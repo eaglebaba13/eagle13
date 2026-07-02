@@ -1,24 +1,678 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { getMarketData, type IndexQuote } from "@/lib/market.functions";
+import { computeLevels, cprBias, type Levels } from "@/lib/levels";
+
+const marketQuery = () =>
+  queryOptions({
+    queryKey: ["market-data"],
+    queryFn: () => getMarketData(),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  loader: ({ context }) => context.queryClient.ensureQueryData(marketQuery()),
+  component: Dashboard,
+  errorComponent: ({ error }) => (
+    <div className="eb-shell" style={{ padding: 40 }}>
+      <p style={{ color: "var(--eb-bear)", fontFamily: "var(--eb-mono)" }}>
+        Live data unavailable: {error.message}
+      </p>
+    </div>
+  ),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+/* ------------------------------------------------------------------ */
+
+const fmt = (n: number) =>
+  n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function useIstClock() {
+  const [now, setNow] = useState("--:--:--");
+  useEffect(() => {
+    const tick = () => {
+      const t = new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+        timeZone: "Asia/Kolkata",
+      });
+      setNow(t);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function Dashboard() {
+  const { data, dataUpdatedAt, isFetching, refetch } = useSuspenseQuery(marketQuery());
+  const clock = useIstClock();
+  const [tab, setTab] = useState<"nifty" | "banknifty">("nifty");
+
+  const quote = tab === "nifty" ? data.nifty : data.banknifty;
+  const isNifty = tab === "nifty";
+  const accent = isNifty ? "var(--eb-accent)" : "var(--eb-bn)";
+  const safeBand = isNifty ? 100 : 300;
+  const levels = useMemo(
+    () => computeLevels(quote.prevDay, safeBand),
+    [quote.prevDay, safeBand],
+  );
+
+  return (
+    <div className="eb-shell eb-scanlines">
+      <Header
+        clock={clock}
+        nifty={data.nifty}
+        banknifty={data.banknifty}
+      />
+
+      {/* Tabs */}
+      <div style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}>
+        <TabButton active={tab === "nifty"} color="var(--eb-accent)" onClick={() => setTab("nifty")}>
+          NIFTY 50<Badge>NSE</Badge>
+        </TabButton>
+        <TabButton active={tab === "banknifty"} color="var(--eb-bn)" onClick={() => setTab("banknifty")}>
+          BANKNIFTY<Badge>NSE</Badge>
+        </TabButton>
+      </div>
+
+      <main style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(280px,1fr) minmax(360px,1.4fr)",
+            gap: 14,
+            alignItems: "start",
+          }}
+          className="eb-grid"
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <QuoteCard quote={quote} accent={accent} />
+            <SignalCard levels={levels} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <CprCard quote={quote} levels={levels} accent={accent} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="eb-grid">
+              <SafeZonesCard levels={levels} band={safeBand} />
+              <GannCard levels={levels} />
+            </div>
+            <PivotCard levels={levels} accent={accent} />
+          </div>
+        </div>
+      </main>
+
+      <StatusBar
+        updatedAt={dataUpdatedAt}
+        isFetching={isFetching}
+        onRefresh={() => refetch()}
+        quote={quote}
+      />
+
+      <style>{`
+        .eb-shell{background:var(--eb-bg);color:var(--eb-text);font-family:var(--eb-body);min-height:100vh;}
+        @media(max-width:820px){.eb-grid{grid-template-columns:1fr !important;}}
+      `}</style>
+    </div>
+  );
+}
+
+/* ---------------------------- Header ------------------------------ */
+
+function Header({ clock, nifty, banknifty }: { clock: string; nifty: IndexQuote; banknifty: IndexQuote }) {
+  return (
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "14px 28px",
+        borderBottom: "1px solid var(--eb-border)",
+        background: "linear-gradient(135deg,#050e1e,#091424)",
+        position: "sticky",
+        top: 0,
+        zIndex: 500,
+        flexWrap: "wrap",
+        gap: 12,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "var(--eb-head)",
+          fontSize: 26,
+          letterSpacing: 3,
+          color: "var(--eb-accent)",
+          textShadow: "0 0 18px rgba(240,165,0,0.4)",
+        }}
+      >
+        EAGLE<span style={{ color: "var(--eb-accent2)" }}>BABA</span>
+        <span style={{ fontSize: 13, letterSpacing: 2, color: "var(--eb-muted)", marginLeft: 10 }}>
+          · ASTRO LEVELS
+        </span>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 22,
+          alignItems: "center",
+          fontFamily: "var(--eb-mono)",
+          fontSize: 12,
+          color: "var(--eb-muted)",
+          flexWrap: "wrap",
+        }}
+      >
+        <MiniTicker q={nifty} color="var(--eb-accent)" />
+        <MiniTicker q={banknifty} color="var(--eb-bn)" />
+        <span>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "var(--eb-bull)",
+              boxShadow: "0 0 7px var(--eb-bull)",
+              animation: "eb-pulse 1.5s infinite",
+              display: "inline-block",
+              marginRight: 5,
+            }}
+          />
+          NSE INDIA
+        </span>
+        <span style={{ color: "var(--eb-neutral)" }}>{clock} IST</span>
+      </div>
+    </header>
+  );
+}
+
+function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
+  const up = q.change >= 0;
+  return (
+    <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+      <span style={{ color, fontWeight: 700 }}>{q.name}</span>
+      <span style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
+      <span style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
+        {up ? "▲" : "▼"} {q.changePct}%
+      </span>
+    </span>
+  );
+}
+
+/* ---------------------------- Tabs -------------------------------- */
+
+function TabButton({
+  active,
+  color,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  color: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      onClick={onClick}
+      style={{
+        padding: "12px 34px",
+        fontFamily: "var(--eb-head)",
+        fontSize: 18,
+        letterSpacing: 2,
+        cursor: "pointer",
+        borderBottom: `3px solid ${active ? color : "transparent"}`,
+        color: active ? color : "var(--eb-muted)",
+        transition: "all .2s",
+        userSelect: "none",
+        marginBottom: -2,
+      }}
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+      {children}
+    </div>
+  );
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontFamily: "var(--eb-mono)",
+        marginLeft: 7,
+        padding: "1px 5px",
+        borderRadius: 3,
+        background: "rgba(255,255,255,0.06)",
+        color: "var(--eb-muted)",
+        letterSpacing: 1,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* ---------------------------- Cards ------------------------------- */
+
+function Card({
+  title,
+  sub,
+  accent,
+  children,
+}: {
+  title: string;
+  sub?: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: "var(--eb-card)",
+        border: "1px solid var(--eb-border)",
+        borderRadius: 8,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "9px 13px",
+          borderBottom: "1px solid var(--eb-border)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: `linear-gradient(90deg, color-mix(in srgb, ${accent} 12%, transparent), transparent 60%)`,
+        }}
+      >
+        <span style={{ fontFamily: "var(--eb-head)", fontSize: 15, letterSpacing: 2, color: accent }}>
+          {title}
+        </span>
+        {sub ? (
+          <span
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 10,
+              padding: "2px 6px",
+              borderRadius: 3,
+              background: "rgba(255,255,255,0.04)",
+              color: "var(--eb-muted)",
+            }}
+          >
+            {sub}
+          </span>
+        ) : null}
+      </div>
+      <div style={{ padding: "12px 13px" }}>{children}</div>
+    </div>
+  );
+}
+
+function FlashValue({ value, color }: { value: number; color?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const prev = useRef(value);
+  useEffect(() => {
+    if (prev.current !== value && ref.current) {
+      ref.current.style.animation = "none";
+      // force reflow
+      void ref.current.offsetWidth;
+      ref.current.style.animation = "eb-flash 1.1s ease-out";
+      prev.current = value;
+    }
+  }, [value]);
+  return (
+    <span
+      ref={ref}
+      style={{
+        fontFamily: "var(--eb-mono)",
+        fontSize: 15,
+        fontWeight: 700,
+        color: color ?? "var(--eb-text)",
+        padding: "1px 4px",
+        borderRadius: 3,
+      }}
+    >
+      {fmt(value)}
+    </span>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "7px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
+      }}
+    >
+      <span style={{ fontSize: 12, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function QuoteCard({ quote, accent }: { quote: IndexQuote; accent: string }) {
+  const up = quote.change >= 0;
+  return (
+    <Card
+      title={`${quote.name} — LIVE`}
+      sub={quote.marketState === "OPEN" ? "MARKET OPEN" : "MARKET CLOSED"}
+      accent={accent}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
+        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 30, fontWeight: 700, color: "var(--eb-text)" }}>
+          {fmt(quote.livePrice)}
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 14,
+            color: up ? "var(--eb-bull)" : "var(--eb-bear)",
+          }}
+        >
+          {up ? "▲" : "▼"} {fmt(Math.abs(quote.change))} ({quote.changePct}%)
+        </span>
+      </div>
+      <div
+        style={{
+          fontSize: 10,
+          fontFamily: "var(--eb-mono)",
+          color: "var(--eb-muted)",
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 4,
+        }}
+      >
+        Previous Working Day &middot; {quote.prevDay.date} &middot; Auto-updated
+      </div>
+      <Row label="Prev Close">
+        <FlashValue value={quote.prevDay.close} color="var(--eb-accent)" />
+      </Row>
+      <Row label="Prev High">
+        <FlashValue value={quote.prevDay.high} color="var(--eb-bull)" />
+      </Row>
+      <Row label="Prev Low">
+        <FlashValue value={quote.prevDay.low} color="var(--eb-bear)" />
+      </Row>
+      <Row label="Prev Open">
+        <FlashValue value={quote.prevDay.open} />
+      </Row>
+    </Card>
+  );
+}
+
+function CprCard({
+  quote,
+  levels,
+  accent,
+}: {
+  quote: IndexQuote;
+  levels: Levels;
+  accent: string;
+}) {
+  const bias = cprBias(levels);
+  const toneColor =
+    bias.tone === "bull" ? "var(--eb-bull)" : bias.tone === "bear" ? "var(--eb-bear)" : "var(--eb-neutral)";
+  return (
+    <Card title={`${quote.name} — CPR LEVELS`} sub="PP · TC · BC" accent={accent}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+        <StatBox label="Top Central" value={levels.tc} color="var(--eb-bull)" />
+        <StatBox label="Pivot (PP)" value={levels.pivot} color={accent} />
+        <StatBox label="Bottom Central" value={levels.bc} color="var(--eb-bear)" />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "8px 10px",
+          borderRadius: 5,
+          border: `1px solid ${toneColor}`,
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
+        <span style={{ fontSize: 11, fontFamily: "var(--eb-mono)", color: "var(--eb-muted)" }}>
+          CPR WIDTH: {levels.cprWidth} ({levels.cprWidthPct}%)
+        </span>
+        <span style={{ fontSize: 11, fontFamily: "var(--eb-head)", letterSpacing: 1, color: toneColor }}>
+          {bias.label}
+        </span>
+      </div>
+    </Card>
+  );
+}
+
+function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div
+      style={{
+        padding: 9,
+        borderRadius: 5,
+        textAlign: "center",
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid var(--eb-border)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          color: "var(--eb-muted)",
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color, marginTop: 3 }}>
+        {fmt(value)}
+      </div>
+    </div>
+  );
+}
+
+function PivotCard({ levels, accent }: { levels: Levels; accent: string }) {
+  const rows = [
+    { k: "R3", v: levels.r3, c: "var(--eb-bull)" },
+    { k: "R2", v: levels.r2, c: "var(--eb-bull)" },
+    { k: "R1", v: levels.r1, c: "var(--eb-bull)" },
+    { k: "PP", v: levels.pivot, c: accent },
+    { k: "S1", v: levels.s1, c: "var(--eb-bear)" },
+    { k: "S2", v: levels.s2, c: "var(--eb-bear)" },
+    { k: "S3", v: levels.s3, c: "var(--eb-bear)" },
+  ];
+  return (
+    <Card title="PIVOT LEVELS" sub="R1-R3 · S1-S3" accent={accent}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Level</th>
+            <th style={{ ...thStyle, textAlign: "right" }}>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.k}>
+              <td style={{ ...tdStyle, color: r.c, fontWeight: 700 }}>{r.k}</td>
+              <td style={{ ...tdStyle, textAlign: "right", color: r.c }}>{fmt(r.v)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
+const thStyle: React.CSSProperties = {
+  padding: "6px 9px",
+  textAlign: "left",
+  fontSize: 10,
+  color: "var(--eb-muted)",
+  fontFamily: "var(--eb-mono)",
+  letterSpacing: 0.8,
+  borderBottom: "1px solid var(--eb-border)",
+  fontWeight: "normal",
+  textTransform: "uppercase",
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "6px 9px",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 13,
+  borderBottom: "1px solid rgba(255,255,255,0.025)",
+};
+
+function SafeZonesCard({ levels, band }: { levels: Levels; band: number }) {
+  return (
+    <Card title="SAFE ZONES" sub={`±${band} pts`} accent="var(--eb-neutral)">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div
+          style={{
+            padding: 9,
+            borderRadius: 5,
+            textAlign: "center",
+            background: "rgba(0,201,122,0.08)",
+            border: "1px solid rgba(0,201,122,0.22)",
+          }}
+        >
+          <div style={{ fontSize: 10, color: "var(--eb-muted)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+            Safe Buy
+          </div>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, fontWeight: 700, color: "var(--eb-bull)", marginTop: 3 }}>
+            {fmt(levels.safeBuy)}
+          </div>
+        </div>
+        <div
+          style={{
+            padding: 9,
+            borderRadius: 5,
+            textAlign: "center",
+            background: "rgba(255,58,92,0.08)",
+            border: "1px solid rgba(255,58,92,0.22)",
+          }}
+        >
+          <div style={{ fontSize: 10, color: "var(--eb-muted)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+            Safe Sell
+          </div>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, fontWeight: 700, color: "var(--eb-bear)", marginTop: 3 }}>
+            {fmt(levels.safeSell)}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function GannCard({ levels }: { levels: Levels }) {
+  return (
+    <Card title="GANN 360° ZONES" sub="√ projection" accent="var(--eb-neutral)">
+      <Row label="Gann Up">
+        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: "var(--eb-bull)" }}>
+          {fmt(levels.gannUp)}
+        </span>
+      </Row>
+      <Row label="Gann Down">
+        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: "var(--eb-bear)" }}>
+          {fmt(levels.gannDown)}
+        </span>
+      </Row>
+    </Card>
+  );
+}
+
+function SignalCard({ levels }: { levels: Levels }) {
+  const bias = cprBias(levels);
+  const isBull = bias.tone === "bull";
+  const tone = bias.tone === "neutral" ? "var(--eb-neutral)" : isBull ? "var(--eb-bull)" : "var(--eb-bear)";
+  return (
+    <Card title="MARKET SIGNAL" sub="AUTO" accent="var(--eb-neutral)">
+      <div
+        style={{
+          padding: 12,
+          textAlign: "center",
+          borderRadius: 6,
+          border: `1px solid ${tone}`,
+          background: "rgba(255,255,255,0.02)",
+          marginBottom: 9,
+        }}
+      >
+        <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 3, color: tone }}>
+          {bias.tone === "bull" ? "TRENDING BIAS" : bias.tone === "bear" ? "RANGE BIAS" : "BALANCED"}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--eb-muted)", marginTop: 2 }}>{bias.label}</div>
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          color: "var(--eb-muted)",
+          fontFamily: "var(--eb-mono)",
+          padding: "7px 10px",
+          background: "rgba(255,255,255,0.02)",
+          borderRadius: 5,
+          lineHeight: 1.5,
+        }}
+      >
+        Levels auto-computed from the previous working day OHLC. CPR width drives the
+        trending vs range read. Not financial advice.
+      </div>
+    </Card>
+  );
+}
+
+/* -------------------------- Status bar ---------------------------- */
+
+function StatusBar({
+  updatedAt,
+  isFetching,
+  onRefresh,
+  quote,
+}: {
+  updatedAt: number;
+  isFetching: boolean;
+  onRefresh: () => void;
+  quote: IndexQuote;
+}) {
+  const t = new Date(updatedAt).toLocaleTimeString("en-GB", {
+    hour12: false,
+    timeZone: "Asia/Kolkata",
+  });
+  return (
+    <div
+      style={{
+        padding: "8px 24px",
+        fontFamily: "var(--eb-mono)",
+        fontSize: 11,
+        color: "var(--eb-muted)",
+        borderTop: "1px solid var(--eb-border)",
+        background: "var(--eb-bg2)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 8,
+      }}
+    >
+      <span className={isFetching ? "" : "eb-ok"} style={{ color: isFetching ? "var(--eb-accent)" : "var(--eb-bull)" }}>
+        {isFetching ? "↻ Updating live data…" : `✓ Live · updated ${t} IST · auto-refresh 30s`}
+      </span>
+      <button
+        onClick={onRefresh}
+        style={{
+          padding: "5px 14px",
+          borderRadius: 4,
+          border: "1px solid var(--eb-border)",
+          background: "var(--eb-bg3)",
+          color: "var(--eb-neutral)",
+          cursor: "pointer",
+          fontFamily: "var(--eb-body)",
+          fontSize: 13,
+          letterSpacing: 1,
+        }}
+      >
+        ↺ REFRESH {quote.name}
+      </button>
     </div>
   );
 }
