@@ -142,3 +142,65 @@
     color: var(--color-foreground);
   }
 }
+
+/* =========================================================================
+ * EagleBABA premium dashboard design tokens
+ * ====================================================================== */
+:root {
+  --eb-bg: #03060d;
+  --eb-bg2: #070d1a;
+  --eb-bg3: #0b1525;
+  --eb-card: #0d1b2e;
+  --eb-border: #1a2f4a;
+  --eb-accent: #f0a500;
+  --eb-accent2: #e05c2a;
+  --eb-bull: #00c97a;
+  --eb-bear: #ff3a5c;
+  --eb-neutral: #7ec8e3;
+  --eb-text: #cdd8e8;
+  --eb-muted: #5a7a9a;
+  --eb-bn: #7b6cf6;
+  --eb-mono: "Share Tech Mono", monospace;
+  --eb-head: "Bebas Neue", sans-serif;
+  --eb-body: "Rajdhani", sans-serif;
+}
+
+@keyframes eb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes eb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes eb-flash {
+  0% {
+    background-color: rgba(240, 165, 0, 0.18);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.eb-scanlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.07) 2px,
+    rgba(0, 0, 0, 0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}

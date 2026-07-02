@@ -77,14 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "EagleBABA — Nifty & BankNifty Astro Levels" },
+      {
+        name: "description",
+        content:
+          "Live premium trading dashboard with auto-updated Nifty 50 & Bank Nifty previous working day OHLC, CPR, pivot and Gann levels.",
+      },
+      { name: "author", content: "EagleBABA" },
+      { property: "og:title", content: "EagleBABA — Nifty & BankNifty Astro Levels" },
+      {
+        property: "og:description",
+        content:
+          "Auto-updated Nifty 50 & Bank Nifty previous-day Close, High, Low with CPR, pivots and Gann zones.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -92,6 +99,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
