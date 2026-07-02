@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "EagleBABA — Nifty & BankNifty Astro Levels" },
+      { title: "EagleBABA | Astro Levels" },
       {
         name: "description",
         content:
           "Live premium trading dashboard with auto-updated Nifty 50 & Bank Nifty previous working day OHLC, CPR, pivot and Gann levels.",
       },
       { name: "author", content: "EagleBABA" },
-      { property: "og:title", content: "EagleBABA — Nifty & BankNifty Astro Levels" },
+      { property: "og:title", content: "EagleBABA | Astro Levels" },
       {
         property: "og:description",
         content:
@@ -92,6 +92,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "EagleBABA | Astro Levels" },
+      { name: "description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
+      { property: "og:description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
+      { name: "twitter:description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp" },
     ],
     links: [
       {
