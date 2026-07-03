@@ -655,23 +655,6 @@ function GannCycleCard({ levels }: { levels: Levels }) {
   );
 }
 
-function GannCardLegacyPlaceholder({ levels }: { levels: Levels }) {
-  return (
-    <Card title="GANN 360° ZONES" sub="√ projection" accent="var(--eb-neutral)">
-      <Row label="Gann Up">
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: "var(--eb-bull)" }}>
-          {fmt(levels.gannUp)}
-        </span>
-      </Row>
-      <Row label="Gann Down">
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: "var(--eb-bear)" }}>
-          {fmt(levels.gannDown)}
-        </span>
-      </Row>
-    </Card>
-  );
-}
-
 function SignalCard({ levels }: { levels: Levels }) {
   const bias = cprBias(levels);
   const isBull = bias.tone === "bull";
