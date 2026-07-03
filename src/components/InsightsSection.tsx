@@ -1,4 +1,4 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import {
   getFno,
   getSectors,
@@ -19,9 +19,7 @@ const sectorsQuery = () =>
 const newsQuery = () =>
   queryOptions({ queryKey: ["news"], queryFn: () => getNews(), refetchInterval: 300_000 });
 
-export function prefetchInsights(qc: {
-  prefetchQuery: (opts: unknown) => unknown;
-}) {
+export function prefetchInsights(qc: QueryClient) {
   qc.prefetchQuery(fnoQuery());
   qc.prefetchQuery(sectorsQuery());
   qc.prefetchQuery(newsQuery());
