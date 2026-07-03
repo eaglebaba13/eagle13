@@ -8,6 +8,7 @@ import {
   computeSignal,
   type PlanetRow,
   type LevelEntry,
+  type MoonPhaseInfo,
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 
