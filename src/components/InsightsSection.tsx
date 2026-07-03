@@ -148,7 +148,7 @@ function SectorBar({ s }: { s: Sector }) {
     <div style={{ padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "var(--eb-text)", fontWeight: 700 }}>{s.name}</span>
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: col, fontWeight: 700 }}>
+        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: col, fontWeight: 700 }}>
           {up ? "▲" : "▼"} {pct(s.changePct)}
         </span>
       </div>
