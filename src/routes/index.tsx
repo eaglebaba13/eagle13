@@ -634,6 +634,8 @@ function StatusBar({
   onRefresh: () => void;
   quote: IndexQuote;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const t = new Date(updatedAt).toLocaleTimeString("en-GB", {
     hour12: false,
     timeZone: "Asia/Kolkata",
@@ -654,8 +656,16 @@ function StatusBar({
         gap: 8,
       }}
     >
-      <span className={isFetching ? "" : "eb-ok"} style={{ color: isFetching ? "var(--eb-accent)" : "var(--eb-bull)" }}>
-        {isFetching ? "↻ Updating live data…" : `✓ Live · updated ${t} IST · auto-refresh 30s`}
+      <span
+        suppressHydrationWarning
+        className={isFetching ? "" : "eb-ok"}
+        style={{ color: isFetching ? "var(--eb-accent)" : "var(--eb-bull)" }}
+      >
+        {!mounted
+          ? "✓ Live · auto-refresh 30s"
+          : isFetching
+            ? "↻ Updating live data…"
+            : `✓ Live · updated ${t} IST · auto-refresh 30s`}
       </span>
       <button
         onClick={onRefresh}
