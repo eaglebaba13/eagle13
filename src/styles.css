@@ -204,3 +204,7 @@
   pointer-events: none;
   z-index: 1000;
 }
+
+#lovable-badge {
+  display: none !important;
+}
