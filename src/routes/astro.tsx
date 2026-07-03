@@ -11,17 +11,18 @@ import {
   type MoonPhaseInfo,
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const C = {
-  bg: "#0B1220",
-  card: "#111827",
-  border: "#1f2937",
-  green: "#16A34A",
-  red: "#DC2626",
-  orange: "#F59E0B",
-  blue: "#2563EB",
-  text: "#E5E7EB",
-  muted: "#94A3B8",
+  bg: "var(--eb-bg)",
+  card: "var(--eb-card)",
+  border: "var(--eb-border)",
+  green: "var(--eb-bull)",
+  red: "var(--eb-bear)",
+  orange: "var(--eb-accent)",
+  blue: "var(--eb-blue)",
+  text: "var(--eb-text)",
+  muted: "var(--eb-muted)",
 };
 
 const astroQuery = () =>
@@ -420,6 +421,7 @@ function AstroDashboard() {
             <Link to="/" style={{ fontSize: 12, color: C.blue, textDecoration: "none", border: `1px solid ${C.border}`, padding: "5px 10px", borderRadius: 8 }}>
               Market View
             </Link>
+            <ThemeToggle />
           </div>
         </div>
 
@@ -434,7 +436,7 @@ function AstroDashboard() {
           <Card
             style={{
               gridColumn: "span 1",
-              background: `linear-gradient(135deg, ${signalColor}22, ${C.card})`,
+              background: `linear-gradient(135deg, color-mix(in oklab, ${signalColor} 14%, transparent), ${C.card})`,
               border: `1px solid ${signalColor}`,
             }}
           >

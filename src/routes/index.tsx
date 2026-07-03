@@ -7,6 +7,7 @@ import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels, cprBias, type Levels } from "@/lib/levels";
 import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
 import { Disclaimer } from "@/components/Disclaimer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const marketQuery = () =>
   queryOptions({
@@ -153,7 +154,7 @@ function Header({
         justifyContent: "space-between",
         padding: "14px 28px",
         borderBottom: "1px solid var(--eb-border)",
-        background: "linear-gradient(135deg,#050e1e,#091424)",
+        background: "linear-gradient(135deg,var(--eb-bg),var(--eb-bg2))",
         position: "sticky",
         top: 0,
         zIndex: 500,
@@ -218,6 +219,7 @@ function Header({
         >
           🪐 Astro Levels
         </Link>
+        <ThemeToggle />
       </div>
     </header>
   );
