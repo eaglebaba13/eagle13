@@ -105,8 +105,8 @@ function MoverRow({ m }: { m: Mover }) {
         </div>
       </div>
       <div style={{ textAlign: "right", fontFamily: "var(--eb-mono)" }}>
-        <div style={{ fontSize: 13, color: "var(--eb-text)" }}>{fmt(m.price)}</div>
-        <div style={{ fontSize: 12, color: col, fontWeight: 700 }}>
+        <div suppressHydrationWarning style={{ fontSize: 13, color: "var(--eb-text)" }}>{fmt(m.price)}</div>
+        <div suppressHydrationWarning style={{ fontSize: 12, color: col, fontWeight: 700 }}>
           {up ? "▲" : "▼"} {pct(m.changePct)}
         </div>
       </div>
