@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { computeCycles, computeAstroLevels, type PlanetRow } from "./astro-levels";
-import type { MoonPhaseInfo } from "./astro-engine.server";
+import { computeCycles, computeAstroLevels, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
