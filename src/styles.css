@@ -160,9 +160,27 @@
   --eb-text: #cdd8e8;
   --eb-muted: #5a7a9a;
   --eb-bn: #7b6cf6;
+  --eb-blue: #4c9dff;
   --eb-mono: "JetBrains Mono", ui-monospace, monospace;
   --eb-head: "Space Grotesk", system-ui, sans-serif;
   --eb-body: "Inter", system-ui, sans-serif;
+}
+
+:root[data-theme="light"] {
+  --eb-bg: #f3f6fc;
+  --eb-bg2: #e9eef7;
+  --eb-bg3: #dde5f1;
+  --eb-card: #ffffff;
+  --eb-border: #c8d2e2;
+  --eb-accent: #b97400;
+  --eb-accent2: #c2481c;
+  --eb-bull: #059669;
+  --eb-bear: #dc2626;
+  --eb-neutral: #1d6fd8;
+  --eb-text: #14202f;
+  --eb-muted: #5a6b82;
+  --eb-bn: #6d28d9;
+  --eb-blue: #1d4ed8;
 }
 
 @keyframes eb-pulse {
