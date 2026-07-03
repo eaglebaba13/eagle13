@@ -189,7 +189,7 @@ function SectorsCard() {
             }}
           >
             <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>Top Sector</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bull)" }}>
+            <div suppressHydrationWarning style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bull)" }}>
               {top.name} {pct(top.changePct)}
             </div>
           </div>
@@ -203,7 +203,7 @@ function SectorsCard() {
             }}
           >
             <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>Weakest Sector</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bear)" }}>
+            <div suppressHydrationWarning style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bear)" }}>
               {bottom.name} {pct(bottom.changePct)}
             </div>
           </div>
