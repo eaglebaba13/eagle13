@@ -198,8 +198,8 @@ function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
   return (
     <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
       <span style={{ color, fontWeight: 700 }}>{q.name}</span>
-      <span style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
-      <span style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
+      <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
+      <span suppressHydrationWarning style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
         {up ? "▲" : "▼"} {q.changePct}%
       </span>
     </span>
@@ -369,10 +369,11 @@ function QuoteCard({ quote, accent }: { quote: IndexQuote; accent: string }) {
       accent={accent}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 30, fontWeight: 700, color: "var(--eb-text)" }}>
+        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 30, fontWeight: 700, color: "var(--eb-text)" }}>
           {fmt(quote.livePrice)}
         </span>
         <span
+          suppressHydrationWarning
           style={{
             fontFamily: "var(--eb-mono)",
             fontSize: 14,
