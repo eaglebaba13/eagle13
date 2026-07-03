@@ -403,6 +403,9 @@ function AstroDashboard() {
           <Stat label="Prev Close" value={<span className="astro-mono">{data.prevClose.toLocaleString("en-IN")}</span>} sub={data.prevDate} />
         </div>
 
+        {/* Moon phase & upcoming New/Full Moon countdown */}
+        <MoonPhaseSection moon={data.moonPhase} />
+
         {/* Nearest level board */}
         <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
