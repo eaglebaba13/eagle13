@@ -58,7 +58,7 @@ export function Disclaimer() {
               alignItems: "baseline",
               gap: 8,
               fontSize: 12.5,
-              color: "var(--eb-text-dim)",
+              color: "var(--eb-muted)",
             }}
           >
             <span style={{ color: "var(--eb-bear)" }}>•</span>
