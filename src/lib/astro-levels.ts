@@ -26,6 +26,16 @@ export type Cycles = {
   lower: number;
 };
 
+export type MoonPhaseInfo = {
+  phaseName: string;
+  illumination: number; // 0-100 %
+  elongation: number; // 0-360 deg
+  nextNewMoon: string; // ISO
+  daysToNewMoon: number;
+  nextFullMoon: string; // ISO
+  daysToFullMoon: number;
+};
+
 export function computeCycles(prevClose: number): Cycles {
   const base = Math.floor(prevClose / 360);
   return { base, upper: base * 360, lower: (base - 1) * 360 };
