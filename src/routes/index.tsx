@@ -106,6 +106,7 @@ function Dashboard() {
               <GannCard levels={levels} />
             </div>
             <PivotCard levels={levels} accent={accent} />
+            <GannCycleCard levels={levels} />
           </div>
         </div>
 
