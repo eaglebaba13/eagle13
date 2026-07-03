@@ -368,7 +368,7 @@ function AstroDashboard() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)",
+          fontFamily: "var(--eb-head, system-ui, sans-serif)",
         }}
       >
         <div style={{ textAlign: "center" }}>
@@ -380,7 +380,7 @@ function AstroDashboard() {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)" }}>
+    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, system-ui, sans-serif)" }}>
       <style>{`
         .astro-grid { display:grid; gap:12px; }
         @media print {
@@ -392,7 +392,7 @@ function AstroDashboard() {
         .astro-table { width:100%; border-collapse:collapse; font-size:13px; }
         .astro-table th { text-align:left; color:${C.muted}; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:8px 10px; border-bottom:1px solid ${C.border}; position:sticky; top:0; background:${C.card}; }
         .astro-table td { padding:8px 10px; border-bottom:1px solid ${C.border}; }
-        .astro-mono { font-family:'Share Tech Mono', ui-monospace, monospace; }
+        .astro-mono { font-family:var(--eb-mono, ui-monospace, monospace); }
       `}</style>
 
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px" }}>
