@@ -19,8 +19,12 @@ const sectorsQuery = () =>
 const newsQuery = () =>
   queryOptions({ queryKey: ["news"], queryFn: () => getNews(), refetchInterval: 300_000 });
 
-export function insightQueries() {
-  return [fnoQuery(), sectorsQuery(), newsQuery()] as const;
+export function prefetchInsights(qc: {
+  prefetchQuery: (opts: unknown) => unknown;
+}) {
+  qc.prefetchQuery(fnoQuery());
+  qc.prefetchQuery(sectorsQuery());
+  qc.prefetchQuery(newsQuery());
 }
 
 /* ------------------------------ card ------------------------------ */
