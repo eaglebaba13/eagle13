@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -205,6 +205,19 @@ function Header({
           NSE INDIA
         </span>
         <span style={{ color: "var(--eb-neutral)" }}>{clock} IST</span>
+        <Link
+          to="/astro"
+          style={{
+            color: "var(--eb-neutral)",
+            textDecoration: "none",
+            border: "1px solid var(--eb-line, #1f2937)",
+            padding: "3px 9px",
+            borderRadius: 7,
+            fontSize: 12,
+          }}
+        >
+          🪐 Astro Levels
+        </Link>
       </div>
     </header>
   );
