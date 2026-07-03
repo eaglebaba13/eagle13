@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels, cprBias, type Levels } from "@/lib/levels";
-import { InsightsSection, insightQueries } from "@/components/InsightsSection";
+import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
 
 const marketQuery = () =>
   queryOptions({
@@ -18,7 +18,7 @@ const marketQuery = () =>
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(marketQuery());
-    for (const q of insightQueries()) context.queryClient.prefetchQuery(q);
+    prefetchInsights(context.queryClient);
   },
   component: Dashboard,
   errorComponent: ({ error }) => (
