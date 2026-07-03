@@ -443,18 +443,6 @@ function QuoteCard({ quote, accent }: { quote: IndexQuote; accent: string }) {
   );
 }
 
-function CprCard({
-  quote,
-  levels,
-  accent,
-}: {
-  quote: IndexQuote;
-  levels: Levels;
-  accent: string;
-}) {
-  return null as never;
-}
-
 function VixCard({ vix }: { vix: IndexQuote }) {
   // VIX up = rising fear/volatility (risk-off); VIX down = calm (risk-on).
   const up = vix.change >= 0;
@@ -501,7 +489,7 @@ function VixCard({ vix }: { vix: IndexQuote }) {
   );
 }
 
-function CprCardImpl({
+function CprCard({
   quote,
   levels,
   accent,
