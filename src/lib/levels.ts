@@ -23,8 +23,8 @@ const r = (n: number) => Math.round(n * 100) / 100;
 export function computeLevels(o: OHLC, safeBand: number): Levels {
   const { high, low, close } = o;
   const pivot = (high + low + close) / 3;
-  const bc = (high + low) / 2;
-  const tc = pivot - bc + pivot; // reflection of BC around pivot
+  const bc = (pivot + low) / 2; // BC = (PP + Low) / 2
+  const tc = (pivot + high) / 2; // TC = (PP + High) / 2
   const topCentral = Math.max(tc, bc);
   const bottomCentral = Math.min(tc, bc);
   const width = topCentral - bottomCentral;
