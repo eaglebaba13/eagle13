@@ -96,6 +96,71 @@ function todayIstLabel() {
   });
 }
 
+function formatMoonDate(iso: string) {
+  return new Date(iso).toLocaleString("en-IN", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+function daysLabel(d: number) {
+  if (d < 1) return "Today";
+  const whole = Math.floor(d);
+  return `in ${d.toFixed(1)} day${whole === 1 ? "" : "s"}`;
+}
+
+function MoonPhaseSection({ moon }: { moon: MoonPhaseInfo }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
+        <Card>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Current Moon Phase
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+            🌙 {moon.phaseName}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {moon.illumination}% illuminated · {moon.elongation}° elongation
+          </div>
+          <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 4, marginTop: 8 }}>
+            <div style={{ height: "100%", width: `${moon.illumination}%`, background: C.blue, borderRadius: 4 }} />
+          </div>
+        </Card>
+
+        <Card style={{ border: `1px solid ${C.border}`, background: `linear-gradient(135deg, rgba(37,99,235,0.12), ${C.card})` }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Next New Moon 🌑
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.blue, marginTop: 4 }} suppressHydrationWarning>
+            {daysLabel(moon.daysToNewMoon)}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {formatMoonDate(moon.nextNewMoon)} IST
+          </div>
+        </Card>
+
+        <Card style={{ border: `1px solid ${C.border}`, background: `linear-gradient(135deg, rgba(245,158,11,0.12), ${C.card})` }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Next Full Moon 🌕
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.orange, marginTop: 4 }} suppressHydrationWarning>
+            {daysLabel(moon.daysToFullMoon)}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {formatMoonDate(moon.nextFullMoon)} IST
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function downloadBlob(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
