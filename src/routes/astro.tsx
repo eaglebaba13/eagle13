@@ -373,7 +373,7 @@ function AstroDashboard() {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: C.text }}>🪐 Astro Levels Dashboard</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: C.text }}>🪐 EagleBABA - Astro Levels Dashboard</div>
           <div style={{ marginTop: 8, fontSize: 13 }}>Loading planetary &amp; market data…</div>
         </div>
       </div>
@@ -401,7 +401,7 @@ function AstroDashboard() {
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: 1 }}>
-              🪐 Astro Levels Dashboard
+              🪐 EagleBABA - Astro Levels Dashboard
             </h1>
             <div style={{ fontSize: 12, color: C.muted }}>
               Mumbai · Asia/Kolkata · {todayIstLabel()}
