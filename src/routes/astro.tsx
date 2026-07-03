@@ -434,7 +434,7 @@ function AstroDashboard() {
           <Card
             style={{
               gridColumn: "span 1",
-              background: `linear-gradient(135deg, ${signalColor}22, ${C.card})`,
+              background: `linear-gradient(135deg, color-mix(in oklab, ${signalColor} 14%, transparent), ${C.card})`,
               border: `1px solid ${signalColor}`,
             }}
           >
