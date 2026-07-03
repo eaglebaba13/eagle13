@@ -134,7 +134,17 @@ function Dashboard() {
 
 /* ---------------------------- Header ------------------------------ */
 
-function Header({ clock, nifty, banknifty }: { clock: string; nifty: IndexQuote; banknifty: IndexQuote }) {
+function Header({
+  clock,
+  nifty,
+  banknifty,
+  vix,
+}: {
+  clock: string;
+  nifty: IndexQuote;
+  banknifty: IndexQuote;
+  vix: IndexQuote | null;
+}) {
   return (
     <header
       style={{
@@ -178,6 +188,7 @@ function Header({ clock, nifty, banknifty }: { clock: string; nifty: IndexQuote;
       >
         <MiniTicker q={nifty} color="var(--eb-accent)" />
         <MiniTicker q={banknifty} color="var(--eb-bn)" />
+        {vix ? <VixTicker q={vix} /> : null}
         <span>
           <span
             style={{
