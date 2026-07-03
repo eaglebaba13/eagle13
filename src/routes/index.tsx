@@ -109,6 +109,8 @@ function Dashboard() {
         </div>
 
         <InsightsSection />
+
+        <Disclaimer />
       </main>
 
       <StatusBar
