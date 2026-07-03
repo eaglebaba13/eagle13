@@ -16,6 +16,7 @@ export type Levels = {
   safeSell: number;
   gannUp: number;
   gannDown: number;
+  gannCycle: { deg: number; up: number; down: number }[];
 };
 
 const r = (n: number) => Math.round(n * 100) / 100;
@@ -41,6 +42,13 @@ export function computeLevels(o: OHLC, safeBand: number): Levels {
   const gannUp = Math.pow(sq + 1, 2);
   const gannDown = Math.pow(sq - 1, 2);
 
+  // Gann cycle: square-of-9 rotations at 45° steps (360° == +2 on the root).
+  const gannCycle = [45, 90, 135, 180, 225, 270, 315, 360].map((deg) => ({
+    deg,
+    up: r(Math.pow(sq + deg / 180, 2)),
+    down: r(Math.pow(sq - deg / 180, 2)),
+  }));
+
   return {
     pivot: r(pivot),
     tc: r(topCentral),
@@ -57,6 +65,7 @@ export function computeLevels(o: OHLC, safeBand: number): Levels {
     safeSell: r(close - safeBand),
     gannUp: r(gannUp),
     gannDown: r(gannDown),
+    gannCycle,
   };
 }
 
