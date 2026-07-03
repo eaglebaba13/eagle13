@@ -62,9 +62,10 @@ export function computeLevels(o: OHLC, safeBand: number): Levels {
 
 export function cprBias(l: Levels): {
   label: string;
+  headline: string;
   tone: "bull" | "bear" | "neutral";
 } {
-  if (l.cprWidthPct < 0.3) return { label: "NARROW · TRENDING DAY LIKELY", tone: "bull" };
-  if (l.cprWidthPct > 0.75) return { label: "WIDE · SIDEWAYS / RANGE DAY", tone: "bear" };
-  return { label: "MODERATE · BALANCED SETUP", tone: "neutral" };
+  if (l.cprWidthPct < 0.5)
+    return { headline: "🔴 NARROW — Trending Day", label: "NARROW CPR · TRENDING DAY", tone: "bear" };
+  return { headline: "🟢 WIDE — Reversal Possible", label: "WIDE CPR · REVERSAL POSSIBLE", tone: "bull" };
 }
