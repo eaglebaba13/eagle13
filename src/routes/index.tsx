@@ -107,6 +107,8 @@ function Dashboard() {
             <PivotCard levels={levels} accent={accent} />
           </div>
         </div>
+
+        <InsightsSection />
       </main>
 
       <StatusBar
