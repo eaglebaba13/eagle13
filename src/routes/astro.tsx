@@ -356,6 +356,29 @@ function AstroDashboard() {
 
   const nearest = signal.nearest;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          background: C.bg,
+          minHeight: "100vh",
+          color: C.muted,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: C.text }}>🪐 Astro Levels Dashboard</div>
+          <div style={{ marginTop: 8, fontSize: 13 }}>Loading planetary &amp; market data…</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)" }}>
       <style>{`
