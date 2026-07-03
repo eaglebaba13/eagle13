@@ -11,6 +11,7 @@ import {
   type MoonPhaseInfo,
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const C = {
   bg: "var(--eb-bg)",
