@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { computeCycles, computeAstroLevels, type PlanetRow } from "./astro-levels";
+import type { MoonPhaseInfo } from "./astro-engine.server";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -70,6 +71,7 @@ export type AstroData = {
   bullCount: number;
   bearCount: number;
   planets: PlanetRow[];
+  moonPhase: MoonPhaseInfo;
 };
 
 export const getAstro = createServerFn({ method: "GET" }).handler(
@@ -101,6 +103,7 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
       bullCount: positions.bullCount,
       bearCount: positions.bearCount,
       planets,
+      moonPhase: positions.moonPhase,
     };
   },
 );
