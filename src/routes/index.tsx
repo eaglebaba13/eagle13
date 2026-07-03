@@ -223,6 +223,21 @@ function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
   );
 }
 
+// For India VIX a RISE means more fear (bearish for market), so colors invert.
+function VixTicker({ q }: { q: IndexQuote }) {
+  const up = q.change >= 0;
+  const col = up ? "var(--eb-bear)" : "var(--eb-bull)";
+  return (
+    <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+      <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>VIX</span>
+      <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
+      <span suppressHydrationWarning style={{ color: col }}>
+        {up ? "▲" : "▼"} {q.changePct}%
+      </span>
+    </span>
+  );
+}
+
 /* ---------------------------- Tabs -------------------------------- */
 
 function TabButton({
