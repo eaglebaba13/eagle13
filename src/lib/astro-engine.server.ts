@@ -13,7 +13,7 @@ import vsopJupiter from "astronomia/data/vsop87Djupiter";
 import vsopSaturn from "astronomia/data/vsop87Dsaturn";
 
 import { NAKSHATRAS, SIGNS, NAKSHATRA_LORDS, isBullNakshatra, isBearNakshatra } from "./astro-constants";
-import type { PlanetRow } from "./astro-levels";
+import type { PlanetRow, MoonPhaseInfo } from "./astro-levels";
 
 const R2D = 180 / Math.PI;
 const NAK_SIZE = 360 / 27; // 13.3333...
@@ -106,16 +106,6 @@ export type AstroPositions = {
   bullCount: number;
   bearCount: number;
   moonPhase: MoonPhaseInfo;
-};
-
-export type MoonPhaseInfo = {
-  phaseName: string;
-  illumination: number; // 0-100 %
-  elongation: number; // 0-360 deg
-  nextNewMoon: string; // ISO
-  daysToNewMoon: number;
-  nextFullMoon: string; // ISO
-  daysToFullMoon: number;
 };
 
 function elongation(jde: number): number {
