@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels, cprBias, type Levels } from "@/lib/levels";
 import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
+import { Disclaimer } from "@/components/Disclaimer";
 
 const marketQuery = () =>
   queryOptions({
@@ -109,6 +110,8 @@ function Dashboard() {
         </div>
 
         <InsightsSection />
+
+        <Disclaimer />
       </main>
 
       <StatusBar
