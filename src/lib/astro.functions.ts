@@ -14,6 +14,15 @@ function todayIst(): string {
   return new Date(Date.now() + 19800 * 1000).toISOString().slice(0, 10);
 }
 
+// Anchor planetary positions to today's 9:00 AM IST (Mumbai). IST = UTC+5:30,
+// so 09:00 IST is 03:30 UTC of the current IST calendar day. This makes the
+// planetary degrees stable through the day and effectively "auto-fetched" once
+// daily at 9:00 AM.
+function astroAnchorDate(): Date {
+  const [y, m, d] = todayIst().split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 3, 30, 0));
+}
+
 async function fetchNifty(): Promise<{
   livePrice: number;
   prevClose: number;
@@ -76,9 +85,10 @@ export type AstroData = {
 export const getAstro = createServerFn({ method: "GET" }).handler(
   async (): Promise<AstroData> => {
     const { computeAstroPositions } = await import("./astro-engine.server");
+    const anchor = astroAnchorDate();
     const [market, positions] = await Promise.all([
       fetchNifty(),
-      Promise.resolve(computeAstroPositions(new Date())),
+      Promise.resolve(computeAstroPositions(anchor)),
     ]);
 
     const cycles = computeCycles(market.prevClose);
@@ -88,7 +98,7 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
     }));
 
     return {
-      asOf: new Date().toISOString(),
+      asOf: anchor.toISOString(),
       ayanamsa: positions.ayanamsa,
       prevClose: market.prevClose,
       prevDate: market.prevDate,

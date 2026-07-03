@@ -404,7 +404,7 @@ function AstroDashboard() {
               🪐 EagleBABA - Astro Levels Dashboard
             </h1>
             <div style={{ fontSize: 12, color: C.muted }}>
-              Mumbai · Asia/Kolkata · {todayIstLabel()}
+              Mumbai · Asia/Kolkata · {todayIstLabel()} · Planets fixed @ 09:00 IST
             </div>
           </div>
           <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
