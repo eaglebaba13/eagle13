@@ -244,10 +244,10 @@ function Stat({
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
         {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: color ?? C.text, marginTop: 4 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: color ?? C.text, marginTop: 4 }} suppressHydrationWarning>
         {value}
       </div>
-      {sub ? <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{sub}</div> : null}
+      {sub ? <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }} suppressHydrationWarning>{sub}</div> : null}
     </Card>
   );
 }
