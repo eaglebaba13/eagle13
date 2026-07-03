@@ -13,7 +13,7 @@ import vsopJupiter from "astronomia/data/vsop87Djupiter";
 import vsopSaturn from "astronomia/data/vsop87Dsaturn";
 
 import { NAKSHATRAS, SIGNS, NAKSHATRA_LORDS, isBullNakshatra, isBearNakshatra } from "./astro-constants";
-import type { PlanetRow } from "./astro-levels";
+import type { PlanetRow, MoonPhaseInfo } from "./astro-levels";
 
 const R2D = 180 / Math.PI;
 const NAK_SIZE = 360 / 27; // 13.3333...
@@ -105,7 +105,69 @@ export type AstroPositions = {
   retroCount: number;
   bullCount: number;
   bearCount: number;
+  moonPhase: MoonPhaseInfo;
 };
+
+function elongation(jde: number): number {
+  return norm(tropical("Moon", jde) - tropical("Sun", jde));
+}
+
+function jdToDate(jd: number): Date {
+  return new Date((jd - 2440587.5) * 86400000);
+}
+
+// Find the next JD after jd0 where elongation crosses `target` (deg) upward.
+function nextPhaseJd(jd0: number, target: number): number {
+  const f = (jd: number) => {
+    let d = elongation(jd) - target;
+    d = ((((d + 180) % 360) + 360) % 360) - 180; // -> [-180,180)
+    return d;
+  };
+  const step = 0.25;
+  let prev = f(jd0);
+  for (let jd = jd0 + step; jd < jd0 + 45; jd += step) {
+    const cur = f(jd);
+    if (prev < 0 && cur >= 0) {
+      let lo = jd - step;
+      let hi = jd;
+      for (let i = 0; i < 40; i++) {
+        const mid = (lo + hi) / 2;
+        if (f(mid) < 0) lo = mid;
+        else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+    prev = cur;
+  }
+  return jd0 + 29.530588; // synodic-month fallback
+}
+
+function phaseName(e: number): string {
+  if (e < 15 || e >= 345) return "New Moon";
+  if (e < 75) return "Waxing Crescent";
+  if (e < 105) return "First Quarter";
+  if (e < 165) return "Waxing Gibbous";
+  if (e < 195) return "Full Moon";
+  if (e < 255) return "Waning Gibbous";
+  if (e < 285) return "Last Quarter";
+  return "Waning Crescent";
+}
+
+function computeMoonPhase(jd: number): MoonPhaseInfo {
+  const e = elongation(jd);
+  const newJd = nextPhaseJd(jd, 0);
+  const fullJd = nextPhaseJd(jd, 180);
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  return {
+    phaseName: phaseName(e),
+    illumination: Math.round(((1 - Math.cos((e * Math.PI) / 180)) / 2) * 1000) / 10,
+    elongation: Math.round(e * 100) / 100,
+    nextNewMoon: jdToDate(newJd).toISOString(),
+    daysToNewMoon: Math.max(0, round1(newJd - jd)),
+    nextFullMoon: jdToDate(fullJd).toISOString(),
+    daysToFullMoon: Math.max(0, round1(fullJd - jd)),
+  };
+}
 
 export function computeAstroPositions(date: Date): AstroPositions {
   const jd = jdFromDate(date);
@@ -154,5 +216,6 @@ export function computeAstroPositions(date: Date): AstroPositions {
     retroCount: planets.filter((p) => p.retro).length,
     bullCount: planets.filter((p) => p.bull).length,
     bearCount: planets.filter((p) => p.bear).length,
+    moonPhase: computeMoonPhase(jd),
   };
 }

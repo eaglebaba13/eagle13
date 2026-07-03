@@ -8,6 +8,7 @@ import {
   computeSignal,
   type PlanetRow,
   type LevelEntry,
+  type MoonPhaseInfo,
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 
@@ -95,6 +96,71 @@ function todayIstLabel() {
   });
 }
 
+function formatMoonDate(iso: string) {
+  return new Date(iso).toLocaleString("en-IN", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+function daysLabel(d: number) {
+  if (d < 1) return "Today";
+  const whole = Math.floor(d);
+  return `in ${d.toFixed(1)} day${whole === 1 ? "" : "s"}`;
+}
+
+function MoonPhaseSection({ moon }: { moon: MoonPhaseInfo }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
+        <Card>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Current Moon Phase
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+            🌙 {moon.phaseName}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {moon.illumination}% illuminated · {moon.elongation}° elongation
+          </div>
+          <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 4, marginTop: 8 }}>
+            <div style={{ height: "100%", width: `${moon.illumination}%`, background: C.blue, borderRadius: 4 }} />
+          </div>
+        </Card>
+
+        <Card style={{ border: `1px solid ${C.border}`, background: `linear-gradient(135deg, rgba(37,99,235,0.12), ${C.card})` }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Next New Moon 🌑
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.blue, marginTop: 4 }} suppressHydrationWarning>
+            {daysLabel(moon.daysToNewMoon)}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {formatMoonDate(moon.nextNewMoon)} IST
+          </div>
+        </Card>
+
+        <Card style={{ border: `1px solid ${C.border}`, background: `linear-gradient(135deg, rgba(245,158,11,0.12), ${C.card})` }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+            Next Full Moon 🌕
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.orange, marginTop: 4 }} suppressHydrationWarning>
+            {daysLabel(moon.daysToFullMoon)}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+            {formatMoonDate(moon.nextFullMoon)} IST
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function downloadBlob(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -178,10 +244,10 @@ function Stat({
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
         {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: color ?? C.text, marginTop: 4 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: color ?? C.text, marginTop: 4 }} suppressHydrationWarning>
         {value}
       </div>
-      {sub ? <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{sub}</div> : null}
+      {sub ? <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }} suppressHydrationWarning>{sub}</div> : null}
     </Card>
   );
 }
@@ -289,6 +355,29 @@ function AstroDashboard() {
   });
 
   const nearest = signal.nearest;
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          background: C.bg,
+          minHeight: "100vh",
+          color: C.muted,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: C.text }}>🪐 Astro Levels Dashboard</div>
+          <div style={{ marginTop: 8, fontSize: 13 }}>Loading planetary &amp; market data…</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, 'Rajdhani', system-ui, sans-serif)" }}>
@@ -402,6 +491,9 @@ function AstroDashboard() {
           <Stat label="Ayanamsa" value={<span className="astro-mono">{data.ayanamsa.toFixed(3)}°</span>} />
           <Stat label="Prev Close" value={<span className="astro-mono">{data.prevClose.toLocaleString("en-IN")}</span>} sub={data.prevDate} />
         </div>
+
+        {/* Moon phase & upcoming New/Full Moon countdown */}
+        <MoonPhaseSection moon={data.moonPhase} />
 
         {/* Nearest level board */}
         <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
