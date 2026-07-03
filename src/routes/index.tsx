@@ -73,6 +73,7 @@ function Dashboard() {
         clock={clock}
         nifty={data.nifty}
         banknifty={data.banknifty}
+        vix={data.vix}
       />
 
       {/* Tabs */}
@@ -97,6 +98,7 @@ function Dashboard() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <QuoteCard quote={quote} accent={accent} />
+            {data.vix ? <VixCard vix={data.vix} /> : null}
             <SignalCard levels={levels} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
