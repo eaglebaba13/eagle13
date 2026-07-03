@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import {
   getFno,
@@ -255,6 +256,29 @@ function NewsCard() {
 /* ---------------------------- section ----------------------------- */
 
 export function InsightsSection() {
+  // Live insight lists reorder as prices update; render them only after mount
+  // so the auto-refreshing client data never conflicts with the SSR snapshot.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          marginTop: 14,
+          padding: 24,
+          textAlign: "center",
+          color: "var(--eb-muted)",
+          fontFamily: "var(--eb-mono)",
+          fontSize: 12,
+          border: "1px solid var(--eb-border)",
+          borderRadius: 8,
+          background: "var(--eb-card)",
+        }}
+      >
+        Loading market insights…
+      </div>
+    );
+  }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="eb-grid">
