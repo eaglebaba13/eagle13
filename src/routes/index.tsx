@@ -608,8 +608,8 @@ function SignalCard({ levels }: { levels: Levels }) {
           marginBottom: 9,
         }}
       >
-        <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 3, color: tone }}>
-          {bias.tone === "bull" ? "TRENDING BIAS" : bias.tone === "bear" ? "RANGE BIAS" : "BALANCED"}
+        <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 2, color: tone }}>
+          {bias.headline}
         </div>
         <div style={{ fontSize: 11, color: "var(--eb-muted)", marginTop: 2 }}>{bias.label}</div>
       </div>
