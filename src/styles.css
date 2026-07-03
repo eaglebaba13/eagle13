@@ -160,9 +160,9 @@
   --eb-text: #cdd8e8;
   --eb-muted: #5a7a9a;
   --eb-bn: #7b6cf6;
-  --eb-mono: "Share Tech Mono", monospace;
-  --eb-head: "Bebas Neue", sans-serif;
-  --eb-body: "Rajdhani", sans-serif;
+  --eb-mono: "JetBrains Mono", ui-monospace, monospace;
+  --eb-head: "Space Grotesk", system-ui, sans-serif;
+  --eb-body: "Inter", system-ui, sans-serif;
 }
 
 @keyframes eb-pulse {
