@@ -420,6 +420,7 @@ function AstroDashboard() {
             <Link to="/" style={{ fontSize: 12, color: C.blue, textDecoration: "none", border: `1px solid ${C.border}`, padding: "5px 10px", borderRadius: 8 }}>
               Market View
             </Link>
+            <ThemeToggle />
           </div>
         </div>
 
