@@ -73,6 +73,7 @@ function Dashboard() {
         clock={clock}
         nifty={data.nifty}
         banknifty={data.banknifty}
+        vix={data.vix}
       />
 
       {/* Tabs */}
@@ -97,6 +98,7 @@ function Dashboard() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <QuoteCard quote={quote} accent={accent} />
+            {data.vix ? <VixCard vix={data.vix} /> : null}
             <SignalCard levels={levels} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -132,7 +134,17 @@ function Dashboard() {
 
 /* ---------------------------- Header ------------------------------ */
 
-function Header({ clock, nifty, banknifty }: { clock: string; nifty: IndexQuote; banknifty: IndexQuote }) {
+function Header({
+  clock,
+  nifty,
+  banknifty,
+  vix,
+}: {
+  clock: string;
+  nifty: IndexQuote;
+  banknifty: IndexQuote;
+  vix: IndexQuote | null;
+}) {
   return (
     <header
       style={{
@@ -176,6 +188,7 @@ function Header({ clock, nifty, banknifty }: { clock: string; nifty: IndexQuote;
       >
         <MiniTicker q={nifty} color="var(--eb-accent)" />
         <MiniTicker q={banknifty} color="var(--eb-bn)" />
+        {vix ? <VixTicker q={vix} /> : null}
         <span>
           <span
             style={{
@@ -204,6 +217,21 @@ function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
       <span style={{ color, fontWeight: 700 }}>{q.name}</span>
       <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
       <span suppressHydrationWarning style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
+        {up ? "▲" : "▼"} {q.changePct}%
+      </span>
+    </span>
+  );
+}
+
+// For India VIX a RISE means more fear (bearish for market), so colors invert.
+function VixTicker({ q }: { q: IndexQuote }) {
+  const up = q.change >= 0;
+  const col = up ? "var(--eb-bear)" : "var(--eb-bull)";
+  return (
+    <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+      <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>VIX</span>
+      <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
+      <span suppressHydrationWarning style={{ color: col }}>
         {up ? "▲" : "▼"} {q.changePct}%
       </span>
     </span>
@@ -410,6 +438,52 @@ function QuoteCard({ quote, accent }: { quote: IndexQuote; accent: string }) {
       </Row>
       <Row label="Prev Open">
         <FlashValue value={quote.prevDay.open} />
+      </Row>
+    </Card>
+  );
+}
+
+function VixCard({ vix }: { vix: IndexQuote }) {
+  // VIX up = rising fear/volatility (risk-off); VIX down = calm (risk-on).
+  const up = vix.change >= 0;
+  const col = up ? "var(--eb-bear)" : "var(--eb-bull)";
+  const level = vix.livePrice;
+  const mood =
+    level >= 20 ? "HIGH FEAR" : level >= 15 ? "ELEVATED" : level >= 12 ? "CALM" : "COMPLACENT";
+  const moodCol =
+    level >= 20 ? "var(--eb-bear)" : level >= 15 ? "var(--eb-accent)" : "var(--eb-bull)";
+  return (
+    <Card title="INDIA VIX — VOLATILITY" sub="FEAR GAUGE" accent="var(--eb-neutral)">
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
+        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 26, fontWeight: 700, color: "var(--eb-text)" }}>
+          {fmt(level)}
+        </span>
+        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 13, color: col }}>
+          {up ? "▲" : "▼"} {fmt(Math.abs(vix.change))} ({vix.changePct}%)
+        </span>
+        <span
+          style={{
+            marginLeft: "auto",
+            fontSize: 11,
+            fontFamily: "var(--eb-head)",
+            letterSpacing: 1,
+            padding: "2px 8px",
+            borderRadius: 4,
+            border: `1px solid ${moodCol}`,
+            color: moodCol,
+          }}
+        >
+          {mood}
+        </span>
+      </div>
+      <Row label="Prev Close">
+        <FlashValue value={vix.prevDay.close} color="var(--eb-neutral)" />
+      </Row>
+      <Row label="Prev High">
+        <FlashValue value={vix.prevDay.high} color="var(--eb-bear)" />
+      </Row>
+      <Row label="Prev Low">
+        <FlashValue value={vix.prevDay.low} color="var(--eb-bull)" />
       </Row>
     </Card>
   );
