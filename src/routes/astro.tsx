@@ -13,15 +13,15 @@ import {
 import { Disclaimer } from "@/components/Disclaimer";
 
 const C = {
-  bg: "#0B1220",
-  card: "#111827",
-  border: "#1f2937",
-  green: "#16A34A",
-  red: "#DC2626",
-  orange: "#F59E0B",
-  blue: "#2563EB",
-  text: "#E5E7EB",
-  muted: "#94A3B8",
+  bg: "var(--eb-bg)",
+  card: "var(--eb-card)",
+  border: "var(--eb-border)",
+  green: "var(--eb-bull)",
+  red: "var(--eb-bear)",
+  orange: "var(--eb-accent)",
+  blue: "var(--eb-blue)",
+  text: "var(--eb-text)",
+  muted: "var(--eb-muted)",
 };
 
 const astroQuery = () =>
