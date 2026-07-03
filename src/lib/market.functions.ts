@@ -105,10 +105,11 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 
 export const getMarketData = createServerFn({ method: "GET" }).handler(
   async () => {
-    const [nifty, banknifty] = await Promise.all([
+    const [nifty, banknifty, vix] = await Promise.all([
       fetchIndex("^NSEI"),
       fetchIndex("^NSEBANK"),
+      fetchIndex("^INDIAVIX").catch(() => null),
     ]);
-    return { nifty, banknifty };
+    return { nifty, banknifty, vix };
   },
 );
