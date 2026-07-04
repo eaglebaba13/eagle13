@@ -8,7 +8,12 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = (localStorage.getItem("eb-theme") as Theme) || "dark";
+    let saved: Theme = "dark";
+    try {
+      saved = (localStorage.getItem("eb-theme") as Theme) || "dark";
+    } catch {
+      // localStorage may be unavailable (private mode / blocked cookies).
+    }
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
     setMounted(true);
@@ -17,7 +22,11 @@ export function ThemeToggle() {
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem("eb-theme", next);
+    try {
+      localStorage.setItem("eb-theme", next);
+    } catch {
+      // Ignore persistence failures; theme still applies for this session.
+    }
     document.documentElement.setAttribute("data-theme", next);
   };
 
