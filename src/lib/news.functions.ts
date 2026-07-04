@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { fetchTextSafe } from "./http";
 
 export type NewsItem = {
   title: string;
@@ -40,15 +41,10 @@ async function fetchFeed(
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(
     query + " when:2d",
   )}&hl=en-IN&gl=IN&ceid=IN:en`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-      Accept: "application/rss+xml, application/xml, text/xml",
-    },
+  const xml = await fetchTextSafe(url, {
+    accept: "application/rss+xml, application/xml, text/xml",
   });
-  if (!res.ok) return [];
-  const xml = await res.text();
+  if (!xml) return [];
   const items = xml.split("<item>").slice(1);
   return items.slice(0, 8).map((raw) => {
     const block = raw.split("</item>")[0];
