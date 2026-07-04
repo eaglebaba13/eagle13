@@ -75,6 +75,9 @@ function Dashboard() {
         nifty={data.nifty}
         banknifty={data.banknifty}
         vix={data.vix}
+        btc={data.btc}
+        gold={data.gold}
+        goldSilverRatio={data.goldSilverRatio}
       />
 
       {/* Tabs */}
@@ -101,6 +104,12 @@ function Dashboard() {
             <QuoteCard quote={quote} accent={accent} />
             {data.vix ? <VixCard vix={data.vix} /> : null}
             <SignalCard levels={levels} />
+            <GlobalMarketsCard
+              btc={data.btc}
+              gold={data.gold}
+              silver={data.silver}
+              goldSilverRatio={data.goldSilverRatio}
+            />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <CprCard quote={quote} levels={levels} accent={accent} />
@@ -140,11 +149,17 @@ function Header({
   nifty,
   banknifty,
   vix,
+  btc,
+  gold,
+  goldSilverRatio,
 }: {
   clock: string;
   nifty: IndexQuote;
   banknifty: IndexQuote;
   vix: IndexQuote | null;
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  goldSilverRatio: number | null;
 }) {
   return (
     <header
@@ -190,6 +205,14 @@ function Header({
         <MiniTicker q={nifty} color="var(--eb-accent)" />
         <MiniTicker q={banknifty} color="var(--eb-bn)" />
         {vix ? <VixTicker q={vix} /> : null}
+        {btc ? <MiniTicker q={btc} color="#f7931a" label="BTC" /> : null}
+        {gold ? <MiniTicker q={gold} color="var(--eb-accent)" label="XAU/USD" /> : null}
+        {goldSilverRatio != null ? (
+          <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+            <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>GS RATIO</span>
+            <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{goldSilverRatio}</span>
+          </span>
+        ) : null}
         <span>
           <span
             style={{
@@ -225,11 +248,11 @@ function Header({
   );
 }
 
-function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
+function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
   const up = q.change >= 0;
   return (
     <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-      <span style={{ color, fontWeight: 700 }}>{q.name}</span>
+      <span style={{ color, fontWeight: 700 }}>{label ?? q.name}</span>
       <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
       <span suppressHydrationWarning style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
         {up ? "▲" : "▼"} {q.changePct}%
@@ -541,6 +564,72 @@ function CprCard({
           {bias.label}
         </span>
       </div>
+    </Card>
+  );
+}
+
+function GlobalMarketsCard({
+  btc,
+  gold,
+  silver,
+  goldSilverRatio,
+}: {
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  silver: IndexQuote | null;
+  goldSilverRatio: number | null;
+}) {
+  const items: { label: string; q: IndexQuote; color: string; suffix?: string }[] = [];
+  if (btc) items.push({ label: "BTC / USD", q: btc, color: "#f7931a" });
+  if (gold) items.push({ label: "XAU / USD (GOLD)", q: gold, color: "var(--eb-accent)" });
+  if (silver) items.push({ label: "XAG / USD (SILVER)", q: silver, color: "var(--eb-neutral)" });
+
+  return (
+    <Card title="GLOBAL MARKETS" sub="BTC · GOLD · SILVER" accent="#f7931a">
+      {items.map((it) => {
+        const up = it.q.change >= 0;
+        return (
+          <Row key={it.label} label={it.label}>
+            <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+              <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
+                {fmt(it.q.livePrice)}
+              </span>
+              <span
+                suppressHydrationWarning
+                style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}
+              >
+                {up ? "▲" : "▼"} {it.q.changePct}%
+              </span>
+            </span>
+          </Row>
+        );
+      })}
+      {goldSilverRatio != null ? (
+        <div
+          style={{
+            marginTop: 10,
+            padding: "9px 11px",
+            borderRadius: 5,
+            border: "1px solid var(--eb-accent)",
+            background: "rgba(255,255,255,0.02)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: 11, fontFamily: "var(--eb-head)", letterSpacing: 1, color: "var(--eb-muted)" }}>
+            GOLD / SILVER RATIO
+          </span>
+          <span style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
+            {goldSilverRatio}
+          </span>
+        </div>
+      ) : null}
+      {items.length === 0 ? (
+        <div style={{ fontSize: 11, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+          Global market data unavailable.
+        </div>
+      ) : null}
     </Card>
   );
 }
