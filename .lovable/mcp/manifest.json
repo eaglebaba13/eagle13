@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "eaglebaba-mcp",
+      "version": "0.1.0",
+      "title": "EagleBABA Market MCP"
+    },
+    "tools": [
+      {
+        "name": "get_market_data",
+        "title": "Get market data",
+        "description": "Live quotes for NIFTY 50, BANK NIFTY, India VIX, Bitcoin, gold and silver, including previous-day OHLC, change, and the gold/silver ratio.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_market_news",
+        "title": "Get market news",
+        "description": "Latest financial headlines across Indian markets, Bitcoin, gold, and silver, sorted newest first with source and publish time.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_astro_levels",
+        "title": "Get astro levels",
+        "description": "Astrology-derived NIFTY trading levels for the current session: base/upper/lower cycles, moon sign, nakshatra, planetary rows with levels, and bull/bear/retrograde counts.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
