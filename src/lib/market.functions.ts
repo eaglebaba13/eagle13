@@ -105,11 +105,20 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 
 export const getMarketData = createServerFn({ method: "GET" }).handler(
   async () => {
-    const [nifty, banknifty, vix] = await Promise.all([
+    const [nifty, banknifty, vix, btc, gold, silver] = await Promise.all([
       fetchIndex("^NSEI"),
       fetchIndex("^NSEBANK"),
       fetchIndex("^INDIAVIX").catch(() => null),
+      fetchIndex("BTC-USD").catch(() => null),
+      fetchIndex("GC=F").catch(() => null),
+      fetchIndex("SI=F").catch(() => null),
     ]);
-    return { nifty, banknifty, vix };
+
+    let goldSilverRatio: number | null = null;
+    if (gold && silver && silver.livePrice) {
+      goldSilverRatio = round2(gold.livePrice / silver.livePrice);
+    }
+
+    return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio };
   },
 );
