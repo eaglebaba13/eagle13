@@ -149,11 +149,17 @@ function Header({
   nifty,
   banknifty,
   vix,
+  btc,
+  gold,
+  goldSilverRatio,
 }: {
   clock: string;
   nifty: IndexQuote;
   banknifty: IndexQuote;
   vix: IndexQuote | null;
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  goldSilverRatio: number | null;
 }) {
   return (
     <header
@@ -199,6 +205,14 @@ function Header({
         <MiniTicker q={nifty} color="var(--eb-accent)" />
         <MiniTicker q={banknifty} color="var(--eb-bn)" />
         {vix ? <VixTicker q={vix} /> : null}
+        {btc ? <MiniTicker q={btc} color="#f7931a" label="BTC" /> : null}
+        {gold ? <MiniTicker q={gold} color="var(--eb-accent)" label="XAU/USD" /> : null}
+        {goldSilverRatio != null ? (
+          <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+            <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>GS RATIO</span>
+            <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{goldSilverRatio}</span>
+          </span>
+        ) : null}
         <span>
           <span
             style={{
