@@ -75,6 +75,9 @@ function Dashboard() {
         nifty={data.nifty}
         banknifty={data.banknifty}
         vix={data.vix}
+        btc={data.btc}
+        gold={data.gold}
+        goldSilverRatio={data.goldSilverRatio}
       />
 
       {/* Tabs */}
@@ -101,6 +104,12 @@ function Dashboard() {
             <QuoteCard quote={quote} accent={accent} />
             {data.vix ? <VixCard vix={data.vix} /> : null}
             <SignalCard levels={levels} />
+            <GlobalMarketsCard
+              btc={data.btc}
+              gold={data.gold}
+              silver={data.silver}
+              goldSilverRatio={data.goldSilverRatio}
+            />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <CprCard quote={quote} levels={levels} accent={accent} />
