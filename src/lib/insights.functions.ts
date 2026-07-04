@@ -239,9 +239,10 @@ function decode(s: string): string {
 export const getNews = createServerFn({ method: "GET" }).handler(async () => {
   const url =
     "https://news.google.com/rss/search?q=nifty+sensex+stock+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en";
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
-  if (!res.ok) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
-  const xml = await res.text();
+  const xml = await fetchTextSafe(url, {
+    accept: "application/rss+xml, application/xml, text/xml",
+  });
+  if (!xml) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
   const items: NewsItem[] = [];
   const blocks = xml.split("<item>").slice(1);
   for (const b of blocks.slice(0, 8)) {
