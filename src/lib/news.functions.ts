@@ -58,9 +58,16 @@ async function fetchFeed(
       const d = new Date(pd);
       if (!Number.isNaN(d.getTime())) iso = d.toISOString();
     }
+    const cleanTitle = title || rawTitle;
+    // Google News RSS <link> is a news.google.com redirect wrapper that many
+    // browsers reject with ERR_BLOCKED_BY_RESPONSE. Link to a normal Google
+    // search for the headline instead, which reliably reaches the article.
+    const searchLink = `https://www.google.com/search?q=${encodeURIComponent(
+      source ? `${cleanTitle} ${source}` : cleanTitle,
+    )}`;
     return {
-      title: title || rawTitle,
-      link: pick("link", block),
+      title: cleanTitle,
+      link: searchLink,
       source,
       pubDate: iso,
       category,
