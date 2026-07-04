@@ -429,6 +429,7 @@ function Card({
 }) {
   return (
     <div
+      className="eb-card"
       style={{
         background: "var(--eb-card)",
         border: "1px solid var(--eb-border)",
