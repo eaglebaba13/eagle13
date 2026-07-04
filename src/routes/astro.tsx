@@ -404,7 +404,7 @@ function AstroDashboard() {
         .astro-mono { font-family:var(--eb-mono, ui-monospace, monospace); }
       `}</style>
 
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px" }}>
+      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px" }}>
         {/* Header */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div>
@@ -563,6 +563,7 @@ function AstroDashboard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search planet / sign / nakshatra…"
+            aria-label="Search planets, signs or nakshatras"
             style={{
               background: C.bg, border: `1px solid ${C.border}`, color: C.text,
               padding: "8px 12px", borderRadius: 8, fontSize: 13, minWidth: 220, flex: "1 1 220px",
@@ -643,7 +644,7 @@ function AstroDashboard() {
         </div>
 
         <Disclaimer />
-      </div>
+      </main>
     </div>
   );
 }

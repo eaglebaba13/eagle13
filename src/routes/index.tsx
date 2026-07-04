@@ -90,7 +90,11 @@ function Dashboard() {
       />
 
       {/* Tabs */}
-      <div style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}>
+      <div
+        role="tablist"
+        aria-label="Select index"
+        style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}
+      >
         <TabButton active={tab === "nifty"} color="var(--eb-accent)" onClick={() => setTab("nifty")}>
           NIFTY 50<Badge>NSE</Badge>
         </TabButton>
@@ -99,7 +103,7 @@ function Dashboard() {
         </TabButton>
       </div>
 
-      <main style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
+      <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <ReferralBanner />
         <div
           style={{
@@ -149,6 +153,17 @@ function Dashboard() {
       <style>{`
         .eb-shell{background:var(--eb-bg);color:var(--eb-text);font-family:var(--eb-body);min-height:100vh;}
         @media(max-width:820px){.eb-grid{grid-template-columns:1fr !important;}}
+        .eb-tab:hover{color:var(--eb-text);}
+        @media(max-width:820px){
+          .eb-grid{grid-template-columns:1fr !important;}
+        }
+        @media(max-width:640px){
+          .eb-header{padding:12px 16px !important;}
+          .eb-header-brand{font-size:21px !important;letter-spacing:2px !important;}
+          .eb-main{padding:12px 12px !important;}
+          .eb-tab{padding:11px 18px !important;font-size:15px !important;flex:1;text-align:center;}
+          .eb-statusbar{padding:8px 14px !important;}
+        }
       `}</style>
     </div>
   );
@@ -175,6 +190,7 @@ function Header({
 }) {
   return (
     <header
+      className="eb-header"
       style={{
         display: "flex",
         alignItems: "center",
@@ -302,14 +318,20 @@ function TabButton({
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
+      className="eb-tab"
       style={{
         padding: "12px 34px",
         fontFamily: "var(--eb-head)",
         fontSize: 18,
         letterSpacing: 2,
         cursor: "pointer",
+        background: "transparent",
+        border: "none",
         borderBottom: `3px solid ${active ? color : "transparent"}`,
         color: active ? color : "var(--eb-muted)",
         transition: "all .2s",
@@ -318,7 +340,7 @@ function TabButton({
       }}
     >
       {children}
-    </div>
+    </button>
   );
 }
 
@@ -419,6 +441,7 @@ function Card({
 }) {
   return (
     <div
+      className="eb-card"
       style={{
         background: "var(--eb-card)",
         border: "1px solid var(--eb-border)",
@@ -968,6 +991,7 @@ function StatusBar({
   });
   return (
     <div
+      className="eb-statusbar"
       style={{
         padding: "8px 24px",
         fontFamily: "var(--eb-mono)",
