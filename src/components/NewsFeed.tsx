@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMarketNews, type NewsItem } from "@/lib/news.functions";
 
 export const newsQuery = () =>
@@ -99,8 +99,10 @@ function NewsRow({ item }: { item: NewsItem }) {
 
 export function NewsFeed() {
   const { data, isFetching } = useSuspenseQuery(newsQuery());
+  const announcement = useNewsAnnouncement(data.items);
   return (
     <section
+      aria-label="Live market news"
       style={{
         marginTop: 18,
         background: "var(--eb-card)",
@@ -151,6 +153,46 @@ export function NewsFeed() {
           data.items.map((it) => <NewsRow key={it.link + it.title} item={it} />)
         )}
       </div>
+      {/* Screen-reader-only live region: announces new headlines without moving focus. */}
+      <div className="eb-sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </div>
     </section>
   );
+}
+
+/**
+ * Watches the headline list and returns a polite announcement string whenever
+ * genuinely new headlines arrive. The first load is not announced (to avoid a
+ * noisy page-load read-out); only subsequent auto-refresh additions are.
+ */
+function useNewsAnnouncement(items: NewsItem[]): string {
+  const seen = useRef<Set<string> | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+
+  useEffect(() => {
+    const keyOf = (it: NewsItem) => it.link + it.title;
+
+    // First render: record what's already on screen, announce nothing.
+    if (seen.current === null) {
+      seen.current = new Set(items.map(keyOf));
+      return;
+    }
+
+    const fresh = items.filter((it) => !seen.current!.has(keyOf(it)));
+    if (fresh.length === 0) return;
+
+    for (const it of items) seen.current.add(keyOf(it));
+
+    const latest = fresh[0];
+    const meta = CAT_META[latest.category];
+    const count =
+      fresh.length === 1 ? "New market headline" : `${fresh.length} new market headlines`;
+    const source = latest.source ? ` from ${latest.source}` : "";
+    // Toggle a trailing space so an identical repeat headline still re-announces.
+    const suffix = announcement.endsWith("\u00A0") ? "" : "\u00A0";
+    setAnnouncement(`${count}. Latest, ${meta.label}: ${latest.title}${source}.${suffix}`);
+  }, [items, announcement]);
+
+  return announcement;
 }
