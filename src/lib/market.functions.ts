@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { fetchJson } from "./http";
 
 export type OHLC = {
   open: number;
@@ -38,16 +39,7 @@ function round2(n: number): number {
 
 async function fetchIndex(symbol: string): Promise<IndexQuote> {
   const url = `${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) throw new Error(`Data source error ${res.status} for ${symbol}`);
-
-  const json = (await res.json()) as any;
+  const json = (await fetchJson<any>(url)) as any;
   const result = json?.chart?.result?.[0];
   if (!result) throw new Error(`No data for ${symbol}`);
 
@@ -105,14 +97,23 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 
 export const getMarketData = createServerFn({ method: "GET" }).handler(
   async () => {
-    const [nifty, banknifty, vix, btc, gold, silver] = await Promise.all([
-      fetchIndex("^NSEI"),
-      fetchIndex("^NSEBANK"),
+    // Core indices are required; secondary instruments degrade gracefully.
+    const [niftyR, bankniftyR, vix, btc, gold, silver] = await Promise.all([
+      fetchIndex("^NSEI").catch((e) => e as Error),
+      fetchIndex("^NSEBANK").catch((e) => e as Error),
       fetchIndex("^INDIAVIX").catch(() => null),
       fetchIndex("BTC-USD").catch(() => null),
       fetchIndex("GC=F").catch(() => null),
       fetchIndex("SI=F").catch(() => null),
     ]);
+
+    if (niftyR instanceof Error && bankniftyR instanceof Error) {
+      throw new Error(
+        `Live market data is temporarily unavailable. ${niftyR.message}`,
+      );
+    }
+    const nifty = niftyR instanceof Error ? (bankniftyR as IndexQuote) : niftyR;
+    const banknifty = bankniftyR instanceof Error ? (niftyR as IndexQuote) : bankniftyR;
 
     let goldSilverRatio: number | null = null;
     if (gold && silver && silver.livePrice) {
