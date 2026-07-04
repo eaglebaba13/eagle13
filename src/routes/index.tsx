@@ -306,14 +306,20 @@ function TabButton({
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
+      className="eb-tab"
       style={{
         padding: "12px 34px",
         fontFamily: "var(--eb-head)",
         fontSize: 18,
         letterSpacing: 2,
         cursor: "pointer",
+        background: "transparent",
+        border: "none",
         borderBottom: `3px solid ${active ? color : "transparent"}`,
         color: active ? color : "var(--eb-muted)",
         transition: "all .2s",
@@ -322,7 +328,7 @@ function TabButton({
       }}
     >
       {children}
-    </div>
+    </button>
   );
 }
 
