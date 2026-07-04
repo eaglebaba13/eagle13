@@ -574,6 +574,10 @@ function CprCard({
 }
 
 function GlobalMarketsCard({
+  ...({} as never)
+}: never): never {
+  throw new Error("placeholder");
+}
   btc,
   gold,
   silver,
