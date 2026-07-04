@@ -93,6 +93,7 @@ function Dashboard() {
       </div>
 
       <main style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
+        <ReferralBanner />
         <div
           style={{
             display: "grid",
@@ -334,6 +335,69 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 /* ---------------------------- Cards ------------------------------- */
+
+function ReferralBanner() {
+  return (
+    <div
+      style={{
+        marginBottom: 16,
+        borderRadius: 10,
+        border: "1px solid var(--eb-accent)",
+        background:
+          "linear-gradient(120deg, color-mix(in srgb, var(--eb-accent) 16%, transparent), var(--eb-card) 70%)",
+        padding: "14px 18px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 14,
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 240, flex: "1 1 320px" }}>
+        <span
+          style={{
+            fontFamily: "var(--eb-head)",
+            fontSize: 17,
+            letterSpacing: 1,
+            color: "var(--eb-accent)",
+          }}
+        >
+          📈 Open Your Demat Account with INDmoney
+        </span>
+        <span style={{ fontSize: 13, color: "var(--eb-text)", lineHeight: 1.5, fontFamily: "var(--eb-body)" }}>
+          Invest across 6000+ Stocks &amp; ETFs 🚀 Real-time price alerts ✨ Custom watchlists for
+          your favourite stocks.
+        </span>
+        <span style={{ fontSize: 12, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+          Referral code:{" "}
+          <span style={{ color: "var(--eb-accent)", fontWeight: 700, letterSpacing: 1 }}>
+            QUJLFDEOIND
+          </span>
+        </span>
+      </div>
+      <a
+        href="https://indmoney.onelink.me/RmHC/0mewvsqe"
+        target="_blank"
+        rel="noopener noreferrer sponsored"
+        style={{
+          flexShrink: 0,
+          padding: "11px 22px",
+          borderRadius: 8,
+          background: "var(--eb-accent)",
+          color: "#0b1220",
+          fontFamily: "var(--eb-head)",
+          fontSize: 15,
+          letterSpacing: 1,
+          textDecoration: "none",
+          fontWeight: 700,
+          boxShadow: "0 0 18px color-mix(in srgb, var(--eb-accent) 45%, transparent)",
+        }}
+      >
+        JOIN &amp; INVEST 🎉
+      </a>
+    </div>
+  );
+}
 
 function Card({
   title,
