@@ -595,7 +595,7 @@ function GlobalMarketsCard({
         return (
           <Row key={it.label} label={it.label}>
             <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
+              <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
                 {fmt(it.q.livePrice)}
               </span>
               <span
