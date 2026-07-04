@@ -153,6 +153,17 @@ function Dashboard() {
       <style>{`
         .eb-shell{background:var(--eb-bg);color:var(--eb-text);font-family:var(--eb-body);min-height:100vh;}
         @media(max-width:820px){.eb-grid{grid-template-columns:1fr !important;}}
+        .eb-tab:hover{color:var(--eb-text);}
+        @media(max-width:820px){
+          .eb-grid{grid-template-columns:1fr !important;}
+        }
+        @media(max-width:640px){
+          .eb-header{padding:12px 16px !important;}
+          .eb-header-brand{font-size:21px !important;letter-spacing:2px !important;}
+          .eb-main{padding:12px 12px !important;}
+          .eb-tab{padding:11px 18px !important;font-size:15px !important;flex:1;text-align:center;}
+          .eb-statusbar{padding:8px 14px !important;}
+        }
       `}</style>
     </div>
   );
