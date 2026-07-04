@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { computeCycles, computeAstroLevels, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
+import { fetchJson } from "./http";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -30,15 +31,7 @@ async function fetchNifty(): Promise<{
   marketState: "OPEN" | "CLOSED";
 }> {
   const url = `${YAHOO}${encodeURIComponent("^NSEI")}?interval=1d&range=1mo`;
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) throw new Error(`Market data source error ${res.status}`);
-  const json = (await res.json()) as any;
+  const json = (await fetchJson<any>(url)) as any;
   const result = json?.chart?.result?.[0];
   if (!result) throw new Error("No NIFTY data available");
   const meta = result.meta;
