@@ -563,6 +563,7 @@ function AstroDashboard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search planet / sign / nakshatra…"
+            aria-label="Search planets, signs or nakshatras"
             style={{
               background: C.bg, border: `1px solid ${C.border}`, color: C.text,
               padding: "8px 12px", borderRadius: 8, fontSize: 13, minWidth: 220, flex: "1 1 220px",
