@@ -64,6 +64,14 @@ export const Route = createFileRoute("/astro")({
       </Link>
     </div>
   ),
+  notFoundComponent: () => (
+    <div style={{ background: C.bg, minHeight: "100vh", padding: 40, color: C.muted }}>
+      <p style={{ fontFamily: "var(--eb-mono)" }}>Astro page not found.</p>
+      <Link to="/" style={{ color: C.blue }}>
+        ← Back to market dashboard
+      </Link>
+    </div>
+  ),
 });
 
 /* ------------------------------ helpers ------------------------------ */
