@@ -248,11 +248,11 @@ function Header({
   );
 }
 
-function MiniTicker({ q, color }: { q: IndexQuote; color: string }) {
+function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
   const up = q.change >= 0;
   return (
     <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-      <span style={{ color, fontWeight: 700 }}>{q.name}</span>
+      <span style={{ color, fontWeight: 700 }}>{label ?? q.name}</span>
       <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
       <span suppressHydrationWarning style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
         {up ? "▲" : "▼"} {q.changePct}%
