@@ -90,7 +90,11 @@ function Dashboard() {
       />
 
       {/* Tabs */}
-      <div style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}>
+      <div
+        role="tablist"
+        aria-label="Select index"
+        style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}
+      >
         <TabButton active={tab === "nifty"} color="var(--eb-accent)" onClick={() => setTab("nifty")}>
           NIFTY 50<Badge>NSE</Badge>
         </TabButton>
