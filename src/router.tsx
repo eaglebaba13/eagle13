@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { renderErrorPage } from "./lib/error-page";
 
 function DefaultError({ error }: { error: Error }) {
   if (typeof console !== "undefined") console.error(error);
@@ -45,7 +44,3 @@ export const getRouter = () => {
 
   return router;
 };
-
-// Keep an explicit reference so tree-shaking never drops the HTML fallback
-// used by the server error boundary.
-void renderErrorPage;
