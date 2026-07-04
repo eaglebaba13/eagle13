@@ -190,6 +190,7 @@ function Header({
 }) {
   return (
     <header
+      className="eb-header"
       style={{
         display: "flex",
         alignItems: "center",
