@@ -103,7 +103,7 @@ function Dashboard() {
         </TabButton>
       </div>
 
-      <main style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
+      <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <ReferralBanner />
         <div
           style={{
