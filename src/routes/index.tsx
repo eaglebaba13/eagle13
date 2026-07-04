@@ -32,6 +32,13 @@ export const Route = createFileRoute("/")({
       </p>
     </div>
   ),
+  notFoundComponent: () => (
+    <div className="eb-shell" style={{ padding: 40 }}>
+      <p style={{ color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+        Nothing to show here.
+      </p>
+    </div>
+  ),
 });
 
 /* ------------------------------------------------------------------ */

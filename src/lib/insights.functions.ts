@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-
-const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
+import { fetchJson, fetchTextSafe } from "./http";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -51,15 +49,16 @@ async function fetchSpark(symbols: string[]): Promise<Map<string, SparkMeta>> {
     const url = `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${encodeURIComponent(
       chunk.join(","),
     )}&range=2d&interval=1d`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-    });
-    if (!res.ok) continue;
-    const json = (await res.json()) as any;
-    const results = json?.spark?.result ?? [];
-    for (const r of results) {
-      const meta: SparkMeta | undefined = r?.response?.[0]?.meta;
-      if (meta?.symbol) out.set(meta.symbol, meta);
+    try {
+      const json = (await fetchJson<any>(url)) as any;
+      const results = json?.spark?.result ?? [];
+      for (const r of results) {
+        const meta: SparkMeta | undefined = r?.response?.[0]?.meta;
+        if (meta?.symbol) out.set(meta.symbol, meta);
+      }
+    } catch {
+      // Skip this chunk on failure; partial data is better than none.
+      continue;
     }
   }
   return out;
@@ -160,7 +159,9 @@ const SECTOR_INDICES: { sym: string; name: string; key: string }[] = [
 /* --------------------------- F&O server fn ------------------------- */
 
 export const getFno = createServerFn({ method: "GET" }).handler(async () => {
-  const metas = await fetchSpark(UNIVERSE.map((u) => u.sym));
+  const metas = await fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
+    () => new Map<string, SparkMeta>(),
+  );
   const movers: Mover[] = [];
   for (const u of UNIVERSE) {
     const m = metas.get(u.sym);
@@ -178,8 +179,12 @@ export const getFno = createServerFn({ method: "GET" }).handler(async () => {
 
 export const getSectors = createServerFn({ method: "GET" }).handler(async () => {
   const [idxMetas, stockMetas] = await Promise.all([
-    fetchSpark(SECTOR_INDICES.map((s) => s.sym)),
-    fetchSpark(UNIVERSE.map((u) => u.sym)),
+    fetchSpark(SECTOR_INDICES.map((s) => s.sym)).catch(
+      () => new Map<string, SparkMeta>(),
+    ),
+    fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
+      () => new Map<string, SparkMeta>(),
+    ),
   ]);
 
   // build stock movers grouped by sector key
@@ -234,9 +239,10 @@ function decode(s: string): string {
 export const getNews = createServerFn({ method: "GET" }).handler(async () => {
   const url =
     "https://news.google.com/rss/search?q=nifty+sensex+stock+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en";
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
-  if (!res.ok) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
-  const xml = await res.text();
+  const xml = await fetchTextSafe(url, {
+    accept: "application/rss+xml, application/xml, text/xml",
+  });
+  if (!xml) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
   const items: NewsItem[] = [];
   const blocks = xml.split("<item>").slice(1);
   for (const b of blocks.slice(0, 8)) {
