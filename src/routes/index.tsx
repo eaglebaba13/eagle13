@@ -8,6 +8,7 @@ import { computeLevels, cprBias, type Levels } from "@/lib/levels";
 import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NewsFeed, newsQuery } from "@/components/NewsFeed";
 
 const marketQuery = () =>
   queryOptions({
@@ -20,6 +21,7 @@ const marketQuery = () =>
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(marketQuery());
+    context.queryClient.ensureQueryData(newsQuery());
     prefetchInsights(context.queryClient);
   },
   component: Dashboard,
@@ -123,6 +125,8 @@ function Dashboard() {
         </div>
 
         <InsightsSection />
+
+        <NewsFeed />
 
         <Disclaimer />
       </main>
@@ -591,7 +595,7 @@ function GlobalMarketsCard({
         return (
           <Row key={it.label} label={it.label}>
             <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
+              <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
                 {fmt(it.q.livePrice)}
               </span>
               <span
