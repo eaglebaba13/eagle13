@@ -991,6 +991,7 @@ function StatusBar({
   });
   return (
     <div
+      className="eb-statusbar"
       style={{
         padding: "8px 24px",
         fontFamily: "var(--eb-mono)",
