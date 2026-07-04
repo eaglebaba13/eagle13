@@ -53,7 +53,11 @@ async function fetchFeed(
     const source = pick("source", block) || (parts.length > 1 ? parts.pop()! : "");
     const title = parts.length > 1 ? parts.join(" - ") : rawTitle;
     const pd = pick("pubDate", block);
-    const iso = pd ? new Date(pd).toISOString() : new Date().toISOString();
+    let iso = new Date().toISOString();
+    if (pd) {
+      const d = new Date(pd);
+      if (!Number.isNaN(d.getTime())) iso = d.toISOString();
+    }
     return {
       title: title || rawTitle,
       link: pick("link", block),
