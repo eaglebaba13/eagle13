@@ -171,6 +171,7 @@ function Dashboard() {
 
       <style>{`
         .eb-shell{background:var(--eb-bg);color:var(--eb-text);font-family:var(--eb-body);min-height:100vh;}
+        .eb-tabrow{overflow-x:auto;-webkit-overflow-scrolling:touch;}
         @media(max-width:820px){.eb-grid{grid-template-columns:1fr !important;}}
         .eb-tab:hover{color:var(--eb-text);}
         @media(max-width:820px){
