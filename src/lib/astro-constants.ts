@@ -33,3 +33,22 @@ export function isBullNakshatra(nak: string): boolean {
 export function isBearNakshatra(nak: string): boolean {
   return BEAR_NAKSHATRAS.has(nak);
 }
+
+/* ------------------------- retrograde bias ------------------------- */
+// Trading bias when a planet is retrograde (Vakri):
+//   Mars & Jupiter retrograde  -> Bullish
+//   Mercury & Saturn retrograde -> Bearish
+//   Venus retrograde           -> Neutral
+// Other bodies (Sun/Moon/Rahu/Ketu) carry no retrograde bias here.
+export type RetroBias = "bull" | "bear" | "neutral" | "none";
+
+export const RETRO_BULL = new Set(["Mars", "Jupiter"]);
+export const RETRO_BEAR = new Set(["Mercury", "Saturn"]);
+export const RETRO_NEUTRAL = new Set(["Venus"]);
+
+export function retroBiasOf(planet: string): RetroBias {
+  if (RETRO_BULL.has(planet)) return "bull";
+  if (RETRO_BEAR.has(planet)) return "bear";
+  if (RETRO_NEUTRAL.has(planet)) return "neutral";
+  return "none";
+}
