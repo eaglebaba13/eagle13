@@ -279,6 +279,33 @@ function RetroBadge() {
   );
 }
 
+function RetroBiasBadge({ bias }: { bias: PlanetRow["retroBias"] }) {
+  if (bias === "none") return null;
+  const map = {
+    bull: { bg: "rgba(22,163,74,0.18)", col: "#4ade80", bd: C.green, txt: "BULL" },
+    bear: { bg: "rgba(220,38,38,0.18)", col: "#f87171", bd: C.red, txt: "BEAR" },
+    neutral: { bg: "rgba(148,163,184,0.18)", col: "#cbd5e1", bd: C.muted, txt: "NEUTRAL" },
+  }[bias];
+  return (
+    <span
+      title="Bias when this planet is retrograde"
+      style={{
+        background: map.bg,
+        color: map.col,
+        border: `1px solid ${map.bd}`,
+        fontSize: 9,
+        fontWeight: 700,
+        padding: "1px 6px",
+        borderRadius: 4,
+        marginLeft: 6,
+        letterSpacing: 0.5,
+      }}
+    >
+      {map.txt} R
+    </span>
+  );
+}
+
 function NakBadge({ bull, bear, name }: { bull: boolean; bear: boolean; name: string }) {
   if (!bull && !bear) return <>{name}</>;
   return (
