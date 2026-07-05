@@ -339,6 +339,9 @@ function AstroDashboard() {
         moonNakshatra: data.moonNakshatra,
         retroCount: data.retroCount,
         totalPlanets: data.planets.length,
+        bullRetroCount: data.bullRetroCount,
+        bearRetroCount: data.bearRetroCount,
+        emaBias: data.emaBias,
       }),
     [board, data],
   );
