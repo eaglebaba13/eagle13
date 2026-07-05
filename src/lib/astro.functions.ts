@@ -15,6 +15,17 @@ function todayIst(): string {
   return new Date(Date.now() + 19800 * 1000).toISOString().slice(0, 10);
 }
 
+// Exponential moving average of the last `period` closes (day timeframe).
+function computeEma(closes: number[], period: number): number | null {
+  if (closes.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = period; i < closes.length; i++) {
+    ema = closes[i] * k + ema * (1 - k);
+  }
+  return round2(ema);
+}
+
 // Anchor planetary positions to today's 9:00 AM IST (Mumbai). IST = UTC+5:30,
 // so 09:00 IST is 03:30 UTC of the current IST calendar day. This makes the
 // planetary degrees stable through the day and effectively "auto-fetched" once
@@ -29,6 +40,7 @@ async function fetchNifty(): Promise<{
   prevClose: number;
   prevDate: string;
   marketState: "OPEN" | "CLOSED";
+  ema13: number | null;
 }> {
   const url = `${YAHOO}${encodeURIComponent("^NSEI")}?interval=1d&range=1mo`;
   const json = (await fetchJson<any>(url)) as any;
@@ -49,11 +61,15 @@ async function fetchNifty(): Promise<{
   if (prevIdx < 0) prevIdx = 0;
   const prev = candles[prevIdx];
 
+  const closes = candles.map((c) => c.close as number);
+  const ema13 = computeEma(closes, 13);
+
   return {
     livePrice: round2(meta.regularMarketPrice ?? prev.close),
     prevClose: round2(prev.close),
     prevDate: prev.date,
     marketState: last.date === today ? "OPEN" : "CLOSED",
+    ema13,
   };
 }
 
@@ -64,6 +80,8 @@ export type AstroData = {
   prevDate: string;
   livePrice: number;
   marketState: "OPEN" | "CLOSED";
+  ema13: number | null;
+  emaBias: "Bullish" | "Bearish" | null;
   cycles: { base: number; upper: number; lower: number };
   moonSign: string;
   moonNakshatra: string;
@@ -71,6 +89,8 @@ export type AstroData = {
   retroCount: number;
   bullCount: number;
   bearCount: number;
+  bullRetroCount: number;
+  bearRetroCount: number;
   planets: PlanetRow[];
   moonPhase: MoonPhaseInfo;
 };
@@ -90,6 +110,9 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
       ...computeAstroLevels(cycles, p.degree),
     }));
 
+    const emaBias: "Bullish" | "Bearish" | null =
+      market.ema13 == null ? null : market.livePrice >= market.ema13 ? "Bullish" : "Bearish";
+
     return {
       asOf: anchor.toISOString(),
       ayanamsa: positions.ayanamsa,
@@ -97,6 +120,8 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
       prevDate: market.prevDate,
       livePrice: market.livePrice,
       marketState: market.marketState,
+      ema13: market.ema13,
+      emaBias,
       cycles,
       moonSign: positions.moonSign,
       moonNakshatra: positions.moonNakshatra,
@@ -104,6 +129,8 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
       retroCount: positions.retroCount,
       bullCount: positions.bullCount,
       bearCount: positions.bearCount,
+      bullRetroCount: positions.bullRetroCount,
+      bearRetroCount: positions.bearRetroCount,
       planets,
       moonPhase: positions.moonPhase,
     };
