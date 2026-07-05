@@ -10,6 +10,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NewsFeed, newsQuery } from "@/components/NewsFeed";
 import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
+import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
 
 const marketQuery = () =>
   queryOptions({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({
     context.queryClient.ensureQueryData(marketQuery());
     context.queryClient.ensureQueryData(newsQuery());
     context.queryClient.ensureQueryData(fiiDiiQuery());
+    context.queryClient.ensureQueryData(seasonalityQuery());
     prefetchInsights(context.queryClient);
   },
   component: Dashboard,
@@ -160,6 +162,8 @@ function Dashboard() {
         <InsightsSection />
 
         <FiiDiiActivity />
+
+        <Seasonality />
 
         <NewsFeed />
 
