@@ -66,12 +66,30 @@ function useIstClock() {
 function Dashboard() {
   const { data, dataUpdatedAt, isFetching, refetch } = useSuspenseQuery(marketQuery());
   const clock = useIstClock();
-  const [tab, setTab] = useState<"nifty" | "banknifty">("nifty");
+  type TabKey = "nifty" | "banknifty" | "btc" | "gold";
 
-  const quote = tab === "nifty" ? data.nifty : data.banknifty;
-  const isNifty = tab === "nifty";
-  const accent = isNifty ? "var(--eb-accent)" : "var(--eb-bn)";
-  const safeBand = isNifty ? 100 : 300;
+  const tabs = useMemo(() => {
+    const list: {
+      key: TabKey;
+      label: string;
+      badge: string;
+      quote: IndexQuote;
+      accent: string;
+      safeBand: number;
+    }[] = [
+      { key: "nifty", label: "NIFTY 50", badge: "NSE", quote: data.nifty, accent: "var(--eb-accent)", safeBand: 100 },
+      { key: "banknifty", label: "BANKNIFTY", badge: "NSE", quote: data.banknifty, accent: "var(--eb-bn)", safeBand: 300 },
+    ];
+    if (data.btc) list.push({ key: "btc", label: "BTC/USD", badge: "CRYPTO", quote: data.btc, accent: "#f7931a", safeBand: 500 });
+    if (data.gold) list.push({ key: "gold", label: "XAU/USD", badge: "COMEX", quote: data.gold, accent: "var(--eb-accent)", safeBand: 15 });
+    return list;
+  }, [data.nifty, data.banknifty, data.btc, data.gold]);
+
+  const [tab, setTab] = useState<TabKey>("nifty");
+  const active = tabs.find((t) => t.key === tab) ?? tabs[0];
+  const quote = active.quote;
+  const accent = active.accent;
+  const safeBand = active.safeBand;
   const levels = useMemo(
     () => computeLevels(quote.prevDay, safeBand),
     [quote.prevDay, safeBand],
@@ -94,13 +112,14 @@ function Dashboard() {
         role="tablist"
         aria-label="Select index"
         style={{ display: "flex", background: "var(--eb-bg2)", borderBottom: "2px solid var(--eb-border)" }}
+        className="eb-tabrow"
       >
-        <TabButton active={tab === "nifty"} color="var(--eb-accent)" onClick={() => setTab("nifty")}>
-          NIFTY 50<Badge>NSE</Badge>
-        </TabButton>
-        <TabButton active={tab === "banknifty"} color="var(--eb-bn)" onClick={() => setTab("banknifty")}>
-          BANKNIFTY<Badge>NSE</Badge>
-        </TabButton>
+        {tabs.map((t) => (
+          <TabButton key={t.key} active={tab === t.key} color={t.accent} onClick={() => setTab(t.key)}>
+            {t.label}
+            <Badge>{t.badge}</Badge>
+          </TabButton>
+        ))}
       </div>
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
