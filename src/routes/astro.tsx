@@ -501,6 +501,24 @@ function AstroDashboard() {
           <Stat label="Retrograde" value={data.retroCount} color={data.retroCount >= 3 ? C.red : C.text} />
           <Stat label="Bull Nakshatra" value={data.bullCount} color={C.green} />
           <Stat label="Bear Nakshatra" value={data.bearCount} color={C.red} />
+          <Stat
+            label="Day EMA 13"
+            value={<span className="astro-mono">{data.ema13 != null ? num(data.ema13) : "—"}</span>}
+            color={data.emaBias === "Bullish" ? C.green : data.emaBias === "Bearish" ? C.red : C.text}
+            sub={data.emaBias ? `${data.emaBias} · price ${data.emaBias === "Bullish" ? "above" : "below"} EMA 13` : "day timeframe"}
+          />
+          <Stat
+            label="Bullish Retro"
+            value={data.bullRetroCount}
+            color={data.bullRetroCount > 0 ? C.green : C.text}
+            sub="Mars / Jupiter Vakri"
+          />
+          <Stat
+            label="Bearish Retro"
+            value={data.bearRetroCount}
+            color={data.bearRetroCount > 0 ? C.red : C.text}
+            sub="Mercury / Saturn Vakri"
+          />
           <Stat label="Ayanamsa" value={<span className="astro-mono">{data.ayanamsa.toFixed(3)}°</span>} />
           <Stat label="Prev Close" value={<span className="astro-mono">{data.prevClose.toLocaleString("en-IN")}</span>} sub={data.prevDate} />
         </div>
