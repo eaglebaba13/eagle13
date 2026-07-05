@@ -1,5 +1,5 @@
 // Client-safe types + Astro level and signal computations.
-import { isBullNakshatra, isBearNakshatra } from "./astro-constants";
+import { isBullNakshatra, isBearNakshatra, type RetroBias } from "./astro-constants";
 
 export type PlanetRow = {
   planet: string;
@@ -12,6 +12,7 @@ export type PlanetRow = {
   speed: number; // deg/day
   motion: "Direct" | "Retrograde";
   retro: boolean;
+  retroBias: RetroBias; // bias when this planet is retrograde
   bull: boolean;
   bear: boolean;
   r1: number;
