@@ -1,5 +1,5 @@
 // Client-safe types + Astro level and signal computations.
-import { isBullNakshatra, isBearNakshatra } from "./astro-constants";
+import { isBullNakshatra, isBearNakshatra, type RetroBias } from "./astro-constants";
 
 export type PlanetRow = {
   planet: string;
@@ -12,6 +12,7 @@ export type PlanetRow = {
   speed: number; // deg/day
   motion: "Direct" | "Retrograde";
   retro: boolean;
+  retroBias: RetroBias; // bias when this planet is retrograde
   bull: boolean;
   bear: boolean;
   r1: number;
@@ -151,8 +152,14 @@ export function computeSignal(params: {
   moonNakshatra: string;
   retroCount: number;
   totalPlanets: number;
+  bullRetroCount?: number;
+  bearRetroCount?: number;
+  emaBias?: "Bullish" | "Bearish" | null;
 }): AstroSignal {
-  const { price, board, moonNakshatra, retroCount, totalPlanets } = params;
+  const {
+    price, board, moonNakshatra, retroCount, totalPlanets,
+    bullRetroCount = 0, bearRetroCount = 0, emaBias = null,
+  } = params;
   const nearest = board[0] ?? null;
   const reasons: string[] = [];
   let score = 50;
@@ -201,6 +208,25 @@ export function computeSignal(params: {
   } else if (retroCount <= 1) {
     score += 6;
     reasons.push(`Majority planets direct`);
+  }
+
+  // Retrograde bias: Mars/Jupiter retro = bullish, Mercury/Saturn retro = bearish.
+  if (bullRetroCount > 0) {
+    score += 8 * bullRetroCount;
+    reasons.push(`Bullish retrograde (${bullRetroCount} of Mars/Jupiter)`);
+  }
+  if (bearRetroCount > 0) {
+    score -= 8 * bearRetroCount;
+    reasons.push(`Bearish retrograde (${bearRetroCount} of Mercury/Saturn)`);
+  }
+
+  // Day timeframe: price above EMA 13 = bullish, below = bearish.
+  if (emaBias === "Bullish") {
+    score += 12;
+    reasons.push(`Price above EMA 13 (day bullish)`);
+  } else if (emaBias === "Bearish") {
+    score -= 12;
+    reasons.push(`Price below EMA 13 (day bearish)`);
   }
 
   const confidence = Math.max(0, Math.min(100, Math.round(score)));

@@ -12,7 +12,7 @@ import vsopMars from "astronomia/data/vsop87Dmars";
 import vsopJupiter from "astronomia/data/vsop87Djupiter";
 import vsopSaturn from "astronomia/data/vsop87Dsaturn";
 
-import { NAKSHATRAS, SIGNS, NAKSHATRA_LORDS, isBullNakshatra, isBearNakshatra } from "./astro-constants";
+import { NAKSHATRAS, SIGNS, NAKSHATRA_LORDS, isBullNakshatra, isBearNakshatra, retroBiasOf } from "./astro-constants";
 import type { PlanetRow, MoonPhaseInfo } from "./astro-levels";
 
 const R2D = 180 / Math.PI;
@@ -105,6 +105,8 @@ export type AstroPositions = {
   retroCount: number;
   bullCount: number;
   bearCount: number;
+  bullRetroCount: number;
+  bearRetroCount: number;
   moonPhase: MoonPhaseInfo;
 };
 
@@ -200,6 +202,7 @@ export function computeAstroPositions(date: Date): AstroPositions {
       speed: Math.round(speed * 10000) / 10000,
       motion: (retro ? "Retrograde" : "Direct") as "Direct" | "Retrograde",
       retro,
+      retroBias: retroBiasOf(name),
       bull: isBullNakshatra(nakshatra),
       bear: isBearNakshatra(nakshatra),
     };
@@ -216,6 +219,8 @@ export function computeAstroPositions(date: Date): AstroPositions {
     retroCount: planets.filter((p) => p.retro).length,
     bullCount: planets.filter((p) => p.bull).length,
     bearCount: planets.filter((p) => p.bear).length,
+    bullRetroCount: planets.filter((p) => p.retro && p.retroBias === "bull").length,
+    bearRetroCount: planets.filter((p) => p.retro && p.retroBias === "bear").length,
     moonPhase: computeMoonPhase(jd),
   };
 }

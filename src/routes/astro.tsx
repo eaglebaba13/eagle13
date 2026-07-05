@@ -279,6 +279,33 @@ function RetroBadge() {
   );
 }
 
+function RetroBiasBadge({ bias }: { bias: PlanetRow["retroBias"] }) {
+  if (bias === "none") return null;
+  const map = {
+    bull: { bg: "rgba(22,163,74,0.18)", col: "#4ade80", bd: C.green, txt: "BULL" },
+    bear: { bg: "rgba(220,38,38,0.18)", col: "#f87171", bd: C.red, txt: "BEAR" },
+    neutral: { bg: "rgba(148,163,184,0.18)", col: "#cbd5e1", bd: C.muted, txt: "NEUTRAL" },
+  }[bias];
+  return (
+    <span
+      title="Bias when this planet is retrograde"
+      style={{
+        background: map.bg,
+        color: map.col,
+        border: `1px solid ${map.bd}`,
+        fontSize: 9,
+        fontWeight: 700,
+        padding: "1px 6px",
+        borderRadius: 4,
+        marginLeft: 6,
+        letterSpacing: 0.5,
+      }}
+    >
+      {map.txt} R
+    </span>
+  );
+}
+
 function NakBadge({ bull, bear, name }: { bull: boolean; bear: boolean; name: string }) {
   if (!bull && !bear) return <>{name}</>;
   return (
@@ -339,6 +366,9 @@ function AstroDashboard() {
         moonNakshatra: data.moonNakshatra,
         retroCount: data.retroCount,
         totalPlanets: data.planets.length,
+        bullRetroCount: data.bullRetroCount,
+        bearRetroCount: data.bearRetroCount,
+        emaBias: data.emaBias,
       }),
     [board, data],
   );
@@ -498,6 +528,24 @@ function AstroDashboard() {
           <Stat label="Retrograde" value={data.retroCount} color={data.retroCount >= 3 ? C.red : C.text} />
           <Stat label="Bull Nakshatra" value={data.bullCount} color={C.green} />
           <Stat label="Bear Nakshatra" value={data.bearCount} color={C.red} />
+          <Stat
+            label="Day EMA 13"
+            value={<span className="astro-mono">{data.ema13 != null ? num(data.ema13) : "—"}</span>}
+            color={data.emaBias === "Bullish" ? C.green : data.emaBias === "Bearish" ? C.red : C.text}
+            sub={data.emaBias ? `${data.emaBias} · price ${data.emaBias === "Bullish" ? "above" : "below"} EMA 13` : "day timeframe"}
+          />
+          <Stat
+            label="Bullish Retro"
+            value={data.bullRetroCount}
+            color={data.bullRetroCount > 0 ? C.green : C.text}
+            sub="Mars / Jupiter Vakri"
+          />
+          <Stat
+            label="Bearish Retro"
+            value={data.bearRetroCount}
+            color={data.bearRetroCount > 0 ? C.red : C.text}
+            sub="Mercury / Saturn Vakri"
+          />
           <Stat label="Ayanamsa" value={<span className="astro-mono">{data.ayanamsa.toFixed(3)}°</span>} />
           <Stat label="Prev Close" value={<span className="astro-mono">{data.prevClose.toLocaleString("en-IN")}</span>} sub={data.prevDate} />
         </div>
@@ -594,6 +642,7 @@ function AstroDashboard() {
                     <td style={{ fontWeight: 700 }}>
                       {p.planet}
                       {p.retro ? <RetroBadge /> : null}
+                      {p.retro ? <RetroBiasBadge bias={p.retroBias} /> : null}
                     </td>
                     <td className="astro-mono">{p.degree.toFixed(2)}°</td>
                     <td>{p.sign}</td>
