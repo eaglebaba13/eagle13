@@ -23,7 +23,7 @@ export const BULL_NAKSHATRAS = new Set([
 ]);
 
 export const BEAR_NAKSHATRAS = new Set([
-  "Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada",
+  "Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada", "Bharani",
 ]);
 
 export function isBullNakshatra(nak: string): boolean {
