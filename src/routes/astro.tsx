@@ -642,6 +642,7 @@ function AstroDashboard() {
                     <td style={{ fontWeight: 700 }}>
                       {p.planet}
                       {p.retro ? <RetroBadge /> : null}
+                      {p.retro ? <RetroBiasBadge bias={p.retroBias} /> : null}
                     </td>
                     <td className="astro-mono">{p.degree.toFixed(2)}°</td>
                     <td>{p.sign}</td>
