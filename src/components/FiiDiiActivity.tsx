@@ -132,7 +132,7 @@ export function FiiDiiActivity() {
                 <th style={{ ...TH, textAlign: "left" }}>Date</th>
                 <th style={TH}>FII Cash</th>
                 <th style={TH}>DII Cash</th>
-                <th style={TH}>FII Future</th>
+                <th style={TH}>FII Fut (OI)</th>
               </tr>
             </thead>
             <tbody>
