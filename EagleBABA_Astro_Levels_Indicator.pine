@@ -150,6 +150,7 @@ f_label(_price, _txt, _col, _show) =>
     else if not na(lb)
         label.delete(lb)
         lb := na
+    lb
 
 if barstate.islast and showLabels
     f_label(buyLevel,     "Buy "     + str.tostring(buyLevel),     colBull,    showBuySell)
