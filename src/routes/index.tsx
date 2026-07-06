@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels, cprBias, type Levels } from "@/lib/levels";
@@ -23,9 +23,12 @@ const marketQuery = () =>
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(marketQuery());
-    context.queryClient.ensureQueryData(newsQuery());
-    context.queryClient.ensureQueryData(fiiDiiQuery());
-    context.queryClient.ensureQueryData(seasonalityQuery());
+    // Secondary sections stream in on their own Suspense boundaries, so we
+    // only prime their caches (non-blocking) instead of awaiting them during
+    // the critical above-the-fold render.
+    context.queryClient.prefetchQuery(newsQuery());
+    context.queryClient.prefetchQuery(fiiDiiQuery());
+    context.queryClient.prefetchQuery(seasonalityQuery());
     prefetchInsights(context.queryClient);
   },
   component: Dashboard,
