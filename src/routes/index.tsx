@@ -775,7 +775,7 @@ function GlobalMarketsCard({
           <span style={{ fontSize: 11, fontFamily: "var(--eb-head)", letterSpacing: 1, color: "var(--eb-muted)" }}>
             GOLD / SILVER RATIO
           </span>
-          <span style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
+          <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
             {goldSilverRatio}
           </span>
         </div>
