@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels, cprBias, type Levels } from "@/lib/levels";
@@ -23,9 +23,12 @@ const marketQuery = () =>
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(marketQuery());
-    context.queryClient.ensureQueryData(newsQuery());
-    context.queryClient.ensureQueryData(fiiDiiQuery());
-    context.queryClient.ensureQueryData(seasonalityQuery());
+    // Secondary sections stream in on their own Suspense boundaries, so we
+    // only prime their caches (non-blocking) instead of awaiting them during
+    // the critical above-the-fold render.
+    context.queryClient.prefetchQuery(newsQuery());
+    context.queryClient.prefetchQuery(fiiDiiQuery());
+    context.queryClient.prefetchQuery(seasonalityQuery());
     prefetchInsights(context.queryClient);
   },
   component: Dashboard,
@@ -161,11 +164,17 @@ function Dashboard() {
 
         <InsightsSection />
 
-        <FiiDiiActivity />
+        <Suspense fallback={<SectionSkeleton label="Loading FII & DII activity…" />}>
+          <FiiDiiActivity />
+        </Suspense>
 
-        <Seasonality />
+        <Suspense fallback={<SectionSkeleton label="Loading seasonality…" />}>
+          <Seasonality />
+        </Suspense>
 
-        <NewsFeed />
+        <Suspense fallback={<SectionSkeleton label="Loading market news…" />}>
+          <NewsFeed />
+        </Suspense>
 
         <Disclaimer />
       </main>
@@ -198,6 +207,26 @@ function Dashboard() {
 }
 
 /* ---------------------------- Header ------------------------------ */
+
+function SectionSkeleton({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: 24,
+        textAlign: "center",
+        color: "var(--eb-muted)",
+        fontFamily: "var(--eb-mono)",
+        fontSize: 12,
+        border: "1px solid var(--eb-border)",
+        borderRadius: 8,
+        background: "var(--eb-card)",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
 
 function Header({
   clock,
@@ -746,7 +775,7 @@ function GlobalMarketsCard({
           <span style={{ fontSize: 11, fontFamily: "var(--eb-head)", letterSpacing: 1, color: "var(--eb-muted)" }}>
             GOLD / SILVER RATIO
           </span>
-          <span style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
+          <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
             {goldSilverRatio}
           </span>
         </div>
