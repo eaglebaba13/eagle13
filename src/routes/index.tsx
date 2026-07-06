@@ -164,11 +164,17 @@ function Dashboard() {
 
         <InsightsSection />
 
-        <FiiDiiActivity />
+        <Suspense fallback={<SectionSkeleton label="Loading FII & DII activity…" />}>
+          <FiiDiiActivity />
+        </Suspense>
 
-        <Seasonality />
+        <Suspense fallback={<SectionSkeleton label="Loading seasonality…" />}>
+          <Seasonality />
+        </Suspense>
 
-        <NewsFeed />
+        <Suspense fallback={<SectionSkeleton label="Loading market news…" />}>
+          <NewsFeed />
+        </Suspense>
 
         <Disclaimer />
       </main>
