@@ -208,6 +208,26 @@ function Dashboard() {
 
 /* ---------------------------- Header ------------------------------ */
 
+function SectionSkeleton({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: 24,
+        textAlign: "center",
+        color: "var(--eb-muted)",
+        fontFamily: "var(--eb-mono)",
+        fontSize: 12,
+        border: "1px solid var(--eb-border)",
+        borderRadius: 8,
+        background: "var(--eb-card)",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
 function Header({
   clock,
   nifty,
