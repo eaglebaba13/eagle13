@@ -1,0 +1,96 @@
+// © EagleBABA
+//@version=6
+// =====================================================================
+//  EAGLEBABA ASTRO LEVELS — STRATEGY (Pine Script v6, backtest-ready)
+// =====================================================================
+
+strategy(title="EagleBABA Astro Levels Strategy", shorttitle="EB Astro ST", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.03, max_lines_count=500, max_labels_count=500)
+
+// === INPUTS ===
+gSym        = "Symbol Settings"
+symbolMode  = input.string("CURRENT CHART", "Symbol Mode", options=["CURRENT CHART","MANUAL SYMBOL"], group=gSym)
+manualSym   = input.symbol("NSE:NIFTY", "Manual Symbol", group=gSym)
+presetMode  = input.string("NONE", "Preset Mode", options=["NONE","NIFTY","BANKNIFTY","CUSTOM"], group=gSym)
+
+gLvl        = "Level Settings"
+roundEnable = input.bool(false, "Round Levels", group=gLvl)
+roundStep   = input.float(0.05, "Round Step", minval=0.00001, step=0.01, group=gLvl)
+htfTF       = input.timeframe("D", "Higher Timeframe (levels source)", group=gLvl)
+
+gTrade      = "Trade Settings"
+enableLong  = input.bool(true,  "Enable Long", group=gTrade)
+enableShort = input.bool(true,  "Enable Short", group=gTrade)
+closeOnly   = input.bool(true,  "Signal On Candle Close Only", group=gTrade)
+targetSel   = input.string("T2", "Profit Target", options=["T1","T2","T3"], group=gTrade)
+
+gStyle      = "Style Settings"
+lineWidth   = input.int(1, "Line Width", minval=1, maxval=5, group=gStyle)
+colBull     = input.color(color.new(#26a69a,0), "Bullish Color", group=gStyle)
+colBear     = input.color(color.new(#ef5350,0), "Bearish Color", group=gStyle)
+colNeutral  = input.color(color.new(#42a5f5,0), "Neutral Color", group=gStyle)
+colTarget   = input.color(color.new(#ffca28,0), "Target Color", group=gStyle)
+colStop     = input.color(color.new(#ff7043,0), "Stop Color", group=gStyle)
+
+// === SYMBOL RESOLUTION ===
+tickerId = symbolMode == "MANUAL SYMBOL" ? manualSym : syminfo.tickerid
+
+presetStep() =>
+    switch presetMode
+        "NIFTY"     => 0.05
+        "BANKNIFTY" => 0.05
+        "CUSTOM"    => roundStep
+        =>             roundStep
+
+roundLvl(_v) =>
+    step = presetStep()
+    not roundEnable or na(_v) ? _v : math.round(_v / step) * step
+
+// === HIGHER TIMEFRAME DATA (non-repainting) ===
+prevHighRaw  = request.security(tickerId, htfTF, high[1],  lookahead=barmerge.lookahead_on)
+prevLowRaw   = request.security(tickerId, htfTF, low[1],   lookahead=barmerge.lookahead_on)
+prevCloseRaw = request.security(tickerId, htfTF, close[1], lookahead=barmerge.lookahead_on)
+
+// === CUSTOM LEVEL FORMULAS (same engine as the indicator) ===
+prevDayHigh  = roundLvl(prevHighRaw)
+prevDayLow   = roundLvl(prevLowRaw)
+prevDayClose = roundLvl(prevCloseRaw)
+prevRange    = prevDayHigh - prevDayLow
+buyLevel     = roundLvl(prevDayClose + prevRange * 0.25)   // REPLACE WITH EAGLEBABA FORMULA
+sellLevel    = roundLvl(prevDayClose - prevRange * 0.25)   // REPLACE WITH EAGLEBABA FORMULA
+target1      = roundLvl(buyLevel + prevRange * 0.50)       // REPLACE WITH EAGLEBABA FORMULA
+target2      = roundLvl(buyLevel + prevRange * 1.00)       // REPLACE WITH EAGLEBABA FORMULA
+target3      = roundLvl(buyLevel + prevRange * 1.50)       // REPLACE WITH EAGLEBABA FORMULA
+stopLossBuy  = roundLvl(buyLevel - prevRange * 0.35)       // REPLACE WITH EAGLEBABA FORMULA
+stopLossSell = roundLvl(sellLevel + prevRange * 0.35)      // REPLACE WITH EAGLEBABA FORMULA
+shortT1      = roundLvl(sellLevel - prevRange * 0.50)      // REPLACE WITH EAGLEBABA FORMULA
+shortT2      = roundLvl(sellLevel - prevRange * 1.00)      // REPLACE WITH EAGLEBABA FORMULA
+shortT3      = roundLvl(sellLevel - prevRange * 1.50)      // REPLACE WITH EAGLEBABA FORMULA
+
+longTarget  = targetSel == "T1" ? target1 : targetSel == "T3" ? target3 : target2
+shortTarget = targetSel == "T1" ? shortT1 : targetSel == "T3" ? shortT3 : shortT2
+
+// === SIGNAL LOGIC ===
+confirmed = closeOnly ? barstate.isconfirmed : true
+buyTrigger  = ta.crossover(close, buyLevel)   and confirmed
+sellTrigger = ta.crossunder(close, sellLevel) and confirmed
+
+// === STRATEGY ORDERS ===
+if enableLong and buyTrigger
+    strategy.entry("Long", strategy.long)
+if enableShort and sellTrigger
+    strategy.entry("Short", strategy.short)
+
+strategy.exit("Long Exit",  from_entry="Long",  limit=longTarget,  stop=stopLossBuy)
+strategy.exit("Short Exit", from_entry="Short", limit=shortTarget, stop=stopLossSell)
+
+// === PLOTS ===
+plot(buyLevel,     "Buy",   color=colBull,    linewidth=lineWidth, style=plot.style_linebr)
+plot(sellLevel,    "Sell",  color=colBear,    linewidth=lineWidth, style=plot.style_linebr)
+plot(longTarget,   "L Tgt", color=colTarget,  linewidth=lineWidth, style=plot.style_linebr)
+plot(shortTarget,  "S Tgt", color=colTarget,  linewidth=lineWidth, style=plot.style_linebr)
+plot(stopLossBuy,  "SL Buy",color=colStop,    linewidth=lineWidth, style=plot.style_linebr)
+plot(stopLossSell, "SL Sell",color=colStop,   linewidth=lineWidth, style=plot.style_linebr)
+plot(prevDayClose, "PClose",color=color.new(colNeutral,20), linewidth=lineWidth, style=plot.style_linebr)
+
+plotshape(enableLong  and buyTrigger,  title="Buy",  style=shape.triangleup,   location=location.belowbar, color=colBull, size=size.small, text="BUY")
+plotshape(enableShort and sellTrigger, title="Sell", style=shape.triangledown, location=location.abovebar, color=colBear, size=size.small, text="SELL")
