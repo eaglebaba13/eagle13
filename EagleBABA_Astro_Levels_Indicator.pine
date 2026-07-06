@@ -1,0 +1,200 @@
+// © EagleBABA
+//@version=6
+// =====================================================================
+//  EAGLEBABA ASTRO LEVELS — UNIVERSAL INDICATOR (Pine Script v6)
+// =====================================================================
+
+// === SCRIPT SETUP ===
+indicator(title="EagleBABA Astro Levels", shorttitle="EB Astro", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=100)
+
+// === INPUTS ===
+// ---- Symbol Settings ----
+gSym        = "Symbol Settings"
+symbolMode  = input.string("CURRENT CHART", "Symbol Mode", options=["CURRENT CHART","MANUAL SYMBOL"], group=gSym)
+manualSym   = input.symbol("NSE:NIFTY", "Manual Symbol", group=gSym)
+presetMode  = input.string("NONE", "Preset Mode", options=["NONE","NIFTY","BANKNIFTY","CUSTOM"], group=gSym)
+// ---- Level Settings ----
+gLvl        = "Level Settings"
+roundEnable = input.bool(false, "Round Levels", group=gLvl)
+roundStep   = input.float(0.05, "Round Step", minval=0.00001, step=0.01, group=gLvl)
+htfTF       = input.timeframe("D", "Higher Timeframe (levels source)", group=gLvl)
+// ---- Display Settings ----
+gDisp       = "Display Settings"
+showPrevDay = input.bool(true,  "Show Previous Day Levels", group=gDisp)
+showDayOpen = input.bool(true,  "Show Day Open", group=gDisp)
+showBuySell = input.bool(true,  "Show Buy/Sell Levels", group=gDisp)
+showTargets = input.bool(true,  "Show Targets", group=gDisp)
+showStops   = input.bool(true,  "Show Stop Loss", group=gDisp)
+showOptional= input.bool(true,  "Show Optional Astro Levels", group=gDisp)
+showLabels  = input.bool(true,  "Show Labels", group=gDisp)
+showTable   = input.bool(true,  "Show Table Dashboard", group=gDisp)
+showZones   = input.bool(true,  "Show Buy/Sell Zone Shading", group=gDisp)
+showArrows  = input.bool(true,  "Show Signal Arrows", group=gDisp)
+// ---- Alert Settings ----
+gAlt        = "Alert Settings"
+closeOnly   = input.bool(true,  "Signal On Candle Close Only", group=gAlt)
+preventDup  = input.bool(true,  "Prevent Duplicate Consecutive Signals", group=gAlt)
+// ---- Style Settings ----
+gStyle      = "Style Settings"
+lineWidth   = input.int(1, "Line Width", minval=1, maxval=5, group=gStyle)
+lblSizeOpt  = input.string("Small", "Label Size", options=["Tiny","Small","Normal","Large"], group=gStyle)
+colBull     = input.color(color.new(#26a69a,0), "Bullish Color", group=gStyle)
+colBear     = input.color(color.new(#ef5350,0), "Bearish Color", group=gStyle)
+colNeutral  = input.color(color.new(#42a5f5,0), "Neutral / Reference Color", group=gStyle)
+colTarget   = input.color(color.new(#ffca28,0), "Target Color", group=gStyle)
+colStop     = input.color(color.new(#ff7043,0), "Stop Loss Color", group=gStyle)
+colOptional = input.color(color.new(#ab47bc,0), "Optional Level Color", group=gStyle)
+
+lblSize() =>
+    switch lblSizeOpt
+        "Tiny"   => size.tiny
+        "Small"  => size.small
+        "Normal" => size.normal
+        "Large"  => size.large
+        =>          size.small
+
+// === SYMBOL RESOLUTION ===
+tickerId = symbolMode == "MANUAL SYMBOL" ? manualSym : syminfo.tickerid
+symType  = syminfo.type
+
+presetStep() =>
+    switch presetMode
+        "NIFTY"     => 0.05
+        "BANKNIFTY" => 0.05
+        "CUSTOM"    => roundStep
+        =>             roundStep
+
+roundLvl(_v) =>
+    step = presetStep()
+    not roundEnable or na(_v) ? _v : math.round(_v / step) * step
+
+// === HIGHER TIMEFRAME DATA ===
+// Non-repainting: prior COMPLETED HTF bar via [1] + lookahead_on.
+prevOpenRaw  = request.security(tickerId, htfTF, open[1],  lookahead=barmerge.lookahead_on)
+prevHighRaw  = request.security(tickerId, htfTF, high[1],  lookahead=barmerge.lookahead_on)
+prevLowRaw   = request.security(tickerId, htfTF, low[1],   lookahead=barmerge.lookahead_on)
+prevCloseRaw = request.security(tickerId, htfTF, close[1], lookahead=barmerge.lookahead_on)
+dayOpenRaw   = request.security(tickerId, htfTF, open,     lookahead=barmerge.lookahead_on)
+
+// === CUSTOM LEVEL FORMULAS ===
+prevDayOpen  = roundLvl(prevOpenRaw)
+prevDayHigh  = roundLvl(prevHighRaw)
+prevDayLow   = roundLvl(prevLowRaw)
+prevDayClose = roundLvl(prevCloseRaw)
+dayOpen      = roundLvl(dayOpenRaw)
+prevRange    = prevDayHigh - prevDayLow
+rangeMid     = roundLvl((prevDayHigh + prevDayLow) / 2.0)          // REPLACE WITH EAGLEBABA FORMULA
+buyLevel     = roundLvl(prevDayClose + prevRange * 0.25)           // REPLACE WITH EAGLEBABA FORMULA
+sellLevel    = roundLvl(prevDayClose - prevRange * 0.25)           // REPLACE WITH EAGLEBABA FORMULA
+target1      = roundLvl(buyLevel + prevRange * 0.50)               // REPLACE WITH EAGLEBABA FORMULA
+target2      = roundLvl(buyLevel + prevRange * 1.00)               // REPLACE WITH EAGLEBABA FORMULA
+target3      = roundLvl(buyLevel + prevRange * 1.50)               // REPLACE WITH EAGLEBABA FORMULA
+stopLossBuy  = roundLvl(buyLevel - prevRange * 0.35)               // REPLACE WITH EAGLEBABA FORMULA
+stopLossSell = roundLvl(sellLevel + prevRange * 0.35)              // REPLACE WITH EAGLEBABA FORMULA
+optionalLevel1 = roundLvl(prevDayHigh + prevRange * 0.618)         // REPLACE WITH EAGLEBABA FORMULA
+optionalLevel2 = roundLvl(prevDayLow  - prevRange * 0.618)         // REPLACE WITH EAGLEBABA FORMULA
+optionalLevel3 = roundLvl(rangeMid)                                // REPLACE WITH EAGLEBABA FORMULA
+
+// === SIGNAL LOGIC ===
+confirmed  = closeOnly ? barstate.isconfirmed : true
+rawBuy     = ta.crossover(close, buyLevel)
+rawSell    = ta.crossunder(close, sellLevel)
+var string bias = "Neutral"
+var int lastSignal = 0
+buyTrigger  = rawBuy  and confirmed and (not preventDup or lastSignal != 1)
+sellTrigger = rawSell and confirmed and (not preventDup or lastSignal != -1)
+if buyTrigger
+    bias := "Bullish"
+    lastSignal := 1
+if sellTrigger
+    bias := "Bearish"
+    lastSignal := -1
+biasColor = bias == "Bullish" ? colBull : bias == "Bearish" ? colBear : colNeutral
+
+// === PLOTS ===
+plotLvl(_val, _show, _col, _style) => plot(_show ? _val : na, color=_col, linewidth=lineWidth, style=_style)
+plotLvl(prevDayHigh,  showPrevDay, color.new(colBear,20),    plot.style_linebr)
+plotLvl(prevDayLow,   showPrevDay, color.new(colBull,20),    plot.style_linebr)
+plotLvl(prevDayOpen,  showPrevDay, color.new(colNeutral,30), plot.style_linebr)
+plotLvl(prevDayClose, showPrevDay, color.new(colNeutral,10), plot.style_linebr)
+plotLvl(dayOpen,      showDayOpen, color.new(colNeutral,0),  plot.style_linebr)
+plotLvl(buyLevel,     showBuySell, colBull, plot.style_linebr)
+plotLvl(sellLevel,    showBuySell, colBear, plot.style_linebr)
+plotLvl(target1,      showTargets, color.new(colTarget,30), plot.style_linebr)
+plotLvl(target2,      showTargets, color.new(colTarget,15), plot.style_linebr)
+plotLvl(target3,      showTargets, color.new(colTarget,0),  plot.style_linebr)
+plotLvl(stopLossBuy,  showStops, colStop, plot.style_linebr)
+plotLvl(stopLossSell, showStops, colStop, plot.style_linebr)
+plotLvl(optionalLevel1, showOptional, color.new(colOptional,20), plot.style_linebr)
+plotLvl(optionalLevel2, showOptional, color.new(colOptional,20), plot.style_linebr)
+plotLvl(optionalLevel3, showOptional, color.new(colOptional,40), plot.style_linebr)
+
+buyZoneTop = plot(showZones ? buyLevel  : na, display=display.none)
+buyZoneBot = plot(showZones ? sellLevel : na, display=display.none)
+fill(buyZoneTop, buyZoneBot, color=bias=="Bullish" ? color.new(colBull,90) : bias=="Bearish" ? color.new(colBear,90) : color.new(colNeutral,94), title="Bias Zone")
+
+plotshape(showArrows and buyTrigger,  title="Buy Arrow",  style=shape.triangleup,   location=location.belowbar, color=colBull, size=size.small, text="BUY")
+plotshape(showArrows and sellTrigger, title="Sell Arrow", style=shape.triangledown, location=location.abovebar, color=colBear, size=size.small, text="SELL")
+
+// === LABELS ===
+f_label(_price, _txt, _col, _show) =>
+    var label lb = na
+    if _show and not na(_price)
+        if na(lb)
+            lb := label.new(bar_index, _price, _txt, xloc=xloc.bar_index, style=label.style_label_left, color=color.new(_col,15), textcolor=color.white, size=lblSize())
+        else
+            label.set_xy(lb, bar_index, _price)
+            label.set_text(lb, _txt)
+            label.set_color(lb, color.new(_col,15))
+    else if not na(lb)
+        label.delete(lb)
+        lb := na
+
+if barstate.islast and showLabels
+    f_label(buyLevel,     "Buy "     + str.tostring(buyLevel),     colBull,    showBuySell)
+    f_label(sellLevel,    "Sell "    + str.tostring(sellLevel),    colBear,    showBuySell)
+    f_label(target1,      "T1 "      + str.tostring(target1),      colTarget,  showTargets)
+    f_label(target2,      "T2 "      + str.tostring(target2),      colTarget,  showTargets)
+    f_label(target3,      "T3 "      + str.tostring(target3),      colTarget,  showTargets)
+    f_label(stopLossBuy,  "SL-Buy "  + str.tostring(stopLossBuy),  colStop,    showStops)
+    f_label(stopLossSell, "SL-Sell " + str.tostring(stopLossSell), colStop,    showStops)
+    f_label(dayOpen,      "Day Open "+ str.tostring(dayOpen),      colNeutral, showDayOpen)
+
+// === DASHBOARD TABLE ===
+fmt(_v) => na(_v) ? "—" : str.tostring(_v, format.mintick)
+
+// Table colors (declared at GLOBAL scope — functions may not be declared inside blocks).
+tblBg  = color.new(#1e222d, 0)
+tblBg2 = color.new(#2a2e39, 0)
+
+// Row helper — declared at GLOBAL scope (this was the bug: it must NOT live inside the `if`).
+f_row(_dash, _i, _k, _v, _vc) =>
+    bgc = _i % 2 == 0 ? tblBg : tblBg2
+    table.cell(_dash, 0, _i, _k, text_color=color.new(color.gray, 0), text_size=size.small, bgcolor=bgc, text_halign=text.align_left)
+    table.cell(_dash, 1, _i, _v, text_color=_vc,                      text_size=size.small, bgcolor=bgc, text_halign=text.align_right)
+
+var table dash = table.new(position.top_right, 2, 12, border_width=1, border_color=color.new(color.gray,40), frame_width=1, frame_color=color.new(color.gray,20))
+
+if showTable and barstate.islast
+    table.cell(dash, 0, 0, "EAGLEBABA ASTRO", text_color=colTarget, text_size=size.normal, bgcolor=tblBg,  text_halign=text.align_left)
+    table.cell(dash, 1, 0, bias,              text_color=biasColor, text_size=size.normal, bgcolor=tblBg,  text_halign=text.align_right)
+    f_row(dash, 1,  "Symbol",     str.tostring(syminfo.ticker),        color.white)
+    f_row(dash, 2,  "Sym Mode",   symbolMode,                          color.white)
+    f_row(dash, 3,  "Preset",     presetMode,                          color.white)
+    f_row(dash, 4,  "Type",       symType,                             color.white)
+    f_row(dash, 5,  "Prev High",  fmt(prevDayHigh),                    colBear)
+    f_row(dash, 6,  "Prev Low",   fmt(prevDayLow),                     colBull)
+    f_row(dash, 7,  "Prev Close", fmt(prevDayClose),                   color.white)
+    f_row(dash, 8,  "Day Open",   fmt(dayOpen),                        colNeutral)
+    f_row(dash, 9,  "Buy Level",  fmt(buyLevel),                       colBull)
+    f_row(dash, 10, "Sell Level", fmt(sellLevel),                      colBear)
+    f_row(dash, 11, "Bias",       bias,                                biasColor)
+
+// === ALERTS ===
+alertcondition(rawBuy,  title="Buy Signal",  message="EagleBABA: BUY signal on {{ticker}} @ {{close}}")
+alertcondition(rawSell, title="Sell Signal", message="EagleBABA: SELL signal on {{ticker}} @ {{close}}")
+
+if buyTrigger
+    alert("EagleBABA BUY — " + syminfo.ticker + " @ " + str.tostring(close) + " | Buy=" + fmt(buyLevel) + " T1=" + fmt(target1) + " SL=" + fmt(stopLossBuy), alert.freq_once_per_bar_close)
+if sellTrigger
+    alert("EagleBABA SELL — " + syminfo.ticker + " @ " + str.tostring(close) + " | Sell=" + fmt(sellLevel) + " T1=" + fmt(roundLvl(sellLevel - prevRange*0.50)) + " SL=" + fmt(stopLossSell), alert.freq_once_per_bar_close)
