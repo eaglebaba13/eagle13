@@ -28,6 +28,7 @@ const ITEMS: Item[] = [
   { label: "Market", icon: CandlestickChart, to: "/" },
   { label: "Live Astro", icon: Orbit, to: "/astro" },
   { label: "Live Terminal", icon: Radio, to: "/live-terminal" },
+  { label: "Level Terminal", icon: TrendingUp, to: "/live-levels" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
   { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
@@ -45,6 +46,7 @@ export function AppSidebar() {
   const isActive = (it: Item) => {
     if (it.to === "/astro") return path === "/astro";
     if (it.to === "/live-terminal") return path === "/live-terminal";
+    if (it.to === "/live-levels") return path === "/live-levels";
     if (it.to === "/") return path === "/" && it.label === "Dashboard";
     return false;
   };
