@@ -12,6 +12,7 @@ import {
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logoUrl from "@/assets/eaglebaba-logo.png";
 
 const C = {
   bg: "var(--eb-bg)",
