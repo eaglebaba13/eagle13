@@ -434,7 +434,7 @@ function AstroDashboard() {
         .astro-mono { font-family:var(--eb-mono, ui-monospace, monospace); }
       `}</style>
 
-      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px" }}>
+      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px", position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
