@@ -12,6 +12,9 @@ import {
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AppSidebar } from "@/components/AppSidebar";
+import { ApexChart } from "@/components/ApexChart";
+import { Moon, Sunrise, Sunset, RotateCcw, Sparkles, Clock } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 
 const C = {
@@ -434,7 +437,7 @@ function AstroDashboard() {
         .astro-mono { font-family:var(--eb-mono, ui-monospace, monospace); }
       `}</style>
 
-      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 1480, margin: "0 auto", padding: "18px 16px 40px", position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -472,6 +475,10 @@ function AstroDashboard() {
           </div>
         </div>
 
+        <div className="eb-astro-layout" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <AppSidebar />
+          <main style={{ flex: 1, minWidth: 0 }}>
+
         {isFetching ? (
           <div className="no-print astro-mono" style={{ fontSize: 11, color: C.orange, marginBottom: 8 }}>
             ⟳ Updating planetary & price data…
@@ -479,7 +486,7 @@ function AstroDashboard() {
         ) : null}
 
         {/* Signal cards */}
-        <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", marginBottom: 14 }}>
+        <div id="signals" className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", marginBottom: 14 }}>
           <Card
             style={{
               gridColumn: "span 1",
@@ -530,7 +537,7 @@ function AstroDashboard() {
         </Card>
 
         {/* Summary cards */}
-        <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", marginBottom: 16 }}>
+        <div id="nakshatra" className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", marginBottom: 16 }}>
           <Stat label="Moon Sign" value={data.moonSign} />
           <Stat label="Moon Nakshatra" value={data.moonNakshatra} />
           <Stat label="Moon Degree" value={<span className="astro-mono">{data.moonDegree.toFixed(2)}°</span>} />
@@ -562,57 +569,25 @@ function AstroDashboard() {
         {/* Moon phase & upcoming New/Full Moon countdown */}
         <MoonPhaseSection moon={data.moonPhase} />
 
-        {/* Nearest level board */}
-        <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Premium charts */}
+        <div id="analysis" style={{ scrollMarginTop: 90 }}>
+          <AstroCharts
+            confidence={signal.confidence}
+            signalColor={signalColor}
+            bullCount={data.bullCount}
+            bearCount={data.bearCount}
+            planets={data.planets}
+          />
+        </div>
+
+        {/* Nearest support/resistance — luxury glass cards */}
+        <div id="levels" style={{ scrollMarginTop: 90, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontWeight: 700, letterSpacing: 1 }}>NEAREST ASTRO LEVELS</span>
             <span style={{ fontSize: 11, color: C.muted }}>Sorted by distance to live price</span>
           </div>
-          <div style={{ overflowX: "auto", maxHeight: 340 }}>
-            <table className="astro-table">
-              <thead>
-                <tr>
-                  <th>Level</th><th>Planet</th><th>Value</th><th>Distance</th><th>Proximity</th><th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {board.slice(0, 12).map((e, i) => {
-                  const glow = e.highlight === "red-glow" || e.highlight === "green-glow";
-                  return (
-                    <tr
-                      key={e.label}
-                      className={i === 0 && glow ? "astro-flash" : undefined}
-                      style={{
-                        background: highlightBg[e.highlight],
-                        boxShadow: i === 0 ? `inset 3px 0 0 ${C.blue}` : undefined,
-                      }}
-                    >
-                      <td style={{ fontWeight: 700 }}>
-                        {e.label}{" "}
-                        <span style={{ color: e.isResistance ? C.red : C.green, fontSize: 11 }}>
-                          ({e.isResistance ? "R" : "S"})
-                        </span>
-                      </td>
-                      <td>{e.planet}</td>
-                      <td className="astro-mono">{num(e.value)}</td>
-                      <td className="astro-mono">{Math.round(e.distance)}</td>
-                      <td>
-                        <span style={{ color: proximityColor[e.proximity], fontWeight: 700, fontSize: 11 }}>
-                          {e.proximity === "NORMAL" ? "—" : `● ${e.proximity}`}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ color: statusColor[e.status], fontWeight: 700, fontSize: 11 }}>
-                          {e.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+          <LevelCards board={board} />
+        </div>
 
         {/* Controls */}
         <div className="no-print" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10, alignItems: "center" }}>
@@ -718,4 +693,312 @@ function btn(color: string): React.CSSProperties {
     fontWeight: 600,
     cursor: "pointer",
   };
+}
+
+/* ==================================================================
+ * Premium planet visuals + right panel + luxury level cards + charts
+ * (presentation only — all values come from existing computed data)
+ * ================================================================== */
+
+const PLANET_STYLE: Record<string, { orb: string; glow: string }> = {
+  Sun: { orb: "radial-gradient(circle at 35% 30%, #ffe9a8, #f5a623 55%, #b8620b)", glow: "rgba(245,166,35,0.6)" },
+  Moon: { orb: "radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 55%, #8b98a8)", glow: "rgba(207,216,227,0.55)" },
+  Mercury: { orb: "radial-gradient(circle at 35% 30%, #c7f7d4, #34d399 55%, #0f7a4f)", glow: "rgba(52,211,153,0.55)" },
+  Venus: { orb: "radial-gradient(circle at 35% 30%, #ffe3ec, #f4a6c0 55%, #c76b8e)", glow: "rgba(244,166,192,0.55)" },
+  Mars: { orb: "radial-gradient(circle at 35% 30%, #ffb4a0, #ef4444 55%, #7f1d1d)", glow: "rgba(239,68,68,0.6)" },
+  Jupiter: { orb: "radial-gradient(circle at 35% 30%, #fff2b0, #eab308 55%, #a16207)", glow: "rgba(234,179,8,0.6)" },
+  Saturn: { orb: "radial-gradient(circle at 35% 30%, #cfe0ee, #64748b 55%, #334155)", glow: "rgba(100,116,139,0.55)" },
+  Rahu: { orb: "radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8)", glow: "rgba(168,85,247,0.6)" },
+  Ketu: { orb: "radial-gradient(circle at 35% 30%, #ffd9b0, #f97316 55%, #9a3412)", glow: "rgba(249,115,22,0.6)" },
+};
+
+function orbStyleFor(planet: string): React.CSSProperties {
+  const s = PLANET_STYLE[planet] ?? { orb: "#888", glow: "rgba(255,255,255,0.35)" };
+  return { ["--orb" as any]: s.orb, ["--orb-glow" as any]: s.glow };
+}
+
+const PAKSHA_TITHI = [
+  "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
+  "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
+  "Trayodashi", "Chaturdashi", "Purnima/Amavasya",
+];
+
+// Tithi derived from Sun-Moon elongation (each tithi spans 12°).
+function deriveTithi(elongation: number): { name: string; paksha: string } {
+  const e = ((elongation % 360) + 360) % 360;
+  const idx = Math.floor(e / 12); // 0..29
+  const paksha = idx < 15 ? "Shukla" : "Krishna";
+  const within = idx % 15;
+  const name = within === 14 ? (idx < 15 ? "Purnima" : "Amavasya") : PAKSHA_TITHI[within];
+  return { name, paksha };
+}
+
+// Lightweight sunrise/sunset for Mumbai (presentational NOAA approximation).
+function sunTimesMumbai(): { sunrise: string; sunset: string } {
+  const lat = 19.076, lng = 72.8777, tz = 5.5;
+  const now = new Date(Date.now() + tz * 3600 * 1000);
+  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+  const day = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000);
+  const rad = Math.PI / 180;
+  const decl = 23.45 * Math.sin(rad * (360 / 365) * (day - 81));
+  const cosH = -Math.tan(lat * rad) * Math.tan(decl * rad);
+  const clamped = Math.max(-1, Math.min(1, cosH));
+  const H = Math.acos(clamped) / rad; // half-day arc in degrees
+  const solarNoon = 12 - lng / 15 + tz; // local clock solar noon
+  const toHM = (h: number) => {
+    const hh = Math.floor(((h % 24) + 24) % 24);
+    const mm = Math.round((h - Math.floor(h)) * 60);
+    const d = new Date();
+    d.setHours(hh, mm, 0, 0);
+    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  };
+  return { sunrise: toHM(solarNoon - H / 15), sunset: toHM(solarNoon + H / 15) };
+}
+
+function PlanetCard({ p }: { p: PlanetRow }) {
+  const strength = Math.max(8, Math.min(100, Math.round((Math.abs(p.speed) / 13) * 100)));
+  return (
+    <div className="eb-card eb-glass eb-planet-card" style={orbStyleFor(p.planet)}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="eb-planet-orb" style={{ width: 54, height: 54 }} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0.5 }}>{p.planet}</span>
+            {p.retro ? <RetroBadge /> : null}
+          </div>
+          <div className="astro-mono" style={{ fontSize: 12, color: C.muted }}>
+            {p.degree.toFixed(2)}° · {p.sign}
+          </div>
+        </div>
+        <span
+          style={{
+            marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6,
+            color: p.retro ? C.red : C.green,
+            background: p.retro ? "rgba(225,29,72,0.14)" : "rgba(16,185,129,0.14)",
+            border: `1px solid ${p.retro ? C.red : C.green}`,
+          }}
+        >
+          {p.motion}
+        </span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 12.5 }}>
+        <Field label="Nakshatra" value={<NakBadge bull={p.bull} bear={p.bear} name={p.nakshatra} />} />
+        <Field label="Lord" value={p.lord} />
+        <Field label="Pada" value={<span className="astro-mono">{p.pada}</span>} />
+        <Field label="Speed" value={<span className="astro-mono">{p.speed.toFixed(3)}</span>} />
+        <Field label="Abs°" value={<span className="astro-mono">{p.absDegree.toFixed(2)}°</span>} />
+        {p.retro ? <Field label="Bias" value={<RetroBiasBadge bias={p.retroBias} />} /> : <span />}
+      </div>
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: C.muted, marginBottom: 3 }}>
+          <span>PLANET STRENGTH</span><span className="astro-mono">{strength}%</span>
+        </div>
+        <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 4 }}>
+          <div style={{ height: "100%", width: `${strength}%`, borderRadius: 4, background: "var(--eb-gold-grad)" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+      <span style={{ fontSize: 9.5, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+function LevelCards({ board }: { board: LevelEntry[] }) {
+  return (
+    <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))" }}>
+      {board.slice(0, 8).map((e, i) => {
+        const col = e.isResistance ? C.red : C.green;
+        return (
+          <div
+            key={e.label}
+            className={`eb-card eb-glass eb-level-card${i === 0 ? " is-nearest" : ""}`}
+            style={{ borderLeft: `3px solid ${col}` }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700 }}>
+                {e.label}{" "}
+                <span style={{ color: col, fontSize: 11 }}>({e.isResistance ? "R" : "S"})</span>
+              </span>
+              {i === 0 ? (
+                <span style={{ fontSize: 9, fontWeight: 700, color: C.blue, letterSpacing: 1 }}>NEAREST</span>
+              ) : null}
+            </div>
+            <div className="astro-mono" style={{ fontSize: 24, fontWeight: 800, color: C.text }}>
+              {num(e.value)}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+              <span style={{ color: C.muted }}>Dist <b className="astro-mono" style={{ color: C.text }}>{Math.round(e.distance)}</b></span>
+              <span style={{ color: proximityColor[e.proximity], fontWeight: 700 }}>
+                {e.proximity === "NORMAL" ? "—" : `● ${e.proximity}`}
+              </span>
+              <span style={{ color: statusColor[e.status], fontWeight: 700 }}>{e.status}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RightPanel({ data }: { data: AstroData }) {
+  const tithi = deriveTithi(data.moonPhase.elongation);
+  const sun = sunTimesMumbai();
+  const retro = data.planets.filter((p) => p.retro);
+  return (
+    <aside className="eb-rightpanel">
+      <div className="eb-card eb-glass eb-anim-border" style={{ borderRadius: 18, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <Moon size={16} color="var(--eb-neutral)" />
+          <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>PANCHANG NOW</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <div className="eb-planet-orb" style={{ width: 46, height: 46, ...orbStyleFor("Moon") }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{data.moonPhase.phaseName}</div>
+            <div className="astro-mono" style={{ fontSize: 11, color: C.muted }} suppressHydrationWarning>
+              {data.moonPhase.illumination}% lit
+            </div>
+          </div>
+        </div>
+        <PanelRow label="Moon Sign" value={data.moonSign} />
+        <PanelRow label="Nakshatra" value={data.moonNakshatra} />
+        <PanelRow label="Tithi" value={`${tithi.paksha} ${tithi.name}`} />
+        <PanelRow label="Moon Degree" value={<span className="astro-mono">{data.moonDegree.toFixed(2)}°</span>} />
+      </div>
+
+      <div className="eb-card eb-glass" style={{ borderRadius: 18, padding: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-around", textAlign: "center" }}>
+          <div>
+            <Sunrise size={20} color="var(--eb-accent)" />
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>SUNRISE</div>
+            <div className="astro-mono" style={{ fontWeight: 700 }} suppressHydrationWarning>{sun.sunrise}</div>
+          </div>
+          <div style={{ width: 1, background: C.border }} />
+          <div>
+            <Sunset size={20} color="var(--eb-bn)" />
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>SUNSET</div>
+            <div className="astro-mono" style={{ fontWeight: 700 }} suppressHydrationWarning>{sun.sunset}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 9, color: C.muted, textAlign: "center", marginTop: 8 }}>Mumbai · Asia/Kolkata</div>
+      </div>
+
+      <div className="eb-card eb-glass" style={{ borderRadius: 18, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <RotateCcw size={15} color="var(--eb-bear)" />
+          <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>RETROGRADE</span>
+          <span style={{ marginLeft: "auto", fontSize: 11, color: C.muted }}>{retro.length} active</span>
+        </div>
+        {retro.length === 0 ? (
+          <div style={{ fontSize: 12, color: C.muted }}>All planets direct.</div>
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {retro.map((p) => (
+              <span key={p.planet} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(225,29,72,0.12)", border: `1px solid ${C.red}`, borderRadius: 8, padding: "4px 8px", fontSize: 12 }}>
+                <span className="eb-planet-orb" style={{ width: 14, height: 14, ...orbStyleFor(p.planet) }} />
+                {p.planet}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function PanelRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: `1px solid ${C.border}`, fontSize: 12.5 }}>
+      <span style={{ color: C.muted }}>{label}</span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+function AstroCharts({
+  confidence,
+  signalColor,
+  bullCount,
+  bearCount,
+  planets,
+}: {
+  confidence: number;
+  signalColor: string;
+  bullCount: number;
+  bearCount: number;
+  planets: PlanetRow[];
+}) {
+  const neutralCount = Math.max(0, planets.length - bullCount - bearCount);
+  const speedPlanets = planets.filter((p) => Math.abs(p.speed) > 0);
+  return (
+    <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", marginBottom: 16 }}>
+      <Card>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted }}>SIGNAL CONFIDENCE</div>
+        <ApexChart
+          type="radialBar"
+          height={240}
+          series={[confidence]}
+          options={{
+            labels: ["Confidence"],
+            colors: [signalColor],
+            plotOptions: {
+              radialBar: {
+                hollow: { size: "62%" },
+                track: { background: "rgba(255,255,255,0.06)" },
+                dataLabels: {
+                  name: { color: C.muted, fontSize: "12px" },
+                  value: { color: C.text, fontSize: "30px", fontWeight: 800 },
+                },
+              },
+            },
+            stroke: { lineCap: "round" },
+          }}
+        />
+      </Card>
+      <Card>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted }}>NAKSHATRA BIAS</div>
+        <ApexChart
+          type="donut"
+          height={240}
+          series={[bullCount, bearCount, neutralCount]}
+          options={{
+            labels: ["Bullish", "Bearish", "Neutral"],
+            colors: ["#10b981", "#e11d48", "#7d8fac"],
+            legend: { position: "bottom", labels: { colors: C.muted } },
+            dataLabels: { enabled: true },
+            stroke: { width: 0 },
+            plotOptions: { pie: { donut: { size: "68%" } } },
+          }}
+        />
+      </Card>
+      <Card>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: C.muted }}>PLANETARY SPEED (°/day)</div>
+        <ApexChart
+          type="area"
+          height={240}
+          series={[{ name: "Speed", data: speedPlanets.map((p) => Number(Math.abs(p.speed).toFixed(3))) }]}
+          options={{
+            colors: ["#d4af37"],
+            xaxis: {
+              categories: speedPlanets.map((p) => p.planet),
+              labels: { style: { colors: C.muted, fontSize: "10px" }, rotate: -40 },
+            },
+            yaxis: { labels: { style: { colors: C.muted } } },
+            dataLabels: { enabled: false },
+            stroke: { curve: "smooth", width: 2 },
+            fill: { type: "gradient", gradient: { opacityFrom: 0.5, opacityTo: 0 } },
+            grid: { borderColor: "rgba(255,255,255,0.06)" },
+            tooltip: { theme: "dark" },
+          }}
+        />
+      </Card>
+    </div>
+  );
 }
