@@ -165,6 +165,8 @@
   --eb-muted: #7d8fac;
   --eb-bn: #8b7cf6; /* Royal violet (BankNifty) */
   --eb-blue: #4c9dff; /* Royal blue */
+  --eb-purple: #a855f7; /* Electric purple accent */
+  --eb-electric: #38bdf8; /* Electric blue glow */
 
   /* Luxury effect tokens (used by helper classes / gradients) */
   --eb-gold-grad: linear-gradient(135deg, #f4d47a 0%, #d4af37 45%, #b8860b 100%);
@@ -412,4 +414,130 @@ a {
 
 #lovable-badge {
   display: none !important;
+}
+
+/* =========================================================================
+ * PREMIUM TERMINAL LAYER — deep-space backdrop, live ticker,
+ * animated gradient borders, count-glow micro-interactions.
+ * Purely presentational; no logic/data changes.
+ * ====================================================================== */
+
+/* Subtle constellation / nebula backdrop fixed behind everything. */
+.eb-space-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 82% -8%, color-mix(in srgb, var(--eb-blue) 12%, transparent), transparent 60%),
+    radial-gradient(1000px 600px at 8% 108%, color-mix(in srgb, var(--eb-purple) 12%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 50% 40%, color-mix(in srgb, var(--eb-accent) 5%, transparent), transparent 70%);
+}
+.eb-space-bg::before,
+.eb-space-bg::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background-image:
+    radial-gradient(1.4px 1.4px at 20% 30%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.2px 1.2px at 70% 60%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1.6px 1.6px at 40% 80%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 85% 20%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.3px 1.3px at 15% 70%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.1px 1.1px at 60% 15%, rgba(255, 255, 255, 0.35), transparent);
+  background-size: 320px 320px;
+  opacity: 0.35;
+  animation: eb-drift 90s linear infinite;
+}
+.eb-space-bg::after {
+  background-size: 520px 520px;
+  opacity: 0.2;
+  animation-duration: 140s;
+  animation-direction: reverse;
+}
+:root[data-theme="light"] .eb-space-bg::before,
+:root[data-theme="light"] .eb-space-bg::after {
+  background-image:
+    radial-gradient(1.4px 1.4px at 20% 30%, rgba(30, 41, 59, 0.35), transparent),
+    radial-gradient(1.2px 1.2px at 70% 60%, rgba(30, 41, 59, 0.25), transparent),
+    radial-gradient(1.6px 1.6px at 40% 80%, rgba(30, 41, 59, 0.3), transparent);
+  opacity: 0.25;
+}
+@keyframes eb-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-320px, -180px, 0); }
+}
+
+/* Keep app content above the backdrop. */
+.eb-shell,
+.eb-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Live auto-scrolling market ticker. */
+.eb-ticker {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--eb-border);
+  background: linear-gradient(90deg, var(--eb-bg2), var(--eb-bg3), var(--eb-bg2));
+  white-space: nowrap;
+}
+.eb-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 34px;
+  padding: 8px 20px;
+  will-change: transform;
+  animation: eb-ticker-scroll 42s linear infinite;
+}
+.eb-ticker:hover .eb-ticker-track {
+  animation-play-state: paused;
+}
+@keyframes eb-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.eb-ticker-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--eb-mono);
+  font-size: 12.5px;
+}
+.eb-ticker-sym {
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Animated gold/blue gradient border (opt-in on premium cards). */
+.eb-anim-border {
+  position: relative;
+}
+.eb-anim-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--eb-accent) 70%, transparent),
+    color-mix(in srgb, var(--eb-electric) 55%, transparent),
+    color-mix(in srgb, var(--eb-purple) 55%, transparent),
+    color-mix(in srgb, var(--eb-accent) 70%, transparent)
+  );
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.65;
+  animation: eb-border-flow 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes eb-border-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
 }
