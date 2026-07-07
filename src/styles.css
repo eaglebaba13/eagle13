@@ -268,13 +268,12 @@ textarea:focus-visible,
   }
 }
 
-/* Glass-morphism card with soft gold-gradient border + premium lift. */
+/* Glass-morphism card with soft gold-gradient border + premium lift.
+ * The gradient border shows through when the component does not paint its
+ * own inline background; component `Card`s below opt into the glass surface
+ * with the `.eb-glass` modifier. */
 .eb-card {
   position: relative;
-  background:
-    linear-gradient(var(--eb-glass), var(--eb-glass)) padding-box,
-    var(--eb-gold-soft) border-box;
-  border: 1px solid transparent !important;
   backdrop-filter: blur(14px) saturate(130%);
   box-shadow:
     var(--eb-shadow-lg),
@@ -286,10 +285,19 @@ textarea:focus-visible,
 }
 .eb-card:hover {
   transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
   box-shadow:
     var(--eb-shadow-lg),
     var(--eb-shadow-gold),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* True glass surface with a soft gold-gradient border (no inline bg). */
+.eb-glass {
+  background:
+    linear-gradient(var(--eb-glass), var(--eb-glass)) padding-box,
+    var(--eb-gold-soft) border-box;
+  border: 1px solid transparent;
 }
 
 /* Premium scrollbars. */
