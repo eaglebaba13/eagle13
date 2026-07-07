@@ -693,3 +693,10 @@ a {
     0 0 28px -6px color-mix(in srgb, var(--eb-electric) 70%, transparent);
   animation: eb-pulse 2.4s ease-in-out infinite;
 }
+
+@media (max-width: 1180px) {
+  .eb-rightpanel { display: none; }
+}
+@media (max-width: 860px) {
+  .eb-sidebar { display: none; }
+}
