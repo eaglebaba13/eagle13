@@ -165,6 +165,8 @@
   --eb-muted: #7d8fac;
   --eb-bn: #8b7cf6; /* Royal violet (BankNifty) */
   --eb-blue: #4c9dff; /* Royal blue */
+  --eb-purple: #a855f7; /* Electric purple accent */
+  --eb-electric: #38bdf8; /* Electric blue glow */
 
   /* Luxury effect tokens (used by helper classes / gradients) */
   --eb-gold-grad: linear-gradient(135deg, #f4d47a 0%, #d4af37 45%, #b8860b 100%);
