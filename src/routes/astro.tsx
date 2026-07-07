@@ -223,11 +223,9 @@ function Card({
 }) {
   return (
     <div
-      className={className}
+      className={`eb-card eb-glass${className ? ` ${className}` : ""}`}
       style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 14,
+        borderRadius: 16,
         padding: 16,
         ...style,
       }}
