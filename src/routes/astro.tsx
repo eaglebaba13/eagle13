@@ -14,7 +14,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
-import { Moon, Sunrise, Sunset, RotateCcw, Sparkles, Clock } from "lucide-react";
+import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 
 const C = {
