@@ -419,6 +419,7 @@ function AstroDashboard() {
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, system-ui, sans-serif)" }}>
+      <div className="eb-space-bg" aria-hidden="true" />
       <style>{`
         .astro-grid { display:grid; gap:12px; }
         @media print {
