@@ -22,6 +22,15 @@ export type NewsCategory =
   | "Economy"
   | "Corporate Results";
 
+export type AiStance = "Bull" | "Bear" | "Neutral" | "Volatile";
+
+export type AiView = {
+  stance: AiStance;
+  level: string; // key level / technical hint
+  sector: string; // likely sector impact
+  text: string; // concise one-line synthesis
+};
+
 export type RichNewsItem = {
   id: string;
   title: string;
@@ -30,7 +39,7 @@ export type RichNewsItem = {
   pubDate: string; // ISO
   category: NewsCategory;
   summary: string;
-  aiView: string;
+  ai: AiView;
   impact: NewsImpact;
   breaking: boolean;
 };
@@ -85,24 +94,54 @@ function classify(title: string, category: NewsCategory): NewsImpact {
   return "General";
 }
 
-function aiViewOf(impact: NewsImpact, category: NewsCategory): string {
-  switch (impact) {
-    case "Bullish":
-      if (category === "BANKNIFTY") return "Likely positive for banking & financial stocks.";
-      if (category === "Commodities") return "Supportive for commodity & metal counters.";
-      if (category === "FII/DII") return "Positive flow signal — supportive for indices.";
-      return "Likely positive momentum for broader markets.";
-    case "Bearish":
-      if (category === "BANKNIFTY") return "Likely pressure on banking & NBFC stocks.";
-      if (category === "Global Markets") return "Global weakness may weigh on Indian equities.";
-      return "Likely negative bias — watch for downside risk.";
-    case "High Volatility":
-      return "Expect elevated volatility and wide intraday swings.";
-    case "Important":
-      return "Policy / regulatory event — potential market-moving impact.";
+const SECTOR_BY_CATEGORY: Record<NewsCategory, string> = {
+  NIFTY: "Broad market (large-caps)",
+  BANKNIFTY: "Banks & financials",
+  Equity: "Broad equities",
+  Options: "Index derivatives",
+  "FII/DII": "Large-cap indices",
+  "Global Markets": "IT & export-oriented names",
+  Commodities: "Metals & energy",
+  RBI: "Rate-sensitives (banks, autos, realty)",
+  SEBI: "Brokers & market infrastructure",
+  IPO: "New listings & primary market",
+  Economy: "Cyclicals & consumption",
+  "Corporate Results": "Result-season movers",
+};
+
+function stanceOf(impact: NewsImpact): AiStance {
+  if (impact === "Bullish") return "Bull";
+  if (impact === "Bearish") return "Bear";
+  if (impact === "High Volatility") return "Volatile";
+  return "Neutral";
+}
+
+function levelHint(stance: AiStance): string {
+  switch (stance) {
+    case "Bull":
+      return "Holding above near-term support; watch for a break past resistance to extend upside.";
+    case "Bear":
+      return "Below key support; failure to reclaim it opens further downside.";
+    case "Volatile":
+      return "Expect wide swings around pivot levels — trade the range, avoid chasing.";
     default:
-      return "Neutral impact — informational for market context.";
+      return "Rangebound between support and resistance; await a decisive breakout.";
   }
+}
+
+function aiViewOf(impact: NewsImpact, category: NewsCategory): AiView {
+  const stance = stanceOf(impact);
+  const sector = SECTOR_BY_CATEGORY[category];
+  const level = levelHint(stance);
+  const lead =
+    stance === "Bull"
+      ? `Bullish for ${sector.toLowerCase()}`
+      : stance === "Bear"
+        ? `Bearish for ${sector.toLowerCase()}`
+        : stance === "Volatile"
+          ? `High volatility likely for ${sector.toLowerCase()}`
+          : `Neutral impact on ${sector.toLowerCase()}`;
+  return { stance, level, sector, text: `${lead}.` };
 }
 
 const CATEGORY_BLURB: Record<NewsCategory, string> = {
@@ -158,7 +197,7 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
       pubDate: iso,
       category,
       summary: summaryOf({ source, category }),
-      aiView: aiViewOf(impact, category),
+      ai: aiViewOf(impact, category),
       impact,
       breaking,
     };
