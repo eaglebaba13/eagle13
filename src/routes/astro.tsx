@@ -14,6 +14,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
+import { NewsCenter } from "@/components/NewsPopup";
 import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 
@@ -471,6 +472,7 @@ function AstroDashboard() {
             <Link to="/" style={{ fontSize: 12, color: C.blue, textDecoration: "none", border: `1px solid ${C.border}`, padding: "5px 10px", borderRadius: 8 }}>
               Market View
             </Link>
+            <NewsCenter />
             <ThemeToggle />
           </div>
         </div>
