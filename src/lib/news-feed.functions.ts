@@ -105,11 +105,23 @@ function aiViewOf(impact: NewsImpact, category: NewsCategory): string {
   }
 }
 
-function summaryOf(item: { source: string; category: NewsCategory; title: string; desc: string }): string {
-  const clean = item.desc.replace(/\s+·\s+.*$/, "").trim();
-  const base = clean && clean.length > 40 && !/https?:\/\//.test(clean) ? clean : item.title;
-  const trimmed = base.length > 190 ? base.slice(0, 187) + "…" : base;
-  return `${item.category} · ${item.source || "Markets"} — ${trimmed}`;
+const CATEGORY_BLURB: Record<NewsCategory, string> = {
+  NIFTY: "Movement and levels in the NIFTY 50 benchmark index.",
+  BANKNIFTY: "Banking index and financial sector activity.",
+  Equity: "Broad equity market trend and stock-specific action.",
+  Options: "Derivatives, open interest and options positioning.",
+  "FII/DII": "Institutional fund flows shaping market direction.",
+  "Global Markets": "Overseas cues influencing domestic sentiment.",
+  Commodities: "Gold, silver and energy commodity price trends.",
+  RBI: "Central bank policy and monetary signals.",
+  SEBI: "Market regulation and compliance updates.",
+  IPO: "Primary market listings and subscription activity.",
+  Economy: "Macro data and key economic indicators.",
+  "Corporate Results": "Company earnings and quarterly performance.",
+};
+
+function summaryOf(item: { source: string; category: NewsCategory }): string {
+  return `${CATEGORY_BLURB[item.category]} Source: ${item.source || "Markets"}.`;
 }
 
 async function fetchFeed(category: NewsCategory, query: string): Promise<RichNewsItem[]> {
@@ -127,7 +139,6 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
     const parts = rawTitle.split(" - ");
     const source = pick("source", block) || (parts.length > 1 ? parts.pop()! : "");
     const title = (parts.length > 1 ? parts.join(" - ") : rawTitle) || rawTitle;
-    const desc = pick("description", block);
     const pd = pick("pubDate", block);
     let iso = new Date().toISOString();
     if (pd) {
@@ -146,7 +157,7 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
       source,
       pubDate: iso,
       category,
-      summary: summaryOf({ source, category, title, desc }),
+      summary: summaryOf({ source, category }),
       aiView: aiViewOf(impact, category),
       impact,
       breaking,
