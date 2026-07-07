@@ -8,6 +8,7 @@ import { computeLevels, cprBias, type Levels } from "@/lib/levels";
 import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NewsCenter } from "@/components/NewsPopup";
 import { NewsFeed, newsQuery } from "@/components/NewsFeed";
 import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
 import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
@@ -356,6 +357,7 @@ function Header({
         >
           🪐 Astro Levels
         </Link>
+        <NewsCenter />
         <ThemeToggle />
       </div>
     </header>
