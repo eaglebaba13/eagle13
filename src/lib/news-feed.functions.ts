@@ -169,6 +169,9 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
   )}&hl=en-IN&gl=IN&ceid=IN:en`;
   const xml = await fetchTextSafe(url, {
     accept: "application/rss+xml, application/xml, text/xml",
+    retries: 3,
+    retryDelayMs: 400,
+    exponential: true,
   });
   if (!xml) return [];
   const items = xml.split("<item>").slice(1);
