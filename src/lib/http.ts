@@ -9,11 +9,20 @@ export type FetchOptions = {
   timeoutMs?: number;
   retries?: number;
   retryDelayMs?: number;
+  /** Use exponential backoff (2^attempt) instead of linear. Default true. */
+  exponential?: boolean;
   headers?: Record<string, string>;
   accept?: string;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Backoff delay with optional exponential growth + jitter. */
+function backoff(base: number, attempt: number, exponential: boolean): number {
+  const growth = exponential ? base * 2 ** attempt : base * (attempt + 1);
+  const jitter = Math.random() * base * 0.3;
+  return Math.min(growth + jitter, 8000);
+}
 
 /**
  * Fetch with an abort-based timeout and bounded retries.
@@ -28,6 +37,7 @@ export async function fetchWithRetry(
     timeoutMs = 8000,
     retries = 2,
     retryDelayMs = 500,
+    exponential = true,
     headers = {},
     accept = "application/json",
   } = opts;
@@ -47,7 +57,7 @@ export async function fetchWithRetry(
       // Retry transient server-side / rate-limit responses.
       if ((res.status === 429 || res.status >= 500) && attempt < retries) {
         lastError = new Error(`Upstream ${res.status} for ${safeHost(url)}`);
-        await sleep(retryDelayMs * (attempt + 1));
+        await sleep(backoff(retryDelayMs, attempt, exponential));
         continue;
       }
       return res;
@@ -55,7 +65,7 @@ export async function fetchWithRetry(
       clearTimeout(timer);
       lastError = err;
       if (attempt < retries) {
-        await sleep(retryDelayMs * (attempt + 1));
+        await sleep(backoff(retryDelayMs, attempt, exponential));
         continue;
       }
     }
