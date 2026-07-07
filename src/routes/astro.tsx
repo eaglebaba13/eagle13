@@ -607,41 +607,15 @@ function AstroDashboard() {
           <button onClick={() => refetch()} style={btn(C.muted)}>Refresh</button>
         </div>
 
-        {/* Planet positions table */}
-        <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, letterSpacing: 1 }}>
-            PLANETARY POSITIONS
+        {/* Planetary positions — premium cards */}
+        <div id="planets" style={{ scrollMarginTop: 90, marginBottom: 16 }}>
+          <div style={{ padding: "0 2px 10px", fontWeight: 700, letterSpacing: 1 }}>PLANETARY POSITIONS</div>
+          <div className="astro-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(268px,1fr))" }}>
+            {filtered.map((p) => (
+              <PlanetCard key={p.planet} p={p} />
+            ))}
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table className="astro-table">
-              <thead>
-                <tr>
-                  <th>Planet</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Lord</th>
-                  <th>Pada</th><th>Speed</th><th>Motion</th><th>Abs°</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr key={p.planet}>
-                    <td style={{ fontWeight: 700 }}>
-                      {p.planet}
-                      {p.retro ? <RetroBadge /> : null}
-                      {p.retro ? <RetroBiasBadge bias={p.retroBias} /> : null}
-                    </td>
-                    <td className="astro-mono">{p.degree.toFixed(2)}°</td>
-                    <td>{p.sign}</td>
-                    <td><NakBadge bull={p.bull} bear={p.bear} name={p.nakshatra} /></td>
-                    <td>{p.lord}</td>
-                    <td className="astro-mono">{p.pada}</td>
-                    <td className="astro-mono">{p.speed.toFixed(3)}</td>
-                    <td style={{ color: p.retro ? C.red : C.green, fontWeight: 700 }}>{p.motion}</td>
-                    <td className="astro-mono">{p.absDegree.toFixed(2)}°</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        </div>
 
         {/* Astro level table */}
         <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
@@ -677,7 +651,10 @@ function AstroDashboard() {
         </div>
 
         <Disclaimer />
-      </main>
+          </main>
+          <RightPanel data={data} />
+        </div>
+      </div>
     </div>
   );
 }
