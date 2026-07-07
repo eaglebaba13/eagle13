@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
 import { Route as AstroRouteImport } from './routes/astro'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -25,6 +26,11 @@ const NewsRoute = NewsRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveTerminalRoute = LiveTerminalRouteImport.update({
+  id: '/live-terminal',
+  path: '/live-terminal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AstroRoute = AstroRouteImport.update({
@@ -59,6 +65,7 @@ const Char91DotmcpChar93InvokeToolToolRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/astro'
+    | '/live-terminal'
     | '/mcp'
     | '/news'
     | '/.mcp/list-tools'
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/astro'
+    | '/live-terminal'
     | '/mcp'
     | '/news'
     | '/.mcp/list-tools'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/astro'
+    | '/live-terminal'
     | '/mcp'
     | '/news'
     | '/.mcp/list-tools'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AstroRoute: typeof AstroRoute
+  LiveTerminalRoute: typeof LiveTerminalRoute
   McpRoute: typeof McpRoute
   NewsRoute: typeof NewsRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-terminal': {
+      id: '/live-terminal'
+      path: '/live-terminal'
+      fullPath: '/live-terminal'
+      preLoaderRoute: typeof LiveTerminalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/astro': {
@@ -181,6 +201,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AstroRoute: AstroRoute,
+  LiveTerminalRoute: LiveTerminalRoute,
   McpRoute: McpRoute,
   NewsRoute: NewsRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
