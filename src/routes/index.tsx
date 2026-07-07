@@ -363,6 +363,10 @@ function Header({
 }
 
 function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
+  return _MiniTickerImpl({ q, color, label });
+}
+
+function _MiniTickerImpl({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
   const up = q.change >= 0;
   return (
     <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
@@ -372,6 +376,57 @@ function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?:
         {up ? "▲" : "▼"} {q.changePct}%
       </span>
     </span>
+  );
+}
+
+/* ------------------------- Live scrolling ticker ------------------------ */
+
+function LiveTicker({
+  nifty,
+  banknifty,
+  vix,
+  btc,
+  gold,
+  silver,
+}: {
+  nifty: IndexQuote;
+  banknifty: IndexQuote;
+  vix: IndexQuote | null;
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  silver: IndexQuote | null;
+}) {
+  const items: { label: string; q: IndexQuote; color: string; invert?: boolean }[] = [
+    { label: "NIFTY 50", q: nifty, color: "var(--eb-accent)" },
+    { label: "BANKNIFTY", q: banknifty, color: "var(--eb-bn)" },
+  ];
+  if (vix) items.push({ label: "INDIA VIX", q: vix, color: "var(--eb-neutral)", invert: true });
+  if (gold) items.push({ label: "GOLD", q: gold, color: "var(--eb-accent)" });
+  if (silver) items.push({ label: "SILVER", q: silver, color: "var(--eb-muted)" });
+  if (btc) items.push({ label: "BTC/USD", q: btc, color: "#f7931a" });
+
+  const row = (keyPrefix: string) =>
+    items.map(({ label, q, color, invert }) => {
+      const up = q.change >= 0;
+      const tone = (invert ? !up : up) ? "var(--eb-bull)" : "var(--eb-bear)";
+      return (
+        <span className="eb-ticker-item" key={`${keyPrefix}-${label}`}>
+          <span className="eb-ticker-sym" style={{ color }}>{label}</span>
+          <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>{fmt(q.livePrice)}</span>
+          <span suppressHydrationWarning style={{ color: tone }}>
+            {up ? "▲" : "▼"} {q.changePct}%
+          </span>
+        </span>
+      );
+    });
+
+  return (
+    <div className="eb-ticker" role="marquee" aria-label="Live market ticker">
+      <div className="eb-ticker-track">
+        {row("a")}
+        {row("b")}
+      </div>
+    </div>
   );
 }
 
