@@ -144,36 +144,49 @@
 }
 
 /* =========================================================================
- * EagleBABA premium dashboard design tokens
+ * EagleBABA — premium "Bloomberg meets luxury astrology" design tokens
+ * A luxury dark interface: deep-space black, dark navy, gold accents,
+ * glass-morphism surfaces and soft gold-gradient borders.
  * ====================================================================== */
 :root {
-  --eb-bg: #03060d;
-  --eb-bg2: #070d1a;
-  --eb-bg3: #0b1525;
-  --eb-card: #0d1b2e;
-  --eb-border: #1a2f4a;
-  --eb-accent: #f0a500;
-  --eb-accent2: #e05c2a;
-  --eb-bull: #00c97a;
-  --eb-bear: #ff3a5c;
+  /* Deep Space Black → Dark Navy backdrop */
+  --eb-bg: #05070f;
+  --eb-bg2: #090d1a;
+  --eb-bg3: #0e1526;
+  --eb-card: #0c1424;
+  --eb-border: #23304a;
+  /* Signature luxury gold */
+  --eb-accent: #d4af37;
+  --eb-accent2: #b8860b;
+  --eb-bull: #10b981; /* Emerald */
+  --eb-bear: #e11d48; /* Ruby */
   --eb-neutral: #7ec8e3;
-  --eb-text: #cdd8e8;
-  --eb-muted: #5a7a9a;
-  --eb-bn: #7b6cf6;
-  --eb-blue: #4c9dff;
+  --eb-text: #e6ecf7;
+  --eb-muted: #7d8fac;
+  --eb-bn: #8b7cf6; /* Royal violet (BankNifty) */
+  --eb-blue: #4c9dff; /* Royal blue */
+
+  /* Luxury effect tokens (used by helper classes / gradients) */
+  --eb-gold-grad: linear-gradient(135deg, #f4d47a 0%, #d4af37 45%, #b8860b 100%);
+  --eb-gold-soft: linear-gradient(135deg, rgba(212,175,55,0.55), rgba(184,134,11,0.15));
+  --eb-glass: color-mix(in srgb, var(--eb-card) 72%, transparent);
+  --eb-glass-border: color-mix(in srgb, var(--eb-accent) 22%, var(--eb-border));
+  --eb-shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.85);
+  --eb-shadow-gold: 0 0 32px -8px rgba(212, 175, 55, 0.35);
+
   --eb-mono: "JetBrains Mono", ui-monospace, monospace;
   --eb-head: "Space Grotesk", system-ui, sans-serif;
   --eb-body: "Inter", system-ui, sans-serif;
 }
 
 :root[data-theme="light"] {
-  --eb-bg: #f3f6fc;
-  --eb-bg2: #e9eef7;
-  --eb-bg3: #dde5f1;
+  --eb-bg: #f5f7fc;
+  --eb-bg2: #eef2f9;
+  --eb-bg3: #e3e9f4;
   --eb-card: #ffffff;
-  --eb-border: #c8d2e2;
-  --eb-accent: #b97400;
-  --eb-accent2: #c2481c;
+  --eb-border: #d3dbe9;
+  --eb-accent: #a67c00;
+  --eb-accent2: #8a6400;
   --eb-bull: #059669;
   --eb-bear: #dc2626;
   --eb-neutral: #1d6fd8;
@@ -181,6 +194,12 @@
   --eb-muted: #5a6b82;
   --eb-bn: #6d28d9;
   --eb-blue: #1d4ed8;
+  --eb-gold-grad: linear-gradient(135deg, #d4af37 0%, #a67c00 100%);
+  --eb-gold-soft: linear-gradient(135deg, rgba(166,124,0,0.28), rgba(166,124,0,0.06));
+  --eb-glass: color-mix(in srgb, #ffffff 82%, transparent);
+  --eb-glass-border: color-mix(in srgb, var(--eb-accent) 30%, var(--eb-border));
+  --eb-shadow-lg: 0 20px 46px -22px rgba(30, 41, 59, 0.35);
+  --eb-shadow-gold: 0 0 26px -10px rgba(166, 124, 0, 0.3);
 }
 
 @keyframes eb-pulse {
@@ -249,17 +268,104 @@ textarea:focus-visible,
   }
 }
 
-/* Card lift + smooth transitions. */
+/* Glass-morphism card with soft gold-gradient border + premium lift.
+ * The gradient border shows through when the component does not paint its
+ * own inline background; component `Card`s below opt into the glass surface
+ * with the `.eb-glass` modifier. */
 .eb-card {
+  position: relative;
+  backdrop-filter: blur(14px) saturate(130%);
+  box-shadow:
+    var(--eb-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
 .eb-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--eb-accent) 35%, var(--eb-border));
-  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
+  box-shadow:
+    var(--eb-shadow-lg),
+    var(--eb-shadow-gold),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* True glass surface with a soft gold-gradient border (no inline bg). */
+.eb-glass {
+  background:
+    linear-gradient(var(--eb-glass), var(--eb-glass)) padding-box,
+    var(--eb-gold-soft) border-box;
+  border: 1px solid transparent;
+}
+
+/* Premium scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--eb-accent) 40%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--eb-accent) 32%, var(--eb-border));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--eb-accent) 55%, var(--eb-border));
+  background-clip: padding-box;
+}
+
+/* Gold text selection. */
+::selection {
+  background: color-mix(in srgb, var(--eb-accent) 35%, transparent);
+  color: var(--eb-text);
+}
+
+/* Luxury helper utilities (opt-in). */
+.eb-gold-text {
+  background: var(--eb-gold-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes eb-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.eb-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.eb-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--eb-accent) 14%, transparent),
+    transparent
+  );
+  animation: eb-shimmer 1.8s infinite;
+}
+@keyframes eb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 /* Smoother anchor colour transitions. */

@@ -498,11 +498,9 @@ function Card({
 }) {
   return (
     <div
-      className="eb-card"
+      className="eb-card eb-glass"
       style={{
-        background: "var(--eb-card)",
-        border: "1px solid var(--eb-border)",
-        borderRadius: 8,
+        borderRadius: 12,
         overflow: "hidden",
       }}
     >
