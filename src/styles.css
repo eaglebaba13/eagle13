@@ -149,12 +149,12 @@
  * glass-morphism surfaces and soft gold-gradient borders.
  * ====================================================================== */
 :root {
-  /* Deep Space Black → Dark Navy backdrop */
-  --eb-bg: #05070f;
-  --eb-bg2: #090d1a;
-  --eb-bg3: #0e1526;
-  --eb-card: #0c1424;
-  --eb-border: #23304a;
+  /* Anthracite Grey backdrop */
+  --eb-bg: #22272b;
+  --eb-bg2: #282e33;
+  --eb-bg3: #30373d;
+  --eb-card: #2b3237;
+  --eb-border: #3d454c;
   /* Signature luxury gold */
   --eb-accent: #d4af37;
   --eb-accent2: #b8860b;
