@@ -363,10 +363,6 @@ function Header({
 }
 
 function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
-  return _MiniTickerImpl({ q, color, label });
-}
-
-function _MiniTickerImpl({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
   const up = q.change >= 0;
   return (
     <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
