@@ -12,6 +12,7 @@ import {
 } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logoUrl from "@/assets/eaglebaba-logo.png";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -435,12 +436,21 @@ function AstroDashboard() {
       <main style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 16px 40px" }}>
         {/* Header */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img
+              src={logoUrl}
+              alt="EagleBABA logo"
+              width={52}
+              height={52}
+              style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", boxShadow: "0 0 16px rgba(212,175,55,0.35)" }}
+            />
+            <div>
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: 1 }}>
               🪐 EagleBABA - Astro Levels Dashboard
             </h1>
             <div style={{ fontSize: 12, color: C.muted }}>
               Mumbai · Asia/Kolkata · {todayIstLabel()} · Planets fixed @ 09:00 IST
+            </div>
             </div>
           </div>
           <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

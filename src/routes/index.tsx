@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NewsFeed, newsQuery } from "@/components/NewsFeed";
 import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
 import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
+import logoUrl from "@/assets/eaglebaba-logo.png";
 
 const marketQuery = () =>
   queryOptions({
@@ -269,11 +270,29 @@ function Header({
           letterSpacing: 3,
           color: "var(--eb-accent)",
           textShadow: "0 0 18px rgba(240,165,0,0.4)",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
         }}
       >
+        <img
+          src={logoUrl}
+          alt="EagleBABA logo"
+          width={44}
+          height={44}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            objectFit: "cover",
+            boxShadow: "0 0 16px rgba(212,175,55,0.35)",
+          }}
+        />
+        <span>
         EAGLE<span style={{ color: "var(--eb-accent2)" }}>BABA</span>
         <span style={{ fontSize: 13, letterSpacing: 2, color: "var(--eb-muted)", marginLeft: 10 }}>
           · ASTRO LEVELS
+        </span>
         </span>
       </div>
       <div
