@@ -105,6 +105,7 @@ function Dashboard() {
 
   return (
     <div className="eb-shell eb-scanlines">
+      <div className="eb-space-bg" aria-hidden="true" />
       <Header
         clock={clock}
         nifty={data.nifty}
@@ -113,6 +114,15 @@ function Dashboard() {
         btc={data.btc}
         gold={data.gold}
         goldSilverRatio={data.goldSilverRatio}
+      />
+
+      <LiveTicker
+        nifty={data.nifty}
+        banknifty={data.banknifty}
+        vix={data.vix}
+        btc={data.btc}
+        gold={data.gold}
+        silver={data.silver}
       />
 
       {/* Tabs */}
