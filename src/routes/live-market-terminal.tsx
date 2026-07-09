@@ -162,6 +162,20 @@ function useHydrated(): boolean {
   return hydrated;
 }
 
+// Responsive breakpoint helper for inline-styled layouts. Returns false during
+// SSR/first paint (deterministic) and updates after mount.
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const update = () => setMatches(m.matches);
+    update();
+    m.addEventListener("change", update);
+    return () => m.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
+
 function TerminalSkeleton() {
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}>
