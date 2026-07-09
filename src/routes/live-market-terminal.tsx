@@ -20,7 +20,7 @@ import {
   cryptoSession,
   type SessionState,
 } from "@/lib/terminal-clock";
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppSidebar, MobileBottomNav } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ApexChart } from "@/components/ApexChart";
 import { Disclaimer } from "@/components/Disclaimer";
