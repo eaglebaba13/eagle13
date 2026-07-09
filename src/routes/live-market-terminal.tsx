@@ -336,6 +336,7 @@ function StatChip({ label, value, color }: { label: string; value: React.ReactNo
         background: "color-mix(in srgb, var(--eb-card) 60%, transparent)",
         border: `1px solid ${C.border}`,
         minWidth: 92,
+        flexShrink: 0,
       }}
     >
       <span style={{ fontSize: 9.5, letterSpacing: 0.6, color: C.muted, textTransform: "uppercase", fontFamily: "var(--eb-mono)" }}>
