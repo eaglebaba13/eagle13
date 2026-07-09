@@ -617,7 +617,7 @@ function LiveMarketTerminal() {
 
         {/* ========================= MARKET SESSIONS ===================== */}
         <Panel title="Live Market Sessions" icon={<Radio size={16} />}>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
             <SessionCard s={nse} extra={nse.note ? undefined : undefined} />
             <SessionCard s={gold} />
             <SessionCard s={silver} />
@@ -636,7 +636,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* =================== PREDICTION + MOON/PLANET/CLOCK ============ */}
-        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
           {/* Next signal prediction */}
           <Panel title="Next Signal Prediction Engine" icon={<Zap size={16} />} accent={C.electric}>
             {activePred ? (
@@ -701,7 +701,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* ============ MOON EVENT + PLANET EVENT TERMINALS ============= */}
-        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "1fr 1fr", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "1fr 1fr", gap: 16 }}>
           <Panel title="Moon Event Terminal" icon={<Moon size={16} />} accent={C.blue}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <StatChip label="Nakshatra" value={me.nakshatra} />
