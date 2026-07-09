@@ -476,6 +476,19 @@ function LiveMarketTerminal() {
   const [history, setHistory] = useState<HistRow[]>(() => loadHist());
   const lastSignalRef = useRef<Record<string, SignalKind>>({});
   const firedRef = useRef<Set<string>>(new Set());
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const tabBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Center the active market tab WITHOUT moving the page. Scoped to the
+  // horizontal tab bar and fired only when the tab actually changes, so the
+  // 1s clock tick / 10s data refresh never trigger a scroll or jump-to-top.
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    const btn = tabBtnRefs.current[tab];
+    if (!bar || !btn) return;
+    const target = btn.offsetLeft - bar.clientWidth / 2 + btn.clientWidth / 2;
+    bar.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [tab]);
 
   const moon = data.planets.find((p) => p.planet === "Moon")!;
   const moonInfo = { abs: moon.absDegree, speed: moon.speed, pada: moon.pada };
@@ -745,6 +758,7 @@ function LiveMarketTerminal() {
         <Panel title="Live Astro Level Terminal" icon={<TrendingUp size={16} />}>
           <div
             className="eb-scroll-x"
+            ref={tabBarRef}
             style={{
               display: "flex",
               gap: 6,
@@ -761,7 +775,9 @@ function LiveMarketTerminal() {
                 <button
                   key={mo.key}
                   type="button"
-                  ref={active ? (el) => el?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }) : undefined}
+                  ref={(el) => {
+                    tabBtnRefs.current[mo.key] = el;
+                  }}
                   onClick={() => setTab(mo.key)}
                   style={{
                     padding: "6px 14px",
