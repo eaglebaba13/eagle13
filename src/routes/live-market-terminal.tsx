@@ -466,6 +466,8 @@ function LiveMarketTerminal() {
   const { data } = useSuspenseQuery(dataQuery());
   const now = useNow(1000);
   const hydrated = useHydrated();
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isTablet = useMediaQuery("(max-width: 900px)");
 
   const [tab, setTab] = useState<MarketKey>("NIFTY");
   const [sound, setSound] = useState(false);
