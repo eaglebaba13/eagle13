@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
+import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
 import { Route as LiveLevelsRouteImport } from './routes/live-levels'
 import { Route as AstroRouteImport } from './routes/astro'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,6 +33,11 @@ const McpRoute = McpRouteImport.update({
 const LiveTerminalRoute = LiveTerminalRouteImport.update({
   id: '/live-terminal',
   path: '/live-terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveMarketTerminalRoute = LiveMarketTerminalRouteImport.update({
+  id: '/live-market-terminal',
+  path: '/live-market-terminal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveLevelsRoute = LiveLevelsRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/live-levels': typeof LiveLevelsRoute
+  '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/live-levels': typeof LiveLevelsRoute
+  '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/live-levels': typeof LiveLevelsRoute
+  '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/live-levels'
+    | '/live-market-terminal'
     | '/live-terminal'
     | '/mcp'
     | '/news'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/live-levels'
+    | '/live-market-terminal'
     | '/live-terminal'
     | '/mcp'
     | '/news'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/live-levels'
+    | '/live-market-terminal'
     | '/live-terminal'
     | '/mcp'
     | '/news'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AstroRoute: typeof AstroRoute
   LiveLevelsRoute: typeof LiveLevelsRoute
+  LiveMarketTerminalRoute: typeof LiveMarketTerminalRoute
   LiveTerminalRoute: typeof LiveTerminalRoute
   McpRoute: typeof McpRoute
   NewsRoute: typeof NewsRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       path: '/live-terminal'
       fullPath: '/live-terminal'
       preLoaderRoute: typeof LiveTerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-market-terminal': {
+      id: '/live-market-terminal'
+      path: '/live-market-terminal'
+      fullPath: '/live-market-terminal'
+      preLoaderRoute: typeof LiveMarketTerminalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/live-levels': {
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AstroRoute: AstroRoute,
   LiveLevelsRoute: LiveLevelsRoute,
+  LiveMarketTerminalRoute: LiveMarketTerminalRoute,
   LiveTerminalRoute: LiveTerminalRoute,
   McpRoute: McpRoute,
   NewsRoute: NewsRoute,
