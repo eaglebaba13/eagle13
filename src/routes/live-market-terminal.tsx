@@ -589,7 +589,16 @@ function LiveMarketTerminal() {
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", padding: "16px 20px 60px", maxWidth: 1560, margin: "0 auto" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+          padding: isMobile ? "12px 12px 96px" : "16px 20px 60px",
+          maxWidth: 1560,
+          margin: "0 auto",
+        }}
+      >
         <AppSidebar />
         <main style={{ flex: 1, minWidth: 0 }}>
         {/* ============================ HEADER ============================ */}
@@ -602,11 +611,12 @@ function LiveMarketTerminal() {
           unread={unread}
           sound={sound}
           onToggleSound={() => setSound((v) => !v)}
+          isMobile={isMobile}
         />
 
         {/* ========================= MARKET SESSIONS ===================== */}
         <Panel title="Live Market Sessions" icon={<Radio size={16} />}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
             <SessionCard s={nse} extra={nse.note ? undefined : undefined} />
             <SessionCard s={gold} />
             <SessionCard s={silver} />
