@@ -865,7 +865,20 @@ function LiveMarketTerminal() {
       </div>
 
       {/* ======================= NOTIFICATIONS ====================== */}
-      <div style={{ position: "fixed", right: 18, bottom: 18, display: "flex", flexDirection: "column", gap: 8, zIndex: 60, maxWidth: 320 }}>
+      <div
+        style={{
+          position: "fixed",
+          right: isMobile ? 10 : 18,
+          left: isMobile ? 10 : "auto",
+          bottom: isMobile ? 88 : 18,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          zIndex: 60,
+          maxWidth: isMobile ? "none" : 320,
+          pointerEvents: "none",
+        }}
+      >
         <AnimatePresence>
           {notes.slice(0, 4).map((n) => {
             const c = signalColor(n.kind);
@@ -876,7 +889,7 @@ function LiveMarketTerminal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 40 }}
                 className="eb-glass"
-                style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid color-mix(in srgb, ${c} 45%, ${C.border})`, display: "flex", alignItems: "center", gap: 8 }}
+                style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid color-mix(in srgb, ${c} 45%, ${C.border})`, display: "flex", alignItems: "center", gap: 8, pointerEvents: "auto" }}
                 onClick={() => setNotes((arr) => arr.filter((x) => x.id !== n.id))}
               >
                 <Bell size={15} style={{ color: c }} />
@@ -887,6 +900,7 @@ function LiveMarketTerminal() {
         </AnimatePresence>
       </div>
 
+      <MobileBottomNav />
       <NewsCenter />
     </div>
   );
