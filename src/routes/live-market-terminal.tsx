@@ -635,7 +635,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* =================== PREDICTION + MOON/PLANET/CLOCK ============ */}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }} className="eb-grid-2">
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
           {/* Next signal prediction */}
           <Panel title="Next Signal Prediction Engine" icon={<Zap size={16} />} accent={C.electric}>
             {activePred ? (
@@ -700,7 +700,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* ============ MOON EVENT + PLANET EVENT TERMINALS ============= */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="eb-grid-2">
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "1fr" : "1fr 1fr", gap: 16 }}>
           <Panel title="Moon Event Terminal" icon={<Moon size={16} />} accent={C.blue}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <StatChip label="Nakshatra" value={me.nakshatra} />
