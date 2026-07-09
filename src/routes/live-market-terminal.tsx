@@ -791,8 +791,8 @@ function LiveMarketTerminal() {
 
         {/* ========================= SIGNAL MATRIX ===================== */}
         <Panel title="Signal Matrix" icon={<Activity size={16} />} accent={C.electric}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, fontFamily: "var(--eb-mono)" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 11.5, fontFamily: "var(--eb-mono)" }}>
               <thead>
                 <tr style={{ color: C.muted, textAlign: "left" }}>
                   {["Instrument", "Current", "Next", "Expected", "Countdown", "Confidence", "Status"].map((h) => (
