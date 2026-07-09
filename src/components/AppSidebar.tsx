@@ -5,6 +5,7 @@ import {
   CandlestickChart,
   Orbit,
   Radio,
+  Activity,
   Globe2,
   Sparkles,
   TrendingUp,
@@ -28,6 +29,7 @@ const ITEMS: Item[] = [
   { label: "Market", icon: CandlestickChart, to: "/" },
   { label: "Live Astro", icon: Orbit, to: "/astro" },
   { label: "Live Terminal", icon: Radio, to: "/live-terminal" },
+  { label: "Market Terminal", icon: Activity, to: "/live-market-terminal" },
   { label: "Level Terminal", icon: TrendingUp, to: "/live-levels" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
@@ -46,6 +48,7 @@ export function AppSidebar() {
   const isActive = (it: Item) => {
     if (it.to === "/astro") return path === "/astro";
     if (it.to === "/live-terminal") return path === "/live-terminal";
+    if (it.to === "/live-market-terminal") return path === "/live-market-terminal";
     if (it.to === "/live-levels") return path === "/live-levels";
     if (it.to === "/") return path === "/" && it.label === "Dashboard";
     return false;
