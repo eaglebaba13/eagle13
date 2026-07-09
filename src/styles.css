@@ -701,6 +701,58 @@ a {
   .eb-sidebar { display: none; }
 }
 
+/* --------------------- Mobile bottom navigation --------------------- */
+.eb-bottomnav {
+  display: none;
+}
+@media (max-width: 860px) {
+  .eb-bottomnav {
+    position: fixed;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: calc(100% - 20px);
+    max-width: 460px;
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 20px;
+    box-shadow: var(--eb-shadow-lg);
+    z-index: 70;
+    /* keep clear of the iOS home indicator */
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+  .eb-bn-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 14px;
+    color: var(--eb-muted);
+    text-decoration: none;
+    font-family: var(--eb-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2px;
+    transition: color 0.18s ease, background 0.18s ease;
+  }
+  .eb-bn-item > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .eb-bn-item.is-active {
+    color: var(--eb-accent);
+    background: color-mix(in srgb, var(--eb-accent) 14%, transparent);
+  }
+}
+
 /* ============================ News center ============================ */
 .eb-news-bell {
   position: relative;
