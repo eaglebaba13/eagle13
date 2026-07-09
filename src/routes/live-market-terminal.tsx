@@ -742,13 +742,25 @@ function LiveMarketTerminal() {
 
         {/* ==================== LIVE ASTRO LEVEL TABS =================== */}
         <Panel title="Live Astro Level Terminal" icon={<TrendingUp size={16} />}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+          <div
+            className="eb-scroll-x"
+            style={{
+              display: "flex",
+              gap: 6,
+              flexWrap: isMobile ? "nowrap" : "wrap",
+              marginBottom: 12,
+              overflowX: isMobile ? "auto" : "visible",
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: isMobile ? 4 : 0,
+            }}
+          >
             {MARKET_ORDER.filter((mo) => data.markets.some((m) => m.key === mo.key)).map((mo) => {
               const active = tab === mo.key;
               return (
                 <button
                   key={mo.key}
                   type="button"
+                  ref={active ? (el) => el?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }) : undefined}
                   onClick={() => setTab(mo.key)}
                   style={{
                     padding: "6px 14px",
@@ -757,6 +769,8 @@ function LiveMarketTerminal() {
                     fontWeight: 700,
                     fontFamily: "var(--eb-mono)",
                     cursor: "pointer",
+                    flex: "0 0 auto",
+                    whiteSpace: "nowrap",
                     color: active ? C.bg : C.text,
                     background: active ? C.gold : "color-mix(in srgb, var(--eb-card) 60%, transparent)",
                     border: `1px solid ${active ? C.gold : C.border}`,
@@ -768,8 +782,8 @@ function LiveMarketTerminal() {
               );
             })}
           </div>
-          {activeMarket && activePred ? <LevelTable m={activeMarket} pred={activePred} /> : null}
-          {activeMarket ? <LevelChart m={activeMarket} /> : null}
+          {activeMarket && activePred ? <LevelTable m={activeMarket} pred={activePred} isMobile={isMobile} /> : null}
+          {activeMarket ? <LevelChart m={activeMarket} isMobile={isMobile} isTablet={isTablet} /> : null}
         </Panel>
 
         <div style={{ height: 16 }} />
