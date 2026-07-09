@@ -705,6 +705,15 @@ a {
 .eb-bottomnav {
   display: none;
 }
+
+/* Horizontal scroll strip with hidden scrollbar (chips / tabs on mobile). */
+.eb-scroll-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.eb-scroll-x::-webkit-scrollbar {
+  display: none;
+}
 @media (max-width: 860px) {
   .eb-bottomnav {
     position: fixed;
