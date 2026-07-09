@@ -1021,12 +1021,12 @@ function EventRow({ title, ev }: { title: string; ev?: { planet: string; from: s
   );
 }
 
-function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
+function LevelTable({ m, pred, isMobile }: { m: MarketBlock; pred: Prediction; isMobile: boolean }) {
   const price = m.livePrice;
   const posLabel =
     price > pred.nearestValue === pred.isResistance ? "Below Nearest" : "Above Nearest";
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
         <StatChip label="Live Price" value={fmtMoney(m, price)} color={m.change >= 0 ? C.green : C.red} />
         <StatChip label="Change" value={`${m.change >= 0 ? "+" : ""}${m.change} (${m.changePct}%)`} color={m.change >= 0 ? C.green : C.red} />
@@ -1035,6 +1035,14 @@ function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
         <StatChip label="Position" value={posLabel} color={C.blue} />
         <StatChip label="Status" value={m.marketState} color={m.marketState === "OPEN" ? C.green : C.muted} />
       </div>
+      {isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {m.planets.map((p) => (
+            <PlanetLevelCard key={p.planet} p={p} price={price} pred={pred} m={m} />
+          ))}
+        </div>
+      ) : (
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
         <thead>
           <tr style={{ color: C.muted, textAlign: "right" }}>
@@ -1066,11 +1074,93 @@ function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
           })}
         </tbody>
       </table>
+      </div>
+      )}
     </div>
   );
 }
 
-function LevelChart({ m }: { m: MarketBlock }) {
+function PlanetLevelCard({
+  p,
+  price,
+  pred,
+  m,
+}: {
+  p: MarketBlock["planets"][number];
+  price: number;
+  pred: Prediction;
+  m: MarketBlock;
+}) {
+  const [open, setOpen] = useState(false);
+  const nearest = pred.nearestLabel.startsWith(p.planet);
+  const rows: { label: string; value: React.ReactNode; color?: string }[] = [
+    { label: "Degree", value: `${p.degree.toFixed(2)}°` },
+    { label: "Current Price", value: fmtMoney(m, price), color: C.text },
+    { label: "R1", value: p.r1, color: C.red },
+    { label: "R2", value: p.r2, color: C.red },
+    { label: "R3", value: p.r3, color: C.red },
+    { label: "S1", value: p.s1, color: C.green },
+    { label: "S2", value: p.s2, color: C.green },
+    { label: "S3", value: p.s3, color: C.green },
+    { label: "Nearest Level", value: pred.nearestLabel, color: C.gold },
+  ];
+  return (
+    <div
+      className="eb-card"
+      style={{
+        borderRadius: 14,
+        padding: 0,
+        overflow: "hidden",
+        borderColor: nearest ? `color-mix(in srgb, ${C.gold} 50%, ${C.border})` : C.border,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "12px 14px",
+          background: nearest ? `color-mix(in srgb, ${C.gold} 8%, transparent)` : "transparent",
+          border: "none",
+          cursor: "pointer",
+          color: C.text,
+          textAlign: "left",
+        }}
+      >
+        <span style={{ width: 20, height: 20, borderRadius: "50%", background: PLANET_STYLE[p.planet] ?? "#888", flex: "0 0 auto" }} />
+        <span style={{ fontWeight: 700, fontFamily: "var(--eb-head)", fontSize: 13.5, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {p.planet}
+          {p.retro ? <span style={{ fontSize: 10, color: C.red, marginLeft: 6 }}>℞</span> : null}
+        </span>
+        <span style={{ fontSize: 11, color: C.muted, fontFamily: "var(--eb-mono)", flex: "0 0 auto" }}>{p.degree.toFixed(1)}°</span>
+        <span style={{ fontSize: 18, color: C.muted, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", flex: "0 0 auto" }}>⌄</span>
+      </button>
+      {open ? (
+        <div style={{ padding: "4px 14px 12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            {rows.map((r) => (
+              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "color-mix(in srgb, var(--eb-card) 55%, transparent)", border: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 10, color: C.muted, fontFamily: "var(--eb-mono)" }}>{r.label}</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: r.color ?? C.text, fontFamily: "var(--eb-mono)" }}>{r.value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
+            <SignalBadge s={pred.current} conf={pred.currentConf} />
+            <span style={{ fontSize: 10.5, color: C.muted, fontFamily: "var(--eb-mono)" }}>
+              Confidence <b style={{ color: C.text }}>{pred.currentConf}%</b>
+            </span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LevelChart({ m, isMobile, isTablet }: { m: MarketBlock; isMobile: boolean; isTablet: boolean }) {
   const price = m.livePrice;
   const cats = m.planets.map((p) => p.planet);
   const series = [
@@ -1078,11 +1168,12 @@ function LevelChart({ m }: { m: MarketBlock }) {
     { name: "Price", data: m.planets.map(() => Math.round(price)) },
     { name: "S1", data: m.planets.map((p) => p.s1) },
   ];
+  const chartHeight = isMobile ? 280 : isTablet ? 350 : 360;
   return (
     <div style={{ marginTop: 12 }}>
       <ApexChart
         type="line"
-        height={260}
+        height={chartHeight}
         series={series}
         options={{
           chart: { toolbar: { show: false }, animations: { enabled: true } },
