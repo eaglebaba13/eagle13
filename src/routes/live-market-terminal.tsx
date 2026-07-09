@@ -917,6 +917,7 @@ function TerminalHeader({
   unread,
   sound,
   onToggleSound,
+  isMobile,
 }: {
   data: LiveLevelsData;
   now: number;
@@ -926,26 +927,35 @@ function TerminalHeader({
   unread: number;
   sound: boolean;
   onToggleSound: () => void;
+  isMobile: boolean;
 }) {
   const moon = data.planets.find((p) => p.planet === "Moon")!;
   return (
     <header
       className="eb-card eb-glass"
-      style={{ padding: 16, borderRadius: 16, marginBottom: 16, borderColor: C.gold }}
+      style={{
+        padding: isMobile ? 12 : 16,
+        borderRadius: 16,
+        marginBottom: 16,
+        borderColor: C.gold,
+        position: "sticky",
+        top: 8,
+        zIndex: 45,
+      }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <Radio size={22} style={{ color: C.gold }} />
-          <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, fontFamily: "var(--eb-head)", letterSpacing: 0.5, background: "var(--eb-gold-grad)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: isMobile ? 14 : 18, fontWeight: 800, margin: 0, fontFamily: "var(--eb-head)", letterSpacing: 0.5, background: "var(--eb-gold-grad)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               LIVE ASTRO MARKET TERMINAL
             </h1>
-            <p style={{ fontSize: 10.5, color: C.muted, margin: 0, fontFamily: "var(--eb-mono)" }}>
+            <p style={{ fontSize: 10.5, color: C.muted, margin: 0, fontFamily: "var(--eb-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               Enterprise Astro trading workspace · auto-sync {REFRESH_MS / 1000}s
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
           <span style={{ position: "relative", display: "inline-flex" }}>
             <Bell size={18} style={{ color: unread ? C.gold : C.muted }} />
             {unread > 0 ? (
@@ -958,7 +968,17 @@ function TerminalHeader({
           <ThemeToggle />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div
+        className="eb-scroll-x"
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          overflowX: isMobile ? "auto" : "visible",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: isMobile ? 2 : 0,
+        }}
+      >
         <StatChip label="IST" value={fmtClock(now)} color={C.gold} />
         <StatChip label="UTC" value={fmtClock(now, "UTC")} />
         <StatChip label="Market" value={nse.status} color={SESSION_COLOR[nse.color]} />
