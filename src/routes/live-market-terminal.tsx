@@ -20,7 +20,7 @@ import {
   cryptoSession,
   type SessionState,
 } from "@/lib/terminal-clock";
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppSidebar, MobileBottomNav } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ApexChart } from "@/components/ApexChart";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -160,6 +160,20 @@ function useHydrated(): boolean {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
   return hydrated;
+}
+
+// Responsive breakpoint helper for inline-styled layouts. Returns false during
+// SSR/first paint (deterministic) and updates after mount.
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const update = () => setMatches(m.matches);
+    update();
+    m.addEventListener("change", update);
+    return () => m.removeEventListener("change", update);
+  }, [query]);
+  return matches;
 }
 
 function TerminalSkeleton() {
@@ -322,6 +336,7 @@ function StatChip({ label, value, color }: { label: string; value: React.ReactNo
         background: "color-mix(in srgb, var(--eb-card) 60%, transparent)",
         border: `1px solid ${C.border}`,
         minWidth: 92,
+        flexShrink: 0,
       }}
     >
       <span style={{ fontSize: 9.5, letterSpacing: 0.6, color: C.muted, textTransform: "uppercase", fontFamily: "var(--eb-mono)" }}>
@@ -452,6 +467,8 @@ function LiveMarketTerminal() {
   const { data } = useSuspenseQuery(dataQuery());
   const now = useNow(1000);
   const hydrated = useHydrated();
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isTablet = useMediaQuery("(max-width: 900px)");
 
   const [tab, setTab] = useState<MarketKey>("NIFTY");
   const [sound, setSound] = useState(false);
@@ -573,7 +590,16 @@ function LiveMarketTerminal() {
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", padding: "16px 20px 60px", maxWidth: 1560, margin: "0 auto" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+          padding: isMobile ? "12px 12px 96px" : "16px 20px 60px",
+          maxWidth: 1560,
+          margin: "0 auto",
+        }}
+      >
         <AppSidebar />
         <main style={{ flex: 1, minWidth: 0 }}>
         {/* ============================ HEADER ============================ */}
@@ -586,11 +612,12 @@ function LiveMarketTerminal() {
           unread={unread}
           sound={sound}
           onToggleSound={() => setSound((v) => !v)}
+          isMobile={isMobile}
         />
 
         {/* ========================= MARKET SESSIONS ===================== */}
         <Panel title="Live Market Sessions" icon={<Radio size={16} />}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
             <SessionCard s={nse} extra={nse.note ? undefined : undefined} />
             <SessionCard s={gold} />
             <SessionCard s={silver} />
@@ -609,7 +636,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* =================== PREDICTION + MOON/PLANET/CLOCK ============ */}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }} className="eb-grid-2">
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 16 }}>
           {/* Next signal prediction */}
           <Panel title="Next Signal Prediction Engine" icon={<Zap size={16} />} accent={C.electric}>
             {activePred ? (
@@ -656,7 +683,7 @@ function LiveMarketTerminal() {
 
           {/* Live Astro Clock */}
           <Panel title="Live Astro Clock" icon={<Clock size={16} />} accent={C.gold}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "1fr 1fr", gap: 8 }}>
               <ClockRow label="NSE Opens/Closes" ms={nse.countdownMs} accent={nse.isOpen ? C.red : C.green} />
               <ClockRow label="MCX Opens/Closes" ms={gold.countdownMs} accent={gold.isOpen ? C.red : C.green} />
               <ClockRow label="Moon Nakshatra" ms={me.nextNakshatra.msRemaining} accent={C.blue} />
@@ -674,7 +701,7 @@ function LiveMarketTerminal() {
         <div style={{ height: 16 }} />
 
         {/* ============ MOON EVENT + PLANET EVENT TERMINALS ============= */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="eb-grid-2">
+        <div style={{ display: "grid", gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "1fr 1fr", gap: 16 }}>
           <Panel title="Moon Event Terminal" icon={<Moon size={16} />} accent={C.blue}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <StatChip label="Nakshatra" value={me.nakshatra} />
@@ -716,13 +743,25 @@ function LiveMarketTerminal() {
 
         {/* ==================== LIVE ASTRO LEVEL TABS =================== */}
         <Panel title="Live Astro Level Terminal" icon={<TrendingUp size={16} />}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+          <div
+            className="eb-scroll-x"
+            style={{
+              display: "flex",
+              gap: 6,
+              flexWrap: isMobile ? "nowrap" : "wrap",
+              marginBottom: 12,
+              overflowX: isMobile ? "auto" : "visible",
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: isMobile ? 4 : 0,
+            }}
+          >
             {MARKET_ORDER.filter((mo) => data.markets.some((m) => m.key === mo.key)).map((mo) => {
               const active = tab === mo.key;
               return (
                 <button
                   key={mo.key}
                   type="button"
+                  ref={active ? (el) => el?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }) : undefined}
                   onClick={() => setTab(mo.key)}
                   style={{
                     padding: "6px 14px",
@@ -731,6 +770,8 @@ function LiveMarketTerminal() {
                     fontWeight: 700,
                     fontFamily: "var(--eb-mono)",
                     cursor: "pointer",
+                    flex: "0 0 auto",
+                    whiteSpace: "nowrap",
                     color: active ? C.bg : C.text,
                     background: active ? C.gold : "color-mix(in srgb, var(--eb-card) 60%, transparent)",
                     border: `1px solid ${active ? C.gold : C.border}`,
@@ -742,16 +783,16 @@ function LiveMarketTerminal() {
               );
             })}
           </div>
-          {activeMarket && activePred ? <LevelTable m={activeMarket} pred={activePred} /> : null}
-          {activeMarket ? <LevelChart m={activeMarket} /> : null}
+          {activeMarket && activePred ? <LevelTable m={activeMarket} pred={activePred} isMobile={isMobile} /> : null}
+          {activeMarket ? <LevelChart m={activeMarket} isMobile={isMobile} isTablet={isTablet} /> : null}
         </Panel>
 
         <div style={{ height: 16 }} />
 
         {/* ========================= SIGNAL MATRIX ===================== */}
         <Panel title="Signal Matrix" icon={<Activity size={16} />} accent={C.electric}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, fontFamily: "var(--eb-mono)" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 11.5, fontFamily: "var(--eb-mono)" }}>
               <thead>
                 <tr style={{ color: C.muted, textAlign: "left" }}>
                   {["Instrument", "Current", "Next", "Expected", "Countdown", "Confidence", "Status"].map((h) => (
@@ -789,8 +830,8 @@ function LiveMarketTerminal() {
               No signal changes recorded yet — history builds as signals flip during the session.
             </p>
           ) : (
-            <div style={{ overflowX: "auto", maxHeight: 280, overflowY: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
+            <div style={{ overflowX: "auto", maxHeight: 280, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ width: "100%", minWidth: 620, borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
                 <thead>
                   <tr style={{ color: C.muted, textAlign: "left", position: "sticky", top: 0, background: C.card }}>
                     {["Instrument", "Signal", "Actual Time", "Predicted", "Delay", "Reason"].map((h) => (
@@ -825,7 +866,20 @@ function LiveMarketTerminal() {
       </div>
 
       {/* ======================= NOTIFICATIONS ====================== */}
-      <div style={{ position: "fixed", right: 18, bottom: 18, display: "flex", flexDirection: "column", gap: 8, zIndex: 60, maxWidth: 320 }}>
+      <div
+        style={{
+          position: "fixed",
+          right: isMobile ? 10 : 18,
+          left: isMobile ? 10 : "auto",
+          bottom: isMobile ? 88 : 18,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          zIndex: 60,
+          maxWidth: isMobile ? "none" : 320,
+          pointerEvents: "none",
+        }}
+      >
         <AnimatePresence>
           {notes.slice(0, 4).map((n) => {
             const c = signalColor(n.kind);
@@ -836,7 +890,7 @@ function LiveMarketTerminal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 40 }}
                 className="eb-glass"
-                style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid color-mix(in srgb, ${c} 45%, ${C.border})`, display: "flex", alignItems: "center", gap: 8 }}
+                style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid color-mix(in srgb, ${c} 45%, ${C.border})`, display: "flex", alignItems: "center", gap: 8, pointerEvents: "auto" }}
                 onClick={() => setNotes((arr) => arr.filter((x) => x.id !== n.id))}
               >
                 <Bell size={15} style={{ color: c }} />
@@ -847,6 +901,7 @@ function LiveMarketTerminal() {
         </AnimatePresence>
       </div>
 
+      <MobileBottomNav />
       <NewsCenter />
     </div>
   );
@@ -863,6 +918,7 @@ function TerminalHeader({
   unread,
   sound,
   onToggleSound,
+  isMobile,
 }: {
   data: LiveLevelsData;
   now: number;
@@ -872,26 +928,35 @@ function TerminalHeader({
   unread: number;
   sound: boolean;
   onToggleSound: () => void;
+  isMobile: boolean;
 }) {
   const moon = data.planets.find((p) => p.planet === "Moon")!;
   return (
     <header
       className="eb-card eb-glass"
-      style={{ padding: 16, borderRadius: 16, marginBottom: 16, borderColor: C.gold }}
+      style={{
+        padding: isMobile ? 12 : 16,
+        borderRadius: 16,
+        marginBottom: 16,
+        borderColor: C.gold,
+        position: "sticky",
+        top: 8,
+        zIndex: 45,
+      }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <Radio size={22} style={{ color: C.gold }} />
-          <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, fontFamily: "var(--eb-head)", letterSpacing: 0.5, background: "var(--eb-gold-grad)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: isMobile ? 14 : 18, fontWeight: 800, margin: 0, fontFamily: "var(--eb-head)", letterSpacing: 0.5, background: "var(--eb-gold-grad)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               LIVE ASTRO MARKET TERMINAL
             </h1>
-            <p style={{ fontSize: 10.5, color: C.muted, margin: 0, fontFamily: "var(--eb-mono)" }}>
+            <p style={{ fontSize: 10.5, color: C.muted, margin: 0, fontFamily: "var(--eb-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               Enterprise Astro trading workspace · auto-sync {REFRESH_MS / 1000}s
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
           <span style={{ position: "relative", display: "inline-flex" }}>
             <Bell size={18} style={{ color: unread ? C.gold : C.muted }} />
             {unread > 0 ? (
@@ -904,7 +969,17 @@ function TerminalHeader({
           <ThemeToggle />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div
+        className="eb-scroll-x"
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          overflowX: isMobile ? "auto" : "visible",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: isMobile ? 2 : 0,
+        }}
+      >
         <StatChip label="IST" value={fmtClock(now)} color={C.gold} />
         <StatChip label="UTC" value={fmtClock(now, "UTC")} />
         <StatChip label="Market" value={nse.status} color={SESSION_COLOR[nse.color]} />
@@ -947,12 +1022,12 @@ function EventRow({ title, ev }: { title: string; ev?: { planet: string; from: s
   );
 }
 
-function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
+function LevelTable({ m, pred, isMobile }: { m: MarketBlock; pred: Prediction; isMobile: boolean }) {
   const price = m.livePrice;
   const posLabel =
     price > pred.nearestValue === pred.isResistance ? "Below Nearest" : "Above Nearest";
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
         <StatChip label="Live Price" value={fmtMoney(m, price)} color={m.change >= 0 ? C.green : C.red} />
         <StatChip label="Change" value={`${m.change >= 0 ? "+" : ""}${m.change} (${m.changePct}%)`} color={m.change >= 0 ? C.green : C.red} />
@@ -961,6 +1036,14 @@ function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
         <StatChip label="Position" value={posLabel} color={C.blue} />
         <StatChip label="Status" value={m.marketState} color={m.marketState === "OPEN" ? C.green : C.muted} />
       </div>
+      {isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {m.planets.map((p) => (
+            <PlanetLevelCard key={p.planet} p={p} price={price} pred={pred} m={m} />
+          ))}
+        </div>
+      ) : (
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
         <thead>
           <tr style={{ color: C.muted, textAlign: "right" }}>
@@ -992,11 +1075,93 @@ function LevelTable({ m, pred }: { m: MarketBlock; pred: Prediction }) {
           })}
         </tbody>
       </table>
+      </div>
+      )}
     </div>
   );
 }
 
-function LevelChart({ m }: { m: MarketBlock }) {
+function PlanetLevelCard({
+  p,
+  price,
+  pred,
+  m,
+}: {
+  p: MarketBlock["planets"][number];
+  price: number;
+  pred: Prediction;
+  m: MarketBlock;
+}) {
+  const [open, setOpen] = useState(false);
+  const nearest = pred.nearestLabel.startsWith(p.planet);
+  const rows: { label: string; value: React.ReactNode; color?: string }[] = [
+    { label: "Degree", value: `${p.degree.toFixed(2)}°` },
+    { label: "Current Price", value: fmtMoney(m, price), color: C.text },
+    { label: "R1", value: p.r1, color: C.red },
+    { label: "R2", value: p.r2, color: C.red },
+    { label: "R3", value: p.r3, color: C.red },
+    { label: "S1", value: p.s1, color: C.green },
+    { label: "S2", value: p.s2, color: C.green },
+    { label: "S3", value: p.s3, color: C.green },
+    { label: "Nearest Level", value: pred.nearestLabel, color: C.gold },
+  ];
+  return (
+    <div
+      className="eb-card"
+      style={{
+        borderRadius: 14,
+        padding: 0,
+        overflow: "hidden",
+        borderColor: nearest ? `color-mix(in srgb, ${C.gold} 50%, ${C.border})` : C.border,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "12px 14px",
+          background: nearest ? `color-mix(in srgb, ${C.gold} 8%, transparent)` : "transparent",
+          border: "none",
+          cursor: "pointer",
+          color: C.text,
+          textAlign: "left",
+        }}
+      >
+        <span style={{ width: 20, height: 20, borderRadius: "50%", background: PLANET_STYLE[p.planet] ?? "#888", flex: "0 0 auto" }} />
+        <span style={{ fontWeight: 700, fontFamily: "var(--eb-head)", fontSize: 13.5, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {p.planet}
+          {p.retro ? <span style={{ fontSize: 10, color: C.red, marginLeft: 6 }}>℞</span> : null}
+        </span>
+        <span style={{ fontSize: 11, color: C.muted, fontFamily: "var(--eb-mono)", flex: "0 0 auto" }}>{p.degree.toFixed(1)}°</span>
+        <span style={{ fontSize: 18, color: C.muted, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", flex: "0 0 auto" }}>⌄</span>
+      </button>
+      {open ? (
+        <div style={{ padding: "4px 14px 12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            {rows.map((r) => (
+              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "color-mix(in srgb, var(--eb-card) 55%, transparent)", border: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 10, color: C.muted, fontFamily: "var(--eb-mono)" }}>{r.label}</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: r.color ?? C.text, fontFamily: "var(--eb-mono)" }}>{r.value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
+            <SignalBadge s={pred.current} conf={pred.currentConf} />
+            <span style={{ fontSize: 10.5, color: C.muted, fontFamily: "var(--eb-mono)" }}>
+              Confidence <b style={{ color: C.text }}>{pred.currentConf}%</b>
+            </span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LevelChart({ m, isMobile, isTablet }: { m: MarketBlock; isMobile: boolean; isTablet: boolean }) {
   const price = m.livePrice;
   const cats = m.planets.map((p) => p.planet);
   const series = [
@@ -1004,11 +1169,12 @@ function LevelChart({ m }: { m: MarketBlock }) {
     { name: "Price", data: m.planets.map(() => Math.round(price)) },
     { name: "S1", data: m.planets.map((p) => p.s1) },
   ];
+  const chartHeight = isMobile ? 280 : isTablet ? 350 : 360;
   return (
     <div style={{ marginTop: 12 }}>
       <ApexChart
         type="line"
-        height={260}
+        height={chartHeight}
         series={series}
         options={{
           chart: { toolbar: { show: false }, animations: { enabled: true } },

@@ -96,3 +96,38 @@ export function AppSidebar() {
     </aside>
   );
 }
+
+/* ------------------------- Mobile bottom navigation ------------------------ */
+
+type BottomItem = { label: string; icon: React.ComponentType<{ size?: number }>; to: string };
+
+const BOTTOM_ITEMS: BottomItem[] = [
+  { label: "Dashboard", icon: LayoutDashboard, to: "/" },
+  { label: "Markets", icon: TrendingUp, to: "/live-levels" },
+  { label: "Signals", icon: Activity, to: "/live-market-terminal" },
+  { label: "Astro", icon: Orbit, to: "/astro" },
+  { label: "Terminal", icon: Radio, to: "/live-terminal" },
+];
+
+export function MobileBottomNav() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  return (
+    <nav className="eb-bottomnav eb-glass" aria-label="Primary">
+      {BOTTOM_ITEMS.map((it) => {
+        const Icon = it.icon;
+        const active = path === it.to;
+        return (
+          <Link
+            key={it.label}
+            to={it.to}
+            className={`eb-bn-item${active ? " is-active" : ""}`}
+            aria-current={active ? "page" : undefined}
+          >
+            <Icon size={20} />
+            <span>{it.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
