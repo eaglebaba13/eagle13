@@ -830,8 +830,8 @@ function LiveMarketTerminal() {
               No signal changes recorded yet — history builds as signals flip during the session.
             </p>
           ) : (
-            <div style={{ overflowX: "auto", maxHeight: 280, overflowY: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
+            <div style={{ overflowX: "auto", maxHeight: 280, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ width: "100%", minWidth: 620, borderCollapse: "collapse", fontSize: 11, fontFamily: "var(--eb-mono)" }}>
                 <thead>
                   <tr style={{ color: C.muted, textAlign: "left", position: "sticky", top: 0, background: C.card }}>
                     {["Instrument", "Signal", "Actual Time", "Predicted", "Delay", "Reason"].map((h) => (
