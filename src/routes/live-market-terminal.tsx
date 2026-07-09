@@ -683,7 +683,7 @@ function LiveMarketTerminal() {
 
           {/* Live Astro Clock */}
           <Panel title="Live Astro Clock" icon={<Clock size={16} />} accent={C.gold}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "1fr 1fr", gap: 8 }}>
               <ClockRow label="NSE Opens/Closes" ms={nse.countdownMs} accent={nse.isOpen ? C.red : C.green} />
               <ClockRow label="MCX Opens/Closes" ms={gold.countdownMs} accent={gold.isOpen ? C.red : C.green} />
               <ClockRow label="Moon Nakshatra" ms={me.nextNakshatra.msRemaining} accent={C.blue} />
