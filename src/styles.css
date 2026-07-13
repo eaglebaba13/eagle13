@@ -1044,3 +1044,23 @@ a {
   border-color: transparent; box-shadow: var(--eb-shadow-gold);
 }
 .eb-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Developer diagnostics panel (news) — visible only in DEV builds. */
+.eb-diag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--eb-border);
+  background: color-mix(in srgb, var(--eb-accent) 6%, transparent);
+  font-family: var(--eb-mono, monospace);
+  font-size: 11px;
+  color: var(--eb-muted);
+}
+.eb-diag strong {
+  color: var(--eb-accent);
+  letter-spacing: 0.8px;
+}
