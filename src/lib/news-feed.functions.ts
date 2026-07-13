@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
+import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
 
 export type NewsImpact =
   | "Bullish"
@@ -42,6 +43,19 @@ export type RichNewsItem = {
   ai: AiView;
   impact: NewsImpact;
   breaking: boolean;
+};
+
+export type FeedDiagnostics = {
+  provider: string;
+  count: number;
+  degraded: boolean;
+  error: string | null;
+};
+
+export type FeedResult = {
+  items: RichNewsItem[];
+  fetchedAt: string;
+  diagnostics: FeedDiagnostics;
 };
 
 const FEEDS: { category: NewsCategory; query: string }[] = [
