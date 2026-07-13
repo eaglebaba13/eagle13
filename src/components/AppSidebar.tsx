@@ -15,6 +15,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Target,
 } from "lucide-react";
 
 type Item = {
@@ -26,6 +27,7 @@ type Item = {
 
 const ITEMS: Item[] = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/" },
+  { label: "NIFTY50 Buying Strategy", icon: Target, to: "/option-strategy" },
   { label: "Market", icon: CandlestickChart, to: "/" },
   { label: "Live Astro", icon: Orbit, to: "/astro" },
   { label: "Live Terminal", icon: Radio, to: "/live-terminal" },
@@ -47,6 +49,7 @@ export function AppSidebar() {
 
   const isActive = (it: Item) => {
     if (it.to === "/astro") return path === "/astro";
+    if (it.to === "/option-strategy") return path === "/option-strategy";
     if (it.to === "/live-terminal") return path === "/live-terminal";
     if (it.to === "/live-market-terminal") return path === "/live-market-terminal";
     if (it.to === "/live-levels") return path === "/live-levels";
