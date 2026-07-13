@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
+import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
 
 export type NewsImpact =
   | "Bullish"
@@ -42,6 +43,19 @@ export type RichNewsItem = {
   ai: AiView;
   impact: NewsImpact;
   breaking: boolean;
+};
+
+export type FeedDiagnostics = {
+  provider: string;
+  count: number;
+  degraded: boolean;
+  error: string | null;
+};
+
+export type FeedResult = {
+  items: RichNewsItem[];
+  fetchedAt: string;
+  diagnostics: FeedDiagnostics;
 };
 
 const FEEDS: { category: NewsCategory; query: string }[] = [
@@ -207,34 +221,123 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
   });
 }
 
-// 5-minute in-memory cache to satisfy the "cache responses for 5 minutes" spec.
-let cache: { at: number; payload: { items: RichNewsItem[]; fetchedAt: string } } | null = null;
-const TTL = 5 * 60 * 1000;
+// 60-second in-memory cache so both Preview and Published refresh every minute
+// while still shielding upstream providers from per-request hammering.
+let cache: { at: number; payload: FeedResult } | null = null;
+const TTL = 60 * 1000;
+
+function inferCategory(title: string): NewsCategory {
+  const t = title.toLowerCase();
+  if (/\bbank nifty|banknifty\b/.test(t)) return "BANKNIFTY";
+  if (/\bnifty\b/.test(t)) return "NIFTY";
+  if (/\boption|call|put|open interest|\boi\b/.test(t)) return "Options";
+  if (/\bfii|dii|foreign investor|institutional\b/.test(t)) return "FII/DII";
+  if (/\brbi|repo|monetary policy\b/.test(t)) return "RBI";
+  if (/\bsebi\b/.test(t)) return "SEBI";
+  if (/\bipo|listing|gmp\b/.test(t)) return "IPO";
+  if (/\bgold|silver|crude|oil|commodity|commodities|bitcoin|btc|crypto\b/.test(t)) return "Commodities";
+  if (/\bdow|nasdaq|s&p|global|us market|asian market\b/.test(t)) return "Global Markets";
+  if (/\bgdp|inflation|economy|cpi|wpi\b/.test(t)) return "Economy";
+  if (/\bresult|earnings|profit|revenue|q1|q2|q3|q4\b/.test(t)) return "Corporate Results";
+  return "Equity";
+}
+
+function toRichItems(raw: RawRssItem[]): RichNewsItem[] {
+  return raw.map((r, idx) => {
+    const category = inferCategory(r.title);
+    const impact = classify(r.title, category);
+    const breaking = /\bbreaking\b|\bjust in\b|\blive updates?\b/i.test(r.title);
+    return {
+      id: `fb-${category}-${idx}-${r.pubDate}`,
+      title: r.title,
+      link: r.link || `https://www.google.com/search?q=${encodeURIComponent(r.title)}`,
+      source: r.source,
+      pubDate: r.pubDate,
+      category,
+      summary: summaryOf({ source: r.source, category }),
+      ai: aiViewOf(impact, category),
+      impact,
+      breaking,
+    };
+  });
+}
+
+function dedupeSort(items: RichNewsItem[], limit: number): RichNewsItem[] {
+  const seen = new Set<string>();
+  return items
+    .filter((it) => {
+      const key = it.title.toLowerCase();
+      if (!it.title || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.breaking !== b.breaking) return a.breaking ? -1 : 1;
+      return +new Date(b.pubDate) - +new Date(a.pubDate);
+    })
+    .slice(0, limit);
+}
 
 export const getMarketNewsFeed = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ items: RichNewsItem[]; fetchedAt: string }> => {
+  async (): Promise<FeedResult> => {
     if (cache && Date.now() - cache.at < TTL) return cache.payload;
 
-    const results = await Promise.all(
-      FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [] as RichNewsItem[])),
-    );
-    const seen = new Set<string>();
-    const items = results
-      .flat()
-      .filter((it) => {
-        const key = it.title.toLowerCase();
-        if (!it.title || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .sort((a, b) => {
-        if (a.breaking !== b.breaking) return a.breaking ? -1 : 1;
-        return +new Date(b.pubDate) - +new Date(a.pubDate);
-      })
-      .slice(0, 12);
+    const fetchedAt = new Date().toISOString();
+    let primaryError: string | null = null;
+    let payload: FeedResult;
 
-    const payload = { items, fetchedAt: new Date().toISOString() };
-    cache = { at: Date.now(), payload };
+    // 1) Primary provider: Google News RSS.
+    try {
+      const results = await Promise.all(
+        FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [] as RichNewsItem[])),
+      );
+      const items = dedupeSort(results.flat(), 12);
+      if (items.length > 0) {
+        payload = {
+          items,
+          fetchedAt,
+          diagnostics: { provider: "Google News", count: items.length, degraded: false, error: null },
+        };
+        cache = { at: Date.now(), payload };
+        return payload;
+      }
+      primaryError = "Primary provider returned no items";
+    } catch (err) {
+      primaryError = err instanceof Error ? err.message : String(err);
+    }
+
+    // 2) Fallback providers (reachable from the Cloudflare Worker in production).
+    try {
+      const [market, crypto] = await Promise.all([
+        fetchFallback(FALLBACK_MARKET_FEEDS),
+        fetchFallback(FALLBACK_CRYPTO_FEEDS),
+      ]);
+      const items = dedupeSort(toRichItems([...market, ...crypto]), 12);
+      payload = {
+        items,
+        fetchedAt,
+        diagnostics: {
+          provider: items.length ? "Fallback (ET/Livemint/BusinessLine/CoinDesk)" : "None",
+          count: items.length,
+          degraded: true,
+          error: items.length ? primaryError : "No news returned by provider.",
+        },
+      };
+    } catch (err) {
+      payload = {
+        items: [],
+        fetchedAt,
+        diagnostics: {
+          provider: "None",
+          count: 0,
+          degraded: true,
+          error: err instanceof Error ? err.message : "No news returned by provider.",
+        },
+      };
+    }
+
+    // Only cache non-empty payloads so a transient empty result isn't pinned for 5 min.
+    if (payload.items.length > 0) cache = { at: Date.now(), payload };
     return payload;
   },
 );

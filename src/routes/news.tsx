@@ -59,13 +59,16 @@ function NewsPage() {
   const q = useQuery({
     queryKey: ["market-news-feed"],
     queryFn: () => getMarketNewsFeed(),
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
+    // Automatic retry: 5s → 15s → 30s.
     retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    retryDelay: (attempt) => [5000, 15000, 30000][attempt] ?? 30000,
   });
 
   const allItems = q.data?.items ?? [];
+  const diag = q.data?.diagnostics;
   const filtered = useMemo(
     () => filterNews(allItems, { query, cat, prefs }),
     [allItems, query, cat, prefs],
@@ -116,6 +119,19 @@ function NewsPage() {
           </div>
         ) : null}
 
+        {import.meta.env.DEV ? (
+          <div className="eb-diag" role="status">
+            <strong>DEV DIAGNOSTICS</strong>
+            <span>API: {q.isError ? "Failed" : q.data ? "Connected" : "…"}</span>
+            <span>HTTP: {q.isError ? "error" : q.data ? "200" : "-"}</span>
+            <span>Items: {allItems.length}</span>
+            <span>Source: {diag?.provider ?? "-"}{diag?.degraded ? " (fallback)" : ""}</span>
+            <span>Last fetch: {q.data ? relTime(q.data.fetchedAt) : "-"}</span>
+            <span>Refresh: {q.isFetching ? "fetching…" : "every 60s"}</span>
+            {diag?.error ? <span>Last error: {diag.error}</span> : null}
+          </div>
+        ) : null}
+
         {/* Controls */}
         <div className="eb-news-controls" style={{ padding: 0, marginBottom: 16 }}>
           <div className="eb-news-search">
@@ -158,7 +174,14 @@ function NewsPage() {
         ) : filtered.length === 0 ? (
           <div className="eb-news-empty">
             <AlertTriangle size={28} color="var(--eb-muted)" />
-            <p>No matching news right now.</p>
+            <p>
+              {allItems.length === 0
+                ? `No news returned by provider.${diag ? ` (${diag.count} items)` : ""}`
+                : "No matching news for the current filters."}
+            </p>
+            {allItems.length === 0 && diag?.error && /auth|401|403|key/i.test(diag.error) ? (
+              <p style={{ color: "var(--eb-bear)" }}>News API authentication failed.</p>
+            ) : null}
           </div>
         ) : (
           <>

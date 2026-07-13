@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
+import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
 
 export type NewsItem = {
   title: string;
@@ -7,6 +8,19 @@ export type NewsItem = {
   source: string;
   pubDate: string; // ISO
   category: "MARKET" | "BTC" | "GOLD" | "SILVER";
+};
+
+export type NewsDiagnostics = {
+  provider: string; // which source actually supplied the items
+  count: number;
+  degraded: boolean; // true when the primary provider failed and a fallback was used
+  error: string | null;
+};
+
+export type NewsResult = {
+  items: NewsItem[];
+  fetchedAt: string;
+  diagnostics: NewsDiagnostics;
 };
 
 const FEEDS: { category: NewsItem["category"]; query: string }[] = [
@@ -75,21 +89,88 @@ async function fetchFeed(
   });
 }
 
+function dedupeSort(items: NewsItem[]): NewsItem[] {
+  const seen = new Set<string>();
+  return items
+    .filter((it) => {
+      const key = it.title.toLowerCase();
+      if (!it.title || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => +new Date(b.pubDate) - +new Date(a.pubDate))
+    .slice(0, 30);
+}
+
+function categorize(title: string): NewsItem["category"] {
+  const t = title.toLowerCase();
+  if (/\b(bitcoin|btc|crypto|ethereum|eth|solana|blockchain)\b/.test(t)) return "BTC";
+  if (/\b(gold|xau|bullion)\b/.test(t)) return "GOLD";
+  if (/\b(silver|xag)\b/.test(t)) return "SILVER";
+  return "MARKET";
+}
+
+function toNewsItems(raw: RawRssItem[]): NewsItem[] {
+  return raw.map((r) => ({
+    title: r.title,
+    link: r.link || `https://www.google.com/search?q=${encodeURIComponent(r.title)}`,
+    source: r.source,
+    pubDate: r.pubDate,
+    category: categorize(r.title),
+  }));
+}
+
 export const getMarketNews = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ items: NewsItem[]; fetchedAt: string }> => {
-    const results = await Promise.all(
-      FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [])),
-    );
-    const seen = new Set<string>();
-    const items = results
-      .flat()
-      .filter((it) => {
-        if (!it.title || seen.has(it.title)) return false;
-        seen.add(it.title);
-        return true;
-      })
-      .sort((a, b) => +new Date(b.pubDate) - +new Date(a.pubDate))
-      .slice(0, 30);
-    return { items, fetchedAt: new Date().toISOString() };
+  async (): Promise<NewsResult> => {
+    const fetchedAt = new Date().toISOString();
+
+    // 1) Primary provider: Google News RSS (reachable from the preview sandbox).
+    let primaryError: string | null = null;
+    try {
+      const results = await Promise.all(
+        FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [])),
+      );
+      const items = dedupeSort(results.flat());
+      if (items.length > 0) {
+        return {
+          items,
+          fetchedAt,
+          diagnostics: { provider: "Google News", count: items.length, degraded: false, error: null },
+        };
+      }
+      primaryError = "Primary provider returned no items";
+    } catch (err) {
+      primaryError = err instanceof Error ? err.message : String(err);
+    }
+
+    // 2) Fallback providers (reachable from the Cloudflare Worker in production).
+    try {
+      const [market, crypto] = await Promise.all([
+        fetchFallback(FALLBACK_MARKET_FEEDS),
+        fetchFallback(FALLBACK_CRYPTO_FEEDS),
+      ]);
+      const items = dedupeSort(toNewsItems([...market, ...crypto]));
+      return {
+        items,
+        fetchedAt,
+        diagnostics: {
+          provider: items.length ? "Fallback (ET/Livemint/BusinessLine/CoinDesk)" : "None",
+          count: items.length,
+          degraded: true,
+          error: items.length ? primaryError : "No news returned by provider.",
+        },
+      };
+    } catch (err) {
+      return {
+        items: [],
+        fetchedAt,
+        diagnostics: {
+          provider: "None",
+          count: 0,
+          degraded: true,
+          error: err instanceof Error ? err.message : "No news returned by provider.",
+        },
+      };
+    }
   },
 );
