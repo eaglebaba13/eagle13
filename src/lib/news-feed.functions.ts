@@ -221,9 +221,10 @@ async function fetchFeed(category: NewsCategory, query: string): Promise<RichNew
   });
 }
 
-// 5-minute in-memory cache to satisfy the "cache responses for 5 minutes" spec.
+// 60-second in-memory cache so both Preview and Published refresh every minute
+// while still shielding upstream providers from per-request hammering.
 let cache: { at: number; payload: FeedResult } | null = null;
-const TTL = 5 * 60 * 1000;
+const TTL = 60 * 1000;
 
 function inferCategory(title: string): NewsCategory {
   const t = title.toLowerCase();
