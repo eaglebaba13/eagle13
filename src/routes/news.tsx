@@ -66,6 +66,7 @@ function NewsPage() {
   });
 
   const allItems = q.data?.items ?? [];
+  const diag = q.data?.diagnostics;
   const filtered = useMemo(
     () => filterNews(allItems, { query, cat, prefs }),
     [allItems, query, cat, prefs],
@@ -113,6 +114,19 @@ function NewsPage() {
             <Zap size={14} />
             <span className="eb-breaking-tag">BREAKING</span>
             <span className="eb-breaking-text">{breaking[0].title}</span>
+          </div>
+        ) : null}
+
+        {import.meta.env.DEV ? (
+          <div className="eb-diag" role="status">
+            <strong>DEV DIAGNOSTICS</strong>
+            <span>API: {q.isError ? "Failed" : q.data ? "Connected" : "…"}</span>
+            <span>HTTP: {q.isError ? "error" : q.data ? "200" : "-"}</span>
+            <span>Items: {allItems.length}</span>
+            <span>Source: {diag?.provider ?? "-"}{diag?.degraded ? " (fallback)" : ""}</span>
+            <span>Last fetch: {q.data ? relTime(q.data.fetchedAt) : "-"}</span>
+            <span>Refresh: {q.isFetching ? "fetching…" : "every 60s"}</span>
+            {diag?.error ? <span>Last error: {diag.error}</span> : null}
           </div>
         ) : null}
 
