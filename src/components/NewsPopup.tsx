@@ -79,13 +79,16 @@ export function NewsCenter() {
     queryFn: () => getMarketNewsFeed(),
     // Lazy: only fetch after the bell has been opened at least once.
     enabled: hasOpened,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: true,
+    // Automatic retry: 5s → 15s → 30s.
     retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    retryDelay: (attempt) => [5000, 15000, 30000][attempt] ?? 30000,
   });
 
   const allItems = q.data?.items ?? [];
+  const diag = q.data?.diagnostics;
   const items = useMemo(() => applyPrefs(allItems, prefs), [allItems, prefs]);
   const breakingUnread = useMemo(() => unreadBreaking(items, read), [items, read]);
   const alertCount = breakingUnread.length;
@@ -225,7 +228,11 @@ export function NewsCenter() {
                 ) : filtered.length === 0 ? (
                   <div className="eb-news-empty">
                     <AlertTriangle size={28} color="var(--eb-muted)" />
-                    <p>No matching news right now.</p>
+                    <p>
+                      {allItems.length === 0
+                        ? "No news returned by provider."
+                        : "No matching news for the current filters."}
+                    </p>
                   </div>
                 ) : (
                   filtered.map((n) => (
