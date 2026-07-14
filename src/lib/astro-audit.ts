@@ -6,10 +6,51 @@
 // score EagleBaba's astronomy against externally captured reference values
 // (Swiss Ephemeris / Drik / MPanchang / Prokerala fixtures).
 
+/**
+ * Phase 21.0B audit modes. Every fixture MUST declare exactly one so
+ * comparisons never mix node/Moon conventions.
+ *
+ * Reference-side conventions are HYPOTHESES until supported by the original
+ * Gann Nifty Astro source, an original spreadsheet, an exact historical
+ * ephemeris edition, or deterministic backtest evidence.
+ */
 export type AuditMode =
-  | "CURRENT_EAGLEBABA"
-  | "SWISS_LAHIRI_MEAN_NODE"
-  | "SWISS_LAHIRI_TRUE_NODE";
+  | "CURRENT_EAGLEBABA_MEAN_GEOCENTRIC"
+  | "SWISS_LAHIRI_MEAN_GEOCENTRIC"
+  | "SWISS_LAHIRI_TRUE_GEOCENTRIC"
+  | "SWISS_LAHIRI_MEAN_TOPOCENTRIC_MUMBAI";
+
+/**
+ * PROVISIONAL METHODOLOGY DEFAULT (not "proven original Gann method").
+ *
+ * - Node: MEAN
+ * - Moon: GEOCENTRIC
+ * - Ayanamsha: LAHIRI / CHITRAPAKSHA
+ *
+ * Chosen to preserve current EagleBaba outputs and match Drik Panchang's
+ * default Mean Rahu/Ketu. Do NOT cite this as a historically verified Gann
+ * convention.
+ */
+export const PROVISIONAL_METHODOLOGY_DEFAULT = {
+  status: "PROVISIONAL METHODOLOGY DEFAULT" as const,
+  nodeMode: "mean" as const,
+  moonConvention: "geocentric" as const,
+  ayanamsha: "Lahiri (Chitrapaksha)" as const,
+  rationale:
+    "Preserves current EagleBaba methodology; matches Drik Panchang default; " +
+    "avoids changing historical outputs before evidence exists.",
+} as const;
+
+/**
+ * Evidence tier for every claim surfaced in an audit report. Reports MUST
+ * tag each statement so readers can distinguish measurement from folklore.
+ */
+export type EvidenceTier =
+  | "VERIFIED_FACT"      // reproducible + cited (original source / spreadsheet)
+  | "DOCUMENTED_DEFAULT" // current production choice, no source claim
+  | "INFERENCE"          // logically follows from measured data
+  | "HYPOTHESIS"         // plausible, not yet supported by evidence
+  | "BACKTEST_RESULT";   // deterministic backtest / replay measurement
 
 export type ToleranceStatus = "EXACT" | "ACCEPTABLE" | "WARNING" | "FAIL";
 
@@ -119,6 +160,8 @@ export type AuditVerdict =
 export type AuditReport = {
   auditVersion: string;
   generatedAt: string;
+  mode: AuditMode;
+  provisionalDefault: typeof PROVISIONAL_METHODOLOGY_DEFAULT;
   fixture: ReferenceFixture;
   ayanamsha: AyanamshaComparison;
   planets: PlanetComparison[];
@@ -136,10 +179,24 @@ export type AuditReport = {
     levelsChanged: number;
   };
   verdict: AuditVerdict;
+  verdictEvidence: EvidenceTier;
   verdictReason: string;
 };
 
-export const AUDIT_VERSION = "21.0B-1" as const;
+export const AUDIT_VERSION = "21.0B-2" as const;
+
+/**
+ * Infer an audit mode from a fixture's declared conventions. Fixtures MUST
+ * declare `nodeMode` and `moonConvention`; the reference engine must be Swiss
+ * or explicitly labelled EagleBaba.
+ */
+export function inferAuditMode(f: ReferenceFixture): AuditMode {
+  const isEagle = /eaglebaba|self-baseline/i.test(f.referenceEngine);
+  if (isEagle) return "CURRENT_EAGLEBABA_MEAN_GEOCENTRIC";
+  if (f.nodeMode === "true") return "SWISS_LAHIRI_TRUE_GEOCENTRIC";
+  if (f.moonConvention === "topocentric") return "SWISS_LAHIRI_MEAN_TOPOCENTRIC_MUMBAI";
+  return "SWISS_LAHIRI_MEAN_GEOCENTRIC";
+}
 
 /**
  * Derive a final recommendation from a single-fixture comparison. This is
@@ -151,11 +208,12 @@ export function deriveVerdict(
   planets: PlanetComparison[],
   levelImpacts: LevelImpact[],
   originalSourceKnown = false,
-): { verdict: AuditVerdict; reason: string } {
+): { verdict: AuditVerdict; reason: string; evidence: EvidenceTier } {
   if (planets.length === 0) {
     return {
       verdict: "CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE",
       reason: "No planet comparisons available in this fixture.",
+      evidence: "INFERENCE",
     };
   }
   const failing = planets.filter((p) => p.toleranceStatus === "FAIL").length;
@@ -168,26 +226,40 @@ export function deriveVerdict(
     return {
       verdict: "CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE",
       reason:
-        "Original Gann Nifty Astro node mode (Mean vs True) and Moon convention " +
-        "(geocentric vs topocentric) are not documented in the reference fixture. " +
-        "Per Phase 21.0B stop conditions, production astronomy must not be migrated " +
-        "until the original methodology's conventions are confirmed.",
+        "HYPOTHESIS: reference fixture does not cite an original Gann Nifty Astro " +
+        "source. Node mode (Mean vs True) and Moon convention (geocentric vs " +
+        "topocentric) remain unverified. Per Phase 21.0B stop conditions, the " +
+        "production default (PROVISIONAL: Mean node, geocentric Moon, Lahiri) " +
+        "must not migrate without cited source evidence, a matching original " +
+        "spreadsheet, or a controlled historical backtest showing material and " +
+        "stable improvement.",
+      evidence: "HYPOTHESIS",
     };
   }
   if (failing === 0 && warning === 0 && maxDelta <= 1) {
     return {
       verdict: "KEEP_CURRENT_ENGINE",
-      reason: `All ${planets.length} planet comparisons within EXACT/ACCEPTABLE tolerance and max level delta ≤ 1.`,
+      reason:
+        `BACKTEST_RESULT: all ${planets.length} planet comparisons within ` +
+        `EXACT/ACCEPTABLE tolerance and max Gann level delta ≤ 1.`,
+      evidence: "BACKTEST_RESULT",
     };
   }
   if (failing === 0) {
     return {
       verdict: "KEEP_CURRENT_ENGINE_WITH_DOCUMENTED_TOLERANCE",
-      reason: `No FAIL results; ${warning} WARNING result(s). Downstream max level delta = ${maxDelta}.`,
+      reason:
+        `BACKTEST_RESULT: no FAIL results; ${warning} WARNING result(s). ` +
+        `Downstream max Gann level delta = ${maxDelta}.`,
+      evidence: "BACKTEST_RESULT",
     };
   }
   return {
     verdict: "ADD_SWISS_EPHEMERIS_OPTIONAL_MODE",
-    reason: `${failing} planet(s) exceed the 0.5° FAIL threshold; add Swiss mode as an audit-only option before considering migration.`,
+    reason:
+      `BACKTEST_RESULT: ${failing} planet(s) exceed the 0.5° FAIL threshold. ` +
+      `Recommendation is INFERENCE — add Swiss mode as an audit-only option ` +
+      `before considering any production migration.`,
+    evidence: "INFERENCE",
   };
 }
