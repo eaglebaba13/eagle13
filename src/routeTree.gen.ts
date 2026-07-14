@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -141,6 +142,12 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPaymentStatusRoute =
+  AuthenticatedPaymentStatusRouteImport.update({
+    id: '/payment-status',
+    path: '/payment-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
   id: '/license',
   path: '/license',
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -256,6 +265,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
+  '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/billing'
     | '/license'
+    | '/payment-status'
     | '/profile'
     | '/settings'
     | '/dev/diagnostics'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/billing'
     | '/license'
+    | '/payment-status'
     | '/profile'
     | '/settings'
     | '/dev/diagnostics'
@@ -343,6 +355,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/billing'
     | '/_authenticated/license'
+    | '/_authenticated/payment-status'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/dev/diagnostics'
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payment-status': {
+      id: '/_authenticated/payment-status'
+      path: '/payment-status'
+      fullPath: '/payment-status'
+      preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/license': {
       id: '/_authenticated/license'
       path: '/license'
@@ -573,6 +593,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
+  AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
@@ -580,6 +601,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
+  AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
