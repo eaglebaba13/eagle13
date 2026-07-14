@@ -7,6 +7,12 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { cached } from "./server-cache";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  astroFormulaLabel,
+  type AstroFormulaVersion,
+} from "./engine-version";
 import { getAstro } from "./astro.functions";
 import { getMarketData } from "./market.functions";
 import { getOptionsChain } from "./options-chain.functions";
@@ -43,13 +49,19 @@ export type DecisionSnapshot = {
     nifty: number | null;
     banknifty: number | null;
   };
+  methodology: {
+    astroFormulaVersion: AstroFormulaVersion;
+    astroFormulaLabel: string;
+    signalMethod: string;
+    decisionMethod: string;
+  };
   generatedAt: string;
 };
 
 export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
   async (): Promise<DecisionSnapshot> =>
     cached<DecisionSnapshot>(
-      "decision-snapshot",
+      astroCacheKey("decision-snapshot"),
       async () => {
         // Reuse every existing engine — never recompute.
         const [astroRes, marketRes, chainRes] = await Promise.allSettled([
@@ -191,6 +203,12 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             optionsSource,
             nifty: market?.nifty?.livePrice ?? null,
             banknifty: market?.banknifty?.livePrice ?? null,
+          },
+          methodology: {
+            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+            astroFormulaLabel: astroFormulaLabel(DEFAULT_ASTRO_FORMULA_VERSION),
+            signalMethod: "EagleBaba Composite Signal",
+            decisionMethod: "EagleBaba Decision Intelligence",
           },
           generatedAt: new Date().toISOString(),
         };
