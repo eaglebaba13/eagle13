@@ -179,6 +179,87 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_payment_requests: {
+        Row: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_paid?: number | null
+          billing_cycle: string
+          created_at?: string
+          currency?: string
+          expected_amount: number
+          expires_at?: string
+          id?: string
+          payee_name?: string | null
+          payment_app?: string | null
+          payment_date?: string | null
+          payment_reference: string
+          rejection_reason?: string | null
+          requested_plan: string
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          upi_id: string
+          user_id: string
+          user_note?: string | null
+          utr_number?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          amount_paid?: number | null
+          billing_cycle?: string
+          created_at?: string
+          currency?: string
+          expected_amount?: number
+          expires_at?: string
+          id?: string
+          payee_name?: string | null
+          payment_app?: string | null
+          payment_date?: string | null
+          payment_reference?: string
+          rejection_reason?: string | null
+          requested_plan?: string
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          upi_id?: string
+          user_id?: string
+          user_note?: string | null
+          utr_number?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           broker_status: boolean
@@ -547,6 +628,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_approve_manual_payment: {
+        Args: { _admin_note: string; _id: string }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_change_plan: {
         Args: { _plan: string; _reason: string; _target: string }
         Returns: {
@@ -628,6 +744,76 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_mark_manual_payment_under_review: {
+        Args: { _id: string }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reject_manual_payment: {
+        Args: { _id: string; _reason: string }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_reset_usage: {
         Args: {
           _period: string
@@ -685,9 +871,87 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_manual_payment_request: {
+        Args: { _id: string }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       consume_usage: {
         Args: { _max: number; _period: string; _resource: string }
         Returns: number
+      }
+      create_manual_payment_request: {
+        Args: {
+          _amount: number
+          _currency: string
+          _cycle: string
+          _payee_name: string
+          _plan: string
+          _reference: string
+          _upi_id: string
+        }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_entitlement_snapshot: { Args: { _target?: string }; Returns: Json }
       has_role: {
@@ -753,6 +1017,49 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_manual_payment_utr: {
+        Args: {
+          _amount_paid: number
+          _id: string
+          _payment_app: string
+          _payment_date: string
+          _screenshot_url: string
+          _user_note: string
+          _utr: string
+        }
+        Returns: {
+          admin_note: string | null
+          amount_paid: number | null
+          billing_cycle: string
+          created_at: string
+          currency: string
+          expected_amount: number
+          expires_at: string
+          id: string
+          payee_name: string | null
+          payment_app: string | null
+          payment_date: string | null
+          payment_reference: string
+          rejection_reason: string | null
+          requested_plan: string
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["manual_payment_status"]
+          submitted_at: string | null
+          updated_at: string
+          upi_id: string
+          user_id: string
+          user_note: string | null
+          utr_number: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       validate_subscription_transition: {
         Args: { _from: string; _to: string }
         Returns: boolean
@@ -766,6 +1073,14 @@ export type Database = {
         | "pro"
         | "free"
         | "guest"
+      manual_payment_status:
+        | "CREATED"
+        | "SUBMITTED"
+        | "UNDER_REVIEW"
+        | "APPROVED"
+        | "REJECTED"
+        | "EXPIRED"
+        | "CANCELED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -894,6 +1209,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "enterprise", "professional", "pro", "free", "guest"],
+      manual_payment_status: [
+        "CREATED",
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED",
+        "EXPIRED",
+        "CANCELED",
+      ],
     },
   },
 } as const
