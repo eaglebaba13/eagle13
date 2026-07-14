@@ -86,7 +86,7 @@ describe("buildLevels", () => {
     expect(rows).toMatchInlineSnapshot(`
       [
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 400,
           "isResistance": true,
           "kind": "R3",
@@ -96,7 +96,7 @@ describe("buildLevels", () => {
           "value": 24700,
         },
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 300,
           "isResistance": true,
           "kind": "R2",
@@ -106,7 +106,7 @@ describe("buildLevels", () => {
           "value": 24600,
         },
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 200,
           "isResistance": true,
           "kind": "R1",
@@ -116,7 +116,7 @@ describe("buildLevels", () => {
           "value": 24500,
         },
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 200,
           "isResistance": false,
           "kind": "S1",
@@ -126,7 +126,7 @@ describe("buildLevels", () => {
           "value": 24100,
         },
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 300,
           "isResistance": false,
           "kind": "S2",
@@ -136,7 +136,7 @@ describe("buildLevels", () => {
           "value": 24000,
         },
         {
-          "confidence": 5,
+          "confidence": 10,
           "distance": 400,
           "isResistance": false,
           "kind": "S3",
