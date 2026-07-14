@@ -92,10 +92,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfileAndRoles]);
 
   const signOut = useCallback(async () => {
+    // Phase 20.3A: session isolation — never leak previous user's state.
     await supabase.auth.signOut();
     setProfile(null);
     setRoles([]);
     setSession(null);
+    if (typeof window !== "undefined") {
+      // Clear user-scoped ephemeral caches. We deliberately keep the raw
+      // eaglebaba.* legacy scopes so re-signing-in with the same user still
+      // sees the migration assistant.
+      try {
+        sessionStorage.clear();
+      } catch {
+        /* ignore */
+      }
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
