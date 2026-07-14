@@ -69,8 +69,9 @@ function AuditDashboard() {
 
   const exportJson = (r: AuditReport) => {
     downloadBlob(
-      new Blob([JSON.stringify(r, null, 2)], { type: "application/json" }),
+      JSON.stringify(r, null, 2),
       `astro-audit_${r.fixture.fixtureVersion}.json`,
+      "application/json",
     );
   };
 
