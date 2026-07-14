@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { MobileNav } from "../components/MobileNav";
 import { AuthProvider } from "../lib/auth-context";
 import { ProfileMenu } from "../components/ProfileMenu";
+import { MigrationAssistant } from "../components/MigrationAssistant";
 import { supabase } from "../integrations/supabase/client";
 import { Toaster } from "sonner";
 
@@ -164,6 +165,7 @@ function RootComponent() {
         <MobileNav />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <MigrationAssistant />
         <Toaster richColors position="top-center" />
       </AuthProvider>
     </QueryClientProvider>
