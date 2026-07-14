@@ -7,6 +7,8 @@ import {
   AUDIT_VERSION,
   classifyLongitudeDiff,
   deriveVerdict,
+  inferAuditMode,
+  PROVISIONAL_METHODOLOGY_DEFAULT,
   signedLongitudeDiff,
   type AuditReport,
   type LevelImpact,
@@ -103,7 +105,7 @@ export function runAstroAudit(fixture: ReferenceFixture): AuditReport {
   const originalSourceKnown = Boolean(
     fixture.notes && /original[\s-]?source[:=]\s*confirmed/i.test(fixture.notes),
   );
-  const { verdict, reason } = deriveVerdict(
+  const { verdict, reason, evidence } = deriveVerdict(
     planets,
     levelImpacts,
     originalSourceKnown,
@@ -112,12 +114,15 @@ export function runAstroAudit(fixture: ReferenceFixture): AuditReport {
   return {
     auditVersion: AUDIT_VERSION,
     generatedAt: new Date().toISOString(),
+    mode: inferAuditMode(fixture),
+    provisionalDefault: PROVISIONAL_METHODOLOGY_DEFAULT,
     fixture,
     ayanamsha,
     planets,
     levelImpacts,
     summary,
     verdict,
+    verdictEvidence: evidence,
     verdictReason: reason,
   };
 }
