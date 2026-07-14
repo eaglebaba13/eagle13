@@ -271,18 +271,14 @@ function OptionsAnalyticsPage() {
     ]
       .map((r) => r.join(","))
       .join("\n");
-    downloadBlob(
-      `options-chain-${symbol}-${selectedExpiry}.csv`,
-      new Blob([rows], { type: "text/csv" }),
-    );
+    downloadBlob(rows, `options-chain-${symbol}-${selectedExpiry}.csv`, "text/csv");
   };
 
   const exportJson = () => {
     downloadBlob(
+      JSON.stringify({ snapshot, analytics }, null, 2),
       `options-chain-${symbol}-${selectedExpiry}.json`,
-      new Blob([JSON.stringify({ snapshot, analytics }, null, 2)], {
-        type: "application/json",
-      }),
+      "application/json",
     );
   };
 
