@@ -97,15 +97,18 @@ export const submitManualPaymentUtr = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ManualPaymentRequest> => {
     const check = validateUtr(data.utr);
     if (!check.ok) throw new Error(`invalid_utr:${check.reason}`);
-    const { data: row, error } = await context.supabase.rpc("submit_manual_payment_utr", {
-      _id: data.id,
-      _utr: data.utr,
-      _payment_date: data.paymentDate ?? null,
-      _amount_paid: data.amountPaidPaise,
-      _payment_app: data.paymentApp ?? null,
-      _screenshot_url: data.screenshotPath ?? null,
-      _user_note: data.userNote ?? null,
-    });
+    const { data: row, error } = await context.supabase.rpc(
+      "submit_manual_payment_utr",
+      {
+        _id: data.id,
+        _utr: data.utr,
+        _payment_date: (data.paymentDate ?? null) as unknown as string,
+        _amount_paid: data.amountPaidPaise,
+        _payment_app: (data.paymentApp ?? null) as unknown as string,
+        _screenshot_url: (data.screenshotPath ?? null) as unknown as string,
+        _user_note: (data.userNote ?? null) as unknown as string,
+      },
+    );
     if (error) throw new Error(error.message);
     return mapRow(row as unknown as ManualPaymentRow);
   });
