@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
+import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
 import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -28,6 +29,11 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
   id: '/signal-accuracy',
   path: '/signal-accuracy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptionsAnalyticsRoute = OptionsAnalyticsRouteImport.update({
+  id: '/options-analytics',
+  path: '/options-analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OptionStrategyRoute = OptionStrategyRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
+  '/options-analytics': typeof OptionsAnalyticsRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
+  '/options-analytics': typeof OptionsAnalyticsRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
+  '/options-analytics': typeof OptionsAnalyticsRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/news'
     | '/option-strategy'
+    | '/options-analytics'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/news'
     | '/option-strategy'
+    | '/options-analytics'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/news'
     | '/option-strategy'
+    | '/options-analytics'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   NewsRoute: typeof NewsRoute
   OptionStrategyRoute: typeof OptionStrategyRoute
+  OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/signal-accuracy'
       fullPath: '/signal-accuracy'
       preLoaderRoute: typeof SignalAccuracyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/options-analytics': {
+      id: '/options-analytics'
+      path: '/options-analytics'
+      fullPath: '/options-analytics'
+      preLoaderRoute: typeof OptionsAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/option-strategy': {
@@ -349,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   NewsRoute: NewsRoute,
   OptionStrategyRoute: OptionStrategyRoute,
+  OptionsAnalyticsRoute: OptionsAnalyticsRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
