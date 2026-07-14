@@ -26,6 +26,8 @@ import { ApexChart } from "@/components/ApexChart";
 import { Disclaimer } from "@/components/Disclaimer";
 import { NewsCenter } from "@/components/NewsPopup";
 import { schedule } from "@/lib/scheduler";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Activity,
   Bell,
