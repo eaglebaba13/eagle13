@@ -19,13 +19,20 @@ const R2D = 180 / Math.PI;
 const NAK_SIZE = 360 / 27; // 13.3333...
 const PADA_SIZE = NAK_SIZE / 4;
 
-const earth = new Planet((vsopEarth as any).default ?? vsopEarth);
+// astronomia's VSOP87 data modules are published as CJS/ESM interop; normalize
+// a possible `.default` wrapper before handing the dataset to Planet.
+type VsopData = ConstructorParameters<typeof Planet>[0];
+function vsop(data: unknown): VsopData {
+  const d = data as { default?: VsopData };
+  return (d?.default ?? (data as VsopData));
+}
+const earth = new Planet(vsop(vsopEarth));
 const bodies: Record<string, Planet> = {
-  Mercury: new Planet((vsopMercury as any).default ?? vsopMercury),
-  Venus: new Planet((vsopVenus as any).default ?? vsopVenus),
-  Mars: new Planet((vsopMars as any).default ?? vsopMars),
-  Jupiter: new Planet((vsopJupiter as any).default ?? vsopJupiter),
-  Saturn: new Planet((vsopSaturn as any).default ?? vsopSaturn),
+  Mercury: new Planet(vsop(vsopMercury)),
+  Venus: new Planet(vsop(vsopVenus)),
+  Mars: new Planet(vsop(vsopMars)),
+  Jupiter: new Planet(vsop(vsopJupiter)),
+  Saturn: new Planet(vsop(vsopSaturn)),
 };
 
 function norm(d: number): number {

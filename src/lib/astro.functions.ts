@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { computeCycles, computeAstroLevels, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
 import { fetchJson } from "./http";
 import { computeEma } from "./strategy-math";
+import { cached } from "./server-cache";
+import { YahooChartSchema, parseProvider } from "./providers";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -33,15 +35,15 @@ async function fetchNifty(): Promise<{
   ema13: number | null;
 }> {
   const url = `${YAHOO}${encodeURIComponent("^NSEI")}?interval=1d&range=1mo`;
-  const json = (await fetchJson<any>(url)) as any;
-  const result = json?.chart?.result?.[0];
+  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), "Yahoo (^NSEI)");
+  const result = json.chart.result?.[0];
   if (!result) throw new Error("No NIFTY data available");
   const meta = result.meta;
   const ts: number[] = result.timestamp ?? [];
   const q = result.indicators?.quote?.[0] ?? {};
   const candles = ts
-    .map((t, i) => ({ close: q.close?.[i], date: istDateStr(t) }))
-    .filter((c) => c.close != null);
+    .map((t, i) => ({ close: q.close?.[i] ?? null, date: istDateStr(t) }))
+    .filter((c): c is { close: number; date: string } => c.close != null);
   if (candles.length === 0) throw new Error("No NIFTY candles available");
 
   const today = todayIst();
@@ -51,7 +53,7 @@ async function fetchNifty(): Promise<{
   if (prevIdx < 0) prevIdx = 0;
   const prev = candles[prevIdx];
 
-  const closes = candles.map((c) => c.close as number);
+  const closes = candles.map((c) => c.close);
   const ema13 = computeEma(closes, 13);
 
   return {
@@ -86,7 +88,10 @@ export type AstroData = {
 };
 
 export const getAstro = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AstroData> => {
+  async (): Promise<AstroData> =>
+    cached<AstroData>(
+      "astro",
+      async () => {
     const { computeAstroPositions } = await import("./astro-engine.server");
     const anchor = astroAnchorDate();
     const [market, positions] = await Promise.all([
@@ -124,5 +129,7 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
       planets,
       moonPhase: positions.moonPhase,
     };
-  },
+      },
+      { ttlMs: 60_000 },
+    ),
 );

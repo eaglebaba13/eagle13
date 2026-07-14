@@ -11,6 +11,7 @@ import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, Download, Printer, FileSpreadsheet, FileText, Radio, Volume2, VolumeX } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
+import { useIstClock } from "@/hooks/use-scheduler";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -95,18 +96,6 @@ function tolFor(price: number): number {
   if (price >= 2000) return 8; // gold / bank nifty
   if (price >= 100) return 5; // silver-ish
   return 2;
-}
-
-function useIstClock() {
-  const [now, setNow] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () =>
-      setNow(new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "Asia/Kolkata" }));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
 }
 
 function makeFmt(m: MarketBlock) {

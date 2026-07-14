@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson } from "./http";
+import { cached } from "./server-cache";
+import { YahooChartSchema, parseProvider } from "./providers";
 
 export type SeasonRow = {
   year: number;
@@ -15,16 +17,19 @@ export type SeasonalityData = {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 export const getSeasonality = createServerFn({ method: "GET" }).handler(
-  async (): Promise<SeasonalityData> => {
+  async (): Promise<SeasonalityData> =>
+    cached<SeasonalityData>(
+      "seasonality",
+      async () => {
     const url =
       "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?range=15y&interval=1mo";
-    let json: any = null;
+    let r: import("./providers").YahooChartResult | undefined;
     try {
-      json = await fetchJson<any>(url, { timeoutMs: 9000 });
+      const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url, { timeoutMs: 9000 }), "Yahoo (^NSEI)");
+      r = json.chart.result?.[0];
     } catch {
       return { years: [], avg: Array(12).fill(null), fetchedAt: new Date().toISOString() };
     }
-    const r = json?.chart?.result?.[0];
     const ts: number[] = r?.timestamp ?? [];
     const quote = r?.indicators?.quote?.[0] ?? {};
     const opens: (number | null)[] = quote.open ?? [];
@@ -57,5 +62,7 @@ export const getSeasonality = createServerFn({ method: "GET" }).handler(
     }
 
     return { years, avg, fetchedAt: new Date().toISOString() };
-  },
+      },
+      { ttlMs: 15 * 60_000 },
+    ),
 );
