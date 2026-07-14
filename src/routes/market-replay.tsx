@@ -29,6 +29,8 @@ import { schedule } from "@/lib/scheduler";
 import { downloadBlob } from "@/lib/download";
 import { ApexChart } from "@/components/ApexChart";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug } from "@/lib/engine-version";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -502,9 +504,10 @@ function MarketReplayPage() {
       t.planet ?? "",
     ]);
     const csv = [head, ...rows].map((r) => r.map(csvCell).join(",")).join("\n");
+    const slug = astroFormulaSlug(session.astroFormulaVersion);
     downloadBlob(
       csv,
-      `replay-${session.symbol}-${session.date}-${session.timeframe}.csv`,
+      `replay-${session.symbol}-${slug}-${session.date}-${session.timeframe}.csv`,
       "text/csv",
     );
   };

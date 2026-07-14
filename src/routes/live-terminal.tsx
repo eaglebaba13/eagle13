@@ -12,6 +12,8 @@ import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, MapPin, Download, Printer, FileSpreadsheet, FileText, Radio } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug, DEFAULT_ASTRO_FORMULA_VERSION, type AstroFormulaVersion } from "@/lib/engine-version";
 import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
 import { downloadBlob } from "@/lib/download";
 import { deriveTithi, deriveKarana, deriveYoga, sunTimes } from "@/lib/panchang";
@@ -108,15 +110,28 @@ const EXPORT_COLS = ["Planet", "Degree", "AbsDegree", "Sign", "Nakshatra", "Lord
 const exportRow = (p: LivePlanet) =>
   [p.planet, p.degree, p.absDegree, p.sign, p.nakshatra, p.lord, p.pada, p.speed, p.motion, p.r1, p.r2, p.r3, p.s1, p.s2, p.s3];
 
-function exportCsv(planets: LivePlanet[]) {
+function exportCsv(planets: LivePlanet[], version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
+  const header = [
+    `# EagleBABA Live Astro Levels · ${version} · R3/S3 = EagleBaba Extended`,
+  ];
   const rows = planets.map((p) => exportRow(p).join(","));
-  downloadBlob([EXPORT_COLS.join(","), ...rows].join("\n"), "live-astro-levels.csv", "text/csv");
+  downloadBlob(
+    [...header, EXPORT_COLS.join(","), ...rows].join("\n"),
+    `live-astro-levels-${slug}.csv`,
+    "text/csv",
+  );
 }
-function exportExcel(planets: LivePlanet[]) {
+function exportExcel(planets: LivePlanet[], version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
   const cells = (arr: (string | number)[]) => arr.map((c) => `<td>${c}</td>`).join("");
   const head = "<tr>" + cells(EXPORT_COLS) + "</tr>";
   const body = planets.map((p) => "<tr>" + cells(exportRow(p)) + "</tr>").join("");
-  downloadBlob(`<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`, "live-astro-levels.xls", "application/vnd.ms-excel");
+  downloadBlob(
+    `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`,
+    `live-astro-levels-${slug}.xls`,
+    "application/vnd.ms-excel",
+  );
 }
 
 /* ------------------------------ component ------------------------------ */
@@ -259,6 +274,9 @@ function LiveTerminal() {
               </h1>
               <div style={{ fontSize: 12, color: C.muted }}>
                 <MapPin size={12} style={{ verticalAlign: -2 }} /> {loc.label} · Asia/Kolkata · auto-refresh 60s
+              </div>
+              <div style={{ marginTop: 6 }}>
+                <FormulaBadge version={data.formulaVersion} extended compact />
               </div>
             </div>
           </div>
@@ -452,8 +470,8 @@ function LiveTerminal() {
 
             {/* Controls / export */}
             <div className="no-print" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-              <button onClick={() => exportCsv(data.planets)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
-              <button onClick={() => exportExcel(data.planets)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
+              <button onClick={() => exportCsv(data.planets, data.formulaVersion)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
+              <button onClick={() => exportExcel(data.planets, data.formulaVersion)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
               <button onClick={() => window.print()} style={ghost(C.gold)}><FileText size={14} style={{ verticalAlign: -2 }} /> PDF</button>
               <button onClick={() => window.print()} style={ghost(C.muted)}><Printer size={14} style={{ verticalAlign: -2 }} /> Print</button>
             </div>

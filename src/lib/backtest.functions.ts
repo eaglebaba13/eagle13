@@ -17,6 +17,11 @@ import {
 } from "./astro-levels";
 import { cached } from "./server-cache";
 import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  type AstroFormulaVersion,
+} from "./engine-version";
+import {
   BACKTEST_ENGINE_VERSION,
   BACKTEST_FORMULA_VERSION,
   ZERO_COSTS,
@@ -142,6 +147,7 @@ export type BacktestResult = {
   runId: string;
   engineVersion: string;
   formulaVersion: string;
+  astroFormulaVersion: AstroFormulaVersion;
   configHash: string;
   executionMeta: {
     policy: ExecutionPolicy;
@@ -477,7 +483,9 @@ export const runBacktest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }: { data: BacktestInput }): Promise<BacktestResult> =>
     cached<BacktestResult>(
-      `backtest:${data.symbol}:${data.from}:${data.to}:${data.policy}:${data.invalidSetupPolicy}:${hashConfig(data.costs)}`,
+      astroCacheKey(
+        `backtest:${data.symbol}:${data.from}:${data.to}:${data.policy}:${data.invalidSetupPolicy}:${hashConfig(data.costs)}`,
+      ),
       async () => {
         const map = BACKTEST_SYMBOLS[data.symbol];
         const isBtc = data.symbol === "BTC";
@@ -497,6 +505,7 @@ export const runBacktest = createServerFn({ method: "POST" })
           symbol: data.symbol, from: data.from, to: data.to,
           policy: data.policy, invalidSetupPolicy: data.invalidSetupPolicy,
           costs: data.costs, dataSource: executionMeta.dataSource, timezone,
+          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
         });
         const configHash = hashConfig({
           symbol: data.symbol, from: data.from, to: data.to,
@@ -545,6 +554,7 @@ export const runBacktest = createServerFn({ method: "POST" })
             equityCurve: [], generatedAt: new Date().toISOString(),
             runId, engineVersion: BACKTEST_ENGINE_VERSION,
             formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
+            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
             executionMeta, dataQuality,
             stats: buildStats([], 0, 0, 0),
             benchmark: null,
@@ -608,6 +618,7 @@ export const runBacktest = createServerFn({ method: "POST" })
           generatedAt: new Date().toISOString(),
           runId, engineVersion: BACKTEST_ENGINE_VERSION,
           formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
+          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
           executionMeta, dataQuality,
           stats, benchmark,
           ambiguousCount, invalidSetupCount,

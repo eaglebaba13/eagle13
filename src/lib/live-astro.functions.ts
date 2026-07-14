@@ -15,6 +15,11 @@ import {
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -43,6 +48,7 @@ export type LiveIndex = {
 export type LiveAstroData = {
   asOf: string; // ISO of the exact compute moment
   ayanamsa: number;
+  formulaVersion: AstroFormulaVersion;
   cycles: { base: number; upper: number; lower: number };
   prevClose: number; // NIFTY previous trading day close
   prevDate: string;
@@ -121,7 +127,7 @@ function levelsFor(
 export const getLiveAstro = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveAstroData> =>
     cached<LiveAstroData>(
-      "live-astro",
+      astroCacheKey("live-astro"),
       async () => {
     const { computeAstroPositions } = await import("./astro-engine.server");
     // LIVE: positions for the current minute (unchanged formula, live moment).
@@ -149,6 +155,7 @@ export const getLiveAstro = createServerFn({ method: "GET" }).handler(
     return {
       asOf: now.toISOString(),
       ayanamsa: positions.ayanamsa,
+      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
       cycles,
       prevClose: nifty.prevClose,
       prevDate: todayIst(),

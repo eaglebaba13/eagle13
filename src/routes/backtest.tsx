@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 
 import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol, type BacktestTrade } from "@/lib/backtest.functions";
 import { downloadBlob } from "@/lib/download";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug } from "@/lib/engine-version";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -108,7 +110,9 @@ function BacktestPage() {
 
   const exportCsv = () => {
     if (!result) return;
+    const slug = astroFormulaSlug(result.astroFormulaVersion);
     const rows = [
+      [`# EagleBABA Backtest · ${result.astroFormulaVersion}`, `engine=${result.engineVersion}`, `formula=${result.formulaVersion}`, `generatedAt=${result.generatedAt}`, `runId=${result.runId}`],
       ["date","time","symbol","signal","strength","confidence","entry","exit","high","low","target","stop","targetHit","stopHit","result","pnl","pnlPct","moonSign","moonNakshatra","retroCount","nearest","dayOfWeek","month"],
       ...filtered.map((t) => [
         t.date,t.time,t.symbol,t.signal,t.strength,t.confidence,t.entry,t.exit,t.high,t.low,t.target,t.stop,
@@ -116,11 +120,12 @@ function BacktestPage() {
       ]),
     ];
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
-    downloadBlob(csv, `eaglebaba-backtest-${symbol}-${from}-${to}.csv`, "text/csv");
+    downloadBlob(csv, `eaglebaba-backtest-${symbol}-${slug}-${from}-${to}.csv`, "text/csv");
   };
   const exportJson = () => {
     if (!result) return;
-    downloadBlob(JSON.stringify(result, null, 2), `eaglebaba-backtest-${symbol}-${from}-${to}.json`, "application/json");
+    const slug = astroFormulaSlug(result.astroFormulaVersion);
+    downloadBlob(JSON.stringify(result, null, 2), `eaglebaba-backtest-${symbol}-${slug}-${from}-${to}.json`, "application/json");
   };
 
   return (
@@ -133,6 +138,11 @@ function BacktestPage() {
           <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 4 }}>
             Replay every trading day · reuses the live signal engine · no formula duplication
           </div>
+          {result ? (
+            <div style={{ marginTop: 6 }}>
+              <FormulaBadge version={result.astroFormulaVersion} />
+            </div>
+          ) : null}
         </div>
         <Link to="/" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>← Dashboard</Link>
       </header>

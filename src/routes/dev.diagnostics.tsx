@@ -145,6 +145,20 @@ function DiagnosticsDashboard() {
           <StatCard label="Client FPS" value={String(perf.fps)} sub={perf.heapMb != null ? `${perf.heapMb} MB heap` : "heap n/a"} tone={perf.fps >= 50 ? "green" : perf.fps >= 30 ? "gold" : "red"} />
         </Grid>
 
+        <Section title="Astro Formula Version" sub={server?.formulaVersion.label ?? ""}>
+          {!server ? <Skeleton /> : (
+            <Table headers={["Default", "Cache Namespace", "Corrected Cache Entries", "Legacy Cache Entries", "Unversioned"]}>
+              <tr>
+                <td style={td()}>{server.formulaVersion.default}</td>
+                <td style={td()}>{server.formulaVersion.cacheNamespace}</td>
+                <td style={td("right")}>{server.formulaVersion.correctedCacheEntries}</td>
+                <td style={td("right", server.formulaVersion.legacyCacheEntries > 0 ? C.gold : undefined)}>{server.formulaVersion.legacyCacheEntries}</td>
+                <td style={td("right", server.formulaVersion.unversionedCacheEntries > 0 ? C.red : undefined)}>{server.formulaVersion.unversionedCacheEntries}</td>
+              </tr>
+            </Table>
+          )}
+        </Section>
+
         <Section title="Cache Monitor" sub={server ? `${server.cache.totals.keys} keys · ${server.cache.totals.entries} live entries · ${server.cache.totals.inFlight} in-flight` : ""}>
           {!server ? <Skeleton /> : (
             <Table headers={["Key", "Hits", "Stale", "Miss", "Refresh", "Hit %", "Age", "TTL Left", "In-flight"]}>

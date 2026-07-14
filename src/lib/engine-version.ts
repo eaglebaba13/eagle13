@@ -34,3 +34,41 @@ export type AstroFormulaVersion =
 
 export const DEFAULT_ASTRO_FORMULA_VERSION: AstroFormulaVersion =
   ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1;
+
+/**
+ * Namespace token bumped whenever the cache-key shape or the authoritative
+ * Astro formula changes. Old (unversioned) cache entries created before
+ * Phase 21.0A will naturally orphan because none of the new keys collide
+ * with any previous key.
+ */
+export const CACHE_NAMESPACE_VERSION = "v2" as const;
+
+/** Human-readable label for a formula version — used by UI badges and exports. */
+export function astroFormulaLabel(v: AstroFormulaVersion): string {
+  return v === ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1
+    ? "Legacy Cascade v1"
+    : "Gann Nifty Astro v1.1";
+}
+
+/** Short slug for filenames — always safe, no spaces. */
+export function astroFormulaSlug(v: AstroFormulaVersion): string {
+  return v === ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1
+    ? "LEGACY_CASCADE_V1"
+    : "GANN_ASTRO_V1_1";
+}
+
+export function isLegacyAstroFormula(v: AstroFormulaVersion): boolean {
+  return v === ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1;
+}
+
+/**
+ * Build a cache key namespaced by the corrected-formula rollout. Every server
+ * function that depends on Astro Levels MUST route its cache key through here
+ * (or an equivalent prefix) so a legacy value can never satisfy a v1.1 request.
+ */
+export function astroCacheKey(
+  base: string,
+  version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION,
+): string {
+  return `${CACHE_NAMESPACE_VERSION}:${version}:${base}`;
+}

@@ -5,10 +5,20 @@
 // once for the CURRENT minute (live) and applied — via the unchanged formula —
 // to each supported instrument's previous-close cycle.
 import { createServerFn } from "@tanstack/react-start";
-import { computeCycles, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
+import {
+  computeCycles,
+  computeGannAstroLevels,
+  type PlanetRow,
+  type MoonPhaseInfo,
+} from "./astro-levels";
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -62,6 +72,7 @@ export type MarketBlock = {
 export type LiveLevelsData = {
   asOf: string; // ISO of the exact compute moment
   ayanamsa: number;
+  formulaVersion: AstroFormulaVersion;
   moonSign: string;
   moonNakshatra: string;
   moonDegree: number;
@@ -117,18 +128,31 @@ async function fetchQuote(def: MarketDef): Promise<Quote> {
   return { livePrice, prevClose, prevDate: prev.date, change, changePct, marketState };
 }
 
-// R1/S1 use the EXISTING EagleBaba rule (Upper/Lower cycle + planet degree).
-// R2/R3/S2/S3 follow the spec's +360 / -360 cascade from R1/S1.
-function levelsFor(cycles: { upper: number; lower: number }, degree: number) {
-  const r1 = Math.round(cycles.upper + degree);
-  const s1 = Math.round(cycles.lower + degree);
-  return { r1, s1, r2: r1 + 360, r3: r1 + 720, s2: s1 - 360, s3: s1 - 720 };
+// GANN_NIFTY_ASTRO_V1_1 — R1/R2/S1/S2 come from the SINGLE authoritative
+// implementation in astro-levels.ts (Upper/Lower ± degree). R3/S3 are
+// EagleBaba EXTENDED levels (not part of the original Gann spec) and use
+// the legacy ±720 cascade purely so the existing terminal columns keep
+// rendering; they are excluded from the core Gann signal math.
+function levelsFor(
+  cycles: { base: number; upper: number; lower: number },
+  degree: number,
+) {
+  const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
+  return {
+    r1,
+    r2,
+    s1,
+    s2,
+    // EagleBaba Extended (legacy) — labeled in UI, not authoritative Gann.
+    r3: r1 + 720,
+    s3: s1 - 720,
+  };
 }
 
 export const getLiveLevels = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveLevelsData> =>
     cached<LiveLevelsData>(
-      "live-levels",
+      astroCacheKey("live-levels"),
       async () => {
     const { computeAstroPositions } = await import("./astro-engine.server");
     // LIVE: positions for the current minute (unchanged formula, live moment).
@@ -173,6 +197,7 @@ export const getLiveLevels = createServerFn({ method: "GET" }).handler(
     return {
       asOf: now.toISOString(),
       ayanamsa: positions.ayanamsa,
+      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
       moonSign: positions.moonSign,
       moonNakshatra: positions.moonNakshatra,
       moonDegree: positions.moonDegree,
