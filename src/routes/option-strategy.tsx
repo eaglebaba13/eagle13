@@ -379,17 +379,7 @@ function OptionStrategyTerminal() {
             </div>
 
             {/* AI reasoning panel */}
-            <Card style={{ marginBottom: 14, border: `1px solid ${recColor}` }}>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                <Activity size={15} /> AI REASONING · {rec.action} · {rec.confidence.toFixed(0)}%
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.9 }}>
-                {rec.reasons.map((r, i) => (
-                  <li key={i} style={{ color: rec.action === "BUY PE" ? "#f4a6b0" : rec.action === "BUY CE" ? "#a7f3d0" : C.text }}>{r}</li>
-                ))}
-                <li style={{ color: C.muted }}>Astro bias: {data.astro.bias} ({data.astro.bullCount}▲ / {data.astro.bearCount}▼ · Moon {data.astro.moonNakshatra})</li>
-              </ul>
-            </Card>
+            <AiReasoningPanel rec={rec} astro={data.astro} />
 
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 12 }} className="os-mono">
               Last updated {lastUpdated} IST · auto-refresh 30s · {oc.source === "NSE" ? "live NSE option chain" : "PCR derived from live breadth & VIX when NSE chain is unreachable"}
