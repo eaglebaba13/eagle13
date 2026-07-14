@@ -28,6 +28,7 @@ import { Route as AstroRouteImport } from './routes/astro'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
+import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -134,6 +135,11 @@ const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
   path: '/dev/diagnostics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevAstroFixtureCaptureRoute = DevAstroFixtureCaptureRouteImport.update({
+  id: '/dev/astro-fixture-capture',
+  path: '/dev/astro-fixture-capture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevAstroAuditRoute = DevAstroAuditRouteImport.update({
   id: '/dev/astro-audit',
   path: '/dev/astro-audit',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
+  '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
+  '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
+  '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/dev/astro-audit'
+    | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/payments'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/dev/astro-audit'
+    | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/payments'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/dev/astro-audit'
+    | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/payments'
@@ -410,6 +422,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
+  DevAstroFixtureCaptureRoute: typeof DevAstroFixtureCaptureRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicWebhooksRazorpayRoute: typeof ApiPublicWebhooksRazorpayRoute
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevDiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/astro-fixture-capture': {
+      id: '/dev/astro-fixture-capture'
+      path: '/dev/astro-fixture-capture'
+      fullPath: '/dev/astro-fixture-capture'
+      preLoaderRoute: typeof DevAstroFixtureCaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/astro-audit': {
       id: '/dev/astro-audit'
       path: '/dev/astro-audit'
@@ -674,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DevAstroAuditRoute: DevAstroAuditRoute,
+  DevAstroFixtureCaptureRoute: DevAstroFixtureCaptureRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicWebhooksRazorpayRoute: ApiPublicWebhooksRazorpayRoute,

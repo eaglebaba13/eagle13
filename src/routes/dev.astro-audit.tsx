@@ -4,6 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { runAstroAuditFn } from "@/lib/astro-audit.functions";
 import type { AuditReport } from "@/lib/astro-audit";
 import { downloadBlob } from "@/lib/download";
+import {
+  aggregateByMode,
+  boundaryRiskCsv,
+  boundaryRisks,
+  coverageStatus,
+  MIN_FIXTURES_FOR_PRODUCTION_VERDICT,
+  planetComparisonCsv,
+} from "@/lib/astro-audit-aggregate";
 
 export const Route = createFileRoute("/dev/astro-audit")({
   component: AstroAuditPage,
@@ -211,9 +219,96 @@ function AuditDashboard() {
           </div>
         </section>
       ))}
+
+      {q.data && q.data.reports.length > 0 && <Aggregate reports={q.data.reports} />}
     </div>
   );
 }
+
+function Aggregate({ reports }: { reports: AuditReport[] }) {
+  const cov = coverageStatus(reports);
+  const modes = aggregateByMode(reports);
+  const risks = boundaryRisks(reports);
+  return (
+    <section style={{ marginTop: 24, background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
+      <h2 style={{ margin: 0, color: C.gold, fontSize: 18 }}>Coverage & Aggregate (Phase 21.0C)</h2>
+      <div style={{ marginTop: 8, color: C.muted, fontSize: 12 }}>
+        Fixtures: <strong style={{ color: cov.meetsMinimum ? C.green : C.red }}>
+          {cov.fixtures} / {MIN_FIXTURES_FOR_PRODUCTION_VERDICT}
+        </strong>
+        {" · "}Modes: {cov.modes.length} · Sources: {cov.sources.length}
+        {" · "}Missing convention rows: {cov.missingConventions}
+      </div>
+      {!cov.meetsMinimum && (
+        <div style={{ marginTop: 8, padding: 10, background: C.bg, border: `1px dashed ${C.red}`, borderRadius: 6, color: C.muted, fontSize: 12 }}>
+          Stop condition: fewer than {MIN_FIXTURES_FOR_PRODUCTION_VERDICT} valid fixtures. Final methodology verdict remains{" "}
+          <strong style={{ color: C.red }}>CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE</strong>.
+          Add fixtures via <a style={{ color: C.gold }} href="/dev/astro-fixture-capture">/dev/astro-fixture-capture</a>.
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <button style={btn} onClick={() => downloadBlob(planetComparisonCsv(reports), "planet-comparison.csv", "text/csv")}>Planet CSV</button>
+        <button style={btn} onClick={() => downloadBlob(boundaryRiskCsv(risks), "boundary-risks.csv", "text/csv")}>Boundary CSV</button>
+        <button style={btn} onClick={() => downloadBlob(JSON.stringify({ coverage: cov, modes, risks }, null, 2), "audit-aggregate.json", "application/json")}>Aggregate JSON</button>
+      </div>
+
+      {modes.map((m) => (
+        <div key={m.mode} style={{ marginTop: 16, padding: 12, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6 }}>
+          <div style={{ color: C.gold, fontWeight: 600 }}>{m.mode} <span style={{ color: C.muted, fontWeight: 400 }}>· {m.fixtures} fixture(s) · levels changed in {m.levelsChangedFixtures} · max Δ {m.maxLevelDelta}</span></div>
+          <div style={{ overflowX: "auto", marginTop: 8 }}>
+            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ color: C.muted, textAlign: "left" }}>
+                  <th style={th}>Planet</th><th style={th}>n</th><th style={th}>|Δ| mean</th>
+                  <th style={th}>|Δ| max</th><th style={th}>EXACT%</th><th style={th}>ACC%</th>
+                  <th style={th}>WARN%</th><th style={th}>FAIL%</th><th style={th}>Sign%</th>
+                  <th style={th}>Nak%</th><th style={th}>Pada%</th><th style={th}>Retro%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...(m.moon ? [m.moon] : []), ...m.perPlanet].map((p) => (
+                  <tr key={p.planet} style={{ borderTop: `1px solid ${C.border}` }}>
+                    <td style={td}>{p.planet}</td><td style={td}>{p.n}</td>
+                    <td style={td}>{p.meanAbsDiff.toFixed(4)}</td>
+                    <td style={td}>{p.maxAbsDiff.toFixed(4)}</td>
+                    <td style={td}>{p.exactPct}</td><td style={td}>{p.acceptablePct}</td>
+                    <td style={td}>{p.warningPct}</td><td style={td}>{p.failPct}</td>
+                    <td style={td}>{p.signMatchPct}</td><td style={td}>{p.nakshatraMatchPct}</td>
+                    <td style={td}>{p.padaMatchPct}</td><td style={td}>{p.retroMatchPct}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+
+      {risks.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ color: C.gold, fontWeight: 600, marginBottom: 6 }}>Boundary Risks ({risks.length})</div>
+          <div style={{ maxHeight: 240, overflow: "auto", fontFamily: "monospace", fontSize: 11, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: 8 }}>
+            {risks.slice(0, 100).map((r, i) => (
+              <div key={i}>
+                {r.fixtureVersion} · {r.planet} · Δ{r.diffDeg.toFixed(4)}°
+                {r.signChange && " · sign⚠"}
+                {r.nakshatraChange && " · nak⚠"}
+                {r.padaChange && " · pada⚠"}
+                {r.retroChange && " · retro⚠"}
+                {r.levelDelta > 0 && ` · Δlvl=${r.levelDelta}`}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+const btn: React.CSSProperties = {
+  background: C.card, color: C.text, border: `1px solid ${C.border}`,
+  padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontSize: 12,
+};
 
 const th: React.CSSProperties = { padding: "6px 8px", fontWeight: 600 };
 const td: React.CSSProperties = { padding: "6px 8px", fontFamily: "monospace" };
