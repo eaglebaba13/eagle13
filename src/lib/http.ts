@@ -1,6 +1,7 @@
 // Client-safe resilient HTTP helpers (no secrets, no server-only imports).
 // Adds request timeouts and bounded retries with backoff so transient
 // upstream failures (rate limits, network blips) don't crash the app.
+import { recordApiRequest } from "./diagnostics";
 
 const DEFAULT_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
@@ -43,8 +44,12 @@ export async function fetchWithRetry(
   } = opts;
 
   let lastError: unknown;
+  const startAll = Date.now();
+  let attemptsUsed = 0;
+  let finalStatus: number | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
+    attemptsUsed = attempt;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -53,6 +58,7 @@ export async function fetchWithRetry(
         signal: controller.signal,
       });
       clearTimeout(timer);
+      finalStatus = res.status;
 
       // Retry transient server-side / rate-limit responses.
       if ((res.status === 429 || res.status >= 500) && attempt < retries) {
@@ -60,6 +66,17 @@ export async function fetchWithRetry(
         await sleep(backoff(retryDelayMs, attempt, exponential));
         continue;
       }
+      recordApiRequest({
+        ts: Date.now(),
+        host: safeHost(url),
+        url,
+        method: "GET",
+        status: res.status,
+        durationMs: Date.now() - startAll,
+        retries: attempt,
+        ok: res.ok,
+        error: res.ok ? undefined : `HTTP ${res.status}`,
+      });
       return res;
     } catch (err) {
       clearTimeout(timer);
@@ -73,6 +90,17 @@ export async function fetchWithRetry(
 
   const reason =
     lastError instanceof Error ? lastError.message : String(lastError ?? "unknown error");
+  recordApiRequest({
+    ts: Date.now(),
+    host: safeHost(url),
+    url,
+    method: "GET",
+    status: finalStatus,
+    durationMs: Date.now() - startAll,
+    retries: attemptsUsed,
+    ok: false,
+    error: reason,
+  });
   throw new Error(`Request failed for ${safeHost(url)}: ${reason}`);
 }
 
