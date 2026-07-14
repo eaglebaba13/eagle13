@@ -625,7 +625,6 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
 }
 
 function SectorChart({ sectors }: { sectors: Sector[] }) {
-function SectorChart({ sectors }: { sectors: Sector[] }) {
   const [horizontal, setHorizontal] = useState(true);
   useEffect(() => {
     const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-orient") : null;
