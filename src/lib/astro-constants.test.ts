@@ -6,6 +6,7 @@ import {
   isBullNakshatra,
   isBearNakshatra,
   retroBiasOf,
+  EAGLEBABA_EXTENDED_BEAR_NAKSHATRAS,
 } from "./astro-constants";
 
 describe("astro constants", () => {
@@ -25,10 +26,14 @@ describe("isBullNakshatra / isBearNakshatra", () => {
     }
   });
   it("classifies known bear nakshatras", () => {
-    for (const n of ["Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada", "Bharani"]) {
+    for (const n of ["Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada"]) {
       expect(isBearNakshatra(n)).toBe(true);
       expect(isBullNakshatra(n)).toBe(false);
     }
+  });
+  it("excludes Bharani from the authentic Gann bear set (Phase 21.0)", () => {
+    expect(isBearNakshatra("Bharani")).toBe(false);
+    expect(EAGLEBABA_EXTENDED_BEAR_NAKSHATRAS.has("Bharani")).toBe(true);
   });
   it("treats a neutral nakshatra as neither bull nor bear", () => {
     expect(isBullNakshatra("Rohini")).toBe(false);

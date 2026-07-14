@@ -6,7 +6,12 @@
 // CURRENT minute (live) instead of the fixed 09:00 IST anchor, so the terminal
 // updates every 60 seconds.
 import { createServerFn } from "@tanstack/react-start";
-import { computeCycles, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
+import {
+  computeCycles,
+  computeGannAstroLevels,
+  type PlanetRow,
+  type MoonPhaseInfo,
+} from "./astro-levels";
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
@@ -92,17 +97,23 @@ async function fetchIndex(symbol: string, name: string): Promise<LiveIndex> {
   };
 }
 
-// R1/S1 use the EXISTING EagleBaba rule (Upper/Lower cycle + planet degree).
-// R2/R3/S2/S3 follow the spec's own +360 / -360 cascade from R1/S1.
-function levelsFor(cycles: { upper: number; lower: number }, degree: number) {
-  const r1 = Math.round(cycles.upper + degree);
-  const s1 = Math.round(cycles.lower + degree);
+// GANN_NIFTY_ASTRO_V1_1 — R1/R2/S1/S2 come from the SINGLE authoritative
+// implementation in astro-levels.ts (Upper/Lower ± degree). R3/S3 are
+// EAGLEBABA EXTENDED levels (not part of the original Gann spec) and use
+// the legacy ±720 cascade from R1/S1 purely so the existing terminal
+// columns keep rendering; they are excluded from core Gann signal math.
+function levelsFor(
+  cycles: { base: number; upper: number; lower: number },
+  degree: number,
+) {
+  const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
   return {
     r1,
+    r2,
     s1,
-    r2: r1 + 360,
+    s2,
+    // EagleBaba Extended (legacy) — labeled in UI, not authoritative Gann.
     r3: r1 + 720,
-    s2: s1 - 360,
     s3: s1 - 720,
   };
 }
