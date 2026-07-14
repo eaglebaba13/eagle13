@@ -8,6 +8,8 @@ import {
   selfStartTrial,
   selfSetCancelAtPeriodEnd,
 } from "@/lib/billing-rpc";
+import { getBillingProviderHealth } from "@/lib/razorpay-checkout.functions";
+import type { BillingProviderHealth } from "@/lib/razorpay-plan-map";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({ meta: [{ title: "Billing — EagleBABA" }] }),
@@ -15,15 +17,37 @@ export const Route = createFileRoute("/_authenticated/billing")({
 });
 
 function BillingPage() {
+  return <BillingPageInner />;
+}
+
+function EnvironmentBadge({ env }: { env: "test" | "live" | "not_configured" }) {
+  const styles: Record<typeof env, string> = {
+    test: "bg-amber-500/15 text-amber-300 border-amber-400/30",
+    live: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+    not_configured: "bg-white/5 text-muted-foreground border-white/10",
+  };
+  const label = env === "not_configured" ? "Not configured" : env.toUpperCase();
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles[env]}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function BillingPageInner() {
   const { user } = useAuth();
   const { effective, refresh } = useEntitlements();
   const adapter = getBillingAdapter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [health, setHealth] = useState<BillingProviderHealth | null>(null);
 
   useEffect(() => {
     if (!user) return;
     void adapter.getInvoices(user.id).then(setInvoices);
+    void getBillingProviderHealth().then(setHealth).catch(() => setHealth(null));
   }, [user, adapter]);
 
   const isDev = import.meta.env.DEV;
@@ -96,14 +120,37 @@ function BillingPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Billing provider
           </h2>
-          {adapter.configured ? (
-            <p className="text-sm text-muted-foreground">
-              Connected to <span className="text-foreground">{adapter.name}</span>.
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Billing provider not configured.{" "}
-              {isDev && "Development mock actions are available below."}
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              Provider: <span className="text-foreground capitalize">{adapter.name}</span>
+            </span>
+            <EnvironmentBadge env={health?.environment ?? "not_configured"} />
+            {health && !health.configured && (
+              <span className="text-amber-300">— Razorpay credentials not configured.</span>
+            )}
+            {health && health.configured && !health.webhookConfigured && (
+              <span className="text-amber-300">— Webhook secret missing.</span>
+            )}
+          </div>
+          {health && health.slots.length > 0 && (
+            <ul className="mt-3 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+              {health.slots.map((s) => (
+                <li key={`${s.plan}_${s.cycle}`} className="flex items-center gap-2">
+                  <span
+                    className={`inline-block h-1.5 w-1.5 rounded-full ${
+                      s.configured ? "bg-emerald-400" : "bg-red-400"
+                    }`}
+                  />
+                  <span className="capitalize">
+                    {s.plan} · {s.cycle}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {isDev && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Development mock actions available below.
             </p>
           )}
           {isDev && (

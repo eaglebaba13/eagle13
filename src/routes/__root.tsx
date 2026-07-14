@@ -17,6 +17,9 @@ import { ProfileMenu } from "../components/ProfileMenu";
 import { MigrationAssistant } from "../components/MigrationAssistant";
 import { supabase } from "../integrations/supabase/client";
 import { Toaster } from "sonner";
+import { installBillingAdapter } from "../lib/billing-init";
+
+installBillingAdapter();
 
 function NotFoundComponent() {
   return (
