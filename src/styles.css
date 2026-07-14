@@ -1378,6 +1378,7 @@ a {
     -webkit-backdrop-filter: blur(12px);
   }
   .eb-news-back { display: grid; }
+  .eb-news-head > div:first-child { flex: 1 1 auto; min-width: 0; }
   .eb-news-title {
     font-size: 17px;
     white-space: nowrap;
