@@ -93,8 +93,8 @@ describe("Phase 21.0B · inferAuditMode", () => {
     location: { label: "Mumbai", latitude: 19, longitude: 72, elevationMeters: 14 },
     ayanamshaMode: "Lahiri",
     ayanamsha: 24,
-    planets: [],
-  } as const;
+    planets: [] as ReferenceFixture["planets"],
+  };
   const f = (
     engine: string,
     node: "mean" | "true",
