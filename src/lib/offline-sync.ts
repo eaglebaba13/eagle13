@@ -19,11 +19,21 @@ export function emptyState(): SyncState {
   return { queue: [], lastSyncAt: null };
 }
 
+let _seq = 0;
+function nextTs(state: SyncState): number {
+  const now = Date.now();
+  const last = state.queue.reduce((m, o) => Math.max(m, o.queuedAt), 0);
+  const base = Math.max(now, last + 1);
+  _seq = (_seq + 1) % 1_000_000;
+  return base;
+}
+
 export function enqueue(state: SyncState, op: Omit<SyncOp, "id" | "queuedAt">): SyncState {
+  const queuedAt = nextTs(state);
   const next: SyncOp = {
     ...op,
-    id: `${op.scope}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-    queuedAt: Date.now(),
+    id: `${op.scope}:${queuedAt}:${_seq.toString(36)}`,
+    queuedAt,
   };
   return { ...state, queue: [...state.queue, next] };
 }
