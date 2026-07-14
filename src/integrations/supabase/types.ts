@@ -14,16 +14,357 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          layout: Json
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          data: Json
+          entry_date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          entry_date?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          entry_date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          broker_status: boolean
+          browser: boolean
+          decision_alerts: boolean
+          email: boolean
+          portfolio_events: boolean
+          push: boolean
+          risk_alerts: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          broker_status?: boolean
+          browser?: boolean
+          decision_alerts?: boolean
+          email?: boolean
+          portfolio_events?: boolean
+          push?: boolean
+          risk_alerts?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          broker_status?: boolean
+          browser?: boolean
+          decision_alerts?: boolean
+          email?: boolean
+          portfolio_events?: boolean
+          push?: boolean
+          risk_alerts?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      paper_trades: {
+        Row: {
+          created_at: string
+          id: string
+          trade: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          trade: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          trade?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          currency: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          language: string | null
+          preferred_broker: string | null
+          preferred_instrument: string | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          display_name?: string | null
+          email?: string | null
+          id: string
+          language?: string | null
+          preferred_broker?: string | null
+          preferred_instrument?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          language?: string | null
+          preferred_broker?: string | null
+          preferred_instrument?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      replay_presets: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          preset: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          preset?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          preset?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          activated_at: string
+          created_at: string
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string
+          engine_version?: string
+          expires_at?: string | null
+          id?: string
+          license_key?: string | null
+          plan?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          engine_version?: string
+          expires_at?: string | null
+          id?: string
+          license_key?: string | null
+          plan?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          settings: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          settings?: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      watchlists: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          pinned: boolean
+          sort_order: number
+          symbols: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          pinned?: boolean
+          sort_order?: number
+          symbols?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          pinned?: boolean
+          sort_order?: number
+          symbols?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "enterprise"
+        | "professional"
+        | "pro"
+        | "free"
+        | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +491,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "enterprise", "professional", "pro", "free", "guest"],
+    },
   },
 } as const
