@@ -16,6 +16,23 @@ import {
   type PlanetRow,
 } from "./astro-levels";
 import { cached } from "./server-cache";
+import {
+  BACKTEST_ENGINE_VERSION,
+  BACKTEST_FORMULA_VERSION,
+  ZERO_COSTS,
+  assertCausal,
+  buildStats,
+  computeRunId,
+  expectedTradingSessions,
+  hashConfig,
+  pickTargetStop,
+  resolveOutcome,
+  validateCandle,
+  type CostModel,
+  type ExecutionPolicy,
+  type InvalidSetupPolicy,
+  type StatBundle,
+} from "./backtest-engine";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -43,7 +60,7 @@ export type BacktestTrade = {
   stop: number | null;
   targetHit: boolean;
   stopHit: boolean;
-  result: "WIN" | "LOSS" | "FLAT" | "SKIP";
+  result: "WIN" | "LOSS" | "FLAT" | "SKIP" | "AMBIGUOUS" | "INVALID_SETUP";
   pnl: number;
   pnlPct: number;
   moonSign: string;
@@ -52,6 +69,16 @@ export type BacktestTrade = {
   nearest: string | null;
   dayOfWeek: string;
   month: string;             // yyyy-mm
+  // Optional integrity metadata — additive, defaults keep legacy consumers happy.
+  ambiguous?: boolean;
+  fabricatedLevels?: boolean;
+  grossPnl?: number;
+  netPnl?: number;
+  costs?: number;
+  astroTs?: string;
+  entryTs?: string;
+  exitTs?: string;
+  dataAvailableTs?: string;
 };
 
 export type BacktestMonthly = {
@@ -111,14 +138,64 @@ export type BacktestResult = {
   };
   equityCurve: { date: string; cumulative: number }[];
   generatedAt: string;
+  // ── Integrity, reproducibility & disclosure ─────────────────────────────
+  runId: string;
+  engineVersion: string;
+  formulaVersion: string;
+  configHash: string;
+  executionMeta: {
+    policy: ExecutionPolicy;
+    invalidSetupPolicy: InvalidSetupPolicy;
+    costs: CostModel;
+    astroAnchor: string;      // "09:00 IST"
+    entryTime: string;        // "09:15 IST"
+    exitAssumption: string;   // "target / stop within daily OHLC; else close"
+    dataSource: string;       // e.g. "Yahoo Finance (daily)"
+    timezone: string;         // "Asia/Kolkata" | "UTC"
+    candleTimeframe: string;  // "1d"
+  };
+  dataQuality: {
+    expectedSessions: number;
+    loadedSessions: number;
+    missingSessions: number;
+    invalidSessions: number;
+    coveragePct: number;
+    dataSource: string;
+    adjusted: "adjusted" | "unadjusted" | "unknown";
+  };
+  stats: StatBundle;
+  benchmark: {
+    buyAndHoldPnl: number;
+    buyAndHoldPct: number;
+    strategyPct: number;
+    excessPct: number;
+    activeDays: number;
+  } | null;
+  ambiguousCount: number;
+  invalidSetupCount: number;
+  disclaimers: string[];
 };
 
+// Extended input — every new option is optional and defaults preserve the
+// existing byte-for-byte output (conservative + fabricate + zero costs).
+const CostSchema = z.object({
+  slippagePct: z.number().min(0).max(5).default(0),
+  brokerageFlat: z.number().min(0).default(0),
+  brokeragePct: z.number().min(0).max(5).default(0),
+  taxesPct: z.number().min(0).max(5).default(0),
+});
 const InputSchema = z.object({
   symbol: z.enum(["NIFTY50", "BANKNIFTY", "GOLD", "SILVER", "BTC"]),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  policy: z.enum(["conservative", "optimistic", "exclude_ambiguous"]).default("conservative"),
+  invalidSetupPolicy: z.enum(["fabricate", "strict"]).default("fabricate"),
+  costs: CostSchema.default({ slippagePct: 0, brokerageFlat: 0, brokeragePct: 0, taxesPct: 0 }),
 });
 type BacktestInput = z.infer<typeof InputSchema>;
+
+const BTC_TIMEZONE = "UTC";
+const IST_TIMEZONE = "Asia/Kolkata";
 
 function istDateStr(unixSeconds: number): string {
   return new Date((unixSeconds + 19800) * 1000).toISOString().slice(0, 10);
@@ -148,6 +225,13 @@ async function fetchCandles(yahooSymbol: string, fromIso: string, toIso: string)
 
 function round2(n: number): number { return Math.round(n * 100) / 100; }
 
+function isoAt(dateStr: string, hh: number, mm: number, tzOffsetMin: number): string {
+  // Build an ISO instant for `dateStr hh:mm` in the given fixed timezone offset.
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const utcMs = Date.UTC(y, m - 1, d, hh, mm, 0) - tzOffsetMin * 60_000;
+  return new Date(utcMs).toISOString();
+}
+
 /** Return anchor timestamp of 09:00 IST for a given yyyy-mm-dd string. */
 function nineAmIst(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -160,6 +244,9 @@ function replayDay(
   prev: Candle,
   positions: Awaited<ReturnType<typeof import("./astro-engine.server").computeAstroPositions>>,
   symbol: BacktestSymbol,
+  policy: ExecutionPolicy,
+  invalidSetupPolicy: InvalidSetupPolicy,
+  costs: CostModel,
 ): BacktestTrade {
   const cycles = computeCycles(prev.close);
   const planets: PlanetRow[] = positions.planets.map((p) => ({
@@ -178,22 +265,33 @@ function replayDay(
     bearRetroCount: positions.bearRetroCount,
   });
 
-  // Target / stop selection: nearest opposing level in the direction of the trade.
-  const resistancesAbove = board.filter((b) => b.isResistance && b.value > entry).sort((a, b) => a.value - b.value);
-  const supportsBelow = board.filter((b) => !b.isResistance && b.value < entry).sort((a, b) => b.value - a.value);
-  let target: number | null = null;
-  let stop: number | null = null;
-  if (sig.signal === "BUY") {
-    target = resistancesAbove[0]?.value ?? round2(entry * 1.005);
-    stop = supportsBelow[0]?.value ?? round2(entry * 0.995);
-  } else if (sig.signal === "SELL") {
-    target = supportsBelow[0]?.value ?? round2(entry * 0.995);
-    stop = resistancesAbove[0]?.value ?? round2(entry * 1.005);
+  // Pure target/stop selection reused everywhere: nearest opposing level in
+  // the direction of the trade. When missing, `invalidSetupPolicy` decides.
+  const picked = pickTargetStop(board.map((b) => ({ value: b.value, isResistance: b.isResistance })), entry, sig.signal);
+  let target = picked.target;
+  let stop = picked.stop;
+  let fabricatedLevels = false;
+  if (sig.signal !== "WAIT" && (target == null || stop == null) && invalidSetupPolicy === "fabricate") {
+    fabricatedLevels = true;
+    if (sig.signal === "BUY") {
+      target = target ?? round2(entry * 1.005);
+      stop = stop ?? round2(entry * 0.995);
+    } else {
+      target = target ?? round2(entry * 0.995);
+      stop = stop ?? round2(entry * 1.005);
+    }
   }
 
   const dow = DAYS[new Date(today.date + "T00:00:00Z").getUTCDay()];
   const month = today.date.slice(0, 7);
   const nearest = sig.nearest ? `${sig.nearest.planet} ${sig.nearest.kind}` : null;
+
+  const isBtc = symbol === "BTC";
+  const tzOffsetMin = isBtc ? 0 : 330;                 // 09:00 IST = UTC+5:30
+  const astroTs = isoAt(today.date, isBtc ? 0 : 9, 0, tzOffsetMin);
+  const entryTs = isoAt(today.date, isBtc ? 0 : 9, isBtc ? 0 : 15, tzOffsetMin);
+  const exitTs = isoAt(today.date, isBtc ? 23 : 15, isBtc ? 59 : 30, tzOffsetMin);
+  const dataAvailableTs = isoAt(prev.date, 23, 59, tzOffsetMin); // prior close
 
   const base: BacktestTrade = {
     date: today.date,
@@ -219,26 +317,61 @@ function replayDay(
     nearest,
     dayOfWeek: dow,
     month,
+    ambiguous: false,
+    fabricatedLevels,
+    grossPnl: 0,
+    netPnl: 0,
+    costs: 0,
+    astroTs,
+    entryTs,
+    exitTs,
+    dataAvailableTs,
   };
 
-  if (sig.signal === "WAIT" || target == null || stop == null) return base;
+  if (sig.signal === "WAIT") return base;
+  if (target == null || stop == null) return { ...base, result: "INVALID_SETUP" };
 
-  const targetHit = sig.signal === "BUY" ? today.high >= target : today.low <= target;
-  const stopHit   = sig.signal === "BUY" ? today.low <= stop   : today.high >= stop;
+  const outcome = resolveOutcome({
+    signal: sig.signal,
+    entry,
+    target,
+    stop,
+    high: today.high,
+    low: today.low,
+    close: today.close,
+    policy,
+    costs,
+  });
 
-  // If both are hit within the same daily candle we conservatively assume the
-  // stop was reached first (worst-case).
-  let exit = today.close;
-  let result: BacktestTrade["result"] = "FLAT";
-  if (targetHit && stopHit) { exit = stop; result = "LOSS"; }
-  else if (targetHit) { exit = target; result = "WIN"; }
-  else if (stopHit)   { exit = stop;   result = "LOSS"; }
+  // Defensive causality check (data available at prev close < signal at 09:00 IST < entry 09:15 IST < exit 15:30 IST).
+  const cz = assertCausal({
+    signalTs: Date.parse(astroTs),
+    entryTs: Date.parse(entryTs),
+    exitTs: Date.parse(exitTs),
+    dataAvailableTs: Date.parse(dataAvailableTs),
+  });
+  if (!cz.ok) {
+    // Should never trigger — engine only reads prev-close + 09:00 astro state.
+    // Surfacing as SKIP keeps aggregate math safe.
+    return { ...base, result: "SKIP" };
+  }
 
-  const dir = sig.signal === "BUY" ? 1 : -1;
-  const pnl = round2((exit - entry) * dir);
-  const pnlPct = round2(((exit - entry) / entry) * 100 * dir);
-
-  return { ...base, exit: round2(exit), target: round2(target), stop: round2(stop), targetHit, stopHit, result, pnl, pnlPct };
+  return {
+    ...base,
+    exit: outcome.exit,
+    target: round2(target),
+    stop: round2(stop),
+    targetHit: outcome.targetHit,
+    stopHit: outcome.stopHit,
+    ambiguous: outcome.ambiguous,
+    result: outcome.result,
+    // Legacy .pnl mirrors gross when costs are zero → default output stays byte-identical.
+    pnl: outcome.netPnl,
+    pnlPct: outcome.pnlPct,
+    grossPnl: outcome.grossPnl,
+    netPnl: outcome.netPnl,
+    costs: outcome.costs,
+  };
 }
 
 function aggregate(trades: BacktestTrade[]): { summary: BacktestSummary; monthly: BacktestMonthly[]; equity: { date: string; cumulative: number }[] } {
