@@ -36,7 +36,9 @@ describe("Razorpay event mapping", () => {
   });
 
   it("returns invalid_transition rather than forcing bad state", () => {
-    const d = decideEventOutcome("subscription.charged", "expired");
+    // active -> incomplete is not a valid transition; a stray auth event
+    // for an already-active subscription must NOT be forced.
+    const d = decideEventOutcome("subscription.authenticated", "active");
     expect(d.action).toBe("invalid_transition");
   });
 
