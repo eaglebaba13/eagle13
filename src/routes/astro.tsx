@@ -451,6 +451,9 @@ function AstroDashboard() {
             <div style={{ fontSize: 12, color: C.muted }}>
               Mumbai · Asia/Kolkata · {todayIstLabel()} · Planets fixed @ 09:00 IST
             </div>
+            <div style={{ marginTop: 6 }}>
+              <FormulaBadge version={data.formulaVersion} compact />
+            </div>
             </div>
           </div>
           <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
