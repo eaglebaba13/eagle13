@@ -7,6 +7,13 @@
 // BUY CE / BUY PE / WAIT recommendation.
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson } from "./http";
+import {
+  biasFromPct,
+  sectorBreadth,
+  vixStrategy,
+  pcrFocusFromOI,
+  pcrFocusFromRatio,
+} from "./strategy-math";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -160,22 +167,6 @@ export type OptionStrategyData = {
   recommendation: Recommendation;
   specialAlert: { type: "CALL" | "PUT" | "NONE"; active: boolean };
 };
-
-/* ------------------------------ helpers ------------------------------ */
-
-function biasFromPct(pct: number): "Bullish" | "Bearish" | "Neutral" {
-  if (pct > 0.15) return "Bullish";
-  if (pct < -0.15) return "Bearish";
-  return "Neutral";
-}
-
-// Model per-sector advance/decline (out of ~50 members) from the sector move.
-function sectorBreadth(pct: number): { advance: number; decline: number } {
-  const total = 50;
-  const frac = clamp(0.5 + pct / 6, 0.05, 0.95);
-  const advance = Math.round(total * frac);
-  return { advance, decline: total - advance };
-}
 
 /* --------------------------- option chain --------------------------- */
 
