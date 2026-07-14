@@ -67,6 +67,7 @@ function fakeResult(trades: BacktestTrade[]): BacktestResult {
     runId: "test",
     engineVersion: "1.0.0",
     formulaVersion: "astro-levels@1",
+    astroFormulaVersion: "GANN_NIFTY_ASTRO_V1_1",
     configHash: "aaaaaaaa",
     executionMeta: {
       policy: "conservative",
