@@ -108,7 +108,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await supabase
           .from("audit_log")
-          .insert({ user_id: session.user.id, event, metadata });
+          .insert({
+            user_id: session.user.id,
+            event,
+            metadata: metadata as never,
+          });
       } catch {
         /* audit failures never block UX */
       }
