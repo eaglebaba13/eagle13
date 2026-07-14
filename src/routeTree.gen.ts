@@ -29,6 +29,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -132,6 +133,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
+  id: '/license',
+  path: '/license',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/license': typeof AuthenticatedLicenseRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/license': typeof AuthenticatedLicenseRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/license': typeof AuthenticatedLicenseRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/license'
     | '/profile'
     | '/settings'
     | '/dev/diagnostics'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/license'
     | '/profile'
     | '/settings'
     | '/dev/diagnostics'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/license'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/dev/diagnostics'
@@ -467,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/license': {
+      id: '/_authenticated/license'
+      path: '/license'
+      fullPath: '/license'
+      preLoaderRoute: typeof AuthenticatedLicenseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -492,11 +511,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
