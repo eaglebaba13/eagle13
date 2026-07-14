@@ -395,6 +395,111 @@ function OptionStrategyTerminal() {
 
 /* ------------------------------ subcomponents ------------------------------ */
 
+/* AI reasoning: high-contrast, WCAG-AA readable in dark & light mode. */
+type ReasonKind = "positive" | "negative" | "warning" | "neutral";
+
+function classifyReason(text: string): ReasonKind {
+  const t = text.toLowerCase();
+  if (/(astro|moon|nakshatra)/.test(t)) return "neutral";
+  if (/(wait|mixed|no clear|neutral)/.test(t)) return "warning";
+  if (/(weak|bearish|negative|▼|strong bearish|put)/.test(t)) return "negative";
+  if (/(strong|bullish|positive|leading|▲|buy|call)/.test(t)) return "positive";
+  return "neutral";
+}
+
+const REASON_STYLES: Record<ReasonKind, { icon: string; color: string; badgeBg: string }> = {
+  positive: { icon: "✅", color: "#22C55E", badgeBg: "rgba(34,197,94,0.16)" },
+  negative: { icon: "🔻", color: "#EF4444", badgeBg: "rgba(239,68,68,0.16)" },
+  warning: { icon: "⚠️", color: "#F59E0B", badgeBg: "rgba(245,158,11,0.16)" },
+  neutral: { icon: "ℹ️", color: "#93C5FD", badgeBg: "rgba(59,130,246,0.16)" },
+};
+
+function AiReasoningPanel({
+  rec,
+  astro,
+}: {
+  rec: OptionStrategyData["recommendation"];
+  astro: OptionStrategyData["astro"];
+}) {
+  const headColor = rec.action === "BUY CE" ? "#22C55E" : rec.action === "BUY PE" ? "#EF4444" : "#F59E0B";
+  const rows: { text: string; kind: ReasonKind }[] = [
+    ...rec.reasons.map((r) => ({ text: r, kind: classifyReason(r) })),
+    {
+      text: `Astro Bias : ${astro.bias} (${astro.bullCount}▲ / ${astro.bearCount}▼) · Current Moon : ${astro.moonNakshatra}`,
+      kind: "neutral" as ReasonKind,
+    },
+  ];
+  return (
+    <div
+      className="os-air"
+      style={{
+        marginBottom: 14,
+        borderRadius: 16,
+        padding: 18,
+        background: "rgba(17,24,39,0.90)",
+        border: "1px solid #334155",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          letterSpacing: 0.4,
+          marginBottom: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          color: "#FFFFFF",
+        }}
+      >
+        <Activity size={18} color={headColor} /> AI REASONING · <span style={{ color: headColor }}>{rec.action}</span> · {rec.confidence.toFixed(0)}%
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {rows.map((row, i) => {
+          const s = REASON_STYLES[row.kind];
+          return (
+            <div
+              key={i}
+              className="os-air-row"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: 500,
+                lineHeight: 1.7,
+                color: "#E2E8F0",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  flex: "0 0 auto",
+                  width: 26,
+                  height: 26,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  background: s.badgeBg,
+                  border: `1px solid ${s.color}`,
+                }}
+              >
+                {s.icon}
+              </span>
+              <span style={{ color: row.kind === "neutral" ? "#CBD5E1" : s.color, fontWeight: 700 }}>{row.text}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return <div className={`eb-card eb-glass${className ? ` ${className}` : ""}`} style={{ borderRadius: 16, padding: 16, ...style }}>{children}</div>;
 }
