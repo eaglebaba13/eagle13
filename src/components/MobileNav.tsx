@@ -15,6 +15,7 @@ import {
   FileBarChart,
   Settings,
   Target,
+  History,
   Menu as MenuIcon,
   X,
 } from "lucide-react";
@@ -35,6 +36,7 @@ const DRAWER_ITEMS: NavItem[] = [
   { label: "Live Terminal", icon: Radio, to: "/live-terminal" },
   { label: "Market Terminal", icon: Activity, to: "/live-market-terminal" },
   { label: "Level Terminal", icon: TrendingUp, to: "/live-levels" },
+  { label: "Backtest", icon: History, to: "/backtest" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
   { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
