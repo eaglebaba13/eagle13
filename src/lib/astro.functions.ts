@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { computeCycles, computeAstroLevels, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
 import { fetchJson } from "./http";
+import { computeEma } from "./strategy-math";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -13,17 +14,6 @@ function istDateStr(unixSeconds: number): string {
 }
 function todayIst(): string {
   return new Date(Date.now() + 19800 * 1000).toISOString().slice(0, 10);
-}
-
-// Exponential moving average of the last `period` closes (day timeframe).
-function computeEma(closes: number[], period: number): number | null {
-  if (closes.length < period) return null;
-  const k = 2 / (period + 1);
-  let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
-  for (let i = period; i < closes.length; i++) {
-    ema = closes[i] * k + ema * (1 - k);
-  }
-  return round2(ema);
 }
 
 // Anchor planetary positions to today's 9:00 AM IST (Mumbai). IST = UTC+5:30,
