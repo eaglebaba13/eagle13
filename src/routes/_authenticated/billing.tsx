@@ -8,6 +8,8 @@ import {
   selfStartTrial,
   selfSetCancelAtPeriodEnd,
 } from "@/lib/billing-rpc";
+import { getBillingProviderHealth } from "@/lib/razorpay-checkout.functions";
+import type { BillingProviderHealth } from "@/lib/razorpay-plan-map";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({ meta: [{ title: "Billing — EagleBABA" }] }),
@@ -20,10 +22,12 @@ function BillingPage() {
   const adapter = getBillingAdapter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [health, setHealth] = useState<BillingProviderHealth | null>(null);
 
   useEffect(() => {
     if (!user) return;
     void adapter.getInvoices(user.id).then(setInvoices);
+    void getBillingProviderHealth().then(setHealth).catch(() => setHealth(null));
   }, [user, adapter]);
 
   const isDev = import.meta.env.DEV;
