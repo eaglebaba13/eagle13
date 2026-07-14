@@ -11,6 +11,10 @@
 // results are fully reproducible.
 
 import { hashConfig } from "./backtest-engine";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 export const REPLAY_ENGINE_VERSION = "1.0.0";
 export const REPLAY_FORMULA_VERSION = "astro-levels@1";
@@ -61,9 +65,12 @@ export type ReplayConfig = {
   entryMode: EntryMode;
   policy: AmbiguousPolicy;
   costs: ReplayCosts;
+  astroFormulaVersion?: AstroFormulaVersion;
 };
 
 export function computeReplayRunId(cfg: ReplayConfig): string {
+  const astroFormulaVersion =
+    cfg.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION;
   return [
     cfg.symbol,
     cfg.date,
@@ -73,7 +80,8 @@ export function computeReplayRunId(cfg: ReplayConfig): string {
     cfg.policy,
     REPLAY_ENGINE_VERSION,
     REPLAY_FORMULA_VERSION,
-    hashConfig({ ...cfg }),
+    astroFormulaVersion,
+    hashConfig({ ...cfg, astroFormulaVersion }),
   ].join(":");
 }
 
