@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          provider_event_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider: string
+          provider_event_id: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          provider_event_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       dashboard_layouts: {
         Row: {
           created_at: string
@@ -91,6 +127,27 @@ export type Database = {
           entry_date?: string
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      local_migrations: {
+        Row: {
+          applied_at: string
+          id: string
+          migration_key: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          id?: string
+          migration_key: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          id?: string
+          migration_key?: string
           user_id?: string
         }
         Relationships: []
@@ -230,37 +287,85 @@ export type Database = {
       subscriptions: {
         Row: {
           activated_at: string
+          cancel_at_period_end: boolean
           created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
           engine_version: string
           expires_at: string | null
           id: string
           license_key: string | null
           plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
           status: string
+          trial_end: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           activated_at?: string
+          cancel_at_period_end?: boolean
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           engine_version?: string
           expires_at?: string | null
           id?: string
           license_key?: string | null
           plan?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
           status?: string
+          trial_end?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           activated_at?: string
+          cancel_at_period_end?: boolean
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           engine_version?: string
           expires_at?: string | null
           id?: string
           license_key?: string | null
           plan?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
           status?: string
+          trial_end?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_counters: {
+        Row: {
+          count: number
+          id: string
+          period: string
+          resource: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          period: string
+          resource: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          period?: string
+          resource?: string
           updated_at?: string
           user_id?: string
         }
