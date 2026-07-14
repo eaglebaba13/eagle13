@@ -18,6 +18,8 @@ import { NewsCenter } from "@/components/NewsPopup";
 import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
+import { orbStyle as orbStyleFor } from "@/lib/planet-style";
+import { deriveTithi, sunTimes } from "@/lib/panchang";
 
 const C = {
   bg: "var(--eb-bg)",
