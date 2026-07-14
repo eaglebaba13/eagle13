@@ -147,6 +147,7 @@ function BrokerPage() {
     refetchInterval: 60_000,
   });
   const decision = decisionQ.data;
+  const dec = decision?.decision;
 
   const activeAdapter = paperMode ? getAdapter("paper") : getAdapter(activeBroker);
 
@@ -236,8 +237,8 @@ function BrokerPage() {
           quantity: ticket.quantity,
           entryPrice: price,
           entryAt: new Date().toISOString(),
-          decisionConfidence: decision?.confidence,
-          riskGrade: decision?.grade,
+          decisionConfidence: dec?.confidence,
+          riskGrade: dec?.grade,
         });
         const next = [t, ...paperTrades];
         setPaperTrades(next);
@@ -528,9 +529,9 @@ function BrokerPage() {
                   <Stat label="Taxes & Fees" value={fmt(preview.taxes)} />
                   <Stat label="Total Cost" value={fmt(preview.totalCost)} />
                   <Stat label="Break-even (₹/unit)" value={fmt(preview.breakEven)} />
-                  <Stat label="Decision Confidence" value={decision ? `${decision.confidence}%` : "—"} />
-                  <Stat label="Risk Grade" value={decision?.grade ?? "—"} />
-                  <Stat label="Regime" value={decision?.regime ?? "—"} />
+                  <Stat label="Decision Confidence" value={dec ? `${Math.round(dec.confidence)}%` : "—"} />
+                  <Stat label="Risk Grade" value={dec?.grade ?? "—"} />
+                  <Stat label="Regime" value={dec?.regime ?? "—"} />
                 </div>
                 <p className="eb-hint">
                   Orders are never auto-placed. You must explicitly click <strong>Confirm & Place</strong>.
