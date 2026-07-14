@@ -15,7 +15,8 @@ import { useIstClock } from "@/hooks/use-scheduler";
 import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
 import { downloadBlob } from "@/lib/download";
 import { inrRound, usdLike } from "@/lib/format";
-import type { LevelKind, LevelStatus, Lvl } from "@/types/levels";
+import type { LevelStatus, Lvl } from "@/types/levels";
+import { buildLevels } from "@/lib/level-engine";
 
 const C = {
   bg: "var(--eb-bg)",
