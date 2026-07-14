@@ -1,5 +1,10 @@
 // Client-safe types + Astro level and signal computations.
 import { isBullNakshatra, isBearNakshatra, type RetroBias } from "./astro-constants";
+import {
+  ASTRO_FORMULA_VERSIONS,
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 export type PlanetRow = {
   planet: string;
@@ -38,12 +43,55 @@ export type MoonPhaseInfo = {
 };
 
 export function computeCycles(prevClose: number): Cycles {
+  if (!Number.isFinite(prevClose) || prevClose <= 0) {
+    throw new TypeError(
+      `computeCycles: previousClose must be a positive finite number, got ${prevClose}`,
+    );
+  }
   const base = Math.floor(prevClose / 360);
   return { base, upper: base * 360, lower: (base - 1) * 360 };
 }
 
-// Astro levels for a given planet degree-in-sign, per the spec formulas.
+/**
+ * Authoritative Gann Nifty Astro level formula (v1.1).
+ *
+ *   R1 = round(upper + degree)
+ *   R2 = round(upper - degree)
+ *   S1 = round(lower + degree)
+ *   S2 = round(lower - degree)
+ *
+ * `degree` MUST be the sidereal degree WITHIN the current sign (0 ≤ d < 30).
+ * Passing an absolute longitude is a bug and is rejected — modulo is NOT
+ * applied here so that upstream data errors surface loudly.
+ */
+export function computeGannAstroLevels(cycles: Cycles, degree: number) {
+  if (!Number.isFinite(degree)) {
+    throw new TypeError(`computeGannAstroLevels: degree must be finite, got ${degree}`);
+  }
+  if (degree < 0 || degree >= 30) {
+    throw new RangeError(
+      `computeGannAstroLevels: degree must be within sign [0,30), got ${degree}. ` +
+        `Pass PlanetRow.degree (degree-in-sign), NOT absDegree (absolute longitude).`,
+    );
+  }
+  const { upper, lower } = cycles;
+  return {
+    r1: Math.round(upper + degree),
+    r2: Math.round(upper - degree),
+    s1: Math.round(lower + degree),
+    s2: Math.round(lower - degree),
+  };
+}
+
+/** Back-compat alias — corrected formula. */
 export function computeAstroLevels(cycles: Cycles, degree: number) {
+  return computeGannAstroLevels(cycles, degree);
+}
+
+/** Legacy cascade (LEGACY_EAGLEBABA_CASCADE_V1) — retained ONLY for
+ *  reproducing historical runs generated before Phase 21.0. Never call this
+ *  from live/backtest/replay code paths. */
+export function computeAstroLevelsLegacyCascade(cycles: Cycles, degree: number) {
   const { upper, lower } = cycles;
   return {
     r1: Math.round(upper + degree),
@@ -51,6 +99,18 @@ export function computeAstroLevels(cycles: Cycles, degree: number) {
     r2: Math.round(upper - 360 + degree),
     s2: Math.round(lower - 360 + degree),
   };
+}
+
+/** Dispatcher used by version-aware consumers (backtest / replay). */
+export function computeLevelsForVersion(
+  cycles: Cycles,
+  degree: number,
+  version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION,
+) {
+  if (version === ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1) {
+    return computeAstroLevelsLegacyCascade(cycles, degree);
+  }
+  return computeGannAstroLevels(cycles, degree);
 }
 
 /* --------------------------- signal engine --------------------------- */
