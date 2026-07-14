@@ -1,4 +1,8 @@
 // Pure, deterministic helpers for the Historical Backtest Engine.
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  type AstroFormulaVersion,
+} from "./engine-version";
 //
 // This module contains NO business logic from the live signal engine — the
 // Astro formulas, cycles, level board and `computeSignal` remain untouched in
@@ -66,7 +70,10 @@ export function computeRunId(cfg: {
   costs: CostModel;
   dataSource: string;
   timezone: string;
+  astroFormulaVersion?: AstroFormulaVersion;
 }): string {
+  const astroFormulaVersion =
+    cfg.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION;
   return [
     cfg.symbol,
     cfg.from,
@@ -75,7 +82,8 @@ export function computeRunId(cfg: {
     cfg.invalidSetupPolicy,
     BACKTEST_ENGINE_VERSION,
     BACKTEST_FORMULA_VERSION,
-    hashConfig({ ...cfg }),
+    astroFormulaVersion,
+    hashConfig({ ...cfg, astroFormulaVersion }),
   ].join(":");
 }
 
