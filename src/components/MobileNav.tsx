@@ -20,6 +20,7 @@ import {
   PlayCircle,
   Layers,
   Brain,
+  ShieldCheck,
   Menu as MenuIcon,
   X,
 } from "lucide-react";
@@ -45,6 +46,7 @@ const DRAWER_ITEMS: NavItem[] = [
   { label: "Market Replay", icon: PlayCircle, to: "/market-replay" },
   { label: "Options Analytics", icon: Layers, to: "/options-analytics" },
   { label: "Decision Engine", icon: Brain, to: "/decision" },
+  { label: "Risk Manager", icon: ShieldCheck, to: "/risk" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
   { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
