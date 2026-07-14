@@ -35,6 +35,7 @@ import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 
@@ -170,6 +171,12 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminPaymentsRoute =
+  AuthenticatedAdminPaymentsRouteImport.update({
+    id: '/admin/payments',
+    path: '/admin/payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -210,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
@@ -239,6 +247,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
@@ -270,6 +279,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/payments'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/payments'
     | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
@@ -360,6 +372,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/payments'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
@@ -573,6 +586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/payments': {
+      id: '/_authenticated/admin/payments'
+      path: '/admin/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -596,6 +616,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -604,6 +625,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
