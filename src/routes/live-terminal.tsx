@@ -470,8 +470,8 @@ function LiveTerminal() {
 
             {/* Controls / export */}
             <div className="no-print" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-              <button onClick={() => exportCsv(data.planets)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
-              <button onClick={() => exportExcel(data.planets)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
+              <button onClick={() => exportCsv(data.planets, data.formulaVersion)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
+              <button onClick={() => exportExcel(data.planets, data.formulaVersion)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
               <button onClick={() => window.print()} style={ghost(C.gold)}><FileText size={14} style={{ verticalAlign: -2 }} /> PDF</button>
               <button onClick={() => window.print()} style={ghost(C.muted)}><Printer size={14} style={{ verticalAlign: -2 }} /> Print</button>
             </div>
