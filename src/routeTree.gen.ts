@@ -18,6 +18,7 @@ import { Route as MarketReplayRouteImport } from './routes/market-replay'
 import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
 import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
 import { Route as LiveLevelsRouteImport } from './routes/live-levels'
+import { Route as DecisionRouteImport } from './routes/decision'
 import { Route as BacktestRouteImport } from './routes/backtest'
 import { Route as AstroRouteImport } from './routes/astro'
 import { Route as IndexRouteImport } from './routes/index'
@@ -71,6 +72,11 @@ const LiveLevelsRoute = LiveLevelsRouteImport.update({
   path: '/live-levels',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DecisionRoute = DecisionRouteImport.update({
+  id: '/decision',
+  path: '/decision',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BacktestRoute = BacktestRouteImport.update({
   id: '/backtest',
   path: '/backtest',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/backtest': typeof BacktestRoute
+  '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/backtest': typeof BacktestRoute
+  '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
   '/backtest': typeof BacktestRoute
+  '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/backtest'
+    | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/backtest'
+    | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/'
     | '/astro'
     | '/backtest'
+    | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -226,6 +238,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AstroRoute: typeof AstroRoute
   BacktestRoute: typeof BacktestRoute
+  DecisionRoute: typeof DecisionRoute
   LiveLevelsRoute: typeof LiveLevelsRoute
   LiveMarketTerminalRoute: typeof LiveMarketTerminalRoute
   LiveTerminalRoute: typeof LiveTerminalRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveLevelsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/decision': {
+      id: '/decision'
+      path: '/decision'
+      fullPath: '/decision'
+      preLoaderRoute: typeof DecisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backtest': {
       id: '/backtest'
       path: '/backtest'
@@ -362,6 +382,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AstroRoute: AstroRoute,
   BacktestRoute: BacktestRoute,
+  DecisionRoute: DecisionRoute,
   LiveLevelsRoute: LiveLevelsRoute,
   LiveMarketTerminalRoute: LiveMarketTerminalRoute,
   LiveTerminalRoute: LiveTerminalRoute,
