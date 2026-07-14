@@ -275,6 +275,7 @@ function Header({
       }}
     >
       <div
+        className="eb-header-brand"
         style={{
           fontFamily: "var(--eb-head)",
           fontSize: 26,
