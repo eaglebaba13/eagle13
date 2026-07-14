@@ -1,0 +1,30 @@
+{
+  "fixtureVersion": "example-2024-01-01T0330Z",
+  "capturedAt": "2026-07-14T00:00:00.000Z",
+  "timestampIso": "2024-01-01T03:30:00.000Z",
+  "timezone": "Asia/Kolkata",
+  "location": {
+    "label": "Mumbai, IN",
+    "latitude": 19.076,
+    "longitude": 72.8777,
+    "elevationMeters": 14
+  },
+  "referenceEngine": "PLACEHOLDER — replace with Swiss Ephemeris 2.10.03 capture",
+  "ayanamshaMode": "Lahiri (Chitrapaksha)",
+  "ayanamsha": 24.15,
+  "nodeMode": "mean",
+  "moonConvention": "geocentric",
+  "planets": [
+    {
+      "planet": "Sun",
+      "siderealLongitude": 256.32,
+      "sign": "Sagittarius",
+      "degreeInSign": 16.32,
+      "nakshatra": "Purva Ashadha",
+      "pada": 3,
+      "retrograde": false,
+      "source": "PLACEHOLDER"
+    }
+  ],
+  "notes": "Schema example only. Runner skips fixtures whose fixtureVersion starts with 'example-'."
+}
