@@ -14,8 +14,13 @@ import { fetchJson } from "./http";
 import { YahooChartSchema, parseProvider } from "./providers";
 import { cached } from "./server-cache";
 import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  type AstroFormulaVersion,
+} from "./engine-version";
+import {
   computeCycles,
-  computeAstroLevels,
+  computeGannAstroLevels,
   type PlanetRow,
   type MoonPhaseInfo,
 } from "./astro-levels";
@@ -67,6 +72,7 @@ export type ReplaySession = {
   runId: string;
   engineVersion: string;
   formulaVersion: string;
+  astroFormulaVersion: AstroFormulaVersion;
   dataQuality: {
     expected: number;
     loaded: number;
@@ -211,14 +217,13 @@ async function fetchPrevDailyClose(
   return null;
 }
 
-function levelsFor(cycles: { upper: number; lower: number }, degree: number) {
-  const base = computeAstroLevels({ base: 0, upper: cycles.upper, lower: cycles.lower }, degree);
-  // Extend with R3/S3 using the same live-levels cascade (display only).
-  return {
-    ...base,
-    r3: Math.round(cycles.upper + degree) + 720,
-    s3: Math.round(cycles.lower + degree) - 720,
-  };
+function levelsFor(
+  cycles: { base: number; upper: number; lower: number },
+  degree: number,
+) {
+  const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
+  // EagleBaba Extended (legacy ±720 cascade) — display-only, not authoritative Gann.
+  return { r1, r2, s1, s2, r3: r1 + 720, s3: s1 - 720 };
 }
 
 function round2(n: number): number {
@@ -230,7 +235,7 @@ export const loadReplaySession = createServerFn({ method: "POST" })
   .handler(
     async ({ data }: { data: ReplayInput }): Promise<ReplaySession> =>
       cached<ReplaySession>(
-        `replay:${data.symbol}:${data.date}:${data.timeframe}`,
+        astroCacheKey(`replay:${data.symbol}:${data.date}:${data.timeframe}`),
         async () => {
           const map = REPLAY_SYMBOLS[data.symbol];
           const win = sessionWindow(data.symbol, data.date);
@@ -277,6 +282,7 @@ export const loadReplaySession = createServerFn({ method: "POST" })
             entryMode: "next_open",
             policy: "conservative",
             costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0 },
+            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
           });
 
           const limitationNote =
@@ -317,6 +323,7 @@ export const loadReplaySession = createServerFn({ method: "POST" })
             runId,
             engineVersion: REPLAY_ENGINE_VERSION,
             formulaVersion: REPLAY_FORMULA_VERSION,
+            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
             dataQuality: { expected, loaded, missing, coveragePct, limitationNote },
             disclaimers: [
               "Replay results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
