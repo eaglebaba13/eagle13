@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useHydrated } from "@/hooks/use-hydrated";
 import { getDecisionSnapshot, type DecisionSnapshot } from "@/lib/decision.functions";
+import { FormulaBadge } from "@/components/FormulaBadge";
 import {
   humanAction,
   humanRegime,
@@ -120,6 +121,9 @@ function Header({ snap }: { snap: DecisionSnapshot }) {
           {snap.context.symbol} · {snap.context.marketOpen ? "Market Open" : "Market Closed"} ·
           {" "}Provider {snap.context.provider} · Options {snap.context.optionsSource} ·
           {" "}Generated {hydrated ? new Date(snap.generatedAt).toLocaleTimeString() : "—"}
+        </div>
+        <div style={{ marginTop: 6 }}>
+          <FormulaBadge version={snap.methodology?.astroFormulaVersion} compact />
         </div>
       </div>
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
