@@ -28,6 +28,7 @@ import { NewsCenter } from "@/components/NewsPopup";
 import { schedule } from "@/lib/scheduler";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { inrRound, usdLike } from "@/lib/format";
 import {
   Activity,
   Bell,
@@ -137,12 +138,7 @@ const MARKET_ORDER: { key: MarketKey; label: string }[] = [
 
 function fmtMoney(m: MarketBlock, n: number): string {
   const inr = m.currency === "₹";
-  return (
-    m.currency +
-    (inr
-      ? Math.round(n).toLocaleString("en-IN")
-      : n.toLocaleString("en-US", { maximumFractionDigits: 2 }))
-  );
+  return m.currency + (inr ? inrRound(n) : usdLike(n));
 }
 
 function useNow(intervalMs = 1000): number {
