@@ -246,7 +246,8 @@ function SignalAccuracyPage() {
 
 function TopSummary({ a }: { a: Analytics }) {
   const s = a.top;
-  const cards: [string, string, "bull" | "bear" | ""?][] = [
+  type Tone = "bull" | "bear" | "";
+  const cards: [string, string, Tone][] = [
     ["Total Trades",    String(s.totalTrades)],
     ["Wins",            String(s.wins), "bull"],
     ["Losses",          String(s.losses), "bear"],
@@ -263,7 +264,7 @@ function TopSummary({ a }: { a: Analytics }) {
     ["Avg Trade",       num(s.avgTrade)],
     ["Avg Winner",      num(s.avgWinner), "bull"],
     ["Avg Loser",       num(-s.avgLoser), "bear"],
-  ];
+  ].map((row) => (row.length === 2 ? [row[0], row[1], ""] : row)) as [string, string, Tone][];
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <SectionHead>📊 Overall Performance</SectionHead>
