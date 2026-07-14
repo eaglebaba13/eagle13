@@ -192,6 +192,7 @@ function BacktestPage() {
       {result ? (
         <>
           <SummaryCards r={result} />
+          <IntegrityPanel r={result} />
           <FiltersBar
             signals={SIGNALS} signalFilter={signalFilter} setSignalFilter={setSignalFilter}
             nakOptions={nakOptions} nakshatraFilter={nakshatraFilter} setNakshatraFilter={setNakshatraFilter}
@@ -204,6 +205,7 @@ function BacktestPage() {
           <MonthlyTable r={result} />
           <EquityCurve r={result} />
           <TradesTable trades={filtered} totalCount={result.trades.length} />
+          <MethodologyDrawer r={result} />
         </>
       ) : null}
     </div>
