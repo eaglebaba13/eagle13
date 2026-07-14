@@ -87,6 +87,13 @@ function AuditDashboard() {
           fixtures. Production astronomy is <strong>not</strong> modified by
           this page.
         </p>
+        <div style={{ marginTop: 10, padding: "8px 12px", border: `1px solid ${C.border}`, borderRadius: 6, background: C.card, color: C.muted, fontSize: 12, maxWidth: 780 }}>
+          <strong style={{ color: C.gold }}>PROVISIONAL METHODOLOGY DEFAULT</strong>
+          {" "}— Mean Node · Geocentric Moon · Lahiri (Chitrapaksha). Preserves current
+          output and matches Drik Panchang default. Not a proven original Gann
+          convention. Evidence tiers: VERIFIED_FACT · DOCUMENTED_DEFAULT ·
+          INFERENCE · HYPOTHESIS · BACKTEST_RESULT.
+        </div>
       </header>
 
       {q.isLoading && <p style={{ color: C.muted }}>Running audit…</p>}
@@ -114,7 +121,7 @@ function AuditDashboard() {
           <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <div>
               <div style={{ color: C.gold, fontWeight: 600 }}>
-                {r.fixture.fixtureVersion}
+                {r.fixture.fixtureVersion} · <span style={{ fontFamily: "monospace", fontSize: 12 }}>{r.mode}</span>
               </div>
               <div style={{ color: C.muted, fontSize: 12 }}>
                 {r.fixture.timestampIso} · {r.fixture.location.label} · {r.fixture.referenceEngine}
@@ -196,7 +203,9 @@ function AuditDashboard() {
           </div>
 
           <div style={{ marginTop: 12, padding: 12, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6 }}>
-            <div style={{ color: C.gold, fontWeight: 600, marginBottom: 4 }}>Verdict</div>
+            <div style={{ color: C.gold, fontWeight: 600, marginBottom: 4 }}>
+              Verdict <span style={{ color: C.muted, fontWeight: 400 }}>· evidence: {r.verdictEvidence}</span>
+            </div>
             <div style={{ fontFamily: "monospace" }}>{r.verdict}</div>
             <div style={{ color: C.muted, marginTop: 4 }}>{r.verdictReason}</div>
           </div>
