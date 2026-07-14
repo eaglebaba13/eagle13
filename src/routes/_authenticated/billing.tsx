@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { getBillingAdapter, type Invoice } from "@/lib/billing-adapter";
 import { PlanBadge, SubscriptionStatusBadge, TrialCountdown } from "@/components/entitlements";
@@ -10,6 +11,13 @@ import {
 } from "@/lib/billing-rpc";
 import { getBillingProviderHealth } from "@/lib/razorpay-checkout.functions";
 import type { BillingProviderHealth } from "@/lib/razorpay-plan-map";
+import { listMyManualPayments } from "@/lib/manual-payment.functions";
+import {
+  isRequestActive,
+  statusTone,
+  type ManualPaymentRequest,
+} from "@/lib/manual-payment";
+import { formatRupees } from "@/lib/manual-payment-config";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({ meta: [{ title: "Billing — EagleBABA" }] }),
@@ -43,12 +51,15 @@ function BillingPageInner() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<BillingProviderHealth | null>(null);
+  const [manualRows, setManualRows] = useState<ManualPaymentRequest[]>([]);
+  const listManual = useServerFn(listMyManualPayments);
 
   useEffect(() => {
     if (!user) return;
     void adapter.getInvoices(user.id).then(setInvoices);
     void getBillingProviderHealth().then(setHealth).catch(() => setHealth(null));
-  }, [user, adapter]);
+    void listManual().then(setManualRows).catch(() => setManualRows([]));
+  }, [user, adapter, listManual]);
 
   const isDev = import.meta.env.DEV;
 
@@ -187,6 +198,64 @@ function BillingPageInner() {
                 </button>
               )}
             </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Manual UPI payments
+            </h2>
+            <Link
+              to="/payment-status"
+              className="text-xs text-amber-300 underline"
+            >
+              Open payment center
+            </Link>
+          </div>
+          {manualRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No UPI payment requests yet. Start one from the{" "}
+              <Link to="/pricing" className="underline">
+                pricing page
+              </Link>
+              .
+            </p>
+          ) : (
+            <ul className="divide-y divide-white/5 text-sm">
+              {manualRows.slice(0, 6).map((r) => {
+                const tone = statusTone(r.status);
+                return (
+                  <li key={r.id} className="py-2 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs truncate">{r.paymentReference}</div>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="capitalize">
+                          {r.requestedPlan} · {r.billingCycle}
+                        </span>{" "}
+                        · {formatRupees(r.expectedAmount)} ·{" "}
+                        {r.utrNumber ? `UTR ${r.utrNumber}` : "no UTR yet"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone.className}`}
+                      >
+                        {tone.label}
+                      </span>
+                      {isRequestActive(r.status) && (
+                        <Link
+                          to="/payment-status"
+                          className="rounded-md border border-white/10 px-2 py-1 text-[11px] hover:bg-white/5"
+                        >
+                          Open
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 

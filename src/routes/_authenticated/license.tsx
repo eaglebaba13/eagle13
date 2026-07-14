@@ -87,8 +87,13 @@ function LicensePage() {
             <UsageMeter label="Exports / day" used={0} limit={effective.plan.limits.exportsPerDay} />
           </div>
           <div className="text-xs text-muted-foreground">
-            Billing provider: {adapter.configured ? adapter.name : "not configured"} · Renews:{" "}
-            {effective.renewsAt ? effective.renewsAt.toLocaleDateString() : "—"}
+            Billing provider:{" "}
+            {effective.provider === "manual_upi"
+              ? "MANUAL UPI"
+              : adapter.configured
+                ? adapter.name
+                : "not configured"}{" "}
+            · Renews: {effective.renewsAt ? effective.renewsAt.toLocaleDateString() : "—"}
           </div>
         </section>
 
