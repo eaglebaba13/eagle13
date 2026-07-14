@@ -206,7 +206,7 @@ describe("computeSignal (buy / sell / wait)", () => {
         [planet({ planet: "Sun", r1: 24500, r2: 24140, s1: 24100, s2: 23740 })],
         23000,
       ),
-      moonNakshatra: "Bharani", // bear nakshatra
+      moonNakshatra: "Vishakha", // bear nakshatra
       retroCount: 4,
       totalPlanets: 9,
       bearRetroCount: 2,
@@ -224,7 +224,7 @@ describe("computeSignal (buy / sell / wait)", () => {
         [planet({ planet: "Sun", r1: 24500, r2: 24140, s1: 24100, s2: 23740 })],
         23000,
       ),
-      moonNakshatra: "Bharani",
+      moonNakshatra: "Vishakha",
       retroCount: 9,
       totalPlanets: 9,
       bearRetroCount: 5,
