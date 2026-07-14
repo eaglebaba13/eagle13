@@ -8,6 +8,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { computeCycles, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
 import { fetchJson } from "./http";
+import { cached } from "./server-cache";
+import { YahooChartSchema, parseProvider } from "./providers";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -56,15 +58,15 @@ export type LiveAstroData = {
 
 async function fetchIndex(symbol: string, name: string): Promise<LiveIndex> {
   const url = `${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
-  const json = (await fetchJson<any>(url)) as any;
-  const result = json?.chart?.result?.[0];
+  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo (${symbol})`);
+  const result = json.chart.result?.[0];
   if (!result) throw new Error(`No data for ${symbol}`);
   const meta = result.meta;
   const ts: number[] = result.timestamp ?? [];
   const q = result.indicators?.quote?.[0] ?? {};
   const candles = ts
-    .map((t, i) => ({ close: q.close?.[i], date: istDateStr(t) }))
-    .filter((c) => c.close != null);
+    .map((t, i) => ({ close: q.close?.[i] ?? null, date: istDateStr(t) }))
+    .filter((c): c is { close: number; date: string } => c.close != null);
   if (candles.length === 0) throw new Error(`No candles for ${symbol}`);
 
   const today = todayIst();
@@ -106,7 +108,10 @@ function levelsFor(cycles: { upper: number; lower: number }, degree: number) {
 }
 
 export const getLiveAstro = createServerFn({ method: "GET" }).handler(
-  async (): Promise<LiveAstroData> => {
+  async (): Promise<LiveAstroData> =>
+    cached<LiveAstroData>(
+      "live-astro",
+      async () => {
     const { computeAstroPositions } = await import("./astro-engine.server");
     // LIVE: positions for the current minute (unchanged formula, live moment).
     const now = new Date();
@@ -150,5 +155,7 @@ export const getLiveAstro = createServerFn({ method: "GET" }).handler(
       moonPhase: positions.moonPhase,
       indices,
     };
-  },
+      },
+      { ttlMs: 30_000 },
+    ),
 );

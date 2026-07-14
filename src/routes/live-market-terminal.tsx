@@ -25,6 +25,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ApexChart } from "@/components/ApexChart";
 import { Disclaimer } from "@/components/Disclaimer";
 import { NewsCenter } from "@/components/NewsPopup";
+import { schedule } from "@/lib/scheduler";
 import {
   Activity,
   Bell,
@@ -145,12 +146,9 @@ function fmtMoney(m: MarketBlock, n: number): string {
 function useNow(intervalMs = 1000): number {
   // Start from a deterministic value so SSR and first client render match;
   // the real clock starts ticking only after mount (avoids hydration drift).
+  // Backed by the single global scheduler instead of a private interval.
   const [now, setNow] = useState(0);
-  useEffect(() => {
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
+  useEffect(() => schedule(() => setNow(Date.now()), intervalMs), [intervalMs]);
   return now;
 }
 

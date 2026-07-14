@@ -14,6 +14,12 @@ import {
   pcrFocusFromOI,
   pcrFocusFromRatio,
 } from "./strategy-math";
+import { cached } from "./server-cache";
+import {
+  YahooChartSchema,
+  NseOptionChainSchema,
+  parseProvider,
+} from "./providers";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -38,12 +44,12 @@ export type Quote = {
 
 async function fetchQuote(symbol: string, name: string): Promise<Quote> {
   const url = `${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=5d`;
-  const json = (await fetchJson<any>(url)) as any;
-  const result = json?.chart?.result?.[0];
+  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo (${symbol})`);
+  const result = json.chart.result?.[0];
   if (!result) throw new Error(`No data for ${symbol}`);
   const meta = result.meta;
   const q = result.indicators?.quote?.[0] ?? {};
-  const closes: number[] = (q.close ?? []).filter((c: number | null) => c != null);
+  const closes: number[] = (q.close ?? []).filter((c): c is number => c != null);
   const price = round2(meta.regularMarketPrice ?? closes[closes.length - 1] ?? 0);
   const prevClose = round2(
     meta.chartPreviousClose ??
@@ -178,7 +184,7 @@ async function fetchOptionChain(
   bullFrac: number,
 ): Promise<OptionChain> {
   try {
-    const json = (await fetchJson<any>(
+    const raw = await fetchJson<unknown>(
       "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY",
       {
         timeoutMs: 6000,
@@ -189,8 +195,9 @@ async function fetchOptionChain(
           Referer: "https://www.nseindia.com/option-chain",
         },
       },
-    )) as any;
-    const rows: any[] = json?.records?.data ?? [];
+    );
+    const json = parseProvider(NseOptionChainSchema, raw, "NSE option chain");
+    const rows = json.records?.data ?? [];
     if (!rows.length) throw new Error("empty chain");
     let totalCallOI = 0,
       totalPutOI = 0,
@@ -204,12 +211,14 @@ async function fetchOptionChain(
       if (ce) {
         totalCallOI += ce.openInterest ?? 0;
         changeCallOI += ce.changeinOpenInterest ?? 0;
-        if ((ce.openInterest ?? 0) > hiCall.oi) hiCall = { oi: ce.openInterest, strike: ce.strikePrice };
+        if ((ce.openInterest ?? 0) > hiCall.oi)
+          hiCall = { oi: ce.openInterest ?? 0, strike: ce.strikePrice ?? 0 };
       }
       if (pe) {
         totalPutOI += pe.openInterest ?? 0;
         changePutOI += pe.changeinOpenInterest ?? 0;
-        if ((pe.openInterest ?? 0) > hiPut.oi) hiPut = { oi: pe.openInterest, strike: pe.strikePrice };
+        if ((pe.openInterest ?? 0) > hiPut.oi)
+          hiPut = { oi: pe.openInterest ?? 0, strike: pe.strikePrice ?? 0 };
       }
     }
     const pcr = totalCallOI ? round2(totalPutOI / totalCallOI) : 1;
@@ -255,7 +264,10 @@ async function fetchOptionChain(
 /* ------------------------------ engine ------------------------------ */
 
 export const getOptionStrategy = createServerFn({ method: "GET" }).handler(
-  async (): Promise<OptionStrategyData> => {
+  async (): Promise<OptionStrategyData> =>
+    cached<OptionStrategyData>(
+      "option-strategy",
+      async () => {
     const now = new Date();
 
     // Astro bias from the EXISTING engine (read-only, unchanged formula).
@@ -453,5 +465,7 @@ export const getOptionStrategy = createServerFn({ method: "GET" }).handler(
       recommendation,
       specialAlert,
     };
-  },
+      },
+      { ttlMs: 30_000 },
+    ),
 );

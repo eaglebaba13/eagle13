@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson, fetchTextSafe } from "./http";
+import { cached } from "./server-cache";
+import { YahooSparkSchema, parseProvider } from "./providers";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -50,11 +52,19 @@ async function fetchSpark(symbols: string[]): Promise<Map<string, SparkMeta>> {
       chunk.join(","),
     )}&range=2d&interval=1d`;
     try {
-      const json = (await fetchJson<any>(url)) as any;
-      const results = json?.spark?.result ?? [];
+      const json = parseProvider(YahooSparkSchema, await fetchJson<unknown>(url), "Yahoo spark");
+      const results = json.spark?.result ?? [];
       for (const r of results) {
-        const meta: SparkMeta | undefined = r?.response?.[0]?.meta;
-        if (meta?.symbol) out.set(meta.symbol, meta);
+        const m = r.response?.[0]?.meta;
+        if (m?.symbol) {
+          out.set(m.symbol, {
+            symbol: m.symbol,
+            shortName: m.shortName,
+            longName: m.longName,
+            regularMarketPrice: m.regularMarketPrice,
+            chartPreviousClose: m.chartPreviousClose,
+          });
+        }
       }
     } catch {
       // Skip this chunk on failure; partial data is better than none.
@@ -158,7 +168,10 @@ const SECTOR_INDICES: { sym: string; name: string; key: string }[] = [
 
 /* --------------------------- F&O server fn ------------------------- */
 
-export const getFno = createServerFn({ method: "GET" }).handler(async () => {
+export const getFno = createServerFn({ method: "GET" }).handler(async () =>
+  cached(
+    "insights-fno",
+    async () => {
   const metas = await fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
     () => new Map<string, SparkMeta>(),
   );
@@ -173,11 +186,17 @@ export const getFno = createServerFn({ method: "GET" }).handler(async () => {
   const bullish = sorted.slice(0, 5);
   const bearish = [...sorted].reverse().slice(0, 5);
   return { bullish, bearish, updatedAt: new Date().toISOString() };
-});
+    },
+    { ttlMs: 30_000 },
+  ),
+);
 
 /* -------------------------- sectors server fn ---------------------- */
 
-export const getSectors = createServerFn({ method: "GET" }).handler(async () => {
+export const getSectors = createServerFn({ method: "GET" }).handler(async () =>
+  cached(
+    "insights-sectors",
+    async () => {
   const [idxMetas, stockMetas] = await Promise.all([
     fetchSpark(SECTOR_INDICES.map((s) => s.sym)).catch(
       () => new Map<string, SparkMeta>(),
@@ -221,7 +240,10 @@ export const getSectors = createServerFn({ method: "GET" }).handler(async () => 
   }
   sectors.sort((a, b) => b.changePct - a.changePct);
   return { sectors, updatedAt: new Date().toISOString() };
-});
+    },
+    { ttlMs: 30_000 },
+  ),
+);
 
 /* ----------------------------- news fn ---------------------------- */
 
@@ -236,7 +258,10 @@ function decode(s: string): string {
     .trim();
 }
 
-export const getNews = createServerFn({ method: "GET" }).handler(async () => {
+export const getNews = createServerFn({ method: "GET" }).handler(async () =>
+  cached(
+    "insights-news",
+    async () => {
   const url =
     "https://news.google.com/rss/search?q=nifty+sensex+stock+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en";
   const xml = await fetchTextSafe(url, {
@@ -267,4 +292,7 @@ export const getNews = createServerFn({ method: "GET" }).handler(async () => {
     if (title) items.push({ title, source: decode(source), link: decode(link), time });
   }
   return { items, updatedAt: new Date().toISOString() };
-});
+    },
+    { ttlMs: 60_000 },
+  ),
+);

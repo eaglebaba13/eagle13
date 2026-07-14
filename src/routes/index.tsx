@@ -13,6 +13,7 @@ import { NewsFeed, newsQuery } from "@/components/NewsFeed";
 import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
 import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
 import logoUrl from "@/assets/eaglebaba-logo.png";
+import { useIstClock } from "@/hooks/use-scheduler";
 
 const marketQuery = () =>
   queryOptions({
@@ -54,23 +55,6 @@ export const Route = createFileRoute("/")({
 
 const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-function useIstClock() {
-  const [now, setNow] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () => {
-      const t = new Date().toLocaleTimeString("en-GB", {
-        hour12: false,
-        timeZone: "Asia/Kolkata",
-      });
-      setNow(t);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 function Dashboard() {
   const { data, dataUpdatedAt, isFetching, refetch } = useSuspenseQuery(marketQuery());

@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson } from "./http";
+import { cached } from "./server-cache";
+import { YahooChartSchema, parseProvider } from "./providers";
 
 export type OHLC = {
   open: number;
@@ -39,8 +41,8 @@ function round2(n: number): number {
 
 async function fetchIndex(symbol: string): Promise<IndexQuote> {
   const url = `${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
-  const json = (await fetchJson<any>(url)) as any;
-  const result = json?.chart?.result?.[0];
+  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo (${symbol})`);
+  const result = json.chart.result?.[0];
   if (!result) throw new Error(`No data for ${symbol}`);
 
   const meta = result.meta;
@@ -49,14 +51,14 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 
   const candles: OHLC[] = ts
     .map((t: number, i: number) => ({
-      open: q.open?.[i],
-      high: q.high?.[i],
-      low: q.low?.[i],
-      close: q.close?.[i],
+      open: q.open?.[i] ?? null,
+      high: q.high?.[i] ?? null,
+      low: q.low?.[i] ?? null,
+      close: q.close?.[i] ?? null,
       date: istDate(t),
     }))
     .filter(
-      (c: OHLC) =>
+      (c): c is OHLC =>
         c.open != null && c.high != null && c.low != null && c.close != null,
     );
 
@@ -96,7 +98,10 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 }
 
 export const getMarketData = createServerFn({ method: "GET" }).handler(
-  async () => {
+  async () =>
+    cached(
+      "market-data",
+      async () => {
     // Core indices are required; secondary instruments degrade gracefully.
     const [niftyR, bankniftyR, vix, btc, gold, silver] = await Promise.all([
       fetchIndex("^NSEI").catch((e) => e as Error),
@@ -121,5 +126,7 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
     }
 
     return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio };
-  },
+      },
+      { ttlMs: 30_000 },
+    ),
 );

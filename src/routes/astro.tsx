@@ -17,6 +17,7 @@ import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
+import { useIstClock } from "@/hooks/use-scheduler";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -82,23 +83,6 @@ export const Route = createFileRoute("/astro")({
 /* ------------------------------ helpers ------------------------------ */
 
 const num = (n: number) => Math.round(n).toLocaleString("en-IN");
-
-function useIstClock() {
-  const [now, setNow] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () =>
-      setNow(
-        new Date().toLocaleTimeString("en-GB", {
-          hour12: false,
-          timeZone: "Asia/Kolkata",
-        }),
-      );
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 function todayIstLabel() {
   return new Date().toLocaleDateString("en-IN", {

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
 import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
+import { cached } from "./server-cache";
 
 export type NewsItem = {
   title: string;
@@ -121,7 +122,10 @@ function toNewsItems(raw: RawRssItem[]): NewsItem[] {
 }
 
 export const getMarketNews = createServerFn({ method: "GET" }).handler(
-  async (): Promise<NewsResult> => {
+  async (): Promise<NewsResult> =>
+    cached<NewsResult>(
+      "market-news",
+      async () => {
     const fetchedAt = new Date().toISOString();
 
     // 1) Primary provider: Google News RSS (reachable from the preview sandbox).
@@ -172,5 +176,7 @@ export const getMarketNews = createServerFn({ method: "GET" }).handler(
         },
       };
     }
-  },
+      },
+      { ttlMs: 60_000 },
+    ),
 );

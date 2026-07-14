@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
+import { useIstClock } from "@/hooks/use-scheduler";
 import {
   Volume2,
   VolumeX,
@@ -83,18 +84,6 @@ export const Route = createFileRoute("/option-strategy")({
 });
 
 /* ------------------------------ helpers ------------------------------ */
-
-function useIstClock() {
-  const [now, setNow] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () =>
-      setNow(new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "Asia/Kolkata" }));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 

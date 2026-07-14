@@ -11,6 +11,7 @@ import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, MapPin, Download, Printer, FileSpreadsheet, FileText, Radio } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
+import { useIstClock } from "@/hooks/use-scheduler";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -114,18 +115,6 @@ const KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vish
 
 const num = (n: number) => Math.round(n).toLocaleString("en-IN");
 const TOL = 8; // NIFTY-point tolerance for a level "touch".
-
-function useIstClock() {
-  const [now, setNow] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () =>
-      setNow(new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "Asia/Kolkata" }));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 function deriveTithi(elongation: number) {
   const e = ((elongation % 360) + 360) % 360;
