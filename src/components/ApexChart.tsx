@@ -1,17 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import type ApexCharts from "apexcharts";
 import type { ApexOptions } from "apexcharts";
 
-/**
- * SSR-safe ApexCharts wrapper. ApexCharts touches `window`, so it is only
- * imported and rendered on the client after mount. Pure presentation — no
- * data logic lives here.
- */
-export function ApexChart({
-  type,
-  series,
-  options,
-  height = 260,
-}: {
+type ApexChartProps = {
   type:
     | "area"
     | "line"
@@ -25,9 +16,16 @@ export function ApexChart({
   series: ApexOptions["series"];
   options: ApexOptions;
   height?: number;
-}) {
+};
+
+/**
+ * SSR-safe ApexCharts wrapper. ApexCharts touches `window`, so it is only
+ * imported and rendered on the client after mount. Pure presentation — no
+ * data logic lives here.
+ */
+function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<ApexCharts | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -86,3 +84,15 @@ export function ApexChart({
     </div>
   );
 }
+
+// Memoized: parent re-renders (e.g. the 1s clock tick) must not re-run the
+// chart unless its actual data/config changes. Compare by serialized value so
+// callers passing fresh object literals each render still hit the cache.
+export const ApexChart = memo(
+  ApexChartImpl,
+  (a, b) =>
+    a.type === b.type &&
+    a.height === b.height &&
+    JSON.stringify(a.series) === JSON.stringify(b.series) &&
+    JSON.stringify(a.options) === JSON.stringify(b.options),
+);
