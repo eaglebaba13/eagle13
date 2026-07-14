@@ -6,6 +6,11 @@
 // calculation reduces existing trade fields — no formula lives here.
 
 import type { BacktestResult, BacktestTrade } from "./backtest.functions";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroFormulaLabel,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -66,6 +71,8 @@ export type TopSummary = {
 
 export type Analytics = {
   top: TopSummary;
+  astroFormulaVersion: AstroFormulaVersion;
+  astroFormulaLabel: string;
   signalBreakdown: Bucket[];
   nakshatra: Bucket[];
   moonSign: Bucket[];
@@ -306,6 +313,10 @@ export function computeAnalytics(r: BacktestResult): Analytics {
 
   return {
     top: topSummary(r),
+    astroFormulaVersion: r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION,
+    astroFormulaLabel: astroFormulaLabel(
+      r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION,
+    ),
     signalBreakdown,
     nakshatra,
     moonSign,
@@ -319,6 +330,31 @@ export function computeAnalytics(r: BacktestResult): Analytics {
     bestNakshatras,
     worstNakshatras,
   };
+}
+
+/**
+ * Refuse to aggregate analytics across a set of runs unless every run was
+ * produced by the same Astro formula version. Prevents silently blending
+ * pre- and post-correction trade data — see Phase 21.0A rules #5 and #15.
+ */
+export class MixedFormulaVersionsError extends Error {
+  constructor(readonly versions: AstroFormulaVersion[]) {
+    super("MIXED_FORMULA_VERSIONS_NOT_ALLOWED");
+    this.name = "MixedFormulaVersionsError";
+  }
+}
+
+export function assertSingleFormulaVersion(
+  results: readonly BacktestResult[],
+): AstroFormulaVersion {
+  const versions = new Set<AstroFormulaVersion>();
+  for (const r of results) {
+    versions.add(r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION);
+  }
+  if (versions.size > 1) {
+    throw new MixedFormulaVersionsError([...versions]);
+  }
+  return versions.values().next().value ?? DEFAULT_ASTRO_FORMULA_VERSION;
 }
 
 function orderBuckets(buckets: Bucket[], order: string[]): Bucket[] {
