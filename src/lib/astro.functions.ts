@@ -4,6 +4,11 @@ import { fetchJson } from "./http";
 import { computeEma } from "./strategy-math";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
+import {
+  DEFAULT_ASTRO_FORMULA_VERSION,
+  astroCacheKey,
+  type AstroFormulaVersion,
+} from "./engine-version";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -68,6 +73,7 @@ async function fetchNifty(): Promise<{
 export type AstroData = {
   asOf: string;
   ayanamsa: number;
+  formulaVersion: AstroFormulaVersion;
   prevClose: number;
   prevDate: string;
   livePrice: number;
@@ -90,7 +96,7 @@ export type AstroData = {
 export const getAstro = createServerFn({ method: "GET" }).handler(
   async (): Promise<AstroData> =>
     cached<AstroData>(
-      "astro",
+      astroCacheKey("astro"),
       async () => {
     const { computeAstroPositions } = await import("./astro-engine.server");
     const anchor = astroAnchorDate();
@@ -111,6 +117,7 @@ export const getAstro = createServerFn({ method: "GET" }).handler(
     return {
       asOf: anchor.toISOString(),
       ayanamsa: positions.ayanamsa,
+      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
       prevClose: market.prevClose,
       prevDate: market.prevDate,
       livePrice: market.livePrice,
