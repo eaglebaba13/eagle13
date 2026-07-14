@@ -90,24 +90,6 @@ function makeFmt(m: MarketBlock) {
   return (n: number) => m.currency + (inr ? inrRound(n) : usdLike(n));
 }
 
-function levelStatus(price: number, value: number, isResistance: boolean, tol: number): LevelStatus {
-  const d = Math.abs(price - value);
-  if (d <= tol) return "TOUCHED";
-  if (isResistance) {
-    if (price > value) return "BROKEN";
-    return d <= tol * 5 ? "ACTIVE" : "PENDING";
-  }
-  if (price < value) return "BROKEN";
-  return d <= tol * 5 ? "ACTIVE" : "PENDING";
-}
-
-function levelSignal(price: number, value: number, isResistance: boolean, tol: number): Lvl["signal"] {
-  const d = Math.abs(price - value);
-  if (d <= tol) return "WATCH";
-  if (isResistance) return price > value ? "BUY" : "SELL";
-  return price < value ? "SELL" : "BUY";
-}
-
 const STATUS_COLOR: Record<LevelStatus, string> = {
   ACTIVE: C.blue,
   TOUCHED: C.gold,
@@ -117,27 +99,7 @@ const STATUS_COLOR: Record<LevelStatus, string> = {
 };
 
 function buildLvls(planets: MarketPlanet[], price: number, tol: number): Lvl[] {
-  const out: Lvl[] = [];
-  for (const p of planets) {
-    const defs: [LevelKind, number, boolean][] = [
-      ["R3", p.r3, true], ["R2", p.r2, true], ["R1", p.r1, true],
-      ["S1", p.s1, false], ["S2", p.s2, false], ["S3", p.s3, false],
-    ];
-    for (const [kind, value, isR] of defs) {
-      const distance = Math.abs(price - value);
-      out.push({
-        planet: p.planet,
-        kind,
-        value,
-        isResistance: isR,
-        distance,
-        status: levelStatus(price, value, isR, tol),
-        signal: levelSignal(price, value, isR, tol),
-        confidence: Math.max(5, Math.min(99, Math.round(100 - Math.min(90, (distance / tol) * 7)))),
-      });
-    }
-  }
-  return out;
+  return buildLevels(planets, price, tol);
 }
 
 /* ------------------------------ exports ------------------------------ */
