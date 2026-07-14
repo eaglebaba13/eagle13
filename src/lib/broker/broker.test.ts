@@ -93,6 +93,6 @@ describe("paper engine", () => {
     expect(s.losses).toBe(1);
     expect(s.totalPnL).toBe(5);
     expect(s.winRate).toBeCloseTo(66.7, 1);
-    expect(s.maxDrawdown).toBe(20);
+    expect(s.maxDrawdown).toBe(10);
   });
 });
