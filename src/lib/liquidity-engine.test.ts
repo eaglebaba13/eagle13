@@ -43,11 +43,13 @@ describe("analyzeLiquidity", () => {
   it("classifies levels as internal vs external relative to swing extremes", () => {
     const cs: Candle[] = [
       c(1, 100, 101, 99, 100),
-      c(2, 100, 120, 100, 110), // outer high
-      c(3, 110, 112, 90, 91),   // outer low
-      c(4, 91, 105, 91, 100),   // inner high
-      c(5, 100, 101, 95, 96),   // inner low
-      c(6, 96, 97, 92, 93),
+      c(2, 100, 120, 100, 110), // outer high (external)
+      c(3, 110, 112, 90, 91),   // outer low (external)
+      c(4, 91, 105, 91, 100),   // inner high (internal)
+      c(5, 100, 101, 95, 96),   // inner low (internal)
+      c(6, 96, 108, 96, 102),   // another inner high
+      c(7, 102, 103, 97, 98),   // another inner low
+      c(8, 98, 99, 94, 95),
     ];
     const rep = analyzeLiquidity(cs, { lookback: 1 });
     const scopes = new Set(rep.levels.map((l) => l.scope));
