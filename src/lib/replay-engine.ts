@@ -21,17 +21,20 @@ export const TIMEFRAMES: Timeframe[] = ["1m", "3m", "5m", "15m", "30m", "60m"];
 // Provider support matrix — Yahoo's public chart endpoint.
 // The route uses this to disable unsupported timeframes at pick time.
 export const YAHOO_TIMEFRAME_LIMITS: Record<Timeframe, { maxAgeDays: number; native: boolean }> = {
-  "1m":  { maxAgeDays: 7,   native: true  },
-  "3m":  { maxAgeDays: 7,   native: false }, // aggregated from 1m
-  "5m":  { maxAgeDays: 60,  native: true  },
-  "15m": { maxAgeDays: 730, native: true  },
-  "30m": { maxAgeDays: 730, native: true  },
-  "60m": { maxAgeDays: 730, native: true  },
+  "1m": { maxAgeDays: 7, native: true },
+  "3m": { maxAgeDays: 7, native: false }, // aggregated from 1m
+  "5m": { maxAgeDays: 60, native: true },
+  "15m": { maxAgeDays: 730, native: true },
+  "30m": { maxAgeDays: 730, native: true },
+  "60m": { maxAgeDays: 730, native: true },
 };
 
 export type Candle = {
-  ts: number;                // epoch ms
-  open: number; high: number; low: number; close: number;
+  ts: number; // epoch ms
+  open: number;
+  high: number;
+  low: number;
+  close: number;
   volume: number;
 };
 
@@ -45,12 +48,14 @@ export type ReplayCosts = {
 };
 
 export const ZERO_REPLAY_COSTS: ReplayCosts = {
-  slippagePct: 0, brokerageFlat: 0, brokeragePct: 0,
+  slippagePct: 0,
+  brokerageFlat: 0,
+  brokeragePct: 0,
 };
 
 export type ReplayConfig = {
   symbol: string;
-  date: string;              // yyyy-mm-dd session date
+  date: string; // yyyy-mm-dd session date
   timeframe: Timeframe;
   provider: string;
   entryMode: EntryMode;
@@ -60,9 +65,14 @@ export type ReplayConfig = {
 
 export function computeReplayRunId(cfg: ReplayConfig): string {
   return [
-    cfg.symbol, cfg.date, cfg.timeframe,
-    cfg.provider, cfg.entryMode, cfg.policy,
-    REPLAY_ENGINE_VERSION, REPLAY_FORMULA_VERSION,
+    cfg.symbol,
+    cfg.date,
+    cfg.timeframe,
+    cfg.provider,
+    cfg.entryMode,
+    cfg.policy,
+    REPLAY_ENGINE_VERSION,
+    REPLAY_FORMULA_VERSION,
     hashConfig({ ...cfg }),
   ].join(":");
 }
@@ -85,7 +95,12 @@ export function assertNoFutureAccess(index: number, upToIndex: number): void {
 /* --------------------------- trade resolution --------------------------- */
 
 export type TradeStatus =
-  | "PENDING" | "ACTIVE" | "TARGET_HIT" | "STOP_HIT" | "EXITED" | "INVALID_SETUP";
+  | "PENDING"
+  | "ACTIVE"
+  | "TARGET_HIT"
+  | "STOP_HIT"
+  | "EXITED"
+  | "INVALID_SETUP";
 
 export type TradeResolve = {
   status: TradeStatus;
@@ -93,8 +108,8 @@ export type TradeResolve = {
   entryIndex: number | null;
   exit: number | null;
   exitIndex: number | null;
-  mfe: number;        // max favourable excursion
-  mae: number;        // max adverse excursion
+  mfe: number; // max favourable excursion
+  mae: number; // max adverse excursion
   ambiguous: boolean;
   grossPnl: number;
   netPnl: number;
@@ -115,7 +130,9 @@ export type TradeParams = {
   costs?: ReplayCosts;
 };
 
-function round2(n: number): number { return Math.round(n * 100) / 100; }
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
 /**
  * Deterministic replay trade resolution walking candle-by-candle.
@@ -125,10 +142,17 @@ export function resolveTrade(p: TradeParams): TradeResolve {
   const costs = p.costs ?? ZERO_REPLAY_COSTS;
   const base: TradeResolve = {
     status: "PENDING",
-    entry: null, entryIndex: null,
-    exit: null, exitIndex: null,
-    mfe: 0, mae: 0, ambiguous: false,
-    grossPnl: 0, netPnl: 0, pnlPct: 0, costs: 0,
+    entry: null,
+    entryIndex: null,
+    exit: null,
+    exitIndex: null,
+    mfe: 0,
+    mae: 0,
+    ambiguous: false,
+    grossPnl: 0,
+    netPnl: 0,
+    pnlPct: 0,
+    costs: 0,
   };
   if (p.target == null || p.stop == null) {
     return { ...base, status: "INVALID_SETUP" };
@@ -159,10 +183,11 @@ export function resolveTrade(p: TradeParams): TradeResolve {
 
   // Apply slippage on entry (adverse direction).
   const dir: 1 | -1 = p.signal === "BUY" ? 1 : -1;
-  const entryAdj = entry * (1 + dir * costs.slippagePct / 100);
+  const entryAdj = entry * (1 + (dir * costs.slippagePct) / 100);
 
   // Walk candles from entryIndex through currentIndex tracking MFE / MAE.
-  let mfe = 0, mae = 0;
+  let mfe = 0,
+    mae = 0;
   let exit: number | null = null;
   let exitIndex: number | null = null;
   let ambiguous = false;
@@ -183,25 +208,61 @@ export function resolveTrade(p: TradeParams): TradeResolve {
       // both-touched policy as the backtest engine.
       if (targetHit && stopHit) {
         ambiguous = true;
-        if (p.policy === "conservative") { exit = p.stop; status = "STOP_HIT"; }
-        else if (p.policy === "optimistic") { exit = p.target; status = "TARGET_HIT"; }
-        else { exit = p.stop; status = "STOP_HIT"; }
-        exitIndex = i; break;
+        if (p.policy === "conservative") {
+          exit = p.stop;
+          status = "STOP_HIT";
+        } else if (p.policy === "optimistic") {
+          exit = p.target;
+          status = "TARGET_HIT";
+        } else {
+          exit = p.stop;
+          status = "STOP_HIT";
+        }
+        exitIndex = i;
+        break;
       }
-      if (targetHit) { exit = p.target; exitIndex = i; status = "TARGET_HIT"; break; }
-      if (stopHit) { exit = p.stop; exitIndex = i; status = "STOP_HIT"; break; }
+      if (targetHit) {
+        exit = p.target;
+        exitIndex = i;
+        status = "TARGET_HIT";
+        break;
+      }
+      if (stopHit) {
+        exit = p.stop;
+        exitIndex = i;
+        status = "STOP_HIT";
+        break;
+      }
       continue;
     }
 
     if (targetHit && stopHit) {
       ambiguous = true;
-      if (p.policy === "conservative") { exit = p.stop; status = "STOP_HIT"; }
-      else if (p.policy === "optimistic") { exit = p.target; status = "TARGET_HIT"; }
-      else { exit = p.stop; status = "STOP_HIT"; }
-      exitIndex = i; break;
+      if (p.policy === "conservative") {
+        exit = p.stop;
+        status = "STOP_HIT";
+      } else if (p.policy === "optimistic") {
+        exit = p.target;
+        status = "TARGET_HIT";
+      } else {
+        exit = p.stop;
+        status = "STOP_HIT";
+      }
+      exitIndex = i;
+      break;
     }
-    if (targetHit) { exit = p.target; exitIndex = i; status = "TARGET_HIT"; break; }
-    if (stopHit) { exit = p.stop; exitIndex = i; status = "STOP_HIT"; break; }
+    if (targetHit) {
+      exit = p.target;
+      exitIndex = i;
+      status = "TARGET_HIT";
+      break;
+    }
+    if (stopHit) {
+      exit = p.stop;
+      exitIndex = i;
+      status = "STOP_HIT";
+      break;
+    }
   }
 
   // If we exhausted visible candles without hitting T/S, keep ACTIVE and
@@ -224,7 +285,9 @@ export function resolveTrade(p: TradeParams): TradeResolve {
     mfe: round2(mfe),
     mae: round2(mae),
     ambiguous,
-    grossPnl, netPnl, pnlPct,
+    grossPnl,
+    netPnl,
+    pnlPct,
     costs: totalCosts,
   };
 }
@@ -233,27 +296,52 @@ export function resolveTrade(p: TradeParams): TradeResolve {
 
 export type ClosedTrade = {
   signal: "BUY" | "SELL";
-  entry: number; exit: number; pnl: number; status: TradeStatus; ambiguous: boolean;
+  entry: number;
+  exit: number;
+  pnl: number;
+  status: TradeStatus;
+  ambiguous: boolean;
 };
 
 export type SessionStats = {
-  totalSignals: number; buy: number; sell: number; wait: number;
-  wins: number; losses: number; ambiguous: number;
-  winRate: number; netPnl: number; profitFactor: number;
-  best: number; worst: number; maxDrawdown: number;
+  totalSignals: number;
+  buy: number;
+  sell: number;
+  wait: number;
+  wins: number;
+  losses: number;
+  ambiguous: number;
+  winRate: number;
+  netPnl: number;
+  profitFactor: number;
+  best: number;
+  worst: number;
+  maxDrawdown: number;
 };
 
 export function summarizeSession(
   trades: ClosedTrade[],
   signals: { buy: number; sell: number; wait: number },
 ): SessionStats {
-  let wins = 0, losses = 0, ambiguous = 0;
-  let sumProfit = 0, sumLoss = 0, cum = 0, peak = 0, maxDD = 0;
-  let best = 0, worst = 0;
+  let wins = 0,
+    losses = 0,
+    ambiguous = 0;
+  let sumProfit = 0,
+    sumLoss = 0,
+    cum = 0,
+    peak = 0,
+    maxDD = 0;
+  let best = 0,
+    worst = 0;
   for (const t of trades) {
     if (t.ambiguous) ambiguous++;
-    if (t.pnl > 0) { wins++; sumProfit += t.pnl; }
-    else if (t.pnl < 0) { losses++; sumLoss += Math.abs(t.pnl); }
+    if (t.pnl > 0) {
+      wins++;
+      sumProfit += t.pnl;
+    } else if (t.pnl < 0) {
+      losses++;
+      sumLoss += Math.abs(t.pnl);
+    }
     cum = round2(cum + t.pnl);
     if (cum > peak) peak = cum;
     if (peak - cum > maxDD) maxDD = round2(peak - cum);
@@ -265,9 +353,17 @@ export function summarizeSession(
   const pf = sumLoss > 0 ? round2(sumProfit / sumLoss) : sumProfit > 0 ? 999 : 0;
   return {
     totalSignals: signals.buy + signals.sell + signals.wait,
-    buy: signals.buy, sell: signals.sell, wait: signals.wait,
-    wins, losses, ambiguous,
-    winRate, netPnl: cum, profitFactor: pf,
-    best: round2(best), worst: round2(worst), maxDrawdown: maxDD,
+    buy: signals.buy,
+    sell: signals.sell,
+    wait: signals.wait,
+    wins,
+    losses,
+    ambiguous,
+    winRate,
+    netPnl: cum,
+    profitFactor: pf,
+    best: round2(best),
+    worst: round2(worst),
+    maxDrawdown: maxDD,
   };
 }

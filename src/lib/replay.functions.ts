@@ -20,20 +20,16 @@ import {
   type MoonPhaseInfo,
 } from "./astro-levels";
 import type { Candle, Timeframe } from "./replay-engine";
-import {
-  REPLAY_ENGINE_VERSION,
-  REPLAY_FORMULA_VERSION,
-  computeReplayRunId,
-} from "./replay-engine";
+import { REPLAY_ENGINE_VERSION, REPLAY_FORMULA_VERSION, computeReplayRunId } from "./replay-engine";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
 export const REPLAY_SYMBOLS = {
-  NIFTY50:   { yahoo: "^NSEI",     label: "NIFTY 50",   currency: "₹", session: "NSE" },
-  BANKNIFTY: { yahoo: "^NSEBANK",  label: "BANK NIFTY", currency: "₹", session: "NSE" },
-  GOLD:      { yahoo: "GC=F",      label: "GOLD",       currency: "$", session: "MCX" },
-  SILVER:    { yahoo: "SI=F",      label: "SILVER",     currency: "$", session: "MCX" },
-  BTC:       { yahoo: "BTC-USD",   label: "BITCOIN",    currency: "$", session: "CRYPTO" },
+  NIFTY50: { yahoo: "^NSEI", label: "NIFTY 50", currency: "₹", session: "NSE" },
+  BANKNIFTY: { yahoo: "^NSEBANK", label: "BANK NIFTY", currency: "₹", session: "NSE" },
+  GOLD: { yahoo: "GC=F", label: "GOLD", currency: "$", session: "MCX" },
+  SILVER: { yahoo: "SI=F", label: "SILVER", currency: "$", session: "MCX" },
+  BTC: { yahoo: "BTC-USD", label: "BITCOIN", currency: "$", session: "CRYPTO" },
 } as const;
 export type ReplaySymbol = keyof typeof REPLAY_SYMBOLS;
 
@@ -48,18 +44,18 @@ export type ReplaySession = {
   label: string;
   currency: string;
   sessionType: "NSE" | "MCX" | "CRYPTO";
-  date: string;                 // yyyy-mm-dd
+  date: string; // yyyy-mm-dd
   timezone: string;
   timeframe: Timeframe;
   provider: string;
-  interval: string;             // provider-native interval
-  candles: Candle[];            // in session-window (may be empty if no data)
+  interval: string; // provider-native interval
+  candles: Candle[]; // in session-window (may be empty if no data)
   prevClose: number;
   prevDate: string;
   sessionStartTs: number;
   sessionEndTs: number;
   cycles: { base: number; upper: number; lower: number };
-  planets: ReplayPlanet[];      // planets with all six levels
+  planets: ReplayPlanet[]; // planets with all six levels
   moonSign: string;
   moonNakshatra: string;
   moonDegree: number;
@@ -99,8 +95,10 @@ function tfSeconds(tf: Timeframe): number {
 }
 
 // Session window in unix seconds for a given yyyy-mm-dd.
-function sessionWindow(symbol: ReplaySymbol, dateIso: string):
-  { start: number; end: number; tz: string } {
+function sessionWindow(
+  symbol: ReplaySymbol,
+  dateIso: string,
+): { start: number; end: number; tz: string } {
   const [y, m, d] = dateIso.split("-").map(Number);
   const utcMidnight = Date.UTC(y, m - 1, d, 0, 0, 0) / 1000;
   if (symbol === "BTC") {
@@ -109,7 +107,7 @@ function sessionWindow(symbol: ReplaySymbol, dateIso: string):
   if (symbol === "GOLD" || symbol === "SILVER") {
     // MCX session (approx): 09:00 – 23:30 IST. IST = UTC+5:30.
     return {
-      start: utcMidnight + (9 * 3600) - (5 * 3600 + 1800),
+      start: utcMidnight + 9 * 3600 - (5 * 3600 + 1800),
       end: utcMidnight + (23 * 3600 + 1800) - (5 * 3600 + 1800),
       tz: "Asia/Kolkata",
     };
@@ -131,7 +129,11 @@ async function fetchIntraday(
   const url =
     `${YAHOO}${encodeURIComponent(yahooSymbol)}` +
     `?interval=${interval}&period1=${startSec}&period2=${endSec}&includePrePost=false`;
-  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo intraday (${yahooSymbol})`);
+  const json = parseProvider(
+    YahooChartSchema,
+    await fetchJson<unknown>(url),
+    `Yahoo intraday (${yahooSymbol})`,
+  );
   const result = json.chart.result?.[0];
   if (!result) return [];
   const ts = result.timestamp ?? [];
@@ -139,11 +141,17 @@ async function fetchIntraday(
   const rawVol = (q as { volume?: (number | null)[] }).volume ?? [];
   const out: Candle[] = [];
   for (let i = 0; i < ts.length; i++) {
-    const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i];
+    const o = q.open?.[i],
+      h = q.high?.[i],
+      l = q.low?.[i],
+      c = q.close?.[i];
     if (o == null || h == null || l == null || c == null) continue;
     out.push({
       ts: ts[i] * 1000,
-      open: o, high: h, low: l, close: c,
+      open: o,
+      high: h,
+      low: l,
+      close: c,
       volume: (rawVol[i] as number | null) ?? 0,
     });
   }
@@ -175,7 +183,8 @@ function aggregateTo3m(candles: Candle[]): Candle[] {
 }
 
 async function fetchPrevDailyClose(
-  yahooSymbol: string, dateIso: string,
+  yahooSymbol: string,
+  dateIso: string,
 ): Promise<{ close: number; date: string } | null> {
   const [y, m, d] = dateIso.split("-").map(Number);
   const endUtc = Math.floor(Date.UTC(y, m - 1, d, 0, 0, 0) / 1000);
@@ -183,7 +192,11 @@ async function fetchPrevDailyClose(
   const url =
     `${YAHOO}${encodeURIComponent(yahooSymbol)}` +
     `?interval=1d&period1=${startUtc}&period2=${endUtc}`;
-  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo daily (${yahooSymbol})`);
+  const json = parseProvider(
+    YahooChartSchema,
+    await fetchJson<unknown>(url),
+    `Yahoo daily (${yahooSymbol})`,
+  );
   const result = json.chart.result?.[0];
   if (!result) return null;
   const ts = result.timestamp ?? [];
@@ -208,104 +221,110 @@ function levelsFor(cycles: { upper: number; lower: number }, degree: number) {
   };
 }
 
-function round2(n: number): number { return Math.round(n * 100) / 100; }
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
 export const loadReplaySession = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
-  .handler(async ({ data }: { data: ReplayInput }): Promise<ReplaySession> =>
-    cached<ReplaySession>(
-      `replay:${data.symbol}:${data.date}:${data.timeframe}`,
-      async () => {
-        const map = REPLAY_SYMBOLS[data.symbol];
-        const win = sessionWindow(data.symbol, data.date);
-        const interval = providerInterval(data.timeframe);
+  .handler(
+    async ({ data }: { data: ReplayInput }): Promise<ReplaySession> =>
+      cached<ReplaySession>(
+        `replay:${data.symbol}:${data.date}:${data.timeframe}`,
+        async () => {
+          const map = REPLAY_SYMBOLS[data.symbol];
+          const win = sessionWindow(data.symbol, data.date);
+          const interval = providerInterval(data.timeframe);
 
-        const rawCandles = await fetchIntraday(map.yahoo, win.start, win.end, interval);
-        const filtered = rawCandles.filter((c) => c.ts >= win.start * 1000 && c.ts <= win.end * 1000);
-        const candles = data.timeframe === "3m" ? aggregateTo3m(filtered) : filtered;
+          const rawCandles = await fetchIntraday(map.yahoo, win.start, win.end, interval);
+          const filtered = rawCandles.filter(
+            (c) => c.ts >= win.start * 1000 && c.ts <= win.end * 1000,
+          );
+          const candles = data.timeframe === "3m" ? aggregateTo3m(filtered) : filtered;
 
-        const prev = await fetchPrevDailyClose(map.yahoo, data.date);
-        const prevClose = prev?.close ?? candles[0]?.open ?? 0;
-        const prevDate = prev?.date ?? "unknown";
+          const prev = await fetchPrevDailyClose(map.yahoo, data.date);
+          const prevClose = prev?.close ?? candles[0]?.open ?? 0;
+          const prevDate = prev?.date ?? "unknown";
 
-        const cycles = computeCycles(prevClose);
+          const cycles = computeCycles(prevClose);
 
-        // Astro anchor: 09:00 IST for equities/commodities, 00:00 UTC for BTC.
-        // Same anchor policy as the backtest engine.
-        const [yy, mm, dd] = data.date.split("-").map(Number);
-        const anchorMs = data.symbol === "BTC"
-          ? Date.UTC(yy, mm - 1, dd, 0, 0, 0)
-          : Date.UTC(yy, mm - 1, dd, 3, 30, 0); // 09:00 IST
-        const { computeAstroPositions } = await import("./astro-engine.server");
-        const positions = computeAstroPositions(new Date(anchorMs));
+          // Astro anchor: 09:00 IST for equities/commodities, 00:00 UTC for BTC.
+          // Same anchor policy as the backtest engine.
+          const [yy, mm, dd] = data.date.split("-").map(Number);
+          const anchorMs =
+            data.symbol === "BTC"
+              ? Date.UTC(yy, mm - 1, dd, 0, 0, 0)
+              : Date.UTC(yy, mm - 1, dd, 3, 30, 0); // 09:00 IST
+          const { computeAstroPositions } = await import("./astro-engine.server");
+          const positions = computeAstroPositions(new Date(anchorMs));
 
-        const planets: ReplayPlanet[] = positions.planets.map((p) => ({
-          ...p,
-          ...levelsFor(cycles, p.degree),
-        }));
+          const planets: ReplayPlanet[] = positions.planets.map((p) => ({
+            ...p,
+            ...levelsFor(cycles, p.degree),
+          }));
 
-        const expected = Math.floor((win.end - win.start) / tfSeconds(data.timeframe));
-        const loaded = candles.length;
-        const missing = Math.max(0, expected - loaded);
-        const coveragePct = expected > 0 ? round2((loaded / expected) * 100) : 0;
+          const expected = Math.floor((win.end - win.start) / tfSeconds(data.timeframe));
+          const loaded = candles.length;
+          const missing = Math.max(0, expected - loaded);
+          const coveragePct = expected > 0 ? round2((loaded / expected) * 100) : 0;
 
-        const provider = "yahoo";
-        const runId = computeReplayRunId({
-          symbol: data.symbol,
-          date: data.date,
-          timeframe: data.timeframe,
-          provider,
-          entryMode: "next_open",
-          policy: "conservative",
-          costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0 },
-        });
+          const provider = "yahoo";
+          const runId = computeReplayRunId({
+            symbol: data.symbol,
+            date: data.date,
+            timeframe: data.timeframe,
+            provider,
+            entryMode: "next_open",
+            policy: "conservative",
+            costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0 },
+          });
 
-        const limitationNote =
-          data.timeframe === "1m"
-            ? "Yahoo 1m intraday is limited to the last ~7 days. Older dates return no data."
-            : data.timeframe === "3m"
-              ? "3m candles are aggregated from Yahoo 1m — same 7-day limit."
-              : data.timeframe === "5m"
-                ? "Yahoo 5m intraday is limited to the last ~60 days."
-                : "Yahoo 15m / 30m / 60m intraday is limited to the last ~730 days.";
+          const limitationNote =
+            data.timeframe === "1m"
+              ? "Yahoo 1m intraday is limited to the last ~7 days. Older dates return no data."
+              : data.timeframe === "3m"
+                ? "3m candles are aggregated from Yahoo 1m — same 7-day limit."
+                : data.timeframe === "5m"
+                  ? "Yahoo 5m intraday is limited to the last ~60 days."
+                  : "Yahoo 15m / 30m / 60m intraday is limited to the last ~730 days.";
 
-        return {
-          symbol: data.symbol,
-          yahooSymbol: map.yahoo,
-          label: map.label,
-          currency: map.currency,
-          sessionType: map.session,
-          date: data.date,
-          timezone: win.tz,
-          timeframe: data.timeframe,
-          provider,
-          interval,
-          candles,
-          prevClose: round2(prevClose),
-          prevDate,
-          sessionStartTs: win.start * 1000,
-          sessionEndTs: win.end * 1000,
-          cycles,
-          planets,
-          moonSign: positions.moonSign,
-          moonNakshatra: positions.moonNakshatra,
-          moonDegree: positions.moonDegree,
-          retroCount: positions.retroCount,
-          bullRetroCount: positions.bullRetroCount,
-          bearRetroCount: positions.bearRetroCount,
-          moonPhase: positions.moonPhase,
-          ayanamsa: positions.ayanamsa,
-          runId,
-          engineVersion: REPLAY_ENGINE_VERSION,
-          formulaVersion: REPLAY_FORMULA_VERSION,
-          dataQuality: { expected, loaded, missing, coveragePct, limitationNote },
-          disclaimers: [
-            "Replay results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
-            "Astro state is anchored at session open — identical to the live signal engine and historical backtest.",
-            "Provider: Yahoo Finance (public chart endpoint). Some sessions or minute-precision windows may be unavailable.",
-          ],
-        };
-      },
-      { ttlMs: 6 * 3600_000, swrMs: 18 * 3600_000 },
-    ),
+          return {
+            symbol: data.symbol,
+            yahooSymbol: map.yahoo,
+            label: map.label,
+            currency: map.currency,
+            sessionType: map.session,
+            date: data.date,
+            timezone: win.tz,
+            timeframe: data.timeframe,
+            provider,
+            interval,
+            candles,
+            prevClose: round2(prevClose),
+            prevDate,
+            sessionStartTs: win.start * 1000,
+            sessionEndTs: win.end * 1000,
+            cycles,
+            planets,
+            moonSign: positions.moonSign,
+            moonNakshatra: positions.moonNakshatra,
+            moonDegree: positions.moonDegree,
+            retroCount: positions.retroCount,
+            bullRetroCount: positions.bullRetroCount,
+            bearRetroCount: positions.bearRetroCount,
+            moonPhase: positions.moonPhase,
+            ayanamsa: positions.ayanamsa,
+            runId,
+            engineVersion: REPLAY_ENGINE_VERSION,
+            formulaVersion: REPLAY_FORMULA_VERSION,
+            dataQuality: { expected, loaded, missing, coveragePct, limitationNote },
+            disclaimers: [
+              "Replay results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
+              "Astro state is anchored at session open — identical to the live signal engine and historical backtest.",
+              "Provider: Yahoo Finance (public chart endpoint). Some sessions or minute-precision windows may be unavailable.",
+            ],
+          };
+        },
+        { ttlMs: 6 * 3600_000, swrMs: 18 * 3600_000 },
+      ),
   );
