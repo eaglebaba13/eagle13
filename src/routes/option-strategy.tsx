@@ -191,6 +191,14 @@ function OptionStrategyTerminal() {
         @keyframes os10FlashDn { 0%{background:rgba(239,68,68,.55)} 100%{background:transparent} }
         .os10-flash-up { animation:os10FlashUp .7s ease-out; border-radius:5px; }
         .os10-flash-dn { animation:os10FlashDn .7s ease-out; border-radius:5px; }
+        .ossec-head, .ossec-row { display:grid; grid-template-columns:40px minmax(120px,1.3fr) 96px 74px 74px 84px 96px 100px; gap:8px; align-items:center; padding:8px 14px; }
+        .ossec-head { color:var(--eb-muted); font-size:10px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--eb-border); font-weight:600; }
+        .ossec-row { border-bottom:1px solid rgba(255,255,255,0.05); font-size:12.5px; background:var(--eb-card); }
+        @media (max-width:720px){
+          .ossec-head { display:none; }
+          .ossec-row { grid-template-columns:34px 1fr auto; grid-auto-rows:auto; row-gap:2px; }
+          .ossec-row .ossec-c-adv, .ossec-row .ossec-c-dec, .ossec-row .ossec-c-str, .ossec-row .ossec-c-status, .ossec-row .ossec-c-contrib { display:none; }
+        }
         @media (max-width:720px){
           .os10-head { display:none; }
           .os10-row { grid-template-columns:34px 1fr auto; grid-auto-rows:auto; row-gap:2px; }
@@ -342,28 +350,7 @@ function OptionStrategyTerminal() {
             <Top10Widget stocks={data.top10} />
 
             {/* Sector strength */}
-            <Card style={{ padding: 0, marginBottom: 14 }}>
-              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>SECTOR STRENGTH</div>
-              <div style={{ overflowX: "auto" }}>
-                <table className="os-table">
-                  <thead>
-                    <tr><th>Sector</th><th>Change %</th><th>Advance</th><th>Decline</th><th>Strength</th><th>Bias</th></tr>
-                  </thead>
-                  <tbody>
-                    {data.sectors.map((s) => (
-                      <tr key={s.key}>
-                        <td style={{ fontWeight: 700 }}>{s.name}</td>
-                        <td className="os-mono" style={{ color: s.changePct >= 0 ? C.green : C.red }}>{s.changePct >= 0 ? "▲" : "▼"} {Math.abs(s.changePct).toFixed(2)}%</td>
-                        <td className="os-mono" style={{ color: C.green }}>{s.advance}</td>
-                        <td className="os-mono" style={{ color: C.red }}>{s.decline}</td>
-                        <td className="os-mono">{s.strength.toFixed(0)}</td>
-                        <td style={{ color: s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.gold, fontWeight: 700 }}>{s.bias}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+            <SectorStrengthWidget sectors={data.sectors} />
 
             {/* Option chain */}
             <Card style={{ marginBottom: 14 }}>
@@ -383,7 +370,6 @@ function OptionStrategyTerminal() {
             {/* Charts */}
             <div className="os-grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 14 }}>
               <Card>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SECTOR STRENGTH CHART</div>
                 <SectorChart sectors={data.sectors} />
               </Card>
               <Card>
@@ -464,6 +450,134 @@ function BreadthCard({ title, b, total }: { title: string; b: OptionStrategyData
 }
 
 type SortMode = "change" | "weight" | "impact" | "alpha";
+
+/* ------------------------ sector sorting engine ------------------------ */
+
+type SectorSortMode = "change" | "smart" | "strength" | "advdecl" | "alpha";
+
+const SECTOR_SORT_LABELS: { value: SectorSortMode; label: string }[] = [
+  { value: "change", label: "Change % (Default)" },
+  { value: "smart", label: "Smart Impact Ranking" },
+  { value: "strength", label: "Strength Score" },
+  { value: "advdecl", label: "Advance/Decline" },
+  { value: "alpha", label: "Alphabetical" },
+];
+
+type SectorRow = Sector & {
+  advDeclScore: number; // -1..1
+  smartScore: number; // signed impact proxy
+  contribution: number; // % share of total sector movement
+};
+
+function enrichSectors(sectors: Sector[]): SectorRow[] {
+  const totalAbs = sectors.reduce((s, x) => s + Math.abs(x.changePct), 0) || 1;
+  return sectors.map((s) => {
+    const adTotal = s.advance + s.decline || 1;
+    const advDeclScore = Math.round(((s.advance - s.decline) / adTotal) * 100) / 100;
+    // Smart Score = Change % × conviction (breadth) — preserves direction sign.
+    const smartScore = Math.round(s.changePct * (1 + Math.abs(advDeclScore)) * 100) / 100;
+    const contribution = Math.round((s.changePct / totalAbs) * 100 * 10) / 10;
+    return { ...s, advDeclScore, smartScore, contribution };
+  });
+}
+
+function sortSectors(rows: SectorRow[], mode: SectorSortMode): SectorRow[] {
+  const arr = [...rows];
+  if (mode === "alpha") {
+    arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  }
+  arr.sort((a, b) => {
+    if (mode === "smart") {
+      if (b.smartScore !== a.smartScore) return b.smartScore - a.smartScore;
+    } else if (mode === "strength") {
+      if (b.strength !== a.strength) return b.strength - a.strength;
+    } else if (mode === "advdecl") {
+      if (b.advDeclScore !== a.advDeclScore) return b.advDeclScore - a.advDeclScore;
+    }
+    // default + tie-breakers: Change % → Strength → Advance/Decline → Alphabetical
+    if (b.changePct !== a.changePct) return b.changePct - a.changePct;
+    if (b.strength !== a.strength) return b.strength - a.strength;
+    if (b.advDeclScore !== a.advDeclScore) return b.advDeclScore - a.advDeclScore;
+    return a.name.localeCompare(b.name);
+  });
+  return arr;
+}
+
+function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
+  const [mode, setMode] = useState<SectorSortMode>("change");
+  useEffect(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-sort") : null;
+    if (saved && ["change", "smart", "strength", "advdecl", "alpha"].includes(saved)) setMode(saved as SectorSortMode);
+  }, []);
+  const changeMode = (m: SectorSortMode) => {
+    setMode(m);
+    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-sort", m);
+  };
+  const rows = useMemo(() => sortSectors(enrichSectors(sectors), mode), [sectors, mode]);
+  const topKey = rows.length ? rows[0].key : null;
+  const botKey = rows.length ? rows[rows.length - 1].key : null;
+
+  return (
+    <Card style={{ padding: 0, marginBottom: 14 }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>SECTOR STRENGTH</span>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}>
+          Sort By
+          <select className="os10-select" value={mode} onChange={(e) => changeMode(e.target.value as SectorSortMode)}>
+            {SECTOR_SORT_LABELS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="ossec-head">
+        <span>Rank</span><span>Sector</span><span>Live %</span><span>Adv</span><span>Dec</span><span>Strength</span><span>Status</span><span>Contrib</span>
+      </div>
+      <motion.div layout>
+        <AnimatePresence initial={false}>
+          {rows.map((s, i) => {
+            const isTop = s.key === topKey;
+            const isBot = s.key === botKey;
+            const glow = isTop
+              ? { border: `1px solid ${C.green}`, boxShadow: "0 0 14px rgba(16,185,129,.35)" }
+              : isBot
+                ? { border: `1px solid ${C.red}`, boxShadow: "0 0 14px rgba(239,68,68,.35)" }
+                : {};
+            const statusColor = s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.muted;
+            return (
+              <motion.div
+                key={s.key}
+                layout
+                layoutId={`sec-${s.key}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ layout: { type: "spring", stiffness: 500, damping: 40 }, opacity: { duration: 0.2 } }}
+                className="ossec-row"
+                style={glow}
+              >
+                <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>#{i + 1}</span>
+                <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                  <span style={{ fontWeight: 700 }}>{s.name}</span>
+                  {isTop ? <span className="os10-badge" style={{ color: "#0b1420", background: C.gold, marginTop: 2, width: "fit-content" }}>🏆 TOP SECTOR</span> : null}
+                  {isBot ? <span className="os10-badge" style={{ color: "#fff", background: C.red, marginTop: 2, width: "fit-content" }}>📉 WEAKEST</span> : null}
+                </span>
+                <span><AnimatedChange value={s.changePct} /></span>
+                <span className="os-mono ossec-c-adv" style={{ color: C.green }}>{s.advance}</span>
+                <span className="os-mono ossec-c-dec" style={{ color: C.red }}>{s.decline}</span>
+                <span className="os-mono ossec-c-str" style={{ color: s.strength >= 0 ? C.green : C.red }}>{s.strength.toFixed(0)}</span>
+                <span className="ossec-c-status" style={{ color: statusColor, fontWeight: 700 }}>{s.bias}</span>
+                <span className="os-mono ossec-c-contrib" style={{ color: s.contribution >= 0 ? C.green : C.red }}>{s.contribution >= 0 ? "+" : ""}{s.contribution.toFixed(1)}%</span>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+    </Card>
+  );
+}
 
 const SORT_LABELS: { value: SortMode; label: string }[] = [
   { value: "change", label: "Change % (Default)" },
@@ -639,39 +753,80 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
 }
 
 function SectorChart({ sectors }: { sectors: Sector[] }) {
-  const series = useMemo(() => [{ name: "Change %", data: sectors.map((s) => Number(s.changePct.toFixed(2))) }], [sectors]);
+  const [horizontal, setHorizontal] = useState(true);
+  useEffect(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-orient") : null;
+    if (saved === "v") setHorizontal(false);
+    else if (saved === "h") setHorizontal(true);
+  }, []);
+  const setOrient = (h: boolean) => {
+    setHorizontal(h);
+    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-orient", h ? "h" : "v");
+  };
+  // Sort by live Change % descending; highest sector shown on top / first.
+  const ordered = useMemo(() => {
+    const arr = [...sectors].sort((a, b) => b.changePct - a.changePct || a.name.localeCompare(b.name));
+    // Horizontal bars render bottom-to-top, so reverse to keep highest on top.
+    return horizontal ? [...arr].reverse() : arr;
+  }, [sectors, horizontal]);
+  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false } },
-      plotOptions: { bar: { horizontal: true, distributed: true, borderRadius: 4 } },
-      colors: sectors.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: sectors.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" } } },
+      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
+      plotOptions: { bar: { horizontal, distributed: true, borderRadius: 4, columnWidth: "60%" } },
+      colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
+      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: horizontal ? 0 : -45 } },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },
       dataLabels: { enabled: false },
       tooltip: { theme: "dark" as const },
     }),
-    [sectors],
+    [ordered, horizontal],
   );
-  return <ApexChart type="bar" series={series} options={options as any} height={300} />;
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>SECTOR STRENGTH CHART</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            onClick={() => setOrient(true)}
+            className="os-mono"
+            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: horizontal ? C.blue : C.muted, border: `1px solid ${horizontal ? C.blue : C.border}` }}
+          >
+            Horizontal
+          </button>
+          <button
+            onClick={() => setOrient(false)}
+            className="os-mono"
+            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: !horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: !horizontal ? C.blue : C.muted, border: `1px solid ${!horizontal ? C.blue : C.border}` }}
+          >
+            Vertical
+          </button>
+        </div>
+      </div>
+      <ApexChart type="bar" series={series} options={options as any} height={300} />
+    </>
+  );
 }
 
 function TopChart({ stocks }: { stocks: TopStock[] }) {
-  const series = useMemo(() => [{ name: "Change %", data: stocks.map((s) => Number(s.changePct.toFixed(2))) }], [stocks]);
+  // Sort by live Change % descending: highest gainer first, largest loser last.
+  const ordered = useMemo(() => sortStocks(stocks, "change"), [stocks]);
+  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false } },
+      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
       plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: "60%" } },
-      colors: stocks.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: stocks.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 } },
+      colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
+      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 } },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },
       dataLabels: { enabled: false },
       tooltip: { theme: "dark" as const },
     }),
-    [stocks],
+    [ordered],
   );
   return <ApexChart type="bar" series={series} options={options as any} height={300} />;
 }
