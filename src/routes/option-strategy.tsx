@@ -191,6 +191,14 @@ function OptionStrategyTerminal() {
         @keyframes os10FlashDn { 0%{background:rgba(239,68,68,.55)} 100%{background:transparent} }
         .os10-flash-up { animation:os10FlashUp .7s ease-out; border-radius:5px; }
         .os10-flash-dn { animation:os10FlashDn .7s ease-out; border-radius:5px; }
+        .ossec-head, .ossec-row { display:grid; grid-template-columns:40px minmax(120px,1.3fr) 96px 74px 74px 84px 96px 100px; gap:8px; align-items:center; padding:8px 14px; }
+        .ossec-head { color:var(--eb-muted); font-size:10px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--eb-border); font-weight:600; }
+        .ossec-row { border-bottom:1px solid rgba(255,255,255,0.05); font-size:12.5px; background:var(--eb-card); }
+        @media (max-width:720px){
+          .ossec-head { display:none; }
+          .ossec-row { grid-template-columns:34px 1fr auto; grid-auto-rows:auto; row-gap:2px; }
+          .ossec-row .ossec-c-adv, .ossec-row .ossec-c-dec, .ossec-row .ossec-c-str, .ossec-row .ossec-c-status, .ossec-row .ossec-c-contrib { display:none; }
+        }
         @media (max-width:720px){
           .os10-head { display:none; }
           .os10-row { grid-template-columns:34px 1fr auto; grid-auto-rows:auto; row-gap:2px; }
