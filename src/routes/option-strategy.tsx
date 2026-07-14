@@ -86,7 +86,7 @@ export const Route = createFileRoute("/option-strategy")({
 
 /* ------------------------------ helpers ------------------------------ */
 
-const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
+const inr = inrPrice;
 
 function beep(freq = 880) {
   try {
