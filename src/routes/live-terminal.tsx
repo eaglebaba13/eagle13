@@ -15,6 +15,8 @@ import { useIstClock } from "@/hooks/use-scheduler";
 import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
 import { downloadBlob } from "@/lib/download";
 import { deriveTithi, deriveKarana, deriveYoga, sunTimes } from "@/lib/panchang";
+import { inrRound } from "@/lib/format";
+import type { LevelKind, LevelStatus, Lvl } from "@/types/levels";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -84,21 +86,8 @@ const LOCATIONS: Record<string, { label: string; lat: number; lng: number }> = {
 
 /* ------------------------------ helpers ------------------------------ */
 
-const num = (n: number) => Math.round(n).toLocaleString("en-IN");
+const num = inrRound;
 const TOL = 8; // NIFTY-point tolerance for a level "touch".
-
-type LevelKind = "R3" | "R2" | "R1" | "S1" | "S2" | "S3";
-type LevelStatus = "ACTIVE" | "TOUCHED" | "BROKEN" | "REJECTED" | "PENDING";
-type Lvl = {
-  planet: string;
-  kind: LevelKind;
-  value: number;
-  isResistance: boolean;
-  distance: number;
-  status: LevelStatus;
-  signal: "BUY" | "SELL" | "WATCH";
-  confidence: number;
-};
 
 function levelStatus(price: number, value: number, isResistance: boolean): LevelStatus {
   const d = Math.abs(price - value);

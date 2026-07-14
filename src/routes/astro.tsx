@@ -20,6 +20,7 @@ import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { orbStyle as orbStyleFor } from "@/lib/planet-style";
 import { deriveTithi, sunTimes } from "@/lib/panchang";
+import { inrRound } from "@/lib/format";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -84,7 +85,7 @@ export const Route = createFileRoute("/astro")({
 
 /* ------------------------------ helpers ------------------------------ */
 
-const num = (n: number) => Math.round(n).toLocaleString("en-IN");
+const num = inrRound;
 
 function todayIstLabel() {
   return new Date().toLocaleDateString("en-IN", {

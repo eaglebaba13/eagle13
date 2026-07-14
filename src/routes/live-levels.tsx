@@ -14,6 +14,8 @@ import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
 import { downloadBlob } from "@/lib/download";
+import { inrRound, usdLike } from "@/lib/format";
+import type { LevelKind, LevelStatus, Lvl } from "@/types/levels";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -85,25 +87,8 @@ function tolFor(price: number): number {
 
 function makeFmt(m: MarketBlock) {
   const inr = m.currency === "₹";
-  return (n: number) =>
-    m.currency +
-    (inr
-      ? Math.round(n).toLocaleString("en-IN")
-      : n.toLocaleString("en-US", { maximumFractionDigits: 2 }));
+  return (n: number) => m.currency + (inr ? inrRound(n) : usdLike(n));
 }
-
-type LevelKind = "R3" | "R2" | "R1" | "S1" | "S2" | "S3";
-type LevelStatus = "ACTIVE" | "TOUCHED" | "BROKEN" | "REJECTED" | "PENDING";
-type Lvl = {
-  planet: string;
-  kind: LevelKind;
-  value: number;
-  isResistance: boolean;
-  distance: number;
-  status: LevelStatus;
-  signal: "BUY" | "SELL" | "WATCH";
-  confidence: number;
-};
 
 function levelStatus(price: number, value: number, isResistance: boolean, tol: number): LevelStatus {
   const d = Math.abs(price - value);
