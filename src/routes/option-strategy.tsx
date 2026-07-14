@@ -370,7 +370,6 @@ function OptionStrategyTerminal() {
             {/* Charts */}
             <div className="os-grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 14 }}>
               <Card>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SECTOR STRENGTH CHART</div>
                 <SectorChart sectors={data.sectors} />
               </Card>
               <Card>
