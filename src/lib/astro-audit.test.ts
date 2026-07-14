@@ -3,6 +3,8 @@ import {
   AUDIT_VERSION,
   classifyLongitudeDiff,
   deriveVerdict,
+  inferAuditMode,
+  PROVISIONAL_METHODOLOGY_DEFAULT,
   signedLongitudeDiff,
   LONGITUDE_TOLERANCE,
   type LevelImpact,
@@ -46,29 +48,79 @@ describe("Phase 21.0B · deriveVerdict", () => {
   const zeroImpact: LevelImpact[] = [];
 
   it("returns CANNOT_DETERMINE with no planets", () => {
-    expect(deriveVerdict([], [], true).verdict).toBe(
-      "CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE",
-    );
+    const v = deriveVerdict([], [], true);
+    expect(v.verdict).toBe("CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE");
+    expect(v.evidence).toBe("INFERENCE");
   });
   it("returns CANNOT_DETERMINE when original source unknown (default)", () => {
-    expect(deriveVerdict([mkP("EXACT")], zeroImpact).verdict).toBe(
-      "CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE",
-    );
+    const v = deriveVerdict([mkP("EXACT")], zeroImpact);
+    expect(v.verdict).toBe("CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE");
+    expect(v.evidence).toBe("HYPOTHESIS");
+    expect(v.reason).toMatch(/PROVISIONAL/);
   });
   it("KEEP_CURRENT when clean and source known", () => {
-    expect(
-      deriveVerdict([mkP("EXACT"), mkP("ACCEPTABLE")], zeroImpact, true).verdict,
-    ).toBe("KEEP_CURRENT_ENGINE");
+    const v = deriveVerdict([mkP("EXACT"), mkP("ACCEPTABLE")], zeroImpact, true);
+    expect(v.verdict).toBe("KEEP_CURRENT_ENGINE");
+    expect(v.evidence).toBe("BACKTEST_RESULT");
   });
   it("KEEP_CURRENT_WITH_TOLERANCE on WARNING but no FAIL", () => {
-    expect(
-      deriveVerdict([mkP("WARNING"), mkP("EXACT")], zeroImpact, true).verdict,
-    ).toBe("KEEP_CURRENT_ENGINE_WITH_DOCUMENTED_TOLERANCE");
+    const v = deriveVerdict([mkP("WARNING"), mkP("EXACT")], zeroImpact, true);
+    expect(v.verdict).toBe("KEEP_CURRENT_ENGINE_WITH_DOCUMENTED_TOLERANCE");
+    expect(v.evidence).toBe("BACKTEST_RESULT");
   });
   it("ADD_SWISS on FAIL", () => {
-    expect(
-      deriveVerdict([mkP("FAIL"), mkP("EXACT")], zeroImpact, true).verdict,
-    ).toBe("ADD_SWISS_EPHEMERIS_OPTIONAL_MODE");
+    const v = deriveVerdict([mkP("FAIL"), mkP("EXACT")], zeroImpact, true);
+    expect(v.verdict).toBe("ADD_SWISS_EPHEMERIS_OPTIONAL_MODE");
+    expect(v.evidence).toBe("INFERENCE");
+  });
+});
+
+describe("Phase 21.0B · provisional methodology default", () => {
+  it("is labelled PROVISIONAL, not a proven Gann convention", () => {
+    expect(PROVISIONAL_METHODOLOGY_DEFAULT.status).toBe("PROVISIONAL METHODOLOGY DEFAULT");
+    expect(PROVISIONAL_METHODOLOGY_DEFAULT.nodeMode).toBe("mean");
+    expect(PROVISIONAL_METHODOLOGY_DEFAULT.moonConvention).toBe("geocentric");
+    expect(PROVISIONAL_METHODOLOGY_DEFAULT.ayanamsha).toBe("Lahiri (Chitrapaksha)");
+  });
+});
+
+describe("Phase 21.0B · inferAuditMode", () => {
+  const base = {
+    fixtureVersion: "x",
+    capturedAt: "2026-01-01T00:00:00Z",
+    timestampIso: "2024-01-01T03:30:00Z",
+    timezone: "Asia/Kolkata",
+    location: { label: "Mumbai", latitude: 19, longitude: 72, elevationMeters: 14 },
+    ayanamshaMode: "Lahiri",
+    ayanamsha: 24,
+    planets: [],
+  } as const;
+  const f = (
+    engine: string,
+    node: "mean" | "true",
+    moon: "geocentric" | "topocentric",
+  ): ReferenceFixture => ({
+    ...base,
+    referenceEngine: engine,
+    nodeMode: node,
+    moonConvention: moon,
+  });
+
+  it("EagleBaba self-baseline → CURRENT_EAGLEBABA_MEAN_GEOCENTRIC", () => {
+    expect(inferAuditMode(f("self-baseline (EagleBaba current)", "mean", "geocentric")))
+      .toBe("CURRENT_EAGLEBABA_MEAN_GEOCENTRIC");
+  });
+  it("Swiss mean geocentric", () => {
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "geocentric")))
+      .toBe("SWISS_LAHIRI_MEAN_GEOCENTRIC");
+  });
+  it("Swiss true geocentric", () => {
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "true", "geocentric")))
+      .toBe("SWISS_LAHIRI_TRUE_GEOCENTRIC");
+  });
+  it("Swiss mean topocentric", () => {
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "topocentric")))
+      .toBe("SWISS_LAHIRI_MEAN_TOPOCENTRIC_MUMBAI");
   });
 });
 
@@ -104,6 +156,8 @@ describe("Phase 21.0B · runAstroAudit end-to-end", () => {
   it("reports audit version and preserves the fixture", () => {
     expect(report.auditVersion).toBe(AUDIT_VERSION);
     expect(report.fixture.fixtureVersion).toBe(fixture.fixtureVersion);
+    expect(report.mode).toBe("CURRENT_EAGLEBABA_MEAN_GEOCENTRIC");
+    expect(report.provisionalDefault.status).toBe("PROVISIONAL METHODOLOGY DEFAULT");
   });
   it("all 9 planets EXACT against self-baseline", () => {
     expect(report.summary.totalPlanets).toBe(9);
@@ -119,6 +173,7 @@ describe("Phase 21.0B · runAstroAudit end-to-end", () => {
   });
   it("verdict is CANNOT_DETERMINE without original-source confirmation", () => {
     expect(report.verdict).toBe("CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE");
+    expect(report.verdictEvidence).toBe("HYPOTHESIS");
   });
 });
 
