@@ -16,59 +16,86 @@ export type Database = {
     Tables: {
       audit_log: {
         Row: {
+          actor_user_id: string | null
           created_at: string
           event: string
           id: string
           metadata: Json | null
+          new_value: Json | null
+          previous_value: Json | null
+          target_user_id: string | null
           user_id: string | null
         }
         Insert: {
+          actor_user_id?: string | null
           created_at?: string
           event: string
           id?: string
           metadata?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          target_user_id?: string | null
           user_id?: string | null
         }
         Update: {
+          actor_user_id?: string | null
           created_at?: string
           event?: string
           id?: string
           metadata?: Json | null
+          new_value?: Json | null
+          previous_value?: Json | null
+          target_user_id?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
       billing_events: {
         Row: {
+          attempts: number
           created_at: string
           event_type: string
+          failure_reason: string | null
           id: string
+          idempotency_key: string | null
           payload: Json
+          payload_hash: string | null
           processed_at: string | null
           provider: string
           provider_event_id: string
+          signature_verified: boolean
           status: string
           user_id: string | null
         }
         Insert: {
+          attempts?: number
           created_at?: string
           event_type: string
+          failure_reason?: string | null
           id?: string
+          idempotency_key?: string | null
           payload?: Json
+          payload_hash?: string | null
           processed_at?: string | null
           provider: string
           provider_event_id: string
+          signature_verified?: boolean
           status?: string
           user_id?: string | null
         }
         Update: {
+          attempts?: number
           created_at?: string
           event_type?: string
+          failure_reason?: string | null
           id?: string
+          idempotency_key?: string | null
           payload?: Json
+          payload_hash?: string | null
           processed_at?: string | null
           provider?: string
           provider_event_id?: string
+          signature_verified?: boolean
           status?: string
           user_id?: string | null
         }
@@ -284,6 +311,36 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_preferences: {
+        Row: {
+          billing_cycle_preference: string
+          created_at: string
+          invoice_email: string | null
+          marketing_consent: boolean
+          preferred_currency: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_cycle_preference?: string
+          created_at?: string
+          invoice_email?: string | null
+          marketing_consent?: boolean
+          preferred_currency?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_cycle_preference?: string
+          created_at?: string
+          invoice_email?: string | null
+          marketing_consent?: boolean
+          preferred_currency?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           activated_at: string
@@ -371,6 +428,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_entitlement_grants: {
+        Row: {
+          capability: string
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          reason: string | null
+          revoked_at: string | null
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+          revoked_at?: string | null
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+          revoked_at?: string | null
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -454,11 +547,214 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_change_plan: {
+        Args: { _plan: string; _reason: string; _target: string }
+        Returns: {
+          activated_at: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_extend_trial: {
+        Args: { _days: number; _reason: string; _target: string }
+        Returns: {
+          activated_at: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_grant_entitlement: {
+        Args: {
+          _capability: string
+          _expires_at: string
+          _reason: string
+          _target: string
+        }
+        Returns: {
+          capability: string
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          reason: string | null
+          revoked_at: string | null
+          starts_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_entitlement_grants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reset_usage: {
+        Args: {
+          _period: string
+          _reason: string
+          _resource: string
+          _target: string
+        }
+        Returns: number
+      }
+      admin_revoke_entitlement: {
+        Args: { _grant_id: string; _reason: string }
+        Returns: {
+          capability: string
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          reason: string | null
+          revoked_at: string | null
+          starts_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_entitlement_grants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_set_status: {
+        Args: { _reason: string; _status: string; _target: string }
+        Returns: {
+          activated_at: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      consume_usage: {
+        Args: { _max: number; _period: string; _resource: string }
+        Returns: number
+      }
+      get_entitlement_snapshot: { Args: { _target?: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      self_set_cancel_at_period_end: {
+        Args: { _flag: boolean }
+        Returns: {
+          activated_at: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      self_start_trial: {
+        Args: { _plan: string }
+        Returns: {
+          activated_at: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          engine_version: string
+          expires_at: string | null
+          id: string
+          license_key: string | null
+          plan: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      validate_subscription_transition: {
+        Args: { _from: string; _to: string }
         Returns: boolean
       }
     }
