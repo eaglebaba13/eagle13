@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Plug,
   Menu as MenuIcon,
+  User as UserIcon,
+  KeyRound,
   X,
 } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
@@ -49,13 +51,15 @@ const DRAWER_ITEMS: NavItem[] = [
   { label: "Decision Engine", icon: Brain, to: "/decision" },
   { label: "Risk Manager", icon: ShieldCheck, to: "/risk" },
   { label: "Broker", icon: Plug, to: "/broker" },
+  { label: "Profile", icon: UserIcon, to: "/profile" },
+  { label: "License", icon: KeyRound, to: "/license" },
+  { label: "Settings", icon: Settings, to: "/settings" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
   { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
   { label: "Signals", icon: Radar, href: "#signals" },
   { label: "Analysis", icon: LineChart, href: "#analysis" },
   { label: "Reports", icon: FileBarChart, href: "#reports" },
-  { label: "Settings", icon: Settings, href: "#settings" },
 ];
 
 type BottomItem = { label: string; icon: React.ComponentType<{ size?: number }>; to?: string; action?: "menu" };
