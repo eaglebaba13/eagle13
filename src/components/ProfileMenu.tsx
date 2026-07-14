@@ -65,9 +65,9 @@ export function ProfileMenu() {
             <div className="text-sm font-medium truncate">{profile?.email}</div>
             <div className="text-xs text-muted-foreground">{ROLE_LABELS[role]} plan</div>
           </div>
-          <MenuItem to="/_authenticated/profile" onClick={() => setOpen(false)}>Profile</MenuItem>
-          <MenuItem to="/_authenticated/settings" onClick={() => setOpen(false)}>Settings</MenuItem>
-          <MenuItem to="/_authenticated/license" onClick={() => setOpen(false)}>License</MenuItem>
+          <MenuItem to="/profile" onClick={() => setOpen(false)}>Profile</MenuItem>
+          <MenuItem to="/settings" onClick={() => setOpen(false)}>Settings</MenuItem>
+          <MenuItem to="/license" onClick={() => setOpen(false)}>License</MenuItem>
           <button
             type="button"
             onClick={async () => {
