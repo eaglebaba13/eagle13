@@ -18,6 +18,7 @@ import {
   History,
   BarChart3,
   PlayCircle,
+  Layers,
   Menu as MenuIcon,
   X,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const DRAWER_ITEMS: NavItem[] = [
   { label: "Backtest", icon: History, to: "/backtest" },
   { label: "Signal Accuracy", icon: BarChart3, to: "/signal-accuracy" },
   { label: "Market Replay", icon: PlayCircle, to: "/market-replay" },
+  { label: "Options Analytics", icon: Layers, to: "/options-analytics" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
   { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
