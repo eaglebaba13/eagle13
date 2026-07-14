@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/plans";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { PlanBadge } from "@/components/entitlements";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -79,6 +80,7 @@ function PlanCard({
   current: boolean;
 }) {
   const plan = PLANS[id];
+  const { isAuthenticated } = useAuth();
   const price = cycle === "monthly" ? plan.monthlyPrice : plan.annualPrice;
   const priceLabel =
     plan.contactSales || price === null
@@ -147,13 +149,30 @@ function PlanCard({
           >
             Manage billing
           </Link>
-        ) : (
+        ) : id === "free" ? (
           <Link
-            to="/billing"
-            className="block w-full rounded-md bg-amber-400/90 hover:bg-amber-400 py-2 text-center text-sm font-semibold text-slate-900"
+            to={isAuthenticated ? "/billing" : "/auth"}
+            className="block w-full rounded-md border border-white/15 py-2 text-center text-sm font-medium hover:bg-white/5"
           >
-            {plan.trialDays > 0 ? `Start ${plan.trialDays}-day trial` : "Upgrade"}
+            {isAuthenticated ? "Manage billing" : "Sign in"}
           </Link>
+        ) : (
+          <div className="space-y-2">
+            <Link
+              to={isAuthenticated ? "/payment-status" : "/auth"}
+              search={
+                isAuthenticated
+                  ? { plan: id as "pro" | "professional", cycle }
+                  : undefined
+              }
+              className="block w-full rounded-md bg-amber-400/90 hover:bg-amber-400 py-2 text-center text-sm font-semibold text-slate-900"
+            >
+              Pay via UPI QR
+            </Link>
+            <p className="text-[10px] text-center text-muted-foreground">
+              Manual verification · typical approval within 24 hours · no auto activation.
+            </p>
+          </div>
         )}
       </div>
     </div>
