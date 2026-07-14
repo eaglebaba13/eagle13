@@ -917,7 +917,6 @@ function LiveMarketTerminal() {
         </AnimatePresence>
       </div>
 
-      <MobileBottomNav />
       <NewsCenter />
     </div>
   );
