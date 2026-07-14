@@ -477,13 +477,59 @@ export const runBacktest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }: { data: BacktestInput }): Promise<BacktestResult> =>
     cached<BacktestResult>(
-      `backtest:${data.symbol}:${data.from}:${data.to}`,
+      `backtest:${data.symbol}:${data.from}:${data.to}:${data.policy}:${data.invalidSetupPolicy}:${hashConfig(data.costs)}`,
       async () => {
         const map = BACKTEST_SYMBOLS[data.symbol];
+        const isBtc = data.symbol === "BTC";
+        const timezone = isBtc ? BTC_TIMEZONE : IST_TIMEZONE;
+        const executionMeta: BacktestResult["executionMeta"] = {
+          policy: data.policy,
+          invalidSetupPolicy: data.invalidSetupPolicy,
+          costs: data.costs,
+          astroAnchor: isBtc ? "00:00 UTC" : "09:00 IST",
+          entryTime: isBtc ? "00:00 UTC" : "09:15 IST",
+          exitAssumption: "target / stop within daily OHLC; else session close",
+          dataSource: "Yahoo Finance (daily, unadjusted OHLC)",
+          timezone,
+          candleTimeframe: "1d",
+        };
+        const runId = computeRunId({
+          symbol: data.symbol, from: data.from, to: data.to,
+          policy: data.policy, invalidSetupPolicy: data.invalidSetupPolicy,
+          costs: data.costs, dataSource: executionMeta.dataSource, timezone,
+        });
+        const configHash = hashConfig({
+          symbol: data.symbol, from: data.from, to: data.to,
+          policy: data.policy, invalidSetupPolicy: data.invalidSetupPolicy,
+          costs: data.costs,
+        });
+        const disclaimers = [
+          "Historical results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
+          "Daily OHLC data cannot determine intraday event order — the both-touched case is resolved per the selected execution policy.",
+          "Backtests are informational and do not guarantee future performance.",
+        ];
         // Pull one extra day before `from` so day-1 has a prev-close reference.
         const fromExpanded = new Date(new Date(data.from + "T00:00:00Z").getTime() - 5 * 86400_000)
           .toISOString().slice(0, 10);
-        const candles = await fetchCandles(map.yahoo, fromExpanded, data.to);
+        const rawCandles = await fetchCandles(map.yahoo, fromExpanded, data.to);
+        let invalidSessions = 0;
+        const candles = rawCandles.filter((c) => {
+          const v = validateCandle(c);
+          if (!v.valid) { invalidSessions++; return false; }
+          return true;
+        });
+        const loadedInRange = candles.filter((c) => c.date >= data.from && c.date <= data.to).length;
+        const expected = expectedTradingSessions(data.from, data.to, isBtc);
+        const dataQuality: BacktestResult["dataQuality"] = {
+          expectedSessions: expected,
+          loadedSessions: loadedInRange,
+          missingSessions: Math.max(0, expected - loadedInRange),
+          invalidSessions,
+          coveragePct: expected > 0 ? Math.round((loadedInRange / expected) * 1000) / 10 : 0,
+          dataSource: executionMeta.dataSource,
+          adjusted: "unadjusted",
+        };
+
         if (candles.length < 2) {
           const empty = aggregate([]);
           return {
@@ -497,6 +543,14 @@ export const runBacktest = createServerFn({ method: "POST" })
               mostSuccessfulSignal: null, mostFailedSignal: null,
             },
             equityCurve: [], generatedAt: new Date().toISOString(),
+            runId, engineVersion: BACKTEST_ENGINE_VERSION,
+            formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
+            executionMeta, dataQuality,
+            stats: buildStats([], 0, 0, 0),
+            benchmark: null,
+            ambiguousCount: 0,
+            invalidSetupCount: 0,
+            disclaimers,
           };
         }
 
@@ -507,7 +561,7 @@ export const runBacktest = createServerFn({ method: "POST" })
           if (today.date < data.from || today.date > data.to) continue;
           const prev = candles[i - 1];
           const positions = computeAstroPositions(nineAmIst(today.date));
-          trades.push(replayDay(today, prev, positions, data.symbol));
+          trades.push(replayDay(today, prev, positions, data.symbol, data.policy, data.invalidSetupPolicy, data.costs));
         }
 
         const { summary, monthly, equity } = aggregate(trades);
@@ -516,6 +570,28 @@ export const runBacktest = createServerFn({ method: "POST" })
         const retro = pickBestWorst(groupInsights(trades, (t) => `${t.retroCount} retro`));
         const sigMap = groupInsights(trades, (t) => t.signal === "WAIT" ? null : t.signal);
         const sigSorted = Array.from(sigMap.values()).sort((a, b) => b.winRate - a.winRate);
+
+        const ambiguousCount = trades.filter((t) => t.ambiguous).length;
+        const invalidSetupCount = trades.filter((t) => t.result === "INVALID_SETUP").length;
+        const decidedForStats = trades
+          .filter((t) => t.result === "WIN" || t.result === "LOSS" || t.result === "FLAT")
+          .map((t) => ({ result: t.result, pnl: t.pnl, pnlPct: t.pnlPct }));
+        const stats = buildStats(decidedForStats, trades.length, summary.netProfit, summary.maxDrawdown);
+
+        // Benchmark = buy & hold from first to last in-range candle.
+        const inRange = candles.filter((c) => c.date >= data.from && c.date <= data.to);
+        const first = inRange[0];
+        const last = inRange[inRange.length - 1];
+        const benchmark = first && last
+          ? {
+              buyAndHoldPnl: Math.round((last.close - first.open) * 100) / 100,
+              buyAndHoldPct: Math.round(((last.close - first.open) / first.open) * 10000) / 100,
+              strategyPct: first.open > 0 ? Math.round((summary.netProfit / first.open) * 10000) / 100 : 0,
+              excessPct: 0,
+              activeDays: decidedForStats.length,
+            }
+          : null;
+        if (benchmark) benchmark.excessPct = Math.round((benchmark.strategyPct - benchmark.buyAndHoldPct) * 100) / 100;
 
         return {
           symbol: data.symbol, yahooSymbol: map.yahoo, label: map.label,
@@ -530,6 +606,12 @@ export const runBacktest = createServerFn({ method: "POST" })
           },
           equityCurve: equity,
           generatedAt: new Date().toISOString(),
+          runId, engineVersion: BACKTEST_ENGINE_VERSION,
+          formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
+          executionMeta, dataQuality,
+          stats, benchmark,
+          ambiguousCount, invalidSetupCount,
+          disclaimers,
         };
       },
       { ttlMs: 6 * 60 * 60_000, swrMs: 18 * 60 * 60_000 },
