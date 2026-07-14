@@ -107,6 +107,7 @@ const ENTERPRISE_CAPS: readonly Capability[] = [
   ...PROFESSIONAL_CAPS,
   "broker.live",
   "team.workspace",
+  "admin.console",
 ];
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
