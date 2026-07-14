@@ -322,35 +322,8 @@ function OptionStrategyTerminal() {
               <BreadthCard title="NIFTY50 Breadth" b={data.niftyBreadth} total={50} />
             </div>
 
-            {/* Top-10 table + heatmap */}
-            <Card style={{ padding: 0, marginBottom: 14 }}>
-              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>TOP-10 NIFTY WEIGHTAGE (~60% index)</div>
-              <div style={{ overflowX: "auto" }}>
-                <table className="os-table">
-                  <thead>
-                    <tr>
-                      <th>Stock</th><th>Live</th><th>Change %</th><th>Weight %</th><th>Status</th><th>Index Impact</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.top10.map((t) => (
-                      <tr key={t.symbol}>
-                        <td style={{ fontWeight: 700 }}>{t.name}</td>
-                        <td className="os-mono">{inr(t.price)}</td>
-                        <td className="os-mono" style={{ color: t.changePct >= 0 ? C.green : C.red }}>{t.changePct >= 0 ? "▲" : "▼"} {Math.abs(t.changePct).toFixed(2)}%</td>
-                        <td className="os-mono">{t.weight.toFixed(1)}</td>
-                        <td style={{ color: t.advancing ? C.green : C.red, fontWeight: 700 }}>{t.advancing ? "Advance" : "Decline"}</td>
-                        <td className="os-mono" style={{ color: t.contribution >= 0 ? C.green : C.red }}>{t.contribution >= 0 ? "+" : ""}{t.contribution.toFixed(3)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div style={{ padding: 14 }}>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>LIVE HEATMAP (size ∝ weight)</div>
-                <Heatmap stocks={data.top10} />
-              </div>
-            </Card>
+            {/* Top-10 auto-sorting weightage monitor + heatmap */}
+            <Top10Widget stocks={data.top10} />
 
             {/* Sector strength */}
             <Card style={{ padding: 0, marginBottom: 14 }}>
