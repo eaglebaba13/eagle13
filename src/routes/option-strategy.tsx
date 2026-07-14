@@ -15,6 +15,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { useIstClock } from "@/hooks/use-scheduler";
+import { inrPrice } from "@/lib/format";
 import {
   Volume2,
   VolumeX,
