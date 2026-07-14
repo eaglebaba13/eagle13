@@ -21,6 +21,8 @@ import { useIstClock } from "@/hooks/use-scheduler";
 import { orbStyle as orbStyleFor } from "@/lib/planet-style";
 import { deriveTithi, sunTimes } from "@/lib/panchang";
 import { inrRound } from "@/lib/format";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug, DEFAULT_ASTRO_FORMULA_VERSION, type AstroFormulaVersion } from "@/lib/engine-version";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -172,7 +174,8 @@ function downloadBlob(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-function exportCsv(planets: PlanetRow[]) {
+function exportCsv(planets: PlanetRow[], version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
   const header = [
     "Planet", "Degree", "Sign", "Nakshatra", "Lord", "Pada", "Speed",
     "Motion", "AbsDegree", "R1", "S1", "R2", "S2",
@@ -181,10 +184,15 @@ function exportCsv(planets: PlanetRow[]) {
     [p.planet, p.degree, p.sign, p.nakshatra, p.lord, p.pada, p.speed,
      p.motion, p.absDegree, p.r1, p.s1, p.r2, p.s2].join(","),
   );
-  downloadBlob([header.join(","), ...rows].join("\n"), "astro-levels.csv", "text/csv");
+  downloadBlob(
+    [`# EagleBABA Astro Levels · ${version}`, header.join(","), ...rows].join("\n"),
+    `astro-levels-${slug}.csv`,
+    "text/csv",
+  );
 }
 
-function exportExcel(planets: PlanetRow[]) {
+function exportExcel(planets: PlanetRow[], version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
   const cells = (arr: (string | number)[]) =>
     arr.map((c) => `<td>${c}</td>`).join("");
   const head =
@@ -199,7 +207,7 @@ function exportExcel(planets: PlanetRow[]) {
     )
     .join("");
   const html = `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`;
-  downloadBlob(html, "astro-levels.xls", "application/vnd.ms-excel");
+  downloadBlob(html, `astro-levels-${slug}.xls`, "application/vnd.ms-excel");
 }
 
 /* -------------------------------- UI -------------------------------- */
@@ -590,8 +598,8 @@ function AstroDashboard() {
               padding: "8px 12px", borderRadius: 8, fontSize: 13, minWidth: 220, flex: "1 1 220px",
             }}
           />
-          <button onClick={() => exportCsv(data.planets)} style={btn(C.green)}>Export CSV</button>
-          <button onClick={() => exportExcel(data.planets)} style={btn(C.blue)}>Export Excel</button>
+          <button onClick={() => exportCsv(data.planets, data.formulaVersion)} style={btn(C.green)}>Export CSV</button>
+          <button onClick={() => exportExcel(data.planets, data.formulaVersion)} style={btn(C.blue)}>Export Excel</button>
           <button onClick={() => window.print()} style={btn(C.orange)}>Print</button>
           <button onClick={() => refetch()} style={btn(C.muted)}>Refresh</button>
         </div>
