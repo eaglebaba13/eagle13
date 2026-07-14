@@ -94,8 +94,9 @@ function DiagnosticsDashboard() {
       perf,
     };
     downloadBlob(
-      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+      JSON.stringify(payload, null, 2),
       `eaglebaba-diagnostics-${Date.now()}.json`,
+      "application/json",
     );
   };
   const exportCsv = () => {
@@ -115,8 +116,9 @@ function DiagnosticsDashboard() {
     rows.push(`perf,fps,${perf.fps}`);
     rows.push(`perf,heap_mb,${perf.heapMb ?? ""}`);
     downloadBlob(
-      new Blob([rows.join("\n")], { type: "text/csv" }),
+      rows.join("\n"),
       `eaglebaba-diagnostics-${Date.now()}.csv`,
+      "text/csv",
     );
   };
 
