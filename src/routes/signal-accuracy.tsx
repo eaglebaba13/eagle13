@@ -6,6 +6,8 @@ import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol
 import { computeAnalytics, buildInsights, type Analytics, type Bucket } from "@/lib/signal-analytics";
 import { downloadBlob } from "@/lib/download";
 import { ApexChart } from "@/components/ApexChart";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug } from "@/lib/engine-version";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -135,11 +137,13 @@ function SignalAccuracyPage() {
       ...bucketRows("Year", analytics.year),
     ];
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
-    downloadBlob(csv, `eaglebaba-signal-accuracy-${symbol}-${from}-${to}.csv`, "text/csv");
+    const slug = analytics ? astroFormulaSlug(analytics.astroFormulaVersion) : "GANN_ASTRO_V1_1";
+    downloadBlob(csv, `eaglebaba-signal-accuracy-${symbol}-${slug}-${from}-${to}.csv`, "text/csv");
   };
   const exportJson = () => {
     if (!analytics) return;
-    downloadBlob(JSON.stringify(analytics, null, 2), `eaglebaba-signal-accuracy-${symbol}-${from}-${to}.json`, "application/json");
+    const slug = astroFormulaSlug(analytics.astroFormulaVersion);
+    downloadBlob(JSON.stringify(analytics, null, 2), `eaglebaba-signal-accuracy-${symbol}-${slug}-${from}-${to}.json`, "application/json");
   };
 
   return (
@@ -152,6 +156,11 @@ function SignalAccuracyPage() {
           <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 4 }}>
             Institutional analytics on top of the validated Historical Backtest Engine · no calculation duplication
           </div>
+          {analytics ? (
+            <div style={{ marginTop: 6 }}>
+              <FormulaBadge version={analytics.astroFormulaVersion} />
+            </div>
+          ) : null}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link to="/backtest" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>← Backtest</Link>
