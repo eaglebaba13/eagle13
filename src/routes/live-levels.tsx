@@ -17,6 +17,8 @@ import { downloadBlob } from "@/lib/download";
 import { inrRound, usdLike } from "@/lib/format";
 import type { LevelStatus, Lvl } from "@/types/levels";
 import { buildLevels } from "@/lib/level-engine";
+import { FormulaBadge } from "@/components/FormulaBadge";
+import { astroFormulaSlug, DEFAULT_ASTRO_FORMULA_VERSION, type AstroFormulaVersion } from "@/lib/engine-version";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -109,15 +111,25 @@ const EXPORT_COLS = ["Planet", "Degree", "Sign", "Nakshatra", "Motion", "R1", "R
 const exportRow = (p: MarketPlanet) =>
   [p.planet, p.degree, p.sign, p.nakshatra, p.motion, p.r1, p.r2, p.r3, p.s1, p.s2, p.s3];
 
-function exportCsv(m: MarketBlock) {
+function exportCsv(m: MarketBlock, version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
   const rows = m.planets.map((p) => exportRow(p).join(","));
-  downloadBlob([EXPORT_COLS.join(","), ...rows].join("\n"), `${m.key}-astro-levels.csv`, "text/csv");
+  downloadBlob(
+    [`# EagleBABA Live Levels · ${version} · R3/S3 = EagleBaba Extended`, EXPORT_COLS.join(","), ...rows].join("\n"),
+    `${m.key}-astro-levels-${slug}.csv`,
+    "text/csv",
+  );
 }
-function exportExcel(m: MarketBlock) {
+function exportExcel(m: MarketBlock, version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION) {
+  const slug = astroFormulaSlug(version);
   const cells = (arr: (string | number)[]) => arr.map((c) => `<td>${c}</td>`).join("");
   const head = "<tr>" + cells(EXPORT_COLS) + "</tr>";
   const body = m.planets.map((p) => "<tr>" + cells(exportRow(p)) + "</tr>").join("");
-  downloadBlob(`<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`, `${m.key}-astro-levels.xls`, "application/vnd.ms-excel");
+  downloadBlob(
+    `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`,
+    `${m.key}-astro-levels-${slug}.xls`,
+    "application/vnd.ms-excel",
+  );
 }
 
 /* ------------------------------ component ------------------------------ */
@@ -296,6 +308,9 @@ function LiveLevelsTerminal() {
               <div style={{ fontSize: 12, color: C.muted }}>
                 NIFTY · BANK NIFTY · GOLD · SILVER · BTC · Asia/Kolkata · auto-refresh 60s
               </div>
+              <div style={{ marginTop: 6 }}>
+                <FormulaBadge version={data.formulaVersion} extended compact />
+              </div>
             </div>
           </div>
           <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -463,8 +478,8 @@ function LiveLevelsTerminal() {
 
             {/* Controls / export */}
             <div className="no-print" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-              <button onClick={() => exportCsv(market)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
-              <button onClick={() => exportExcel(market)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
+              <button onClick={() => exportCsv(market, data.formulaVersion)} style={ghost(C.green)}><Download size={14} style={{ verticalAlign: -2 }} /> CSV</button>
+              <button onClick={() => exportExcel(market, data.formulaVersion)} style={ghost(C.blue)}><FileSpreadsheet size={14} style={{ verticalAlign: -2 }} /> Excel</button>
               <button onClick={() => window.print()} style={ghost(C.gold)}><FileText size={14} style={{ verticalAlign: -2 }} /> PDF</button>
               <button onClick={() => window.print()} style={ghost(C.muted)}><Printer size={14} style={{ verticalAlign: -2 }} /> Print</button>
             </div>
