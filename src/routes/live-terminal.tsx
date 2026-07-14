@@ -16,7 +16,8 @@ import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
 import { downloadBlob } from "@/lib/download";
 import { deriveTithi, deriveKarana, deriveYoga, sunTimes } from "@/lib/panchang";
 import { inrRound } from "@/lib/format";
-import type { LevelKind, LevelStatus, Lvl } from "@/types/levels";
+import type { LevelStatus, Lvl } from "@/types/levels";
+import { buildLevels } from "@/lib/level-engine";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -89,24 +90,6 @@ const LOCATIONS: Record<string, { label: string; lat: number; lng: number }> = {
 const num = inrRound;
 const TOL = 8; // NIFTY-point tolerance for a level "touch".
 
-function levelStatus(price: number, value: number, isResistance: boolean): LevelStatus {
-  const d = Math.abs(price - value);
-  if (d <= TOL) return "TOUCHED";
-  if (isResistance) {
-    if (price > value) return "BROKEN";
-    return d <= TOL * 5 ? "ACTIVE" : "PENDING";
-  }
-  if (price < value) return "BROKEN";
-  return d <= TOL * 5 ? "ACTIVE" : "PENDING";
-}
-
-function levelSignal(price: number, value: number, isResistance: boolean): Lvl["signal"] {
-  const d = Math.abs(price - value);
-  if (d <= TOL) return "WATCH";
-  if (isResistance) return price > value ? "BUY" : "SELL";
-  return price < value ? "SELL" : "BUY";
-}
-
 const STATUS_COLOR: Record<LevelStatus, string> = {
   ACTIVE: C.blue,
   TOUCHED: C.gold,
@@ -116,27 +99,7 @@ const STATUS_COLOR: Record<LevelStatus, string> = {
 };
 
 function buildLvls(planets: LivePlanet[], price: number): Lvl[] {
-  const out: Lvl[] = [];
-  for (const p of planets) {
-    const defs: [LevelKind, number, boolean][] = [
-      ["R3", p.r3, true], ["R2", p.r2, true], ["R1", p.r1, true],
-      ["S1", p.s1, false], ["S2", p.s2, false], ["S3", p.s3, false],
-    ];
-    for (const [kind, value, isR] of defs) {
-      const distance = Math.abs(price - value);
-      out.push({
-        planet: p.planet,
-        kind,
-        value,
-        isResistance: isR,
-        distance,
-        status: levelStatus(price, value, isR),
-        signal: levelSignal(price, value, isR),
-        confidence: Math.max(5, Math.min(99, Math.round(100 - Math.min(90, (distance / TOL) * 7)))),
-      });
-    }
-  }
-  return out;
+  return buildLevels(planets, price, TOL);
 }
 
 /* ------------------------------ exports ------------------------------ */
