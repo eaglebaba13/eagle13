@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { getBillingAdapter, type Invoice } from "@/lib/billing-adapter";
 import { PlanBadge, SubscriptionStatusBadge, TrialCountdown } from "@/components/entitlements";
 import { useAuth } from "@/lib/auth-context";
+import {
+  selfStartTrial,
+  selfSetCancelAtPeriodEnd,
+} from "@/lib/billing-rpc";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({ meta: [{ title: "Billing — EagleBABA" }] }),
@@ -27,49 +30,35 @@ function BillingPage() {
 
   const startTrial = async (plan: "pro" | "professional") => {
     if (!user) return;
-    const trialEnd = new Date(Date.now() + 14 * 86_400_000).toISOString();
-    await supabase
-      .from("subscriptions")
-      .upsert(
-        {
-          user_id: user.id,
-          plan,
-          status: "trialing",
-          trial_end: trialEnd,
-        } as never,
-        { onConflict: "user_id" },
-      );
-    await supabase
-      .from("audit_log")
-      .insert({ user_id: user.id, event: "trial.started", metadata: { plan } as never });
-    await refresh();
-    setMsg(`Trial started on ${plan}. Ends ${new Date(trialEnd).toLocaleDateString()}.`);
+    try {
+      await selfStartTrial(plan);
+      await refresh();
+      setMsg(`Trial started on ${plan}.`);
+    } catch (e) {
+      setMsg(`Could not start trial: ${(e as Error).message}`);
+    }
   };
 
   const cancel = async () => {
     if (!user) return;
-    await supabase
-      .from("subscriptions")
-      .update({ cancel_at_period_end: true } as never)
-      .eq("user_id", user.id);
-    await supabase
-      .from("audit_log")
-      .insert({ user_id: user.id, event: "subscription.canceled", metadata: {} as never });
-    await refresh();
-    setMsg("Cancellation scheduled at period end.");
+    try {
+      await selfSetCancelAtPeriodEnd(true);
+      await refresh();
+      setMsg("Cancellation scheduled at period end.");
+    } catch (e) {
+      setMsg(`Could not cancel: ${(e as Error).message}`);
+    }
   };
 
   const resume = async () => {
     if (!user) return;
-    await supabase
-      .from("subscriptions")
-      .update({ cancel_at_period_end: false } as never)
-      .eq("user_id", user.id);
-    await supabase
-      .from("audit_log")
-      .insert({ user_id: user.id, event: "subscription.resumed", metadata: {} as never });
-    await refresh();
-    setMsg("Subscription resumed.");
+    try {
+      await selfSetCancelAtPeriodEnd(false);
+      await refresh();
+      setMsg("Subscription resumed.");
+    } catch (e) {
+      setMsg(`Could not resume: ${(e as Error).message}`);
+    }
   };
 
   return (
