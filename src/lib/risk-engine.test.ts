@@ -76,22 +76,24 @@ describe("suggestStopAndTarget", () => {
     const r = suggestStopAndTarget({
       entry: 24000,
       direction: "LONG",
-      supports: [23800, 23500],
-      resistances: [24200, 24500],
+      supports: [23900, 23500],
+      resistances: [24500, 25000],
+      minRiskReward: 1.5,
     });
-    expect(r.stop).toBeLessThan(23800); // buffer applied
-    expect(r.target).toBe(24200);
-    expect(r.riskReward! > 0).toBe(true);
+    expect(r.stop).toBeLessThan(23900); // buffer applied
+    expect(r.target).toBe(24500);
+    expect(r.riskReward!).toBeGreaterThanOrEqual(1.5);
   });
   it("SHORT mirrors direction", () => {
     const r = suggestStopAndTarget({
       entry: 24000,
       direction: "SHORT",
-      supports: [23800],
+      supports: [23500],
       resistances: [24100, 24500],
+      minRiskReward: 1.5,
     });
     expect(r.stop!).toBeGreaterThan(24100);
-    expect(r.target).toBe(23800);
+    expect(r.target).toBe(23500);
   });
   it("falls back to minRR target when no resistance", () => {
     const r = suggestStopAndTarget({
