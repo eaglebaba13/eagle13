@@ -154,26 +154,6 @@ function useNow(intervalMs = 1000): number {
 
 // True only after the client has mounted. Lets a real-time terminal render a
 // deterministic skeleton during SSR/first paint, avoiding hydration mismatch.
-function useHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  return hydrated;
-}
-
-// Responsive breakpoint helper for inline-styled layouts. Returns false during
-// SSR/first paint (deterministic) and updates after mount.
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia(query);
-    const update = () => setMatches(m.matches);
-    update();
-    m.addEventListener("change", update);
-    return () => m.removeEventListener("change", update);
-  }, [query]);
-  return matches;
-}
-
 function TerminalSkeleton() {
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}>
