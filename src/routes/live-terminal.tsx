@@ -12,6 +12,9 @@ import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, MapPin, Download, Printer, FileSpreadsheet, FileText, Radio } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
+import { PLANET_STYLE, orbStyle } from "@/lib/planet-style";
+import { downloadBlob } from "@/lib/download";
+import { deriveTithi, deriveKarana, deriveYoga, sunTimes } from "@/lib/panchang";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -71,23 +74,6 @@ export const Route = createFileRoute("/live-terminal")({
 
 /* ------------------------------ constants ------------------------------ */
 
-const PLANET_STYLE: Record<string, { orb: string; glow: string; line: string }> = {
-  Sun: { orb: "radial-gradient(circle at 35% 30%, #ffe9a8, #f5a623 55%, #b8620b)", glow: "rgba(245,166,35,0.6)", line: "#f5a623" },
-  Moon: { orb: "radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 55%, #8b98a8)", glow: "rgba(207,216,227,0.55)", line: "#cfd8e3" },
-  Mercury: { orb: "radial-gradient(circle at 35% 30%, #c7f7d4, #34d399 55%, #0f7a4f)", glow: "rgba(52,211,153,0.55)", line: "#34d399" },
-  Venus: { orb: "radial-gradient(circle at 35% 30%, #ffe3ec, #f4a6c0 55%, #c76b8e)", glow: "rgba(244,166,192,0.55)", line: "#f4a6c0" },
-  Mars: { orb: "radial-gradient(circle at 35% 30%, #ffb4a0, #ef4444 55%, #7f1d1d)", glow: "rgba(239,68,68,0.6)", line: "#ef4444" },
-  Jupiter: { orb: "radial-gradient(circle at 35% 30%, #fff2b0, #eab308 55%, #a16207)", glow: "rgba(234,179,8,0.6)", line: "#eab308" },
-  Saturn: { orb: "radial-gradient(circle at 35% 30%, #cfe0ee, #64748b 55%, #334155)", glow: "rgba(100,116,139,0.55)", line: "#94a3b8" },
-  Rahu: { orb: "radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8)", glow: "rgba(168,85,247,0.6)", line: "#a855f7" },
-  Ketu: { orb: "radial-gradient(circle at 35% 30%, #ffd9b0, #f97316 55%, #9a3412)", glow: "rgba(249,115,22,0.6)", line: "#f97316" },
-};
-
-function orbStyle(planet: string): React.CSSProperties {
-  const s = PLANET_STYLE[planet] ?? { orb: "#888", glow: "rgba(255,255,255,0.35)" };
-  return { ["--orb" as any]: s.orb, ["--orb-glow" as any]: s.glow };
-}
-
 const LOCATIONS: Record<string, { label: string; lat: number; lng: number }> = {
   Mumbai: { label: "Mumbai, Maharashtra", lat: 19.076, lng: 72.8777 },
   Delhi: { label: "New Delhi", lat: 28.6139, lng: 77.209 },
@@ -96,67 +82,10 @@ const LOCATIONS: Record<string, { label: string; lat: number; lng: number }> = {
   Bengaluru: { label: "Bengaluru, Karnataka", lat: 12.9716, lng: 77.5946 },
 };
 
-const YOGAS = [
-  "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda",
-  "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata",
-  "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyan", "Parigha", "Shiva",
-  "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti",
-];
-
-const PAKSHA_TITHI = [
-  "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
-  "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
-  "Trayodashi", "Chaturdashi", "Purnima/Amavasya",
-];
-
-const KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti"];
-
 /* ------------------------------ helpers ------------------------------ */
 
 const num = (n: number) => Math.round(n).toLocaleString("en-IN");
 const TOL = 8; // NIFTY-point tolerance for a level "touch".
-
-function deriveTithi(elongation: number) {
-  const e = ((elongation % 360) + 360) % 360;
-  const idx = Math.floor(e / 12);
-  const paksha = idx < 15 ? "Shukla" : "Krishna";
-  const within = idx % 15;
-  const name = within === 14 ? (idx < 15 ? "Purnima" : "Amavasya") : PAKSHA_TITHI[within];
-  return { name, paksha };
-}
-
-function deriveKarana(elongation: number) {
-  const e = ((elongation % 360) + 360) % 360;
-  const half = Math.floor(e / 6); // 0..59
-  if (half === 0) return "Kimstughna";
-  if (half >= 57) return ["Shakuni", "Chatushpada", "Naga"][half - 57] ?? "Naga";
-  return KARANAS[(half - 1) % 7];
-}
-
-function deriveYoga(sunAbs: number, moonAbs: number) {
-  const sum = ((sunAbs + moonAbs) % 360 + 360) % 360;
-  return YOGAS[Math.floor(sum / (360 / 27)) % 27];
-}
-
-function sunTimes(lat: number, lng: number) {
-  const tz = 5.5;
-  const now = new Date(Date.now() + tz * 3600 * 1000);
-  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
-  const day = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000);
-  const rad = Math.PI / 180;
-  const decl = 23.45 * Math.sin(rad * (360 / 365) * (day - 81));
-  const cosH = Math.max(-1, Math.min(1, -Math.tan(lat * rad) * Math.tan(decl * rad)));
-  const H = Math.acos(cosH) / rad;
-  const noon = 12 - lng / 15 + tz;
-  const toHM = (h: number) => {
-    const hh = Math.floor(((h % 24) + 24) % 24);
-    const mm = Math.round((h - Math.floor(h)) * 60);
-    const d = new Date();
-    d.setHours(hh, mm, 0, 0);
-    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-  };
-  return { sunrise: toHM(noon - H / 15), sunset: toHM(noon + H / 15) };
-}
 
 type LevelKind = "R3" | "R2" | "R1" | "S1" | "S2" | "S3";
 type LevelStatus = "ACTIVE" | "TOUCHED" | "BROKEN" | "REJECTED" | "PENDING";
@@ -222,16 +151,6 @@ function buildLvls(planets: LivePlanet[], price: number): Lvl[] {
 }
 
 /* ------------------------------ exports ------------------------------ */
-
-function downloadBlob(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 const EXPORT_COLS = ["Planet", "Degree", "AbsDegree", "Sign", "Nakshatra", "Lord", "Pada", "Speed", "Motion", "R1", "R2", "R3", "S1", "S2", "S3"];
 const exportRow = (p: LivePlanet) =>
