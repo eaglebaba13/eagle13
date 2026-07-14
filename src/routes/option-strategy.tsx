@@ -625,39 +625,81 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
 }
 
 function SectorChart({ sectors }: { sectors: Sector[] }) {
-  const series = useMemo(() => [{ name: "Change %", data: sectors.map((s) => Number(s.changePct.toFixed(2))) }], [sectors]);
+function SectorChart({ sectors }: { sectors: Sector[] }) {
+  const [horizontal, setHorizontal] = useState(true);
+  useEffect(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-orient") : null;
+    if (saved === "v") setHorizontal(false);
+    else if (saved === "h") setHorizontal(true);
+  }, []);
+  const setOrient = (h: boolean) => {
+    setHorizontal(h);
+    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-orient", h ? "h" : "v");
+  };
+  // Sort by live Change % descending; highest sector shown on top / first.
+  const ordered = useMemo(() => {
+    const arr = [...sectors].sort((a, b) => b.changePct - a.changePct || a.name.localeCompare(b.name));
+    // Horizontal bars render bottom-to-top, so reverse to keep highest on top.
+    return horizontal ? [...arr].reverse() : arr;
+  }, [sectors, horizontal]);
+  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false } },
-      plotOptions: { bar: { horizontal: true, distributed: true, borderRadius: 4 } },
-      colors: sectors.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: sectors.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" } } },
+      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
+      plotOptions: { bar: { horizontal, distributed: true, borderRadius: 4, columnWidth: "60%" } },
+      colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
+      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: horizontal ? 0 : -45 } },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },
       dataLabels: { enabled: false },
       tooltip: { theme: "dark" as const },
     }),
-    [sectors],
+    [ordered, horizontal],
   );
-  return <ApexChart type="bar" series={series} options={options as any} height={300} />;
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>SECTOR STRENGTH CHART</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            onClick={() => setOrient(true)}
+            className="os-mono"
+            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: horizontal ? C.blue : C.muted, border: `1px solid ${horizontal ? C.blue : C.border}` }}
+          >
+            Horizontal
+          </button>
+          <button
+            onClick={() => setOrient(false)}
+            className="os-mono"
+            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: !horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: !horizontal ? C.blue : C.muted, border: `1px solid ${!horizontal ? C.blue : C.border}` }}
+          >
+            Vertical
+          </button>
+        </div>
+      </div>
+      <ApexChart type="bar" series={series} options={options as any} height={300} />
+    </>
+  );
 }
 
 function TopChart({ stocks }: { stocks: TopStock[] }) {
-  const series = useMemo(() => [{ name: "Change %", data: stocks.map((s) => Number(s.changePct.toFixed(2))) }], [stocks]);
+  // Sort by live Change % descending: highest gainer first, largest loser last.
+  const ordered = useMemo(() => sortStocks(stocks, "change"), [stocks]);
+  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false } },
+      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
       plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: "60%" } },
-      colors: stocks.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: stocks.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 } },
+      colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
+      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 } },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },
       dataLabels: { enabled: false },
       tooltip: { theme: "dark" as const },
     }),
-    [stocks],
+    [ordered],
   );
   return <ApexChart type="bar" series={series} options={options as any} height={300} />;
 }
