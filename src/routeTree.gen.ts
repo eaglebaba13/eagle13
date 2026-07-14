@@ -22,9 +22,14 @@ import { Route as LiveLevelsRouteImport } from './routes/live-levels'
 import { Route as DecisionRouteImport } from './routes/decision'
 import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as BacktestRouteImport } from './routes/backtest'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AstroRouteImport } from './routes/astro'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -94,9 +99,18 @@ const BacktestRoute = BacktestRouteImport.update({
   path: '/backtest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AstroRoute = AstroRouteImport.update({
   id: '/astro',
   path: '/astro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -108,6 +122,21 @@ const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
   id: '/dev/diagnostics',
   path: '/dev/diagnostics',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
+  id: '/license',
+  path: '/license',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
@@ -131,6 +160,7 @@ const Char91DotmcpChar93InvokeToolToolRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -146,12 +176,16 @@ export interface FileRoutesByFullPath {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/license': typeof AuthenticatedLicenseRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -167,13 +201,18 @@ export interface FileRoutesByTo {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/license': typeof AuthenticatedLicenseRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -189,6 +228,9 @@ export interface FileRoutesById {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/license': typeof AuthenticatedLicenseRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
@@ -197,6 +239,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -212,12 +255,16 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/license'
+    | '/profile'
+    | '/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -233,12 +280,17 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/license'
+    | '/profile'
+    | '/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -254,13 +306,18 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/license'
+    | '/_authenticated/profile'
+    | '/_authenticated/settings'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AstroRoute: typeof AstroRoute
+  AuthRoute: typeof AuthRoute
   BacktestRoute: typeof BacktestRoute
   BrokerRoute: typeof BrokerRoute
   DecisionRoute: typeof DecisionRoute
@@ -373,11 +430,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BacktestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/astro': {
       id: '/astro'
       path: '/astro'
       fullPath: '/astro'
       preLoaderRoute: typeof AstroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -393,6 +464,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/dev/diagnostics'
       preLoaderRoute: typeof DevDiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/license': {
+      id: '/_authenticated/license'
+      path: '/license'
+      fullPath: '/license'
+      preLoaderRoute: typeof AuthenticatedLicenseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -418,9 +510,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AstroRoute: AstroRoute,
+  AuthRoute: AuthRoute,
   BacktestRoute: BacktestRoute,
   BrokerRoute: BrokerRoute,
   DecisionRoute: DecisionRoute,
