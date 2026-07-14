@@ -281,12 +281,17 @@ textarea:focus-visible,
   border-radius: 6px;
 }
 
-/* Comfortable tap targets on touch devices. */
+/* Comfortable, WCAG-friendly tap targets on touch devices (>=48px). */
 @media (pointer: coarse) {
   button,
   a[role="button"],
-  [role="tab"] {
-    min-height: 44px;
+  [role="tab"],
+  a.eb-foot-btn,
+  .eb-icon-btn {
+    min-height: 48px;
+  }
+  .eb-icon-btn {
+    min-width: 48px;
   }
 }
 
