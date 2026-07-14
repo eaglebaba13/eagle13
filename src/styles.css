@@ -144,6 +144,26 @@
 }
 
 /* =========================================================================
+ * Enterprise refinement layer — global text rendering, terminal-grade
+ * tabular numerals (prices/levels/tables align vertically), and smooth
+ * scrolling. Presentational only; no markup/logic changes.
+ * ====================================================================== */
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  font-family: var(--eb-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  /* Data-terminal number alignment across the whole app. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
  * EagleBABA — premium "Bloomberg meets luxury astrology" design tokens
  * A luxury dark interface: deep-space black, dark navy, gold accents,
  * glass-morphism surfaces and soft gold-gradient borders.
