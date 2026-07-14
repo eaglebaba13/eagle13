@@ -1,0 +1,19 @@
+{
+  "formulaVersion": "GANN_NIFTY_ASTRO_V1_1",
+  "note": "Immutable Gann Nifty Astro reference. Do NOT update without explicit approval.",
+  "input": {
+    "previousClose": 24176
+  },
+  "expectedCycles": { "base": 67, "upper": 24120, "lower": 23760 },
+  "planets": [
+    { "planet": "Sun",     "degree": 27.02, "r1": 24147, "r2": 24093, "s1": 23787, "s2": 23733 },
+    { "planet": "Moon",    "degree": 15.50, "r1": 24136, "r2": 24105, "s1": 23776, "s2": 23745 },
+    { "planet": "Mercury", "degree": 21.12, "r1": 24141, "r2": 24099, "s1": 23781, "s2": 23739 },
+    { "planet": "Venus",   "degree": 4.30,  "r1": 24124, "r2": 24116, "s1": 23764, "s2": 23756 },
+    { "planet": "Mars",    "degree": 23.77, "r1": 24144, "r2": 24096, "s1": 23784, "s2": 23736 },
+    { "planet": "Jupiter", "degree": 2.02,  "r1": 24122, "r2": 24118, "s1": 23762, "s2": 23758 },
+    { "planet": "Saturn",  "degree": 18.88, "r1": 24139, "r2": 24101, "s1": 23779, "s2": 23741 },
+    { "planet": "Rahu",    "degree": 9.35,  "r1": 24129, "r2": 24111, "s1": 23769, "s2": 23751 },
+    { "planet": "Ketu",    "degree": 9.35,  "r1": 24129, "r2": 24111, "s1": 23769, "s2": 23751 }
+  ]
+}
