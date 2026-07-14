@@ -224,7 +224,7 @@ async function fetchOptionChain(
       support: hiPut.strike, // max put OI = support
       resistance: hiCall.strike, // max call OI = resistance
       source: "NSE",
-      focus: changePutOI > changeCallOI * 1.15 ? "CALL" : changeCallOI > changePutOI * 1.15 ? "PUT" : "NEUTRAL",
+      focus: pcrFocusFromOI(changeCallOI, changePutOI),
     };
   } catch {
     // Derived PCR proxy: bullish breadth ⇒ put writing ⇒ PCR > 1.
@@ -247,7 +247,7 @@ async function fetchOptionChain(
       support: atm - step * 2,
       resistance: atm + step * 2,
       source: "DERIVED",
-      focus: pcr >= 1.1 ? "CALL" : pcr <= 0.85 ? "PUT" : "NEUTRAL",
+      focus: pcrFocusFromRatio(pcr),
     };
   }
 }
@@ -366,12 +366,7 @@ export const getOptionStrategy = createServerFn({ method: "GET" }).handler(
 
     // India VIX strategy.
     const vixVal = vixR?.price ?? 14;
-    const vix: VixStrategy =
-      vixVal < 15
-        ? { vix: vixVal, changePct: vixR?.changePct ?? 0, band: "ITM", label: "BUY ITM OPTIONS", tone: "green" }
-        : vixVal <= 20
-          ? { vix: vixVal, changePct: vixR?.changePct ?? 0, band: "ATM", label: "BUY ATM OPTIONS", tone: "yellow" }
-          : { vix: vixVal, changePct: vixR?.changePct ?? 0, band: "OTM", label: "BUY OTM OPTIONS", tone: "red" };
+    const vix: VixStrategy = vixStrategy(vixVal, vixR?.changePct ?? 0);
 
     // Option chain.
     const optionChain = await fetchOptionChain(nifty.price, bullFrac);
