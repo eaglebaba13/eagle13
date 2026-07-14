@@ -128,10 +128,17 @@ function RiskWorkstation() {
   const decision = decisionQ.data?.decision;
   const decisionConfidence = decision?.confidence ?? 0;
   const conflicts = decision?.conflicts.length ?? 0;
+  const decisionBias: "BULL" | "BEAR" | "NEUTRAL" =
+    decision?.action === "STRONG_BUY_CE" || decision?.action === "BUY_CE"
+      ? "BULL"
+      : decision?.action === "STRONG_BUY_PE" || decision?.action === "BUY_PE"
+        ? "BEAR"
+        : "NEUTRAL";
   const optionsAgreement =
-    decision?.contributions.find((c) => c.key === "options")?.bias === decision?.direction &&
-    !!decision?.contributions.find((c) => c.key === "options")?.present;
-  const historicalAcc = decision?.contributions.find((c) => c.key === "historical")?.confidence ?? null;
+    !!decision?.contributions.find(
+      (c) => c.key === "options" && c.present && c.bias === decisionBias,
+    );
+  const historicalAcc: number | null = null;
 
   // ── Trade builder state ─────────────────────────────────────────
   const [symbol, setSymbol] = useState<"NIFTY" | "BANKNIFTY">("NIFTY");
