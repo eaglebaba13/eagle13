@@ -53,6 +53,8 @@ const DRAWER_ITEMS: NavItem[] = [
   { label: "Broker", icon: Plug, to: "/broker" },
   { label: "Profile", icon: UserIcon, to: "/profile" },
   { label: "License", icon: KeyRound, to: "/license" },
+  { label: "Billing", icon: KeyRound, to: "/billing" },
+  { label: "Pricing", icon: KeyRound, to: "/pricing" },
   { label: "Settings", icon: Settings, to: "/settings" },
   { label: "Planets", icon: Globe2, href: "#planets" },
   { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
