@@ -706,6 +706,266 @@ a {
   display: none;
 }
 
+/* ===================================================================== */
+/* Global mobile navigation (hamburger top bar + drawer + bottom nav)    */
+/* Hidden on desktop; shown at <=860px where the desktop sidebar hides.  */
+/* ===================================================================== */
+.eb-mtopbar,
+.eb-mbottomnav {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  /* ---- Sticky top bar with hamburger + logo ---- */
+  .eb-mtopbar {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    border-bottom: 1px solid var(--eb-glass-border);
+    border-radius: 0;
+  }
+  .eb-burger {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--eb-glass-border);
+    background: color-mix(in srgb, var(--eb-accent) 10%, transparent);
+    color: var(--eb-accent);
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  .eb-burger:hover {
+    background: color-mix(in srgb, var(--eb-accent) 18%, transparent);
+  }
+  .eb-mtopbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    min-width: 0;
+  }
+  .eb-mtopbar-brand img {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+  }
+  .eb-mtopbar-brand span {
+    font-family: var(--eb-head);
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--eb-accent);
+    text-shadow: 0 0 14px rgba(240, 165, 0, 0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- Backdrop ---- */
+  .eb-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+  }
+
+  /* ---- Slide drawer ---- */
+  .eb-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1001;
+    width: min(320px, 86vw);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--eb-glass-border);
+    border-radius: 0 20px 20px 0;
+    box-shadow: var(--eb-shadow-lg);
+    padding: 14px 12px calc(16px + env(safe-area-inset-bottom));
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
+  .eb-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 4px 12px;
+    border-bottom: 1px solid var(--eb-border);
+    margin-bottom: 10px;
+  }
+  .eb-drawer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .eb-drawer-brand img {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    object-fit: cover;
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.4);
+  }
+  .eb-drawer-title {
+    font-family: var(--eb-head);
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: var(--eb-accent);
+  }
+  .eb-drawer-sub {
+    font-family: var(--eb-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+    color: var(--eb-muted);
+    text-transform: uppercase;
+  }
+  .eb-drawer-close {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    border: 1px solid var(--eb-border);
+    background: transparent;
+    color: var(--eb-muted);
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease;
+  }
+  .eb-drawer-close:hover {
+    color: var(--eb-accent);
+    border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
+  }
+  .eb-drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
+  }
+  .eb-drawer-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: var(--eb-muted);
+    text-decoration: none;
+    font-family: var(--eb-body);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .eb-drawer-ico {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: inherit;
+  }
+  .eb-drawer-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .eb-drawer-item:active {
+    background: color-mix(in srgb, var(--eb-accent) 10%, transparent);
+  }
+  .eb-drawer-item.is-active {
+    color: var(--eb-accent);
+    background: color-mix(in srgb, var(--eb-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--eb-accent) 40%, var(--eb-border));
+    box-shadow: 0 0 22px -8px color-mix(in srgb, var(--eb-accent) 55%, transparent);
+  }
+  .eb-drawer-dot {
+    position: absolute;
+    left: -1px;
+    top: 26%;
+    bottom: 26%;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--eb-gold-grad);
+  }
+
+  /* ---- Bottom navigation ---- */
+  .eb-mbottomnav {
+    position: fixed;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    width: calc(100% - 18px);
+    max-width: 480px;
+    z-index: 800;
+    display: flex;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 6px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    border-radius: 20px;
+    box-shadow: var(--eb-shadow-lg);
+  }
+  .eb-mbn-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 48px;
+    padding: 6px 2px;
+    border: none;
+    background: transparent;
+    border-radius: 14px;
+    color: var(--eb-muted);
+    text-decoration: none;
+    cursor: pointer;
+    font-family: var(--eb-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2px;
+    transition: color 0.18s ease, background 0.18s ease;
+  }
+  .eb-mbn-item > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .eb-mbn-item.is-active {
+    color: var(--eb-accent);
+    background: color-mix(in srgb, var(--eb-accent) 14%, transparent);
+  }
+
+  /* Keep page content clear of the fixed bottom navigation. */
+  body {
+    padding-bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eb-drawer,
+  .eb-drawer-backdrop {
+    transition: none !important;
+  }
+}
+
 /* Horizontal scroll strip with hidden scrollbar (chips / tabs on mobile). */
 .eb-scroll-x {
   scrollbar-width: none;

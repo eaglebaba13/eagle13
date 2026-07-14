@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { MobileNav } from "../components/MobileNav";
 
 function NotFoundComponent() {
   return (
@@ -142,6 +143,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Global mobile navigation: sticky hamburger bar, slide drawer, bottom nav. */}
+      <MobileNav />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
