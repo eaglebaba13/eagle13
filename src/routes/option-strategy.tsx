@@ -350,28 +350,7 @@ function OptionStrategyTerminal() {
             <Top10Widget stocks={data.top10} />
 
             {/* Sector strength */}
-            <Card style={{ padding: 0, marginBottom: 14 }}>
-              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>SECTOR STRENGTH</div>
-              <div style={{ overflowX: "auto" }}>
-                <table className="os-table">
-                  <thead>
-                    <tr><th>Sector</th><th>Change %</th><th>Advance</th><th>Decline</th><th>Strength</th><th>Bias</th></tr>
-                  </thead>
-                  <tbody>
-                    {data.sectors.map((s) => (
-                      <tr key={s.key}>
-                        <td style={{ fontWeight: 700 }}>{s.name}</td>
-                        <td className="os-mono" style={{ color: s.changePct >= 0 ? C.green : C.red }}>{s.changePct >= 0 ? "▲" : "▼"} {Math.abs(s.changePct).toFixed(2)}%</td>
-                        <td className="os-mono" style={{ color: C.green }}>{s.advance}</td>
-                        <td className="os-mono" style={{ color: C.red }}>{s.decline}</td>
-                        <td className="os-mono">{s.strength.toFixed(0)}</td>
-                        <td style={{ color: s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.gold, fontWeight: 700 }}>{s.bias}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+            <SectorStrengthWidget sectors={data.sectors} />
 
             {/* Option chain */}
             <Card style={{ marginBottom: 14 }}>
