@@ -17,6 +17,26 @@ export const Route = createFileRoute("/_authenticated/billing")({
 });
 
 function BillingPage() {
+  return <BillingPageInner />;
+}
+
+function EnvironmentBadge({ env }: { env: "test" | "live" | "not_configured" }) {
+  const styles: Record<typeof env, string> = {
+    test: "bg-amber-500/15 text-amber-300 border-amber-400/30",
+    live: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+    not_configured: "bg-white/5 text-muted-foreground border-white/10",
+  };
+  const label = env === "not_configured" ? "Not configured" : env.toUpperCase();
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles[env]}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function BillingPageInner() {
   const { user } = useAuth();
   const { effective, refresh } = useEntitlements();
   const adapter = getBillingAdapter();
