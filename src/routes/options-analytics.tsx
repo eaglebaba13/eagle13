@@ -23,6 +23,16 @@ import {
   type FocusSample,
   type OptionLeg,
 } from "@/lib/options-analytics";
+import {
+  evaluateOptionsTradability,
+  computeSpotDivergence,
+  atmCoverage,
+  safeRecommendationAction,
+  exportFilename,
+  isExpiryValid,
+  type SourceStatus,
+} from "@/lib/options-integrity";
+import { nseSession } from "@/lib/terminal-clock";
 import { downloadBlob } from "@/lib/download";
 
 const C = {
@@ -39,10 +49,10 @@ const C = {
 
 const REFRESH_MS = 30_000;
 
-const chainQuery = (symbol: OptionsSymbol, expiry?: string) =>
+const chainQuery = (symbol: OptionsSymbol, expiry?: string, demo = false) =>
   queryOptions({
-    queryKey: ["options-chain", symbol, expiry ?? "auto"],
-    queryFn: () => getOptionsChain({ data: { symbol, expiry } }),
+    queryKey: ["options-chain", demo ? "demo" : "live", symbol, expiry ?? "auto"],
+    queryFn: () => getOptionsChain({ data: { symbol, expiry, demo } }),
     refetchInterval: REFRESH_MS,
     refetchOnWindowFocus: true,
   });
@@ -104,18 +114,36 @@ function OptionsAnalyticsPage() {
   const [expiry, setExpiry] = useState<string | undefined>(undefined);
   const [showMethod, setShowMethod] = useState(false);
   const [strikeSearch, setStrikeSearch] = useState("");
+  const [demoMode, setDemoMode] = useState(false);
 
-  const chainQ = useSuspenseQuery(chainQuery(symbol, expiry));
+  const chainQ = useSuspenseQuery(chainQuery(symbol, expiry, demoMode));
   const astroQ = useSuspenseQuery(astroQuery());
   const marketQ = useSuspenseQuery(marketQuery());
 
-  const { snapshot, expiries, selectedExpiry, step, degraded, errorMessage } = chainQ.data;
+  const { snapshot, expiries, selectedExpiry, step, degraded, errorMessage, integrity, yahooSpot } =
+    chainQ.data;
   const astro = astroQ.data;
   const market = marketQ.data;
 
+  const session = nseSession();
+  const marketOpen = session.isOpen;
+
+  const sourceStatus: SourceStatus = integrity.sourceStatus;
+  const isUnavailable = sourceStatus === "UNAVAILABLE";
+  const isDemo = sourceStatus === "DEMO";
+
   // Focus alert confirmation history (last snapshots only, in memory).
   const focusHistory = useRef<FocusSample[]>([]);
+  // Reset confirmation history whenever symbol / expiry / provider / status / demo mode changes.
+  const historyKey = `${symbol}::${selectedExpiry}::${snapshot.provider}::${sourceStatus}::${demoMode}`;
+  const prevHistoryKey = useRef(historyKey);
+  if (prevHistoryKey.current !== historyKey) {
+    focusHistory.current = [];
+    prevHistoryKey.current = historyKey;
+  }
   useEffect(() => {
+    // Only accumulate alert-confirmation samples on true LIVE snapshots during market hours.
+    if (sourceStatus !== "LIVE" || !marketOpen) return;
     const pcr = computePCR(snapshot.legs);
     let cw = 0,
       pw = 0;
@@ -130,9 +158,13 @@ function OptionsAnalyticsPage() {
       { ts: Date.now(), putWriting: pw, callWriting: cw },
     ];
     void pcr;
-  }, [snapshot]);
+  }, [snapshot, sourceStatus, marketOpen]);
 
   const analytics = useMemo(() => {
+    if (isUnavailable) {
+      // No analytics on an unavailable chain.
+      return null;
+    }
     const legs = snapshot.legs;
     const spot = snapshot.spot;
     const atm = atmStrike(spot, snapshot.strikes);
@@ -220,11 +252,48 @@ function OptionsAnalyticsPage() {
       focus,
     };
     // focusHistory is a ref; safe to omit
-  }, [snapshot, astro, market, symbol]);
+  }, [snapshot, astro, market, symbol, isUnavailable]);
 
   const spotChangePct = market.nifty.changePct;
   const daysToExpiry =
     expiries.find((e) => e.expiry === selectedExpiry)?.daysToExpiry ?? 0;
+
+  // Tradability gate — always compute so the source bar can render.
+  const coverage = analytics
+    ? atmCoverage(snapshot.strikes, analytics.atm)
+    : { below: 0, above: 0 };
+  const hasCallOi = snapshot.legs.some((l) => l.side === "CE" && Number.isFinite(l.oi));
+  const hasPutOi = snapshot.legs.some((l) => l.side === "PE" && Number.isFinite(l.oi));
+  const expiryValid = isExpiryValid(
+    selectedExpiry,
+    expiries.map((e) => e.expiry),
+  );
+  const tradability = evaluateOptionsTradability({
+    demo: demoMode,
+    sourceStatus,
+    underlying: snapshot.spot || null,
+    expiry: selectedExpiry || null,
+    expiryValid,
+    strikesBelowAtm: coverage.below,
+    strikesAboveAtm: coverage.above,
+    hasCallOi,
+    hasPutOi,
+    providerTimestampValid: Boolean(integrity.providerTimestamp),
+    marketOpen,
+  });
+
+  const divergence = computeSpotDivergence(snapshot.spot || null, yahooSpot);
+
+  const rawAction = analytics?.recommendation.action ?? "WAIT";
+  const safeAction = safeRecommendationAction(rawAction, tradability, marketOpen);
+  const safeConfidence =
+    safeAction === "BUY_CE" || safeAction === "BUY_PE" || safeAction === "WAIT"
+      ? sourceStatus === "DELAYED"
+        ? Math.round((analytics?.recommendation.confidence ?? 0) * 0.5)
+        : (analytics?.recommendation.confidence ?? 0)
+      : 0;
+  const showRealRecommendation =
+    !isDemo && !isUnavailable && safeAction !== "MARKET_CLOSED" && safeAction !== "DATA_INCOMPLETE";
 
   const filteredLegs = useMemo(() => {
     const byStrike = new Map<number, { ce?: OptionLeg; pe?: OptionLeg }>();
@@ -241,6 +310,20 @@ function OptionsAnalyticsPage() {
   }, [snapshot, strikeSearch]);
 
   const exportCsv = () => {
+    if (isUnavailable) return;
+    const mode: "LIVE" | "DEMO" = isDemo ? "DEMO" : "LIVE";
+    const meta = [
+      `# EagleBABA Options Analytics export`,
+      `# instrument=${symbol}`,
+      `# expiry=${selectedExpiry}`,
+      `# mode=${mode}`,
+      `# source_status=${sourceStatus}`,
+      `# provider=${snapshot.provider}`,
+      `# provider_timestamp=${integrity.providerTimestamp ?? ""}`,
+      `# export_timestamp=${new Date().toISOString()}`,
+      `# data_age_seconds=${integrity.dataAgeSeconds}`,
+      `# warnings=${tradability.blockingReasons.concat(tradability.warnings).join("; ")}`,
+    ].join("\n");
     const rows = [
       [
         "strike",
@@ -271,26 +354,76 @@ function OptionsAnalyticsPage() {
     ]
       .map((r) => r.join(","))
       .join("\n");
-    downloadBlob(rows, `options-chain-${symbol}-${selectedExpiry}.csv`, "text/csv");
+    downloadBlob(
+      `${meta}\n${rows}`,
+      exportFilename("OPTIONS", symbol, selectedExpiry, mode, "csv"),
+      "text/csv",
+    );
   };
 
   const exportJson = () => {
+    if (isUnavailable) return;
+    const mode: "LIVE" | "DEMO" = isDemo ? "DEMO" : "LIVE";
     downloadBlob(
-      JSON.stringify({ snapshot, analytics }, null, 2),
-      `options-chain-${symbol}-${selectedExpiry}.json`,
+      JSON.stringify(
+        {
+          mode,
+          integrity,
+          tradability,
+          snapshot,
+          analytics,
+          exportTimestamp: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+      exportFilename("OPTIONS", symbol, selectedExpiry, mode, "json"),
       "application/json",
     );
   };
 
-  const rec = analytics.recommendation;
   const recColor =
-    rec.action === "BUY_CE" ? C.green : rec.action === "BUY_PE" ? C.red : C.gold;
+    safeAction === "BUY_CE"
+      ? C.green
+      : safeAction === "BUY_PE"
+        ? C.red
+        : safeAction === "MARKET_CLOSED"
+          ? C.blue
+          : safeAction === "DATA_INCOMPLETE"
+            ? C.red
+            : C.gold;
   const recLabel =
-    rec.action === "BUY_CE" ? "BUY CE" : rec.action === "BUY_PE" ? "BUY PE" : "WAIT";
+    safeAction === "BUY_CE"
+      ? "BUY CE"
+      : safeAction === "BUY_PE"
+        ? "BUY PE"
+        : safeAction === "MARKET_CLOSED"
+          ? "MARKET CLOSED"
+          : safeAction === "DATA_INCOMPLETE"
+            ? "DATA INCOMPLETE"
+            : isDemo
+              ? "NO LIVE RECOMMENDATION"
+              : "WAIT";
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1rem" }}>
+        {isDemo && <DemoBanner />}
+        <SourceBar
+          sourceStatus={sourceStatus}
+          provider={snapshot.provider}
+          providerTimestamp={integrity.providerTimestamp}
+          dataAgeSeconds={integrity.dataAgeSeconds}
+          expiry={selectedExpiry}
+          strikeCount={integrity.strikeCount}
+          spot={snapshot.spot}
+          yahooSpot={yahooSpot}
+          divergencePct={divergence.divergencePct}
+          divergenceSevere={divergence.severe}
+          cacheStatus={integrity.cacheStatus}
+          lastLiveFetchAt={integrity.lastLiveFetchAt}
+          marketOpen={marketOpen}
+        />
         <header
           style={{
             display: "flex",
@@ -325,6 +458,21 @@ function OptionsAnalyticsPage() {
               ← Dashboard
             </Link>
             <button
+              onClick={() => setDemoMode((v) => !v)}
+              style={{
+                padding: "0.4rem 0.75rem",
+                border: `1px solid ${demoMode ? "#a855f7" : C.border}`,
+                borderRadius: 6,
+                background: demoMode ? "rgba(168,85,247,0.15)" : "transparent",
+                color: demoMode ? "#e9d5ff" : C.text,
+                cursor: "pointer",
+                fontSize: "0.85rem",
+              }}
+              title="Demo mode uses a deterministic simulated chain. Recommendations, alerts, and live analytics are disabled."
+            >
+              {demoMode ? "Exit Demo" : "Demo Mode"}
+            </button>
+            <button
               onClick={() => setShowMethod(true)}
               style={{
                 padding: "0.4rem 0.75rem",
@@ -340,13 +488,15 @@ function OptionsAnalyticsPage() {
             </button>
             <button
               onClick={exportCsv}
+              disabled={isUnavailable}
               style={{
                 padding: "0.4rem 0.75rem",
                 border: `1px solid ${C.border}`,
                 borderRadius: 6,
                 background: "transparent",
-                color: C.text,
-                cursor: "pointer",
+                color: isUnavailable ? C.muted : C.text,
+                cursor: isUnavailable ? "not-allowed" : "pointer",
+                opacity: isUnavailable ? 0.5 : 1,
                 fontSize: "0.85rem",
               }}
             >
@@ -354,13 +504,15 @@ function OptionsAnalyticsPage() {
             </button>
             <button
               onClick={exportJson}
+              disabled={isUnavailable}
               style={{
                 padding: "0.4rem 0.75rem",
                 border: `1px solid ${C.border}`,
                 borderRadius: 6,
                 background: "transparent",
-                color: C.text,
-                cursor: "pointer",
+                color: isUnavailable ? C.muted : C.text,
+                cursor: isUnavailable ? "not-allowed" : "pointer",
+                opacity: isUnavailable ? 0.5 : 1,
                 fontSize: "0.85rem",
               }}
             >
@@ -369,7 +521,7 @@ function OptionsAnalyticsPage() {
           </div>
         </header>
 
-        {degraded && (
+        {degraded && !isUnavailable && (
           <div
             style={{
               padding: "0.75rem 1rem",
@@ -380,9 +532,19 @@ function OptionsAnalyticsPage() {
               fontSize: "0.85rem",
             }}
           >
-            <strong style={{ color: C.gold }}>Data source: SIMULATED.</strong>{" "}
-            {errorMessage}
+            <strong style={{ color: C.gold }}>Degraded feed.</strong> {errorMessage}
           </div>
+        )}
+
+        {isUnavailable && (
+          <UnavailableState
+            errorMessage={errorMessage}
+            onRetry={() => chainQ.refetch()}
+            onEnableDemo={() => setDemoMode(true)}
+            expiries={expiries}
+            selectedExpiry={selectedExpiry}
+            onChangeExpiry={setExpiry}
+          />
         )}
 
         {/* Controls */}
@@ -441,6 +603,8 @@ function OptionsAnalyticsPage() {
           </div>
         </div>
 
+        {!analytics ? null : (
+        <>
         {/* Summary cards */}
         <div
           style={{
@@ -483,10 +647,16 @@ function OptionsAnalyticsPage() {
                 {recLabel}
               </div>
               <div style={{ fontSize: "0.85rem", color: C.muted }}>
-                Confidence {rec.confidence}%
+                {showRealRecommendation
+                  ? `Confidence ${safeConfidence}%${sourceStatus === "DELAYED" ? " (delayed-data penalty applied)" : ""}`
+                  : isDemo
+                    ? "Demo mode — live recommendations disabled"
+                    : safeAction === "MARKET_CLOSED"
+                      ? "Market closed — showing previous-session snapshot"
+                      : "Analytics paused until data integrity is restored"}
               </div>
             </div>
-            {analytics.focus && (
+            {analytics.focus && sourceStatus === "LIVE" && marketOpen && !isDemo && (
               <div
                 style={{
                   padding: "0.5rem 1rem",
@@ -501,6 +671,23 @@ function OptionsAnalyticsPage() {
               </div>
             )}
           </div>
+          {(tradability.blockingReasons.length > 0 || tradability.warnings.length > 0) && (
+            <ul
+              style={{
+                margin: "0.75rem 0 0",
+                paddingLeft: "1.25rem",
+                color: tradability.blockingReasons.length > 0 ? C.red : C.gold,
+                fontSize: "0.8rem",
+              }}
+            >
+              {tradability.blockingReasons.map((r) => (
+                <li key={`b-${r}`}>Blocking: {r}</li>
+              ))}
+              {tradability.warnings.map((r) => (
+                <li key={`w-${r}`}>Warning: {r}</li>
+              ))}
+            </ul>
+          )}
           <div
             style={{
               display: "grid",
@@ -509,7 +696,7 @@ function OptionsAnalyticsPage() {
               marginTop: "0.75rem",
             }}
           >
-            {rec.scores.map((s) => (
+            {(showRealRecommendation ? analytics.recommendation.scores : []).map((s) => (
               <div
                 key={s.label}
                 style={{
@@ -529,7 +716,7 @@ function OptionsAnalyticsPage() {
               </div>
             ))}
           </div>
-          {rec.reasons.length > 0 && (
+          {showRealRecommendation && analytics.recommendation.reasons.length > 0 && (
             <ul
               style={{
                 margin: "0.75rem 0 0",
@@ -538,7 +725,7 @@ function OptionsAnalyticsPage() {
                 fontSize: "0.82rem",
               }}
             >
-              {rec.reasons.map((r) => (
+              {analytics.recommendation.reasons.map((r) => (
                 <li key={r}>{r}</li>
               ))}
             </ul>
@@ -717,13 +904,15 @@ function OptionsAnalyticsPage() {
           }}
         >
           Provider: <strong style={{ color: C.text }}>{snapshot.provider}</strong> · Source:{" "}
-          <strong style={{ color: snapshot.source === "NSE" ? C.green : C.gold }}>
-            {snapshot.source}
+          <strong style={{ color: sourceStatus === "LIVE" ? C.green : sourceStatus === "DEMO" ? "#a855f7" : C.gold }}>
+            {sourceStatus}
           </strong>{" "}
           · Strikes: {analytics.dq.strikesLoaded} · IV:{" "}
           {analytics.dq.hasIv ? "available" : "unavailable"} · Greeks: not provided · Data
           age: {analytics.dq.ageSeconds}s · Missing: {analytics.dq.missingFields.length || "none"}
         </div>
+        </>
+        )}
 
         <div style={{ fontSize: "0.75rem", color: C.muted }}>
           Options analytics are derived from available market data and may be delayed or incomplete. OI,
@@ -733,6 +922,7 @@ function OptionsAnalyticsPage() {
 
         {showMethod && <MethodologyDrawer onClose={() => setShowMethod(false)} />}
       </div>
+      {isDemo && <DemoWatermark />}
     </div>
   );
 }
@@ -865,6 +1055,236 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
           <p><strong style={{ color: C.text }}>Greeks and IV.</strong> Provider values are used verbatim after validation. When the provider does not supply a value it is displayed as "—". Greeks and IV are never fabricated.</p>
           <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When NSE feed access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
         </div>
+      </div>
+    </div>
+  );
+}
+/* ------------------------- Phase 16.1 helpers ------------------------- */
+
+function DemoBanner() {
+  return (
+    <div
+      style={{
+        padding: "0.6rem 1rem",
+        background: "linear-gradient(90deg, rgba(168,85,247,0.25), rgba(168,85,247,0.10))",
+        border: "1px solid #a855f7",
+        borderRadius: 8,
+        color: "#e9d5ff",
+        fontWeight: 700,
+        letterSpacing: 0.5,
+        textAlign: "center",
+        marginBottom: "0.75rem",
+        fontSize: "0.9rem",
+      }}
+    >
+      ⚠ DEMO DATA — NOT LIVE MARKET DATA. Recommendations, alerts and exports are disabled or watermarked.
+    </div>
+  );
+}
+
+function DemoWatermark() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        background:
+          "repeating-linear-gradient(45deg, transparent 0 120px, rgba(168,85,247,0.05) 120px 240px)",
+        zIndex: 1,
+      }}
+    />
+  );
+}
+
+function statusTone(status: SourceStatus): { color: string; bg: string; label: string } {
+  switch (status) {
+    case "LIVE":
+      return { color: "#22c55e", bg: "rgba(34,197,94,0.12)", label: "LIVE" };
+    case "DELAYED":
+      return { color: "#f59e0b", bg: "rgba(245,158,11,0.12)", label: "DELAYED" };
+    case "STALE":
+      return { color: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "STALE" };
+    case "PARTIAL":
+      return { color: "#f97316", bg: "rgba(249,115,22,0.12)", label: "PARTIAL" };
+    case "UNAVAILABLE":
+      return { color: "#ef4444", bg: "rgba(239,68,68,0.18)", label: "UNAVAILABLE" };
+    case "DEMO":
+      return { color: "#a855f7", bg: "rgba(168,85,247,0.15)", label: "DEMO" };
+  }
+}
+
+function SourceBar(props: {
+  sourceStatus: SourceStatus;
+  provider: string;
+  providerTimestamp: string | null;
+  dataAgeSeconds: number;
+  expiry: string;
+  strikeCount: number;
+  spot: number;
+  yahooSpot: number | null;
+  divergencePct: number;
+  divergenceSevere: boolean;
+  cacheStatus: string;
+  lastLiveFetchAt: string | null;
+  marketOpen: boolean;
+}) {
+  const tone = statusTone(props.sourceStatus);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.75rem",
+        alignItems: "center",
+        padding: "0.55rem 0.85rem",
+        border: `1px solid ${tone.color}`,
+        background: tone.bg,
+        borderRadius: 8,
+        marginBottom: "0.75rem",
+        fontSize: "0.78rem",
+        color: C.text,
+      }}
+    >
+      <span
+        style={{
+          padding: "0.15rem 0.5rem",
+          borderRadius: 4,
+          background: tone.color,
+          color: "#000",
+          fontWeight: 800,
+          letterSpacing: 0.5,
+        }}
+      >
+        {tone.label}
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Provider </span>
+        <strong>{props.provider}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Age </span>
+        <strong>{props.dataAgeSeconds}s</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Expiry </span>
+        <strong>{props.expiry || "—"}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Strikes </span>
+        <strong>{props.strikeCount}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Spot </span>
+        <strong>{props.spot ? props.spot.toFixed(2) : "—"}</strong>
+        {props.yahooSpot != null && (
+          <span style={{ color: C.muted }}>
+            {" "}
+            / Yahoo <strong style={{ color: C.text }}>{props.yahooSpot.toFixed(2)}</strong>
+            {" · Δ "}
+            <strong style={{ color: props.divergenceSevere ? "#ef4444" : C.text }}>
+              {props.divergencePct.toFixed(2)}%
+            </strong>
+            {props.divergenceSevere && (
+              <span style={{ color: "#ef4444", marginLeft: 4 }}>SOURCE MISMATCH</span>
+            )}
+          </span>
+        )}
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Cache </span>
+        <strong>{props.cacheStatus}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Last live </span>
+        <strong>
+          {props.lastLiveFetchAt ? new Date(props.lastLiveFetchAt).toLocaleTimeString() : "—"}
+        </strong>
+      </span>
+      <span style={{ marginLeft: "auto", color: props.marketOpen ? "#22c55e" : C.muted }}>
+        {props.marketOpen ? "Market Open" : "Market Closed"}
+      </span>
+    </div>
+  );
+}
+
+function UnavailableState(props: {
+  errorMessage: string | null;
+  onRetry: () => void;
+  onEnableDemo: () => void;
+  expiries: { expiry: string; category: string; daysToExpiry: number }[];
+  selectedExpiry: string;
+  onChangeExpiry: (e: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        padding: "1rem 1.25rem",
+        border: `1px dashed ${C.red}`,
+        background: "rgba(239,68,68,0.06)",
+        borderRadius: 10,
+        marginBottom: "1rem",
+      }}
+    >
+      <div style={{ fontWeight: 800, color: C.red, fontSize: "1.05rem", marginBottom: 4 }}>
+        DATA UNAVAILABLE — WAIT
+      </div>
+      <div style={{ color: C.muted, fontSize: "0.85rem", marginBottom: "0.6rem" }}>
+        Live option-chain data is currently unavailable. Analytics and directional recommendations
+        have been paused to prevent misleading output.
+      </div>
+      {props.errorMessage && (
+        <div style={{ color: C.muted, fontSize: "0.78rem", marginBottom: "0.6rem" }}>
+          {props.errorMessage}
+        </div>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <button
+          onClick={props.onRetry}
+          style={{
+            padding: "0.4rem 0.75rem",
+            border: `1px solid ${C.border}`,
+            borderRadius: 6,
+            background: "transparent",
+            color: C.text,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+          }}
+        >
+          Retry
+        </button>
+        <button
+          onClick={props.onEnableDemo}
+          style={{
+            padding: "0.4rem 0.75rem",
+            border: "1px solid #a855f7",
+            borderRadius: 6,
+            background: "rgba(168,85,247,0.1)",
+            color: "#e9d5ff",
+            cursor: "pointer",
+            fontSize: "0.82rem",
+          }}
+        >
+          Open Demo Mode
+        </button>
+        {props.expiries.map((e) => (
+          <button
+            key={e.expiry}
+            onClick={() => props.onChangeExpiry(e.expiry)}
+            style={{
+              padding: "0.4rem 0.6rem",
+              border: `1px solid ${e.expiry === props.selectedExpiry ? C.blue : C.border}`,
+              borderRadius: 6,
+              background: "transparent",
+              color: C.text,
+              cursor: "pointer",
+              fontSize: "0.78rem",
+            }}
+          >
+            {e.expiry}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -1,11 +1,17 @@
 // Server function that fetches a live NIFTY / BANK NIFTY option-chain
 // snapshot, validates the provider payload with Zod, categorises expiries,
-// and normalises the result for the Options Analytics Terminal (Phase 16).
-// If the upstream NSE endpoint is unreachable (common from datacenter IPs
-// because it requires browser cookies), the function transparently falls
-// back to a deterministic SIMULATED chain built around the live Yahoo spot
-// so the terminal degrades gracefully. The `source` field is surfaced in
-// the UI so users can always tell which provider produced the snapshot.
+// and normalises the result for the Options Analytics Terminal.
+//
+// Phase 16.1 — Data-integrity hardening:
+//   * Live mode NEVER auto-substitutes simulated data. If the upstream feed
+//     fails and no last-known-good cache is available, the response carries
+//     sourceStatus = "UNAVAILABLE" and empty legs so the UI can render its
+//     safe empty state and disable analytics + recommendations.
+//   * Simulated chains are produced ONLY when the caller explicitly opts in
+//     via `demo: true`, and are tagged sourceStatus = "DEMO".
+//   * A short-lived last-known-good (LKG) cache serves the previous valid
+//     snapshot when the live provider errors, tagged sourceStatus = "STALE"
+//     when past the delayed threshold — never labelled LIVE.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { fetchJson } from "./http";
@@ -16,6 +22,13 @@ import type {
   OptionLeg,
 } from "./options-analytics";
 import { categorizeExpiries, type ExpiryCategory } from "./options-analytics";
+import {
+  FRESHNESS_THRESHOLDS,
+  classifyFreshness,
+  atmCoverage,
+  type SourceStatus,
+  type OptionsIntegrityMeta,
+} from "./options-integrity";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -81,6 +94,8 @@ export type OptionsChainResponse = {
   step: number;
   degraded: boolean;
   errorMessage: string | null;
+  integrity: OptionsIntegrityMeta;
+  yahooSpot: number | null;
 };
 
 /* -------------------------- helpers -------------------------- */
@@ -104,6 +119,14 @@ async function fetchSpot(sym: OptionsSymbol): Promise<{ price: number; prevClose
   return { price, prevClose: prev };
 }
 
+async function fetchSpotSafe(sym: OptionsSymbol): Promise<{ price: number | null; prevClose: number | null }> {
+  try {
+    return await fetchSpot(sym);
+  } catch {
+    return { price: null, prevClose: null };
+  }
+}
+
 function toIsoDate(nseExpiry: string): string {
   // NSE returns "17-Jul-2026". Convert to "2026-07-17".
   const parts = nseExpiry.split("-");
@@ -113,6 +136,25 @@ function toIsoDate(nseExpiry: string): string {
   const m = months.indexOf(mon);
   if (m < 0) return nseExpiry;
   return `${y}-${String(m + 1).padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
+
+/* ------------------- Last-known-good (LKG) cache ------------------- */
+// Module-level cache of the most recent successful LIVE snapshot per
+// (symbol, expiry). Persists for the lifetime of the server isolate.
+
+type LkgEntry = {
+  snapshot: OptionChainSnapshot;
+  expiries: ExpirySummary[];
+  yahooSpot: number | null;
+  tradingDate: string;
+  fetchedAtMs: number;
+};
+const LKG = new Map<string, LkgEntry>();
+function lkgKey(sym: OptionsSymbol, expiry: string): string {
+  return `${sym}::${expiry}`;
+}
+function currentTradingDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /* --------------------- SIMULATED fallback -------------------- */
@@ -176,6 +218,129 @@ function simulatedExpiries(now: Date = new Date()): string[] {
   return out;
 }
 
+/* ------------------------- Integrity helpers ------------------------- */
+
+function computeIntegrity(
+  snapshot: OptionChainSnapshot,
+  opts: {
+    demo: boolean;
+    minCoverage: number;
+    fromLkg: boolean;
+    lastLiveFetchAt: string | null;
+    yahooSpot: number | null;
+  },
+): OptionsIntegrityMeta {
+  const receivedAt = new Date().toISOString();
+  const ageSec = Math.max(
+    0,
+    Math.round((Date.now() - new Date(snapshot.fetchedAt).getTime()) / 1000),
+  );
+  const strikeCount = snapshot.strikes.length;
+  const missing = snapshot.legs.filter((l) => !Number.isFinite(l.oi)).length;
+  const validStrikes = snapshot.strikes.length; // placeholder — refined below
+  const hasCall = snapshot.legs.some((l) => l.side === "CE");
+  const hasPut = snapshot.legs.some((l) => l.side === "PE");
+  const atm =
+    snapshot.strikes.length && snapshot.spot
+      ? snapshot.strikes.reduce((b, s) =>
+          Math.abs(s - snapshot.spot) < Math.abs(b - snapshot.spot) ? s : b,
+        )
+      : 0;
+  const cov = atmCoverage(snapshot.strikes, atm);
+  const partial =
+    !hasCall || !hasPut || cov.below < opts.minCoverage || cov.above < opts.minCoverage;
+
+  let sourceStatus: SourceStatus;
+  let cacheStatus: OptionsIntegrityMeta["cacheStatus"];
+  if (opts.demo || snapshot.source === "DEMO" || snapshot.source === "SIMULATED") {
+    sourceStatus = "DEMO";
+    cacheStatus = "DEMO";
+  } else if (snapshot.source === "UNAVAILABLE" || strikeCount === 0) {
+    sourceStatus = "UNAVAILABLE";
+    cacheStatus = "NONE";
+  } else if (partial) {
+    sourceStatus = "PARTIAL";
+    cacheStatus = opts.fromLkg ? "LAST_KNOWN_GOOD" : "LIVE";
+  } else {
+    const freshness = classifyFreshness(ageSec);
+    if (freshness === "STALE") sourceStatus = "STALE";
+    else if (freshness === "DELAYED" || opts.fromLkg) sourceStatus = "DELAYED";
+    else sourceStatus = "LIVE";
+    cacheStatus = opts.fromLkg ? "LAST_KNOWN_GOOD" : "LIVE";
+  }
+
+  const providerTs = snapshot.fetchedAt;
+  const isTradable =
+    sourceStatus === "LIVE" &&
+    hasCall &&
+    hasPut &&
+    cov.below >= opts.minCoverage &&
+    cov.above >= opts.minCoverage &&
+    snapshot.spot > 0;
+
+  const spotDivergence =
+    opts.yahooSpot != null && snapshot.spot > 0
+      ? Math.abs(snapshot.spot - opts.yahooSpot)
+      : null;
+
+  return {
+    sourceStatus,
+    provider: snapshot.provider,
+    fetchedAt: snapshot.fetchedAt,
+    providerTimestamp: providerTs,
+    receivedAt,
+    dataAgeSeconds: ageSec,
+    expiry: snapshot.expiry || null,
+    underlying: snapshot.spot || null,
+    strikeCount,
+    validStrikeCount: validStrikes - missing,
+    missingFieldCount: missing,
+    isTradable,
+    lastLiveFetchAt: opts.lastLiveFetchAt,
+    cacheStatus,
+    spotDivergence,
+  };
+}
+
+function emptyUnavailableResponse(
+  sym: OptionsSymbol,
+  expiryHint: string | undefined,
+  step: number,
+  yahooSpot: number | null,
+  errorMessage: string,
+): OptionsChainResponse {
+  const iso = simulatedExpiries();
+  const expiries = categorizeExpiries(iso);
+  const selectedExpiry = expiryHint && iso.includes(expiryHint) ? expiryHint : iso[0];
+  const snapshot: OptionChainSnapshot = {
+    symbol: sym,
+    spot: yahooSpot ?? 0,
+    expiry: selectedExpiry,
+    fetchedAt: new Date().toISOString(),
+    strikes: [],
+    legs: [],
+    provider: "unavailable",
+    source: "UNAVAILABLE",
+  };
+  const integrity = computeIntegrity(snapshot, {
+    demo: false,
+    minCoverage: 5,
+    fromLkg: false,
+    lastLiveFetchAt: null,
+    yahooSpot,
+  });
+  return {
+    snapshot,
+    expiries,
+    selectedExpiry,
+    step,
+    degraded: true,
+    errorMessage,
+    integrity,
+    yahooSpot,
+  };
+}
+
 /* ------------------------- server fn ------------------------- */
 
 export const getOptionsChain = createServerFn({ method: "GET" })
@@ -184,16 +349,57 @@ export const getOptionsChain = createServerFn({ method: "GET" })
       .object({
         symbol: z.enum(["NIFTY", "BANKNIFTY"]).default("NIFTY"),
         expiry: z.string().optional(),
+        demo: z.boolean().optional().default(false),
       })
       .parse(raw ?? {}),
   )
   .handler(async ({ data }): Promise<OptionsChainResponse> => {
     const sym: OptionsSymbol = data.symbol;
     const step = STEPS[sym];
+    const mode = data.demo ? "demo" : "live";
     return cached<OptionsChainResponse>(
-      `options-chain:${sym}:${data.expiry ?? "auto"}`,
+      `options-chain:${mode}:${sym}:${data.expiry ?? "auto"}`,
       async () => {
-        const spotInfo = await fetchSpot(sym);
+        const spotInfo = await fetchSpotSafe(sym);
+        const yahooSpot = spotInfo.price;
+
+        /* ------------------------ DEMO MODE ------------------------ */
+        if (data.demo) {
+          const iso = simulatedExpiries();
+          const expiries = categorizeExpiries(iso);
+          const selectedIso = data.expiry && iso.includes(data.expiry) ? data.expiry : iso[0];
+          const demoSpot = yahooSpot ?? (sym === "NIFTY" ? 24000 : 51000);
+          const { legs, strikes } = buildSimulatedChain(sym, demoSpot);
+          const snapshot: OptionChainSnapshot = {
+            symbol: sym,
+            spot: demoSpot,
+            expiry: selectedIso,
+            fetchedAt: new Date().toISOString(),
+            strikes,
+            legs,
+            provider: "DEMO (deterministic simulated chain)",
+            source: "DEMO",
+          };
+          const integrity = computeIntegrity(snapshot, {
+            demo: true,
+            minCoverage: 5,
+            fromLkg: false,
+            lastLiveFetchAt: null,
+            yahooSpot,
+          });
+          return {
+            snapshot,
+            expiries,
+            selectedExpiry: selectedIso,
+            step,
+            degraded: false,
+            errorMessage: null,
+            integrity,
+            yahooSpot,
+          };
+        }
+
+        /* ------------------------ LIVE MODE ------------------------ */
         try {
           const raw = await fetchJson<unknown>(
             `https://www.nseindia.com/api/option-chain-indices?symbol=${NSE_SYMBOLS[sym]}`,
@@ -258,9 +464,10 @@ export const getOptionsChain = createServerFn({ method: "GET" })
           }
           if (!legs.length) throw new Error("no legs for selected expiry");
           const strikes = Array.from(strikeSet).sort((a, b) => a - b);
+          const nseSpot = json.records?.underlyingValue ?? spotInfo.price ?? 0;
           const snapshot: OptionChainSnapshot = {
             symbol: sym,
-            spot: json.records?.underlyingValue ?? spotInfo.price,
+            spot: nseSpot,
             expiry: selectedIso,
             fetchedAt: new Date().toISOString(),
             strikes,
@@ -268,6 +475,20 @@ export const getOptionsChain = createServerFn({ method: "GET" })
             provider: "NSE",
             source: "NSE",
           };
+          const integrity = computeIntegrity(snapshot, {
+            demo: false,
+            minCoverage: 5,
+            fromLkg: false,
+            lastLiveFetchAt: snapshot.fetchedAt,
+            yahooSpot,
+          });
+          LKG.set(lkgKey(sym, selectedIso), {
+            snapshot,
+            expiries,
+            yahooSpot,
+            tradingDate: currentTradingDate(),
+            fetchedAtMs: Date.now(),
+          });
           return {
             snapshot,
             expiries,
@@ -275,34 +496,57 @@ export const getOptionsChain = createServerFn({ method: "GET" })
             step,
             degraded: false,
             errorMessage: null,
+            integrity,
+            yahooSpot,
           };
         } catch (err) {
-          const iso = simulatedExpiries();
-          const expiries = categorizeExpiries(iso);
-          const selectedIso =
-            data.expiry && iso.includes(data.expiry) ? data.expiry : iso[0];
-          const { legs, strikes } = buildSimulatedChain(sym, spotInfo.price);
-          const snapshot: OptionChainSnapshot = {
-            symbol: sym,
-            spot: spotInfo.price,
-            expiry: selectedIso,
-            fetchedAt: new Date().toISOString(),
-            strikes,
-            legs,
-            provider: "SIMULATED (Yahoo spot + deterministic OI curve)",
-            source: "SIMULATED",
-          };
-          return {
-            snapshot,
-            expiries,
-            selectedExpiry: selectedIso,
+          const errMsg =
+            err instanceof Error
+              ? `Live NSE option-chain feed unavailable (${err.message}).`
+              : "Live NSE option-chain feed unavailable.";
+          // Try last-known-good cache — same symbol / expiry / trading date, within stale window.
+          const today = currentTradingDate();
+          const preferredExpiry = data.expiry;
+          const candidateKeys = preferredExpiry
+            ? [lkgKey(sym, preferredExpiry)]
+            : Array.from(LKG.keys()).filter((k) => k.startsWith(`${sym}::`));
+          for (const k of candidateKeys) {
+            const lkg = LKG.get(k);
+            if (!lkg) continue;
+            if (lkg.tradingDate !== today) continue;
+            const ageSec = Math.round((Date.now() - lkg.fetchedAtMs) / 1000);
+            // Only serve LKG within the stale threshold; older data is treated as UNAVAILABLE.
+            if (ageSec > FRESHNESS_THRESHOLDS.delayedMaxSec * 4) continue;
+            const lkgSnapshot: OptionChainSnapshot = {
+              ...lkg.snapshot,
+              provider: `${lkg.snapshot.provider} (last-known-good)`,
+              source: "LAST_KNOWN_GOOD",
+            };
+            const integrity = computeIntegrity(lkgSnapshot, {
+              demo: false,
+              minCoverage: 5,
+              fromLkg: true,
+              lastLiveFetchAt: lkg.snapshot.fetchedAt,
+              yahooSpot,
+            });
+            return {
+              snapshot: lkgSnapshot,
+              expiries: lkg.expiries,
+              selectedExpiry: lkg.snapshot.expiry,
+              step,
+              degraded: true,
+              errorMessage: `${errMsg} Serving last-known-good snapshot from ${new Date(lkg.snapshot.fetchedAt).toLocaleTimeString()}.`,
+              integrity,
+              yahooSpot,
+            };
+          }
+          return emptyUnavailableResponse(
+            sym,
+            data.expiry,
             step,
-            degraded: true,
-            errorMessage:
-              err instanceof Error
-                ? `Live NSE option-chain feed unavailable (${err.message}). Showing a labelled simulated chain around the live spot.`
-                : "Live NSE option-chain feed unavailable. Showing a labelled simulated chain around the live spot.",
-          };
+            yahooSpot,
+            `${errMsg} No last-known-good snapshot available for the current session.`,
+          );
         }
       },
       { ttlMs: 30_000 },
