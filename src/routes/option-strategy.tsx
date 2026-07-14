@@ -451,6 +451,134 @@ function BreadthCard({ title, b, total }: { title: string; b: OptionStrategyData
 
 type SortMode = "change" | "weight" | "impact" | "alpha";
 
+/* ------------------------ sector sorting engine ------------------------ */
+
+type SectorSortMode = "change" | "smart" | "strength" | "advdecl" | "alpha";
+
+const SECTOR_SORT_LABELS: { value: SectorSortMode; label: string }[] = [
+  { value: "change", label: "Change % (Default)" },
+  { value: "smart", label: "Smart Impact Ranking" },
+  { value: "strength", label: "Strength Score" },
+  { value: "advdecl", label: "Advance/Decline" },
+  { value: "alpha", label: "Alphabetical" },
+];
+
+type SectorRow = Sector & {
+  advDeclScore: number; // -1..1
+  smartScore: number; // signed impact proxy
+  contribution: number; // % share of total sector movement
+};
+
+function enrichSectors(sectors: Sector[]): SectorRow[] {
+  const totalAbs = sectors.reduce((s, x) => s + Math.abs(x.changePct), 0) || 1;
+  return sectors.map((s) => {
+    const adTotal = s.advance + s.decline || 1;
+    const advDeclScore = Math.round(((s.advance - s.decline) / adTotal) * 100) / 100;
+    // Smart Score = Change % × conviction (breadth) — preserves direction sign.
+    const smartScore = Math.round(s.changePct * (1 + Math.abs(advDeclScore)) * 100) / 100;
+    const contribution = Math.round((s.changePct / totalAbs) * 100 * 10) / 10;
+    return { ...s, advDeclScore, smartScore, contribution };
+  });
+}
+
+function sortSectors(rows: SectorRow[], mode: SectorSortMode): SectorRow[] {
+  const arr = [...rows];
+  if (mode === "alpha") {
+    arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  }
+  arr.sort((a, b) => {
+    if (mode === "smart") {
+      if (b.smartScore !== a.smartScore) return b.smartScore - a.smartScore;
+    } else if (mode === "strength") {
+      if (b.strength !== a.strength) return b.strength - a.strength;
+    } else if (mode === "advdecl") {
+      if (b.advDeclScore !== a.advDeclScore) return b.advDeclScore - a.advDeclScore;
+    }
+    // default + tie-breakers: Change % → Strength → Advance/Decline → Alphabetical
+    if (b.changePct !== a.changePct) return b.changePct - a.changePct;
+    if (b.strength !== a.strength) return b.strength - a.strength;
+    if (b.advDeclScore !== a.advDeclScore) return b.advDeclScore - a.advDeclScore;
+    return a.name.localeCompare(b.name);
+  });
+  return arr;
+}
+
+function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
+  const [mode, setMode] = useState<SectorSortMode>("change");
+  useEffect(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-sort") : null;
+    if (saved && ["change", "smart", "strength", "advdecl", "alpha"].includes(saved)) setMode(saved as SectorSortMode);
+  }, []);
+  const changeMode = (m: SectorSortMode) => {
+    setMode(m);
+    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-sort", m);
+  };
+  const rows = useMemo(() => sortSectors(enrichSectors(sectors), mode), [sectors, mode]);
+  const topKey = rows.length ? rows[0].key : null;
+  const botKey = rows.length ? rows[rows.length - 1].key : null;
+
+  return (
+    <Card style={{ padding: 0, marginBottom: 14 }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>SECTOR STRENGTH</span>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}>
+          Sort By
+          <select className="os10-select" value={mode} onChange={(e) => changeMode(e.target.value as SectorSortMode)}>
+            {SECTOR_SORT_LABELS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="ossec-head">
+        <span>Rank</span><span>Sector</span><span>Live %</span><span>Adv</span><span>Dec</span><span>Strength</span><span>Status</span><span>Contrib</span>
+      </div>
+      <motion.div layout>
+        <AnimatePresence initial={false}>
+          {rows.map((s, i) => {
+            const isTop = s.key === topKey;
+            const isBot = s.key === botKey;
+            const glow = isTop
+              ? { border: `1px solid ${C.green}`, boxShadow: "0 0 14px rgba(16,185,129,.35)" }
+              : isBot
+                ? { border: `1px solid ${C.red}`, boxShadow: "0 0 14px rgba(239,68,68,.35)" }
+                : {};
+            const statusColor = s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.muted;
+            return (
+              <motion.div
+                key={s.key}
+                layout
+                layoutId={`sec-${s.key}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ layout: { type: "spring", stiffness: 500, damping: 40 }, opacity: { duration: 0.2 } }}
+                className="ossec-row"
+                style={glow}
+              >
+                <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>#{i + 1}</span>
+                <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                  <span style={{ fontWeight: 700 }}>{s.name}</span>
+                  {isTop ? <span className="os10-badge" style={{ color: "#0b1420", background: C.gold, marginTop: 2, width: "fit-content" }}>🏆 TOP SECTOR</span> : null}
+                  {isBot ? <span className="os10-badge" style={{ color: "#fff", background: C.red, marginTop: 2, width: "fit-content" }}>📉 WEAKEST</span> : null}
+                </span>
+                <span><AnimatedChange value={s.changePct} /></span>
+                <span className="os-mono ossec-c-adv" style={{ color: C.green }}>{s.advance}</span>
+                <span className="os-mono ossec-c-dec" style={{ color: C.red }}>{s.decline}</span>
+                <span className="os-mono ossec-c-str" style={{ color: s.strength >= 0 ? C.green : C.red }}>{s.strength.toFixed(0)}</span>
+                <span className="ossec-c-status" style={{ color: statusColor, fontWeight: 700 }}>{s.bias}</span>
+                <span className="os-mono ossec-c-contrib" style={{ color: s.contribution >= 0 ? C.green : C.red }}>{s.contribution >= 0 ? "+" : ""}{s.contribution.toFixed(1)}%</span>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+    </Card>
+  );
+}
+
 const SORT_LABELS: { value: SortMode; label: string }[] = [
   { value: "change", label: "Change % (Default)" },
   { value: "weight", label: "Weightage %" },
