@@ -35,7 +35,7 @@ export async function fetchEntitlementSnapshot(
   targetUserId?: string,
 ): Promise<EntitlementSnapshot | null> {
   const { data, error } = await supabase.rpc("get_entitlement_snapshot", {
-    _target: targetUserId ?? null,
+    _target: targetUserId,
   });
   if (error) throw error;
   return (data ?? null) as EntitlementSnapshot | null;
@@ -136,7 +136,7 @@ export async function adminGrantEntitlement(
   const { error } = await supabase.rpc("admin_grant_entitlement", {
     _target: userId,
     _capability: capability,
-    _expires_at: expiresAt ? expiresAt.toISOString() : null,
+    _expires_at: expiresAt ? expiresAt.toISOString() : undefined,
     _reason: reason,
   });
   if (error) throw new Error(error.message);
