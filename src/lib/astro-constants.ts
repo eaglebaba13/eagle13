@@ -22,8 +22,15 @@ export const BULL_NAKSHATRAS = new Set([
   "Krittika", "Uttara Phalguni", "Chitra", "Dhanishta", "Pushya",
 ]);
 
+// Original Gann Nifty Astro bear classification (Phase 21.0 correction).
+// Bharani is NOT part of the authentic original spec and has been moved
+// to EAGLEBABA_EXTENDED_BEAR_NAKSHATRAS.
 export const BEAR_NAKSHATRAS = new Set([
-  "Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada", "Bharani",
+  "Shatabhisha", "Uttara Ashadha", "Vishakha", "Purva Bhadrapada",
+]);
+
+export const EAGLEBABA_EXTENDED_BEAR_NAKSHATRAS = new Set([
+  "Bharani",
 ]);
 
 export function isBullNakshatra(nak: string): boolean {
