@@ -176,7 +176,7 @@ export const adminListManualPayments = createServerFn({ method: "GET" })
         .select("*")
         .order("created_at", { ascending: false })
         .limit(500);
-      if (data.status) q = q.eq("status", data.status);
+      if (data.status) q = q.eq("status", data.status as never);
       const { data: rows, error } = await q;
       if (error) throw new Error(error.message);
       const mapped = (rows ?? []).map((r) => mapRow(r as unknown as ManualPaymentRow));
@@ -214,7 +214,7 @@ export const adminApproveManualPayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase.rpc("admin_approve_manual_payment", {
       _id: data.id,
-      _admin_note: data.adminNote ?? null,
+      _admin_note: (data.adminNote ?? null) as unknown as string,
     });
     if (error) throw new Error(error.message);
     return mapRow(row as unknown as ManualPaymentRow);
