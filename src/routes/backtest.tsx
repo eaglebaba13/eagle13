@@ -419,6 +419,124 @@ function TradesTable({ trades, totalCount }: { trades: BacktestTrade[]; totalCou
   );
 }
 
+/* ---------------- Integrity + Methodology ---------------- */
+
+function IntegrityPanel({ r }: { r: BacktestResult }) {
+  const dq = r.dataQuality;
+  const s = r.stats;
+  const b = r.benchmark;
+  const em = r.executionMeta;
+  const items: [string, string, string?][] = [
+    ["Run ID", r.runId],
+    ["Engine", r.engineVersion],
+    ["Formula", r.formulaVersion],
+    ["Config Hash", r.configHash],
+    ["Policy", em.policy],
+    ["Invalid Setup", em.invalidSetupPolicy],
+    ["Timezone", em.timezone],
+    ["Anchor / Entry", `${em.astroAnchor} → ${em.entryTime}`],
+    ["Coverage", `${dq.coveragePct}% (${dq.loadedSessions}/${dq.expectedSessions})`,
+      dq.coveragePct >= 90 ? "bull" : dq.coveragePct >= 60 ? "" : "bear"],
+    ["Missing / Invalid", `${dq.missingSessions} · ${dq.invalidSessions}`],
+    ["Ambiguous Trades", `${r.ambiguousCount} (${r.summary.taken > 0 ? Math.round((r.ambiguousCount / r.summary.taken) * 1000) / 10 : 0}%)`],
+    ["Invalid Setups", String(r.invalidSetupCount)],
+    ["Sample Size", `${s.sampleSize} · ${s.sampleWarning}`,
+      s.sampleWarning === "MEANINGFUL" ? "bull" : s.sampleWarning === "LIMITED" ? "" : "bear"],
+    ["Expectancy", formatNum(s.expectancy), s.expectancy >= 0 ? "bull" : "bear"],
+    ["Sharpe-like", String(s.sharpeLike)],
+    ["Sortino-like", String(s.sortinoLike)],
+    ["Payoff Ratio", String(s.payoffRatio)],
+    ["Recovery Factor", String(s.recoveryFactor)],
+    ["Exposure %", `${s.exposurePct}%`],
+    ["Median Trade", formatNum(s.median)],
+    ["Std Dev", String(s.stddev)],
+  ];
+  if (b) {
+    items.push(
+      ["Buy & Hold PnL", `${formatNum(b.buyAndHoldPnl)} (${b.buyAndHoldPct}%)`, b.buyAndHoldPnl >= 0 ? "bull" : "bear"],
+      ["Strategy Return", `${b.strategyPct}%`, b.strategyPct >= 0 ? "bull" : "bear"],
+      ["Excess vs B&H", `${b.excessPct}%`, b.excessPct >= 0 ? "bull" : "bear"],
+      ["Active Days", String(b.activeDays)],
+    );
+  }
+  return (
+    <section style={{ ...panel, marginTop: 14 }}>
+      <SectionHead>🔎 Integrity · Reproducibility · Statistics</SectionHead>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
+        {items.map(([label, value, tone]) => (
+          <div key={label} style={{ background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px" }}>
+            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{label}</div>
+            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, fontWeight: 700, marginTop: 3, color: tone === "bull" ? C.green : tone === "bear" ? C.red : C.text, wordBreak: "break-all" }}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+      {s.sampleWarning !== "MEANINGFUL" ? (
+        <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
+          ⚠️ {s.sampleSize} decided trades — {s.sampleWarning === "INSUFFICIENT" ? "INSUFFICIENT SAMPLE" : "LIMITED SAMPLE"}. Treat statistics as directional, not conclusive.
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MethodologyDrawer({ r }: { r: BacktestResult }) {
+  const [open, setOpen] = useState(false);
+  const em = r.executionMeta;
+  const costs = em.costs;
+  const zeroCosts = costs.slippagePct === 0 && costs.brokerageFlat === 0 && costs.brokeragePct === 0 && costs.taxesPct === 0;
+  return (
+    <section style={{ ...panel, marginTop: 14 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          background: "transparent", color: C.orange, border: "none",
+          fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 1.5, cursor: "pointer",
+          padding: 0, textAlign: "left", width: "100%",
+        }}
+        aria-expanded={open}
+      >
+        {open ? "▼" : "▶"} 📘 METHODOLOGY, ASSUMPTIONS & LIMITATIONS
+      </button>
+      {open ? (
+        <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 12, color: C.text, lineHeight: 1.6 }}>
+          <MethodRow k="Data source" v={em.dataSource} />
+          <MethodRow k="Candle timeframe" v={em.candleTimeframe} />
+          <MethodRow k="Astro anchor time" v={em.astroAnchor} />
+          <MethodRow k="Entry assumption" v={`Session open at ${em.entryTime}`} />
+          <MethodRow k="Exit assumption" v={em.exitAssumption} />
+          <MethodRow k="Both-touched policy" v={em.policy} />
+          <MethodRow k="Invalid setup policy" v={em.invalidSetupPolicy === "fabricate" ? "fabricate ±0.5% band when no level exists" : "strict — mark INVALID_SETUP"} />
+          <MethodRow k="Slippage" v={zeroCosts ? "none" : `${costs.slippagePct}%`} />
+          <MethodRow k="Brokerage" v={zeroCosts ? "none" : `${costs.brokerageFlat} flat + ${costs.brokeragePct}%`} />
+          <MethodRow k="Taxes" v={zeroCosts ? "none" : `${costs.taxesPct}%`} />
+          <MethodRow k="Timezone" v={em.timezone} />
+          <MethodRow k="Data source adjusted" v={r.dataQuality.adjusted} />
+          <div style={{ marginTop: 10, padding: 10, background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, color: C.muted }}>
+            <div style={{ color: C.orange, fontWeight: 700, marginBottom: 6 }}>Known limitations</div>
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {r.disclaimers.map((d) => <li key={d} style={{ marginBottom: 4 }}>{d}</li>)}
+              <li>Daily OHLC cannot determine whether target or stop was touched first; the both-touched policy above controls the outcome deterministically.</li>
+              <li>Weekend / holiday gaps in the underlying data feed are counted in coverage % — a missing session is not silently treated as a zero-return day.</li>
+              <li>Options-based simulations do not infer premium from index points; the strategy PnL is index-point PnL, not option-premium PnL.</li>
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MethodRow({ k, v }: { k: string; v: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "3px 0", borderBottom: `1px dashed rgba(255,255,255,0.05)` }}>
+      <span style={{ color: C.muted }}>{k}</span>
+      <span style={{ color: C.text }}>{v}</span>
+    </div>
+  );
+}
+
 function LabeledSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <div>
