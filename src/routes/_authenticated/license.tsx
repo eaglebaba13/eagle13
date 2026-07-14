@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { buildLicenseView, type SubscriptionRow } from "@/lib/license";
 import { ENGINE_VERSION } from "@/lib/engine-version";
+import { useEntitlements } from "@/lib/use-entitlements";
+import { PlanBadge, SubscriptionStatusBadge, UsageMeter } from "@/components/entitlements";
+import { getBillingAdapter } from "@/lib/billing-adapter";
 
 export const Route = createFileRoute("/_authenticated/license")({
   head: () => ({ meta: [{ title: "License — EagleBABA" }] }),
@@ -12,6 +15,8 @@ export const Route = createFileRoute("/_authenticated/license")({
 
 function LicensePage() {
   const { user, role } = useAuth();
+  const { effective } = useEntitlements();
+  const adapter = getBillingAdapter();
   const [row, setRow] = useState<SubscriptionRow | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,6 +68,28 @@ function LicensePage() {
             label="Expires"
             value={view.expiresAt ? view.expiresAt.toLocaleDateString() : "—"}
           />
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Subscription
+            </h2>
+            <div className="flex items-center gap-2">
+              <PlanBadge plan={effective.planId} />
+              <SubscriptionStatusBadge status={effective.status} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <UsageMeter label="Watchlists" used={0} limit={effective.plan.limits.watchlists} />
+            <UsageMeter label="Layouts" used={0} limit={effective.plan.limits.layouts} />
+            <UsageMeter label="Backtests / day" used={0} limit={effective.plan.limits.backtestsPerDay} />
+            <UsageMeter label="Exports / day" used={0} limit={effective.plan.limits.exportsPerDay} />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Billing provider: {adapter.configured ? adapter.name : "not configured"} · Renews:{" "}
+            {effective.renewsAt ? effective.renewsAt.toLocaleDateString() : "—"}
+          </div>
         </section>
 
         <section className="rounded-xl border border-border bg-card p-6">
