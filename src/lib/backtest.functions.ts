@@ -399,6 +399,6 @@ export const runBacktest = createServerFn({ method: "POST" })
           generatedAt: new Date().toISOString(),
         };
       },
-      { ttlMs: 6 * 60 * 60_000, staleMs: 24 * 60 * 60_000 },
+      { ttlMs: 6 * 60 * 60_000, swrMs: 18 * 60 * 60_000 },
     ),
   );
