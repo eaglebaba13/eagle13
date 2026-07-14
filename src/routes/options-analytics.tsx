@@ -1059,3 +1059,233 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+/* ------------------------- Phase 16.1 helpers ------------------------- */
+
+function DemoBanner() {
+  return (
+    <div
+      style={{
+        padding: "0.6rem 1rem",
+        background: "linear-gradient(90deg, rgba(168,85,247,0.25), rgba(168,85,247,0.10))",
+        border: "1px solid #a855f7",
+        borderRadius: 8,
+        color: "#e9d5ff",
+        fontWeight: 700,
+        letterSpacing: 0.5,
+        textAlign: "center",
+        marginBottom: "0.75rem",
+        fontSize: "0.9rem",
+      }}
+    >
+      ⚠ DEMO DATA — NOT LIVE MARKET DATA. Recommendations, alerts and exports are disabled or watermarked.
+    </div>
+  );
+}
+
+function DemoWatermark() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        background:
+          "repeating-linear-gradient(45deg, transparent 0 120px, rgba(168,85,247,0.05) 120px 240px)",
+        zIndex: 1,
+      }}
+    />
+  );
+}
+
+function statusTone(status: SourceStatus): { color: string; bg: string; label: string } {
+  switch (status) {
+    case "LIVE":
+      return { color: "#22c55e", bg: "rgba(34,197,94,0.12)", label: "LIVE" };
+    case "DELAYED":
+      return { color: "#f59e0b", bg: "rgba(245,158,11,0.12)", label: "DELAYED" };
+    case "STALE":
+      return { color: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "STALE" };
+    case "PARTIAL":
+      return { color: "#f97316", bg: "rgba(249,115,22,0.12)", label: "PARTIAL" };
+    case "UNAVAILABLE":
+      return { color: "#ef4444", bg: "rgba(239,68,68,0.18)", label: "UNAVAILABLE" };
+    case "DEMO":
+      return { color: "#a855f7", bg: "rgba(168,85,247,0.15)", label: "DEMO" };
+  }
+}
+
+function SourceBar(props: {
+  sourceStatus: SourceStatus;
+  provider: string;
+  providerTimestamp: string | null;
+  dataAgeSeconds: number;
+  expiry: string;
+  strikeCount: number;
+  spot: number;
+  yahooSpot: number | null;
+  divergencePct: number;
+  divergenceSevere: boolean;
+  cacheStatus: string;
+  lastLiveFetchAt: string | null;
+  marketOpen: boolean;
+}) {
+  const tone = statusTone(props.sourceStatus);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.75rem",
+        alignItems: "center",
+        padding: "0.55rem 0.85rem",
+        border: `1px solid ${tone.color}`,
+        background: tone.bg,
+        borderRadius: 8,
+        marginBottom: "0.75rem",
+        fontSize: "0.78rem",
+        color: C.text,
+      }}
+    >
+      <span
+        style={{
+          padding: "0.15rem 0.5rem",
+          borderRadius: 4,
+          background: tone.color,
+          color: "#000",
+          fontWeight: 800,
+          letterSpacing: 0.5,
+        }}
+      >
+        {tone.label}
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Provider </span>
+        <strong>{props.provider}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Age </span>
+        <strong>{props.dataAgeSeconds}s</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Expiry </span>
+        <strong>{props.expiry || "—"}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Strikes </span>
+        <strong>{props.strikeCount}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Spot </span>
+        <strong>{props.spot ? props.spot.toFixed(2) : "—"}</strong>
+        {props.yahooSpot != null && (
+          <span style={{ color: C.muted }}>
+            {" "}
+            / Yahoo <strong style={{ color: C.text }}>{props.yahooSpot.toFixed(2)}</strong>
+            {" · Δ "}
+            <strong style={{ color: props.divergenceSevere ? "#ef4444" : C.text }}>
+              {props.divergencePct.toFixed(2)}%
+            </strong>
+            {props.divergenceSevere && (
+              <span style={{ color: "#ef4444", marginLeft: 4 }}>SOURCE MISMATCH</span>
+            )}
+          </span>
+        )}
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Cache </span>
+        <strong>{props.cacheStatus}</strong>
+      </span>
+      <span>
+        <span style={{ color: C.muted }}>Last live </span>
+        <strong>
+          {props.lastLiveFetchAt ? new Date(props.lastLiveFetchAt).toLocaleTimeString() : "—"}
+        </strong>
+      </span>
+      <span style={{ marginLeft: "auto", color: props.marketOpen ? "#22c55e" : C.muted }}>
+        {props.marketOpen ? "Market Open" : "Market Closed"}
+      </span>
+    </div>
+  );
+}
+
+function UnavailableState(props: {
+  errorMessage: string | null;
+  onRetry: () => void;
+  onEnableDemo: () => void;
+  expiries: { expiry: string; category: string; daysToExpiry: number }[];
+  selectedExpiry: string;
+  onChangeExpiry: (e: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        padding: "1rem 1.25rem",
+        border: `1px dashed ${C.red}`,
+        background: "rgba(239,68,68,0.06)",
+        borderRadius: 10,
+        marginBottom: "1rem",
+      }}
+    >
+      <div style={{ fontWeight: 800, color: C.red, fontSize: "1.05rem", marginBottom: 4 }}>
+        DATA UNAVAILABLE — WAIT
+      </div>
+      <div style={{ color: C.muted, fontSize: "0.85rem", marginBottom: "0.6rem" }}>
+        Live option-chain data is currently unavailable. Analytics and directional recommendations
+        have been paused to prevent misleading output.
+      </div>
+      {props.errorMessage && (
+        <div style={{ color: C.muted, fontSize: "0.78rem", marginBottom: "0.6rem" }}>
+          {props.errorMessage}
+        </div>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <button
+          onClick={props.onRetry}
+          style={{
+            padding: "0.4rem 0.75rem",
+            border: `1px solid ${C.border}`,
+            borderRadius: 6,
+            background: "transparent",
+            color: C.text,
+            cursor: "pointer",
+            fontSize: "0.82rem",
+          }}
+        >
+          Retry
+        </button>
+        <button
+          onClick={props.onEnableDemo}
+          style={{
+            padding: "0.4rem 0.75rem",
+            border: "1px solid #a855f7",
+            borderRadius: 6,
+            background: "rgba(168,85,247,0.1)",
+            color: "#e9d5ff",
+            cursor: "pointer",
+            fontSize: "0.82rem",
+          }}
+        >
+          Open Demo Mode
+        </button>
+        {props.expiries.map((e) => (
+          <button
+            key={e.expiry}
+            onClick={() => props.onChangeExpiry(e.expiry)}
+            style={{
+              padding: "0.4rem 0.6rem",
+              border: `1px solid ${e.expiry === props.selectedExpiry ? C.blue : C.border}`,
+              borderRadius: 6,
+              background: "transparent",
+              color: C.text,
+              cursor: "pointer",
+              fontSize: "0.78rem",
+            }}
+          >
+            {e.expiry}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
