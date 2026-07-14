@@ -665,60 +665,8 @@ function btn(color: string): React.CSSProperties {
  * (presentation only — all values come from existing computed data)
  * ================================================================== */
 
-const PLANET_STYLE: Record<string, { orb: string; glow: string }> = {
-  Sun: { orb: "radial-gradient(circle at 35% 30%, #ffe9a8, #f5a623 55%, #b8620b)", glow: "rgba(245,166,35,0.6)" },
-  Moon: { orb: "radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 55%, #8b98a8)", glow: "rgba(207,216,227,0.55)" },
-  Mercury: { orb: "radial-gradient(circle at 35% 30%, #c7f7d4, #34d399 55%, #0f7a4f)", glow: "rgba(52,211,153,0.55)" },
-  Venus: { orb: "radial-gradient(circle at 35% 30%, #ffe3ec, #f4a6c0 55%, #c76b8e)", glow: "rgba(244,166,192,0.55)" },
-  Mars: { orb: "radial-gradient(circle at 35% 30%, #ffb4a0, #ef4444 55%, #7f1d1d)", glow: "rgba(239,68,68,0.6)" },
-  Jupiter: { orb: "radial-gradient(circle at 35% 30%, #fff2b0, #eab308 55%, #a16207)", glow: "rgba(234,179,8,0.6)" },
-  Saturn: { orb: "radial-gradient(circle at 35% 30%, #cfe0ee, #64748b 55%, #334155)", glow: "rgba(100,116,139,0.55)" },
-  Rahu: { orb: "radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8)", glow: "rgba(168,85,247,0.6)" },
-  Ketu: { orb: "radial-gradient(circle at 35% 30%, #ffd9b0, #f97316 55%, #9a3412)", glow: "rgba(249,115,22,0.6)" },
-};
-
-function orbStyleFor(planet: string): React.CSSProperties {
-  const s = PLANET_STYLE[planet] ?? { orb: "#888", glow: "rgba(255,255,255,0.35)" };
-  return { ["--orb" as any]: s.orb, ["--orb-glow" as any]: s.glow };
-}
-
-const PAKSHA_TITHI = [
-  "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
-  "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
-  "Trayodashi", "Chaturdashi", "Purnima/Amavasya",
-];
-
-// Tithi derived from Sun-Moon elongation (each tithi spans 12°).
-function deriveTithi(elongation: number): { name: string; paksha: string } {
-  const e = ((elongation % 360) + 360) % 360;
-  const idx = Math.floor(e / 12); // 0..29
-  const paksha = idx < 15 ? "Shukla" : "Krishna";
-  const within = idx % 15;
-  const name = within === 14 ? (idx < 15 ? "Purnima" : "Amavasya") : PAKSHA_TITHI[within];
-  return { name, paksha };
-}
-
-// Lightweight sunrise/sunset for Mumbai (presentational NOAA approximation).
-function sunTimesMumbai(): { sunrise: string; sunset: string } {
-  const lat = 19.076, lng = 72.8777, tz = 5.5;
-  const now = new Date(Date.now() + tz * 3600 * 1000);
-  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
-  const day = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000);
-  const rad = Math.PI / 180;
-  const decl = 23.45 * Math.sin(rad * (360 / 365) * (day - 81));
-  const cosH = -Math.tan(lat * rad) * Math.tan(decl * rad);
-  const clamped = Math.max(-1, Math.min(1, cosH));
-  const H = Math.acos(clamped) / rad; // half-day arc in degrees
-  const solarNoon = 12 - lng / 15 + tz; // local clock solar noon
-  const toHM = (h: number) => {
-    const hh = Math.floor(((h % 24) + 24) % 24);
-    const mm = Math.round((h - Math.floor(h)) * 60);
-    const d = new Date();
-    d.setHours(hh, mm, 0, 0);
-    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-  };
-  return { sunrise: toHM(solarNoon - H / 15), sunset: toHM(solarNoon + H / 15) };
-}
+// Sunrise/sunset for Mumbai — thin wrapper around the shared helper.
+const sunTimesMumbai = () => sunTimes(19.076, 72.8777);
 
 function PlanetCard({ p }: { p: PlanetRow }) {
   const strength = Math.max(8, Math.min(100, Math.round((Math.abs(p.speed) / 13) * 100)));
