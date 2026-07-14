@@ -498,10 +498,9 @@ function AnimatedChange({ value }: { value: number }) {
   const prev = useRef(value);
   const [flash, setFlash] = useState<"" | "up" | "dn">("");
   useEffect(() => {
-    if (value > prev.current) setFlash("up");
-    else if (value < prev.current) setFlash("dn");
+    if (value === prev.current) return;
+    setFlash(value > prev.current ? "up" : "dn");
     prev.current = value;
-    if (value !== prev.current) return;
     const id = setTimeout(() => setFlash(""), 700);
     return () => clearTimeout(id);
   }, [value]);
