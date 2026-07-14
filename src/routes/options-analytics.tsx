@@ -50,6 +50,13 @@ const C = {
 
 const REFRESH_MS = 30_000;
 
+function HydratedTime({ iso }: { iso: string | null }) {
+  const hydrated = useHydrated();
+  if (!iso) return <>—</>;
+  if (!hydrated) return <>—</>;
+  return <>{new Date(iso).toLocaleTimeString()}</>;
+}
+
 const chainQuery = (symbol: OptionsSymbol, expiry?: string, demo = false) =>
   queryOptions({
     queryKey: ["options-chain", demo ? "demo" : "live", symbol, expiry ?? "auto"],
