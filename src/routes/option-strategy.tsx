@@ -178,7 +178,8 @@ function OptionStrategyTerminal() {
         .os-blink-red { animation: osGlowRed 1s infinite; border:1px solid var(--eb-bear) !important; }
         @keyframes osAlert { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.85;transform:scale(1.01)} }
         .os-alert { animation: osAlert 0.9s infinite; }
-        .os-heat { display:grid; gap:6px; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); }
+        .os-heat { display:flex; flex-wrap:wrap; gap:6px; }
+        .os-heat > * { flex-basis:120px; }
         .os-chip { font-size:11px; background:rgba(76,157,255,0.12); border:1px solid var(--eb-blue); padding:2px 8px; border-radius:6px; }
         .os10-head, .os10-row { display:grid; grid-template-columns:44px minmax(120px,1.4fr) 90px 110px 80px 88px 96px; gap:8px; align-items:center; padding:8px 14px; }
         .os10-head { color:var(--eb-muted); font-size:10px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--eb-border); font-weight:600; }
