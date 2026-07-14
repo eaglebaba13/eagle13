@@ -22,6 +22,7 @@ import { Route as LiveLevelsRouteImport } from './routes/live-levels'
 import { Route as DecisionRouteImport } from './routes/decision'
 import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as BacktestRouteImport } from './routes/backtest'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AstroRouteImport } from './routes/astro'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
@@ -94,6 +95,11 @@ const BacktestRoute = BacktestRouteImport.update({
   path: '/backtest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AstroRoute = AstroRouteImport.update({
   id: '/astro',
   path: '/astro',
@@ -131,6 +137,7 @@ const Char91DotmcpChar93InvokeToolToolRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/astro': typeof AstroRoute
+  '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/decision': typeof DecisionRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/astro'
+    | '/auth'
     | '/backtest'
     | '/broker'
     | '/decision'
@@ -261,6 +273,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AstroRoute: typeof AstroRoute
+  AuthRoute: typeof AuthRoute
   BacktestRoute: typeof BacktestRoute
   BrokerRoute: typeof BrokerRoute
   DecisionRoute: typeof DecisionRoute
@@ -373,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BacktestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/astro': {
       id: '/astro'
       path: '/astro'
@@ -421,6 +441,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AstroRoute: AstroRoute,
+  AuthRoute: AuthRoute,
   BacktestRoute: BacktestRoute,
   BrokerRoute: BrokerRoute,
   DecisionRoute: DecisionRoute,
