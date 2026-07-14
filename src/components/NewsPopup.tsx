@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,8 +12,10 @@ import {
   WifiOff,
   AlertTriangle,
   Settings as SettingsIcon,
+  ArrowLeft,
 } from "lucide-react";
 import { getMarketNewsFeed } from "@/lib/news-feed.functions";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   NewsCard,
   NewsSettings,
@@ -39,6 +42,9 @@ export function NewsCenter() {
   const [read, toggleRead] = useLocalSet(READ_KEY);
   const [saved, toggleSaved] = useLocalSet(SAVE_KEY);
   const { prefs, toggleCat, toggleSource, reset } = useNewsPrefs();
+  const isMobile = useIsMobile();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -65,6 +71,16 @@ export function NewsCenter() {
 
   useEffect(() => {
     if (open) setHasOpened(true);
+  }, [open]);
+
+  // Prevent background scrolling while the popup is open (mobile full-screen sheet).
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   useEffect(() => {
@@ -119,7 +135,10 @@ export function NewsCenter() {
         {alertCount > 0 ? <span className="eb-news-badge">{alertCount > 9 ? "9+" : alertCount}</span> : null}
       </button>
 
-      <AnimatePresence>
+      {mounted
+        ? createPortal(
+            <>
+              <AnimatePresence>
         {open ? (
           <motion.div
             className="eb-news-overlay"
@@ -130,11 +149,15 @@ export function NewsCenter() {
             onClick={() => setOpen(false)}
           >
             <motion.div
-              className="eb-news-modal eb-glass"
-              initial={{ opacity: 0, scale: 0.94, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              className={`eb-news-modal eb-glass${isMobile ? " is-mobile" : ""}`}
+              initial={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.94, y: 12 }}
+              animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.96, y: 8 }}
+              transition={
+                isMobile
+                  ? { type: "tween", duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+                  : { type: "spring", stiffness: 260, damping: 24 }
+              }
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -143,6 +166,16 @@ export function NewsCenter() {
               {/* Header */}
               <div className="eb-news-head">
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  {isMobile ? (
+                    <button
+                      className="eb-icon-btn eb-news-back"
+                      onClick={() => setOpen(false)}
+                      aria-label="Back"
+                      title="Back"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                  ) : null}
                   <span className="eb-live-dot" aria-hidden />
                   <div style={{ minWidth: 0 }}>
                     <div className="eb-news-title">Latest Market News</div>
@@ -273,6 +306,10 @@ export function NewsCenter() {
           />
         ) : null}
       </AnimatePresence>
+            </>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

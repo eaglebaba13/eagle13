@@ -233,7 +233,7 @@ export function NewsSettings({
   onClose: () => void;
 }) {
   return (
-    <div className="eb-news-overlay" style={{ zIndex: 130 }} onClick={onClose}>
+    <div className="eb-news-overlay" style={{ zIndex: 1300 }} onClick={onClose}>
       <motion.div
         className="eb-news-modal eb-glass"
         style={{ width: 560 }}

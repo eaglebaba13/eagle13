@@ -1059,7 +1059,7 @@ a {
 .eb-news-overlay {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: 1200;
   background: rgba(3, 6, 12, 0.62);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1323,4 +1323,156 @@ a {
 .eb-diag strong {
   color: var(--eb-accent);
   letter-spacing: 0.8px;
+}
+
+/* ============================================================
+   Latest Market News popup — responsive (tablet + mobile)
+   UI only: full-screen bottom sheet on phones, no logic change.
+   ============================================================ */
+
+.eb-news-back { display: none; }
+.eb-news-cats {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.eb-news-cats::-webkit-scrollbar { display: none; }
+
+/* Tablet: centred sheet, slightly narrower + softer radius */
+@media (max-width: 1024px) {
+  .eb-news-modal {
+    width: 90%;
+    max-width: 90vw;
+    border-radius: 16px;
+  }
+}
+
+/* Mobile: full-screen bottom sheet */
+@media (max-width: 767px) {
+  .eb-news-overlay {
+    padding: 0;
+    place-items: stretch;
+    overflow: hidden;
+    background: rgba(3, 6, 12, 0.78);
+  }
+  .eb-news-modal,
+  .eb-news-modal.is-mobile {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  /* Sticky header with safe-area */
+  .eb-news-head {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 12px 14px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .eb-news-back { display: grid; }
+  .eb-news-title {
+    font-size: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .eb-news-head .eb-icon-btn { width: 40px; height: 40px; }
+
+  /* Breaking banner stays pinned under header */
+  .eb-breaking { position: sticky; top: 0; z-index: 3; }
+
+  /* Sticky search + tabs area */
+  .eb-news-controls {
+    position: sticky;
+    z-index: 3;
+    padding: 12px 14px 8px;
+    background: color-mix(in srgb, var(--eb-bg) 70%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .eb-news-search { padding: 12px 14px; border-radius: 12px; }
+  .eb-news-search input { font-size: 15px; }
+  .eb-news-cats {
+    gap: 8px;
+    padding-bottom: 2px;
+    flex-wrap: nowrap;
+  }
+  .eb-cat-chip {
+    scroll-snap-align: start;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* Only the news list scrolls */
+  .eb-news-body {
+    padding: 12px 14px;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Compact, readable cards */
+  .eb-news-card { padding: 14px; border-radius: 16px; }
+  .eb-src-logo { width: 44px; height: 44px; border-radius: 12px; font-size: 18px; }
+  .eb-src-name { font-size: 13px; }
+  .eb-src-meta { font-size: 12px; }
+  .eb-news-headline {
+    font-size: 16px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .eb-news-summary {
+    font-size: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .eb-news-actions { gap: 8px; }
+  .eb-card-btn { flex: 1 1 auto; justify-content: center; padding: 9px 10px; font-size: 13px; }
+
+  /* Sticky footer with safe-area */
+  .eb-news-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    justify-content: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    min-height: 72px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--eb-bg) 80%, transparent);
+  }
+  .eb-news-foot .eb-foot-btn {
+    flex: 1 1 0;
+    text-align: center;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+}
+
+/* Extra small phones (≤360px): tighten paddings + text */
+@media (max-width: 360px) {
+  .eb-news-head { padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); }
+  .eb-news-controls { padding: 10px 12px 6px; }
+  .eb-news-body { padding: 10px 12px; }
+  .eb-news-title { font-size: 16px; }
+  .eb-news-foot .eb-foot-btn { padding: 11px 4px; font-size: 12px; }
 }
