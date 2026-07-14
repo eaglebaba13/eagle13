@@ -462,6 +462,149 @@ function BreadthCard({ title, b, total }: { title: string; b: OptionStrategyData
   );
 }
 
+type SortMode = "change" | "weight" | "impact" | "alpha";
+
+const SORT_LABELS: { value: SortMode; label: string }[] = [
+  { value: "change", label: "Change % (Default)" },
+  { value: "weight", label: "Weightage %" },
+  { value: "impact", label: "Index Impact" },
+  { value: "alpha", label: "Alphabetical" },
+];
+
+function sortStocks(stocks: TopStock[], mode: SortMode): TopStock[] {
+  const arr = [...stocks];
+  if (mode === "alpha") {
+    arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  }
+  arr.sort((a, b) => {
+    if (mode === "weight") {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+    } else if (mode === "impact") {
+      if (b.contribution !== a.contribution) return b.contribution - a.contribution;
+    } else {
+      // change % descending, ties → highest index impact → highest weight
+      if (b.changePct !== a.changePct) return b.changePct - a.changePct;
+      if (b.contribution !== a.contribution) return b.contribution - a.contribution;
+    }
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    return a.name.localeCompare(b.name);
+  });
+  return arr;
+}
+
+function AnimatedChange({ value }: { value: number }) {
+  const prev = useRef(value);
+  const [flash, setFlash] = useState<"" | "up" | "dn">("");
+  useEffect(() => {
+    if (value > prev.current) setFlash("up");
+    else if (value < prev.current) setFlash("dn");
+    prev.current = value;
+    if (value !== prev.current) return;
+    const id = setTimeout(() => setFlash(""), 700);
+    return () => clearTimeout(id);
+  }, [value]);
+  const up = value >= 0;
+  return (
+    <span
+      className={`os-mono ${flash === "up" ? "os10-flash-up" : flash === "dn" ? "os10-flash-dn" : ""}`}
+      style={{ color: up ? C.green : C.red, fontWeight: 700, padding: "1px 4px" }}
+    >
+      {up ? "▲" : "▼"} {Math.abs(value).toFixed(2)}%
+    </span>
+  );
+}
+
+function Top10Widget({ stocks }: { stocks: TopStock[] }) {
+  const [mode, setMode] = useState<SortMode>("change");
+  useEffect(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-top10-sort") : null;
+    if (saved && ["change", "weight", "impact", "alpha"].includes(saved)) setMode(saved as SortMode);
+  }, []);
+  const changeMode = (m: SortMode) => {
+    setMode(m);
+    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-top10-sort", m);
+  };
+  const sorted = useMemo(() => sortStocks(stocks, mode), [stocks, mode]);
+  const topSym = mode === "change" && sorted.length ? sorted[0].symbol : null;
+  const botSym = mode === "change" && sorted.length ? sorted[sorted.length - 1].symbol : null;
+
+  return (
+    <Card style={{ padding: 0, marginBottom: 14 }}>
+      <div
+        style={{
+          padding: "12px 16px",
+          borderBottom: `1px solid ${C.border}`,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>TOP-10 NIFTY WEIGHTAGE (~60% index)</span>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}>
+          Sort By
+          <select className="os10-select" value={mode} onChange={(e) => changeMode(e.target.value as SortMode)}>
+            {SORT_LABELS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div>
+        <div className="os10-head">
+          <span>Rank</span><span>Stock</span><span>Live</span><span>Change %</span><span>Weight %</span><span>Status</span><span>Impact</span>
+        </div>
+        <motion.div layout style={{ position: "relative" }}>
+          <AnimatePresence initial={false}>
+            {sorted.map((t, i) => {
+              const isTop = t.symbol === topSym;
+              const isBot = t.symbol === botSym;
+              const glow = isTop
+                ? { border: `1px solid ${C.green}`, boxShadow: "0 0 14px rgba(16,185,129,.35)" }
+                : isBot
+                  ? { border: `1px solid ${C.red}`, boxShadow: "0 0 14px rgba(239,68,68,.35)" }
+                  : {};
+              return (
+                <motion.div
+                  key={t.symbol}
+                  layout
+                  layoutId={t.symbol}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ layout: { type: "spring", stiffness: 500, damping: 40 }, opacity: { duration: 0.2 } }}
+                  className="os10-row"
+                  style={glow}
+                >
+                  <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>#{i + 1}</span>
+                  <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                    <span style={{ fontWeight: 700 }}>{t.name}</span>
+                    {isTop ? <span className="os10-badge" style={{ color: "#0b1420", background: C.gold, marginTop: 2, width: "fit-content" }}>🏆 TOP GAINER</span> : null}
+                    {isBot ? <span className="os10-badge" style={{ color: "#fff", background: C.red, marginTop: 2, width: "fit-content" }}>📉 TOP LOSER</span> : null}
+                  </span>
+                  <span className="os-mono os10-c-live">{inr(t.price)}</span>
+                  <span><AnimatedChange value={t.changePct} /></span>
+                  <span className="os-mono os10-c-weight">{t.weight.toFixed(1)}</span>
+                  <span className="os10-c-status" style={{ color: t.advancing ? C.green : C.red, fontWeight: 700 }}>{t.advancing ? "Advance" : "Decline"}</span>
+                  <span className="os-mono os10-c-impact" style={{ color: t.contribution >= 0 ? C.green : C.red }}>{t.contribution >= 0 ? "+" : ""}{t.contribution.toFixed(3)}</span>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+
+      <div style={{ padding: 14 }}>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>LIVE HEATMAP (size ∝ weight · order by Change %)</div>
+        <Heatmap stocks={sortStocks(stocks, "change")} />
+      </div>
+    </Card>
+  );
+}
+
 function Heatmap({ stocks }: { stocks: TopStock[] }) {
   return (
     <div className="os-heat">
@@ -470,8 +613,10 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
         const intensity = Math.min(0.85, 0.2 + Math.abs(s.changePct) / 4);
         const flex = Math.max(1, s.weight);
         return (
-          <div
+          <motion.div
             key={s.symbol}
+            layout
+            transition={{ type: "spring", stiffness: 500, damping: 40 }}
             style={{
               flexGrow: flex,
               borderRadius: 10,
@@ -486,7 +631,7 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
           >
             <div style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>{s.name}</div>
             <div className="os-mono" style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{up ? "+" : ""}{s.changePct.toFixed(2)}%</div>
-          </div>
+          </motion.div>
         );
       })}
     </div>
