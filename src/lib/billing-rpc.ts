@@ -133,12 +133,13 @@ export async function adminGrantEntitlement(
   expiresAt: Date | null,
   reason: string,
 ): Promise<void> {
-  const { error } = await supabase.rpc("admin_grant_entitlement", {
+  const args = {
     _target: userId,
     _capability: capability,
-    _expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+    _expires_at: expiresAt ? expiresAt.toISOString() : (null as unknown as string),
     _reason: reason,
-  });
+  };
+  const { error } = await supabase.rpc("admin_grant_entitlement", args);
   if (error) throw new Error(error.message);
 }
 
