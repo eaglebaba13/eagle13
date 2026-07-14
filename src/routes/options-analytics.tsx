@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useHydrated } from "@/hooks/use-hydrated";
 import { getOptionsChain, type OptionsSymbol } from "@/lib/options-chain.functions";
 import { getAstro } from "@/lib/astro.functions";
 import { getMarketData } from "@/lib/market.functions";
@@ -48,6 +49,13 @@ const C = {
 };
 
 const REFRESH_MS = 30_000;
+
+function HydratedTime({ iso }: { iso: string | null }) {
+  const hydrated = useHydrated();
+  if (!iso) return <>—</>;
+  if (!hydrated) return <>—</>;
+  return <>{new Date(iso).toLocaleTimeString()}</>;
+}
 
 const chainQuery = (symbol: OptionsSymbol, expiry?: string, demo = false) =>
   queryOptions({
@@ -440,7 +448,7 @@ function OptionsAnalyticsPage() {
             </div>
             <div style={{ color: C.muted, fontSize: "0.85rem" }}>
               {symbol === "NIFTY" ? "NIFTY 50" : "BANK NIFTY"} · Provider:{" "}
-              {snapshot.provider} · Snapshot {new Date(snapshot.fetchedAt).toLocaleTimeString()}
+              {snapshot.provider} · Snapshot <HydratedTime iso={snapshot.fetchedAt} />
             </div>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -1199,7 +1207,7 @@ function SourceBar(props: {
       <span>
         <span style={{ color: C.muted }}>Last live </span>
         <strong>
-          {props.lastLiveFetchAt ? new Date(props.lastLiveFetchAt).toLocaleTimeString() : "—"}
+          <HydratedTime iso={props.lastLiveFetchAt} />
         </strong>
       </span>
       <span style={{ marginLeft: "auto", color: props.marketOpen ? "#22c55e" : C.muted }}>
