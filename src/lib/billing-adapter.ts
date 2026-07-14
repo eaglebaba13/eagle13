@@ -65,7 +65,13 @@ export class DevBillingAdapter implements BillingProviderAdapter {
   readonly name = "dev" as const;
   readonly configured = false;
 
-  async createCheckoutSession(): Promise<CheckoutSessionResult> {
+  async createCheckoutSession(_input: {
+    userId: string;
+    plan: PlanId;
+    billingCycle: "monthly" | "annual";
+    returnUrl: string;
+  }): Promise<CheckoutSessionResult> {
+    void _input;
     return {
       url: null,
       provider: "dev",
@@ -73,26 +79,45 @@ export class DevBillingAdapter implements BillingProviderAdapter {
       message: "Billing provider not configured.",
     };
   }
-  async createCustomerPortalSession(): Promise<CheckoutSessionResult> {
-    return { url: null, provider: "dev", configured: false, message: "Billing provider not configured." };
+  async createCustomerPortalSession(_userId: string): Promise<CheckoutSessionResult> {
+    void _userId;
+    return {
+      url: null,
+      provider: "dev",
+      configured: false,
+      message: "Billing provider not configured.",
+    };
   }
-  async cancelSubscription() {
+  async cancelSubscription(_subscriptionId: string) {
+    void _subscriptionId;
     return { ok: false, message: "Billing provider not configured." };
   }
-  async resumeSubscription() {
+  async resumeSubscription(_subscriptionId: string) {
+    void _subscriptionId;
     return { ok: false, message: "Billing provider not configured." };
   }
-  async changePlan() {
+  async changePlan(_subscriptionId: string, _plan: PlanId) {
+    void _subscriptionId;
+    void _plan;
     return { ok: false, message: "Billing provider not configured." };
   }
-  async getInvoices(): Promise<Invoice[]> {
+  async getInvoices(_userId: string): Promise<Invoice[]> {
+    void _userId;
     return [];
   }
-  async getPaymentMethods(): Promise<PaymentMethodSummary[]> {
+  async getPaymentMethods(_userId: string): Promise<PaymentMethodSummary[]> {
+    void _userId;
     return [];
   }
-  async handleWebhook(): Promise<WebhookResult> {
-    return { ok: false, eventId: null, duplicate: false, reason: "Billing provider not configured." };
+  async handleWebhook(_raw: string, _signature: string | null): Promise<WebhookResult> {
+    void _raw;
+    void _signature;
+    return {
+      ok: false,
+      eventId: null,
+      duplicate: false,
+      reason: "Billing provider not configured.",
+    };
   }
   async healthCheck() {
     return { ok: true, message: "dev adapter (no real billing)" };
