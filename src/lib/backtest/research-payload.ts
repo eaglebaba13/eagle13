@@ -74,10 +74,15 @@ export function createComputeCounters(): ResearchComputeCounters {
  * every downstream engine (no shallow copy that could diverge). This is a
  * developer aid — production callers may pass Object.freeze(candles).
  */
-export function assertFrozenPayload(ctx: ResearchDataContext): void {
-  if (!Object.isFrozen(ctx.candles) && ctx.candles.length > 0) {
-    // Deliberately soft — freezing here would mutate the caller. Log & mark.
-    (ctx as { readonly warning?: string } & typeof ctx).warning =
-      "candles not frozen — pass Object.freeze(candles) to guarantee immutability";
-  }
+export function assertFrozenPayload(ctx: ResearchDataContext): {
+  frozen: boolean;
+  warning?: string;
+} {
+  if (ctx.candles.length === 0) return { frozen: true };
+  if (Object.isFrozen(ctx.candles)) return { frozen: true };
+  return {
+    frozen: false,
+    warning:
+      "candles not frozen — pass Object.freeze(candles) to guarantee immutability",
+  };
 }
