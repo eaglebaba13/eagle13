@@ -154,7 +154,7 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
             planet: p.level.planet,
             sourceLevel: p.level.sourceLevel,
             safeRisky: p.level.safety,
-            cubeGrade: p.cube.grade,
+            cubeGrade: p.cube.cubeGrade,
             cubeAction: p.cube.action,
             touchTime: p.touchIndex != null ? session.candles[p.touchIndex]?.timeIst ?? null : null,
             confirmationTime:
