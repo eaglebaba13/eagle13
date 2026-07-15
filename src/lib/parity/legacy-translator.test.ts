@@ -313,25 +313,19 @@ describe("β1 · translator has zero network / provider dependencies", () => {
       path.resolve(__dirname, "../backtest/legacy-translator.ts"),
       "utf8",
     );
-    const banned = [
-      /from\s+["'][^"']*\/http["']/,
-      /from\s+["'][^"']*\/providers["']/,
-      /from\s+["'][^"']*\.functions["']/,
-      /from\s+["'][^"']*\.server["']/,
-      /fetchJson/,
-      /YahooChartSchema/,
-    ];
-    // .functions type-only imports are fine — they are `import type` and get
-    // stripped. Enforce that only `import type` references touch .functions.
-    for (const re of banned) {
-      if (re.source.includes(".functions")) {
-        const lines = src.split("\n").filter((l) => l.match(re));
-        for (const l of lines) {
-          expect(l.trim().startsWith("import type")).toBe(true);
-        }
-        continue;
+    // Fully banned: any reference at all.
+    expect(/from\s+["'][^"']*\/http["']/.test(src)).toBe(false);
+    expect(/from\s+["'][^"']*\/providers["']/.test(src)).toBe(false);
+    expect(/from\s+["'][^"']*\.server["']/.test(src)).toBe(false);
+    expect(/\bfetchJson\b/.test(src)).toBe(false);
+    expect(/YahooChartSchema/.test(src)).toBe(false);
+    // `.functions` / `.server` type imports are allowed ONLY as `import type`.
+    // Match every import block and reject non-type imports from banned paths.
+    const importBlocks = src.match(/import[\s\S]*?from\s+["'][^"']+["'];?/g) ?? [];
+    for (const block of importBlocks) {
+      if (/["'][^"']*\.functions["']/.test(block)) {
+        expect(block.startsWith("import type")).toBe(true);
       }
-      expect(re.test(src)).toBe(false);
     }
   });
 });
