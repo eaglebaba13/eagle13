@@ -18,6 +18,12 @@ import {
   analyzeSmc,
   type SmcEngineResult,
 } from "../smc-engine";
+import {
+  SMC_SIGNAL_ENGINE_READY,
+  analyzeSmcSignals,
+  type SmcSignalEngineReady,
+  type SmcSignalResult,
+} from "../smc-signal-engine";
 
 export type StrategyId = "ASTRO" | "SMC" | "ASTRO_SMC_HYBRID" | "BASELINE";
 
@@ -96,10 +102,23 @@ export const smcStrategyAdapter: HistoricalStrategyAdapter & {
   analyzeStructure: (
     ...args: Parameters<typeof analyzeSmc>
   ) => SmcEngineResult;
+  /**
+   * Phase 21.4 Stage 2 · Deterministic signal-derivation entry point.
+   * The strategy is still NOT executable through runUnifiedBacktest
+   * (availability stays COMING_NEXT until Stage 3 wires the historical
+   * runner adapter). Exposed here so downstream tests can invoke the
+   * pure engine directly.
+   */
+  signalEngineStatus: SmcSignalEngineReady;
+  analyzeSignals: (
+    ...args: Parameters<typeof analyzeSmcSignals>
+  ) => SmcSignalResult;
 } = {
   ...smcBaseAdapter,
   engineStatus: SMC_STRATEGY_NOT_IMPLEMENTED,
   analyzeStructure: analyzeSmc,
+  signalEngineStatus: SMC_SIGNAL_ENGINE_READY,
+  analyzeSignals: analyzeSmcSignals,
 };
 
 export const astroSmcHybridAdapter = comingNextAdapter(
