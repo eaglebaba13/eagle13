@@ -18,9 +18,11 @@ import {
 import { cached } from "./server-cache";
 import {
   DEFAULT_ASTRO_FORMULA_VERSION,
+  ASTRO_FORMULA_VERSIONS,
   astroCacheKey,
   type AstroFormulaVersion,
 } from "./engine-version";
+import { warnLegacyHashQuirkIfApplicable } from "./backtest/legacy-diagnostics";
 import {
   BACKTEST_ENGINE_VERSION,
   BACKTEST_FORMULA_VERSION,
@@ -197,6 +199,16 @@ const InputSchema = z.object({
   policy: z.enum(["conservative", "optimistic", "exclude_ambiguous"]).default("conservative"),
   invalidSetupPolicy: z.enum(["fabricate", "strict"]).default("fabricate"),
   costs: CostSchema.default({ slippagePct: 0, brokerageFlat: 0, brokeragePct: 0, taxesPct: 0 }),
+  // Phase 21.3d-parity-β2a · Optional formula switch. Default preserves
+  // Sign-Degree public output byte-for-byte (cache key, Run ID, envelope).
+  // When omitted, `astroCacheKey` and `computeRunId` receive the same
+  // DEFAULT_ASTRO_FORMULA_VERSION they used before this parameter existed.
+  astroFormulaVersion: z
+    .enum([
+      ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1,
+      ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1,
+    ])
+    .optional(),
 });
 type BacktestInput = z.infer<typeof InputSchema>;
 
@@ -482,9 +494,17 @@ function pickBestWorst(map: Map<string, BacktestInsight>, minTrades = 3): { best
 export const runBacktest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }: { data: BacktestInput }): Promise<BacktestResult> =>
-    cached<BacktestResult>(
+  {
+    // Resolve formula selection. When omitted, the cache key, Run ID, and
+    // envelope are byte-identical to the pre-β2a Sign-Degree output because
+    // `astroCacheKey` / `computeRunId` default to DEFAULT_ASTRO_FORMULA_VERSION.
+    const astroFormulaVersion: AstroFormulaVersion =
+      data.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION;
+    warnLegacyHashQuirkIfApplicable(data.costs);
+    return cached<BacktestResult>(
       astroCacheKey(
         `backtest:${data.symbol}:${data.from}:${data.to}:${data.policy}:${data.invalidSetupPolicy}:${hashConfig(data.costs)}`,
+        astroFormulaVersion,
       ),
       async () => {
         const map = BACKTEST_SYMBOLS[data.symbol];
@@ -505,7 +525,7 @@ export const runBacktest = createServerFn({ method: "POST" })
           symbol: data.symbol, from: data.from, to: data.to,
           policy: data.policy, invalidSetupPolicy: data.invalidSetupPolicy,
           costs: data.costs, dataSource: executionMeta.dataSource, timezone,
-          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+          astroFormulaVersion,
         });
         const configHash = hashConfig({
           symbol: data.symbol, from: data.from, to: data.to,
@@ -554,7 +574,7 @@ export const runBacktest = createServerFn({ method: "POST" })
             equityCurve: [], generatedAt: new Date().toISOString(),
             runId, engineVersion: BACKTEST_ENGINE_VERSION,
             formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
-            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+            astroFormulaVersion,
             executionMeta, dataQuality,
             stats: buildStats([], 0, 0, 0),
             benchmark: null,
@@ -618,7 +638,7 @@ export const runBacktest = createServerFn({ method: "POST" })
           generatedAt: new Date().toISOString(),
           runId, engineVersion: BACKTEST_ENGINE_VERSION,
           formulaVersion: BACKTEST_FORMULA_VERSION, configHash,
-          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+          astroFormulaVersion,
           executionMeta, dataQuality,
           stats, benchmark,
           ambiguousCount, invalidSetupCount,
@@ -626,5 +646,6 @@ export const runBacktest = createServerFn({ method: "POST" })
         };
       },
       { ttlMs: 6 * 60 * 60_000, swrMs: 18 * 60 * 60_000 },
-    ),
+    );
+  },
   );

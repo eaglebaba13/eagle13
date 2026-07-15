@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol, type BacktestTrade } from "@/lib/backtest.functions";
 import { downloadBlob } from "@/lib/download";
 import { FormulaBadge } from "@/components/FormulaBadge";
-import { astroFormulaSlug } from "@/lib/engine-version";
+import { astroFormulaSlug, ASTRO_FORMULA_VERSIONS, type AstroFormulaVersion } from "@/lib/engine-version";
 import { StrategySelector } from "@/components/backtest/StrategySelector";
 import { FormulaSelector } from "@/components/backtest/FormulaSelector";
 import { getStrategyAdapter, type StrategyId } from "@/lib/backtest/strategy";
@@ -97,18 +97,26 @@ function BacktestPage() {
   };
 
   const runNow = async () => {
-    // Sign-Degree is the only formula wired to the shared runBacktest path.
-    if (formula !== "GANN_SIGN_DEGREE_TABLE_V1_1") {
+    // Phase 21.3d-parity-β2a · Sign-Degree AND Legacy dispatch through the
+    // shared runBacktest path. Absolute remains on its dedicated surface
+    // until β2b activates it inside /backtest.
+    if (formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1") {
       setError(
-        formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1"
-          ? "Absolute-Degree Intraday runs on the dedicated validation surface. Open /absolute-intraday-validation to execute this formula."
-          : "Legacy Cascade v1 currently runs from its own preview export. Unified /backtest wiring is COMING NEXT.",
+        "Absolute-Degree Intraday runs on the dedicated validation surface. Open /absolute-intraday-validation to execute this formula.",
       );
       return;
     }
     setLoading(true); setError(null);
     try {
-      const res = await call({ data: { symbol, from, to } });
+      const astroFormulaVersion: AstroFormulaVersion | undefined =
+        formula === "LEGACY_EAGLEBABA_CASCADE_V1"
+          ? ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1
+          : undefined; // omit to preserve Sign-Degree byte parity
+      const res = await call({
+        data: astroFormulaVersion
+          ? { symbol, from, to, astroFormulaVersion }
+          : { symbol, from, to },
+      });
       setResult(res);
     } catch (e) {
       setError(mapTypedError(e));
@@ -181,19 +189,17 @@ function BacktestPage() {
             <div>
               <div style={fieldLbl}>Formula</div>
               <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
-              {formula !== "GANN_SIGN_DEGREE_TABLE_V1_1" ? (
+              {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-                  {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
-                    <>
-                      Absolute-Degree Intraday runs on{" "}
-                      <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
-                        /absolute-intraday-validation
-                      </Link>{" "}
-                      — unified execution is COMING NEXT.
-                    </>
-                  ) : (
-                    <>Legacy Cascade v1 unified execution is COMING NEXT.</>
-                  )}
+                  Absolute-Degree Intraday runs on{" "}
+                  <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
+                    /absolute-intraday-validation
+                  </Link>{" "}
+                  — unified execution is COMING NEXT.
+                </div>
+              ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
+                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
+                  Legacy Cascade v1 · daily backtest via the shared runner. Astro math reuses the same production primitives as Sign-Degree; envelope carries the legacy formula label and disclosure.
                 </div>
               ) : null}
             </div>
