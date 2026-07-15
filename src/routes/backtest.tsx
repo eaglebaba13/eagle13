@@ -31,6 +31,13 @@ const HybridBacktestPanelLazy = lazy(
   () => import("@/components/backtest/HybridBacktestPanel"),
 );
 
+// Phase 21.5 · Stage 1B — Research Lab tab is lazy-loaded so walk-forward /
+// comparison / stability / export modules never enter the default Backtest
+// bundle.
+const ResearchPanelLazy = lazy(
+  () => import("@/components/backtest/ResearchPanel"),
+);
+
 const C = {
   bg: "var(--eb-bg)",
   card: "var(--eb-card)",
@@ -81,6 +88,7 @@ export const Route = createFileRoute("/backtest")({
 });
 
 function BacktestPage() {
+  const [tab, setTab] = useState<"BACKTEST" | "RESEARCH">("BACKTEST");
   // Phase 21.3d · Strategy + Formula selectors are wired at the UI layer.
   // Only Astro strategy + Sign-Degree formula executes through the existing
   // production backtest path. Legacy / Absolute formulas surface a notice
