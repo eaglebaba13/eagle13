@@ -201,7 +201,13 @@ function AbsoluteIntradayPage() {
             Absolute Degree Intraday · Preview
           </h1>
           <StatusPill status={data.status} />
-          <Link to="/live-levels" style={{ marginLeft: "auto", color: C.blue, fontSize: 12 }}>
+          <Link
+            to="/absolute-intraday-validation"
+            style={{ marginLeft: "auto", color: C.gold, fontSize: 12 }}
+          >
+            Historical Validation →
+          </Link>
+          <Link to="/live-levels" style={{ color: C.blue, fontSize: 12 }}>
             ← Sign-Degree Terminal
           </Link>
         </div>
