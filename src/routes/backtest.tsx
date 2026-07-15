@@ -215,6 +215,7 @@ function BacktestPage() {
             </div>
           )}
         </div>
+        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? null : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
@@ -254,6 +255,7 @@ function BacktestPage() {
             </button>
           </div>
         </div>
+        )}
         {loading ? (
           <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
             Running · Strategy={strategy} · Formula={formula} · Instrument={symbol} · {from} → {to}
@@ -264,13 +266,25 @@ function BacktestPage() {
         ) : null}
       </section>
 
-      {!result && !loading ? (
+      {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+        <section style={{ ...panel, marginTop: 14 }}>
+          <Suspense
+            fallback={
+              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+                Loading Absolute-Degree validation modules…
+              </div>
+            }
+          >
+            <AbsoluteValidationPanelLazy />
+          </Suspense>
+        </section>
+      ) : !result && !loading ? (
         <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
           Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
         </section>
       ) : null}
 
-      {result ? (
+      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
         <>
           <SummaryCards r={result} />
           <IntegrityPanel r={result} />
