@@ -213,10 +213,10 @@ describe("analyzeSmc — no-lookahead & determinism", () => {
 });
 
 describe("smcStrategyAdapter — Stage 1 wiring", () => {
-  it("stays COMING_NEXT with NOT_IMPLEMENTED engine status", () => {
-    expect(smcStrategyAdapter.availability).toBe("COMING_NEXT");
+  it("Stage 3 · AVAILABLE with SMC_V1 formula; Stage-1 status flag preserved", () => {
+    expect(smcStrategyAdapter.availability).toBe("AVAILABLE");
     expect(smcStrategyAdapter.engineStatus).toBe(SMC_STRATEGY_NOT_IMPLEMENTED);
-    expect(smcStrategyAdapter.supportedFormulaVersions).toEqual([]);
+    expect(smcStrategyAdapter.supportedFormulaVersions).toContain("SMC_V1");
   });
 
   it("exposes the pure analyzer without executing any signal logic", () => {
