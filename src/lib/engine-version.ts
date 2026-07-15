@@ -29,6 +29,35 @@ export const ASTRO_FORMULA_VERSIONS = {
   LEGACY_EAGLEBABA_CASCADE_V1: "LEGACY_EAGLEBABA_CASCADE_V1",
 } as const;
 
+/**
+ * Phase 21.2 — Intraday methodology version registry.
+ * These are SEPARATE from the sign-degree R1/R2/S1/S2 table method and MUST
+ * NOT be used interchangeably. See Phase 21.2 spec §1.
+ */
+export const INTRADAY_FORMULA_VERSIONS = {
+  GANN_ASTRO_INTRADAY_ABSOLUTE_V1: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1",
+  GANN_SIGN_DEGREE_TABLE_V1_1: "GANN_SIGN_DEGREE_TABLE_V1_1",
+  LEGACY_EAGLEBABA_CASCADE_V1: "LEGACY_EAGLEBABA_CASCADE_V1",
+} as const;
+
+export type IntradayFormulaVersion =
+  (typeof INTRADAY_FORMULA_VERSIONS)[keyof typeof INTRADAY_FORMULA_VERSIONS];
+
+/** Default intraday Astro method — paid-course absolute-degree engine. */
+export const DEFAULT_INTRADAY_FORMULA_VERSION: IntradayFormulaVersion =
+  INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1;
+
+export function intradayFormulaLabel(v: IntradayFormulaVersion): string {
+  switch (v) {
+    case INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1:
+      return "Absolute Degree Intraday v1";
+    case INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1:
+      return "Sign Degree Table v1.1";
+    default:
+      return "Legacy Cascade v1";
+  }
+}
+
 export type AstroFormulaVersion =
   (typeof ASTRO_FORMULA_VERSIONS)[keyof typeof ASTRO_FORMULA_VERSIONS];
 
