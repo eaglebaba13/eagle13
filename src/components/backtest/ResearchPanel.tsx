@@ -14,6 +14,19 @@ import {
   type BacktestSymbol,
   type BacktestTrade,
 } from "@/lib/backtest.functions";
+import { ApexChart } from "@/components/ApexChart";
+import {
+  estimateGridCells,
+  validateSensitivityGrid,
+  RESEARCH_UI_MAX_CELLS,
+  SENSITIVITY_UI_ERROR_LABEL,
+  type SensitivityUiErrorCode,
+} from "@/lib/backtest/sensitivity-ui";
+import {
+  SMC_PARAMETER_KEYS,
+  HYBRID_PARAMETER_KEYS,
+  type ParameterSpec,
+} from "@/lib/backtest/parameter-sensitivity";
 import {
   runWalkForward,
   type SplitMode,
