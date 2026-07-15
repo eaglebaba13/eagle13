@@ -191,7 +191,7 @@ function BacktestPage() {
             <div style={fieldLbl}>Strategy</div>
             <StrategySelector value={strategy} onChange={setStrategy} />
           </div>
-          {strategy === "ASTRO" ? (
+          {strategy === "ASTRO" || strategy === "SMC" ? (
             <div>
               <div style={fieldLbl}>Formula</div>
               <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
@@ -206,6 +206,10 @@ function BacktestPage() {
               ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
                   Legacy Cascade v1 · daily backtest via the shared runner. Astro math reuses the same production primitives as Sign-Degree; envelope carries the legacy formula label and disclosure.
+                </div>
+              ) : formula === "SMC_V1" ? (
+                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
+                  SMC Historical v1 · deterministic Smart Money backtest via the shared runner. Requires 5-minute candles + pre-computed SMC signals supplied through the unified adapter. Validation only — not a live trade recommendation.
                 </div>
               ) : null}
             </div>
