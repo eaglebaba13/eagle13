@@ -14,6 +14,7 @@ import {
   signDegreeHistoricalAdapter,
 } from "./adapters/daily-astro.adapter";
 import { smcHistoricalAdapter } from "./adapters/smc-historical.adapter";
+import { hybridHistoricalAdapter } from "./adapters/astro-smc-hybrid.adapter";
 import {
   SMC_STRATEGY_NOT_IMPLEMENTED,
   analyzeSmc,
@@ -139,11 +140,28 @@ export const smcStrategyAdapter: HistoricalStrategyAdapter & {
   analyzeSignals: analyzeSmcSignals,
 };
 
-export const astroSmcHybridAdapter = comingNextAdapter(
-  "ASTRO_SMC_HYBRID",
-  "Astro + SMC Hybrid",
-  "Astro+SMC Hybrid strategy — engine adapter not yet wired. Uses Astro directional bias with SMC structural confirmation; conflicts resolve to WAIT.",
-);
+const HYBRID_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [
+  hybridHistoricalAdapter,
+];
+
+export const astroSmcHybridAdapter: HistoricalStrategyAdapter = {
+  strategyId: "ASTRO_SMC_HYBRID",
+  label: "Astro + SMC Hybrid",
+  availability: "AVAILABLE",
+  supportedFormulaVersions: HYBRID_FORMULA_ADAPTERS.map((a) => a.id),
+  supportedInstruments: Array.from(
+    new Set(HYBRID_FORMULA_ADAPTERS.flatMap((a) => a.supportedInstruments)),
+  ),
+  supportedTimeframes: Array.from(
+    new Set(HYBRID_FORMULA_ADAPTERS.map((a) => a.dataGranularity)),
+  ) as DataGranularity[],
+  defaultFormulaVersion: INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
+  resolveFormulaAdapter(formula) {
+    return HYBRID_FORMULA_ADAPTERS.find((a) => a.id === formula) ?? null;
+  },
+  methodology:
+    "Astro+SMC Hybrid strategy — trades only when Astro and SMC agree on direction for the same session; direct BUY/SELL conflicts never trade. Execution reuses the shared SMC historical adapter and cost model.",
+};
 
 export const baselineStrategyAdapter = comingNextAdapter(
   "BASELINE",

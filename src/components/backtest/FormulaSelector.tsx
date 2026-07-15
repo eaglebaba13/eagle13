@@ -12,6 +12,8 @@ const LABELS: Record<string, string> = {
   GANN_SIGN_DEGREE_TABLE_V1_1: "Sign-Degree Astro v1.1",
   LEGACY_EAGLEBABA_CASCADE_V1: "Legacy Cascade v1",
   GANN_ASTRO_INTRADAY_ABSOLUTE_V1: "Absolute-Degree Intraday v1",
+  SMC_V1: "SMC Historical v1",
+  ASTRO_SMC_HYBRID_V1: "Astro+SMC Hybrid v1",
 };
 
 /**
