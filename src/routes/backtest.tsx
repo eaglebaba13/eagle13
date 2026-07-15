@@ -203,7 +203,7 @@ function BacktestPage() {
             <div style={fieldLbl}>Strategy</div>
             <StrategySelector value={strategy} onChange={setStrategy} />
           </div>
-          {strategy === "ASTRO" || strategy === "SMC" ? (
+          {strategy === "ASTRO" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? (
             <div>
               <div style={fieldLbl}>Formula</div>
               <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
@@ -223,6 +223,10 @@ function BacktestPage() {
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
                   SMC Historical v1 · deterministic Smart Money backtest via the shared runner. Requires 5-minute candles + pre-computed SMC signals supplied through the unified adapter. Validation only — not a live trade recommendation.
                 </div>
+              ) : formula === "ASTRO_SMC_HYBRID_V1" ? (
+                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
+                  Astro+SMC Hybrid v1 · trades only when Astro and SMC agree on direction. Direct BUY/SELL conflicts always resolve to WAIT. Validation only — not a live trade recommendation.
+                </div>
               ) : null}
             </div>
           ) : (
@@ -231,7 +235,7 @@ function BacktestPage() {
             </div>
           )}
         </div>
-        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" || strategy === "SMC" ? null : (
+        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? null : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
@@ -306,13 +310,25 @@ function BacktestPage() {
             <SmcBacktestPanelLazy />
           </Suspense>
         </section>
+      ) : strategy === "ASTRO_SMC_HYBRID" ? (
+        <section style={{ ...panel, marginTop: 14 }}>
+          <Suspense
+            fallback={
+              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+                Loading Hybrid modules…
+              </div>
+            }
+          >
+            <HybridBacktestPanelLazy />
+          </Suspense>
+        </section>
       ) : !result && !loading ? (
         <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
           Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
         </section>
       ) : null}
 
-      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" && strategy !== "SMC" ? (
+      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" && strategy !== "SMC" && strategy !== "ASTRO_SMC_HYBRID" ? (
         <>
           <SummaryCards r={result} />
           <IntegrityPanel r={result} />
