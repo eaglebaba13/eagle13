@@ -63,7 +63,14 @@ describe("Phase 21.3d-parity-α · legacy daily-astro Run-ID (backtest-engine)",
     expect(parts[8]).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it("costs perturbation changes only the config-hash tail", () => {
+  it("[LATENT BEHAVIOUR] costs perturbation does NOT change legacy Run-ID (nested keys elided by hashConfig replacer)", () => {
+    // The legacy `hashConfig` uses `JSON.stringify(input, Object.keys(input).sort())`,
+    // and the replacer-array form filters keys at EVERY nesting level. Because
+    // `costs`' nested fields (slippagePct / brokerageFlat / brokeragePct /
+    // taxesPct) are not in the top-level key list, they are omitted from the
+    // serialised payload and never influence the resulting hash. This is a
+    // production quirk — surfaced here so β cannot silently "fix" it and
+    // invalidate every historical Run-ID at the same time.
     const perturbed = computeLegacyBacktestRunId({
       symbol: BACKTEST_GOLDEN_INPUT.symbol,
       from: BACKTEST_GOLDEN_INPUT.from,
@@ -75,10 +82,23 @@ describe("Phase 21.3d-parity-α · legacy daily-astro Run-ID (backtest-engine)",
       timezone: BACKTEST_GOLDEN_INPUT.timezone,
       astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
     });
-    const originalHead = BACKTEST_GOLDEN_RUN_ID.split(":").slice(0, 8).join(":");
-    const perturbedHead = perturbed.split(":").slice(0, 8).join(":");
-    expect(perturbedHead).toBe(originalHead);
+    expect(perturbed).toBe(BACKTEST_GOLDEN_RUN_ID);
+  });
+
+  it("policy perturbation DOES change legacy Run-ID (top-level key survives filter)", () => {
+    const perturbed = computeLegacyBacktestRunId({
+      symbol: BACKTEST_GOLDEN_INPUT.symbol,
+      from: BACKTEST_GOLDEN_INPUT.from,
+      to: BACKTEST_GOLDEN_INPUT.to,
+      policy: "optimistic",
+      invalidSetupPolicy: BACKTEST_GOLDEN_INPUT.invalidSetupPolicy,
+      costs: BACKTEST_GOLDEN_INPUT.costs,
+      dataSource: BACKTEST_GOLDEN_INPUT.dataSource,
+      timezone: BACKTEST_GOLDEN_INPUT.timezone,
+      astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+    });
     expect(perturbed).not.toBe(BACKTEST_GOLDEN_RUN_ID);
+    expect(perturbed.split(":")[3]).toBe("optimistic");
   });
 
   it("hashConfig is deterministic and 8-char hex", () => {
