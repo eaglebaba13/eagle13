@@ -22,27 +22,49 @@ function uptrendThenReversal(): Candle[] {
   return out;
 }
 
-// Series designed to force a bullish FVG at index 4 (gap between i-1 high and
-// i+1 low), a bearish FVG later, plus equal highs.
-function fvgAndEqualsSeries(): Candle[] {
+// Realistic mini-market with genuine swings, equal highs, an FVG, a sweep,
+// and directional bodies (so order-block anchor detection can find opposite
+// colour candles). Every OHLC obeys h >= max(o,c) and l <= min(o,c).
+function richSmcSeries(): Candle[] {
   const raw: [number, number, number, number, number, number][] = [
-    // t, o, h, l, c, v
-    [0, 100, 101, 99, 100, 1000],
-    [1, 100, 102, 99, 101, 1000],
-    [2, 101, 103, 100, 102, 1000],
-    [3, 102, 104, 101, 103, 1000],
-    [4, 103, 106, 102, 105, 1000], // middle candle of a bull FVG (prev.h=104 < next.l=108)
-    [5, 108, 112, 108, 111, 5000], // impulse — displacement candle
-    [6, 111, 113, 110, 112, 1000],
-    [7, 112, 113, 111, 112, 1000], // equal high near 113 with idx 6
-    [8, 112, 113, 110, 111, 1000],
-    [9, 111, 112, 108, 108, 1000], // sweep of a low
-    [10, 108, 109, 105, 106, 1000],
-    [11, 106, 107, 100, 101, 5000], // bear displacement
-    [12, 101, 102, 98, 99, 1000],
-    [13, 99, 100, 96, 97, 1000],
+    // t,  o,   h,   l,   c,   v
+    [0, 100, 101, 99, 100.5, 1000],
+    [1, 100.5, 102, 100, 101.5, 1000],
+    [2, 101.5, 104, 101, 103.5, 1000], // swing high candidate top
+    [3, 103.5, 104, 101, 101.5, 1000], // pullback (bear body → OB anchor for later bull impulse)
+    [4, 101.5, 103, 101, 102.5, 1000], // swing low (idx 3 is low with l=101 vs 101,101)
+    [5, 102.5, 106, 102, 105.5, 1000], // middle of a bull FVG (prev.h=103 < next.l=108)
+    [6, 108, 112, 108, 111.5, 5000], // displacement / impulse breaking prior swing high (104)
+    [7, 111.5, 113, 111, 112.5, 1000], // equal-high candidate
+    [8, 112.5, 113, 111, 112.0, 1000], // matches idx 7 high → equal highs
+    [9, 112.0, 113, 108, 108.5, 1000], // sweep wick above 113 possible but closes below
+    [10, 108.5, 109, 105, 105.5, 1000], // bear body
+    [11, 105.5, 106, 99, 99.5, 5000], // bear displacement, breaks prior low
+    [12, 99.5, 100, 97, 97.5, 1000],
+    [13, 97.5, 98, 94, 94.5, 1000],
   ];
   return raw.map(([t, o, h, l, c, v]) => candle(t, o, h, l, c, v));
+}
+
+// Bullish + bearish body version of the reversal fixture so order-block
+// detection can find valid opposite-colour anchors.
+function reversalWithBodies(): Candle[] {
+  const cs: Candle[] = [];
+  const bulls = [100, 98, 105, 102, 110, 107, 115]; // rising with intermediate dips
+  const bears = [112, 108, 104, 100, 96, 92]; // falling
+  let t = 1_700_000_000_000;
+  for (let i = 0; i < bulls.length; i++) {
+    const p = bulls[i];
+    // bull body: c > o
+    cs.push(candle(t, p - 0.5, p + 1, p - 1, p + 0.5));
+    t += 60_000;
+  }
+  for (const p of bears) {
+    // bear body: c < o
+    cs.push(candle(t, p + 0.5, p + 1, p - 1, p - 0.5));
+    t += 60_000;
+  }
+  return cs;
 }
 
 describe("analyzeSmc — structural outputs", () => {
@@ -63,7 +85,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("detects equal highs (or equal lows) via liquidity engine", () => {
-    const r = analyzeSmc(fvgAndEqualsSeries(), { lookback: 1 });
+    const r = analyzeSmc(richSmcSeries(), { lookback: 1 });
     const eq = r.liquidityLevels.filter(
       (l) => l.kind === "equal_high" || l.kind === "equal_low",
     );
@@ -71,7 +93,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("emits liquidity sweeps/grabs/stop_hunts", () => {
-    const r = analyzeSmc(fvgAndEqualsSeries(), { lookback: 1 });
+    const r = analyzeSmc(richSmcSeries(), { lookback: 1 });
     const kinds = new Set(r.liquidityEvents.map((e) => e.type));
     expect(r.liquidityEvents.length).toBeGreaterThan(0);
     for (const k of kinds) {
@@ -80,7 +102,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("detects bullish and bearish FVGs", () => {
-    const r = analyzeSmc(fvgAndEqualsSeries(), { lookback: 1 });
+    const r = analyzeSmc(richSmcSeries(), { lookback: 1 });
     const dirs = new Set(r.fvgs.map((g) => g.direction));
     expect(r.fvgs.length).toBeGreaterThan(0);
     expect(dirs.has("bullish") || dirs.has("bearish")).toBe(true);
@@ -88,7 +110,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("detects order blocks tied to confirmed impulses", () => {
-    const r = analyzeSmc(uptrendThenReversal(), { lookback: 1 });
+    const r = analyzeSmc(reversalWithBodies(), { lookback: 1 });
     expect(r.orderBlocks.length).toBeGreaterThan(0);
     for (const ob of r.orderBlocks) {
       expect(ob.impulseIndex).toBeGreaterThan(ob.index);
@@ -107,7 +129,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("flags displacement candles by range multiple", () => {
-    const r = analyzeSmc(fvgAndEqualsSeries(), {
+    const r = analyzeSmc(richSmcSeries(), {
       lookback: 1,
       displacementMultiple: 1.5,
       displacementWindow: 5,
@@ -131,7 +153,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("produces VWAP bias samples one-per-candle", () => {
-    const cs = fvgAndEqualsSeries();
+    const cs = richSmcSeries();
     const r = analyzeSmc(cs);
     expect(r.vwapBias.length).toBe(cs.length);
     for (const s of r.vwapBias) {
@@ -155,7 +177,7 @@ describe("analyzeSmc — no-lookahead & determinism", () => {
   });
 
   it("prefix analysis preserves earlier FVGs", () => {
-    const cs = fvgAndEqualsSeries();
+    const cs = richSmcSeries();
     const full = analyzeSmc(cs);
     const prefix = analyzeSmc(cs.slice(0, 10));
     for (const g of prefix.fvgs) {
@@ -167,7 +189,7 @@ describe("analyzeSmc — no-lookahead & determinism", () => {
   });
 
   it("identical inputs produce byte-identical outputs (deterministic replay)", () => {
-    const cs = fvgAndEqualsSeries();
+    const cs = richSmcSeries();
     const a = analyzeSmc(cs, { lookback: 1 });
     const b = analyzeSmc(cs, { lookback: 1 });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
