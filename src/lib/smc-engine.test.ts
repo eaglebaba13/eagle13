@@ -67,6 +67,22 @@ function reversalWithBodies(): Candle[] {
   return cs;
 }
 
+// Dedicated fixture with two near-equal pivot highs so the liquidity engine
+// can cluster them into an equal_high level; a later candle then sweeps it.
+function equalHighsSeries(): Candle[] {
+  const raw: [number, number, number, number, number][] = [
+    // t,  o,     h,      l,     c
+    [0, 99.5, 101, 99, 100.5],
+    [1, 108.5, 110.05, 108, 109.5], // pivot high A
+    [2, 105.5, 106, 104, 104.5], // pivot low
+    [3, 108.5, 110.03, 108, 109.5], // pivot high B (~equal to A)
+    [4, 106, 107.5, 105, 106.5], // dip → confirms pivot at idx 3
+    [5, 110.5, 113, 110.5, 112], // sweep breaks the equal-high cluster
+    [6, 110, 111, 105, 105.5],
+  ];
+  return raw.map(([t, o, h, l, c]) => candle(t, o, h, l, c));
+}
+
 describe("analyzeSmc — structural outputs", () => {
   it("emits labeled swings with HH/HL/LH/LL", () => {
     const r = analyzeSmc(uptrendThenReversal(), { lookback: 1 });
@@ -85,7 +101,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("detects equal highs (or equal lows) via liquidity engine", () => {
-    const r = analyzeSmc(richSmcSeries(), { lookback: 1 });
+    const r = analyzeSmc(equalHighsSeries(), { lookback: 1 });
     const eq = r.liquidityLevels.filter(
       (l) => l.kind === "equal_high" || l.kind === "equal_low",
     );
@@ -93,7 +109,7 @@ describe("analyzeSmc — structural outputs", () => {
   });
 
   it("emits liquidity sweeps/grabs/stop_hunts", () => {
-    const r = analyzeSmc(richSmcSeries(), { lookback: 1 });
+    const r = analyzeSmc(equalHighsSeries(), { lookback: 1 });
     const kinds = new Set(r.liquidityEvents.map((e) => e.type));
     expect(r.liquidityEvents.length).toBeGreaterThan(0);
     for (const k of kinds) {
