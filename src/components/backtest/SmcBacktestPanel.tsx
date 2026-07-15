@@ -30,6 +30,7 @@ import { INTRADAY_FORMULA_VERSIONS } from "@/lib/engine-version";
 import { downloadBlob } from "@/lib/download";
 import type { HistoricalBacktestResult } from "@/lib/backtest/result";
 import type { CostModel } from "@/lib/backtest/cost-model";
+import { publishResearchPayload } from "@/lib/backtest/research-payload-store";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -136,6 +137,39 @@ export default function SmcBacktestPanel() {
         },
       });
       setResult(res);
+
+      // Phase 21.6 · Stage 4 — publish immutable payload for Research Lab.
+      // Only publish on successful run + non-FAIL data quality.
+      const dqCovg = loaded.dataQuality.coveragePct;
+      const dqStatus: "OK" | "DEGRADED" | "FAIL" =
+        dqCovg >= 95 ? "OK" : dqCovg >= 70 ? "DEGRADED" : "FAIL";
+      if (dqStatus !== "FAIL") {
+        publishResearchPayload({
+          strategy: "SMC_V1",
+          formulaVersion: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+          publishedAt: new Date().toISOString(),
+          instrument,
+          timeframe: timeframe as unknown as "5m",
+          provider: loaded.provider,
+          timezone: "Asia/Kolkata",
+          requestedRange: { from, to },
+          actualRange: {
+            from: loaded.actualFrom ?? from,
+            to: loaded.actualTo ?? to,
+          },
+          candles: Object.freeze([...loaded.candles]),
+          dataHash: loaded.dataHash,
+          dataQuality: {
+            status: dqStatus,
+            coveragePct: dqCovg,
+            missingBars: loaded.dataQuality.missingSessions,
+            reasons: [],
+          },
+          baseRunId: res.runId,
+          costs,
+          source: `${loaded.provider}#${loaded.dataHash}#${timeframe}`,
+        });
+      }
     } catch (e) {
       if (e instanceof SmcDataRangeUnavailableError) {
         setError(e.message);

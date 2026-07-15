@@ -34,6 +34,7 @@ import {
 import { INTRADAY_FORMULA_VERSIONS } from "@/lib/engine-version";
 import { downloadBlob } from "@/lib/download";
 import type { HistoricalBacktestResult } from "@/lib/backtest/result";
+import { publishResearchPayload } from "@/lib/backtest/research-payload-store";
 
 const C = {
   card: "var(--eb-card)",
@@ -185,6 +186,39 @@ export default function HybridBacktestPanel() {
         },
       });
       setHybrid(hybridRes);
+
+      // Phase 21.6 · Stage 4 — publish hybrid research payload.
+      const dqCovg = loaded.dataQuality.coveragePct;
+      const dqStatus: "OK" | "DEGRADED" | "FAIL" =
+        dqCovg >= 95 ? "OK" : dqCovg >= 70 ? "DEGRADED" : "FAIL";
+      if (dqStatus !== "FAIL") {
+        publishResearchPayload({
+          strategy: "ASTRO_SMC_HYBRID_V1",
+          formulaVersion: INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
+          publishedAt: new Date().toISOString(),
+          instrument,
+          timeframe: timeframe as unknown as "5m",
+          provider: loaded.provider,
+          timezone: "Asia/Kolkata",
+          requestedRange: { from, to },
+          actualRange: {
+            from: loaded.actualFrom ?? from,
+            to: loaded.actualTo ?? to,
+          },
+          candles: Object.freeze([...loaded.candles]),
+          dataHash: loaded.dataHash,
+          dataQuality: {
+            status: dqStatus,
+            coveragePct: dqCovg,
+            missingBars: loaded.dataQuality.missingSessions,
+            reasons: [],
+          },
+          baseRunId: hybridRes.runId,
+          costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0, taxesPct: 0 },
+          source: `${loaded.provider}#${loaded.dataHash}#${timeframe}#hybrid`,
+          astroByDate,
+        });
+      }
     } catch (e) {
       if (e instanceof SmcDataRangeUnavailableError || e instanceof Error) {
         setError(e.message);
