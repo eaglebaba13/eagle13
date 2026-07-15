@@ -6,6 +6,10 @@ import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol
 import { downloadBlob } from "@/lib/download";
 import { FormulaBadge } from "@/components/FormulaBadge";
 import { astroFormulaSlug } from "@/lib/engine-version";
+import { StrategySelector } from "@/components/backtest/StrategySelector";
+import { FormulaSelector } from "@/components/backtest/FormulaSelector";
+import { getStrategyAdapter, type StrategyId } from "@/lib/backtest/strategy";
+import type { UnifiedFormulaId } from "@/lib/backtest/result";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -57,6 +61,16 @@ export const Route = createFileRoute("/backtest")({
 });
 
 function BacktestPage() {
+  // Phase 21.3d · Strategy + Formula selectors are wired at the UI layer.
+  // Only Astro strategy + Sign-Degree formula executes through the existing
+  // production backtest path. Legacy / Absolute formulas surface a notice
+  // pointing at their current dedicated surfaces so no output changes.
+  const [strategy, setStrategy] = useState<StrategyId>("ASTRO");
+  const astroDefault =
+    getStrategyAdapter("ASTRO").defaultFormulaVersion ??
+    ("GANN_SIGN_DEGREE_TABLE_V1_1" as UnifiedFormulaId);
+  const [formula, setFormula] = useState<UnifiedFormulaId>(astroDefault);
+
   const [symbol, setSymbol] = useState<BacktestSymbol>("NIFTY50");
   const [period, setPeriod] = useState<PeriodKey>("6M");
   const [from, setFrom] = useState<string>(isoDaysAgo(182));
@@ -83,12 +97,21 @@ function BacktestPage() {
   };
 
   const runNow = async () => {
+    // Sign-Degree is the only formula wired to the shared runBacktest path.
+    if (formula !== "GANN_SIGN_DEGREE_TABLE_V1_1") {
+      setError(
+        formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1"
+          ? "Absolute-Degree Intraday runs on the dedicated validation surface. Open /absolute-intraday-validation to execute this formula."
+          : "Legacy Cascade v1 currently runs from its own preview export. Unified /backtest wiring is COMING NEXT.",
+      );
+      return;
+    }
     setLoading(true); setError(null);
     try {
       const res = await call({ data: { symbol, from, to } });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Backtest failed");
+      setError(mapTypedError(e));
     } finally { setLoading(false); }
   };
 
@@ -149,6 +172,37 @@ function BacktestPage() {
 
       {/* Controls */}
       <section style={panel}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
+          <div>
+            <div style={fieldLbl}>Strategy</div>
+            <StrategySelector value={strategy} onChange={setStrategy} />
+          </div>
+          {strategy === "ASTRO" ? (
+            <div>
+              <div style={fieldLbl}>Formula</div>
+              <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
+              {formula !== "GANN_SIGN_DEGREE_TABLE_V1_1" ? (
+                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+                  {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+                    <>
+                      Absolute-Degree Intraday runs on{" "}
+                      <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
+                        /absolute-intraday-validation
+                      </Link>{" "}
+                      — unified execution is COMING NEXT.
+                    </>
+                  ) : (
+                    <>Legacy Cascade v1 unified execution is COMING NEXT.</>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.orange }}>
+              COMING NEXT — {strategy} strategy adapter is not yet wired.
+            </div>
+          )}
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
@@ -182,12 +236,17 @@ function BacktestPage() {
             <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPeriod("CUSTOM"); }} style={selectStyle} />
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button onClick={runNow} disabled={loading}
+            <button onClick={runNow} disabled={loading || strategy !== "ASTRO"}
               style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, cursor: loading ? "wait" : "pointer" }}>
               {loading ? "Running…" : "▶ Run Backtest"}
             </button>
           </div>
         </div>
+        {loading ? (
+          <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+            Running · Strategy={strategy} · Formula={formula} · Instrument={symbol} · {from} → {to}
+          </div>
+        ) : null}
         {error ? (
           <div style={{ marginTop: 10, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}>{error}</div>
         ) : null}
@@ -570,6 +629,20 @@ function SectionHead({ children }: { children: React.ReactNode }) {
 
 function uniq(arr: string[]): string[] {
   return Array.from(new Set(arr)).sort();
+}
+function mapTypedError(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e ?? "Backtest failed");
+  const codes = [
+    "DATA_RANGE_UNAVAILABLE",
+    "PROVIDER_UNAVAILABLE",
+    "UNSUPPORTED_TIMEFRAME",
+    "UNSUPPORTED_INSTRUMENT",
+    "INSUFFICIENT_INTRADAY_HISTORY",
+    "STRATEGY_ADAPTER_NOT_AVAILABLE",
+    "DATA_QUALITY_FAILURE",
+  ];
+  const hit = codes.find((c) => raw.includes(c));
+  return hit ? `${hit} · ${raw}` : raw;
 }
 function formatNum(n: number): string {
   if (!Number.isFinite(n)) return "—";
