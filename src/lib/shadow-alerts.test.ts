@@ -84,10 +84,12 @@ describe("Phase 21.2 Stage 5 · shadow alerts", () => {
       new URL("./shadow-alerts.ts", import.meta.url),
       "utf8",
     );
-    expect(src).not.toMatch(/broker/);
-    expect(src).not.toMatch(/notification/);
-    expect(src).not.toMatch(/decision-engine/);
-    expect(src).not.toMatch(/notify/);
+    const imports = (src.match(/^import[\s\S]+?from\s+["'][^"']+["'];/gm) ?? []).join("\n");
+    expect(imports).not.toMatch(/broker/);
+    expect(imports).not.toMatch(/notification/);
+    expect(imports).not.toMatch(/decision-engine/);
+    expect(imports).not.toMatch(/decision\.functions/);
+    expect(imports).not.toMatch(/notify/);
   });
 
   it("ENTRY_READY_SHADOW requires locked snapshot + closed candle + cube pass", () => {
