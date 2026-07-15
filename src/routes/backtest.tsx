@@ -204,6 +204,33 @@ function BacktestPage() {
         <Link to="/" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>← Dashboard</Link>
       </header>
 
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {(["BACKTEST","RESEARCH"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{
+              padding: "6px 12px", borderRadius: 6,
+              border: `1px solid ${tab === t ? C.orange : C.border}`,
+              background: tab === t ? C.orange : "transparent",
+              color: tab === t ? "#04140b" : C.text,
+              fontFamily: "var(--eb-mono)", fontSize: 12, cursor: "pointer",
+              letterSpacing: 1,
+            }}>
+            {t === "BACKTEST" ? "Backtest" : "Research"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "RESEARCH" ? (
+        <Suspense fallback={
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+            Loading Research Lab modules…
+          </div>
+        }>
+          <ResearchPanelLazy />
+        </Suspense>
+      ) : (
+      <>
       {/* Controls */}
       <section style={panel}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
