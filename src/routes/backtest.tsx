@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol, type BacktestTrade } from "@/lib/backtest.functions";
 import { downloadBlob } from "@/lib/download";
@@ -10,6 +10,14 @@ import { StrategySelector } from "@/components/backtest/StrategySelector";
 import { FormulaSelector } from "@/components/backtest/FormulaSelector";
 import { getStrategyAdapter, type StrategyId } from "@/lib/backtest/strategy";
 import type { UnifiedFormulaId } from "@/lib/backtest/result";
+
+// Phase 21.3d-β2b · Absolute-Degree Intraday panel is lazy-loaded so the
+// CSV parser, provider comparison and validation modules never enter the
+// daily-mode bundle. React.lazy triggers a dynamic import only when the
+// user selects the Absolute formula.
+const AbsoluteValidationPanelLazy = lazy(
+  () => import("@/components/backtest/AbsoluteValidationPanel"),
+);
 
 const C = {
   bg: "var(--eb-bg)",
