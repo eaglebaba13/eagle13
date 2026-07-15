@@ -40,6 +40,12 @@ export const INTRADAY_FORMULA_VERSIONS = {
   LEGACY_EAGLEBABA_CASCADE_V1: "LEGACY_EAGLEBABA_CASCADE_V1",
 } as const;
 
+/** Phase 21.2 Stage 4 — replay validation channel for the absolute-degree
+ *  intraday methodology. Independent of the production Market Replay engine. */
+export const GANN_ABSOLUTE_INTRADAY_REPLAY_VERSION =
+  "GANN_ABSOLUTE_INTRADAY_REPLAY_V1" as const;
+export type GannAbsoluteReplayVersion = typeof GANN_ABSOLUTE_INTRADAY_REPLAY_VERSION;
+
 export type IntradayFormulaVersion =
   (typeof INTRADAY_FORMULA_VERSIONS)[keyof typeof INTRADAY_FORMULA_VERSIONS];
 
