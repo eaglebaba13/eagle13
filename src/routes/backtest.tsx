@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol, type BacktestTrade } from "@/lib/backtest.functions";
 import { downloadBlob } from "@/lib/download";
@@ -10,6 +10,14 @@ import { StrategySelector } from "@/components/backtest/StrategySelector";
 import { FormulaSelector } from "@/components/backtest/FormulaSelector";
 import { getStrategyAdapter, type StrategyId } from "@/lib/backtest/strategy";
 import type { UnifiedFormulaId } from "@/lib/backtest/result";
+
+// Phase 21.3d-β2b · Absolute-Degree Intraday panel is lazy-loaded so the
+// CSV parser, provider comparison and validation modules never enter the
+// daily-mode bundle. React.lazy triggers a dynamic import only when the
+// user selects the Absolute formula.
+const AbsoluteValidationPanelLazy = lazy(
+  () => import("@/components/backtest/AbsoluteValidationPanel"),
+);
 
 const C = {
   bg: "var(--eb-bg)",
@@ -98,12 +106,10 @@ function BacktestPage() {
 
   const runNow = async () => {
     // Phase 21.3d-parity-β2a · Sign-Degree AND Legacy dispatch through the
-    // shared runBacktest path. Absolute remains on its dedicated surface
-    // until β2b activates it inside /backtest.
+    // shared runBacktest path. Absolute is handled by the embedded
+    // AbsoluteValidationPanel below (activated in β2b), which calls
+    // runHistoricalValidation directly — no runBacktest dispatch here.
     if (formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1") {
-      setError(
-        "Absolute-Degree Intraday runs on the dedicated validation surface. Open /absolute-intraday-validation to execute this formula.",
-      );
       return;
     }
     setLoading(true); setError(null);
@@ -191,11 +197,11 @@ function BacktestPage() {
               <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
               {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-                  Absolute-Degree Intraday runs on{" "}
+                  Absolute-Degree Intraday validation runs below · same engine as{" "}
                   <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
                     /absolute-intraday-validation
-                  </Link>{" "}
-                  — unified execution is COMING NEXT.
+                  </Link>
+                  . Validation only — not a live trade recommendation.
                 </div>
               ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
@@ -209,6 +215,7 @@ function BacktestPage() {
             </div>
           )}
         </div>
+        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? null : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
@@ -248,6 +255,7 @@ function BacktestPage() {
             </button>
           </div>
         </div>
+        )}
         {loading ? (
           <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
             Running · Strategy={strategy} · Formula={formula} · Instrument={symbol} · {from} → {to}
@@ -258,13 +266,25 @@ function BacktestPage() {
         ) : null}
       </section>
 
-      {!result && !loading ? (
+      {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+        <section style={{ ...panel, marginTop: 14 }}>
+          <Suspense
+            fallback={
+              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+                Loading Absolute-Degree validation modules…
+              </div>
+            }
+          >
+            <AbsoluteValidationPanelLazy />
+          </Suspense>
+        </section>
+      ) : !result && !loading ? (
         <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
           Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
         </section>
       ) : null}
 
-      {result ? (
+      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
         <>
           <SummaryCards r={result} />
           <IntegrityPanel r={result} />
