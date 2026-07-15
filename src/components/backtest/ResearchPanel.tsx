@@ -551,6 +551,9 @@ export default function ResearchPanel() {
 
       {rows && comparison && summary ? (
         <>
+          <ResearchTabs tab={tab} onChange={setTab} />
+          {tab === "wf" ? (
+          <>
           {/* Matrix */}
           <section style={panel}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
