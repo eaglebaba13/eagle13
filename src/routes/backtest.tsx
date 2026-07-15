@@ -19,6 +19,12 @@ const AbsoluteValidationPanelLazy = lazy(
   () => import("@/components/backtest/AbsoluteValidationPanel"),
 );
 
+// Phase 21.4 · Stage 4A — SMC panel + Astro-vs-SMC comparison are lazy-loaded
+// so SMC/CSV/signal modules never enter the Astro-mode bundle.
+const SmcBacktestPanelLazy = lazy(
+  () => import("@/components/backtest/SmcBacktestPanel"),
+);
+
 const C = {
   bg: "var(--eb-bg)",
   card: "var(--eb-card)",
@@ -219,7 +225,7 @@ function BacktestPage() {
             </div>
           )}
         </div>
-        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? null : (
+        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" || strategy === "SMC" ? null : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
@@ -282,13 +288,25 @@ function BacktestPage() {
             <AbsoluteValidationPanelLazy />
           </Suspense>
         </section>
+      ) : strategy === "SMC" ? (
+        <section style={{ ...panel, marginTop: 14 }}>
+          <Suspense
+            fallback={
+              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+                Loading SMC modules…
+              </div>
+            }
+          >
+            <SmcBacktestPanelLazy />
+          </Suspense>
+        </section>
       ) : !result && !loading ? (
         <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
           Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
         </section>
       ) : null}
 
-      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" && strategy !== "SMC" ? (
         <>
           <SummaryCards r={result} />
           <IntegrityPanel r={result} />
