@@ -10,6 +10,55 @@ import { getSchedulerMetrics, type SchedulerTaskSnapshot } from "@/lib/scheduler
 import { getErrorLog, recordError } from "@/lib/diagnostics";
 import { downloadBlob } from "@/lib/download";
 import { useTick } from "@/hooks/use-scheduler";
+import { runIntradayValidation } from "@/lib/gann-intraday-validation.functions";
+
+function AbsoluteIntradayValidationPanel() {
+  const runVal = useServerFn(runIntradayValidation);
+  const q = useQuery({
+    queryKey: ["dev-absolute-intraday-validation"],
+    queryFn: () => runVal({ data: { instrument: "NIFTY50" } }),
+    refetchInterval: 30_000,
+    retry: false,
+  });
+  if (q.isLoading)
+    return <div style={{ padding: 12, color: C.muted, fontSize: 12 }}>Loading validation counters…</div>;
+  if (q.error || !q.data)
+    return (
+      <div style={{ padding: 12, color: C.muted, fontSize: 12 }}>
+        Absolute-Intraday validation unavailable
+        {q.error ? `: ${(q.error as Error).message}` : ""}.
+      </div>
+    );
+  const v = q.data;
+  const rows: Array<[string, string | number]> = [
+    ["Provider", v.candles.provider],
+    ["Session status", v.candles.sessionStatus],
+    ["5m candles", v.candles.candles.length],
+    ["Missing candles", v.candles.missingCount],
+    ["Gaps", v.candles.gaps.length],
+    ["First-touch count", v.simulation.counters.firstTouch],
+    ["Confirmed count", v.simulation.counters.confirmed],
+    ["Retest count", v.simulation.counters.retest],
+    ["Missed-chase count", v.simulation.counters.missedChase],
+    ["Cube approved", v.simulation.counters.cubeApproved],
+    ["Cube conflict", v.simulation.counters.cubeConflict],
+    ["Ambiguous", v.simulation.counters.ambiguous],
+    ["Target hits", v.simulation.counters.targetHit],
+    ["Stop hits", v.simulation.counters.stopHit],
+    ["No-future guard", "OK"],
+    ["Avg FSM step μs", Math.round(v.simulation.processingMicros / Math.max(1, v.candles.candles.length))],
+  ];
+  return (
+    <Table headers={["Metric", "Value"]}>
+      {rows.map(([k, val]) => (
+        <tr key={k}>
+          <td style={td()}>{k}</td>
+          <td style={td("right")}>{val}</td>
+        </tr>
+      ))}
+    </Table>
+  );
+}
 
 export const Route = createFileRoute("/dev/diagnostics")({
   component: DiagnosticsPage,
@@ -207,6 +256,10 @@ function DiagnosticsDashboard() {
         </Section>
 
         <Section title="Scheduler Monitor">
+          <AbsoluteIntradayValidationPanel />
+        </Section>
+
+        <Section title="Scheduler Monitor · Tasks">
           <Table headers={["#", "Task", "Period", "Runs", "Errors", "Last Duration", "Avg", "Last Run", "Next Run"]}>
             {sched.tasks.map((t: SchedulerTaskSnapshot) => (
               <tr key={t.id}>
