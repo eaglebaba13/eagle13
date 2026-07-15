@@ -197,11 +197,11 @@ function BacktestPage() {
               <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
               {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-                  Absolute-Degree Intraday runs on{" "}
+                  Absolute-Degree Intraday validation runs below · same engine as{" "}
                   <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
                     /absolute-intraday-validation
-                  </Link>{" "}
-                  — unified execution is COMING NEXT.
+                  </Link>
+                  . Validation only — not a live trade recommendation.
                 </div>
               ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
                 <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
