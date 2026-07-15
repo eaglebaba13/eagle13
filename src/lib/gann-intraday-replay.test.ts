@@ -110,8 +110,9 @@ describe("Stage 4 · replay controller", () => {
       }),
       3,
     );
-    expect(JSON.stringify(computeReplayView(s))).toBe(
-      JSON.stringify(computeReplayView(s)),
-    );
+    // processingMicros is a wall-clock timing metric — exclude from determinism.
+    const strip = (v: ReturnType<typeof computeReplayView>) =>
+      JSON.stringify({ ...v, processingMicros: 0 });
+    expect(strip(computeReplayView(s))).toBe(strip(computeReplayView(s)));
   });
 });
