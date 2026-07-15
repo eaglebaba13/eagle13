@@ -146,36 +146,33 @@ export function simulateLevel(
       }
     }
 
-    // Phase 2 — confirmation / retest via closed candle.
-    if (plan.state === "WAITING_CANDLE" || plan.state === "WAITING_RETEST") {
-      // Only consider closes on candles AFTER the touch candle.
-      if (touchIndex !== null && i > touchIndex) {
-        const prev = plan.state;
-        plan = onCandleClose(instrument, plan, stripCandle(c));
-        if (prev === "WAITING_CANDLE" && plan.state !== "WAITING_CANDLE") {
-          confirmIndex = i;
-        }
+    // Phase 2a — confirmation candle (only on candles AFTER the touch).
+    if (plan.state === "WAITING_CANDLE" && touchIndex !== null && i > touchIndex) {
+      const prev = plan.state;
+      plan = onCandleClose(instrument, plan, stripCandle(c));
+      if (prev === "WAITING_CANDLE" && plan.state !== "WAITING_CANDLE") {
+        confirmIndex = i;
+      }
+      if (plan.state === "ENTRY_READY") {
+        entryTimeIst = c.timeIst;
+      }
+      if (plan.state === "INVALIDATED") {
+        outcome = "INVALIDATED";
+        exitIndex = i;
+        exitTimeIst = c.timeIst;
+        break;
+      }
+    } else if (plan.state === "WAITING_RETEST") {
+      // Phase 2b — retest: fill when price returns within tolerance band.
+      const range = candlePriceRange(c);
+      const withinLow = level.value - tol;
+      const withinHigh = level.value + tol;
+      if (range.max >= withinLow && range.min <= withinHigh) {
+        const retestPrice = Math.max(withinLow, Math.min(withinHigh, level.value));
+        plan = onRetest(instrument, plan, retestPrice);
         if (plan.state === "ENTRY_READY") {
+          retestIndex = i;
           entryTimeIst = c.timeIst;
-        }
-        if (plan.state === "INVALIDATED") {
-          outcome = "INVALIDATED";
-          exitIndex = i;
-          exitTimeIst = c.timeIst;
-          break;
-        }
-      } else if (plan.state === "WAITING_RETEST") {
-        // Watch for a mid-candle retest without waiting for close.
-        const range = candlePriceRange(c);
-        const withinLow = level.value - tol;
-        const withinHigh = level.value + tol;
-        if (range.max >= withinLow && range.min <= withinHigh) {
-          const retestPrice = Math.max(withinLow, Math.min(withinHigh, level.value));
-          plan = onRetest(instrument, plan, retestPrice);
-          if (plan.state === "ENTRY_READY") {
-            retestIndex = i;
-            entryTimeIst = c.timeIst;
-          }
         }
       }
     }
