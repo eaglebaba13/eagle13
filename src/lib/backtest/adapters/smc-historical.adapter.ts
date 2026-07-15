@@ -338,7 +338,7 @@ export const smcHistoricalAdapter: HistoricalFormulaAdapter = {
   label: "SMC Historical v1",
   dataGranularity: "5m",
   causality: "intraday-5m",
-  supportedInstruments: ["NIFTY50", "BANKNIFTY", "GOLD", "SILVER", "BTC"],
+  supportedInstruments: ["NIFTY50", "BANKNIFTY", "GOLD", "SILVER", "BTC", "XAUUSD"],
   methodology:
     "SMC Historical v1 — deterministic BUY/SELL derivation from the Stage-2 SMC Signal Engine with configurable entry (next-open / signal-close), stop (swing/ATR/OB/liquidity), target (fixed-RR/opposing-liquidity/nearest-structure) and one active position.",
   disclaimers: [
