@@ -715,6 +715,8 @@ export default function ResearchPanel() {
               <div>Generated: {new Date().toISOString()}</div>
             </div>
           </section>
+          </>
+          ) : null}
 
           <MonteCarloSection
             walkByStrategy={walkByStrategy}
@@ -723,6 +725,7 @@ export default function ResearchPanel() {
             instrument={cfg.symbol}
             from={cfg.from}
             to={cfg.to}
+            tab={tab}
           />
         </>
       ) : null}
