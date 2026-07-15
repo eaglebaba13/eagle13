@@ -27,11 +27,7 @@ const DELAYED_MAX_LAG_MS = 30 * 60_000; // ≤ 30m
 export function classifyDataQuality(input: DataQualityInput): DataQualityState {
   const { report, candleCount, latestCandleMs, mode } = input;
   if (candleCount === 0) return "UNAVAILABLE";
-  if (
-    report.outOfOrderCount > 0 ||
-    report.causalityFailures > 0 ||
-    report.outOfWindowCount > 0
-  ) {
+  if (report.outOfOrderCount > 0 || report.causalityFailures > 0) {
     return "UNAVAILABLE";
   }
   if (report.coveragePct < 60) return "UNAVAILABLE";
