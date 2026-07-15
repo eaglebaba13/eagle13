@@ -56,9 +56,9 @@ export function historyToSummaryCsv(r: HistoryResult): string {
 export function historyToJson(r: HistoryResult): string {
   return JSON.stringify(
     {
-      version: GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
-      formulaVersion: INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1,
       ...r,
+      exportVersion: GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
+      formulaVersion: INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1,
     },
     null,
     2,
