@@ -46,6 +46,14 @@ export const GANN_ABSOLUTE_INTRADAY_REPLAY_VERSION =
   "GANN_ABSOLUTE_INTRADAY_REPLAY_V1" as const;
 export type GannAbsoluteReplayVersion = typeof GANN_ABSOLUTE_INTRADAY_REPLAY_VERSION;
 
+/** Phase 21.2 Stage 5 — historical validation, shadow alerts, readiness gate.
+ *  Isolated version tokens so no downstream production surface can accidentally
+ *  consume validation-only artefacts as if they were signed engine output. */
+export const GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION =
+  "GANN_ABSOLUTE_INTRADAY_VALIDATION_V1" as const;
+export const SHADOW_ALERT_VERSION = "SHADOW_ALERT_V1" as const;
+export const READINESS_GATE_VERSION = "READINESS_GATE_V1" as const;
+
 export type IntradayFormulaVersion =
   (typeof INTRADAY_FORMULA_VERSIONS)[keyof typeof INTRADAY_FORMULA_VERSIONS];
 
