@@ -323,6 +323,7 @@ function LiveLevelsTerminal() {
               {unread > 0 ? <span style={{ position: "absolute", top: -6, right: -6, background: C.red, color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: 20, padding: "1px 5px" }}>{unread}</span> : null}
             </button>
             <Link to="/live-terminal" style={{ fontSize: 12, color: C.blue, textDecoration: "none", border: `1px solid ${C.border}`, padding: "5px 10px", borderRadius: 8 }}>Planet Terminal</Link>
+            <Link to="/absolute-intraday" style={{ fontSize: 12, color: C.gold, textDecoration: "none", border: `1px solid ${C.gold}`, padding: "5px 10px", borderRadius: 8 }} title="Preview: Absolute-Degree Intraday v1 (paid-course methodology)">Absolute · Preview</Link>
             <NewsCenter />
             <ThemeToggle />
           </div>
