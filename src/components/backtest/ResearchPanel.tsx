@@ -822,6 +822,7 @@ export function MonteCarloSection({
   instrument,
   from,
   to,
+  tab = "mc",
 }: {
   walkByStrategy: Record<string, WalkForwardResult>;
   rows: StrategyResearchRow[];
@@ -829,6 +830,7 @@ export function MonteCarloSection({
   instrument: string;
   from: string;
   to: string;
+  tab?: "wf" | "mc" | "sens" | "rob";
 }) {
   const [mcCfg, setMcCfg] = useState<MonteCarloUiConfig>({
     simulations: 500,
