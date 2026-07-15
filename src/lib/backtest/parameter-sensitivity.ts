@@ -143,6 +143,8 @@ export function classifySensitivitySurface(
 
   // Plateau: many values close to the top.
   const top = sorted[sorted.length - 1];
+  const secondTop = sorted.length >= 2 ? sorted[sorted.length - 2] : top;
+  const peakDominance = Math.abs(secondTop) > 1e-9 ? Math.abs(top) / Math.abs(secondTop) : (top !== 0 ? Infinity : 1);
   const eps = Math.max(1e-9, Math.abs(top) * 0.1);
   const plateauCount = values.filter((v) => nearlyEqual(v, top, eps)).length;
   const plateauFrac = plateauCount / values.length;
@@ -155,6 +157,9 @@ export function classifySensitivitySurface(
   } else if (monotonicScore >= 0.9) {
     classification = "MONOTONIC";
     reason = `${(monotonicScore * 100).toFixed(0)}% of adjacent cells move in one direction along ${firstKey}.`;
+  } else if (peakDominance >= 5 && plateauFrac <= 0.2) {
+    classification = "NARROW_OPTIMUM";
+    reason = `Peak dominates (top/second=${peakDominance.toFixed(1)}×) with plateau share ${(plateauFrac * 100).toFixed(0)}%.`;
   } else if (cv > 1.0 && plateauFrac <= 0.2) {
     classification = "ERRATIC";
     reason = `High dispersion (cv=${cv.toFixed(2)}) with no dominant direction.`;
