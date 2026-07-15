@@ -114,6 +114,9 @@ export function evaluateReadiness(i: ReadinessInputs): ReadinessReport {
         "no_causality_failure",
         "no_snapshot_mutation",
         "no_formula_mix",
+        "months_covered",
+        "min_trades",
+        "expectancy_positive",
       ].includes(c.id),
   ).length;
   const softPassed = checks.filter((c) => c.passed).length;
