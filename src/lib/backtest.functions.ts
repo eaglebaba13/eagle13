@@ -18,9 +18,12 @@ import {
 import { cached } from "./server-cache";
 import {
   DEFAULT_ASTRO_FORMULA_VERSION,
+  ASTRO_FORMULA_VERSIONS,
   astroCacheKey,
+  astroFormulaSlug,
   type AstroFormulaVersion,
 } from "./engine-version";
+import { warnLegacyHashQuirkIfApplicable } from "./backtest/legacy-diagnostics";
 import {
   BACKTEST_ENGINE_VERSION,
   BACKTEST_FORMULA_VERSION,
@@ -197,6 +200,16 @@ const InputSchema = z.object({
   policy: z.enum(["conservative", "optimistic", "exclude_ambiguous"]).default("conservative"),
   invalidSetupPolicy: z.enum(["fabricate", "strict"]).default("fabricate"),
   costs: CostSchema.default({ slippagePct: 0, brokerageFlat: 0, brokeragePct: 0, taxesPct: 0 }),
+  // Phase 21.3d-parity-β2a · Optional formula switch. Default preserves
+  // Sign-Degree public output byte-for-byte (cache key, Run ID, envelope).
+  // When omitted, `astroCacheKey` and `computeRunId` receive the same
+  // DEFAULT_ASTRO_FORMULA_VERSION they used before this parameter existed.
+  astroFormulaVersion: z
+    .enum([
+      ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1,
+      ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1,
+    ])
+    .optional(),
 });
 type BacktestInput = z.infer<typeof InputSchema>;
 
