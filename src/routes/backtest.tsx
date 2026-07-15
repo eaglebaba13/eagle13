@@ -288,13 +288,25 @@ function BacktestPage() {
             <AbsoluteValidationPanelLazy />
           </Suspense>
         </section>
+      ) : strategy === "SMC" ? (
+        <section style={{ ...panel, marginTop: 14 }}>
+          <Suspense
+            fallback={
+              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+                Loading SMC modules…
+              </div>
+            }
+          >
+            <SmcBacktestPanelLazy />
+          </Suspense>
+        </section>
       ) : !result && !loading ? (
         <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
           Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
         </section>
       ) : null}
 
-      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" && strategy !== "SMC" ? (
         <>
           <SummaryCards r={result} />
           <IntegrityPanel r={result} />
