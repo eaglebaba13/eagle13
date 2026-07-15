@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
   getGannIntradaySnapshot,
@@ -403,7 +403,7 @@ function RankedTab({ data }: { data: IntradaySnapshot }) {
   );
 }
 
-function LoadingBox({ children }: { children: React.ReactNode }) {
+function LoadingBox({ children }: { children: ReactNode }) {
   return (
     <div style={{ padding: 20, color: C.muted, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10 }}>
       {children}
@@ -561,10 +561,22 @@ function ReplayTab({
   validation: ValidationResult | undefined;
   loading: boolean;
 }) {
-  const [state, setState] = useState<ReplayState | null>(null);
-  const derived = useMemo(() => (state ? computeReplayView(state) : null), [state]);
   if (loading || !validation) return <LoadingBox>Loading replay…</LoadingBox>;
-  if (!state) {
+  return <ReplayTabInner validation={validation} />;
+}
+
+function ReplayTabInner({ validation }: { validation: ValidationResult }) {
+  const [state, setState] = useState<ReplayState>(() =>
+    initReplay({
+      instrument: validation.snapshot.instrument,
+      ranked: validation.snapshot.rankedLevels,
+      candles: validation.candles.candles,
+      cubeInputs: validation.cubeInputs,
+      ambiguousPolicy: validation.ambiguousPolicy,
+    }),
+  );
+  // Reset on validation identity change.
+  useEffect(() => {
     setState(
       initReplay({
         instrument: validation.snapshot.instrument,
@@ -574,8 +586,8 @@ function ReplayTab({
         ambiguousPolicy: validation.ambiguousPolicy,
       }),
     );
-    return <LoadingBox>Initialising…</LoadingBox>;
-  }
+  }, [validation]);
+  const derived = useMemo(() => computeReplayView(state), [state]);
   const total = state.candles.length;
   const cursor = state.cursor;
   const currentCandle = cursor > 0 ? state.candles[cursor - 1] : null;
@@ -598,16 +610,14 @@ function ReplayTab({
         onChange={(e) => setState(jumpReplay(state, Number(e.target.value)))}
         style={{ width: "100%", marginBottom: 14 }}
       />
-      {derived ? (
-        <div className="abs-grid" style={{ marginBottom: 14 }}>
+      <div className="abs-grid" style={{ marginBottom: 14 }}>
           <Card title="Touches so far" value={derived.counters.firstTouch} />
           <Card title="Confirmed" value={derived.counters.confirmed} />
           <Card title="Retests" value={derived.counters.retest} />
           <Card title="Targets" value={derived.counters.targetHit} />
           <Card title="Stops" value={derived.counters.stopHit} />
           <Card title="Missed Chase" value={derived.counters.missedChase} />
-        </div>
-      ) : null}
+      </div>
     </>
   );
 }
