@@ -21,6 +21,9 @@ export type GannPlanet = (typeof GANN_PLANETS)[number];
 /** Branded numeric guard: 0 <= v < 360, finite. */
 export type AbsolutePlanetDegree = number & { readonly __abs360: unique symbol };
 
+/** Branded numeric guard: 0 <= v < 30, finite. */
+export type DegreeWithinSign = number & { readonly __deg30: unique symbol };
+
 export type SourceLevel = "L1" | "L2" | "L3" | "L4";
 export type LevelSide = "RESISTANCE" | "SUPPORT" | "NEUTRAL";
 export type TradeBias = "BUY" | "SELL" | "WAIT";
@@ -92,4 +95,20 @@ export function assertAbsoluteDegree(
     throw new AbsoluteDegreeValidationError(planet, d, ">= 360");
   }
   return d as AbsolutePlanetDegree;
+}
+
+/** Alias — reads more naturally at call sites. */
+export const asAbsolutePlanetDegree = assertAbsoluteDegree;
+
+export function asDegreeWithinSign(planet: string, d: unknown): DegreeWithinSign {
+  if (typeof d !== "number" || !Number.isFinite(d)) {
+    throw new AbsoluteDegreeValidationError(planet, d, "not a finite number");
+  }
+  if (d < 0) {
+    throw new AbsoluteDegreeValidationError(planet, d, "negative");
+  }
+  if (d >= 30) {
+    throw new AbsoluteDegreeValidationError(planet, d, ">= 30 (sign-degree domain)");
+  }
+  return d as DegreeWithinSign;
 }
