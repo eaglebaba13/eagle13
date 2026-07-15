@@ -225,7 +225,7 @@ function BacktestPage() {
             </div>
           )}
         </div>
-        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? null : (
+        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" || strategy === "SMC" ? null : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           <div>
             <div style={fieldLbl}>Instrument</div>
