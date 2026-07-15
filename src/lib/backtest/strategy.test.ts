@@ -16,12 +16,11 @@ describe("HistoricalStrategyAdapter registry", () => {
     expect(ids).toEqual(["ASTRO", "SMC", "ASTRO_SMC_HYBRID", "BASELINE"]);
   });
 
-  it("ASTRO and SMC are AVAILABLE; Hybrid/Baseline remain COMING_NEXT", () => {
+  it("ASTRO/SMC/Hybrid are AVAILABLE; Baseline remains COMING_NEXT", () => {
     expect(astroStrategyAdapter.availability).toBe("AVAILABLE");
     expect(STRATEGY_REGISTRY.SMC.availability).toBe("AVAILABLE");
-    for (const id of ["ASTRO_SMC_HYBRID", "BASELINE"] as const) {
-      expect(STRATEGY_REGISTRY[id].availability).toBe("COMING_NEXT");
-    }
+    expect(STRATEGY_REGISTRY.ASTRO_SMC_HYBRID.availability).toBe("AVAILABLE");
+    expect(STRATEGY_REGISTRY.BASELINE.availability).toBe("COMING_NEXT");
   });
 
   it("Astro strategy exposes all three formula versions", () => {
@@ -50,22 +49,31 @@ describe("HistoricalStrategyAdapter registry", () => {
 });
 
 describe("validateUnifiedConfig — typed errors", () => {
-  it("throws STRATEGY_ADAPTER_NOT_AVAILABLE for Hybrid / Baseline", () => {
-    for (const strat of ["ASTRO_SMC_HYBRID", "BASELINE"] as const) {
-      try {
-        validateUnifiedConfig({
-          strategy: strat,
-          formula: INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
-          instrument: "NIFTY50",
-        });
-        throw new Error("should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(UnifiedBacktestConfigError);
-        expect((e as UnifiedBacktestConfigError).code).toBe(
-          "STRATEGY_ADAPTER_NOT_AVAILABLE",
-        );
-      }
+  it("throws STRATEGY_ADAPTER_NOT_AVAILABLE for Baseline", () => {
+    try {
+      validateUnifiedConfig({
+        strategy: "BASELINE",
+        formula: INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
+        instrument: "NIFTY50",
+      });
+      throw new Error("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(UnifiedBacktestConfigError);
+      expect((e as UnifiedBacktestConfigError).code).toBe(
+        "STRATEGY_ADAPTER_NOT_AVAILABLE",
+      );
     }
+  });
+
+  it("resolves Hybrid formula adapter", () => {
+    const v = validateUnifiedConfig({
+      strategy: "ASTRO_SMC_HYBRID",
+      formula: INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
+      instrument: "NIFTY50",
+      timeframe: "5m",
+    });
+    expect(v.strategy.strategyId).toBe("ASTRO_SMC_HYBRID");
+    expect(v.formula.id).toBe(INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1);
   });
 
   it("throws UNSUPPORTED_FORMULA_FOR_STRATEGY", () => {
