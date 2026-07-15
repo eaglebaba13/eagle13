@@ -1088,3 +1088,286 @@ function McCard({ label, value, accent }: { label: string; value: string; accent
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Phase 21.6 · Stage 3 — Research sub-tabs, Monte Carlo equity-fan chart,
+// Sensitivity scaffold with typed empty state. UI only — no engine here.
+
+type ResearchTab = "wf" | "mc" | "sens" | "rob";
+const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
+  { id: "wf", label: "Walk-Forward" },
+  { id: "mc", label: "Monte Carlo" },
+  { id: "sens", label: "Sensitivity" },
+  { id: "rob", label: "Robustness" },
+];
+
+export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
+
+function ResearchTabs({ tab, onChange }: { tab: ResearchTab; onChange: (t: ResearchTab) => void }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Research sub-tabs"
+      style={{
+        display: "flex",
+        gap: 6,
+        flexWrap: "wrap",
+        marginBottom: 12,
+        borderBottom: `1px solid ${C.border}`,
+        paddingBottom: 8,
+      }}
+    >
+      {RESEARCH_TABS.map((t) => {
+        const active = tab === t.id;
+        return (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(t.id)}
+            style={{
+              ...chip,
+              background: active ? C.orange : "transparent",
+              color: active ? "#04140b" : C.text,
+              fontWeight: active ? 600 : 400,
+            }}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MonteCarloEquityFan({
+  result,
+}: {
+  result: {
+    readonly percentileEquityCurves: {
+      readonly p5: readonly number[];
+      readonly p50: readonly number[];
+      readonly p95: readonly number[];
+    };
+    readonly worstPath: readonly number[];
+    readonly medianPath: readonly number[];
+    readonly bestPath: readonly number[];
+  };
+}) {
+  const [pathSel, setPathSel] = useState<"none" | "worst" | "median" | "best">("none");
+  const series = useMemo(() => {
+    const base = [
+      { name: "P95", data: [...result.percentileEquityCurves.p95] },
+      { name: "P50", data: [...result.percentileEquityCurves.p50] },
+      { name: "P5", data: [...result.percentileEquityCurves.p5] },
+    ];
+    if (pathSel === "worst") base.push({ name: "Worst path", data: [...result.worstPath] });
+    else if (pathSel === "median") base.push({ name: "Median path", data: [...result.medianPath] });
+    else if (pathSel === "best") base.push({ name: "Best path", data: [...result.bestPath] });
+    return base;
+  }, [result, pathSel]);
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+        <span style={lbl}>Equity Fan (P5 / P50 / P95)</span>
+        <select
+          value={pathSel}
+          onChange={(e) => setPathSel(e.target.value as "none" | "worst" | "median" | "best")}
+          style={{ ...sel, width: "auto" }}
+          aria-label="Overlay path"
+        >
+          <option value="none">No overlay</option>
+          <option value="worst">Worst path</option>
+          <option value="median">Median path</option>
+          <option value="best">Best path</option>
+        </select>
+      </div>
+      <ApexChart
+        type="line"
+        series={series}
+        options={{
+          chart: { id: "mc-equity-fan", toolbar: { show: false }, animations: { enabled: false }, background: "transparent" },
+          stroke: { curve: "smooth", width: 2 },
+          xaxis: { labels: { show: false }, axisTicks: { show: false } },
+          yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
+          grid: { borderColor: "var(--eb-border)" },
+          legend: { labels: { colors: "var(--eb-text)" } },
+          tooltip: { theme: "dark" },
+          dataLabels: { enabled: false },
+        }}
+        height={220}
+      />
+    </div>
+  );
+}
+
+type SensitivityStrategy = "SMC_V1" | "ASTRO_SMC_HYBRID_V1";
+type SensitivityMode = "1D" | "2D";
+
+type SensitivityAxisState = { name: string; min: number; max: number; step: number };
+
+function SensitivitySection({ instrument }: { instrument: string }) {
+  const [strategy, setStrategy] = useState<SensitivityStrategy>("SMC_V1");
+  const [mode, setMode] = useState<SensitivityMode>("1D");
+  const [axisA, setAxisA] = useState<SensitivityAxisState>({ name: "minScore", min: 40, max: 80, step: 10 });
+  const [axisB, setAxisB] = useState<SensitivityAxisState>({ name: "rr", min: 1, max: 3, step: 0.5 });
+  const [normalizeWeights, setNormalizeWeights] = useState(true);
+  const [includeMonteCarlo, setIncludeMonteCarlo] = useState(false);
+
+  const allowedKeys: readonly string[] = useMemo(() => {
+    const smc = SMC_PARAMETER_KEYS as readonly string[];
+    if (strategy === "SMC_V1") return smc;
+    return [...HYBRID_PARAMETER_KEYS, "smcMinScore"] as readonly string[];
+  }, [strategy]);
+
+  const specs: ParameterSpec[] = useMemo(() => {
+    const list: ParameterSpec[] = [{ name: axisA.name, min: axisA.min, max: axisA.max, step: axisA.step }];
+    if (mode === "2D") list.push({ name: axisB.name, min: axisB.min, max: axisB.max, step: axisB.step });
+    return list;
+  }, [axisA, axisB, mode]);
+
+  const cells = estimateGridCells(specs);
+  const validation = validateSensitivityGrid(specs);
+
+  // Stage 3: payload plumbing lives in Stage 4. Execution is disabled here.
+  const payloadCode: SensitivityUiErrorCode = "RESEARCH_PAYLOAD_MISSING";
+
+  return (
+    <section style={panel}>
+      <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>
+        PARAMETER SENSITIVITY · {instrument}
+      </div>
+      <div
+        style={{
+          fontFamily: "var(--eb-mono)",
+          fontSize: 11,
+          color: C.orange,
+          border: `1px solid ${C.orange}`,
+          borderRadius: 6,
+          padding: 10,
+          marginBottom: 12,
+        }}
+        role="alert"
+        aria-live="polite"
+      >
+        {SENSITIVITY_UI_ERROR_LABEL[payloadCode]} — {payloadCode}. Load an intraday SMC or Hybrid payload from the SMC / Hybrid panels to enable sensitivity execution. Grid controls remain available for preview.
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+        <div>
+          <div style={lbl}>Strategy</div>
+          <select value={strategy} onChange={(e) => setStrategy(e.target.value as SensitivityStrategy)} style={sel}>
+            <option value="SMC_V1">SMC_V1</option>
+            <option value="ASTRO_SMC_HYBRID_V1">ASTRO_SMC_HYBRID_V1</option>
+          </select>
+        </div>
+        <div>
+          <div style={lbl}>Mode</div>
+          <select value={mode} onChange={(e) => setMode(e.target.value as SensitivityMode)} style={sel}>
+            <option value="1D">Single-parameter sweep</option>
+            <option value="2D">Two-parameter grid</option>
+          </select>
+        </div>
+        <AxisEditor label="Parameter A" axis={axisA} onChange={setAxisA} options={allowedKeys} />
+        {mode === "2D" ? (
+          <AxisEditor label="Parameter B" axis={axisB} onChange={setAxisB} options={allowedKeys} />
+        ) : null}
+        <div>
+          <div style={lbl}>Normalize Hybrid Weights</div>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+            <input
+              type="checkbox"
+              checked={normalizeWeights}
+              onChange={(e) => setNormalizeWeights(e.target.checked)}
+              disabled={strategy !== "ASTRO_SMC_HYBRID_V1"}
+            />
+            <span style={{ color: strategy === "ASTRO_SMC_HYBRID_V1" ? C.text : C.muted }}>
+              {normalizeWeights ? "normalized" : "raw weights"}
+            </span>
+          </label>
+        </div>
+        <div>
+          <div style={lbl}>Include Monte Carlo</div>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+            <input type="checkbox" checked={includeMonteCarlo} onChange={(e) => setIncludeMonteCarlo(e.target.checked)} />
+            <span>{includeMonteCarlo ? "per-cell MC on" : "per-cell MC off"}</span>
+          </label>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 12,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: 8,
+          fontFamily: "var(--eb-mono)",
+          fontSize: 11,
+        }}
+      >
+        <div>
+          <div style={lbl}>Estimated Cells</div>
+          <div style={{ color: cells > RESEARCH_UI_MAX_CELLS ? C.red : C.text }}>{cells} / {RESEARCH_UI_MAX_CELLS}</div>
+        </div>
+        <div>
+          <div style={lbl}>Grid Status</div>
+          <div style={{ color: validation.ok ? C.green : C.red }}>{validation.ok ? "OK" : validation.code}</div>
+        </div>
+        <div>
+          <div style={lbl}>Effective A</div>
+          <div style={{ color: C.muted }}>{axisA.name} · {axisA.min}→{axisA.max} step {axisA.step}</div>
+        </div>
+        {mode === "2D" ? (
+          <div>
+            <div style={lbl}>Effective B</div>
+            <div style={{ color: C.muted }}>{axisB.name} · {axisB.min}→{axisB.max} step {axisB.step}</div>
+          </div>
+        ) : null}
+      </div>
+
+      {!validation.ok ? (
+        <div style={{ marginTop: 10, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+          {validation.code}: {validation.message}
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button
+          disabled
+          title="Payload plumbing arrives in Stage 4"
+          style={{ ...btn, opacity: 0.5, cursor: "not-allowed" }}
+        >
+          ▶ Run Sensitivity
+        </button>
+        <button disabled style={{ ...btnGhost, opacity: 0.5, cursor: "not-allowed" }}>Cancel</button>
+      </div>
+    </section>
+  );
+}
+
+function AxisEditor({
+  label,
+  axis,
+  onChange,
+  options,
+}: {
+  label: string;
+  axis: SensitivityAxisState;
+  onChange: (a: SensitivityAxisState) => void;
+  options: readonly string[];
+}) {
+  return (
+    <div>
+      <div style={lbl}>{label}</div>
+      <select value={axis.name} onChange={(e) => onChange({ ...axis, name: e.target.value })} style={sel} aria-label={`${label} parameter`}>
+        {options.map((k) => (<option key={k} value={k}>{k}</option>))}
+      </select>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, marginTop: 4 }}>
+        <input type="number" value={axis.min} onChange={(e) => onChange({ ...axis, min: Number(e.target.value) })} style={sel} aria-label={`${label} min`} />
+        <input type="number" value={axis.max} onChange={(e) => onChange({ ...axis, max: Number(e.target.value) })} style={sel} aria-label={`${label} max`} />
+        <input type="number" value={axis.step} onChange={(e) => onChange({ ...axis, step: Number(e.target.value) })} style={sel} aria-label={`${label} step`} />
+      </div>
+    </div>
+  );
+}
