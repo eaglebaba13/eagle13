@@ -13,6 +13,11 @@ import {
   legacyHistoricalAdapter,
   signDegreeHistoricalAdapter,
 } from "./adapters/daily-astro.adapter";
+import {
+  SMC_STRATEGY_NOT_IMPLEMENTED,
+  analyzeSmc,
+  type SmcEngineResult,
+} from "../smc-engine";
 
 export type StrategyId = "ASTRO" | "SMC" | "ASTRO_SMC_HYBRID" | "BASELINE";
 
@@ -74,11 +79,28 @@ function comingNextAdapter(
   };
 }
 
-export const smcStrategyAdapter = comingNextAdapter(
+const smcBaseAdapter = comingNextAdapter(
   "SMC",
   "SMC (Smart Money Concepts)",
-  "SMC strategy — engine adapter not yet wired. Existing pure engines (market-structure, liquidity, order-block, fvg) will plug in via Phase 21.4b.",
+  "SMC strategy — Stage 1 pure engine wired (deterministic structure detection). Signal / backtest layers arrive in Phase 21.4 Stages 2–3.",
 );
+
+/**
+ * SMC strategy adapter — availability stays COMING_NEXT until Stage 2 wires
+ * the signal engine. `engineStatus` remains NOT_IMPLEMENTED for callers that
+ * probe for a runnable strategy, while `analyzeStructure` exposes the pure
+ * Stage 1 detector so future stages can plug in without touching this shape.
+ */
+export const smcStrategyAdapter: HistoricalStrategyAdapter & {
+  engineStatus: typeof SMC_STRATEGY_NOT_IMPLEMENTED;
+  analyzeStructure: (
+    ...args: Parameters<typeof analyzeSmc>
+  ) => SmcEngineResult;
+} = {
+  ...smcBaseAdapter,
+  engineStatus: SMC_STRATEGY_NOT_IMPLEMENTED,
+  analyzeStructure: analyzeSmc,
+};
 
 export const astroSmcHybridAdapter = comingNextAdapter(
   "ASTRO_SMC_HYBRID",
