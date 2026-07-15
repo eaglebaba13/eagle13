@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   runHistoricalValidation,
@@ -19,6 +19,23 @@ import {
   GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
   INTRADAY_FORMULA_VERSIONS,
 } from "@/lib/engine-version";
+import {
+  parseCandleCsv,
+  type ParseResult,
+  type ProviderLabel,
+} from "@/lib/candle-csv-parser";
+import { computeDataQuality } from "@/lib/candle-data-quality";
+import { buildSessions, type BuildResult } from "@/lib/candle-session-builder";
+import { compareProviders, type ProviderComparisonResult } from "@/lib/provider-comparison";
+import {
+  cleanedCandlesToCsv,
+  rejectedRowsToCsv,
+  sessionSummaryToCsv,
+  providerComparisonToCsv,
+  dqReportToJson,
+  ingestExportFilename,
+  type ProvenanceHeader,
+} from "@/lib/historical-ingest-export";
 
 export const Route = createFileRoute("/absolute-intraday-validation")({
   component: ValidationPage,
@@ -90,6 +107,66 @@ function ValidationPage() {
   const [result, setResult] = useState<HistoryResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // CSV Import state (client-side, deterministic).
+  const [providerA, setProviderA] = useState<ProviderLabel>("Generic");
+  const [providerB, setProviderB] = useState<ProviderLabel>("Generic");
+  const [importA, setImportA] = useState<ParseResult | null>(null);
+  const [importB, setImportB] = useState<ParseResult | null>(null);
+  const [importInstrument, setImportInstrument] = useState<InstrumentSymbol>("NIFTY50");
+  const [importError, setImportError] = useState<string | null>(null);
+
+  const dqA = useMemo(() => (importA ? computeDataQuality(importA.rows) : null), [importA]);
+  const builtA = useMemo<BuildResult | null>(
+    () =>
+      importA
+        ? buildSessions({
+            provider: importA.provider,
+            instrument: importInstrument,
+            rows: importA.rows,
+          })
+        : null,
+    [importA, importInstrument],
+  );
+  const comparison = useMemo<ProviderComparisonResult | null>(
+    () => (importA && importB ? compareProviders(importA.rows, importB.rows) : null),
+    [importA, importB],
+  );
+
+  const readFile = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (r: ParseResult) => void,
+    provider: ProviderLabel,
+  ) => {
+    setImportError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = parseCandleCsv({
+          csv: String(reader.result ?? ""),
+          provider,
+          instrument: importInstrument,
+          timezone: "Asia/Kolkata",
+          interval: "5m",
+        });
+        setter(parsed);
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : String(err));
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const provenance = (source: string): ProvenanceHeader => ({
+    source,
+    instrument: importInstrument,
+    from: builtA?.from ?? "",
+    to: builtA?.to ?? "",
+    runId: `${INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1}:${builtA?.from ?? ""}:${builtA?.to ?? ""}`,
+    generatedAt: new Date().toISOString(),
+  });
 
   const onRun = async () => {
     setLoading(true);
@@ -163,6 +240,160 @@ function ValidationPage() {
         Engine: {INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1} · Validation:{" "}
         {GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION}
       </p>
+
+      <Section title="Historical CSV Import (Stage 5.1)">
+        <p style={{ color: C.muted, fontSize: 12, marginTop: 0 }}>
+          Load 5-minute candles from a provider export. Timezone is fixed to
+          Asia/Kolkata; interval to 5m. Data is validated client-side; nothing
+          is uploaded or persisted.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+          <label style={{ fontSize: 12, color: C.muted }}>
+            Instrument
+            <select
+              value={importInstrument}
+              onChange={(e) => setImportInstrument(e.target.value as InstrumentSymbol)}
+              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+            >
+              <option value="NIFTY50">NIFTY 50</option>
+              <option value="BANKNIFTY">BANK NIFTY</option>
+            </select>
+          </label>
+          <label style={{ fontSize: 12, color: C.muted }}>
+            Provider A
+            <select
+              value={providerA}
+              onChange={(e) => setProviderA(e.target.value as ProviderLabel)}
+              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+            >
+              {(["Generic", "TradingView", "Zerodha", "Upstox", "Dhan", "AngelOne", "NSE"] as ProviderLabel[]).map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <input type="file" accept=".csv,text/csv" onChange={(e) => readFile(e, setImportA, providerA)} style={{ display: "block", marginTop: 4, fontSize: 12 }} />
+          </label>
+          <label style={{ fontSize: 12, color: C.muted }}>
+            Provider B (optional, for comparison)
+            <select
+              value={providerB}
+              onChange={(e) => setProviderB(e.target.value as ProviderLabel)}
+              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+            >
+              {(["Generic", "TradingView", "Zerodha", "Upstox", "Dhan", "AngelOne", "NSE"] as ProviderLabel[]).map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <input type="file" accept=".csv,text/csv" onChange={(e) => readFile(e, setImportB, providerB)} style={{ display: "block", marginTop: 4, fontSize: 12 }} />
+          </label>
+        </div>
+        {importError && <div style={{ color: C.red, marginTop: 8, fontSize: 12 }}>{importError}</div>}
+
+        {importA && dqA && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, color: C.gold, marginBottom: 6 }}>Provider A · Data quality</div>
+            <KV k="Rows parsed" v={importA.rows.length} />
+            <KV k="Rows rejected" v={importA.rejected.length} />
+            <KV k="Sessions detected" v={dqA.sessionsDetected} />
+            <KV k="Coverage" v={`${dqA.coveragePct.toFixed(2)}%`} />
+            <KV k="Missing candles" v={dqA.gaps.reduce((a, g) => a + g.missingCount, 0)} />
+            <KV k="Out-of-window rows" v={dqA.outOfWindowCount} />
+            <KV k="Out-of-order rows" v={dqA.outOfOrderCount} />
+            <KV k="Causality failures" v={dqA.causalityFailures} />
+            {builtA && (
+              <>
+                <KV k="Usable sessions" v={builtA.usable.length} />
+                <KV k="Rejected sessions" v={builtA.rejected.length} />
+                <KV k="Date range" v={builtA.from && builtA.to ? `${builtA.from} → ${builtA.to}` : "—"} />
+              </>
+            )}
+          </div>
+        )}
+
+        {comparison && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, color: C.gold, marginBottom: 6 }}>Provider comparison</div>
+            <KV k="Overlap sessions" v={comparison.overlapDates.length} />
+            <KV
+              k="Overall"
+              v={comparison.overall}
+            />
+            {comparison.overall === "MATERIAL_DIFFERENCE" && (
+              <div style={{ color: C.red, fontSize: 12, marginTop: 4 }}>
+                Datasets materially disagree — do not merge; investigate before use.
+              </div>
+            )}
+          </div>
+        )}
+
+        {importA && builtA && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            <button
+              onClick={() =>
+                downloadBlob(
+                  cleanedCandlesToCsv(importA.rows, provenance(importA.provider)),
+                  ingestExportFilename(provenance(importA.provider), "candles", "csv"),
+                  "text/csv",
+                )
+              }
+              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+            >
+              Cleaned candles CSV
+            </button>
+            <button
+              onClick={() =>
+                downloadBlob(
+                  rejectedRowsToCsv(importA.rejected, provenance(importA.provider)),
+                  ingestExportFilename(provenance(importA.provider), "rejected", "csv"),
+                  "text/csv",
+                )
+              }
+              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+            >
+              Rejected rows CSV
+            </button>
+            <button
+              onClick={() =>
+                downloadBlob(
+                  sessionSummaryToCsv(builtA, provenance(importA.provider)),
+                  ingestExportFilename(provenance(importA.provider), "sessions", "csv"),
+                  "text/csv",
+                )
+              }
+              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+            >
+              Session summary CSV
+            </button>
+            {dqA && (
+              <button
+                onClick={() =>
+                  downloadBlob(
+                    dqReportToJson(dqA, provenance(importA.provider)),
+                    ingestExportFilename(provenance(importA.provider), "dq", "json"),
+                    "application/json",
+                  )
+                }
+                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+              >
+                DQ report JSON
+              </button>
+            )}
+            {comparison && (
+              <button
+                onClick={() =>
+                  downloadBlob(
+                    providerComparisonToCsv(comparison, provenance(`${importA.provider}_vs_${importB?.provider ?? "B"}`)),
+                    ingestExportFilename(provenance("compare"), "compare", "csv"),
+                    "text/csv",
+                  )
+                }
+                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+              >
+                Provider comparison CSV
+              </button>
+            )}
+          </div>
+        )}
+      </Section>
 
       <Section title="Run Historical Validation">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
