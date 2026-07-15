@@ -942,6 +942,7 @@ export function MonteCarloSection({
 
   return (
     <>
+      {tab === "mc" ? (
       <section style={panel}>
         <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>MONTE CARLO ROBUSTNESS</div>
         <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginBottom: 10 }}>
@@ -1010,6 +1011,7 @@ export function MonteCarloSection({
             <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
               Ruin formula: {mcResult.ruinFormula} · Trades resampled: {mcResult.tradeCount}
             </div>
+            <MonteCarloEquityFan result={mcResult} />
             <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
               <button onClick={exportMcCsv} style={btnGhost}>Monte Carlo CSV</button>
               <button onClick={exportMcJson} style={btnGhost}>Monte Carlo JSON</button>
@@ -1020,8 +1022,9 @@ export function MonteCarloSection({
           </div>
         ) : null}
       </section>
+      ) : null}
 
-      {robustness ? (
+      {tab === "rob" && robustness ? (
         <section style={panel}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
             <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange }}>ROBUSTNESS SCORE</div>
@@ -1063,14 +1066,16 @@ export function MonteCarloSection({
         </section>
       ) : null}
 
-      <section style={panel}>
-        <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>PARAMETER SENSITIVITY</div>
-        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted }}>
-          Sensitivity grids for SMC (minScore, structureWindow, fvgValidityBars, obValidityBars, cooldownBars, ATR stop multiplier, RR) and Hybrid
-          (Astro/SMC/agreement/data-quality weights, hybrid threshold) run through the existing unified backtest without touching production defaults.
-          Available once an intraday provider payload is wired for SMC / Hybrid. INSUFFICIENT_DATA cells are hidden from the surface, never highlighted as optimal.
-        </div>
-      </section>
+      {tab === "rob" && !robustness ? (
+        <section style={panel}>
+          <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>ROBUSTNESS SCORE</div>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted }}>
+            Run Monte Carlo first to compute the composite robustness score for the selected strategy.
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "sens" ? <SensitivitySection instrument={instrument} /> : null}
     </>
   );
 }
