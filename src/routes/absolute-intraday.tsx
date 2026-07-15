@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
 
 import {
   getGannIntradaySnapshot,
@@ -9,6 +10,25 @@ import {
 import type { InstrumentSymbol } from "@/lib/gann-intraday-anchor";
 import { GANN_PART1_BEAR_STARS } from "@/lib/gann-part1-stars";
 import { PROVISIONAL_POLICIES } from "@/lib/gann-intraday-policy";
+import {
+  runIntradayValidation,
+  type ValidationResult,
+} from "@/lib/gann-intraday-validation.functions";
+import {
+  toValidationCsv,
+  toValidationJson,
+  validationExportFilename,
+} from "@/lib/gann-intraday-export";
+import type { AmbiguousPolicy } from "@/lib/gann-intraday-simulator";
+import {
+  computeReplayView,
+  initReplay,
+  jumpReplay,
+  restartReplay,
+  stepReplay,
+  type ReplayState,
+} from "@/lib/gann-intraday-replay";
+import { downloadBlob } from "@/lib/download";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -122,7 +142,24 @@ function Card({ title, value, sub }: { title: string; value: string | number; su
 function AbsoluteIntradayPage() {
   const [instrument, setInstrument] = useState<InstrumentSymbol>("NIFTY50");
   const { data } = useSuspenseQuery(intradayQuery(instrument));
-  const [showMethodology, setShowMethodology] = useState(false);
+  const [tab, setTab] = useState<
+    "SNAPSHOT" | "RANKED" | "EXECUTION" | "CUBE" | "REPLAY" | "METHODOLOGY"
+  >("SNAPSHOT");
+  const [ambiguousPolicy, setAmbiguousPolicy] =
+    useState<AmbiguousPolicy>("conservative");
+
+  const runValidation = useServerFn(runIntradayValidation);
+  const validation = useQuery({
+    queryKey: ["gann-intraday-validation", instrument, ambiguousPolicy],
+    queryFn: () =>
+      runValidation({
+        data: { instrument, ambiguousPolicy, starBias: "UNKNOWN" },
+      }),
+    enabled:
+      data.status === "LOCKED" ||
+      data.status === "HISTORICAL_LOCKED",
+    refetchInterval: data.status === "LOCKED" ? 60_000 : false,
+  });
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, padding: "18px 14px 60px" }}>
@@ -142,6 +179,23 @@ function AbsoluteIntradayPage() {
       `}</style>
 
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+        <div
+          style={{
+            background: "rgba(255,190,0,0.12)",
+            border: `1px solid ${C.gold}`,
+            color: C.gold,
+            padding: "8px 12px",
+            borderRadius: 8,
+            marginBottom: 12,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 0.5,
+          }}
+        >
+          VALIDATION MODE — no push alerts, no broker orders, no Decision Engine
+          wiring. Preview only.
+        </div>
+
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>
             Absolute Degree Intraday · Preview
@@ -167,22 +221,59 @@ function AbsoluteIntradayPage() {
               {k === "NIFTY50" ? "NIFTY 50" : "BANK NIFTY"}
             </button>
           ))}
-          <button
-            className="abs-tab"
-            style={{ marginLeft: "auto" }}
-            onClick={() => setShowMethodology((s) => !s)}
-          >
-            {showMethodology ? "Hide" : "Show"} Methodology
-          </button>
         </div>
 
-        {showMethodology ? <Methodology /> : null}
+        <div className="abs-tabs" style={{ marginBottom: 14 }}>
+          {(
+            [
+              ["SNAPSHOT", "Snapshot"],
+              ["RANKED", "Ranked Levels"],
+              ["EXECUTION", "Execution"],
+              ["CUBE", "Cube Setup"],
+              ["REPLAY", "Replay Validation"],
+              ["METHODOLOGY", "Methodology"],
+            ] as const
+          ).map(([id, lbl]) => (
+            <button
+              key={id}
+              className={`abs-tab${tab === id ? " on" : ""}`}
+              onClick={() => setTab(id)}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
 
         {data.status === "NO_TRADING_SESSION" ? (
           <div style={{ padding: 24, background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, color: C.muted }}>
             {data.tradingDate} is a non-trading day (weekend). No snapshot generated.
           </div>
+        ) : tab === "METHODOLOGY" ? (
+          <Methodology />
+        ) : tab === "SNAPSHOT" ? (
+          <SnapshotTab data={data} />
+        ) : tab === "RANKED" ? (
+          <RankedTab data={data} />
+        ) : tab === "EXECUTION" ? (
+          <ExecutionTab
+            validation={validation.data}
+            loading={validation.isLoading}
+            error={validation.error}
+            ambiguousPolicy={ambiguousPolicy}
+            setAmbiguousPolicy={setAmbiguousPolicy}
+          />
+        ) : tab === "CUBE" ? (
+          <CubeTab validation={validation.data} loading={validation.isLoading} />
         ) : (
+          <ReplayTab validation={validation.data} loading={validation.isLoading} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SnapshotTab({ data }: { data: IntradaySnapshot }) {
+  return (
           <>
             <div className="abs-grid" style={{ marginBottom: 14 }}>
               <Card title="Trading Date" value={data.tradingDate} sub={`Anchor ${data.anchorIst}`} />
@@ -245,6 +336,33 @@ function AbsoluteIntradayPage() {
             </div>
 
             <h2 style={{ fontSize: 14, margin: "18px 0 8px", color: C.gold }}>
+              Part-One Source Evidence
+            </h2>
+            <div style={{ fontSize: 12, color: C.muted, background: C.card, padding: 12, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+              {GANN_PART1_BEAR_STARS.map((s) => (
+                <div key={s.nakshatra}>
+                  <strong style={{ color: C.text }}>{s.nakshatra}</strong> · {s.classification} ·
+                  {" "}source: {s.evidenceSource} · observations: {s.historicalObservationCount},
+                  {" "}monthly tops: {s.monthlyTops} · confidence: {s.confidence}
+                </div>
+              ))}
+              <div style={{ marginTop: 6 }}>
+                Displayed separately from the existing EagleBaba nakshatra classification.
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14, fontSize: 11, color: C.muted }}>
+              Snapshot generated {new Date(data.generatedAt).toISOString()} · not connected to
+              live BUY/SELL alerts, Decision Engine, or broker.
+            </div>
+          </>
+  );
+}
+
+function RankedTab({ data }: { data: IntradaySnapshot }) {
+  return (
+    <>
+      <h2 style={{ fontSize: 14, margin: "6px 0 8px", color: C.gold }}>
               Absolute Levels (L1–L4 · 36 rows)
             </h2>
             <div className="abs-scroll">
@@ -281,31 +399,255 @@ function AbsoluteIntradayPage() {
                 </tbody>
               </table>
             </div>
+    </>
+  );
+}
 
-            <h2 style={{ fontSize: 14, margin: "18px 0 8px", color: C.gold }}>
-              Part-One Source Evidence
-            </h2>
-            <div style={{ fontSize: 12, color: C.muted, background: C.card, padding: 12, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-              {GANN_PART1_BEAR_STARS.map((s) => (
-                <div key={s.nakshatra}>
-                  <strong style={{ color: C.text }}>{s.nakshatra}</strong> · {s.classification} ·
-                  {" "}source: {s.evidenceSource} · observations: {s.historicalObservationCount},
-                  {" "}monthly tops: {s.monthlyTops} · confidence: {s.confidence}
-                </div>
-              ))}
-              <div style={{ marginTop: 6 }}>
-                Displayed separately from the existing EagleBaba nakshatra classification.
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, fontSize: 11, color: C.muted }}>
-              Snapshot generated {new Date(data.generatedAt).toISOString()} · not connected to
-              live BUY/SELL alerts, Decision Engine, or broker.
-            </div>
-          </>
-        )}
-      </div>
+function LoadingBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ padding: 20, color: C.muted, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10 }}>
+      {children}
     </div>
+  );
+}
+
+function ExecutionTab({
+  validation,
+  loading,
+  error,
+  ambiguousPolicy,
+  setAmbiguousPolicy,
+}: {
+  validation: ValidationResult | undefined;
+  loading: boolean;
+  error: Error | null;
+  ambiguousPolicy: AmbiguousPolicy;
+  setAmbiguousPolicy: (p: AmbiguousPolicy) => void;
+}) {
+  if (loading) return <LoadingBox>Loading 5-minute session…</LoadingBox>;
+  if (error)
+    return <LoadingBox>Validation unavailable: {error.message}</LoadingBox>;
+  if (!validation) return <LoadingBox>No validation session available yet.</LoadingBox>;
+
+  const s = validation.simulation;
+  const c = validation.candles;
+  return (
+    <>
+      <div className="abs-grid" style={{ marginBottom: 14 }}>
+        <Card title="5m Candles" value={c.candles.length} sub={`Provider ${c.provider}`} />
+        <Card title="Missing" value={c.missingCount} sub={`Expected ${c.expectedCount}`} />
+        <Card title="First Touches" value={s.counters.firstTouch} />
+        <Card title="Confirmed" value={s.counters.confirmed} />
+        <Card title="Retests" value={s.counters.retest} />
+        <Card title="Missed Chase" value={s.counters.missedChase} />
+        <Card title="Targets Hit" value={s.counters.targetHit} />
+        <Card title="Stops Hit" value={s.counters.stopHit} />
+        <Card title="Ambiguous" value={s.counters.ambiguous} sub={`Policy ${ambiguousPolicy}`} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {(["conservative", "optimistic", "exclude_ambiguous"] as AmbiguousPolicy[]).map((p) => (
+          <button
+            key={p}
+            className={`abs-tab${p === ambiguousPolicy ? " on" : ""}`}
+            onClick={() => setAmbiguousPolicy(p)}
+          >
+            {p}
+          </button>
+        ))}
+        <ExportButtons validation={validation} />
+      </div>
+      <div className="abs-scroll">
+        <table className="abs-tbl">
+          <thead>
+            <tr>
+              <th>Planet</th>
+              <th>Src</th>
+              <th>Level</th>
+              <th>Side</th>
+              <th>Safe</th>
+              <th>State</th>
+              <th>Touch</th>
+              <th>Confirm</th>
+              <th>Retest</th>
+              <th>Entry</th>
+              <th>SL</th>
+              <th>Target</th>
+              <th>Outcome</th>
+              <th>MFE</th>
+              <th>MAE</th>
+              <th>Ambig</th>
+            </tr>
+          </thead>
+          <tbody>
+            {s.perLevel.map((p, i) => (
+              <tr key={`${p.level.planet}-${p.level.sourceLevel}-${i}`}>
+                <td>{p.level.planet}</td>
+                <td>{p.level.sourceLevel}</td>
+                <td>{p.level.value.toLocaleString()}</td>
+                <td style={{ color: p.level.side === "RESISTANCE" ? C.red : p.level.side === "SUPPORT" ? C.green : C.muted }}>
+                  {p.level.side}
+                </td>
+                <td style={{ color: p.level.safety === "SAFE" ? C.green : C.gold }}>{p.level.safety}</td>
+                <td>{p.finalPlan.state}</td>
+                <td>{p.touchIndex ?? ""}</td>
+                <td>{p.confirmIndex ?? ""}</td>
+                <td>{p.retestIndex ?? ""}</td>
+                <td>{p.entry?.toLocaleString() ?? ""}</td>
+                <td>{p.stopLoss?.toLocaleString() ?? ""}</td>
+                <td>{p.target?.toLocaleString() ?? ""}</td>
+                <td style={{ color: p.outcome === "TARGET" ? C.green : p.outcome === "STOP" ? C.red : C.muted }}>{p.outcome}</td>
+                <td>{p.mfe}</td>
+                <td>{p.mae}</td>
+                <td>{p.ambiguousCandleCount || ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function CubeTab({
+  validation,
+  loading,
+}: {
+  validation: ValidationResult | undefined;
+  loading: boolean;
+}) {
+  if (loading || !validation) return <LoadingBox>Loading Cube evaluations…</LoadingBox>;
+  return (
+    <div className="abs-scroll">
+      <table className="abs-tbl">
+        <thead>
+          <tr>
+            <th>Planet</th>
+            <th>Src</th>
+            <th>Level</th>
+            <th>Bias</th>
+            <th>Mandatory</th>
+            <th>Aligned</th>
+            <th>Conflict</th>
+            <th>Grade</th>
+            <th>Action</th>
+            <th>Reasons</th>
+          </tr>
+        </thead>
+        <tbody>
+          {validation.simulation.perLevel.map((p, i) => (
+            <tr key={`${p.level.planet}-${i}`}>
+              <td>{p.level.planet}</td>
+              <td>{p.level.sourceLevel}</td>
+              <td>{p.level.value.toLocaleString()}</td>
+              <td>{p.level.tradeBias}</td>
+              <td style={{ color: p.cube.mandatoryPassed ? C.green : C.red }}>{p.cube.mandatoryPassed ? "PASS" : "FAIL"}</td>
+              <td>{p.cube.conditionsAligned}/{p.cube.conditionsAvailable}</td>
+              <td>{p.cube.conditionsConflicting}</td>
+              <td>{p.cube.cubeGrade}</td>
+              <td>{p.cube.action}</td>
+              <td style={{ whiteSpace: "normal", color: C.muted }}>{p.cube.reasons.join(" · ")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ReplayTab({
+  validation,
+  loading,
+}: {
+  validation: ValidationResult | undefined;
+  loading: boolean;
+}) {
+  const [state, setState] = useState<ReplayState | null>(null);
+  const derived = useMemo(() => (state ? computeReplayView(state) : null), [state]);
+  if (loading || !validation) return <LoadingBox>Loading replay…</LoadingBox>;
+  if (!state) {
+    setState(
+      initReplay({
+        instrument: validation.snapshot.instrument,
+        ranked: validation.snapshot.rankedLevels,
+        candles: validation.candles.candles,
+        cubeInputs: validation.cubeInputs,
+        ambiguousPolicy: validation.ambiguousPolicy,
+      }),
+    );
+    return <LoadingBox>Initialising…</LoadingBox>;
+  }
+  const total = state.candles.length;
+  const cursor = state.cursor;
+  const currentCandle = cursor > 0 ? state.candles[cursor - 1] : null;
+  return (
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
+        <button className="abs-tab" onClick={() => setState(restartReplay(state))}>⏮ Restart</button>
+        <button className="abs-tab" onClick={() => setState(stepReplay(state, -1))} disabled={cursor === 0}>◀ Step</button>
+        <button className="abs-tab" onClick={() => setState(stepReplay(state, 1))} disabled={cursor === total}>Step ▶</button>
+        <button className="abs-tab" onClick={() => setState(jumpReplay(state, total))}>End ⏭</button>
+        <span style={{ color: C.muted, fontSize: 12 }}>
+          Candle {cursor} / {total} {currentCandle ? `· ${currentCandle.timeIst}` : ""}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={total}
+        value={cursor}
+        onChange={(e) => setState(jumpReplay(state, Number(e.target.value)))}
+        style={{ width: "100%", marginBottom: 14 }}
+      />
+      {derived ? (
+        <div className="abs-grid" style={{ marginBottom: 14 }}>
+          <Card title="Touches so far" value={derived.counters.firstTouch} />
+          <Card title="Confirmed" value={derived.counters.confirmed} />
+          <Card title="Retests" value={derived.counters.retest} />
+          <Card title="Targets" value={derived.counters.targetHit} />
+          <Card title="Stops" value={derived.counters.stopHit} />
+          <Card title="Missed Chase" value={derived.counters.missedChase} />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ExportButtons({ validation }: { validation: ValidationResult }) {
+  const args = {
+    instrument: validation.snapshot.instrument,
+    tradingDate: validation.snapshot.tradingDate,
+    anchorIst: validation.snapshot.anchorIst,
+    previousClose: validation.snapshot.previousClose,
+    ambiguousPolicy: validation.ambiguousPolicy,
+    simulation: validation.simulation,
+  };
+  return (
+    <>
+      <button
+        className="abs-tab"
+        onClick={() =>
+          downloadBlob(
+            toValidationCsv(args),
+            validationExportFilename(args.instrument, args.tradingDate, "csv"),
+            "text/csv",
+          )
+        }
+      >
+        Export CSV
+      </button>
+      <button
+        className="abs-tab"
+        onClick={() =>
+          downloadBlob(
+            toValidationJson(args),
+            validationExportFilename(args.instrument, args.tradingDate, "json"),
+            "application/json",
+          )
+        }
+      >
+        Export JSON
+      </button>
+    </>
   );
 }
 
