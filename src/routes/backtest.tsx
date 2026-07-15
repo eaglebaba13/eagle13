@@ -382,6 +382,8 @@ function BacktestPage() {
           <MethodologyDrawer r={result} />
         </>
       ) : null}
+      </>
+      )}
     </div>
   );
 }
