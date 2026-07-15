@@ -117,7 +117,7 @@ type StrategyOption = {
 const STRATEGY_OPTIONS: StrategyOption[] = [
   { id: "ASTRO", formula: "GANN_SIGN_DEGREE_TABLE_V1_1", label: "Sign-Degree Astro", supported: true },
   { id: "ASTRO", formula: ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1, label: "Legacy Cascade", supported: true },
-  { id: "ABSOLUTE_INTRADAY", formula: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1", label: "Absolute-Degree Intraday", supported: false, note: "Requires 5m provider payload · enable via CSV/provider selection" },
+  { id: "ASTRO", formula: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1", label: "Absolute-Degree Intraday", supported: false, note: "Requires 5m provider payload · enable via CSV/provider selection" },
   { id: "SMC", formula: "SMC_V1", label: "SMC_V1", supported: false, note: "Requires 5m provider payload · enable via CSV/provider selection" },
   { id: "ASTRO_SMC_HYBRID", formula: "ASTRO_SMC_HYBRID_V1", label: "Astro + SMC Hybrid", supported: false, note: "Requires 5m provider payload · enable via CSV/provider selection" },
 ];
