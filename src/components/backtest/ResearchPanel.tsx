@@ -31,6 +31,25 @@ import {
   buildResearchJson,
 } from "@/lib/backtest/research-exports";
 import { computeResearchRunId } from "@/lib/backtest/research-run-id";
+import {
+  computeMonteCarloRunId,
+  runMonteCarlo,
+  type MonteCarloResult,
+  type MonteCarloSamplingMode,
+  type RuinThreshold,
+} from "@/lib/backtest/monte-carlo";
+import {
+  computeRobustnessScore,
+  computeRobustnessRunId,
+  type RobustnessResult,
+} from "@/lib/backtest/robustness";
+import {
+  buildMonteCarloCsv,
+  buildMonteCarloJson,
+  buildRobustnessCsv,
+  buildRobustnessJson,
+  type ExportProvenance,
+} from "@/lib/backtest/robustness-exports";
 import type { StrategyId } from "@/lib/backtest/strategy";
 import type {
   HistoricalBacktestResult,
@@ -679,6 +698,15 @@ export default function ResearchPanel() {
               <div>Generated: {new Date().toISOString()}</div>
             </div>
           </section>
+
+          <MonteCarloSection
+            walkByStrategy={walkByStrategy}
+            rows={rows}
+            researchRunId={runId ?? "unknown"}
+            instrument={cfg.symbol}
+            from={cfg.from}
+            to={cfg.to}
+          />
         </>
       ) : null}
     </div>
@@ -751,3 +779,285 @@ function colorForPct(pct: number): string {
 
 // Re-export a marker for tests to confirm lazy chunk boundary.
 export const RESEARCH_PANEL_MARKER = "RESEARCH_V1_UI";
+
+// ---------------------------------------------------------------------------
+// Phase 21.6 · Stage 1 — Monte Carlo + Robustness section (additive UI only).
+
+type MonteCarloUiConfig = {
+  simulations: number;
+  seed: number;
+  samplingMode: MonteCarloSamplingMode;
+  startingCapital: number;
+  ruinDrawdownPct: number;
+  blockSize: number;
+};
+
+// Exported for unit tests: caps simulation count to prevent runaway UI runs.
+export const MONTE_CARLO_UI_MAX_SIMULATIONS = 2000;
+
+export function MonteCarloSection({
+  walkByStrategy,
+  rows,
+  researchRunId,
+  instrument,
+  from,
+  to,
+}: {
+  walkByStrategy: Record<string, WalkForwardResult>;
+  rows: StrategyResearchRow[];
+  researchRunId: string;
+  instrument: string;
+  from: string;
+  to: string;
+}) {
+  const [mcCfg, setMcCfg] = useState<MonteCarloUiConfig>({
+    simulations: 500,
+    seed: 42,
+    samplingMode: "BOOTSTRAP",
+    startingCapital: 100000,
+    ruinDrawdownPct: 0.2,
+    blockSize: 5,
+  });
+  const [selectedKey, setSelectedKey] = useState<string>(() => Object.keys(walkByStrategy)[0] ?? "");
+  const [mcResult, setMcResult] = useState<MonteCarloResult | null>(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const strategyKeys = Object.keys(walkByStrategy);
+
+  const trades = useMemo(() => {
+    const walk = walkByStrategy[selectedKey];
+    if (!walk) return [] as { pnl: number }[];
+    const out: { pnl: number }[] = [];
+    for (const w of walk.windows) {
+      for (const t of w.validation.trades) out.push({ pnl: t.pnl });
+    }
+    return out;
+  }, [walkByStrategy, selectedKey]);
+
+  const runMc = useCallback(() => {
+    if (running) return;
+    setRunning(true);
+    setError(null);
+    setMcResult(null);
+    try {
+      const sims = Math.min(MONTE_CARLO_UI_MAX_SIMULATIONS, Math.max(1, mcCfg.simulations));
+      const ruin: RuinThreshold = { kind: "DRAWDOWN_PCT", value: mcCfg.ruinDrawdownPct };
+      const r = runMonteCarlo(trades, {
+        seed: mcCfg.seed,
+        simulations: sims,
+        startingCapital: mcCfg.startingCapital,
+        samplingMode: mcCfg.samplingMode,
+        blockSize: mcCfg.blockSize,
+        ruin,
+      });
+      setMcResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Monte Carlo run failed.");
+    } finally {
+      setRunning(false);
+    }
+  }, [running, mcCfg, trades]);
+
+  const mcRunId = useMemo(() => {
+    if (!mcResult) return null;
+    const baseRunId = walkByStrategy[selectedKey]?.windows[0]?.training.runId ?? "unknown";
+    return computeMonteCarloRunId({
+      baseRunId,
+      researchRunId,
+      seed: mcCfg.seed,
+      simulations: mcResult.simulations,
+      samplingMode: mcCfg.samplingMode,
+      startingCapital: mcCfg.startingCapital,
+      ruin: mcResult.ruin,
+      tradeCount: mcResult.tradeCount,
+    });
+  }, [mcResult, walkByStrategy, selectedKey, researchRunId, mcCfg]);
+
+  const robustness: RobustnessResult | null = useMemo(() => {
+    if (!mcResult) return null;
+    const row = rows.find((r) => `${r.strategy}::${r.formula}` === selectedKey);
+    if (!row) return null;
+    const dd = mcResult.maxDrawdown.p95 / Math.max(1, mcCfg.startingCapital);
+    return computeRobustnessScore({
+      walkForwardStability: row.stability.score / 100,
+      oosConsistency: Math.max(0, 1 - Math.abs(row.degradation.profitFactor) / 100),
+      monteCarloP5FinalEquity: mcResult.finalEquity.p5,
+      monteCarloMedianFinalEquity: mcResult.finalEquity.p50,
+      startingCapital: mcCfg.startingCapital,
+      maxDrawdownPct: Math.min(1, dd),
+      sensitivityClassification: "INSUFFICIENT_DATA",
+      tradeCount: mcResult.tradeCount,
+      profitFactorConsistency: Math.max(0, 1 - Math.abs(row.degradation.profitFactor) / 100),
+    });
+  }, [mcResult, rows, selectedKey, mcCfg.startingCapital]);
+
+  const robustnessRunId = useMemo(() => {
+    if (!robustness || !mcRunId) return null;
+    return computeRobustnessRunId({ researchRunId, monteCarloRunId: mcRunId });
+  }, [robustness, mcRunId, researchRunId]);
+
+  const provenance: ExportProvenance = {
+    researchRunId,
+    monteCarloRunId: mcRunId ?? undefined,
+    robustnessRunId: robustnessRunId ?? undefined,
+    instrument,
+    from,
+    to,
+    generatedAt: new Date().toISOString(),
+  };
+
+  const exportMcCsv = () => { if (mcResult) downloadBlob(buildMonteCarloCsv(mcResult, provenance), `monte-carlo-${instrument}-${from}-${to}.csv`, "text/csv"); };
+  const exportMcJson = () => { if (mcResult) downloadBlob(buildMonteCarloJson(mcResult, provenance), `monte-carlo-${instrument}-${from}-${to}.json`, "application/json"); };
+  const exportRobCsv = () => { if (robustness) downloadBlob(buildRobustnessCsv(robustness, provenance), `robustness-${instrument}-${from}-${to}.csv`, "text/csv"); };
+  const exportRobJson = () => { if (robustness) downloadBlob(buildRobustnessJson(robustness, provenance), `robustness-${instrument}-${from}-${to}.json`, "application/json"); };
+
+  const statusColor = !robustness ? C.muted
+    : robustness.status === "ROBUST" ? C.green
+      : robustness.status === "ACCEPTABLE" ? C.blue
+        : robustness.status === "OVERFIT" ? C.orange
+          : robustness.status === "FRAGILE" ? C.red : C.muted;
+
+  return (
+    <>
+      <section style={panel}>
+        <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>MONTE CARLO ROBUSTNESS</div>
+        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginBottom: 10 }}>
+          Resamples validation trades from the selected strategy. Deterministic for a given seed. RESEARCH ANALYSIS — NOT A LIVE TRADE RECOMMENDATION.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+          <div>
+            <div style={lbl}>Strategy</div>
+            <select value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)} style={sel}>
+              {strategyKeys.map((k) => (<option key={k} value={k}>{k}</option>))}
+            </select>
+          </div>
+          <div>
+            <div style={lbl}>Sampling</div>
+            <select value={mcCfg.samplingMode} onChange={(e) => setMcCfg({ ...mcCfg, samplingMode: e.target.value as MonteCarloSamplingMode })} style={sel}>
+              <option value="BOOTSTRAP">Bootstrap</option>
+              <option value="SHUFFLE">Shuffle</option>
+              <option value="BLOCK_BOOTSTRAP">Block bootstrap</option>
+              <option value="PERTURB">Perturb</option>
+            </select>
+          </div>
+          <div>
+            <div style={lbl}>Simulations</div>
+            <input type="number" min={10} max={MONTE_CARLO_UI_MAX_SIMULATIONS} value={mcCfg.simulations} onChange={(e) => setMcCfg({ ...mcCfg, simulations: Number(e.target.value) || 500 })} style={sel} />
+          </div>
+          <div>
+            <div style={lbl}>Seed</div>
+            <input type="number" value={mcCfg.seed} onChange={(e) => setMcCfg({ ...mcCfg, seed: Number(e.target.value) || 0 })} style={sel} />
+          </div>
+          <div>
+            <div style={lbl}>Capital</div>
+            <input type="number" min={1} value={mcCfg.startingCapital} onChange={(e) => setMcCfg({ ...mcCfg, startingCapital: Number(e.target.value) || 100000 })} style={sel} />
+          </div>
+          <div>
+            <div style={lbl}>Ruin DD</div>
+            <select value={mcCfg.ruinDrawdownPct} onChange={(e) => setMcCfg({ ...mcCfg, ruinDrawdownPct: Number(e.target.value) })} style={sel}>
+              <option value={0.1}>10%</option>
+              <option value={0.2}>20%</option>
+              <option value={0.3}>30%</option>
+              <option value={0.5}>50%</option>
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <button onClick={runMc} disabled={running || trades.length === 0} style={{ ...btn, opacity: running || trades.length === 0 ? 0.55 : 1 }}>
+              {running ? "Running…" : "▶ Run Monte Carlo"}
+            </button>
+          </div>
+        </div>
+        {trades.length === 0 ? (
+          <div style={{ marginTop: 8, color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+            No validation trades available for the selected strategy.
+          </div>
+        ) : null}
+        {error ? (<div style={{ marginTop: 8, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}>{error}</div>) : null}
+
+        {mcResult ? (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              <McCard label="Probability of loss" value={`${(mcResult.probabilityOfLoss * 100).toFixed(1)}%`} accent={mcResult.probabilityOfLoss > 0.4 ? C.red : C.green} />
+              <McCard label="Probability of ruin" value={`${(mcResult.probabilityOfRuin * 100).toFixed(1)}%`} accent={mcResult.probabilityOfRuin > 0.1 ? C.red : C.green} />
+              <McCard label="Final equity · P5" value={mcResult.finalEquity.p5.toFixed(0)} />
+              <McCard label="Final equity · P50" value={mcResult.finalEquity.p50.toFixed(0)} />
+              <McCard label="Final equity · P95" value={mcResult.finalEquity.p95.toFixed(0)} />
+              <McCard label="Max DD · P95" value={mcResult.maxDrawdown.p95.toFixed(0)} accent={C.red} />
+            </div>
+            <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+              Ruin formula: {mcResult.ruinFormula} · Trades resampled: {mcResult.tradeCount}
+            </div>
+            <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button onClick={exportMcCsv} style={btnGhost}>Monte Carlo CSV</button>
+              <button onClick={exportMcJson} style={btnGhost}>Monte Carlo JSON</button>
+            </div>
+            <div style={{ marginTop: 12, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+              Monte Carlo Run ID: <span style={{ color: C.blue }}>{mcRunId}</span>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {robustness ? (
+        <section style={panel}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+            <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange }}>ROBUSTNESS SCORE</div>
+            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+              <span style={{ color: statusColor, marginRight: 8 }}>{robustness.status}</span>
+              <span style={{ color: C.text }}>{(robustness.total * 100).toFixed(0)} / 100</span>
+            </div>
+          </div>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginBottom: 8 }}>{robustness.reason}</div>
+          {robustness.factors.length ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+                <thead>
+                  <tr style={{ color: C.muted, textAlign: "left" }}>
+                    {["Factor","Weight","Value","Score","Formula"].map((h) => (<th key={h} style={{ padding: "4px 6px", borderBottom: `1px solid ${C.border}` }}>{h}</th>))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {robustness.factors.map((f) => (
+                    <tr key={f.key} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={{ padding: "4px 6px" }}>{f.key}</td>
+                      <td style={{ padding: "4px 6px" }}>{f.weight}</td>
+                      <td style={{ padding: "4px 6px" }}>{typeof f.value === "number" ? f.value.toFixed(2) : String(f.value)}</td>
+                      <td style={{ padding: "4px 6px", color: f.score >= 0.7 ? C.green : f.score >= 0.4 ? C.orange : C.red }}>{f.score.toFixed(2)}</td>
+                      <td style={{ padding: "4px 6px", color: C.muted }}>{f.formula}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button onClick={exportRobCsv} style={btnGhost}>Robustness CSV</button>
+            <button onClick={exportRobJson} style={btnGhost}>Robustness JSON</button>
+          </div>
+          <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+            Robustness Run ID: <span style={{ color: C.blue }}>{robustnessRunId}</span>
+          </div>
+        </section>
+      ) : null}
+
+      <section style={panel}>
+        <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>PARAMETER SENSITIVITY</div>
+        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted }}>
+          Sensitivity grids for SMC (minScore, structureWindow, fvgValidityBars, obValidityBars, cooldownBars, ATR stop multiplier, RR) and Hybrid
+          (Astro/SMC/agreement/data-quality weights, hybrid threshold) run through the existing unified backtest without touching production defaults.
+          Available once an intraday provider payload is wired for SMC / Hybrid. INSUFFICIENT_DATA cells are hidden from the surface, never highlighted as optimal.
+        </div>
+      </section>
+    </>
+  );
+}
+
+function McCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 10 }}>
+      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, color: accent ?? C.text, marginTop: 4 }}>{value}</div>
+    </div>
+  );
+}
