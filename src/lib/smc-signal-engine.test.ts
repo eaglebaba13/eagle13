@@ -2,10 +2,12 @@
 //
 // Deterministic, network-free. Verifies scoring, mandatory rules, optional
 // filters, conflict resolution, cooldown, config overrides, prefix
-// invariance (no lookahead) and adapter wiring.
+// invariance (no lookahead) and adapter wiring. Most tests use synthetic
+// SmcEngineResult inputs so the signal-engine logic is tested in isolation
+// from the Stage 1 detectors.
 
 import { describe, expect, it } from "vitest";
-import { analyzeSmc, type SmcEngineResult } from "./smc-engine";
+import { analyzeSmc, type SmcBias, type SmcEngineResult } from "./smc-engine";
 import {
   DEFAULT_SMC_SIGNAL_CONFIG,
   SMC_SIGNAL_ENGINE_READY,
@@ -13,115 +15,227 @@ import {
   analyzeSmcSignals,
   analyzeSmcWithSignals,
   type SmcSignalConfig,
-  type SmcSignalDebug,
 } from "./smc-signal-engine";
 import { smcStrategyAdapter } from "./backtest/strategy";
 import type { Candle } from "./smc-types";
 
-function candle(t: number, o: number, h: number, l: number, c: number, v = 1000): Candle {
-  return { t, o, h, l, c, v };
+// ── Candle + engine builders ─────────────────────────────────────────────
+
+function candle(t: number, price: number, v = 1000): Candle {
+  return { t, o: price, h: price + 0.5, l: price - 0.5, c: price, v };
 }
 
-// ── Fixtures ─────────────────────────────────────────────────────────────
-// A candle series that produces a full bearish SMC setup around index 11:
-//   pivot high → equal-high sweep at idx 8 (buy-side) → bearish CHOCH →
-//   bearish displacement → bearish FVG. Enough structure for a SELL.
-function bearishSetup(): Candle[] {
-  const raw: [number, number, number, number, number, number][] = [
-    [0, 100, 101, 99, 100.5, 1000],
-    [1, 100.5, 102, 100, 101.5, 1000],
-    [2, 101.5, 104, 101, 103.5, 1000], // pivot high (label HH)
-    [3, 103.5, 104, 101, 101.5, 1000],
-    [4, 101.5, 103, 101, 102.5, 1000],
-    [5, 102.5, 106, 102, 105.5, 1000],
-    [6, 105.5, 108, 105, 107.5, 5000], // bull displacement / BOS
-    [7, 107.5, 109, 107, 108.5, 1000],
-    [8, 108.5, 113, 108, 108.0, 1000], // sweep buy-side above prior high
-    [9, 108.0, 108.5, 105, 105.5, 1000],
-    [10, 105.5, 106, 100, 100.5, 5000], // bear displacement, break of structure
-    [11, 100.5, 101, 96, 96.5, 5000], // bearish CHOCH candle
-    [12, 96.5, 97, 93, 93.5, 1000],
-    [13, 93.5, 94, 90, 90.5, 1000],
-    [14, 90.5, 91, 87, 87.5, 1000],
-  ];
-  return raw.map(([t, o, h, l, c, v]) => candle(t, o, h, l, c, v));
-}
-
-// Flat noise — no structure, no sweep, no CHOCH: forces INVALID / WAIT.
-function flatNoise(): Candle[] {
+function candles(n: number): Candle[] {
   const out: Candle[] = [];
-  for (let i = 0; i < 20; i++) {
-    const p = 100 + (i % 2) * 0.1;
-    out.push(candle(i, p, p + 0.2, p - 0.2, p + 0.05, 1000));
-  }
+  for (let i = 0; i < n; i++) out.push(candle(i * 60_000, 100 + i * 0.1));
   return out;
 }
 
-function runFull(candles: Candle[], cfg?: Partial<SmcSignalConfig>) {
-  const engine = analyzeSmc(candles, { lookback: 1 });
-  const sig = analyzeSmcSignals(candles, engine, cfg);
-  return { engine, sig };
+function biasArray(cs: Candle[], bias: SmcBias) {
+  return cs.map((c, i) => ({ index: i, t: c.t, bias, fast: 0, slow: 0 }));
+}
+function vwapArray(cs: Candle[], bias: SmcBias) {
+  return cs.map((c, i) => ({ index: i, t: c.t, bias, vwap: c.c }));
 }
 
-function firstOf(signals: SmcSignalDebug[], state: string) {
-  return signals.find((s) => s.signal === state) ?? null;
+type EngineOverrides = Partial<SmcEngineResult>;
+
+function makeEngine(cs: Candle[], overrides: EngineOverrides = {}): SmcEngineResult {
+  return {
+    swings: [],
+    structureEvents: [],
+    finalBias: "neutral",
+    fvgs: [],
+    liquidityLevels: [],
+    liquidityEvents: [],
+    orderBlocks: [],
+    displacementCandles: [],
+    premiumDiscount: null,
+    emaBias: biasArray(cs, "neutral"),
+    vwapBias: vwapArray(cs, "neutral"),
+    meta: {
+      lookback: 1,
+      emaFast: 13,
+      emaSlow: 50,
+      displacementMultiple: 1.5,
+      displacementWindow: 10,
+      candleCount: cs.length,
+    },
+    ...overrides,
+  };
+}
+
+function bullishStackAt(cs: Candle[], i: number): EngineOverrides {
+  return {
+    liquidityEvents: [
+      { type: "sweep", side: "sell", index: i - 3, t: cs[i - 3].t, level: cs[i - 3].l, reclaim: true },
+    ],
+    structureEvents: [
+      {
+        type: "CHoCH",
+        direction: "bull",
+        index: i - 2,
+        t: cs[i - 2].t,
+        brokenSwing: { index: 0, t: 0, price: 100, kind: "high" },
+        price: cs[i - 2].c,
+      },
+    ],
+    displacementCandles: [
+      { index: i - 1, t: cs[i - 1].t, direction: "bull", range: 5, ratio: 3 },
+    ],
+    fvgs: [
+      {
+        direction: "bullish",
+        index: i - 1,
+        t: cs[i - 1].t,
+        top: cs[i - 1].h,
+        bottom: cs[i - 1].l,
+        size: 1,
+        status: "unfilled",
+        fillPct: 0,
+        filledIndex: null,
+      },
+    ],
+    orderBlocks: [
+      {
+        direction: "bullish",
+        index: i - 3,
+        t: cs[i - 3].t,
+        top: cs[i - 3].h,
+        bottom: cs[i - 3].l,
+        impulseIndex: i - 2,
+        status: "active",
+        retests: 0,
+        age: 3,
+        strength: 0.5,
+      },
+    ],
+    emaBias: biasArray(cs, "bullish"),
+    vwapBias: vwapArray(cs, "bullish"),
+    premiumDiscount: {
+      highIndex: 0,
+      lowIndex: 0,
+      high: 110,
+      low: 100,
+      equilibrium: 105,
+      currentZone: "discount",
+    },
+  };
+}
+
+function bearishStackAt(cs: Candle[], i: number): EngineOverrides {
+  return {
+    liquidityEvents: [
+      { type: "sweep", side: "buy", index: i - 3, t: cs[i - 3].t, level: cs[i - 3].h, reclaim: true },
+    ],
+    structureEvents: [
+      {
+        type: "CHoCH",
+        direction: "bear",
+        index: i - 2,
+        t: cs[i - 2].t,
+        brokenSwing: { index: 0, t: 0, price: 100, kind: "low" },
+        price: cs[i - 2].c,
+      },
+    ],
+    displacementCandles: [
+      { index: i - 1, t: cs[i - 1].t, direction: "bear", range: 5, ratio: 3 },
+    ],
+    fvgs: [
+      {
+        direction: "bearish",
+        index: i - 1,
+        t: cs[i - 1].t,
+        top: cs[i - 1].h,
+        bottom: cs[i - 1].l,
+        size: 1,
+        status: "unfilled",
+        fillPct: 0,
+        filledIndex: null,
+      },
+    ],
+    emaBias: biasArray(cs, "bearish"),
+    vwapBias: vwapArray(cs, "bearish"),
+    premiumDiscount: {
+      highIndex: 0,
+      lowIndex: 0,
+      high: 110,
+      low: 100,
+      equilibrium: 105,
+      currentZone: "premium",
+    },
+  };
 }
 
 // ── Basic states ─────────────────────────────────────────────────────────
 
 describe("SMC Signal Engine · basic states", () => {
-  it("returns one debug row per candle with the correct meta", () => {
-    const cs = bearishSetup();
-    const { sig } = runFull(cs);
+  it("emits one debug row per candle with correct meta", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs);
+    const sig = analyzeSmcSignals(cs, engine);
     expect(sig.version).toBe(SMC_SIGNAL_ENGINE_VERSION);
     expect(sig.signals.length).toBe(cs.length);
     expect(sig.meta.candleCount).toBe(cs.length);
     expect(sig.meta.dataLeakageChecked).toBe(true);
   });
 
-  it("emits a SELL when the bearish stack completes", () => {
-    const cs = bearishSetup();
-    const { sig } = runFull(cs, { minScore: 60, cooldownBars: 0 });
-    const sell = firstOf(sig.signals, "SELL");
-    expect(sell).not.toBeNull();
-    expect(sell!.structureDirection).toBe("bear");
-    expect(sell!.triggeredRules).toEqual(
-      expect.arrayContaining([
-        expect.stringMatching(/^CHOCH:bear/),
-        "displacement:bear",
-      ]),
+  it("emits BUY when all bull mandatories align", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 0 });
+    const buy = sig.signals.find((s) => s.signal === "BUY");
+    expect(buy).toBeTruthy();
+    expect(buy!.structureDirection).toBe("bull");
+    expect(buy!.triggeredRules).toEqual(
+      expect.arrayContaining(["CHOCH:bull", "displacement:bull", "FVG"]),
     );
-    expect(sell!.score).toBeGreaterThanOrEqual(60);
   });
 
-  it("emits WAIT before mandatory rules complete", () => {
-    const cs = bearishSetup();
-    const { sig } = runFull(cs);
-    const early = sig.signals.slice(0, 6);
-    for (const s of early) {
-      expect(["WAIT", "INVALID"]).toContain(s.signal);
-    }
+  it("emits SELL when all bear mandatories align", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bearishStackAt(cs, 10));
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 0 });
+    const sell = sig.signals.find((s) => s.signal === "SELL");
+    expect(sell).toBeTruthy();
+    expect(sell!.structureDirection).toBe("bear");
   });
 
-  it("emits INVALID when no liquidity sweep exists in flat data", () => {
-    const cs = flatNoise();
-    const { sig } = runFull(cs, { minScore: 0 });
-    const invalid = firstOf(sig.signals, "INVALID");
-    expect(invalid).not.toBeNull();
+  it("emits INVALID when no liquidity sweep exists anywhere", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, {
+      structureEvents: [
+        {
+          type: "CHoCH",
+          direction: "bull",
+          index: 8,
+          t: cs[8].t,
+          brokenSwing: { index: 0, t: 0, price: 100, kind: "high" },
+          price: 100,
+        },
+      ],
+    });
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 0 });
+    const invalid = sig.signals.find((s) => s.signal === "INVALID");
+    expect(invalid).toBeTruthy();
     expect(invalid!.reasons.join(",")).toContain("no_liquidity_sweep_in_window");
   });
 
-  it("emits WAIT (not SELL/BUY) when score is below minScore", () => {
-    const cs = bearishSetup();
-    const { sig } = runFull(cs, { minScore: 999, cooldownBars: 0 });
+  it("emits WAIT when score is below minScore", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const sig = analyzeSmcSignals(cs, engine, {
+      minScore: 999,
+      cooldownBars: 0,
+    });
     for (const s of sig.signals) {
       expect(s.signal).not.toBe("BUY");
       expect(s.signal).not.toBe("SELL");
     }
-    const bar = sig.signals.find((s) =>
+    const under = sig.signals.find((s) =>
       s.reasons.some((r) => r.startsWith("score_below_min")),
     );
-    expect(bar).toBeTruthy();
+    expect(under).toBeTruthy();
   });
 });
 
@@ -129,151 +243,166 @@ describe("SMC Signal Engine · basic states", () => {
 
 describe("SMC Signal Engine · score engine", () => {
   it("weights are transparent and additive", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
-    const weightsA = analyzeSmcSignals(cs, engine, {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const baseline = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
-    }).signals.find((s) => s.signal === "SELL")!.score;
-    const weightsB = analyzeSmcSignals(cs, engine, {
+    }).signals.find((s) => s.signal === "BUY")!.score;
+    const bumped = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       weights: { ...DEFAULT_SMC_SIGNAL_CONFIG.weights, choch: 100 },
-    }).signals.find((s) => s.signal === "SELL")!.score;
-    expect(weightsB - weightsA).toBe(100 - DEFAULT_SMC_SIGNAL_CONFIG.weights.choch);
+    }).signals.find((s) => s.signal === "BUY")!.score;
+    expect(bumped - baseline).toBe(100 - DEFAULT_SMC_SIGNAL_CONFIG.weights.choch);
   });
 
-  it("optional EMA/VWAP toggles change the emitted score", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
+  it("disabling EMA drops the EMA weight from the score", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
     const withEma = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       emaEnabled: true,
       vwapEnabled: false,
-    }).signals.find((s) => s.signal === "SELL")!;
+      premiumDiscountEnabled: false,
+    }).signals.find((s) => s.signal === "BUY")!;
     const withoutEma = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       emaEnabled: false,
       vwapEnabled: false,
-    }).signals.find((s) => s.signal === "SELL")!;
-    expect(withEma.score).toBeGreaterThanOrEqual(withoutEma.score);
+      premiumDiscountEnabled: false,
+    }).signals.find((s) => s.signal === "BUY")!;
+    expect(withEma.score - withoutEma.score).toBe(
+      DEFAULT_SMC_SIGNAL_CONFIG.weights.ema,
+    );
   });
 });
 
 // ── Optional filters ─────────────────────────────────────────────────────
 
 describe("SMC Signal Engine · optional filters", () => {
-  it("premium/discount adds score only when aligned", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
-    const sig = analyzeSmcSignals(cs, engine, {
-      minScore: 0,
-      cooldownBars: 0,
-      premiumDiscountEnabled: true,
+  it("VWAP alignment adds only when direction matches", () => {
+    const cs = candles(15);
+    const bull = bullishStackAt(cs, 10);
+    // Flip VWAP bearish → should NOT credit for bull.
+    const engine = makeEngine(cs, { ...bull, vwapBias: vwapArray(cs, "bearish") });
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 0, cooldownBars: 0 });
+    const buy = sig.signals.find((s) => s.signal === "BUY")!;
+    expect(buy.triggeredRules).not.toContain("VWAP");
+  });
+
+  it("premium/discount adds only when zone aligns", () => {
+    const cs = candles(15);
+    // Bull setup but zone = premium → should NOT credit.
+    const engine = makeEngine(cs, {
+      ...bullishStackAt(cs, 10),
+      premiumDiscount: {
+        highIndex: 0,
+        lowIndex: 0,
+        high: 110,
+        low: 100,
+        equilibrium: 105,
+        currentZone: "premium",
+      },
     });
-    const sell = sig.signals.find((s) => s.signal === "SELL")!;
-    // Bear setup runs while price crashes → zone should be discount, not premium.
-    // So premiumDiscount confirmation should NOT trigger for bear.
-    expect(sell.triggeredRules.some((r) => r.startsWith("zone:premium"))).toBe(false);
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 0, cooldownBars: 0 });
+    const buy = sig.signals.find((s) => s.signal === "BUY")!;
+    expect(buy.triggeredRules.some((r) => r.startsWith("zone:"))).toBe(false);
   });
 
   it("session filter contributes only when it returns true", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
-    const withSession = analyzeSmcSignals(cs, engine, {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const on = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       sessionEnabled: true,
       sessionFilter: () => true,
-    }).signals.find((s) => s.signal === "SELL")!;
-    const withoutSession = analyzeSmcSignals(cs, engine, {
+    }).signals.find((s) => s.signal === "BUY")!;
+    const off = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       sessionEnabled: false,
-    }).signals.find((s) => s.signal === "SELL")!;
-    expect(withSession.score - withoutSession.score).toBe(
-      DEFAULT_SMC_SIGNAL_CONFIG.weights.session,
-    );
-    expect(withSession.triggeredRules).toContain("session");
+    }).signals.find((s) => s.signal === "BUY")!;
+    expect(on.score - off.score).toBe(DEFAULT_SMC_SIGNAL_CONFIG.weights.session);
+    expect(on.triggeredRules).toContain("session");
   });
 
-  it("volume filter respects the multiple and window", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
+  it("volume filter respects the multiple and rolling window", () => {
+    const cs = candles(15);
+    // Boost the volume of candle at the signal bar so it exceeds the rolling avg.
+    cs[10] = { ...cs[10], v: 10_000 };
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
     const sig = analyzeSmcSignals(cs, engine, {
       minScore: 0,
       cooldownBars: 0,
       volumeEnabled: true,
-      volumeMultiple: 1.5,
+      volumeMultiple: 2,
       volumeWindow: 5,
     });
-    // Some SELL bar has volume 5000 vs rolling avg ~1000-2000 → volume rule fires.
-    const sell = sig.signals.find(
-      (s) => s.signal === "SELL" && s.triggeredRules.includes("volume"),
+    const buy = sig.signals.find(
+      (s) => s.signal === "BUY" && s.triggeredRules.includes("volume"),
     );
-    expect(sell).toBeTruthy();
+    expect(buy).toBeTruthy();
+  });
+
+  it("FVG or Order Block satisfies the last mandatory (either alone is enough)", () => {
+    const cs = candles(15);
+    // Remove OB, keep FVG → still BUY.
+    const bullNoOb: EngineOverrides = {
+      ...bullishStackAt(cs, 10),
+      orderBlocks: [],
+    };
+    const sig1 = analyzeSmcSignals(cs, makeEngine(cs, bullNoOb), {
+      minScore: 40,
+      cooldownBars: 0,
+    });
+    expect(sig1.signals.some((s) => s.signal === "BUY")).toBe(true);
+    // Remove FVG, keep OB → still BUY.
+    const bullNoFvg: EngineOverrides = {
+      ...bullishStackAt(cs, 10),
+      fvgs: [],
+    };
+    const sig2 = analyzeSmcSignals(cs, makeEngine(cs, bullNoFvg), {
+      minScore: 40,
+      cooldownBars: 0,
+    });
+    expect(sig2.signals.some((s) => s.signal === "BUY")).toBe(true);
   });
 });
 
 // ── Conflict + cooldown ──────────────────────────────────────────────────
 
 describe("SMC Signal Engine · conflict + cooldown", () => {
-  it("cooldown suppresses signals for the configured window after a fire", () => {
-    const cs = bearishSetup();
-    const { sig } = runFull(cs, { minScore: 60, cooldownBars: 5 });
-    const fireIdx = sig.signals.findIndex(
-      (s) => s.signal === "BUY" || s.signal === "SELL",
-    );
+  it("cooldown suppresses signals for the configured bars after a fire", () => {
+    const cs = candles(20);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 4 });
+    const fireIdx = sig.signals.findIndex((s) => s.signal === "BUY");
     expect(fireIdx).toBeGreaterThanOrEqual(0);
-    for (let i = fireIdx + 1; i <= fireIdx + 5 && i < sig.signals.length; i++) {
-      expect(["WAIT", "INVALID"]).toContain(sig.signals[i].signal);
-      if (sig.signals[i].signal === "WAIT") {
-        expect(sig.signals[i].reasons).toContain("cooldown");
-      }
+    for (let i = fireIdx + 1; i <= fireIdx + 4 && i < sig.signals.length; i++) {
+      expect(sig.signals[i].signal).toBe("WAIT");
+      expect(sig.signals[i].reasons).toContain("cooldown");
     }
+    expect(sig.meta.cooldownHits).toBeGreaterThan(0);
   });
 
   it("emits CONFLICT when both directions satisfy mandatory rules", () => {
-    // Simulate by injecting a synthetic engine where both dir mandatory pass.
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
-    const idx = cs.length - 1;
-    const synthetic: SmcEngineResult = {
-      ...engine,
-      liquidityEvents: [
-        { type: "sweep", side: "sell", index: idx - 2, t: cs[idx - 2].t, level: 100, reclaim: false },
-        { type: "sweep", side: "buy", index: idx - 2, t: cs[idx - 2].t, level: 110, reclaim: false },
-      ],
-      structureEvents: [
-        {
-          type: "CHoCH",
-          direction: "bull",
-          index: idx - 1,
-          t: cs[idx - 1].t,
-          brokenSwing: { index: 0, t: 0, price: 100, kind: "high" },
-          price: 100,
-        },
-        {
-          type: "CHoCH",
-          direction: "bear",
-          index: idx - 1,
-          t: cs[idx - 1].t,
-          brokenSwing: { index: 0, t: 0, price: 100, kind: "low" },
-          price: 100,
-        },
-      ],
+    const cs = candles(15);
+    const bull = bullishStackAt(cs, 10);
+    const bear = bearishStackAt(cs, 10);
+    const engine = makeEngine(cs, {
+      liquidityEvents: [...(bull.liquidityEvents ?? []), ...(bear.liquidityEvents ?? [])],
+      structureEvents: [...(bull.structureEvents ?? []), ...(bear.structureEvents ?? [])],
       displacementCandles: [
-        { index: idx - 1, t: cs[idx - 1].t, direction: "bull", range: 5, ratio: 3 },
-        { index: idx - 1, t: cs[idx - 1].t, direction: "bear", range: 5, ratio: 3 },
+        ...(bull.displacementCandles ?? []),
+        ...(bear.displacementCandles ?? []),
       ],
-      fvgs: [
-        { direction: "bullish", index: idx - 2, t: cs[idx - 2].t, top: 100, bottom: 95, size: 5, status: "unfilled", fillPct: 0, filledIndex: null },
-        { direction: "bearish", index: idx - 2, t: cs[idx - 2].t, top: 120, bottom: 115, size: 5, status: "unfilled", fillPct: 0, filledIndex: null },
-      ],
-    };
-    const sig = analyzeSmcSignals(cs, synthetic, { minScore: 0, cooldownBars: 0 });
+      fvgs: [...(bull.fvgs ?? []), ...(bear.fvgs ?? [])],
+    });
+    const sig = analyzeSmcSignals(cs, engine, { minScore: 0, cooldownBars: 0 });
     const conflict = sig.signals.find((s) => s.signal === "CONFLICT");
     expect(conflict).toBeTruthy();
     expect(conflict!.reasons).toContain("both_directions_satisfy_mandatory_rules");
@@ -283,83 +412,88 @@ describe("SMC Signal Engine · conflict + cooldown", () => {
 // ── No-lookahead / determinism ───────────────────────────────────────────
 
 describe("SMC Signal Engine · no-lookahead + determinism", () => {
-  it("is byte-identical across repeated runs", () => {
-    const cs = bearishSetup();
-    const a = runFull(cs).sig;
-    const b = runFull(cs).sig;
+  it("byte-identical output across repeated runs", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const a = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 0 });
+    const b = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 0 });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
-  it("prefix invariance: signals at bar k only depend on candles <= k", () => {
-    const cs = bearishSetup();
-    const full = runFull(cs, { minScore: 60, cooldownBars: 0 }).sig;
-    // Compare each prefix's tail signal to the equivalent bar in the full run.
-    // Only bars that have enough history for swing confirmation (i >= 2) are
-    // meaningfully comparable.
-    for (let k = 4; k < cs.length; k++) {
-      const prefix = analyzeSmcSignals(
-        cs.slice(0, k + 1),
-        analyzeSmc(cs.slice(0, k + 1), { lookback: 1 }),
-        { minScore: 60, cooldownBars: 0 },
+  it("prefix invariance: signal at bar k only depends on events with index <= k", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
+    const full = analyzeSmcSignals(cs, engine, { minScore: 60, cooldownBars: 0 });
+    // Reconstruct a prefix engine by filtering all event arrays to index <= k.
+    for (let k = 5; k < cs.length; k++) {
+      const prefixCs = cs.slice(0, k + 1);
+      const prefixEngine = makeEngine(prefixCs, {
+        ...engine,
+        liquidityEvents: engine.liquidityEvents.filter((e) => e.index <= k),
+        structureEvents: engine.structureEvents.filter((e) => e.index <= k),
+        displacementCandles: engine.displacementCandles.filter((e) => e.index <= k),
+        fvgs: engine.fvgs.filter((g) => g.index <= k),
+        orderBlocks: engine.orderBlocks.filter((b) => b.impulseIndex <= k),
+        emaBias: engine.emaBias.slice(0, k + 1),
+        vwapBias: engine.vwapBias.slice(0, k + 1),
+        premiumDiscount: engine.premiumDiscount,
+        meta: { ...engine.meta, candleCount: k + 1 },
+      });
+      const prefixSig = analyzeSmcSignals(prefixCs, prefixEngine, {
+        minScore: 60,
+        cooldownBars: 0,
+      });
+      expect(prefixSig.signals[k].signal).toBe(full.signals[k].signal);
+      expect(prefixSig.signals[k].structureDirection).toBe(
+        full.signals[k].structureDirection,
       );
-      const tail = prefix.signals[k];
-      const fullBar = full.signals[k];
-      // Signal state and structure direction must match — any drift here is
-      // future-information leaking backwards.
-      expect(tail.signal).toBe(fullBar.signal);
-      expect(tail.structureDirection).toBe(fullBar.structureDirection);
     }
   });
 
-  it("throws DataLeakageError if a structure event references a future index at the tail", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
-    const rogue: SmcEngineResult = {
-      ...engine,
+  it("throws DataLeakageError when a structure event references a future index at the tail", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, {
+      ...bullishStackAt(cs, 10),
       structureEvents: [
-        ...engine.structureEvents,
         {
           type: "BOS",
           direction: "bull",
-          index: cs.length + 10, // future
+          index: cs.length + 5,
           t: cs[cs.length - 1].t + 60_000,
           brokenSwing: { index: 0, t: 0, price: 100, kind: "high" },
           price: 100,
         },
       ],
-    };
-    expect(() => analyzeSmcSignals(cs, rogue)).toThrow(/DATA_LEAKAGE|future|data/i);
+    });
+    expect(() => analyzeSmcSignals(cs, engine)).toThrow(
+      /structure event at .* referenced for signal/,
+    );
   });
 });
 
-// ── Config override + wrapper ────────────────────────────────────────────
+// ── Config override + adapter wiring ─────────────────────────────────────
 
 describe("SMC Signal Engine · config + adapter wiring", () => {
-  it("full config override cascades through weights and toggles", () => {
-    const cs = bearishSetup();
-    const engine = analyzeSmc(cs, { lookback: 1 });
+  it("config override cascades through weights and toggles", () => {
+    const cs = candles(15);
+    const engine = makeEngine(cs, bullishStackAt(cs, 10));
     const custom = analyzeSmcSignals(cs, engine, {
       minScore: 10,
       cooldownBars: 0,
-      liquidityEnabled: true,
       emaEnabled: false,
-      vwapEnabled: false,
-      premiumDiscountEnabled: false,
-      volumeEnabled: false,
-      sessionEnabled: false,
       weights: { ...DEFAULT_SMC_SIGNAL_CONFIG.weights, choch: 1 },
     });
     expect(custom.config.weights.choch).toBe(1);
     expect(custom.config.emaEnabled).toBe(false);
+    // Default weights untouched:
+    expect(custom.config.weights.displacement).toBe(
+      DEFAULT_SMC_SIGNAL_CONFIG.weights.displacement,
+    );
   });
 
-  it("analyzeSmcWithSignals composes engine + signals in one call", () => {
-    const cs = bearishSetup();
-    const { engine, signals } = analyzeSmcWithSignals(
-      cs,
-      { lookback: 1 },
-      { minScore: 60, cooldownBars: 0 },
-    );
+  it("analyzeSmcWithSignals composes Stage 1 + Stage 2 in one call", () => {
+    const cs = candles(10);
+    const { engine, signals } = analyzeSmcWithSignals(cs, { lookback: 1 });
     expect(engine.meta.candleCount).toBe(cs.length);
     expect(signals.signals.length).toBe(cs.length);
   });
@@ -367,9 +501,17 @@ describe("SMC Signal Engine · config + adapter wiring", () => {
   it("strategy adapter exposes signal engine but remains COMING_NEXT / not executable", () => {
     expect(smcStrategyAdapter.availability).toBe("COMING_NEXT");
     expect(smcStrategyAdapter.signalEngineStatus).toBe(SMC_SIGNAL_ENGINE_READY);
-    const cs = bearishSetup();
-    const engine = smcStrategyAdapter.analyzeStructure(cs, { lookback: 1 });
+    const cs = candles(10);
+    const engine = analyzeSmc(cs, { lookback: 1 });
     const sig = smcStrategyAdapter.analyzeSignals(cs, engine, { minScore: 60 });
     expect(sig.signals.length).toBe(cs.length);
   });
+
+  it("engine adapter continues to signal NOT_IMPLEMENTED for runUnifiedBacktest", () => {
+    expect(smcStrategyAdapter.engineStatus).toBe("NOT_IMPLEMENTED");
+    expect(smcStrategyAdapter.supportedFormulaVersions).toEqual([]);
+  });
 });
+
+// Silence unused type imports lint if any:
+export type _ = SmcSignalConfig;
