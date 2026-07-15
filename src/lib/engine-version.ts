@@ -54,6 +54,10 @@ export const GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION =
 export const SHADOW_ALERT_VERSION = "SHADOW_ALERT_V1" as const;
 export const READINESS_GATE_VERSION = "READINESS_GATE_V1" as const;
 
+/** Phase 21.2 Stage 5.1 — historical CSV ingestion pipeline version. */
+export const GANN_ABSOLUTE_INTRADAY_INGEST_VERSION =
+  "GANN_ABSOLUTE_INTRADAY_INGEST_V1" as const;
+
 export type IntradayFormulaVersion =
   (typeof INTRADAY_FORMULA_VERSIONS)[keyof typeof INTRADAY_FORMULA_VERSIONS];
 
