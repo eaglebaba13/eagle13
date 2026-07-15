@@ -19,6 +19,12 @@ const AbsoluteValidationPanelLazy = lazy(
   () => import("@/components/backtest/AbsoluteValidationPanel"),
 );
 
+// Phase 21.4 · Stage 4A — SMC panel + Astro-vs-SMC comparison are lazy-loaded
+// so SMC/CSV/signal modules never enter the Astro-mode bundle.
+const SmcBacktestPanelLazy = lazy(
+  () => import("@/components/backtest/SmcBacktestPanel"),
+);
+
 const C = {
   bg: "var(--eb-bg)",
   card: "var(--eb-card)",
