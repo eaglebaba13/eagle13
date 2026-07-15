@@ -5,7 +5,7 @@
 // or Run ID is modified.
 
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 
 import {
   runBacktest,
@@ -25,8 +25,29 @@ import {
 import {
   SMC_PARAMETER_KEYS,
   HYBRID_PARAMETER_KEYS,
+  classifySensitivitySurface,
+  computeSensitivityRunId,
   type ParameterSpec,
+  type SensitivityCell,
+  type SensitivitySurface,
 } from "@/lib/backtest/parameter-sensitivity";
+import {
+  runSmcSensitivity,
+  runHybridSensitivity,
+  SensitivityExecutionError,
+} from "@/lib/backtest/sensitivity-execution";
+import { createComputeCounters } from "@/lib/backtest/research-payload";
+import {
+  useResearchPayload,
+  type PublishedResearchPayload,
+} from "@/lib/backtest/research-payload-store";
+import {
+  buildSensitivityCellsCsv,
+  buildSensitivityMatrixCsv,
+  buildSensitivityJson,
+  buildResearchBundleJson,
+  type SensitivityExportProvenance,
+} from "@/lib/backtest/sensitivity-exports";
 import {
   runWalkForward,
   type SplitMode,
@@ -1207,13 +1228,53 @@ type SensitivityMode = "1D" | "2D";
 
 type SensitivityAxisState = { name: string; min: number; max: number; step: number };
 
+type SensitivityRunOutcome = {
+  readonly runId: string;
+  readonly cells: readonly SensitivityCell[];
+  readonly surface: SensitivitySurface | null;
+  readonly partial: boolean;
+  readonly grid: readonly ParameterSpec[];
+  readonly counters: Readonly<Record<string, number>>;
+  readonly strategy: SensitivityStrategy;
+  readonly errorCode?: SensitivityUiErrorCode;
+  readonly errorMessage?: string;
+};
+
+function buildCacheKey(input: {
+  baseRunId: string;
+  dataHash: string;
+  strategy: string;
+  grid: readonly ParameterSpec[];
+  normalize: boolean;
+  mc: boolean;
+}): string {
+  const g = input.grid.map((s) => `${s.name}:${s.min}:${s.max}:${s.step}`).join(",");
+  return [input.strategy, input.baseRunId, input.dataHash, g, input.normalize ? "n" : "r", input.mc ? "1" : "0"].join("|");
+}
+
 function SensitivitySection({ instrument }: { instrument: string }) {
+  const payload = useResearchPayload();
   const [strategy, setStrategy] = useState<SensitivityStrategy>("SMC_V1");
   const [mode, setMode] = useState<SensitivityMode>("1D");
   const [axisA, setAxisA] = useState<SensitivityAxisState>({ name: "minScore", min: 40, max: 80, step: 10 });
   const [axisB, setAxisB] = useState<SensitivityAxisState>({ name: "rr", min: 1, max: 3, step: 0.5 });
   const [normalizeWeights, setNormalizeWeights] = useState(true);
   const [includeMonteCarlo, setIncludeMonteCarlo] = useState(false);
+  const [metric, setMetric] = useState<"profitFactor" | "expectancy" | "netPnl" | "maxDrawdown" | "stabilityScore">(
+    "expectancy",
+  );
+  const [outcome, setOutcome] = useState<SensitivityRunOutcome | null>(null);
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<{ completed: number; total: number; current: string; startedAt: number } | null>(null);
+  const [selectedCellIdx, setSelectedCellIdx] = useState<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const cacheRef = useRef<Map<string, SensitivityRunOutcome>>(new Map());
+
+  // Auto-align strategy with published payload strategy for clarity.
+  useEffect(() => {
+    if (!payload) return;
+    setStrategy((s) => (s === payload.strategy ? s : payload.strategy));
+  }, [payload]);
 
   const allowedKeys: readonly string[] = useMemo(() => {
     const smc = SMC_PARAMETER_KEYS as readonly string[];
@@ -1230,29 +1291,255 @@ function SensitivitySection({ instrument }: { instrument: string }) {
   const cells = estimateGridCells(specs);
   const validation = validateSensitivityGrid(specs);
 
-  // Stage 3: payload plumbing lives in Stage 4. Execution is disabled here.
-  const payloadCode: SensitivityUiErrorCode = "RESEARCH_PAYLOAD_MISSING";
+  const canRun = !!payload && validation.ok && !running;
+
+  const buildProvenance = useCallback(
+    (o: SensitivityRunOutcome, p: PublishedResearchPayload): SensitivityExportProvenance => ({
+      researchRunId: o.runId,
+      baseRunId: p.baseRunId,
+      sensitivityRunId: o.runId,
+      strategy: o.strategy,
+      formulaVersion: p.formulaVersion,
+      provider: p.provider,
+      dataHash: p.dataHash,
+      requestedRange: p.requestedRange,
+      actualRange: p.actualRange,
+      timeframe: String(p.timeframe),
+      timezone: p.timezone,
+      costs: p.costs,
+      grid: o.grid.map((g) => ({ name: g.name, min: g.min, max: g.max, step: g.step })),
+      normalizeWeights: normalizeWeights && o.strategy === "ASTRO_SMC_HYBRID_V1",
+      includeMonteCarlo,
+      counters: o.counters,
+      dataQuality: p.dataQuality,
+      classification: o.surface?.classification ?? "INSUFFICIENT_DATA",
+      partial: o.partial,
+      generatedAt: new Date().toISOString(),
+    }),
+    [normalizeWeights, includeMonteCarlo],
+  );
+
+  const runNow = useCallback(async () => {
+    if (!payload || !validation.ok || running) return;
+    const cacheKey = buildCacheKey({
+      baseRunId: payload.baseRunId,
+      dataHash: payload.dataHash,
+      strategy,
+      grid: specs,
+      normalize: normalizeWeights,
+      mc: includeMonteCarlo,
+    });
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached && !cached.partial) {
+      setOutcome(cached);
+      return;
+    }
+
+    setRunning(true);
+    setOutcome(null);
+    setSelectedCellIdx(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const counters = createComputeCounters();
+    const started = Date.now();
+    const combos: { readonly [k: string]: number }[] = [];
+    // Build combos deterministically (same as generateParameterGrid, minus classification).
+    {
+      const axes = specs.map((s) => {
+        const vals: number[] = [];
+        for (let v = s.min; v <= s.max + 1e-9; v += s.step) vals.push(Number(v.toFixed(6)));
+        return { name: s.name, values: vals };
+      });
+      const cursor = new Array<number>(axes.length).fill(0);
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const combo: Record<string, number> = {};
+        for (let i = 0; i < axes.length; i++) combo[axes[i].name] = axes[i].values[cursor[i]];
+        combos.push(combo);
+        let k = axes.length - 1;
+        while (k >= 0) {
+          cursor[k]++;
+          if (cursor[k] < axes[k].values.length) break;
+          cursor[k] = 0;
+          k--;
+        }
+        if (k < 0) break;
+      }
+    }
+
+    setProgress({ completed: 0, total: combos.length, current: "", startedAt: started });
+
+    try {
+      const runId = computeSensitivityRunId({
+        baseRunId: payload.baseRunId,
+        strategy,
+        formula: payload.formulaVersion,
+        grid: specs,
+        from: payload.actualRange.from,
+        to: payload.actualRange.to,
+        dataHash: payload.dataHash,
+      });
+      const onProgress = (completed: number, total: number, current: Record<string, number>) => {
+        setProgress({ completed, total, current: JSON.stringify(current), startedAt: started });
+      };
+
+      let result: { cells: SensitivityCell[]; partial: boolean };
+      if (strategy === "SMC_V1") {
+        result = await runSmcSensitivity(payload, combos, counters, {
+          signal: controller.signal,
+          onProgress,
+        });
+      } else {
+        if (!payload.astroByDate) {
+          throw new SensitivityExecutionError(
+            "INSUFFICIENT_DATA",
+            "Hybrid sensitivity requires astro payload — run the Hybrid backtest first.",
+          );
+        }
+        const hybridResult = await runHybridSensitivity(payload, combos, counters, {
+          signal: controller.signal,
+          onProgress,
+          astroByDate: payload.astroByDate,
+          astroFormulaVersion: payload.formulaVersion,
+          normalizeWeights,
+          dataQualityPct: payload.dataQuality.coveragePct,
+        });
+        result = hybridResult;
+      }
+
+      const partial = result.partial || controller.signal.aborted;
+      const surface = classifySensitivitySurface(result.cells, metric === "stabilityScore" ? "stabilityScore" : metric);
+      const outc: SensitivityRunOutcome = {
+        runId,
+        cells: result.cells,
+        surface,
+        partial,
+        grid: specs,
+        counters: {
+          providerLoadCount: counters.providerLoadCount,
+          dataQualityCount: counters.dataQualityCount,
+          astroComputeCount: counters.astroComputeCount,
+          smcStructureComputeCount: counters.smcStructureComputeCount,
+          smcSignalComputeCount: counters.smcSignalComputeCount,
+          executionCount: counters.executionCount,
+        },
+        strategy,
+      };
+      cacheRef.current.set(cacheKey + (partial ? ":partial" : ""), outc);
+      setOutcome(outc);
+    } catch (e) {
+      const err = e instanceof SensitivityExecutionError ? e : null;
+      setOutcome({
+        runId: "",
+        cells: [],
+        surface: null,
+        partial: false,
+        grid: specs,
+        counters: {},
+        strategy,
+        errorCode: (err?.code as SensitivityUiErrorCode | undefined) ?? "INVALID_PARAMETER_GRID",
+        errorMessage: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setRunning(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
+  }, [payload, validation.ok, running, strategy, specs, normalizeWeights, includeMonteCarlo, metric]);
+
+  const cancel = () => {
+    abortRef.current?.abort();
+  };
+
+  // Re-classify with selected metric without rerunning.
+  const classifiedSurface = useMemo(() => {
+    if (!outcome || outcome.cells.length === 0) return null;
+    return classifySensitivitySurface(outcome.cells, metric === "stabilityScore" ? "stabilityScore" : metric);
+  }, [outcome, metric]);
+
+  const chartSeries = useMemo(() => {
+    if (!outcome) return [];
+    if (outcome.grid.length === 1) {
+      const name = outcome.grid[0].name;
+      const data = outcome.cells.map((c) => ({
+        x: c.params[name],
+        y: c.metrics ? Number(c.metrics[metric]) : null,
+      }));
+      return [{ name: metric, data }];
+    }
+    // 2D → heatmap series (Y axis = axis B, each series = one Y value).
+    const [ax, ay] = outcome.grid;
+    const ys = new Set<number>();
+    for (const c of outcome.cells) ys.add(c.params[ay.name]);
+    const sortedY = [...ys].sort((a, b) => a - b);
+    return sortedY.map((yv) => ({
+      name: `${ay.name}=${yv}`,
+      data: outcome.cells
+        .filter((c) => c.params[ay.name] === yv)
+        .sort((a, b) => a.params[ax.name] - b.params[ax.name])
+        .map((c) => ({ x: String(c.params[ax.name]), y: c.metrics ? Number(c.metrics[metric]) : 0 })),
+    }));
+  }, [outcome, metric]);
+
+  const exportCells = () => {
+    if (!outcome || !payload) return;
+    const prov = buildProvenance(outcome, payload);
+    const csv = buildSensitivityCellsCsv(outcome.cells, prov);
+    downloadBlob(csv, `sensitivity-cells-${instrument}-${payload.actualRange.from}-${payload.actualRange.to}.csv`, "text/csv");
+  };
+  const exportMatrix = () => {
+    if (!outcome || !payload) return;
+    const prov = buildProvenance(outcome, payload);
+    const csv = buildSensitivityMatrixCsv(outcome.cells, prov, metric === "stabilityScore" ? "expectancy" : metric);
+    downloadBlob(csv, `sensitivity-matrix-${instrument}-${payload.actualRange.from}-${payload.actualRange.to}.csv`, "text/csv");
+  };
+  const exportJson = () => {
+    if (!outcome || !payload) return;
+    const prov = buildProvenance(outcome, payload);
+    const json = buildSensitivityJson(outcome.cells, classifiedSurface, prov);
+    downloadBlob(json, `sensitivity-${instrument}-${payload.actualRange.from}-${payload.actualRange.to}.json`, "application/json");
+  };
+  const exportBundle = () => {
+    if (!outcome || !payload) return;
+    const bundle = buildResearchBundleJson({
+      context: payload,
+      researchRunId: outcome.runId,
+      sensitivity: {
+        runId: outcome.runId,
+        cells: outcome.cells,
+        surface: classifiedSurface,
+        grid: outcome.grid.map((g) => ({ name: g.name, min: g.min, max: g.max, step: g.step })),
+        partial: outcome.partial,
+        counters: outcome.counters,
+      },
+    });
+    downloadBlob(bundle, `research-bundle-${instrument}-${payload.actualRange.from}-${payload.actualRange.to}.json`, "application/json");
+  };
 
   return (
     <section style={panel}>
       <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>
         PARAMETER SENSITIVITY · {instrument}
       </div>
-      <div
-        style={{
-          fontFamily: "var(--eb-mono)",
-          fontSize: 11,
-          color: C.orange,
-          border: `1px solid ${C.orange}`,
-          borderRadius: 6,
-          padding: 10,
-          marginBottom: 12,
-        }}
-        role="alert"
-        aria-live="polite"
-      >
-        {SENSITIVITY_UI_ERROR_LABEL[payloadCode]} — {payloadCode}. Load an intraday SMC or Hybrid payload from the SMC / Hybrid panels to enable sensitivity execution. Grid controls remain available for preview.
-      </div>
+      {!payload ? (
+        <div
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 11,
+            color: C.orange,
+            border: `1px solid ${C.orange}`,
+            borderRadius: 6,
+            padding: 10,
+            marginBottom: 12,
+          }}
+          role="alert"
+          aria-live="polite"
+        >
+          {SENSITIVITY_UI_ERROR_LABEL.RESEARCH_PAYLOAD_MISSING} — RESEARCH_PAYLOAD_MISSING. Open the SMC or Hybrid Backtest panel, run it once with valid data, and return here.
+        </div>
+      ) : (
+        <PayloadSummary payload={payload} />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
         <div>
@@ -1294,6 +1581,16 @@ function SensitivitySection({ instrument }: { instrument: string }) {
             <span>{includeMonteCarlo ? "per-cell MC on" : "per-cell MC off"}</span>
           </label>
         </div>
+        <div>
+          <div style={lbl}>Metric</div>
+          <select value={metric} onChange={(e) => setMetric(e.target.value as typeof metric)} style={sel}>
+            <option value="expectancy">Expectancy</option>
+            <option value="profitFactor">Profit Factor</option>
+            <option value="netPnl">Net PnL</option>
+            <option value="maxDrawdown">Max Drawdown</option>
+            <option value="stabilityScore">Stability</option>
+          </select>
+        </div>
       </div>
 
       <div
@@ -1334,14 +1631,41 @@ function SensitivitySection({ instrument }: { instrument: string }) {
 
       <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
         <button
-          disabled
-          title="Payload plumbing arrives in Stage 4"
-          style={{ ...btn, opacity: 0.5, cursor: "not-allowed" }}
+          onClick={runNow}
+          disabled={!canRun}
+          style={{ ...btn, opacity: canRun ? 1 : 0.5, cursor: canRun ? "pointer" : "not-allowed" }}
         >
-          ▶ Run Sensitivity
+          {running ? "Running…" : "▶ Run Sensitivity"}
         </button>
-        <button disabled style={{ ...btnGhost, opacity: 0.5, cursor: "not-allowed" }}>Cancel</button>
+        <button onClick={cancel} disabled={!running} style={{ ...btnGhost, opacity: running ? 1 : 0.5 }}>
+          Cancel
+        </button>
       </div>
+
+      {progress ? (
+        <SensitivityProgress progress={progress} />
+      ) : null}
+
+      {outcome && outcome.errorCode ? (
+        <div style={{ marginTop: 10, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+          {outcome.errorCode}: {outcome.errorMessage}
+        </div>
+      ) : null}
+
+      {outcome && outcome.cells.length > 0 ? (
+        <SensitivityResults
+          outcome={outcome}
+          surface={classifiedSurface}
+          metric={metric}
+          chartSeries={chartSeries}
+          selectedCellIdx={selectedCellIdx}
+          onSelectCell={setSelectedCellIdx}
+          exportCells={exportCells}
+          exportMatrix={exportMatrix}
+          exportJson={exportJson}
+          exportBundle={exportBundle}
+        />
+      ) : null}
     </section>
   );
 }
@@ -1371,3 +1695,220 @@ function AxisEditor({
     </div>
   );
 }
+
+function PayloadSummary({ payload }: { payload: PublishedResearchPayload }) {
+  const bad = payload.dataQuality.status === "FAIL";
+  return (
+    <div
+      style={{
+        marginBottom: 12,
+        border: `1px solid ${bad ? C.red : C.border}`,
+        borderRadius: 6,
+        padding: 10,
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        gap: 6,
+        fontFamily: "var(--eb-mono)",
+        fontSize: 11,
+      }}
+    >
+      <div><span style={{ color: C.muted }}>Instrument</span> {payload.instrument}</div>
+      <div><span style={{ color: C.muted }}>Timeframe</span> {String(payload.timeframe)}</div>
+      <div><span style={{ color: C.muted }}>Provider</span> {payload.provider}</div>
+      <div><span style={{ color: C.muted }}>Range</span> {payload.actualRange.from} → {payload.actualRange.to}</div>
+      <div><span style={{ color: C.muted }}>Candles</span> {payload.candles.length}</div>
+      <div><span style={{ color: C.muted }}>Data Hash</span> {payload.dataHash}</div>
+      <div>
+        <span style={{ color: C.muted }}>Data Quality</span>{" "}
+        <span style={{ color: bad ? C.red : payload.dataQuality.status === "DEGRADED" ? C.orange : C.green }}>
+          {payload.dataQuality.status} · {payload.dataQuality.coveragePct}%
+        </span>
+      </div>
+      <div style={{ gridColumn: "1 / -1", color: C.muted, wordBreak: "break-all" }}>
+        Base Run ID: <span style={{ color: C.blue }}>{payload.baseRunId}</span> · Strategy: {payload.strategy}
+      </div>
+    </div>
+  );
+}
+
+function SensitivityProgress({
+  progress,
+}: {
+  progress: { completed: number; total: number; current: string; startedAt: number };
+}) {
+  const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+  const elapsedMs = Date.now() - progress.startedAt;
+  const perCell = progress.completed > 0 ? elapsedMs / progress.completed : 0;
+  const remainingMs = perCell > 0 ? (progress.total - progress.completed) * perCell : 0;
+  return (
+    <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
+      Cell {progress.completed}/{progress.total} · {pct}% · elapsed {Math.round(elapsedMs / 1000)}s · eta {Math.round(remainingMs / 1000)}s
+      <div style={{ marginTop: 4, height: 4, background: C.border, borderRadius: 2 }}>
+        <div style={{ height: "100%", background: C.orange, width: `${pct}%`, borderRadius: 2 }} />
+      </div>
+      <div style={{ marginTop: 4, wordBreak: "break-all" }}>current: {progress.current}</div>
+    </div>
+  );
+}
+
+function SensitivityResults({
+  outcome,
+  surface,
+  metric,
+  chartSeries,
+  selectedCellIdx,
+  onSelectCell,
+  exportCells,
+  exportMatrix,
+  exportJson,
+  exportBundle,
+}: {
+  outcome: SensitivityRunOutcome;
+  surface: SensitivitySurface | null;
+  metric: string;
+  chartSeries: { name: string; data: { x: string | number; y: number | null }[] }[];
+  selectedCellIdx: number | null;
+  onSelectCell: (i: number | null) => void;
+  exportCells: () => void;
+  exportMatrix: () => void;
+  exportJson: () => void;
+  exportBundle: () => void;
+}) {
+  const valid = outcome.cells.filter((c) => c.metrics !== null);
+  const invalid = outcome.cells.length - valid.length;
+  const chartType: "line" | "heatmap" = outcome.grid.length === 1 ? "line" : "heatmap";
+  const selected = selectedCellIdx !== null ? outcome.cells[selectedCellIdx] ?? null : null;
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: 8,
+          fontFamily: "var(--eb-mono)",
+          fontSize: 11,
+          marginBottom: 8,
+        }}
+      >
+        <div><span style={{ color: C.muted }}>Cells</span> {outcome.cells.length}</div>
+        <div><span style={{ color: C.muted }}>Valid</span> {valid.length}</div>
+        <div><span style={{ color: C.muted }}>Insufficient</span> {invalid}</div>
+        <div><span style={{ color: C.muted }}>Classification</span> {surface?.classification ?? "n/a"}</div>
+        <div><span style={{ color: C.muted }}>Partial</span> {outcome.partial ? "YES" : "no"}</div>
+        <div><span style={{ color: C.muted }}>Executions</span> {outcome.counters.executionCount ?? 0}</div>
+        <div>
+          <span style={{ color: C.muted }}>Provider fetches</span>{" "}
+          <span style={{ color: (outcome.counters.providerLoadCount ?? 0) === 0 ? C.green : C.red }}>
+            {outcome.counters.providerLoadCount ?? 0}
+          </span>
+        </div>
+        <div>
+          <span style={{ color: C.muted }}>DQ recomputes</span>{" "}
+          <span style={{ color: (outcome.counters.dataQualityCount ?? 0) === 0 ? C.green : C.red }}>
+            {outcome.counters.dataQualityCount ?? 0}
+          </span>
+        </div>
+      </div>
+
+      {surface?.reason ? (
+        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginBottom: 8 }}>{surface.reason}</div>
+      ) : null}
+
+      <ApexChart
+        type={chartType}
+        series={chartSeries}
+        options={{
+          chart: { id: "sensitivity", toolbar: { show: false }, animations: { enabled: false }, background: "transparent" },
+          dataLabels: { enabled: chartType === "heatmap" },
+          xaxis: { labels: { style: { colors: "var(--eb-muted)" } }, title: { text: outcome.grid[0]?.name ?? "" } },
+          yaxis: { labels: { style: { colors: "var(--eb-muted)" } }, title: { text: chartType === "line" ? metric : outcome.grid[1]?.name ?? "" } },
+          stroke: chartType === "line" ? { curve: "smooth", width: 2 } : undefined,
+          markers: chartType === "line" ? { size: 4 } : undefined,
+          legend: { labels: { colors: "var(--eb-text)" } },
+          tooltip: { theme: "dark" },
+          grid: { borderColor: "var(--eb-border)" },
+          plotOptions: chartType === "heatmap" ? { heatmap: { shadeIntensity: 0.5, radius: 0, useFillColorAsStroke: false, colorScale: { ranges: [] } } } : undefined,
+        }}
+        height={280}
+      />
+
+      <div style={{ marginTop: 12, overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+          <thead>
+            <tr style={{ color: C.muted, textAlign: "left" }}>
+              {[...outcome.grid.map((g) => g.name), "trades", "PF", "Exp", "NetPnL", "DD", "Stability", "OOS", metric === "stabilityScore" ? "score" : metric, "status"].map((h) => (
+                <th key={h} style={{ padding: "4px 6px", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {outcome.cells.map((c, i) => {
+              const m = c.metrics;
+              const isSel = i === selectedCellIdx;
+              return (
+                <tr
+                  key={i}
+                  onClick={() => onSelectCell(i)}
+                  style={{ borderBottom: `1px solid ${C.border}`, background: isSel ? "rgba(255,140,0,0.08)" : "transparent", cursor: "pointer", opacity: m ? 1 : 0.55 }}
+                >
+                  {outcome.grid.map((g) => (
+                    <td key={g.name} style={{ padding: "4px 6px" }}>{c.params[g.name]}</td>
+                  ))}
+                  <td style={{ padding: "4px 6px" }}>{m?.trades ?? "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m ? fmt(m.profitFactor) : "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m ? m.expectancy : "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m ? m.netPnl : "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m ? m.maxDrawdown : "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m?.stabilityScore ?? "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m?.oosScore ?? "—"}</td>
+                  <td style={{ padding: "4px 6px" }}>{m ? String(m[metric as keyof typeof m] ?? "—") : "—"}</td>
+                  <td style={{ padding: "4px 6px", color: m ? C.green : C.muted }}>{m ? "VALID" : c.reason ?? "INSUFFICIENT"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {selected ? (
+        <div style={{ marginTop: 10, border: `1px solid ${C.border}`, borderRadius: 6, padding: 10 }}>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.orange, marginBottom: 6 }}>Cell Details</div>
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 6 }}>
+            {Object.entries(selected.params).map(([k, v]) => (
+              <div key={k}><span style={{ color: C.muted }}>{k}</span> {v}</div>
+            ))}
+            {selected.metrics ? (
+              <>
+                <div><span style={{ color: C.muted }}>Trades</span> {selected.metrics.trades}</div>
+                <div><span style={{ color: C.muted }}>Win Rate</span> {(selected.metrics.winRate * 100).toFixed(1)}%</div>
+                <div><span style={{ color: C.muted }}>PF</span> {fmt(selected.metrics.profitFactor)}</div>
+                <div><span style={{ color: C.muted }}>Expectancy</span> {selected.metrics.expectancy}</div>
+                <div><span style={{ color: C.muted }}>Net PnL</span> {selected.metrics.netPnl}</div>
+                <div><span style={{ color: C.muted }}>Max DD</span> {selected.metrics.maxDrawdown}</div>
+                <div><span style={{ color: C.muted }}>Recovery</span> {fmt(selected.metrics.recoveryFactor)}</div>
+                <div><span style={{ color: C.muted }}>Stability</span> {selected.metrics.stabilityScore}</div>
+                <div><span style={{ color: C.muted }}>OOS</span> {selected.metrics.oosScore}</div>
+                <div><span style={{ color: C.muted }}>MC p5</span> {selected.metrics.monteCarloP5}</div>
+              </>
+            ) : (
+              <div style={{ gridColumn: "1 / -1", color: C.red }}>{selected.reason ?? "INSUFFICIENT_DATA"}</div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button onClick={exportCells} style={btnGhost}>Cells CSV</button>
+        <button onClick={exportMatrix} style={btnGhost}>Matrix CSV</button>
+        <button onClick={exportJson} style={btnGhost}>Sensitivity JSON</button>
+        <button onClick={exportBundle} style={btnGhost}>Research Bundle JSON</button>
+      </div>
+      <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, wordBreak: "break-all" }}>
+        Sensitivity Run ID: <span style={{ color: C.blue }}>{outcome.runId}</span>{outcome.partial ? " · PARTIAL" : ""}
+      </div>
+    </div>
+  );
+}
+
+export const SENSITIVITY_SECTION_MARKER = "SENSITIVITY_SECTION_V1";
