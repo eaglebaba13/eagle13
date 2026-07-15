@@ -31,6 +31,13 @@ const HybridBacktestPanelLazy = lazy(
   () => import("@/components/backtest/HybridBacktestPanel"),
 );
 
+// Phase 21.5 · Stage 1B — Research Lab tab is lazy-loaded so walk-forward /
+// comparison / stability / export modules never enter the default Backtest
+// bundle.
+const ResearchPanelLazy = lazy(
+  () => import("@/components/backtest/ResearchPanel"),
+);
+
 const C = {
   bg: "var(--eb-bg)",
   card: "var(--eb-card)",
@@ -81,6 +88,7 @@ export const Route = createFileRoute("/backtest")({
 });
 
 function BacktestPage() {
+  const [tab, setTab] = useState<"BACKTEST" | "RESEARCH">("BACKTEST");
   // Phase 21.3d · Strategy + Formula selectors are wired at the UI layer.
   // Only Astro strategy + Sign-Degree formula executes through the existing
   // production backtest path. Legacy / Absolute formulas surface a notice
@@ -196,6 +204,33 @@ function BacktestPage() {
         <Link to="/" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>← Dashboard</Link>
       </header>
 
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {(["BACKTEST","RESEARCH"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{
+              padding: "6px 12px", borderRadius: 6,
+              border: `1px solid ${tab === t ? C.orange : C.border}`,
+              background: tab === t ? C.orange : "transparent",
+              color: tab === t ? "#04140b" : C.text,
+              fontFamily: "var(--eb-mono)", fontSize: 12, cursor: "pointer",
+              letterSpacing: 1,
+            }}>
+            {t === "BACKTEST" ? "Backtest" : "Research"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "RESEARCH" ? (
+        <Suspense fallback={
+          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
+            Loading Research Lab modules…
+          </div>
+        }>
+          <ResearchPanelLazy />
+        </Suspense>
+      ) : (
+      <>
       {/* Controls */}
       <section style={panel}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
@@ -347,6 +382,8 @@ function BacktestPage() {
           <MethodologyDrawer r={result} />
         </>
       ) : null}
+      </>
+      )}
     </div>
   );
 }
