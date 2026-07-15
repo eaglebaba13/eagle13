@@ -15,14 +15,14 @@ const SMC_V = INTRADAY_FORMULA_VERSIONS.SMC_V1;
 function astro(
   direction: AstroInput["direction"],
   confidence = 80,
-  fv = ASTRO_V,
+  fv: string = ASTRO_V,
 ): AstroInput {
   return { direction, confidence, formulaVersion: fv };
 }
 function smc(
   signal: SmcInput["signal"],
   score = 70,
-  fv = SMC_V,
+  fv: string = SMC_V,
 ): SmcInput {
   return { signal, score, formulaVersion: fv };
 }
