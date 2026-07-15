@@ -25,6 +25,7 @@ import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as BacktestRouteImport } from './routes/backtest'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AstroRouteImport } from './routes/astro'
+import { Route as AbsoluteIntradayValidationRouteImport } from './routes/absolute-intraday-validation'
 import { Route as AbsoluteIntradayRouteImport } from './routes/absolute-intraday'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -122,6 +123,12 @@ const AstroRoute = AstroRouteImport.update({
   path: '/astro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AbsoluteIntradayValidationRoute =
+  AbsoluteIntradayValidationRouteImport.update({
+    id: '/absolute-intraday-validation',
+    path: '/absolute-intraday-validation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AbsoluteIntradayRoute = AbsoluteIntradayRouteImport.update({
   id: '/absolute-intraday',
   path: '/absolute-intraday',
@@ -211,6 +218,7 @@ const ApiPublicWebhooksRazorpayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/absolute-intraday': typeof AbsoluteIntradayRoute
+  '/absolute-intraday-validation': typeof AbsoluteIntradayValidationRoute
   '/astro': typeof AstroRoute
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/absolute-intraday': typeof AbsoluteIntradayRoute
+  '/absolute-intraday-validation': typeof AbsoluteIntradayValidationRoute
   '/astro': typeof AstroRoute
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
@@ -279,6 +288,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/absolute-intraday': typeof AbsoluteIntradayRoute
+  '/absolute-intraday-validation': typeof AbsoluteIntradayValidationRoute
   '/astro': typeof AstroRoute
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/absolute-intraday'
+    | '/absolute-intraday-validation'
     | '/astro'
     | '/auth'
     | '/backtest'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/absolute-intraday'
+    | '/absolute-intraday-validation'
     | '/astro'
     | '/auth'
     | '/backtest'
@@ -381,6 +393,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/absolute-intraday'
+    | '/absolute-intraday-validation'
     | '/astro'
     | '/auth'
     | '/backtest'
@@ -416,6 +429,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AbsoluteIntradayRoute: typeof AbsoluteIntradayRoute
+  AbsoluteIntradayValidationRoute: typeof AbsoluteIntradayValidationRoute
   AstroRoute: typeof AstroRoute
   AuthRoute: typeof AuthRoute
   BacktestRoute: typeof BacktestRoute
@@ -553,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/astro'
       fullPath: '/astro'
       preLoaderRoute: typeof AstroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/absolute-intraday-validation': {
+      id: '/absolute-intraday-validation'
+      path: '/absolute-intraday-validation'
+      fullPath: '/absolute-intraday-validation'
+      preLoaderRoute: typeof AbsoluteIntradayValidationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/absolute-intraday': {
@@ -695,6 +716,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AbsoluteIntradayRoute: AbsoluteIntradayRoute,
+  AbsoluteIntradayValidationRoute: AbsoluteIntradayValidationRoute,
   AstroRoute: AstroRoute,
   AuthRoute: AuthRoute,
   BacktestRoute: BacktestRoute,
