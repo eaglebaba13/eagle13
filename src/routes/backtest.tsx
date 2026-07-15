@@ -25,6 +25,12 @@ const SmcBacktestPanelLazy = lazy(
   () => import("@/components/backtest/SmcBacktestPanel"),
 );
 
+// Phase 21.4 · Stage 4B — Astro+SMC Hybrid panel is lazy-loaded so hybrid
+// modules never enter the Astro-mode bundle.
+const HybridBacktestPanelLazy = lazy(
+  () => import("@/components/backtest/HybridBacktestPanel"),
+);
+
 const C = {
   bg: "var(--eb-bg)",
   card: "var(--eb-card)",
