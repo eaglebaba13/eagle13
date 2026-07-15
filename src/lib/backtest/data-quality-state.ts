@@ -28,9 +28,9 @@ export function classifyDataQuality(input: DataQualityInput): DataQualityState {
   const { report, candleCount, latestCandleMs, mode } = input;
   if (candleCount === 0) return "UNAVAILABLE";
   if (
-    report.duplicateCount > 0 ||
     report.outOfOrderCount > 0 ||
-    report.causalityFailures > 0
+    report.causalityFailures > 0 ||
+    report.outOfWindowCount > 0
   ) {
     return "UNAVAILABLE";
   }
