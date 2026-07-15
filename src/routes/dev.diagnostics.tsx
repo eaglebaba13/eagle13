@@ -10,6 +10,7 @@ import { getSchedulerMetrics, type SchedulerTaskSnapshot } from "@/lib/scheduler
 import { getErrorLog, recordError } from "@/lib/diagnostics";
 import { downloadBlob } from "@/lib/download";
 import { useTick } from "@/hooks/use-scheduler";
+import { runIntradayValidation } from "@/lib/gann-intraday-validation.functions";
 
 export const Route = createFileRoute("/dev/diagnostics")({
   component: DiagnosticsPage,
@@ -207,6 +208,10 @@ function DiagnosticsDashboard() {
         </Section>
 
         <Section title="Scheduler Monitor">
+          <AbsoluteIntradayValidationPanel />
+        </Section>
+
+        <Section title="Scheduler Monitor · Tasks">
           <Table headers={["#", "Task", "Period", "Runs", "Errors", "Last Duration", "Avg", "Last Run", "Next Run"]}>
             {sched.tasks.map((t: SchedulerTaskSnapshot) => (
               <tr key={t.id}>
