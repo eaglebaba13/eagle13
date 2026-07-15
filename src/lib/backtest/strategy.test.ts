@@ -16,9 +16,10 @@ describe("HistoricalStrategyAdapter registry", () => {
     expect(ids).toEqual(["ASTRO", "SMC", "ASTRO_SMC_HYBRID", "BASELINE"]);
   });
 
-  it("only ASTRO is AVAILABLE in this phase", () => {
+  it("ASTRO and SMC are AVAILABLE; Hybrid/Baseline remain COMING_NEXT", () => {
     expect(astroStrategyAdapter.availability).toBe("AVAILABLE");
-    for (const id of ["SMC", "ASTRO_SMC_HYBRID", "BASELINE"] as const) {
+    expect(STRATEGY_REGISTRY.SMC.availability).toBe("AVAILABLE");
+    for (const id of ["ASTRO_SMC_HYBRID", "BASELINE"] as const) {
       expect(STRATEGY_REGISTRY[id].availability).toBe("COMING_NEXT");
     }
   });
@@ -49,19 +50,21 @@ describe("HistoricalStrategyAdapter registry", () => {
 });
 
 describe("validateUnifiedConfig — typed errors", () => {
-  it("throws STRATEGY_ADAPTER_NOT_AVAILABLE for SMC", () => {
-    try {
-      validateUnifiedConfig({
-        strategy: "SMC",
-        formula: INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
-        instrument: "NIFTY50",
-      });
-      throw new Error("should have thrown");
-    } catch (e) {
-      expect(e).toBeInstanceOf(UnifiedBacktestConfigError);
-      expect((e as UnifiedBacktestConfigError).code).toBe(
-        "STRATEGY_ADAPTER_NOT_AVAILABLE",
-      );
+  it("throws STRATEGY_ADAPTER_NOT_AVAILABLE for Hybrid / Baseline", () => {
+    for (const strat of ["ASTRO_SMC_HYBRID", "BASELINE"] as const) {
+      try {
+        validateUnifiedConfig({
+          strategy: strat,
+          formula: INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
+          instrument: "NIFTY50",
+        });
+        throw new Error("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(UnifiedBacktestConfigError);
+        expect((e as UnifiedBacktestConfigError).code).toBe(
+          "STRATEGY_ADAPTER_NOT_AVAILABLE",
+        );
+      }
     }
   });
 
@@ -119,7 +122,7 @@ describe("validateUnifiedConfig — typed errors", () => {
 });
 
 describe("runUnifiedBacktest dispatch", () => {
-  it("refuses SMC before adapter is wired", async () => {
+  it("refuses SMC with a non-SMC formula", async () => {
     await expect(
       runUnifiedBacktest({
         strategy: "SMC",
@@ -129,6 +132,20 @@ describe("runUnifiedBacktest dispatch", () => {
         to: "2024-01-31",
       }),
     ).rejects.toBeInstanceOf(UnifiedBacktestConfigError);
+  });
+
+  it("runs SMC through the shared runner with empty extras", async () => {
+    const res = await runUnifiedBacktest({
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-31",
+      extras: { candles: [], signals: [] },
+    });
+    expect(res.formulaVersion).toBe(INTRADAY_FORMULA_VERSIONS.SMC_V1);
+    expect(res.trades).toEqual([]);
+    expect(res.runId).toContain(INTRADAY_FORMULA_VERSIONS.SMC_V1);
   });
 
   it("runs the Astro sign-degree adapter through the shared runner", async () => {

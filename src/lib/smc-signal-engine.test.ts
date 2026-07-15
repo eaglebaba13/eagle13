@@ -498,8 +498,8 @@ describe("SMC Signal Engine · config + adapter wiring", () => {
     expect(signals.signals.length).toBe(cs.length);
   });
 
-  it("strategy adapter exposes signal engine but remains COMING_NEXT / not executable", () => {
-    expect(smcStrategyAdapter.availability).toBe("COMING_NEXT");
+  it("strategy adapter exposes signal engine and is AVAILABLE via Stage 3", () => {
+    expect(smcStrategyAdapter.availability).toBe("AVAILABLE");
     expect(smcStrategyAdapter.signalEngineStatus).toBe(SMC_SIGNAL_ENGINE_READY);
     const cs = candles(10);
     const engine = analyzeSmc(cs, { lookback: 1 });
@@ -507,9 +507,9 @@ describe("SMC Signal Engine · config + adapter wiring", () => {
     expect(sig.signals.length).toBe(cs.length);
   });
 
-  it("engine adapter continues to signal NOT_IMPLEMENTED for runUnifiedBacktest", () => {
+  it("Stage-1 NOT_IMPLEMENTED sentinel is preserved for introspection", () => {
     expect(smcStrategyAdapter.engineStatus).toBe("NOT_IMPLEMENTED");
-    expect(smcStrategyAdapter.supportedFormulaVersions).toEqual([]);
+    expect(smcStrategyAdapter.supportedFormulaVersions).toContain("SMC_V1");
   });
 });
 

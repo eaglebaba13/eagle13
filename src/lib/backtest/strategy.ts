@@ -13,6 +13,7 @@ import {
   legacyHistoricalAdapter,
   signDegreeHistoricalAdapter,
 } from "./adapters/daily-astro.adapter";
+import { smcHistoricalAdapter } from "./adapters/smc-historical.adapter";
 import {
   SMC_STRATEGY_NOT_IMPLEMENTED,
   analyzeSmc,
@@ -85,11 +86,28 @@ function comingNextAdapter(
   };
 }
 
-const smcBaseAdapter = comingNextAdapter(
-  "SMC",
-  "SMC (Smart Money Concepts)",
-  "SMC strategy — Stage 1 pure engine wired (deterministic structure detection). Signal / backtest layers arrive in Phase 21.4 Stages 2–3.",
-);
+const SMC_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [
+  smcHistoricalAdapter,
+];
+
+const smcBaseAdapter: HistoricalStrategyAdapter = {
+  strategyId: "SMC",
+  label: "SMC (Smart Money Concepts)",
+  availability: "AVAILABLE",
+  supportedFormulaVersions: SMC_FORMULA_ADAPTERS.map((a) => a.id),
+  supportedInstruments: Array.from(
+    new Set(SMC_FORMULA_ADAPTERS.flatMap((a) => a.supportedInstruments)),
+  ),
+  supportedTimeframes: Array.from(
+    new Set(SMC_FORMULA_ADAPTERS.map((a) => a.dataGranularity)),
+  ) as DataGranularity[],
+  defaultFormulaVersion: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+  resolveFormulaAdapter(formula) {
+    return SMC_FORMULA_ADAPTERS.find((a) => a.id === formula) ?? null;
+  },
+  methodology:
+    "SMC strategy — deterministic BUY/SELL derivation via Stage-1 Structure + Stage-2 Signal engines and Stage-3 historical execution. Isolated from Astro / broker / live paths.",
+};
 
 /**
  * SMC strategy adapter — availability stays COMING_NEXT until Stage 2 wires
