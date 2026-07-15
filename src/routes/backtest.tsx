@@ -106,12 +106,10 @@ function BacktestPage() {
 
   const runNow = async () => {
     // Phase 21.3d-parity-β2a · Sign-Degree AND Legacy dispatch through the
-    // shared runBacktest path. Absolute remains on its dedicated surface
-    // until β2b activates it inside /backtest.
+    // shared runBacktest path. Absolute is handled by the embedded
+    // AbsoluteValidationPanel below (activated in β2b), which calls
+    // runHistoricalValidation directly — no runBacktest dispatch here.
     if (formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1") {
-      setError(
-        "Absolute-Degree Intraday runs on the dedicated validation surface. Open /absolute-intraday-validation to execute this formula.",
-      );
       return;
     }
     setLoading(true); setError(null);
