@@ -1,41 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-
-import {
-  runHistoricalValidation,
-  type HistoryResult,
-} from "@/lib/gann-intraday-history.functions";
-import {
-  historyExportFilename,
-  historyToJson,
-  historyToSummaryCsv,
-} from "@/lib/gann-intraday-validation-export";
-import { downloadBlob } from "@/lib/download";
-import type { InstrumentSymbol } from "@/lib/gann-intraday-anchor";
-import type { AmbiguousPolicy } from "@/lib/gann-intraday-simulator";
-import { evaluateReadiness } from "@/lib/readiness-gate";
-import {
-  GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
-  INTRADAY_FORMULA_VERSIONS,
-} from "@/lib/engine-version";
-import {
-  parseCandleCsv,
-  type ParseResult,
-  type ProviderLabel,
-} from "@/lib/candle-csv-parser";
-import { computeDataQuality } from "@/lib/candle-data-quality";
-import { buildSessions, type BuildResult } from "@/lib/candle-session-builder";
-import { compareProviders, type ProviderComparisonResult } from "@/lib/provider-comparison";
-import {
-  cleanedCandlesToCsv,
-  rejectedRowsToCsv,
-  sessionSummaryToCsv,
-  providerComparisonToCsv,
-  dqReportToJson,
-  ingestExportFilename,
-  type ProvenanceHeader,
-} from "@/lib/historical-ingest-export";
+import { AbsoluteValidationPanel } from "@/components/backtest/AbsoluteValidationPanel";
 
 export const Route = createFileRoute("/absolute-intraday-validation")({
   component: ValidationPage,
