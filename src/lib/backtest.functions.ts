@@ -20,7 +20,6 @@ import {
   DEFAULT_ASTRO_FORMULA_VERSION,
   ASTRO_FORMULA_VERSIONS,
   astroCacheKey,
-  astroFormulaSlug,
   type AstroFormulaVersion,
 } from "./engine-version";
 import { warnLegacyHashQuirkIfApplicable } from "./backtest/legacy-diagnostics";
