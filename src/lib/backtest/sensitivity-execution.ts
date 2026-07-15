@@ -72,7 +72,7 @@ export class SensitivityExecutionError extends Error {
       | "PROVIDER_UNAVAILABLE",
     message: string,
   ) {
-    super(message);
+    super(`${code}: ${message}`);
     this.name = "SensitivityExecutionError";
   }
 }
