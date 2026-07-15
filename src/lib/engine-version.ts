@@ -38,6 +38,7 @@ export const INTRADAY_FORMULA_VERSIONS = {
   GANN_ASTRO_INTRADAY_ABSOLUTE_V1: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1",
   GANN_SIGN_DEGREE_TABLE_V1_1: "GANN_SIGN_DEGREE_TABLE_V1_1",
   LEGACY_EAGLEBABA_CASCADE_V1: "LEGACY_EAGLEBABA_CASCADE_V1",
+  SMC_V1: "SMC_V1",
 } as const;
 
 /** Phase 21.2 Stage 4 — replay validation channel for the absolute-degree
@@ -71,6 +72,8 @@ export function intradayFormulaLabel(v: IntradayFormulaVersion): string {
       return "Absolute Degree Intraday v1";
     case INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1:
       return "Sign Degree Table v1.1";
+    case INTRADAY_FORMULA_VERSIONS.SMC_V1:
+      return "SMC Historical v1";
     default:
       return "Legacy Cascade v1";
   }
