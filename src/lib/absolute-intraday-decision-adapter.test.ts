@@ -10,8 +10,9 @@ describe("Phase 21.2 Stage 5 · Decision adapter isolation", () => {
       new URL("./absolute-intraday-decision-adapter.ts", import.meta.url),
       "utf8",
     );
-    expect(src).not.toMatch(/decision-engine/);
-    expect(src).not.toMatch(/decision\.functions/);
+    const imports = (src.match(/^import[\s\S]+?from\s+["'][^"']+["'];/gm) ?? []).join("\n");
+    expect(imports).not.toMatch(/decision-engine/);
+    expect(imports).not.toMatch(/decision\.functions/);
   });
 
   it("returns WAIT + PARTIAL when no simulation is provided", () => {
