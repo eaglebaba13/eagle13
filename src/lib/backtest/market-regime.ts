@@ -216,10 +216,15 @@ export function classifyRegime(
     return { regime: "UNKNOWN", features, reasons: ["INSUFFICIENT_SAMPLE"] };
   }
 
-  const strongTrend = features.adxLike >= 25;
-  const upBias = features.emaSlopePct > 0.2 && features.hh + features.hl > features.lh + features.ll;
-  const downBias = features.emaSlopePct < -0.2 && features.lh + features.ll > features.hh + features.hl;
+  const swingUp = features.hh + features.hl >= features.lh + features.ll;
+  const swingDown = features.lh + features.ll >= features.hh + features.hl;
+  const strongTrend = features.adxLike >= 25 || Math.abs(features.emaSlopePct) >= 1;
+  const upBias = features.emaSlopePct > 0.2 && swingUp;
+  const downBias = features.emaSlopePct < -0.2 && swingDown;
 
+  // Trend classification takes priority over volatility percentile,
+  // otherwise a monotonic series (all TRs equal → 100th percentile)
+  // would masquerade as HIGH_VOLATILITY.
   if (strongTrend && upBias) {
     reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
     return { regime: "TRENDING_UP", features, reasons };
@@ -228,6 +233,14 @@ export function classifyRegime(
     reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
     return { regime: "TRENDING_DOWN", features, reasons };
   }
+
+  // Absolute-quiet check before percentile fires, otherwise a flat-line
+  // series with tiny ATR would be flagged HIGH_VOLATILITY.
+  if (features.atrPct <= 0.1) {
+    reasons.push(`ATR_PCT=${features.atrPct}`);
+    return { regime: "LOW_VOLATILITY", features, reasons };
+  }
+
   if (features.rangeExpansion >= 1.6 && features.volatilityPercentile >= 70) {
     reasons.push(`RANGE_EXPANSION=${features.rangeExpansion}`);
     reasons.push(`VOL_PCT=${features.volatilityPercentile}`);
@@ -236,14 +249,6 @@ export function classifyRegime(
   if (features.volatilityPercentile >= 85) {
     reasons.push(`VOL_PCT=${features.volatilityPercentile}`);
     return { regime: "HIGH_VOLATILITY", features, reasons };
-  }
-  if (upBias && features.adxLike >= 15) {
-    reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
-    return { regime: "TRENDING_UP", features, reasons };
-  }
-  if (downBias && features.adxLike >= 15) {
-    reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
-    return { regime: "TRENDING_DOWN", features, reasons };
   }
   if (features.volatilityPercentile <= 20 && features.adxLike < 20) {
     reasons.push(`VOL_PCT=${features.volatilityPercentile}`, `ADX=${features.adxLike}`);
