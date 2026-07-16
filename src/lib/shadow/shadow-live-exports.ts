@@ -103,5 +103,5 @@ export type ScheduledShadowBundle = {
 };
 
 export function buildScheduledShadowBundleJson(bundle: ScheduledShadowBundle): string {
-  return JSON.stringify({ disclaimer: SHADOW_DISCLAIMER, ...bundle }, null, 2);
+  return JSON.stringify({ ...bundle, disclaimer: SHADOW_DISCLAIMER }, null, 2);
 }
