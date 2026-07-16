@@ -36,8 +36,13 @@ export function computeCorrelations(assets: readonly PortfolioAsset[]): Correlat
   // aligned dates = intersection of all keys
   let common: Set<string> | null = null;
   for (const s of series) {
-    const keys = new Set(s.keys());
-    common = common == null ? keys : new Set([...common].filter((k) => keys.has(k)));
+    const keys = new Set<string>(s.keys());
+    if (common == null) common = keys;
+    else {
+      const next = new Set<string>();
+      for (const k of common) if (keys.has(k)) next.add(k);
+      common = next;
+    }
   }
   const dates = [...(common ?? new Set<string>())].sort();
 
