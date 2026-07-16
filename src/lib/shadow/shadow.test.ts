@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { reduce, evaluateEntryGates } from "./shadow-orchestrator";
+import type { OrchestratorInput } from "./shadow-orchestrator";
 import { trackOutcome } from "./shadow-outcome";
 import { computeShadowMetrics, calibrationCurve } from "./shadow-metrics";
 import { classifyShadowDrift } from "./shadow-drift";
@@ -24,7 +25,6 @@ import {
   defaultPolicy,
   emptyOutcome,
   SHADOW_DISCLAIMER,
-  type OrchestratorInput,
   type ShadowClosedCandle,
   type ShadowDataSnapshot,
   type ShadowHypotheticalPosition,
@@ -32,7 +32,6 @@ import {
   type ShadowPortfolioDecision,
   type ShadowRecommendation,
 } from "./shadow-types";
-import type { OrchestratorInput as _OI } from "./shadow-orchestrator";
 
 function candle(date: string, o: number, h: number, l: number, c: number): ShadowClosedCandle {
   return { date, open: o, high: h, low: l, close: c, closed: true };
