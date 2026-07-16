@@ -61,6 +61,23 @@ import {
   type StrategyResearchRow,
 } from "@/lib/backtest/research-comparison";
 import {
+  createBatchOrchestrator,
+  summarizeBatch,
+  buildExecutionPlan,
+  type BatchController,
+  type BatchOrchestratorInput,
+  type BatchOrchestratorState,
+} from "@/lib/backtest/cross-asset-orchestrator";
+import {
+  buildBatchResultsCsv,
+  buildBatchFailuresCsv,
+  buildBatchCoverageCsv,
+  buildBatchSummaryJson,
+  buildBatchResultsJson,
+} from "@/lib/backtest/batch-exports";
+import { runUnifiedBacktest } from "@/lib/backtest/unified";
+import type { DataGranularity } from "@/lib/backtest/result";
+import {
   buildComparisonMatrixCsv,
   buildResearchJson,
 } from "@/lib/backtest/research-exports";
