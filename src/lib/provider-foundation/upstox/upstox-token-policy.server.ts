@@ -3,6 +3,8 @@
 
 export type UpstoxTokenSource = "LIVE" | "SANDBOX" | "NONE";
 export type UpstoxTokenExpiryStatus = "UNKNOWN" | "OK" | "EXPIRED";
+export type UpstoxTokenFormat = "JWT" | "OPAQUE" | "NONE";
+export type UpstoxTokenTypeGuess = "STANDARD" | "ANALYTICS" | "UNKNOWN";
 
 export interface UpstoxTokenStatus {
   readonly tokenPresent: boolean;
@@ -13,6 +15,17 @@ export interface UpstoxTokenStatus {
   readonly mode: "live" | "disabled";
   readonly apiKeyConfigured: boolean;
   readonly apiSecretConfigured: boolean;
+  /** Structural classification of the token value. Never contains the token itself. */
+  readonly tokenFormat?: UpstoxTokenFormat;
+  /**
+   * Heuristic guess of which Upstox token type is configured. Upstox standard
+   * OAuth access tokens are JWTs (three base64url segments). Analytics tokens
+   * from the Upstox Analytics dashboard are opaque long strings. `UNKNOWN`
+   * when the token is absent or unusable.
+   */
+  readonly tokenTypeGuess?: UpstoxTokenTypeGuess;
+  /** Redacted preview (length only) — never the token value. */
+  readonly tokenLength?: number;
 }
 
 const PLACEHOLDER_PATTERNS = [
@@ -29,6 +42,25 @@ function isPlaceholder(v: string | undefined | null): boolean {
   const trimmed = String(v).trim();
   if (!trimmed) return true;
   return PLACEHOLDER_PATTERNS.some((rx) => rx.test(trimmed));
+}
+
+/**
+ * Classify token structure without ever returning its value.
+ *  - JWT: three base64url-ish segments separated by `.`; standard OAuth token.
+ *  - OPAQUE: any other non-empty string; likely an Analytics token.
+ *  - NONE: missing or placeholder.
+ */
+export function classifyUpstoxTokenFormat(raw: string | undefined | null): {
+  readonly format: UpstoxTokenFormat;
+  readonly guess: UpstoxTokenTypeGuess;
+  readonly length: number;
+} {
+  if (isPlaceholder(raw)) return { format: "NONE", guess: "UNKNOWN", length: 0 };
+  const v = String(raw).trim();
+  const segs = v.split(".");
+  const isJwt = segs.length === 3 && segs.every((s) => /^[A-Za-z0-9_-]+$/.test(s)) && v.startsWith("eyJ");
+  if (isJwt) return { format: "JWT", guess: "STANDARD", length: v.length };
+  return { format: "OPAQUE", guess: "ANALYTICS", length: v.length };
 }
 
 export interface TokenPolicyEnv {
@@ -51,6 +83,7 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
   const apiKeyOk = !isPlaceholder(env.UPSTOX_API_KEY);
   const apiSecretOk = !isPlaceholder(env.UPSTOX_API_SECRET);
   const liveOk = !isPlaceholder(env.UPSTOX_ACCESS_TOKEN);
+  const classified = classifyUpstoxTokenFormat(env.UPSTOX_ACCESS_TOKEN);
 
   if (mode !== "live") {
     return {
@@ -62,6 +95,9 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
       mode: "disabled",
       apiKeyConfigured: apiKeyOk,
       apiSecretConfigured: apiSecretOk,
+      tokenFormat: classified.format,
+      tokenTypeGuess: liveOk ? classified.guess : "UNKNOWN",
+      tokenLength: classified.length,
     };
   }
   if (!liveOk) {
@@ -75,6 +111,9 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
       mode: "live",
       apiKeyConfigured: apiKeyOk,
       apiSecretConfigured: apiSecretOk,
+      tokenFormat: "NONE",
+      tokenTypeGuess: "UNKNOWN",
+      tokenLength: 0,
     };
   }
   return {
@@ -89,6 +128,9 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
     mode: "live",
     apiKeyConfigured: apiKeyOk,
     apiSecretConfigured: apiSecretOk,
+    tokenFormat: classified.format,
+    tokenTypeGuess: classified.guess,
+    tokenLength: classified.length,
   };
 }
 
