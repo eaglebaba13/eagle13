@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
-import { computeLevels, cprBias, type Levels } from "@/lib/levels";
+import { computeLevels } from "@/lib/levels";
 import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -14,7 +13,15 @@ import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
 import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
-import { GoldSilverRatioCard } from "@/components/dashboard/GoldSilverRatioCard";
+import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
+import {
+  DashboardDataProvider,
+  type DashboardTabKey,
+} from "@/components/dashboard/DashboardDataContext";
+import {
+  LEGACY_DASHBOARD_WIDGETS,
+  legacyWidgetsById,
+} from "@/lib/dashboard-widgets";
 
 const marketQuery = () =>
   queryOptions({
