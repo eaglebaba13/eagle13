@@ -555,7 +555,11 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   const safeQuote = async (entry: { symbol: string; instrumentKey?: string }): Promise<EndpointResult> => {
     try {
       const q = await fetchQuote(http, entry.instrumentKey!);
-      return toEndpointResult("quote", entry.symbol, q);
+      return toEndpointResult("quote", entry.symbol, q, {
+        instrumentKey: entry.instrumentKey ?? null ?? undefined,
+        requestTimestamp: new Date().toISOString(),
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
+      });
     } catch (e) {
       return {
         endpoint: "quote", symbol: entry.symbol, ok: false, latencyMs: 0,
@@ -563,14 +567,22 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
         errorSource: "SERVER_FUNCTION", dataQuality: null,
+        httpStatus: null,
+        upstoxErrorCode: null,
+        endpointPath: "v2/market-quote/quotes",
+        requestTimestamp: new Date().toISOString(),
+        instrumentKey: entry.instrumentKey ?? null,
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
       };
     }
   };
   const safeHistorical = async (entry: { symbol: string }): Promise<EndpointResult> => {
     try {
+      const startedAt = new Date().toISOString();
       const hist = await histAdapter.fetchRange({
         symbol: entry.symbol, timeframe: histTf, from: fromIso, to: toIso, nowIso, nowMs,
       });
+      const diag = !hist.ok ? hist.providerDiagnostics : undefined;
       return {
         endpoint: "historical", symbol: entry.symbol, ok: hist.ok,
         latencyMs: hist.telemetry.latencyMs, requestId: null,
@@ -581,6 +593,12 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         cacheHit: false,
         safeError: hist.ok ? null : redactUpstoxMessage(`${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`),
         errorSource: hist.ok ? null : errorSourceFromAdapterReason(hist.reason),
+        httpStatus: diag?.httpStatus ?? (hist.ok ? 200 : null),
+        upstoxErrorCode: diag?.upstoxErrorCode ?? null,
+        endpointPath: diag?.endpointPath ?? null,
+        requestTimestamp: diag?.requestTimestamp ?? startedAt,
+        instrumentKey: diag?.instrumentKey ?? null,
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
         dataQuality: hist.ok ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 } : null,
       };
     } catch (e) {
@@ -590,14 +608,22 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
         errorSource: "SERVER_FUNCTION", dataQuality: null,
+        httpStatus: null,
+        upstoxErrorCode: null,
+        endpointPath: null,
+        requestTimestamp: new Date().toISOString(),
+        instrumentKey: null,
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
       };
     }
   };
   const safeIntraday = async (entry: { symbol: string }): Promise<EndpointResult> => {
     try {
+      const startedAt = new Date().toISOString();
       const intra = await intraAdapter.fetch(entry.symbol, intraTf, nowIso);
       // Market-closed / no current candle → PARTIAL, not FAIL.
       const marketClosed = intra.ok && intra.data.candles.length === 0;
+      const diag = !intra.ok ? intra.providerDiagnostics : undefined;
       return {
         endpoint: "intraday", symbol: entry.symbol,
         ok: intra.ok && !marketClosed,
@@ -611,6 +637,12 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
           ? redactUpstoxMessage(`${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`)
           : marketClosed ? "market closed or no current intraday candle" : null,
         errorSource: !intra.ok ? errorSourceFromAdapterReason(intra.reason) : null,
+        httpStatus: diag?.httpStatus ?? (intra.ok ? 200 : null),
+        upstoxErrorCode: diag?.upstoxErrorCode ?? null,
+        endpointPath: diag?.endpointPath ?? null,
+        requestTimestamp: diag?.requestTimestamp ?? startedAt,
+        instrumentKey: diag?.instrumentKey ?? null,
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
         dataQuality: intra.ok ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 } : null,
       };
     } catch (e) {
@@ -620,6 +652,12 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
         errorSource: "SERVER_FUNCTION", dataQuality: null,
+        httpStatus: null,
+        upstoxErrorCode: null,
+        endpointPath: null,
+        requestTimestamp: new Date().toISOString(),
+        instrumentKey: null,
+        tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
       };
     }
   };
