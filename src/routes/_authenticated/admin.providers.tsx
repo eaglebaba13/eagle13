@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getProviderDiagnostics } from "@/lib/provider-foundation/provider-diagnostics.functions";
+import { getCombinedPcrDiagnostics } from "@/lib/combined-pcr/combined-pcr.functions";
 import {
   buildSmokeDiagnosticRows,
   classifySmokeError,
@@ -24,6 +25,7 @@ import {
 
 type UpstoxSmokeReport = Awaited<ReturnType<typeof testUpstoxProvider>>;
 type ProviderDiagnosticsReport = Awaited<ReturnType<typeof getProviderDiagnostics>>;
+type CombinedPcrDiagnosticsResult = Awaited<ReturnType<typeof getCombinedPcrDiagnostics>>;
 
 export const Route = createFileRoute("/_authenticated/admin/providers")({
   head: () => ({
@@ -129,6 +131,7 @@ function AdminProvidersPage() {
 
         <ProviderDiagnosticsTables diag={diag} />
         <UpstoxReadOnlySection report={report} />
+        <CombinedPcrDiagnosticsSection />
       </div>
     </DiagnosticsErrorBoundary>
   );
