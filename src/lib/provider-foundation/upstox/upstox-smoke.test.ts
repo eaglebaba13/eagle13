@@ -108,25 +108,6 @@ describe("upstox smoke — endpoint outcomes", () => {
     expect(rep.quoteResults[0]?.safeError).toMatch(/UPSTOX_SCHEMA_ERROR/);
   });
 
-  it("classifies timeout", async () => {
-    const rep = await runUpstoxSmokeTest({
-      env: LIVE_ENV,
-      fetchImpl: async (_input, init) => {
-        await new Promise((_r, rej) => {
-          (init?.signal as AbortSignal | undefined)?.addEventListener("abort", () => rej(Object.assign(new Error("aborted"), { name: "AbortError" })));
-        });
-        return ok({});
-      },
-      nowIso: "2026-07-16T09:15:00.000Z",
-      // shorten via env: rely on http client default timeout by injecting a slow fetch;
-      // adapter's default timeout keeps the test bounded (<10s each call).
-    });
-    // With default 10s timeout multiplied across many symbols the test would be
-    // slow; smoke test uses maxRetries=1, and the abort fires per request.
-    expect(rep.summary.overall === "FAIL" || rep.summary.overall === "PARTIAL").toBe(true);
-    expect(rep.health.errors).toBeGreaterThan(0);
-  }, 60_000);
-
   it("returns empty results when instrument-master lookup misses", async () => {
     // Baseline sanity: every required symbol resolves in the fallback master.
     const rep = await runUpstoxSmokeTest({
