@@ -750,6 +750,18 @@ export function buildApplicationAuthFailureReport(
   const safeReason = redactUpstoxMessage(reason).slice(0, 200);
   return {
     at: nowIso,
+    generatedAt: nowIso,
+    requestStartedAt: nowIso,
+    requestCompletedAt: nowIso,
+    durationMs: 0,
+    status: "FAIL",
+    errorSource: "APPLICATION_AUTH",
+    safeError: safeReason,
+    httpStatus: null,
+    endpointFailed: null,
+    serializationStatus: "OK",
+    checklist: emptyChecklist("FAIL"),
+    symbolResults: [],
     configured: false,
     authenticated: false,
     tokenStatus: {
