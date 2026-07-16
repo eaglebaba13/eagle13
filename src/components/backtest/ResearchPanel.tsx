@@ -12,6 +12,7 @@ const RecommendationValidationSection = lazy(
   () => import("./RecommendationValidationSection"),
 );
 const OptimizerSection = lazy(() => import("./OptimizerSection"));
+const PortfolioSection = lazy(() => import("./PortfolioSection"));
 
 import {
   runBacktest,
@@ -1150,6 +1151,11 @@ export function MonteCarloSection({
           />
         </Suspense>
       ) : null}
+      {tab === "portfolio" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading portfolio…</div>}>
+          <PortfolioSection />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -1176,7 +1182,8 @@ type ResearchTab =
   | "batch"
   | "regime"
   | "recval"
-  | "opt";
+  | "opt"
+  | "portfolio";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
@@ -1187,6 +1194,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "regime", label: "Regime Intelligence" },
   { id: "recval", label: "Recommendation Validation" },
   { id: "opt", label: "Optimizer" },
+  { id: "portfolio", label: "Portfolio" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
