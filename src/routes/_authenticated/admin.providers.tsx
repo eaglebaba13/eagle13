@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { testUpstoxProvider } from "@/lib/provider-foundation/upstox/upstox-smoke.functions";
 import {
   ALL_QUOTE_SYMBOLS,
   DEFAULT_REFRESH_INTERVAL_MS,
@@ -14,6 +16,8 @@ import {
   UPSTOX_INSTRUMENT_MASTER_VERSION,
   UPSTOX_SUPPORTED_SYMBOLS,
 } from "@/lib/provider-foundation/upstox";
+
+type UpstoxSmokeReport = Awaited<ReturnType<typeof testUpstoxProvider>>;
 
 export const Route = createFileRoute("/_authenticated/admin/providers")({
   head: () => ({
