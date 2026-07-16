@@ -338,7 +338,7 @@ export default function ResearchPanel() {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [sortKey, setSortKey] = useState<"stability" | "vpf" | "vexp" | "dd" | "trades">("stability");
-  const [tab, setTab] = useState<"wf" | "mc" | "sens" | "rob">("wf");
+  const [tab, setTab] = useState<ResearchTab>("wf");
 
   const toggle = (key: string) => {
     setCfg((s) => ({
