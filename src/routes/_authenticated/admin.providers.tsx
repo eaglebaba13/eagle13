@@ -272,7 +272,11 @@ function UpstoxLiveSmokeTestPanel() {
       </div>
 
       {state.kind === "error" && (
-        <StatusCard status="FAIL" title="Live Provider Test" note={state.message === "forbidden" ? "Admin role required." : state.message} />
+        <StatusCard
+          status="FAIL"
+          title="Live Provider Test"
+          note={`[${classifySmokeError(state.message)}] ${state.message === "forbidden" ? "Admin role required." : state.message}`}
+        />
       )}
 
       {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
