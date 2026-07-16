@@ -46,6 +46,22 @@ import {
   buildResearchBundleJson,
 } from "@/lib/portfolio/bundle-exports";
 import { buildMonthlyHeatmap } from "@/lib/portfolio/rolling-metrics";
+import { computeEfficientFrontier, type FrontierResult } from "@/lib/portfolio/efficient-frontier";
+import { computeRiskBudget, type RiskBudgetResult } from "@/lib/portfolio/risk-budget";
+import {
+  computePortfolioRecommendation,
+  type PortfolioRecommendationResult,
+} from "@/lib/portfolio/portfolio-recommendation";
+import { compareScenarios } from "@/lib/portfolio/scenario-comparison";
+import {
+  buildAllocationTreemapCsv,
+  buildFrontierCsv,
+  buildInstitutionalBundleJson,
+  buildRecommendationCsv,
+  buildRecommendationJson,
+  buildRiskBudgetCsv,
+  buildScenarioComparisonCsv,
+} from "@/lib/portfolio/stage3-exports";
 
 const C = {
   border: "hsl(var(--border))",
@@ -112,7 +128,10 @@ export default function PortfolioSection({
   }, [candidates, registryAssets]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [subtab, setSubtab] = useState<"builder" | "alloc" | "corr" | "stress" | "history" | "compare" | "exports">("builder");
+  const [subtab, setSubtab] = useState<
+    | "builder" | "alloc" | "equity" | "corr" | "frontier" | "risk-budget"
+    | "stress" | "recommendation" | "history" | "compare" | "exports"
+  >("builder");
 
   const [method, setMethod] = useState<AllocationMethod>("EQUAL_WEIGHT");
   const [sizing, setSizing] = useState<PositionSizingMethod>("FIXED_RISK_PCT");
@@ -204,8 +223,12 @@ export default function PortfolioSection({
   const subtabs: { id: typeof subtab; label: string }[] = [
     { id: "builder", label: "Builder" },
     { id: "alloc", label: "Allocation" },
+    { id: "equity", label: "Equity" },
     { id: "corr", label: "Correlation" },
+    { id: "frontier", label: "Frontier" },
+    { id: "risk-budget", label: "Risk Budget" },
     { id: "stress", label: "Stress" },
+    { id: "recommendation", label: "Recommendation" },
     { id: "history", label: "History" },
     { id: "compare", label: "Comparison" },
     { id: "exports", label: "Exports" },
@@ -219,6 +242,27 @@ export default function PortfolioSection({
   const cmpA = historyEntries.find((e) => e.id === compareA)?.result ?? null;
   const cmpB = historyEntries.find((e) => e.id === compareB)?.result ?? null;
   const comparison = cmpA && cmpB ? compareResults(cmpA, cmpB) : null;
+
+  const frontier: FrontierResult | null = useMemo(
+    () => (chosen.length >= 2 ? computeEfficientFrontier({ candidates: chosen, startingCapital: capital, weightStep: 0.25 }) : null),
+    [chosen, capital],
+  );
+  const riskBudget: RiskBudgetResult | null = useMemo(
+    () => (result ? computeRiskBudget({ assets: chosen, contributions: result.riskContributions }) : null),
+    [result, chosen],
+  );
+  const recommendation: PortfolioRecommendationResult | null = useMemo(
+    () => (result ? computePortfolioRecommendation({ scenarios: [{ id: "current", label: `${method} · ${sizing}`, result, assets: chosen }] }) : null),
+    [result, chosen, method, sizing],
+  );
+  const scenarioComparison = useMemo(() => {
+    if (historyEntries.length < 2) return null;
+    return compareScenarios({
+      scenarios: historyEntries.slice(-5).map((e) => ({
+        id: e.id, label: `${e.result.config.method} · ${e.result.config.sizingPolicy.method}`, result: e.result,
+      })),
+    });
+  }, [historyEntries]);
 
   return (
     <div>
@@ -480,6 +524,23 @@ export default function PortfolioSection({
               {comparison ? (
                 <button style={btn} onClick={() => download(`portfolio-comparison-${result.runId}.csv`, buildComparisonCsv(comparison), "text/csv")}>Comparison CSV</button>
               ) : null}
+              {frontier ? (
+                <button style={btn} onClick={() => download(`portfolio-frontier-${result.runId}.csv`, buildFrontierCsv(frontier), "text/csv")}>Frontier CSV</button>
+              ) : null}
+              {riskBudget ? (
+                <button style={btn} onClick={() => download(`portfolio-risk-budget-${result.runId}.csv`, buildRiskBudgetCsv(riskBudget), "text/csv")}>Risk Budget CSV</button>
+              ) : null}
+              {recommendation ? (
+                <>
+                  <button style={btn} onClick={() => download(`portfolio-recommendation-${result.runId}.csv`, buildRecommendationCsv(recommendation), "text/csv")}>Recommendation CSV</button>
+                  <button style={btn} onClick={() => download(`portfolio-recommendation-${result.runId}.json`, buildRecommendationJson(recommendation), "application/json")}>Recommendation JSON</button>
+                </>
+              ) : null}
+              {scenarioComparison ? (
+                <button style={btn} onClick={() => download(`portfolio-scenarios-${result.runId}.csv`, buildScenarioComparisonCsv(scenarioComparison), "text/csv")}>Scenarios CSV</button>
+              ) : null}
+              <button style={btn} onClick={() => download(`portfolio-treemap-${result.runId}.csv`, buildAllocationTreemapCsv(result, chosen), "text/csv")}>Treemap CSV</button>
+              <button style={btn} onClick={() => download(`portfolio-institutional-bundle-${result.runId}.json`, buildInstitutionalBundleJson({ portfolio: result, frontier, riskBudget, recommendation, comparison: scenarioComparison }), "application/json")}>Institutional Bundle JSON</button>
               <button style={btn} onClick={() => download(`portfolio-bundle-${result.runId}.json`, buildResearchBundleJson({ portfolio: result, candidates: candidateRows, monteCarlo: mcResult ?? null, history: historyEntries, comparison }), "application/json")}>Full Bundle JSON</button>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
@@ -488,7 +549,23 @@ export default function PortfolioSection({
           </div>
       ) : null}
 
-      {(subtab === "alloc" || subtab === "corr" || subtab === "stress" || subtab === "exports") && !result ? (
+      {subtab === "equity" && result ? (
+        <EquityPanel result={result} section={section} label={label} />
+      ) : null}
+
+      {subtab === "frontier" ? (
+        <FrontierPanel frontier={frontier} section={section} label={label} />
+      ) : null}
+
+      {subtab === "risk-budget" && riskBudget ? (
+        <RiskBudgetPanel rb={riskBudget} section={section} />
+      ) : null}
+
+      {subtab === "recommendation" && recommendation ? (
+        <RecommendationPanel rec={recommendation} section={section} />
+      ) : null}
+
+      {(subtab === "alloc" || subtab === "corr" || subtab === "stress" || subtab === "exports" || subtab === "equity" || subtab === "recommendation" || subtab === "risk-budget") && !result ? (
         <div style={{ ...section, textAlign: "center", color: C.muted, fontSize: 12 }}>
           Run a portfolio from the Builder tab to see this view.
         </div>
@@ -690,5 +767,164 @@ function MonthlyHeatmap({ result, section, label }: { result: PortfolioResearchR
         })}
       </div>
     </div>
+  );
+}
+
+function EquityPanel({ result, section, label }: { result: PortfolioResearchResult; section: React.CSSProperties; label: React.CSSProperties }) {
+  const pts = result.equityCurve;
+  if (pts.length === 0) return <div style={section}>No equity points to render.</div>;
+  const eqMin = Math.min(...pts.map((p) => p.equity));
+  const eqMax = Math.max(...pts.map((p) => p.equity));
+  const ddMax = Math.max(1, ...pts.map((p) => p.drawdown));
+  const W = 640, H = 160;
+  const px = (i: number) => (i / Math.max(1, pts.length - 1)) * W;
+  const eqY = (v: number) => H - ((v - eqMin) / Math.max(1, eqMax - eqMin)) * H;
+  const ddY = (v: number) => (v / ddMax) * H;
+  const eqPath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${eqY(p.equity).toFixed(1)}`).join(" ");
+  const ddPath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${ddY(p.drawdown).toFixed(1)}`).join(" ");
+  return (
+    <>
+      <div style={section}>
+        <div style={{ ...label, marginBottom: 8 }}>Equity Curve</div>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="portfolio equity curve">
+          <path d={eqPath} fill="none" stroke="hsl(var(--primary))" strokeWidth={1.5} />
+        </svg>
+      </div>
+      <div style={section}>
+        <div style={{ ...label, marginBottom: 8 }}>Drawdown</div>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="portfolio drawdown">
+          <path d={ddPath} fill="none" stroke="#e11" strokeWidth={1.5} />
+        </svg>
+      </div>
+    </>
+  );
+}
+
+function FrontierPanel({ frontier, section, label }: { frontier: FrontierResult | null; section: React.CSSProperties; label: React.CSSProperties }) {
+  if (!frontier || frontier.feasible.length === 0) {
+    return <div style={section}>Select at least two candidates to compute an efficient frontier.</div>;
+  }
+  const W = 640, H = 240;
+  const vols = frontier.feasible.map((p) => p.volatility);
+  const rets = frontier.feasible.map((p) => p.expectedReturn);
+  const xMax = Math.max(...vols, 1e-6);
+  const yMin = Math.min(...rets, 0);
+  const yMax = Math.max(...rets, 1e-6);
+  const x = (v: number) => (v / xMax) * (W - 20) + 10;
+  const y = (r: number) => H - ((r - yMin) / Math.max(1e-9, yMax - yMin)) * (H - 20) - 10;
+  const dot = (p: { volatility: number; expectedReturn: number }, color: string, r = 3) =>
+    <circle cx={x(p.volatility)} cy={y(p.expectedReturn)} r={r} fill={color} />;
+  return (
+    <div style={section}>
+      <div style={{ ...label, marginBottom: 8 }}>
+        Efficient Frontier · {frontier.method} · feasible={frontier.feasible.length} · rejected={frontier.rejected}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="efficient frontier scatter">
+        {frontier.feasible.map((p, i) => dot(p, p.efficient ? "hsl(var(--primary))" : "rgba(120,120,120,0.4)", p.efficient ? 3 : 2))}
+        {frontier.minVariance ? dot(frontier.minVariance, "#3c8cf0", 5) : null}
+        {frontier.maxSharpe ? dot(frontier.maxSharpe, "#e11", 5) : null}
+        {frontier.maxDiversification ? dot(frontier.maxDiversification, "#0a0", 5) : null}
+      </svg>
+      <div style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", marginTop: 4 }}>
+        Blue=Min Variance · Red=Max Sharpe · Green=Max Diversification · X=Volatility(ann) · Y=Return(ann).
+        Grid-search approximation, not a convex solver.
+      </div>
+      <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)", marginTop: 8 }}>
+        <thead>
+          <tr style={{ color: "hsl(var(--muted-foreground))", textAlign: "left" }}>
+            <th>Point</th><th>Return</th><th>Vol</th><th>Sharpe</th><th>Div</th>
+          </tr>
+        </thead>
+        <tbody>
+          {([
+            ["Min Var", frontier.minVariance],
+            ["Max Sharpe", frontier.maxSharpe],
+            ["Max Div", frontier.maxDiversification],
+          ] as const).map(([lbl, p]) => p ? (
+            <tr key={lbl}>
+              <td>{lbl}</td>
+              <td>{(p.expectedReturn * 100).toFixed(2)}%</td>
+              <td>{(p.volatility * 100).toFixed(2)}%</td>
+              <td>{p.sharpe.toFixed(2)}</td>
+              <td>{p.diversificationRatio.toFixed(2)}</td>
+            </tr>
+          ) : null)}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RiskBudgetPanel({ rb, section }: { rb: RiskBudgetResult; section: React.CSSProperties }) {
+  return (
+    <div style={section}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+        Risk Budget · scope={rb.scope} · compliance={(rb.compliance * 100).toFixed(0)}% · worst gap={(rb.worstBreach * 100).toFixed(1)}%
+      </div>
+      <table style={{ width: "100%", fontSize: 12, fontFamily: "var(--eb-mono, monospace)" }}>
+        <thead>
+          <tr style={{ color: "hsl(var(--muted-foreground))", textAlign: "left" }}>
+            <th>Key</th><th>Target</th><th>Actual</th><th>Gap</th><th>Status</th><th>Suggestion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rb.rows.map((r) => (
+            <tr key={r.key}>
+              <td>{r.key}</td>
+              <td>{(r.target * 100).toFixed(1)}%</td>
+              <td>{(r.actual * 100).toFixed(1)}%</td>
+              <td style={{ color: r.breach === "OK" ? "hsl(var(--muted-foreground))" : r.breach === "OVER" ? "#e11" : "#f80" }}>
+                {(r.gap * 100).toFixed(1)}%
+              </td>
+              <td>{r.breach}</td>
+              <td style={{ color: "hsl(var(--muted-foreground))" }}>{r.suggestion}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RecommendationPanel({ rec, section }: { rec: PortfolioRecommendationResult; section: React.CSSProperties }) {
+  return (
+    <>
+      <div style={section}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Portfolio Recommendation</div>
+        <div style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>{rec.disclaimer}</div>
+        <div style={{ marginTop: 8, fontSize: 12 }}>Recommendation Run ID: <code>{rec.runId}</code></div>
+      </div>
+      <div style={section}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Ranked Scenarios</div>
+        <table style={{ width: "100%", fontSize: 12, fontFamily: "var(--eb-mono, monospace)" }}>
+          <thead>
+            <tr style={{ color: "hsl(var(--muted-foreground))", textAlign: "left" }}>
+              <th>Scenario</th><th>Score</th><th>Confidence</th><th>Recommendable</th><th>Reasons</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rec.scored.map((s) => (
+              <tr key={s.scenarioId}>
+                <td>{s.scenarioId}</td>
+                <td>{(s.score * 100).toFixed(1)}</td>
+                <td>{(s.confidence * 100).toFixed(1)}</td>
+                <td>{s.recommendable ? "YES" : "NO"}</td>
+                <td style={{ color: s.recommendable ? "hsl(var(--muted-foreground))" : "#e11" }}>
+                  {s.reasons.join(" · ")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rec.recommended ? (
+        <div style={section}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Recommended · {rec.recommended.scenarioId}</div>
+          <div style={{ fontSize: 12 }}>Score {(rec.recommended.score * 100).toFixed(1)} · Confidence {(rec.recommended.confidence * 100).toFixed(1)}</div>
+        </div>
+      ) : (
+        <div style={section}><div style={{ color: "#e11", fontSize: 12 }}>No scenario satisfies the hard gates.</div></div>
+      )}
+    </>
   );
 }
