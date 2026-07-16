@@ -435,3 +435,55 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
 
 export { REQUIRED_SYMBOLS, OPTIONAL_SYMBOLS };
 export { UPSTOX_SUPPORTED_SYMBOLS };
+
+/**
+ * Build a report indicating the caller failed the application-side
+ * authorization check (Supabase auth or admin `has_role`). Never contains
+ * tokens or Upstox response bodies.
+ */
+export function buildApplicationAuthFailureReport(
+  reason: string,
+  opts: Pick<UpstoxSmokeOptions, "nowIso"> = {},
+): UpstoxSmokeReport {
+  const nowIso = opts.nowIso ?? new Date().toISOString();
+  const safeReason = redactUpstoxMessage(reason).slice(0, 200);
+  return {
+    at: nowIso,
+    configured: false,
+    authenticated: false,
+    tokenStatus: {
+      tokenPresent: false,
+      tokenUsable: false,
+      tokenSource: "APPLICATION_AUTH",
+      reason: safeReason,
+    } as UpstoxTokenStatus,
+    instrumentResolved: [],
+    quoteResults: [
+      {
+        endpoint: "quote",
+        symbol: "SYSTEM",
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError: safeReason,
+        errorSource: "APPLICATION_AUTH",
+        dataQuality: null,
+      },
+    ],
+    historicalResults: [],
+    intradayResults: [],
+    summary: {
+      quoteSuccess: false,
+      historicalSuccess: false,
+      intradaySuccess: false,
+      overall: "FAIL",
+      errorSource: "APPLICATION_AUTH",
+      safeError: safeReason,
+    },
+    cache: { hits: 0, misses: 0, writes: 0 },
+    health: { totalCalls: 0, errors: 1, avgLatencyMs: 0 },
+  };
+}
