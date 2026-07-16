@@ -15,12 +15,14 @@ export class RateLimiter {
   private readonly cfg: RateLimiterConfig;
   private readonly state: RateLimiterState;
 
+  private initialized = false;
   constructor(cfg: RateLimiterConfig, initial?: Partial<RateLimiterState>) {
     this.cfg = cfg;
     this.state = {
       tokens: initial?.tokens ?? cfg.capacity,
       lastRefillMs: initial?.lastRefillMs ?? 0,
     };
+    if (initial?.lastRefillMs !== undefined) this.initialized = true;
   }
 
   tryConsume(nowMs: number, cost = 1): { ok: boolean; retryAfterMs: number; remaining: number } {
@@ -47,8 +49,9 @@ export class RateLimiter {
   }
 
   private refill(nowMs: number): void {
-    if (this.state.lastRefillMs === 0) {
+    if (!this.initialized) {
       this.state.lastRefillMs = nowMs;
+      this.initialized = true;
       return;
     }
     const elapsedSec = Math.max(0, (nowMs - this.state.lastRefillMs) / 1000);
