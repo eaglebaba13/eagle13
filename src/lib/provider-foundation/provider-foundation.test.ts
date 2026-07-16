@@ -159,10 +159,11 @@ describe("health manager", () => {
     const h = new ProviderHealthManager("p");
     h.record({ at: NOW_ISO, ok: true, latencyMs: 10 }, "LIVE");
     h.record({ at: NOW_ISO, ok: true, latencyMs: 10 }, "LIVE");
+    h.record({ at: NOW_ISO, ok: false, latencyMs: 10, reason: "NETWORK" }, "FAILED");
     const s = h.summary();
-    // one transition from OFFLINE->LIVE, none after
+    // initial LIVE assumed; only LIVE→FAILED emits a transition
     expect(s.transitions).toHaveLength(1);
-    expect(s.transitions[0].to).toBe("LIVE");
+    expect(s.transitions[0].to).toBe("FAILED");
   });
 });
 
