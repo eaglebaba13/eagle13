@@ -52,7 +52,7 @@ function providerTelemetry(input: {
     ? classifyFreshness(input.ageSec, DEFAULT_FRESHNESS.HISTORICAL)
     : input.code === "UPSTOX_RATE_LIMITED"
       ? "RATE_LIMITED"
-      : input.code === "UPSTOX_AUTH_REQUIRED"
+      : input.code === "UPSTOX_AUTH_REQUIRED" || input.code === "UPSTOX_FORBIDDEN"
         ? "OFFLINE"
         : input.code === "UPSTOX_DATA_UNAVAILABLE" || input.code === "UPSTOX_UNSUPPORTED_RANGE" || input.code === "UPSTOX_UNSUPPORTED_TIMEFRAME"
           ? "OFFLINE"
@@ -74,6 +74,7 @@ function providerTelemetry(input: {
 function errorToReason(code: UpstoxErrorCode): "UNAVAILABLE" | "RATE_LIMITED" | "AUTH_REQUIRED" | "UNSUPPORTED_SYMBOL" | "UNSUPPORTED_TIMEFRAME" | "SCHEMA_ERROR" | "TIMEOUT" | "NETWORK" | "UNKNOWN" {
   switch (code) {
     case "UPSTOX_AUTH_REQUIRED": return "AUTH_REQUIRED";
+    case "UPSTOX_FORBIDDEN": return "UNAVAILABLE";
     case "UPSTOX_RATE_LIMITED": return "RATE_LIMITED";
     case "UPSTOX_TIMEOUT": return "TIMEOUT";
     case "UPSTOX_SCHEMA_ERROR": return "SCHEMA_ERROR";
@@ -116,7 +117,7 @@ function quoteTelemetry(input: {
     ? "LIVE"
     : input.code === "UPSTOX_RATE_LIMITED"
       ? "RATE_LIMITED"
-      : input.code === "UPSTOX_AUTH_REQUIRED"
+      : input.code === "UPSTOX_AUTH_REQUIRED" || input.code === "UPSTOX_FORBIDDEN"
         ? "OFFLINE"
         : input.code === "UPSTOX_DATA_UNAVAILABLE"
           ? "OFFLINE"

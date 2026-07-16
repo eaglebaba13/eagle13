@@ -4,8 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { getProviderDiagnostics } from "@/lib/provider-foundation/provider-diagnostics.functions";
 import {
   buildSmokeDiagnosticRows,
+  classifySmokeError,
   dispatchSmokeTest,
   providerHeaderText,
+  type SmokeErrorSource,
   type SmokeOverall,
 } from "@/lib/provider-foundation/provider-diagnostics-ui";
 import { testUpstoxProvider } from "@/lib/provider-foundation/upstox/upstox-smoke.functions";
@@ -270,7 +272,11 @@ function UpstoxLiveSmokeTestPanel() {
       </div>
 
       {state.kind === "error" && (
-        <StatusCard status="FAIL" title="Live Provider Test" note={state.message === "forbidden" ? "Admin role required." : state.message} />
+        <StatusCard
+          status="FAIL"
+          title="Live Provider Test"
+          note={`[${classifySmokeError(state.message)}] ${state.message === "forbidden" ? "Admin role required." : state.message}`}
+        />
       )}
 
       {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
@@ -280,14 +286,27 @@ function UpstoxLiveSmokeTestPanel() {
 
 function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
   const rows = buildSmokeDiagnosticRows(report);
+  const overall = report.summary.overall as SmokeOverall;
+  const errorSource = (report.summary.errorSource ?? null) as SmokeErrorSource | null;
+  const safeSummaryError = report.summary.safeError ?? null;
   return (
     <div className="rounded-md border border-slate-800 bg-slate-950/80 p-3 space-y-2 text-slate-200">
       <div className="flex items-center justify-between">
         <div className="text-xs font-mono text-slate-400">at {report.at}</div>
-        <div className={`rounded border px-2 py-0.5 text-[11px] ${SMOKE_STATUS_COLORS[report.summary.overall]}`}>
-          {report.summary.overall}
+        <div className={`rounded border px-2 py-0.5 text-[11px] ${SMOKE_STATUS_COLORS[overall]}`}>
+          {overall}
         </div>
       </div>
+
+      {errorSource ? (
+        <div
+          data-testid="smoke-error-source"
+          className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-200"
+        >
+          <span className="font-semibold">Error source:</span> {errorSource}
+          {safeSummaryError ? <span className="ml-2 text-red-300/80">· {safeSummaryError}</span> : null}
+        </div>
+      ) : null}
 
       <div>
         {rows.map((row) => (
@@ -328,12 +347,20 @@ function FailureCard({ title, message }: { title: string; message: string }) {
   return <StatusCard status="FAIL" title={title} note={message} />;
 }
 
+interface SmokeSymbolRow {
+  readonly symbol: string;
+  readonly ok: boolean;
+  readonly latencyMs: number;
+  readonly errorSource?: SmokeErrorSource | null;
+  readonly safeError?: string | null;
+}
+
 function SymbolTable({
   title,
   rows,
 }: {
   title: string;
-  rows: UpstoxSmokeReport["quoteResults"];
+  rows: readonly SmokeSymbolRow[];
 }) {
   return (
     <div className="rounded border border-slate-800 p-2">
@@ -344,6 +371,9 @@ function SymbolTable({
             <tr key={r.symbol} className="border-t border-slate-800">
               <td className="py-0.5">{r.symbol}</td>
               <td className={`py-0.5 ${r.ok ? "text-emerald-300" : "text-red-300"}`}>{r.ok ? "ok" : "fail"}</td>
+              <td className={`py-0.5 ${r.ok ? "text-slate-500" : "text-red-300/80"}`}>
+                {r.errorSource ?? ""}
+              </td>
               <td className="py-0.5 text-right">{r.latencyMs}ms</td>
             </tr>
           ))}

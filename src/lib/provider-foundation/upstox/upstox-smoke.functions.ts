@@ -8,14 +8,26 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const testUpstoxProvider = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("forbidden");
-
     // Dynamic import: server-only module MUST NOT ship to the client bundle.
-    const { runUpstoxSmokeTest, buildUpstoxSmokeFailureReport } = await import("./upstox-smoke.server");
+    const { runUpstoxSmokeTest, buildUpstoxSmokeFailureReport, buildApplicationAuthFailureReport } =
+      await import("./upstox-smoke.server");
+
+    let isAdmin: boolean | null = null;
+    try {
+      const { data } = await context.supabase.rpc("has_role", {
+        _user_id: context.userId,
+        _role: "admin",
+      });
+      isAdmin = data === true;
+    } catch {
+      isAdmin = null;
+    }
+    if (isAdmin !== true) {
+      return buildApplicationAuthFailureReport(
+        isAdmin === null ? "Admin role check failed." : "Admin role required.",
+      );
+    }
+
     try {
       return await runUpstoxSmokeTest();
     } catch (error) {

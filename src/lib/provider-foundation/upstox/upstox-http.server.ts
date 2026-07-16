@@ -54,11 +54,14 @@ function redact(msg: string): string {
   return msg
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
-    .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"');
+    .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
+    // Never leak the raw HTTP response body — keep only the status prefix.
+    .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1");
 }
 
 function classifyStatus(status: number): { code: UpstoxErrorCode; retryable: boolean } {
-  if (status === 401 || status === 403) return { code: "UPSTOX_AUTH_REQUIRED", retryable: false };
+  if (status === 401) return { code: "UPSTOX_AUTH_REQUIRED", retryable: false };
+  if (status === 403) return { code: "UPSTOX_FORBIDDEN", retryable: false };
   if (status === 429) return { code: "UPSTOX_RATE_LIMITED", retryable: true };
   if (status === 400 || status === 404) return { code: "UPSTOX_DATA_UNAVAILABLE", retryable: false };
   if (status === 422) return { code: "UPSTOX_UNSUPPORTED_RANGE", retryable: false };
@@ -217,6 +220,7 @@ export class UpstoxHttpClient {
           message: redact(`HTTP ${res.status}: ${bodyText.slice(0, 240)}`),
           retryAfterMs,
           requestId,
+          httpStatus: res.status,
         };
         if (!cls.retryable || attempt === this.maxRetries) {
           return { ok: false, latencyMs: Date.now() - started, error: lastErr };

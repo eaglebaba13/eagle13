@@ -1,5 +1,41 @@
 export type SmokeOverall = "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
 
+export type SmokeErrorSource =
+  | "APPLICATION_AUTH"
+  | "UPSTOX_AUTH"
+  | "UPSTOX_API"
+  | "PROVIDER_CONFIG"
+  | "NETWORK"
+  | "SCHEMA";
+
+/** Human label for an error source, used in the diagnostics UI. */
+export function describeSmokeErrorSource(source: SmokeErrorSource | null | undefined): string {
+  switch (source) {
+    case "APPLICATION_AUTH":
+      return "Application admin role required";
+    case "UPSTOX_AUTH":
+      return "Upstox authentication failed";
+    case "UPSTOX_API":
+      return "Upstox denied this request";
+    case "PROVIDER_CONFIG":
+      return "Provider configuration issue";
+    case "NETWORK":
+      return "Network error contacting Upstox";
+    case "SCHEMA":
+      return "Unexpected Upstox response schema";
+    default:
+      return "";
+  }
+}
+
+/** Classify a dispatch-layer error into a SmokeErrorSource without leaking secrets. */
+export function classifySmokeError(message: string): SmokeErrorSource {
+  const m = message.toLowerCase();
+  if (m.includes("unauthorized") || m.includes("forbidden") || m.includes("admin")) return "APPLICATION_AUTH";
+  if (m.includes("timeout") || m.includes("network") || m.includes("fetch")) return "NETWORK";
+  return "UPSTOX_API";
+}
+
 export interface SmokeReportLike {
   readonly configured: boolean;
   readonly authenticated: boolean;

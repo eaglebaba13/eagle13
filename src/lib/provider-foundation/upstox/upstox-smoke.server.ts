@@ -12,6 +12,58 @@ import {
 } from "./upstox-token-policy.server";
 import { resolveInstrument, UPSTOX_SUPPORTED_SYMBOLS, type UpstoxSupportedSymbol } from "./upstox-instruments.server";
 import type { QuoteSymbol, Timeframe } from "../types";
+import type { UpstoxErrorCode } from "./upstox-types";
+
+export type SmokeErrorSource =
+  | "APPLICATION_AUTH"
+  | "UPSTOX_AUTH"
+  | "UPSTOX_API"
+  | "PROVIDER_CONFIG"
+  | "NETWORK"
+  | "SCHEMA";
+
+export const UPSTOX_FORBIDDEN_SAFE_MESSAGE = "Upstox denied this request";
+
+/** Map an Upstox HTTP-error code to a SmokeErrorSource. Never leaks bodies. */
+export function errorSourceFromUpstoxCode(code: UpstoxErrorCode): SmokeErrorSource {
+  switch (code) {
+    case "UPSTOX_AUTH_REQUIRED":
+      return "UPSTOX_AUTH";
+    case "UPSTOX_FORBIDDEN":
+      return "UPSTOX_API";
+    case "UPSTOX_TIMEOUT":
+    case "UPSTOX_NETWORK":
+      return "NETWORK";
+    case "UPSTOX_SCHEMA_ERROR":
+      return "SCHEMA";
+    case "UPSTOX_UNSUPPORTED_RANGE":
+    case "UPSTOX_UNSUPPORTED_TIMEFRAME":
+      return "PROVIDER_CONFIG";
+    case "UPSTOX_RATE_LIMITED":
+    case "UPSTOX_DATA_UNAVAILABLE":
+    case "UPSTOX_UNKNOWN":
+    default:
+      return "UPSTOX_API";
+  }
+}
+
+/** Map an adapter's ProviderResult failure reason to a SmokeErrorSource. */
+export function errorSourceFromAdapterReason(reason: string): SmokeErrorSource {
+  switch (reason) {
+    case "AUTH_REQUIRED":
+      return "UPSTOX_AUTH";
+    case "TIMEOUT":
+    case "NETWORK":
+      return "NETWORK";
+    case "SCHEMA_ERROR":
+      return "SCHEMA";
+    case "UNSUPPORTED_SYMBOL":
+    case "UNSUPPORTED_TIMEFRAME":
+      return "PROVIDER_CONFIG";
+    default:
+      return "UPSTOX_API";
+  }
+}
 
 export interface EndpointResult {
   readonly endpoint: "quote" | "historical" | "intraday";
@@ -26,6 +78,7 @@ export interface EndpointResult {
   readonly marketSession: string;
   readonly cacheHit: boolean;
   readonly safeError: string | null;
+  readonly errorSource: SmokeErrorSource | null;
   readonly dataQuality: {
     readonly coveragePct: number | null;
     readonly insufficient: boolean;
@@ -52,6 +105,8 @@ export interface UpstoxSmokeReport {
     readonly historicalSuccess: boolean;
     readonly intradaySuccess: boolean;
     readonly overall: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+    readonly errorSource?: SmokeErrorSource | null;
+    readonly safeError?: string | null;
   };
   readonly cache: { hits: number; misses: number; writes: number };
   readonly health: {
@@ -69,6 +124,7 @@ interface QuoteApiResult {
   readonly latencyMs: number;
   readonly requestId: string | null;
   readonly safeError: string | null;
+  readonly errorSource: SmokeErrorSource | null;
   readonly providerStatus: string;
   readonly last?: number;
 }
@@ -82,11 +138,17 @@ async function fetchQuote(
     query: { instrument_key: instrumentKey },
   });
   if (!res.ok) {
+    const source = errorSourceFromUpstoxCode(res.error.code);
+    const safeError =
+      res.error.code === "UPSTOX_FORBIDDEN"
+        ? UPSTOX_FORBIDDEN_SAFE_MESSAGE
+        : redactUpstoxMessage(`${res.error.code}: ${res.error.message}`);
     return {
       ok: false,
       latencyMs: res.latencyMs,
       requestId: res.error.requestId ?? null,
-      safeError: redactUpstoxMessage(`${res.error.code}: ${res.error.message}`),
+      safeError,
+      errorSource: source,
       providerStatus: res.error.code === "UPSTOX_RATE_LIMITED" ? "RATE_LIMITED" : res.error.code === "UPSTOX_AUTH_REQUIRED" ? "OFFLINE" : "FAILED",
     };
   }
@@ -97,6 +159,7 @@ async function fetchQuote(
     latencyMs: res.latencyMs,
     requestId: res.requestId,
     safeError: null,
+    errorSource: null,
     providerStatus: "LIVE",
     last: typeof last === "number" ? last : undefined,
   };
@@ -117,6 +180,7 @@ function toEndpointResult(
     marketSession: "UNKNOWN",
     cacheHit: false,
     safeError: q.safeError,
+    errorSource: q.errorSource,
     dataQuality: null,
   };
 }
@@ -150,6 +214,7 @@ export function buildUpstoxSmokeFailureReport(
   const tokenStatus = evaluateUpstoxTokenPolicy(envSource);
   const configured = tokenStatus.tokenPresent && envSource.UPSTOX_API_KEY != null && envSource.UPSTOX_API_SECRET != null;
   const safeError = redactUpstoxMessage(error instanceof Error ? error.message : String(error ?? "smoke test failed"));
+  const errorSource: SmokeErrorSource = tokenStatus.tokenUsable ? "UPSTOX_API" : "PROVIDER_CONFIG";
   const instrumentResolved = REQUIRED_SYMBOLS.map((sym) => {
     const inst = resolveInstrument(sym as QuoteSymbol);
     return inst
@@ -173,6 +238,7 @@ export function buildUpstoxSmokeFailureReport(
         marketSession: "UNKNOWN",
         cacheHit: false,
         safeError,
+        errorSource,
         dataQuality: null,
       },
     ],
@@ -183,6 +249,8 @@ export function buildUpstoxSmokeFailureReport(
       historicalSuccess: false,
       intradaySuccess: false,
       overall: tokenStatus.tokenUsable ? "FAIL" : "NOT_CONFIGURED",
+      errorSource,
+      safeError,
     },
     cache: { hits: 0, misses: 0, writes: 0 },
     health: { totalCalls: 0, errors: 1, avgLatencyMs: 0 },
@@ -285,6 +353,7 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
       marketSession: hist.telemetry.marketSession,
       cacheHit: false,
       safeError: hist.ok ? null : redactUpstoxMessage(`${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`),
+      errorSource: hist.ok ? null : errorSourceFromAdapterReason(hist.reason),
       dataQuality: hist.ok ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 } : null,
     });
 
@@ -306,6 +375,7 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
       marketSession: intra.telemetry.marketSession,
       cacheHit: false,
       safeError: intra.ok ? null : redactUpstoxMessage(`${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`),
+      errorSource: intra.ok ? null : errorSourceFromAdapterReason(intra.reason),
       dataQuality: intra.ok ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 } : null,
     });
   }
@@ -326,6 +396,17 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   // Silence unused-variable lint on the required-set marker.
   void requiredKeys;
 
+  const firstError =
+    quoteResults.find((r) => !r.ok && r.errorSource)?.errorSource ??
+    historicalResults.find((r) => !r.ok && r.errorSource)?.errorSource ??
+    intradayResults.find((r) => !r.ok && r.errorSource)?.errorSource ??
+    null;
+  const firstErrorMessage =
+    quoteResults.find((r) => !r.ok && r.safeError)?.safeError ??
+    historicalResults.find((r) => !r.ok && r.safeError)?.safeError ??
+    intradayResults.find((r) => !r.ok && r.safeError)?.safeError ??
+    null;
+
   return {
     at: nowIso,
     configured,
@@ -335,7 +416,14 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     quoteResults,
     historicalResults,
     intradayResults,
-    summary: { quoteSuccess, historicalSuccess, intradaySuccess, overall },
+    summary: {
+      quoteSuccess,
+      historicalSuccess,
+      intradaySuccess,
+      overall,
+      errorSource: firstError,
+      safeError: firstErrorMessage,
+    },
     cache: { hits: 0, misses: totalCalls, writes: 0 },
     health: {
       totalCalls,
@@ -347,3 +435,59 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
 
 export { REQUIRED_SYMBOLS, OPTIONAL_SYMBOLS };
 export { UPSTOX_SUPPORTED_SYMBOLS };
+
+/**
+ * Build a report indicating the caller failed the application-side
+ * authorization check (Supabase auth or admin `has_role`). Never contains
+ * tokens or Upstox response bodies.
+ */
+export function buildApplicationAuthFailureReport(
+  reason: string,
+  opts: Pick<UpstoxSmokeOptions, "nowIso"> = {},
+): UpstoxSmokeReport {
+  const nowIso = opts.nowIso ?? new Date().toISOString();
+  const safeReason = redactUpstoxMessage(reason).slice(0, 200);
+  return {
+    at: nowIso,
+    configured: false,
+    authenticated: false,
+    tokenStatus: {
+      tokenPresent: false,
+      tokenSource: "NONE",
+      tokenExpiryStatus: "UNKNOWN",
+      tokenUsable: false,
+      reason: safeReason,
+      mode: "disabled",
+      apiKeyConfigured: false,
+      apiSecretConfigured: false,
+    },
+    instrumentResolved: [],
+    quoteResults: [
+      {
+        endpoint: "quote",
+        symbol: "SYSTEM",
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError: safeReason,
+        errorSource: "APPLICATION_AUTH",
+        dataQuality: null,
+      },
+    ],
+    historicalResults: [],
+    intradayResults: [],
+    summary: {
+      quoteSuccess: false,
+      historicalSuccess: false,
+      intradaySuccess: false,
+      overall: "FAIL",
+      errorSource: "APPLICATION_AUTH",
+      safeError: safeReason,
+    },
+    cache: { hits: 0, misses: 0, writes: 0 },
+    health: { totalCalls: 0, errors: 1, avgLatencyMs: 0 },
+  };
+}
