@@ -22,6 +22,8 @@ import {
   LEGACY_DASHBOARD_WIDGETS,
   legacyWidgetsById,
 } from "@/lib/dashboard-widgets";
+import { deriveDashboardFreshness } from "@/lib/dashboard-freshness-adapter";
+import { DashboardParityDiagnostic } from "@/components/dashboard/DashboardParityDiagnostic";
 
 const marketQuery = () =>
   queryOptions({
@@ -65,7 +67,8 @@ const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function Dashboard() {
-  const { data, dataUpdatedAt, isFetching, refetch } = useSuspenseQuery(marketQuery());
+  const { data, dataUpdatedAt, isFetching, isStale, error, refetch } =
+    useSuspenseQuery(marketQuery());
   const clock = useIstClock();
   type TabKey = "nifty" | "banknifty" | "btc" | "gold";
 
@@ -96,6 +99,19 @@ function Dashboard() {
     [quote.prevDay, safeBand],
   );
 
+  const freshnessByDependency = useMemo(
+    () =>
+      deriveDashboardFreshness({
+        nifty: data.nifty,
+        banknifty: data.banknifty,
+        gold: data.gold,
+        silver: data.silver,
+        queryReceivedAt: dataUpdatedAt || null,
+        providerStatus: "OK",
+      }),
+    [data.nifty, data.banknifty, data.gold, data.silver, dataUpdatedAt],
+  );
+
   const dashboardCtx = useMemo(
     () => ({
       data,
@@ -106,8 +122,26 @@ function Dashboard() {
       accent,
       safeBand,
       levels,
+      queryReceivedAt: dataUpdatedAt || null,
+      lastSuccessfulUpdate: dataUpdatedAt || null,
+      freshnessByDependency,
+      providerMetadata: { name: "Yahoo Finance", status: "OK" as const },
+      queryError: error,
+      queryStale: isStale,
     }),
-    [data, dataUpdatedAt, isFetching, tab, quote, accent, safeBand, levels],
+    [
+      data,
+      dataUpdatedAt,
+      isFetching,
+      tab,
+      quote,
+      accent,
+      safeBand,
+      levels,
+      freshnessByDependency,
+      error,
+      isStale,
+    ],
   );
 
   // Legacy `/` widget set is registry-driven. Both rails render the same
@@ -203,6 +237,15 @@ function Dashboard() {
             </div>
           </div>
         </DashboardDataProvider>
+
+        {import.meta.env.DEV ||
+        (typeof window !== "undefined" &&
+          window.localStorage?.getItem("eb-diagnostics") === "on") ? (
+          <DashboardParityDiagnostic
+            widgetContext={{ plan: "free" }}
+            navContext={{ plan: "free" }}
+          />
+        ) : null}
 
         <InsightsSection />
 

@@ -1,11 +1,19 @@
 import { cprBias } from "@/lib/levels";
 import { useDashboardData } from "../DashboardDataContext";
 import { Card } from "./legacy-primitives";
+import { DataFreshnessPill } from "../DataFreshnessPill";
+import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 
 export default function SignalWidget() {
-  const { levels } = useDashboardData();
+  const { levels, freshnessByDependency, providerMetadata } = useDashboardData();
   const bias = cprBias(levels);
   const isBull = bias.tone === "bull";
+  const freshness = freshnessByDependency?.MARKET_DATA;
+  const gate = canDisplayActionableSignal({
+    freshness: freshness?.status ?? "UNAVAILABLE",
+    providerStatus: providerMetadata?.status ?? "UNKNOWN",
+    formulaVersion: "LEGACY_EAGLEBABA_CASCADE_V1",
+  });
   const tone =
     bias.tone === "neutral"
       ? "var(--eb-neutral)"
@@ -14,20 +22,37 @@ export default function SignalWidget() {
         : "var(--eb-bear)";
   return (
     <Card title="MARKET SIGNAL" sub="AUTO" accent="var(--eb-neutral)">
+      {freshness ? (
+        <div style={{ marginBottom: 8 }}>
+          <DataFreshnessPill result={freshness} provider={providerMetadata?.name} compact />
+        </div>
+      ) : null}
       <div
         style={{
           padding: 12,
           textAlign: "center",
           borderRadius: 6,
-          border: `1px solid ${tone}`,
+          border: `1px solid ${gate.allowed ? tone : "var(--eb-muted)"}`,
           background: "rgba(255,255,255,0.02)",
           marginBottom: 9,
         }}
+        aria-live="polite"
       >
-        <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 2, color: tone }}>
-          {bias.headline}
-        </div>
-        <div style={{ fontSize: 11, color: "var(--eb-muted)", marginTop: 2 }}>{bias.label}</div>
+        {gate.allowed ? (
+          <>
+            <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 2, color: tone }}>
+              {bias.headline}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--eb-muted)", marginTop: 2 }}>{bias.label}</div>
+          </>
+        ) : (
+          <div
+            title={gate.blockingReasons.join(" · ")}
+            style={{ fontFamily: "var(--eb-head)", fontSize: 18, letterSpacing: 2, color: "var(--eb-muted)" }}
+          >
+            {blockedLabel(gate.blockingReasons)}
+          </div>
+        )}
       </div>
       <div
         style={{
