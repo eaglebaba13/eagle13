@@ -193,6 +193,12 @@ export interface EndpointResult {
   readonly cacheHit: boolean;
   readonly safeError: string | null;
   readonly errorSource: SmokeErrorSource | null;
+  readonly httpStatus?: number | null;
+  readonly upstoxErrorCode?: string | null;
+  readonly endpointPath?: string | null;
+  readonly requestTimestamp?: string | null;
+  readonly instrumentKey?: string | null;
+  readonly tokenType?: "STANDARD" | "ANALYTICS" | "UNKNOWN";
   readonly dataQuality: {
     readonly coveragePct: number | null;
     readonly insufficient: boolean;
@@ -252,6 +258,9 @@ interface QuoteApiResult {
   readonly safeError: string | null;
   readonly errorSource: SmokeErrorSource | null;
   readonly providerStatus: string;
+  readonly httpStatus?: number | null;
+  readonly upstoxErrorCode?: string | null;
+  readonly endpointPath?: string | null;
   readonly last?: number;
 }
 
@@ -276,6 +285,9 @@ async function fetchQuote(
       safeError,
       errorSource: source,
       providerStatus: res.error.code === "UPSTOX_RATE_LIMITED" ? "RATE_LIMITED" : res.error.code === "UPSTOX_AUTH_REQUIRED" ? "OFFLINE" : "FAILED",
+      httpStatus: res.error.httpStatus ?? null,
+      upstoxErrorCode: res.error.upstoxErrorCode ?? null,
+      endpointPath: res.error.path ?? "v2/market-quote/quotes",
     };
   }
   const entries = res.data?.data ? Object.values(res.data.data) : [];
@@ -287,6 +299,9 @@ async function fetchQuote(
     safeError: null,
     errorSource: null,
     providerStatus: "LIVE",
+    httpStatus: 200,
+    upstoxErrorCode: null,
+    endpointPath: res.path ?? "v2/market-quote/quotes",
     last: typeof last === "number" ? last : undefined,
   };
 }
@@ -295,6 +310,7 @@ function toEndpointResult(
   endpoint: EndpointResult["endpoint"],
   symbol: string,
   q: QuoteApiResult,
+  extra?: { readonly instrumentKey?: string; readonly requestTimestamp?: string; readonly tokenType?: "STANDARD" | "ANALYTICS" | "UNKNOWN" },
 ): EndpointResult {
   return {
     endpoint,
@@ -307,6 +323,12 @@ function toEndpointResult(
     cacheHit: false,
     safeError: q.safeError,
     errorSource: q.errorSource,
+    httpStatus: q.httpStatus ?? null,
+    upstoxErrorCode: q.upstoxErrorCode ?? null,
+    endpointPath: q.endpointPath ?? null,
+    requestTimestamp: extra?.requestTimestamp ?? null,
+    instrumentKey: extra?.instrumentKey ?? null,
+    tokenType: extra?.tokenType ?? "UNKNOWN",
     dataQuality: null,
   };
 }
