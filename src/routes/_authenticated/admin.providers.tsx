@@ -12,6 +12,11 @@ import {
 } from "@/lib/provider-foundation/provider-diagnostics-ui";
 import { testUpstoxProvider } from "@/lib/provider-foundation/upstox/upstox-smoke.functions";
 import {
+  getProviderAdminAccess,
+  describeBlocker,
+  type ProviderAdminAccess,
+} from "@/lib/provider-foundation/provider-admin-access.functions";
+import {
   DEFAULT_REFRESH_INTERVAL_MS,
   type ManagerDiagnostics,
   type ProviderStatus,
@@ -242,12 +247,38 @@ function UpstoxReadOnlySection({ report }: { report: ProviderDiagnosticsReport |
 
 function UpstoxLiveSmokeTestPanel() {
   const runFn = useServerFn(testUpstoxProvider);
+  const loadAccess = useServerFn(getProviderAdminAccess);
+  const [access, setAccess] = useState<ProviderAdminAccess | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
   const [state, setState] = useState<
     | { kind: "idle" }
     | { kind: "running" }
     | { kind: "ok"; report: UpstoxSmokeReport }
     | { kind: "error"; message: string }
   >({ kind: "idle" });
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const next = (await loadAccess()) as ProviderAdminAccess;
+        if (!cancelled) {
+          setAccess(next);
+          setAccessError(null);
+        }
+      } catch (e) {
+        const raw = e instanceof Error ? e.message : "access check failed";
+        if (!cancelled) {
+          setAccessError(raw.slice(0, 180));
+          setAccess(null);
+        }
+      }
+    }
+    void refresh();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAccess]);
 
   async function run() {
     setState({ kind: "running" });
@@ -256,13 +287,18 @@ function UpstoxLiveSmokeTestPanel() {
     else setState({ kind: "error", message: next.message });
   }
 
+  const canRun = access?.canRunSmokeTest === true;
+
   return (
     <div className="mt-4 space-y-3">
+      <AdminAccessPanel access={access} accessError={accessError} />
+
       <div className="flex items-center gap-3">
         <button
           onClick={run}
-          disabled={state.kind === "running"}
+          disabled={state.kind === "running" || !canRun}
           className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50"
+          data-testid="run-smoke-test"
         >
           {state.kind === "running" ? "Running live provider test…" : "Run Live Provider Test"}
         </button>
@@ -280,6 +316,62 @@ function UpstoxLiveSmokeTestPanel() {
       )}
 
       {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
+    </div>
+  );
+}
+
+function AdminAccessPanel({
+  access,
+  accessError,
+}: {
+  access: ProviderAdminAccess | null;
+  accessError: string | null;
+}) {
+  if (accessError && !access) {
+    return (
+      <StatusCard
+        status="FAIL"
+        title="Application access"
+        note={`[AUTH_REQUIRED] ${accessError}`}
+      />
+    );
+  }
+  if (!access) {
+    return <div className="text-[11px] text-slate-500">Checking admin access…</div>;
+  }
+  const rows: readonly { label: string; ok: boolean }[] = [
+    { label: "Authenticated", ok: access.authenticated },
+    { label: "User ID present", ok: access.userIdPresent },
+    { label: "Profile present", ok: access.profilePresent },
+    { label: "has_role RPC working", ok: access.hasRoleRpcOk },
+    { label: "Admin role present", ok: access.adminRolePresent },
+  ];
+  return (
+    <div
+      className="rounded-md border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-200"
+      data-testid="admin-access-panel"
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <span className="font-semibold">Application access</span>
+        <span
+          className={`rounded border px-2 py-0.5 text-[10px] ${access.canRunSmokeTest ? SMOKE_STATUS_COLORS.PASS : SMOKE_STATUS_COLORS.FAIL}`}
+        >
+          {access.canRunSmokeTest ? "READY" : (access.blocker ?? "FAIL")}
+        </span>
+      </div>
+      <ul className="space-y-1">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-center justify-between border-t border-slate-800 py-1">
+            <span>{r.label}</span>
+            <span className={r.ok ? "text-emerald-300" : "text-red-300"}>{r.ok ? "PASS" : "FAIL"}</span>
+          </li>
+        ))}
+      </ul>
+      {!access.canRunSmokeTest && (
+        <div className="mt-2 text-[11px] text-red-300/90">
+          {describeBlocker(access.blocker)}
+        </div>
+      )}
     </div>
   );
 }
