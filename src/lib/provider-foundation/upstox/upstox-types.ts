@@ -9,6 +9,7 @@ export const UPSTOX_CACHE_NAMESPACE = "upstox";
 
 export type UpstoxErrorCode =
   | "UPSTOX_AUTH_REQUIRED"
+  | "UPSTOX_FORBIDDEN"
   | "UPSTOX_RATE_LIMITED"
   | "UPSTOX_TIMEOUT"
   | "UPSTOX_SCHEMA_ERROR"
@@ -23,6 +24,7 @@ export interface UpstoxError {
   readonly message: string;
   readonly retryAfterMs?: number;
   readonly requestId?: string;
+  readonly httpStatus?: number;
 }
 
 export interface UpstoxUnit {
