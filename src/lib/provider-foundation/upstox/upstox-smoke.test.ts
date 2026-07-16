@@ -144,3 +144,53 @@ describe("upstox smoke — endpoint outcomes", () => {
     expect(unresolved.length).toBe(0);
   });
 });
+describe("upstox smoke — error source classification", () => {
+  it("maps Upstox error codes to error sources", () => {
+    expect(errorSourceFromUpstoxCode("UPSTOX_AUTH_REQUIRED")).toBe("UPSTOX_AUTH");
+    expect(errorSourceFromUpstoxCode("UPSTOX_FORBIDDEN")).toBe("UPSTOX_API");
+    expect(errorSourceFromUpstoxCode("UPSTOX_TIMEOUT")).toBe("NETWORK");
+    expect(errorSourceFromUpstoxCode("UPSTOX_NETWORK")).toBe("NETWORK");
+    expect(errorSourceFromUpstoxCode("UPSTOX_SCHEMA_ERROR")).toBe("SCHEMA");
+    expect(errorSourceFromUpstoxCode("UPSTOX_RATE_LIMITED")).toBe("UPSTOX_API");
+    expect(errorSourceFromUpstoxCode("UPSTOX_UNSUPPORTED_TIMEFRAME")).toBe("PROVIDER_CONFIG");
+  });
+
+  it("maps adapter reasons to error sources", () => {
+    expect(errorSourceFromAdapterReason("AUTH_REQUIRED")).toBe("UPSTOX_AUTH");
+    expect(errorSourceFromAdapterReason("SCHEMA_ERROR")).toBe("SCHEMA");
+    expect(errorSourceFromAdapterReason("NETWORK")).toBe("NETWORK");
+    expect(errorSourceFromAdapterReason("UNAVAILABLE")).toBe("UPSTOX_API");
+    expect(errorSourceFromAdapterReason("UNSUPPORTED_SYMBOL")).toBe("PROVIDER_CONFIG");
+  });
+
+  it("distinguishes application admin 403 from Upstox 403", async () => {
+    // Application-side admin failure — never contacts Upstox.
+    const appRep = buildApplicationAuthFailureReport("Admin role required.");
+    expect(appRep.summary.overall).toBe("FAIL");
+    expect(appRep.summary.errorSource).toBe("APPLICATION_AUTH");
+    expect(appRep.quoteResults[0]?.errorSource).toBe("APPLICATION_AUTH");
+    expect(JSON.stringify(appRep)).not.toContain("Bearer");
+
+    // Upstox 403 — server-side but provider denied.
+    const upstoxRep = await runUpstoxSmokeTest({
+      env: {
+        UPSTOX_MARKET_DATA_MODE: "live",
+        UPSTOX_API_KEY: "key",
+        UPSTOX_API_SECRET: "sec",
+        UPSTOX_ACCESS_TOKEN: "live-tok-abcdef",
+      },
+      fetchImpl: async () =>
+        new Response("permission denied by upstox", { status: 403 }),
+      nowIso: "2026-07-16T09:15:00.000Z",
+    });
+    expect(upstoxRep.summary.errorSource).toBe("UPSTOX_API");
+    expect(upstoxRep.quoteResults[0]?.errorSource).toBe("UPSTOX_API");
+    expect(upstoxRep.quoteResults[0]?.errorSource).not.toBe("APPLICATION_AUTH");
+  });
+
+  it("application-auth failure report never contains provider tokens or bodies", () => {
+    const rep = buildApplicationAuthFailureReport("Admin role required.");
+    const json = JSON.stringify(rep);
+    expect(json).not.toMatch(/Bearer|access_token|api_key|api_secret/i);
+  });
+});
