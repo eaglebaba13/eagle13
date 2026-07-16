@@ -22,6 +22,8 @@ describe("Phase 24E · dashboard health summary", () => {
     const f = deriveDashboardFreshness({
       nifty: { updatedAt: iso(30 * 60_000), marketState: "OPEN" },
       banknifty: { updatedAt: iso(30 * 60_000), marketState: "OPEN" },
+      gold: { updatedAt: iso(30 * 60_000), marketState: "OPEN" },
+      silver: { updatedAt: iso(30 * 60_000), marketState: "OPEN" },
       now: NOW,
     });
     const s = summarizeDashboardHealth({ freshness: f, providerStatus: "OK" });
