@@ -220,6 +220,14 @@ export function classifyRegime(
   const upBias = features.emaSlopePct > 0.2 && features.hh + features.hl > features.lh + features.ll;
   const downBias = features.emaSlopePct < -0.2 && features.lh + features.ll > features.hh + features.hl;
 
+  if (strongTrend && upBias) {
+    reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
+    return { regime: "TRENDING_UP", features, reasons };
+  }
+  if (strongTrend && downBias) {
+    reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
+    return { regime: "TRENDING_DOWN", features, reasons };
+  }
   if (features.rangeExpansion >= 1.6 && features.volatilityPercentile >= 70) {
     reasons.push(`RANGE_EXPANSION=${features.rangeExpansion}`);
     reasons.push(`VOL_PCT=${features.volatilityPercentile}`);
@@ -229,11 +237,11 @@ export function classifyRegime(
     reasons.push(`VOL_PCT=${features.volatilityPercentile}`);
     return { regime: "HIGH_VOLATILITY", features, reasons };
   }
-  if (strongTrend && upBias) {
+  if (upBias && features.adxLike >= 15) {
     reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
     return { regime: "TRENDING_UP", features, reasons };
   }
-  if (strongTrend && downBias) {
+  if (downBias && features.adxLike >= 15) {
     reasons.push(`ADX=${features.adxLike}`, `EMA_SLOPE=${features.emaSlopePct}`);
     return { regime: "TRENDING_DOWN", features, reasons };
   }
