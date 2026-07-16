@@ -1,0 +1,100 @@
+// Phase 24A · Single navigation registry.
+//
+// This is the ONE source of truth consumed by the desktop sidebar, the
+// mobile drawer, and the mobile bottom-nav. Menu arrays must not be
+// hard-coded anywhere else.
+
+import {
+  Activity,
+  BarChart3,
+  Brain,
+  CandlestickChart,
+  FileBarChart,
+  Globe2,
+  History,
+  KeyRound,
+  Layers,
+  LayoutDashboard,
+  LineChart,
+  Orbit,
+  PlayCircle,
+  Plug,
+  Radar,
+  Radio,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+  User as UserIcon,
+} from "lucide-react";
+
+export type NavSection = "MAIN" | "RESEARCH" | "MARKET" | "ACCOUNT";
+
+export type NavItem = {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  to?: string;
+  href?: string;
+  section: NavSection;
+  order: number;
+  desktopVisible: boolean;
+  mobileVisible: boolean;
+  mobileBottom?: boolean; // included in the mobile bottom-nav shortcuts
+  bottomOrder?: number;
+  minimumPlan?: "free" | "pro" | "elite";
+  requiredRole?: "user" | "admin";
+};
+
+export const NAV_REGISTRY: NavItem[] = [
+  // MAIN
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, to: "/", section: "MAIN", order: 10, desktopVisible: true, mobileVisible: true, mobileBottom: true, bottomOrder: 1 },
+  { id: "astro-levels", label: "Astro Levels", icon: Orbit, to: "/astro", section: "MAIN", order: 20, desktopVisible: true, mobileVisible: true, mobileBottom: true, bottomOrder: 2 },
+  { id: "live-terminal", label: "Live Terminal", icon: Radio, to: "/live-terminal", section: "MAIN", order: 30, desktopVisible: true, mobileVisible: true },
+  { id: "live-market-terminal", label: "Market Terminal", icon: Activity, to: "/live-market-terminal", section: "MAIN", order: 40, desktopVisible: true, mobileVisible: true, mobileBottom: true, bottomOrder: 3 },
+  { id: "level-terminal", label: "Level Terminal", icon: TrendingUp, to: "/live-levels", section: "MAIN", order: 50, desktopVisible: true, mobileVisible: true },
+  { id: "decision", label: "Decision", icon: Brain, to: "/decision", section: "MAIN", order: 60, desktopVisible: true, mobileVisible: true },
+  { id: "risk", label: "Risk", icon: ShieldCheck, to: "/risk", section: "MAIN", order: 70, desktopVisible: true, mobileVisible: true },
+
+  // RESEARCH
+  { id: "backtest", label: "Backtest", icon: History, to: "/backtest", section: "RESEARCH", order: 110, desktopVisible: true, mobileVisible: true },
+  { id: "signal-accuracy", label: "Signal Accuracy", icon: BarChart3, to: "/signal-accuracy", section: "RESEARCH", order: 120, desktopVisible: true, mobileVisible: true },
+  { id: "market-replay", label: "Market Replay", icon: PlayCircle, to: "/market-replay", section: "RESEARCH", order: 130, desktopVisible: true, mobileVisible: true },
+
+  // MARKET
+  { id: "option-strategy", label: "NIFTY50 Buying Strategy", icon: Target, to: "/option-strategy", section: "MARKET", order: 210, desktopVisible: true, mobileVisible: true },
+  { id: "options-analytics", label: "Options Analytics", icon: Layers, to: "/options-analytics", section: "MARKET", order: 220, desktopVisible: true, mobileVisible: true },
+  { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
+
+  // ACCOUNT
+  { id: "profile", label: "Profile", icon: UserIcon, to: "/profile", section: "ACCOUNT", order: 310, desktopVisible: true, mobileVisible: true },
+  { id: "license", label: "License", icon: KeyRound, to: "/license", section: "ACCOUNT", order: 320, desktopVisible: true, mobileVisible: true },
+  { id: "billing", label: "Billing", icon: ScrollText, to: "/billing", section: "ACCOUNT", order: 330, desktopVisible: true, mobileVisible: true },
+  { id: "pricing", label: "Pricing", icon: FileBarChart, to: "/pricing", section: "ACCOUNT", order: 340, desktopVisible: true, mobileVisible: true },
+  { id: "settings", label: "Settings", icon: Settings, to: "/settings", section: "ACCOUNT", order: 350, desktopVisible: true, mobileVisible: true },
+
+  // Anchor shortcuts (hash links) — still available in both menus.
+  { id: "planets", label: "Planets", icon: Globe2, href: "#planets", section: "MARKET", order: 410, desktopVisible: true, mobileVisible: true },
+  { id: "nakshatra", label: "Nakshatra", icon: Sparkles, href: "#nakshatra", section: "MARKET", order: 420, desktopVisible: true, mobileVisible: true },
+  { id: "support-resistance", label: "Support / Resistance", icon: TrendingUp, href: "#levels", section: "MARKET", order: 430, desktopVisible: true, mobileVisible: true },
+  { id: "signals", label: "Signals", icon: Radar, href: "#signals", section: "MARKET", order: 440, desktopVisible: true, mobileVisible: true },
+  { id: "analysis", label: "Analysis", icon: LineChart, href: "#analysis", section: "MARKET", order: 450, desktopVisible: true, mobileVisible: true },
+  { id: "reports", label: "Reports", icon: FileBarChart, href: "#reports", section: "MARKET", order: 460, desktopVisible: true, mobileVisible: true },
+  { id: "market-mini", label: "Market", icon: CandlestickChart, to: "/live-levels", section: "MARKET", order: 470, desktopVisible: true, mobileVisible: true },
+];
+
+export function desktopNav(): NavItem[] {
+  return NAV_REGISTRY.filter((it) => it.desktopVisible).sort((a, b) => a.order - b.order);
+}
+
+export function mobileDrawerNav(): NavItem[] {
+  return NAV_REGISTRY.filter((it) => it.mobileVisible).sort((a, b) => a.order - b.order);
+}
+
+export function mobileBottomNav(): NavItem[] {
+  return NAV_REGISTRY
+    .filter((it) => it.mobileBottom && it.mobileVisible)
+    .sort((a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999));
+}
