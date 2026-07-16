@@ -64,13 +64,27 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
         : new UpstoxOptionChainProvider();
 
       const snapshots: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {};
-      const providerMeta: Record<string, unknown> = {};
+      const providerMeta: Record<string, {
+        providerId: string;
+        status: string;
+        latencyMs: number;
+        fetchedAt: string;
+        safeError: string | null;
+        upstreamCode: string | null;
+      }> = {};
       const history = getSnapshotHistory();
 
       for (const u of UNDERLYINGS) {
         const expiry = data.expiries?.[u];
         const res = await provider.fetchSnapshot({ underlying: u, expiry });
-        providerMeta[u] = res.meta;
+        providerMeta[u] = {
+          providerId: res.meta.providerId,
+          status: res.meta.status,
+          latencyMs: res.meta.latencyMs,
+          fetchedAt: res.meta.fetchedAt,
+          safeError: res.meta.safeError,
+          upstreamCode: res.meta.upstreamCode,
+        };
         if (res.ok && res.snapshot) {
           snapshots[u] = res.snapshot;
           try { history.push(res.snapshot); } catch { /* best-effort */ }
