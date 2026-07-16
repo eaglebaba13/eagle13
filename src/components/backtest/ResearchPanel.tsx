@@ -1922,3 +1922,207 @@ function SensitivityResults({
 }
 
 export const SENSITIVITY_SECTION_MARKER = "SENSITIVITY_SECTION_V1";
+
+// ---------------------------------------------------------------------------
+// Phase 21.7 · Cross-Asset Validation Lab UI. This section reads whatever
+// research rows the panel already produced (via walk-forward + comparison)
+// and reformats them into the cross-asset envelope. No new provider fetch,
+// no adapter change, no Run ID mutation.
+
+import {
+  buildCrossAssetRow as _buildCxRow,
+  buildInstrumentStrategyMatrix,
+  buildRegimeStrategyMatrix,
+  buildLeaderboard,
+  buildResearchSummary,
+  computeConsistencyScore,
+  buildCrossAssetCsv,
+  buildCrossAssetJson,
+  CROSS_ASSET_ENGINE_VERSION,
+  type CrossAssetRow,
+  type LeaderboardEntry,
+} from "@/lib/backtest/cross-asset";
+
+export const CROSS_ASSET_SECTION_MARKER = "CROSS_ASSET_SECTION_V1";
+
+function toCxRows(rows: StrategyResearchRow[], instrument: string): CrossAssetRow[] {
+  // Adapt the research-comparison row shape to CrossAssetRow without
+  // touching any Historical result; validation trades supply the metrics.
+  return rows.map((r) => {
+    const decided = r.validation.tradeCount;
+    return {
+      instrument,
+      timeframe: "1d",
+      strategy: r.strategy,
+      formula: r.formula,
+      regime: null,
+      runId: `${r.strategy}:${r.formula}`,
+      trades: decided,
+      wins: Math.round((r.validation.winRate / 100) * decided),
+      losses: decided - Math.round((r.validation.winRate / 100) * decided),
+      winRate: r.validation.winRate,
+      profitFactor: r.validation.profitFactor,
+      expectancy: r.validation.expectancy,
+      netPnl: r.validation.expectancy * decided,
+      maxDrawdown: r.validation.drawdown,
+      recoveryFactor: r.validation.drawdown > 0 ? (r.validation.expectancy * decided) / r.validation.drawdown : null,
+      stability: r.stability.score,
+      robustness: null,
+      monteCarloP5: null,
+      walkForwardOos: r.validation.profitFactor,
+      sufficient: r.status !== "INSUFFICIENT_DATA",
+    };
+  });
+}
+
+function CrossAssetSection({
+  rows,
+  researchRunId,
+  instrument,
+  from,
+  to,
+}: {
+  rows: StrategyResearchRow[];
+  researchRunId: string;
+  instrument: string;
+  from: string;
+  to: string;
+}) {
+  const cxRows = useMemo(() => toCxRows(rows, instrument), [rows, instrument]);
+  const matrix = useMemo(() => buildInstrumentStrategyMatrix(cxRows), [cxRows]);
+  const regimeMatrix = useMemo(() => buildRegimeStrategyMatrix(cxRows), [cxRows]);
+  const leaderboard = useMemo<LeaderboardEntry[]>(() => buildLeaderboard(cxRows), [cxRows]);
+  const summary = useMemo(() => buildResearchSummary(cxRows), [cxRows]);
+  const strategies = useMemo(() => Array.from(new Set(cxRows.map((r) => r.strategy))), [cxRows]);
+  const consistency = useMemo(() => {
+    const out: Record<string, ReturnType<typeof computeConsistencyScore>> = {};
+    for (const s of strategies) out[s] = computeConsistencyScore({ strategy: s, rows: cxRows });
+    return out;
+  }, [strategies, cxRows]);
+
+  const provenance = {
+    researchRunId,
+    generatedAt: new Date().toISOString(),
+    engineVersion: CROSS_ASSET_ENGINE_VERSION,
+  };
+
+  const exportCsv = useCallback(() => {
+    const csv = buildCrossAssetCsv(cxRows, provenance);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url;
+    a.download = `cross_asset_${instrument}_${from}_${to}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }, [cxRows, provenance, instrument, from, to]);
+
+  const exportJson = useCallback(() => {
+    const json = buildCrossAssetJson(cxRows, provenance, { leaderboard, summary, consistency });
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url;
+    a.download = `cross_asset_${instrument}_${from}_${to}.json`;
+    a.click(); URL.revokeObjectURL(url);
+  }, [cxRows, provenance, leaderboard, summary, consistency, instrument, from, to]);
+
+  return (
+    <>
+      <section style={panel}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange }}>CROSS-ASSET MATRIX</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={exportCsv} style={btnGhost}>Cross-Asset CSV</button>
+            <button onClick={exportJson} style={btnGhost}>Cross-Asset JSON</button>
+          </div>
+        </div>
+        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginBottom: 10 }}>
+          {cxRows.length === 0
+            ? "No rows yet. Run the Research Lab above to populate the cross-asset matrix; run additional instruments to expand it."
+            : `Adapting ${cxRows.length} research row(s) into the cross-asset envelope. Run additional instruments via the Astro / SMC / Hybrid panels to broaden coverage — no strategy formulas are altered.`}
+        </div>
+        {cxRows.length > 0 ? (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+              <thead>
+                <tr style={{ color: C.muted, textAlign: "left" }}>
+                  {["Instrument","Strategy","Formula","Trades","Win %","PF","Expectancy","Net PnL","Max DD","Stability","Sufficient"].map((h) => (
+                    <th key={h} style={{ padding: "6px 8px", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cxRows.map((r, i) => (
+                  <tr key={`${r.instrument}-${r.strategy}-${i}`} style={{ borderBottom: `1px solid ${C.border}`, opacity: r.sufficient ? 1 : 0.55 }}>
+                    <td style={{ padding: "6px 8px" }}>{r.instrument}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.strategy}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.formula}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.trades}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.winRate}%</td>
+                    <td style={{ padding: "6px 8px" }}>{r.profitFactor}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.expectancy}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.netPnl.toFixed(2)}</td>
+                    <td style={{ padding: "6px 8px", color: C.red }}>{r.maxDrawdown}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.stability ?? "—"}</td>
+                    <td style={{ padding: "6px 8px" }}>{r.sufficient ? "yes" : "no"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
+      {cxRows.length > 0 ? (
+        <section style={panel}>
+          <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>LEADERBOARD</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
+            {leaderboard.map((e) => (
+              <div key={e.category} style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 10 }}>
+                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, letterSpacing: 1 }}>{e.category}</div>
+                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 14, marginTop: 4 }}>{e.winner ?? "—"}</div>
+                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 4 }}>
+                  {e.metric}: <span style={{ color: C.text }}>{e.value ?? "—"}</span>
+                </div>
+                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, marginTop: 4 }}>{e.reason}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {cxRows.length > 0 ? (
+        <section style={panel}>
+          <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>RESEARCH SUMMARY</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+            <div><span style={lbl}>Best Instrument</span><div>{summary.bestInstrument ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.bestInstrument}</div></div>
+            <div><span style={lbl}>Weak Instrument</span><div>{summary.weakInstrument ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.weakInstrument}</div></div>
+            <div><span style={lbl}>Best Timeframe</span><div>{summary.bestTimeframe ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.bestTimeframe}</div></div>
+            <div><span style={lbl}>Weak Timeframe</span><div>{summary.weakTimeframe ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.weakTimeframe}</div></div>
+            <div><span style={lbl}>Best Regime</span><div>{summary.bestRegime ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.bestRegime}</div></div>
+            <div><span style={lbl}>Worst Regime</span><div>{summary.worstRegime ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.worstRegime}</div></div>
+            <div><span style={lbl}>Highest Confidence</span><div>{summary.highestConfidenceStrategy ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.highestConfidenceStrategy}</div></div>
+            <div><span style={lbl}>Least Stable</span><div>{summary.leastStableStrategy ?? "—"}</div><div style={{ color: C.muted, fontSize: 10 }}>{summary.reasons.leastStableStrategy}</div></div>
+          </div>
+        </section>
+      ) : null}
+
+      {cxRows.length > 0 ? (
+        <section style={panel}>
+          <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>CONSISTENCY SCORES</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
+            {strategies.map((s) => {
+              const c = consistency[s];
+              return (
+                <div key={s} style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 10 }}>
+                  <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.orange }}>{s}</div>
+                  <div style={{ fontFamily: "var(--eb-mono)", fontSize: 24, marginTop: 6 }}>{c.score}</div>
+                  <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, marginTop: 6 }}>{c.formula}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted }}>
+            Matrix rows: {matrix.rowKeys.length} × {matrix.colKeys.length} · Regime rows: {regimeMatrix.rowKeys.length}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
