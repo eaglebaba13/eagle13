@@ -2,6 +2,8 @@ export type SmokeOverall = "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
 
 export type SmokeErrorSource =
   | "APPLICATION_AUTH"
+  | "SERVER_FUNCTION"
+  | "SERIALIZATION"
   | "UPSTOX_AUTH"
   | "UPSTOX_API"
   | "PROVIDER_CONFIG"
@@ -13,6 +15,10 @@ export function describeSmokeErrorSource(source: SmokeErrorSource | null | undef
   switch (source) {
     case "APPLICATION_AUTH":
       return "Application admin role required";
+    case "SERVER_FUNCTION":
+      return "Server function failed before contacting Upstox";
+    case "SERIALIZATION":
+      return "Server response could not be serialized safely";
     case "UPSTOX_AUTH":
       return "Upstox authentication failed";
     case "UPSTOX_API":
