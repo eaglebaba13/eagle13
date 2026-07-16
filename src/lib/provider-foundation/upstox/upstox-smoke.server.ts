@@ -80,7 +80,7 @@ export function sanitizeForJson(input: unknown): unknown {
     if (value == null) return value ?? null;
     const t = typeof value;
     if (t === "string") {
-      return redactUpstoxMessage(value);
+      return redactUpstoxMessage(value as string);
     }
     if (t === "number") {
       return Number.isFinite(value as number) ? value : null;
