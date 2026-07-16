@@ -53,7 +53,7 @@ class DiagnosticsErrorBoundary extends Component<
   { readonly children: ReactNode },
   { readonly message: string | null }
 > {
-  state = { message: null };
+  state: { readonly message: string | null } = { message: null };
 
   static getDerivedStateFromError(error: unknown) {
     const raw = error instanceof Error ? error.message : String(error ?? "diagnostics failed");
