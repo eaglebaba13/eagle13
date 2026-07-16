@@ -54,7 +54,9 @@ function redact(msg: string): string {
   return msg
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
-    .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"');
+    .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
+    // Never leak the raw HTTP response body — keep only the status prefix.
+    .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1");
 }
 
 function classifyStatus(status: number): { code: UpstoxErrorCode; retryable: boolean } {
