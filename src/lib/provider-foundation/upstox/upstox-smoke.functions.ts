@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { UpstoxSmokeReport } from "./upstox-smoke.server";
 
 /**
  * Admin-only Upstox live-provider smoke test. Read-only. Never returns
@@ -38,7 +39,7 @@ export const testUpstoxProvider = createServerFn({ method: "GET" })
             isAdmin === null ? "Admin role check failed." : "Admin role required.",
             { nowIso: startedAtIso },
           ),
-        );
+        ) as UpstoxSmokeReport;
       }
 
       let report;
@@ -48,14 +49,14 @@ export const testUpstoxProvider = createServerFn({ method: "GET" })
         report = buildUpstoxSmokeFailureReport(inner, { nowIso: startedAtIso });
       }
       try {
-        return sanitizeForJson(report);
+        return sanitizeForJson(report) as UpstoxSmokeReport;
       } catch (sErr) {
         // Sanitization itself failed — return a minimal SERIALIZATION report.
         return sanitizeForJson({
           ...buildServerFunctionFailureReport(sErr, { nowIso: startedAtIso }),
           errorSource: "SERIALIZATION",
           serializationStatus: "FAIL",
-        });
+        }) as UpstoxSmokeReport;
       }
     } catch (outer) {
       // Last-resort safe fallback that survives even a dynamic-import crash.
