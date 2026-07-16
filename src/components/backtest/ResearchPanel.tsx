@@ -14,6 +14,7 @@ const RecommendationValidationSection = lazy(
 const OptimizerSection = lazy(() => import("./OptimizerSection"));
 const PortfolioSection = lazy(() => import("./PortfolioSection"));
 const ShadowSection = lazy(() => import("./ShadowSection"));
+const DecisionCenterSection = lazy(() => import("./DecisionCenterSection"));
 
 import {
   runBacktest,
@@ -1162,6 +1163,11 @@ export function MonteCarloSection({
           <ShadowSection />
         </Suspense>
       ) : null}
+      {tab === "decision" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading decision center…</div>}>
+          <DecisionCenterSection />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -1190,7 +1196,8 @@ type ResearchTab =
   | "recval"
   | "opt"
   | "portfolio"
-  | "shadow";
+  | "shadow"
+  | "decision";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
@@ -1203,6 +1210,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "opt", label: "Optimizer" },
   { id: "portfolio", label: "Portfolio" },
   { id: "shadow", label: "Shadow Validation" },
+  { id: "decision", label: "GO / NO-GO" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
