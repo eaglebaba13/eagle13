@@ -1,10 +1,26 @@
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, fmt } from "./legacy-primitives";
+import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function GannCycleWidget() {
-  const { levels } = useDashboardData();
+  const { levels, freshnessByDependency, providerMetadata } = useDashboardData();
+  const freshness = freshnessByDependency?.MARKET_DATA;
+  const gate = canDisplayActionableSignal({
+    freshness: freshness?.status ?? "UNAVAILABLE",
+    providerStatus: providerMetadata?.status ?? "UNKNOWN",
+    formulaVersion: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1",
+  });
   return (
-    <Card title="GANN CYCLE" sub="SQUARE OF 9 · 45° STEPS" accent="var(--eb-bn)">
+    <Card
+      title="GANN CYCLE"
+      sub="SQUARE OF 9 · 45° STEPS"
+      accent="var(--eb-bn)"
+      freshness={freshness}
+      provider={providerMetadata?.name}
+      methodology="GANN_ASTRO_INTRADAY_ABSOLUTE_V1"
+      blocked={!gate.allowed}
+      blockedReasons={gate.blockingReasons}
+    >
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
