@@ -1,8 +1,15 @@
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, fmt, tdStyle, thStyle } from "./legacy-primitives";
+import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function PivotWidget() {
-  const { levels, accent } = useDashboardData();
+  const { levels, accent, freshnessByDependency, providerMetadata } = useDashboardData();
+  const freshness = freshnessByDependency?.MARKET_DATA;
+  const gate = canDisplayActionableSignal({
+    freshness: freshness?.status ?? "UNAVAILABLE",
+    providerStatus: providerMetadata?.status ?? "UNKNOWN",
+    formulaVersion: "CLASSIC_PIVOT_V1",
+  });
   const rows = [
     { k: "R3", v: levels.r3, c: "var(--eb-bull)" },
     { k: "R2", v: levels.r2, c: "var(--eb-bull)" },
@@ -13,7 +20,16 @@ export default function PivotWidget() {
     { k: "S3", v: levels.s3, c: "var(--eb-bear)" },
   ];
   return (
-    <Card title="PIVOT LEVELS" sub="R1-R3 · S1-S3" accent={accent}>
+    <Card
+      title="PIVOT LEVELS"
+      sub="R1-R3 · S1-S3"
+      accent={accent}
+      freshness={freshness}
+      provider={providerMetadata?.name}
+      methodology="CLASSIC_PIVOT_V1"
+      blocked={!gate.allowed}
+      blockedReasons={gate.blockingReasons}
+    >
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
