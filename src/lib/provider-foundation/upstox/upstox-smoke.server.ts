@@ -12,6 +12,58 @@ import {
 } from "./upstox-token-policy.server";
 import { resolveInstrument, UPSTOX_SUPPORTED_SYMBOLS, type UpstoxSupportedSymbol } from "./upstox-instruments.server";
 import type { QuoteSymbol, Timeframe } from "../types";
+import type { UpstoxErrorCode } from "./upstox-types";
+
+export type SmokeErrorSource =
+  | "APPLICATION_AUTH"
+  | "UPSTOX_AUTH"
+  | "UPSTOX_API"
+  | "PROVIDER_CONFIG"
+  | "NETWORK"
+  | "SCHEMA";
+
+export const UPSTOX_FORBIDDEN_SAFE_MESSAGE = "Upstox denied this request";
+
+/** Map an Upstox HTTP-error code to a SmokeErrorSource. Never leaks bodies. */
+export function errorSourceFromUpstoxCode(code: UpstoxErrorCode): SmokeErrorSource {
+  switch (code) {
+    case "UPSTOX_AUTH_REQUIRED":
+      return "UPSTOX_AUTH";
+    case "UPSTOX_FORBIDDEN":
+      return "UPSTOX_API";
+    case "UPSTOX_TIMEOUT":
+    case "UPSTOX_NETWORK":
+      return "NETWORK";
+    case "UPSTOX_SCHEMA_ERROR":
+      return "SCHEMA";
+    case "UPSTOX_UNSUPPORTED_RANGE":
+    case "UPSTOX_UNSUPPORTED_TIMEFRAME":
+      return "PROVIDER_CONFIG";
+    case "UPSTOX_RATE_LIMITED":
+    case "UPSTOX_DATA_UNAVAILABLE":
+    case "UPSTOX_UNKNOWN":
+    default:
+      return "UPSTOX_API";
+  }
+}
+
+/** Map an adapter's ProviderResult failure reason to a SmokeErrorSource. */
+export function errorSourceFromAdapterReason(reason: string): SmokeErrorSource {
+  switch (reason) {
+    case "AUTH_REQUIRED":
+      return "UPSTOX_AUTH";
+    case "TIMEOUT":
+    case "NETWORK":
+      return "NETWORK";
+    case "SCHEMA_ERROR":
+      return "SCHEMA";
+    case "UNSUPPORTED_SYMBOL":
+    case "UNSUPPORTED_TIMEFRAME":
+      return "PROVIDER_CONFIG";
+    default:
+      return "UPSTOX_API";
+  }
+}
 
 export interface EndpointResult {
   readonly endpoint: "quote" | "historical" | "intraday";
@@ -26,6 +78,7 @@ export interface EndpointResult {
   readonly marketSession: string;
   readonly cacheHit: boolean;
   readonly safeError: string | null;
+  readonly errorSource: SmokeErrorSource | null;
   readonly dataQuality: {
     readonly coveragePct: number | null;
     readonly insufficient: boolean;
@@ -52,6 +105,8 @@ export interface UpstoxSmokeReport {
     readonly historicalSuccess: boolean;
     readonly intradaySuccess: boolean;
     readonly overall: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+    readonly errorSource?: SmokeErrorSource | null;
+    readonly safeError?: string | null;
   };
   readonly cache: { hits: number; misses: number; writes: number };
   readonly health: {
@@ -69,6 +124,7 @@ interface QuoteApiResult {
   readonly latencyMs: number;
   readonly requestId: string | null;
   readonly safeError: string | null;
+  readonly errorSource: SmokeErrorSource | null;
   readonly providerStatus: string;
   readonly last?: number;
 }
@@ -82,11 +138,17 @@ async function fetchQuote(
     query: { instrument_key: instrumentKey },
   });
   if (!res.ok) {
+    const source = errorSourceFromUpstoxCode(res.error.code);
+    const safeError =
+      res.error.code === "UPSTOX_FORBIDDEN"
+        ? UPSTOX_FORBIDDEN_SAFE_MESSAGE
+        : redactUpstoxMessage(`${res.error.code}: ${res.error.message}`);
     return {
       ok: false,
       latencyMs: res.latencyMs,
       requestId: res.error.requestId ?? null,
-      safeError: redactUpstoxMessage(`${res.error.code}: ${res.error.message}`),
+      safeError,
+      errorSource: source,
       providerStatus: res.error.code === "UPSTOX_RATE_LIMITED" ? "RATE_LIMITED" : res.error.code === "UPSTOX_AUTH_REQUIRED" ? "OFFLINE" : "FAILED",
     };
   }
@@ -97,6 +159,7 @@ async function fetchQuote(
     latencyMs: res.latencyMs,
     requestId: res.requestId,
     safeError: null,
+    errorSource: null,
     providerStatus: "LIVE",
     last: typeof last === "number" ? last : undefined,
   };
@@ -117,6 +180,7 @@ function toEndpointResult(
     marketSession: "UNKNOWN",
     cacheHit: false,
     safeError: q.safeError,
+    errorSource: q.errorSource,
     dataQuality: null,
   };
 }
