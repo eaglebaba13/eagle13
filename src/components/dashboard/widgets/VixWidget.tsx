@@ -1,8 +1,9 @@
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, FlashValue, Row, fmt } from "./legacy-primitives";
+import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function VixWidget() {
-  const { data } = useDashboardData();
+  const { data, freshnessByDependency, providerMetadata } = useDashboardData();
   const vix = data.vix;
   if (!vix) return null;
   const up = vix.change >= 0;
@@ -12,14 +13,32 @@ export default function VixWidget() {
     level >= 20 ? "HIGH FEAR" : level >= 15 ? "ELEVATED" : level >= 12 ? "CALM" : "COMPLACENT";
   const moodCol =
     level >= 20 ? "var(--eb-bear)" : level >= 15 ? "var(--eb-accent)" : "var(--eb-bull)";
+  const freshness = freshnessByDependency?.MARKET_DATA;
+  const gate = canDisplayActionableSignal({
+    freshness: freshness?.status ?? "UNAVAILABLE",
+    providerStatus: providerMetadata?.status ?? "UNKNOWN",
+    formulaVersion: "MARKET_DATA_V1",
+  });
+  const stale = !gate.allowed;
   return (
-    <Card title="INDIA VIX — VOLATILITY" sub="FEAR GAUGE" accent="var(--eb-neutral)">
+    <Card
+      title="INDIA VIX — VOLATILITY"
+      sub="FEAR GAUGE"
+      accent="var(--eb-neutral)"
+      freshness={freshness}
+      provider={providerMetadata?.name}
+      methodology="MARKET_DATA_V1"
+      blocked={stale}
+      blockedReasons={gate.blockingReasons}
+    >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
         <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 26, fontWeight: 700, color: "var(--eb-text)" }}>
           {fmt(level)}
         </span>
-        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 13, color: col }}>
-          {up ? "▲" : "▼"} {fmt(Math.abs(vix.change))} ({vix.changePct}%)
+        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 13, color: stale ? "var(--eb-muted)" : col }}>
+          {stale ? null : (up ? "▲" : "▼") + " "}
+          {fmt(Math.abs(vix.change))} ({vix.changePct}%)
+          {stale ? " · DATA STALE" : ""}
         </span>
         <span
           style={{
@@ -29,11 +48,11 @@ export default function VixWidget() {
             letterSpacing: 1,
             padding: "2px 8px",
             borderRadius: 4,
-            border: `1px solid ${moodCol}`,
-            color: moodCol,
+            border: `1px solid ${stale ? "var(--eb-muted)" : moodCol}`,
+            color: stale ? "var(--eb-muted)" : moodCol,
           }}
         >
-          {mood}
+          {stale ? "MOOD SUPPRESSED" : mood}
         </span>
       </div>
       <Row label="Prev Close">

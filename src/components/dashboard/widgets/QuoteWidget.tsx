@@ -1,14 +1,27 @@
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, FlashValue, Row, fmt } from "./legacy-primitives";
+import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function QuoteWidget() {
-  const { activeQuote: quote, accent } = useDashboardData();
+  const { activeQuote: quote, accent, freshnessByDependency, providerMetadata } = useDashboardData();
+  const freshness = freshnessByDependency?.MARKET_DATA;
+  const gate = canDisplayActionableSignal({
+    freshness: freshness?.status ?? "UNAVAILABLE",
+    providerStatus: providerMetadata?.status ?? "UNKNOWN",
+    formulaVersion: "MARKET_DATA_V1",
+  });
   const up = quote.change >= 0;
+  const stale = !gate.allowed;
   return (
     <Card
       title={`${quote.name} — LIVE`}
       sub={quote.marketState === "OPEN" ? "MARKET OPEN" : "MARKET CLOSED"}
       accent={accent}
+      freshness={freshness}
+      provider={providerMetadata?.name}
+      methodology="MARKET_DATA_V1"
+      blocked={stale}
+      blockedReasons={gate.blockingReasons}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
         <span
@@ -22,16 +35,30 @@ export default function QuoteWidget() {
         >
           {fmt(quote.livePrice)}
         </span>
-        <span
-          suppressHydrationWarning
-          style={{
-            fontFamily: "var(--eb-mono)",
-            fontSize: 14,
-            color: up ? "var(--eb-bull)" : "var(--eb-bear)",
-          }}
-        >
-          {up ? "▲" : "▼"} {fmt(Math.abs(quote.change))} ({quote.changePct}%)
-        </span>
+        {stale ? (
+          <span
+            suppressHydrationWarning
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 13,
+              color: "var(--eb-muted)",
+              letterSpacing: 1,
+            }}
+          >
+            {fmt(Math.abs(quote.change))} ({quote.changePct}%) · STALE
+          </span>
+        ) : (
+          <span
+            suppressHydrationWarning
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 14,
+              color: up ? "var(--eb-bull)" : "var(--eb-bear)",
+            }}
+          >
+            {up ? "▲" : "▼"} {fmt(Math.abs(quote.change))} ({quote.changePct}%)
+          </span>
+        )}
       </div>
       <div
         style={{
