@@ -99,7 +99,7 @@ describe("upstox smoke — endpoint outcomes", () => {
   it("classifies Upstox 403 as UPSTOX_API with the safe forbidden message", async () => {
     const rep = await runUpstoxSmokeTest({
       env: LIVE_ENV,
-      fetchImpl: async () => status(403, "denied"),
+      fetchImpl: async () => status(403, "permission denied by upstox internal reason"),
       nowIso: "2026-07-16T09:15:00.000Z",
     });
     expect(rep.summary.overall).toBe("FAIL");
@@ -109,7 +109,8 @@ describe("upstox smoke — endpoint outcomes", () => {
     const json = JSON.stringify(rep);
     expect(json).not.toContain("live-tok-abcdef");
     expect(json).not.toContain("Authorization");
-    expect(json).not.toContain("denied");
+    expect(json).not.toContain("permission denied by upstox");
+    expect(json).not.toContain("internal reason");
   });
 
   it("classifies 429 with retry-after", async () => {
