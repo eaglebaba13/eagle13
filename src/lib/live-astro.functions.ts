@@ -112,7 +112,8 @@ function levelsFor(
   cycles: { base: number; upper: number; lower: number },
   degree: number,
 ) {
-  const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
+  const degreeInSign = degree === 30 ? 0 : degree;
+  const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degreeInSign);
   return {
     r1,
     r2,

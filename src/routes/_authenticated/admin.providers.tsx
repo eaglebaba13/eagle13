@@ -1,23 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { getProviderDiagnostics } from "@/lib/provider-foundation/provider-diagnostics.functions";
+import {
+  buildSmokeDiagnosticRows,
+  dispatchSmokeTest,
+  providerHeaderText,
+  type SmokeOverall,
+} from "@/lib/provider-foundation/provider-diagnostics-ui";
 import { testUpstoxProvider } from "@/lib/provider-foundation/upstox/upstox-smoke.functions";
 import {
-  ALL_QUOTE_SYMBOLS,
   DEFAULT_REFRESH_INTERVAL_MS,
-  ProviderManager,
-  createFactoryAdapter,
   type ManagerDiagnostics,
   type ProviderStatus,
 } from "@/lib/provider-foundation";
-import {
-  UPSTOX_ADAPTER_ID,
-  UPSTOX_ADAPTER_VERSION,
-  UPSTOX_INSTRUMENT_MASTER_VERSION,
-  UPSTOX_SUPPORTED_SYMBOLS,
-} from "@/lib/provider-foundation/upstox";
 
 type UpstoxSmokeReport = Awaited<ReturnType<typeof testUpstoxProvider>>;
+type ProviderDiagnosticsReport = Awaited<ReturnType<typeof getProviderDiagnostics>>;
 
 export const Route = createFileRoute("/_authenticated/admin/providers")({
   head: () => ({
@@ -43,67 +42,55 @@ const STATUS_COLORS: Record<ProviderStatus, string> = {
   OFFLINE: "bg-slate-500/15 text-slate-300 border-slate-500/30",
 };
 
-function buildDemoManager(nowIso: string): ProviderManager {
-  const primary = createFactoryAdapter({
-    id: "primary-mock",
-    label: "Primary Mock",
-    role: "PRIMARY",
-    capability: { domain: "QUOTES", quotes: [...ALL_QUOTE_SYMBOLS] },
-    quotes: {
-      NIFTY50: { last: 25000, prevClose: 24900, ageSec: 5 },
-      BANKNIFTY: { last: 55000, prevClose: 54800, ageSec: 5 },
-      INDIA_VIX: { last: 12.5, prevClose: 12.9, ageSec: 5 },
-      GOLD: { last: 71000, prevClose: 70900, ageSec: 10 },
-      SILVER: { last: 91000, prevClose: 90900, ageSec: 10 },
-      XAUUSD: { last: 2400, prevClose: 2395, currency: "USD", ageSec: 5 },
-      BTC: { last: 68000, prevClose: 67500, currency: "USD", ageSec: 5 },
-      CRUDEOIL: { last: 6800, prevClose: 6750, ageSec: 30 },
-      NATURAL_GAS: { last: 260, prevClose: 258, ageSec: 30 },
-      USDINR: { last: 83.5, prevClose: 83.4, ageSec: 20 },
-    },
-    latencyMs: 45,
-  });
-  const secondary = createFactoryAdapter({
-    id: "secondary-mock",
-    label: "Secondary Mock",
-    role: "SECONDARY",
-    capability: { domain: "QUOTES", quotes: [...ALL_QUOTE_SYMBOLS] },
-    quotes: {
-      NIFTY50: { last: 24990, prevClose: 24900, ageSec: 20 },
-      BANKNIFTY: { last: 54990, prevClose: 54800, ageSec: 20 },
-    },
-    latencyMs: 120,
-  });
-  const mgr = new ProviderManager({
-    startedAt: nowIso,
-    primary: primary.id,
-    secondary: secondary.id,
-  });
-  mgr.register(primary);
-  mgr.register(secondary);
-  mgr.wire({
-    domain: "QUOTES",
-    primaryId: primary.id,
-    secondaryId: secondary.id,
-    rateLimit: { capacity: 60, refillPerSec: 5 },
-  });
-  return mgr;
+const SMOKE_STATUS_COLORS: Record<SmokeOverall, string> = {
+  PASS: "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+  PARTIAL: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+  FAIL: "border-red-500/40 bg-red-500/10 text-red-200",
+  NOT_CONFIGURED: "border-slate-500/40 bg-slate-500/10 text-slate-200",
+};
+
+class DiagnosticsErrorBoundary extends Component<
+  { readonly children: ReactNode },
+  { readonly message: string | null }
+> {
+  state = { message: null };
+
+  static getDerivedStateFromError(error: unknown) {
+    const raw = error instanceof Error ? error.message : String(error ?? "diagnostics failed");
+    return { message: raw.slice(0, 180) };
+  }
+
+  componentDidCatch(_error: unknown, _info: ErrorInfo) {
+    // Boundary is intentionally silent: the UI renders a redacted status card.
+  }
+
+  render() {
+    if (this.state.message) {
+      return <FailureCard title="Provider diagnostics" message={this.state.message} />;
+    }
+    return this.props.children;
+  }
 }
 
 function AdminProvidersPage() {
-  const startedAt = useMemo(() => new Date().toISOString(), []);
-  const [diag, setDiag] = useState<ManagerDiagnostics | null>(null);
+  const loadDiagnostics = useServerFn(getProviderDiagnostics);
+  const [report, setReport] = useState<ProviderDiagnosticsReport | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    const mgr = buildDemoManager(startedAt);
     async function refresh() {
-      const now = new Date();
-      for (const sym of ALL_QUOTE_SYMBOLS) {
-        await mgr.getQuote(sym, { nowIso: now.toISOString(), nowMs: now.getTime() });
+      try {
+        const next = (await loadDiagnostics()) as ProviderDiagnosticsReport;
+        if (!cancelled) {
+          setReport(next);
+          setLoadError(null);
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "diagnostics failed";
+        if (!cancelled) setLoadError(message.slice(0, 180));
       }
-      if (!cancelled) setDiag(mgr.diagnostics());
     }
     void refresh();
     const iv = setInterval(() => setTick((t) => t + 1), 5000);
@@ -111,23 +98,36 @@ function AdminProvidersPage() {
       cancelled = true;
       clearInterval(iv);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedAt, tick]);
+  }, [loadDiagnostics, tick]);
+
+  const diag = report?.diagnostics ?? null;
 
   return (
-    <div className="mx-auto max-w-6xl p-6 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-white">Provider Diagnostics</h1>
-        <p className="text-sm text-slate-400">
-          Provider Foundation V1 · demo diagnostics using mock adapters. Real
-          provider adapters land in Phase 26 Stage 2–4. This page has no impact
-          on dashboards, backtests, or trading logic.
-        </p>
-        <div className="text-xs text-slate-500 font-mono">
-          session: {diag?.sessionId ?? "…"}
-        </div>
-      </header>
+    <DiagnosticsErrorBoundary>
+      <div className="mx-auto max-w-6xl p-6 space-y-6">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold text-white">Provider Diagnostics</h1>
+          <p className="text-sm text-slate-400">{providerHeaderText(report)}</p>
+          <div className="flex flex-wrap gap-3 text-xs text-slate-500 font-mono">
+            <span>session: {diag?.sessionId ?? "…"}</span>
+            <span>provider: {report?.providerSelected ?? "…"}</span>
+            {report?.fallbackReason ? <span>fallback: {report.fallbackReason}</span> : null}
+          </div>
+        </header>
 
+        {loadError ? <FailureCard title="Provider diagnostics" message={loadError} /> : null}
+        {report?.safeError ? <FailureCard title="Provider diagnostics" message={report.safeError} /> : null}
+
+        <ProviderDiagnosticsTables diag={diag} />
+        <UpstoxReadOnlySection report={report} />
+      </div>
+    </DiagnosticsErrorBoundary>
+  );
+}
+
+function ProviderDiagnosticsTables({ diag }: { diag: ManagerDiagnostics | null }) {
+  return (
+    <>
       <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
         <h2 className="text-sm font-semibold text-slate-200 mb-3">Wirings</h2>
         <table className="w-full text-xs">
@@ -172,17 +172,13 @@ function AdminProvidersPage() {
               <tr key={h.providerId} className="border-t border-slate-800">
                 <td className="py-1">{h.providerId}</td>
                 <td className="py-1">
-                  <span
-                    className={`inline-block rounded border px-2 py-0.5 ${STATUS_COLORS[h.status]}`}
-                  >
+                  <span className={`inline-block rounded border px-2 py-0.5 ${STATUS_COLORS[h.status]}`}>
                     {h.status}
                   </span>
                 </td>
                 <td className="py-1 text-right">{h.calls}</td>
                 <td className="py-1 text-right">{h.errors}</td>
-                <td className="py-1 text-right">
-                  {(h.errorRate * 100).toFixed(1)}%
-                </td>
+                <td className="py-1 text-right">{(h.errorRate * 100).toFixed(1)}%</td>
                 <td className="py-1 text-right">{h.avgLatencyMs.toFixed(1)}ms</td>
               </tr>
             ))}
@@ -193,7 +189,7 @@ function AdminProvidersPage() {
       <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
         <h2 className="text-sm font-semibold text-slate-200 mb-3">Cache</h2>
         {diag ? (
-          <div className="grid grid-cols-5 gap-3 text-xs font-mono text-slate-300">
+          <div className="grid grid-cols-2 gap-3 text-xs font-mono text-slate-300 md:grid-cols-5">
             <Stat label="Hits" value={diag.cache.hits} />
             <Stat label="Misses" value={diag.cache.misses} />
             <Stat label="Writes" value={diag.cache.writes} />
@@ -213,33 +209,32 @@ function AdminProvidersPage() {
           ))}
         </ul>
       </section>
+    </>
+  );
+}
 
-      <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
-        <h2 className="text-sm font-semibold text-slate-200 mb-3">
-          Upstox Historical V3 (read-only)
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono text-slate-300">
-          <Stat label="Adapter" value={UPSTOX_ADAPTER_ID} />
-          <Stat label="Version" value={UPSTOX_ADAPTER_VERSION} />
-          <Stat label="Instrument master" value={UPSTOX_INSTRUMENT_MASTER_VERSION} />
-          <Stat label="Symbols" value={UPSTOX_SUPPORTED_SYMBOLS.length} />
-        </div>
-        <p className="mt-3 text-[11px] text-slate-500">
-          Read-only historical + intraday candles. Token status, health,
-          latency and cache metrics are surfaced server-side only. API keys,
-          secrets and access tokens are never rendered here.
-        </p>
-        <div className="mt-2 text-[11px] text-slate-500">
-          Supported: {UPSTOX_SUPPORTED_SYMBOLS.join(", ")}
-        </div>
-        <div className="mt-1 text-[11px] text-slate-500">
-          Timeframes: 1m · 3m · 5m · 15m · 1h · 1d — dashboard/backtest wiring
-          is intentionally deferred to Stage 3.
-        </div>
+function UpstoxReadOnlySection({ report }: { report: ProviderDiagnosticsReport | null }) {
+  return (
+    <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
+      <h2 className="text-sm font-semibold text-slate-200 mb-3">Upstox ProviderAdapter (read-only)</h2>
+      <div className="grid grid-cols-2 gap-3 text-xs font-mono text-slate-300 md:grid-cols-4">
+        <Stat label="Adapter" value={report?.providerSelected ?? "…"} />
+        <Stat label="Version" value={report?.adapterVersion ?? "—"} />
+        <Stat label="Instrument master" value={report?.instrumentMaster.version ?? "…"} />
+        <Stat label="Symbols" value={report?.supportedSymbols.length ?? "…"} />
+      </div>
+      <p className="mt-3 text-[11px] text-slate-500">
+        Read-only quotes, historical and intraday candles. Token status, health, latency and cache metrics are surfaced server-side only.
+      </p>
+      <div className="mt-2 text-[11px] text-slate-500">
+        Supported: {report?.supportedSymbols.join(", ") ?? "…"}
+      </div>
+      <div className="mt-1 text-[11px] text-slate-500">
+        Timeframes: {report?.supportedIntervals.join(" · ") ?? "…"}
+      </div>
 
-        <UpstoxLiveSmokeTestPanel />
-      </section>
-    </div>
+      <UpstoxLiveSmokeTestPanel />
+    </section>
   );
 }
 
@@ -254,12 +249,9 @@ function UpstoxLiveSmokeTestPanel() {
 
   async function run() {
     setState({ kind: "running" });
-    try {
-      const report = (await runFn()) as UpstoxSmokeReport;
-      setState({ kind: "ok", report });
-    } catch (e) {
-      setState({ kind: "error", message: e instanceof Error ? e.message : "failed" });
-    }
+    const next = await dispatchSmokeTest(() => runFn() as Promise<UpstoxSmokeReport>);
+    if (next.kind === "ok") setState({ kind: "ok", report: next.report });
+    else setState({ kind: "error", message: next.message });
   }
 
   return (
@@ -278,9 +270,7 @@ function UpstoxLiveSmokeTestPanel() {
       </div>
 
       {state.kind === "error" && (
-        <div className="rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-          {state.message === "forbidden" ? "Admin role required." : state.message}
-        </div>
+        <StatusCard status="FAIL" title="Live Provider Test" note={state.message === "forbidden" ? "Admin role required." : state.message} />
       )}
 
       {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
@@ -288,57 +278,29 @@ function UpstoxLiveSmokeTestPanel() {
   );
 }
 
-function SmokeCheck({ label, ok, note }: { label: string; ok: boolean; note?: string }) {
-  return (
-    <div className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs">
-      <div className="flex items-center gap-2">
-        <span className={ok ? "text-emerald-400" : "text-red-400"}>{ok ? "✓" : "✗"}</span>
-        <span className="text-slate-200">{label}</span>
-      </div>
-      {note ? <span className="font-mono text-[11px] text-slate-500">{note}</span> : null}
-    </div>
-  );
-}
-
 function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
-  const anyOk = (rs: UpstoxSmokeReport["quoteResults"]) => rs.some((r) => r.ok);
+  const rows = buildSmokeDiagnosticRows(report);
   return (
     <div className="rounded-md border border-slate-800 bg-slate-950/80 p-3 space-y-2 text-slate-200">
       <div className="flex items-center justify-between">
         <div className="text-xs font-mono text-slate-400">at {report.at}</div>
-        <div
-          className={`rounded border px-2 py-0.5 text-[11px] ${
-            report.summary.overall === "PASS"
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-              : report.summary.overall === "PARTIAL"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                : "border-red-500/40 bg-red-500/10 text-red-200"
-          }`}
-        >
+        <div className={`rounded border px-2 py-0.5 text-[11px] ${SMOKE_STATUS_COLORS[report.summary.overall]}`}>
           {report.summary.overall}
         </div>
       </div>
 
       <div>
-        <SmokeCheck label="Authentication" ok={report.authenticated} note={report.tokenStatus.tokenSource} />
-        <SmokeCheck
-          label="Instrument Master"
-          ok={report.instrumentResolved.every((r) => r.resolved)}
-          note={`${report.instrumentResolved.filter((r) => r.resolved).length}/${report.instrumentResolved.length} resolved`}
-        />
-        <SmokeCheck label="Quote API" ok={anyOk(report.quoteResults)} note={`${report.quoteResults.filter((r) => r.ok).length}/${report.quoteResults.length} ok`} />
-        <SmokeCheck label="Historical API" ok={anyOk(report.historicalResults)} note={`${report.historicalResults.filter((r) => r.ok).length}/${report.historicalResults.length} ok`} />
-        <SmokeCheck label="Intraday API" ok={anyOk(report.intradayResults)} note={`${report.intradayResults.filter((r) => r.ok).length}/${report.intradayResults.length} ok`} />
-        <SmokeCheck
-          label="Cache"
-          ok={true}
-          note={`hits=${report.cache.hits} misses=${report.cache.misses} writes=${report.cache.writes}`}
-        />
-        <SmokeCheck
-          label="Health"
-          ok={report.health.errors === 0}
-          note={`calls=${report.health.totalCalls} errors=${report.health.errors} avg=${report.health.avgLatencyMs.toFixed(0)}ms`}
-        />
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`rounded border px-2 py-0.5 text-[10px] ${SMOKE_STATUS_COLORS[row.status]}`}>
+                {row.status}
+              </span>
+              <span className="text-slate-200">{row.label}</span>
+            </div>
+            <span className="font-mono text-[11px] text-slate-500">{row.note}</span>
+          </div>
+        ))}
       </div>
 
       <details className="text-[11px] text-slate-400">
@@ -351,6 +313,19 @@ function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
       </details>
     </div>
   );
+}
+
+function StatusCard({ status, title, note }: { status: SmokeOverall; title: string; note: string }) {
+  return (
+    <div className={`rounded-md border px-3 py-2 text-xs ${SMOKE_STATUS_COLORS[status]}`}>
+      <div className="font-semibold">{title}: {status}</div>
+      <div className="mt-1 opacity-90">{note}</div>
+    </div>
+  );
+}
+
+function FailureCard({ title, message }: { title: string; message: string }) {
+  return <StatusCard status="FAIL" title={title} note={message} />;
 }
 
 function SymbolTable({

@@ -15,6 +15,10 @@ export const testUpstoxProvider = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("forbidden");
 
     // Dynamic import: server-only module MUST NOT ship to the client bundle.
-    const { runUpstoxSmokeTest } = await import("./upstox-smoke.server");
-    return runUpstoxSmokeTest();
+    const { runUpstoxSmokeTest, buildUpstoxSmokeFailureReport } = await import("./upstox-smoke.server");
+    try {
+      return await runUpstoxSmokeTest();
+    } catch (error) {
+      return buildUpstoxSmokeFailureReport(error);
+    }
   });

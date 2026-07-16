@@ -7,6 +7,7 @@ import type {
   ProviderResult,
   ProviderTelemetry,
   QuoteSymbol,
+  QuoteTick,
   Timeframe,
 } from "../types";
 import { DEFAULT_FRESHNESS, classifyFreshness } from "../types";
@@ -22,7 +23,7 @@ import {
   type UpstoxHttpConfig,
   type UpstoxHttpResult,
 } from "./upstox-http.server";
-import { resolveInstrument } from "./upstox-instruments.server";
+import { resolveInstrument, UPSTOX_SUPPORTED_SYMBOLS } from "./upstox-instruments.server";
 import { planRange, policyFor } from "./upstox-range-policy";
 import {
   computeDataQuality,
@@ -47,7 +48,7 @@ function providerTelemetry(input: {
   providerTime: string | null;
   reason: string | null;
 }): ProviderTelemetry {
-  const status = input.ok
+  const status: ProviderTelemetry["status"] = input.ok
     ? classifyFreshness(input.ageSec, DEFAULT_FRESHNESS.HISTORICAL)
     : input.code === "UPSTOX_RATE_LIMITED"
       ? "RATE_LIMITED"
@@ -103,6 +104,37 @@ function buildIntradayPath(instrumentKey: string, tf: Timeframe): string | null 
   return `v3/historical-candle/intraday/${encInstr}/${mapped.unit}/${mapped.interval}`;
 }
 
+function quoteTelemetry(input: {
+  ok: boolean;
+  code?: UpstoxErrorCode;
+  latencyMs: number;
+  nowIso: string;
+  retryAfterMs?: number;
+  reason: string | null;
+}): ProviderTelemetry {
+  const status = input.ok
+    ? "LIVE"
+    : input.code === "UPSTOX_RATE_LIMITED"
+      ? "RATE_LIMITED"
+      : input.code === "UPSTOX_AUTH_REQUIRED"
+        ? "OFFLINE"
+        : input.code === "UPSTOX_DATA_UNAVAILABLE"
+          ? "OFFLINE"
+          : "FAILED";
+  return {
+    status,
+    latencyMs: input.latencyMs,
+    receivedAt: input.nowIso,
+    providerTime: null,
+    marketSession: "UNKNOWN",
+    rateLimit: null,
+    retryAfterMs: input.retryAfterMs ?? null,
+    staleReason: input.reason,
+    providerId: UPSTOX_ADAPTER_ID,
+    role: "PRIMARY",
+  };
+}
+
 function isoToday(nowMs: number): string {
   return new Date(nowMs).toISOString().slice(0, 10);
 }
@@ -145,6 +177,86 @@ export class UpstoxHistoricalAdapter {
 
   tokenStatus() {
     return this.http.tokenStatus();
+  }
+
+  /** Fetch a read-only quote through Upstox market quote API. */
+  async fetchQuote(symbol: QuoteSymbol, nowIso: string): Promise<ProviderResult<QuoteTick>> {
+    const instr = resolveInstrument(symbol);
+    if (!instr) {
+      return {
+        ok: false,
+        reason: "UNSUPPORTED_SYMBOL",
+        detail: `${symbol} is not in the Upstox instrument master`,
+        telemetry: quoteTelemetry({
+          ok: false,
+          code: "UPSTOX_DATA_UNAVAILABLE",
+          latencyMs: 0,
+          nowIso,
+          reason: "unsupported symbol",
+        }),
+      };
+    }
+    const res = await this.http.request<{
+      status?: string;
+      data?: Record<
+        string,
+        {
+          last_price?: number;
+          ohlc?: { open?: number; high?: number; low?: number; close?: number };
+          volume?: number;
+        }
+      >;
+    }>({
+      path: "v2/market-quote/quotes",
+      query: { instrument_key: instr.instrumentKey },
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        reason: errorToReason(res.error.code),
+        detail: res.error.message,
+        telemetry: quoteTelemetry({
+          ok: false,
+          code: res.error.code,
+          latencyMs: res.latencyMs,
+          nowIso,
+          reason: res.error.message,
+          retryAfterMs: res.error.retryAfterMs,
+        }),
+      };
+    }
+    const row = res.data?.data ? Object.values(res.data.data)[0] : undefined;
+    const last = row?.last_price;
+    if (typeof last !== "number" || !Number.isFinite(last)) {
+      return {
+        ok: false,
+        reason: "SCHEMA_ERROR",
+        detail: "missing quote last_price",
+        telemetry: quoteTelemetry({
+          ok: false,
+          code: "UPSTOX_SCHEMA_ERROR",
+          latencyMs: res.latencyMs,
+          nowIso,
+          reason: "missing quote last_price",
+        }),
+      };
+    }
+    const prevClose = row?.ohlc?.close ?? null;
+    const telemetry = quoteTelemetry({ ok: true, latencyMs: res.latencyMs, nowIso, reason: null });
+    const tick: QuoteTick = {
+      symbol,
+      last,
+      open: row?.ohlc?.open ?? null,
+      high: row?.ohlc?.high ?? null,
+      low: row?.ohlc?.low ?? null,
+      prevClose,
+      change: prevClose != null ? last - prevClose : null,
+      changePct: prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
+      volume: row?.volume ?? null,
+      currency: "INR",
+      telemetry,
+    };
+    return { ok: true, data: tick, telemetry };
   }
 
   /** Fetch a bounded historical range with deterministic chunking. */
@@ -358,6 +470,7 @@ export function buildUpstoxProviderAdapter(opts: UpstoxAdapterOptions = {}): Pro
     role: "PRIMARY",
     capability: {
       domain: "HISTORICAL",
+      quotes: [...UPSTOX_SUPPORTED_SYMBOLS],
       historical: ["1m", "3m", "5m", "15m", "1h", "1d"],
       historicalSymbols: [
         "NIFTY50", "BANKNIFTY", "INDIA_VIX",
@@ -365,6 +478,7 @@ export function buildUpstoxProviderAdapter(opts: UpstoxAdapterOptions = {}): Pro
       ],
     },
     freshness: DEFAULT_FRESHNESS.HISTORICAL,
+    fetchQuote: (symbol, nowIso) => impl.fetchQuote(symbol, nowIso),
     fetchHistorical: (symbol, tf, limit, nowIso) => impl.fetchHistorical(symbol, tf, limit, nowIso),
   };
 }
