@@ -527,66 +527,107 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   let errors = 0;
   let totalLatency = 0;
 
+  // Each per-symbol/per-endpoint check is isolated so one failure cannot
+  // halt reporting for others. Adapter methods should not throw, but if they
+  // do we still capture a redacted safe error and continue.
+  const safeQuote = async (entry: { symbol: string; instrumentKey?: string }): Promise<EndpointResult> => {
+    try {
+      const q = await fetchQuote(http, entry.instrumentKey!);
+      return toEndpointResult("quote", entry.symbol, q);
+    } catch (e) {
+      return {
+        endpoint: "quote", symbol: entry.symbol, ok: false, latencyMs: 0,
+        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
+        errorSource: "SERVER_FUNCTION", dataQuality: null,
+      };
+    }
+  };
+  const safeHistorical = async (entry: { symbol: string }): Promise<EndpointResult> => {
+    try {
+      const hist = await histAdapter.fetchRange({
+        symbol: entry.symbol, timeframe: histTf, from: fromIso, to: toIso, nowIso, nowMs,
+      });
+      return {
+        endpoint: "historical", symbol: entry.symbol, ok: hist.ok,
+        latencyMs: hist.telemetry.latencyMs, requestId: null,
+        candleCount: hist.ok ? hist.data.candles.length : 0,
+        firstCandleTime: hist.ok ? (hist.data.candles[0]?.time ?? null) : null,
+        lastCandleTime: hist.ok ? (hist.data.candles[hist.data.candles.length - 1]?.time ?? null) : null,
+        providerStatus: hist.telemetry.status, marketSession: hist.telemetry.marketSession,
+        cacheHit: false,
+        safeError: hist.ok ? null : redactUpstoxMessage(`${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`),
+        errorSource: hist.ok ? null : errorSourceFromAdapterReason(hist.reason),
+        dataQuality: hist.ok ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 } : null,
+      };
+    } catch (e) {
+      return {
+        endpoint: "historical", symbol: entry.symbol, ok: false, latencyMs: 0,
+        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
+        errorSource: "SERVER_FUNCTION", dataQuality: null,
+      };
+    }
+  };
+  const safeIntraday = async (entry: { symbol: string }): Promise<EndpointResult> => {
+    try {
+      const intra = await intraAdapter.fetch(entry.symbol, intraTf, nowIso);
+      // Market-closed / no current candle → PARTIAL, not FAIL.
+      const marketClosed = intra.ok && intra.data.candles.length === 0;
+      return {
+        endpoint: "intraday", symbol: entry.symbol,
+        ok: intra.ok && !marketClosed,
+        latencyMs: intra.telemetry.latencyMs, requestId: null,
+        candleCount: intra.ok ? intra.data.candles.length : 0,
+        firstCandleTime: intra.ok ? (intra.data.candles[0]?.time ?? null) : null,
+        lastCandleTime: intra.ok ? (intra.data.candles[intra.data.candles.length - 1]?.time ?? null) : null,
+        providerStatus: intra.telemetry.status, marketSession: intra.telemetry.marketSession,
+        cacheHit: false,
+        safeError: !intra.ok
+          ? redactUpstoxMessage(`${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`)
+          : marketClosed ? "market closed or no current intraday candle" : null,
+        errorSource: !intra.ok ? errorSourceFromAdapterReason(intra.reason) : null,
+        dataQuality: intra.ok ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 } : null,
+      };
+    } catch (e) {
+      return {
+        endpoint: "intraday", symbol: entry.symbol, ok: false, latencyMs: 0,
+        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
+        errorSource: "SERVER_FUNCTION", dataQuality: null,
+      };
+    }
+  };
+
   for (const entry of instrumentResolved) {
     if (!entry.resolved || !entry.instrumentKey) continue;
-
-    // Quote
-    const q = await fetchQuote(http, entry.instrumentKey);
-    quoteResults.push(toEndpointResult("quote", entry.symbol, q));
-    totalCalls++;
-    totalLatency += q.latencyMs;
+    const [qSet, hSet, iSet] = await Promise.allSettled([
+      safeQuote(entry),
+      safeHistorical(entry),
+      safeIntraday(entry),
+    ]);
+    const pushFrom = (s: PromiseSettledResult<EndpointResult>, endpoint: EndpointResult["endpoint"]): EndpointResult =>
+      s.status === "fulfilled"
+        ? s.value
+        : {
+            endpoint, symbol: entry.symbol, ok: false, latencyMs: 0,
+            requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+            cacheHit: false,
+            safeError: redactUpstoxMessage(String(s.reason ?? "unknown")).slice(0, 240),
+            errorSource: "SERVER_FUNCTION", dataQuality: null,
+          };
+    const q = pushFrom(qSet, "quote");
+    const h = pushFrom(hSet, "historical");
+    const i = pushFrom(iSet, "intraday");
+    quoteResults.push(q); historicalResults.push(h); intradayResults.push(i);
+    totalCalls += 3;
+    totalLatency += q.latencyMs + h.latencyMs + i.latencyMs;
     if (!q.ok) errors++;
-
-    // Historical
-    const hist = await histAdapter.fetchRange({
-      symbol: entry.symbol,
-      timeframe: histTf,
-      from: fromIso,
-      to: toIso,
-      nowIso,
-      nowMs,
-    });
-    totalCalls++;
-    totalLatency += hist.telemetry.latencyMs;
-    if (!hist.ok) errors++;
-    historicalResults.push({
-      endpoint: "historical",
-      symbol: entry.symbol,
-      ok: hist.ok,
-      latencyMs: hist.telemetry.latencyMs,
-      requestId: null,
-      candleCount: hist.ok ? hist.data.candles.length : 0,
-      firstCandleTime: hist.ok ? (hist.data.candles[0]?.time ?? null) : null,
-      lastCandleTime: hist.ok ? (hist.data.candles[hist.data.candles.length - 1]?.time ?? null) : null,
-      providerStatus: hist.telemetry.status,
-      marketSession: hist.telemetry.marketSession,
-      cacheHit: false,
-      safeError: hist.ok ? null : redactUpstoxMessage(`${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`),
-      errorSource: hist.ok ? null : errorSourceFromAdapterReason(hist.reason),
-      dataQuality: hist.ok ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 } : null,
-    });
-
-    // Intraday
-    const intra = await intraAdapter.fetch(entry.symbol, intraTf, nowIso);
-    totalCalls++;
-    totalLatency += intra.telemetry.latencyMs;
-    if (!intra.ok) errors++;
-    intradayResults.push({
-      endpoint: "intraday",
-      symbol: entry.symbol,
-      ok: intra.ok,
-      latencyMs: intra.telemetry.latencyMs,
-      requestId: null,
-      candleCount: intra.ok ? intra.data.candles.length : 0,
-      firstCandleTime: intra.ok ? (intra.data.candles[0]?.time ?? null) : null,
-      lastCandleTime: intra.ok ? (intra.data.candles[intra.data.candles.length - 1]?.time ?? null) : null,
-      providerStatus: intra.telemetry.status,
-      marketSession: intra.telemetry.marketSession,
-      cacheHit: false,
-      safeError: intra.ok ? null : redactUpstoxMessage(`${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`),
-      errorSource: intra.ok ? null : errorSourceFromAdapterReason(intra.reason),
-      dataQuality: intra.ok ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 } : null,
-    });
+    if (!h.ok) errors++;
+    if (!i.ok) errors++;
   }
 
   const requiredKeys = new Set<string>(REQUIRED_SYMBOLS);
@@ -616,8 +657,59 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     intradayResults.find((r) => !r.ok && r.safeError)?.safeError ??
     null;
 
+  const symbolResults: SmokeSymbolResult[] = instrumentResolved.map((entry) => {
+    const q = quoteResults.find((r) => r.symbol === entry.symbol);
+    const h = historicalResults.find((r) => r.symbol === entry.symbol);
+    const i = intradayResults.find((r) => r.symbol === entry.symbol);
+    const firstErr =
+      (q && !q.ok && q.errorSource) || (h && !h.ok && h.errorSource) || (i && !i.ok && i.errorSource) || null;
+    const firstMsg =
+      (q && !q.ok && q.safeError) || (h && !h.ok && h.safeError) || (i && !i.ok && i.safeError) || null;
+    return {
+      symbol: entry.symbol,
+      resolved: entry.resolved,
+      quoteOk: q?.ok ?? false,
+      historicalOk: h?.ok ?? false,
+      intradayOk: i?.ok ?? false,
+      errorSource: firstErr || null,
+      safeError: firstMsg || null,
+    };
+  });
+
+  const checklist: SmokeChecklist = {
+    authentication: tokenStatus.tokenUsable ? "PASS" : "FAIL",
+    instrumentMaster: instrumentResolved.every((r) => r.resolved)
+      ? "PASS"
+      : instrumentResolved.some((r) => r.resolved) ? "PARTIAL" : "FAIL",
+    quoteApi: endpointChecklistStatus(quoteResults),
+    historicalApi: endpointChecklistStatus(historicalResults),
+    intradayApi: endpointChecklistStatus(intradayResults),
+    cache: "PASS",
+    health: errors === 0 ? "PASS" : errors < totalCalls ? "PARTIAL" : "FAIL",
+  };
+
+  const completedAt = new Date().toISOString();
+  const startedMs = Date.parse(nowIso);
+  const durationMs = Number.isFinite(startedMs) ? Math.max(0, Date.parse(completedAt) - startedMs) : 0;
+  const failedEndpoint =
+    (quoteResults.find((r) => !r.ok) ? "quote" : null) ??
+    (historicalResults.find((r) => !r.ok) ? "historical" : null) ??
+    (intradayResults.find((r) => !r.ok) ? "intraday" : null);
+
   return {
     at: nowIso,
+    generatedAt: nowIso,
+    requestStartedAt: nowIso,
+    requestCompletedAt: completedAt,
+    durationMs,
+    status: overall,
+    errorSource: firstError,
+    safeError: firstErrorMessage,
+    httpStatus: null,
+    endpointFailed: failedEndpoint,
+    serializationStatus: "OK",
+    checklist,
+    symbolResults,
     configured,
     authenticated: true,
     tokenStatus,
