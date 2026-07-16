@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { testUpstoxProvider } from "@/lib/provider-foundation/upstox/upstox-smoke.functions";
 import {
   ALL_QUOTE_SYMBOLS,
   DEFAULT_REFRESH_INTERVAL_MS,
@@ -14,6 +16,8 @@ import {
   UPSTOX_INSTRUMENT_MASTER_VERSION,
   UPSTOX_SUPPORTED_SYMBOLS,
 } from "@/lib/provider-foundation/upstox";
+
+type UpstoxSmokeReport = Awaited<ReturnType<typeof testUpstoxProvider>>;
 
 export const Route = createFileRoute("/_authenticated/admin/providers")({
   head: () => ({
@@ -232,7 +236,144 @@ function AdminProvidersPage() {
           Timeframes: 1m · 3m · 5m · 15m · 1h · 1d — dashboard/backtest wiring
           is intentionally deferred to Stage 3.
         </div>
+
+        <UpstoxLiveSmokeTestPanel />
       </section>
+    </div>
+  );
+}
+
+function UpstoxLiveSmokeTestPanel() {
+  const runFn = useServerFn(testUpstoxProvider);
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "running" }
+    | { kind: "ok"; report: UpstoxSmokeReport }
+    | { kind: "error"; message: string }
+  >({ kind: "idle" });
+
+  async function run() {
+    setState({ kind: "running" });
+    try {
+      const report = (await runFn()) as UpstoxSmokeReport;
+      setState({ kind: "ok", report });
+    } catch (e) {
+      setState({ kind: "error", message: e instanceof Error ? e.message : "failed" });
+    }
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={run}
+          disabled={state.kind === "running"}
+          className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50"
+        >
+          {state.kind === "running" ? "Running live provider test…" : "Run Live Provider Test"}
+        </button>
+        <span className="text-[11px] text-slate-500">
+          Read-only. Uses server-side UPSTOX_ACCESS_TOKEN. No orders, no writes.
+        </span>
+      </div>
+
+      {state.kind === "error" && (
+        <div className="rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          {state.message === "forbidden" ? "Admin role required." : state.message}
+        </div>
+      )}
+
+      {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
+    </div>
+  );
+}
+
+function SmokeCheck({ label, ok, note }: { label: string; ok: boolean; note?: string }) {
+  return (
+    <div className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs">
+      <div className="flex items-center gap-2">
+        <span className={ok ? "text-emerald-400" : "text-red-400"}>{ok ? "✓" : "✗"}</span>
+        <span className="text-slate-200">{label}</span>
+      </div>
+      {note ? <span className="font-mono text-[11px] text-slate-500">{note}</span> : null}
+    </div>
+  );
+}
+
+function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
+  const anyOk = (rs: UpstoxSmokeReport["quoteResults"]) => rs.some((r) => r.ok);
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/80 p-3 space-y-2 text-slate-200">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-mono text-slate-400">at {report.at}</div>
+        <div
+          className={`rounded border px-2 py-0.5 text-[11px] ${
+            report.summary.overall === "PASS"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+              : report.summary.overall === "PARTIAL"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                : "border-red-500/40 bg-red-500/10 text-red-200"
+          }`}
+        >
+          {report.summary.overall}
+        </div>
+      </div>
+
+      <div>
+        <SmokeCheck label="Authentication" ok={report.authenticated} note={report.tokenStatus.tokenSource} />
+        <SmokeCheck
+          label="Instrument Master"
+          ok={report.instrumentResolved.every((r) => r.resolved)}
+          note={`${report.instrumentResolved.filter((r) => r.resolved).length}/${report.instrumentResolved.length} resolved`}
+        />
+        <SmokeCheck label="Quote API" ok={anyOk(report.quoteResults)} note={`${report.quoteResults.filter((r) => r.ok).length}/${report.quoteResults.length} ok`} />
+        <SmokeCheck label="Historical API" ok={anyOk(report.historicalResults)} note={`${report.historicalResults.filter((r) => r.ok).length}/${report.historicalResults.length} ok`} />
+        <SmokeCheck label="Intraday API" ok={anyOk(report.intradayResults)} note={`${report.intradayResults.filter((r) => r.ok).length}/${report.intradayResults.length} ok`} />
+        <SmokeCheck
+          label="Cache"
+          ok={true}
+          note={`hits=${report.cache.hits} misses=${report.cache.misses} writes=${report.cache.writes}`}
+        />
+        <SmokeCheck
+          label="Health"
+          ok={report.health.errors === 0}
+          note={`calls=${report.health.totalCalls} errors=${report.health.errors} avg=${report.health.avgLatencyMs.toFixed(0)}ms`}
+        />
+      </div>
+
+      <details className="text-[11px] text-slate-400">
+        <summary className="cursor-pointer">Per-symbol detail</summary>
+        <div className="mt-2 grid gap-2 md:grid-cols-3">
+          <SymbolTable title="Quote" rows={report.quoteResults} />
+          <SymbolTable title="Historical" rows={report.historicalResults} />
+          <SymbolTable title="Intraday" rows={report.intradayResults} />
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function SymbolTable({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: UpstoxSmokeReport["quoteResults"];
+}) {
+  return (
+    <div className="rounded border border-slate-800 p-2">
+      <div className="mb-1 text-xs font-semibold text-slate-200">{title}</div>
+      <table className="w-full text-[11px] font-mono text-slate-400">
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.symbol} className="border-t border-slate-800">
+              <td className="py-0.5">{r.symbol}</td>
+              <td className={`py-0.5 ${r.ok ? "text-emerald-300" : "text-red-300"}`}>{r.ok ? "ok" : "fail"}</td>
+              <td className="py-0.5 text-right">{r.latencyMs}ms</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
