@@ -6,6 +6,7 @@ import { adaptPcrConfirmation } from "./pcr-confirmation";
 import { classifyGti } from "./gti-classifier";
 import { NIFTY50_REGISTRY_VERSION, NIFTY50_REGISTRY_EFFECTIVE_DATE } from "./nifty50-registry";
 import { SECTOR_REGISTRY_VERSION, SECTOR_REGISTRY_EFFECTIVE_DATE } from "./sector-registry";
+import type { ConfidenceBreakdown } from "./types";
 
 export interface MarketBreadthDiagnosticsReport {
   readonly generatedAt: string;
@@ -32,7 +33,7 @@ export interface MarketBreadthDiagnosticsReport {
     readonly vixReadiness: boolean;
     readonly sectorReadiness: number;
     readonly conflictCodes: readonly string[];
-    readonly confidenceBreakdown: unknown;
+    readonly confidenceBreakdown: ConfidenceBreakdown;
     readonly finalResearchState: string;
   };
 }
