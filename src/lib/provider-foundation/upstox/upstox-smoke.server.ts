@@ -201,6 +201,18 @@ export interface EndpointResult {
 
 export interface UpstoxSmokeReport {
   readonly at: string;
+  readonly generatedAt: string;
+  readonly requestStartedAt: string;
+  readonly requestCompletedAt: string;
+  readonly durationMs: number;
+  readonly status: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+  readonly errorSource: SmokeErrorSource | null;
+  readonly safeError: string | null;
+  readonly httpStatus: number | null;
+  readonly endpointFailed: string | null;
+  readonly serializationStatus: "OK" | "PARTIAL" | "FAIL";
+  readonly checklist: SmokeChecklist;
+  readonly symbolResults: readonly SmokeSymbolResult[];
   readonly configured: boolean;
   readonly authenticated: boolean;
   readonly tokenStatus: UpstoxTokenStatus;
