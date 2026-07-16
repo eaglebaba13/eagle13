@@ -527,6 +527,12 @@ interface SmokeSymbolRow {
   readonly latencyMs: number;
   readonly errorSource?: SmokeErrorSource | null;
   readonly safeError?: string | null;
+  readonly httpStatus?: number | null;
+  readonly upstoxErrorCode?: string | null;
+  readonly endpointPath?: string | null;
+  readonly requestTimestamp?: string | null;
+  readonly instrumentKey?: string | null;
+  readonly tokenType?: string;
 }
 
 function SymbolTable({
@@ -542,13 +548,35 @@ function SymbolTable({
       <table className="w-full text-[11px] font-mono text-slate-400">
         <tbody>
           {rows.map((r) => (
-            <tr key={r.symbol} className="border-t border-slate-800">
-              <td className="py-0.5">{r.symbol}</td>
-              <td className={`py-0.5 ${r.ok ? "text-emerald-300" : "text-red-300"}`}>{r.ok ? "ok" : "fail"}</td>
-              <td className={`py-0.5 ${r.ok ? "text-slate-500" : "text-red-300/80"}`}>
-                {r.errorSource ?? ""}
+            <tr key={r.symbol} className="border-t border-slate-800 align-top">
+              <td className="py-0.5">
+                <div>{r.symbol}</div>
+                {r.instrumentKey ? (
+                  <div className="text-[10px] text-slate-600">{r.instrumentKey}</div>
+                ) : null}
               </td>
-              <td className="py-0.5 text-right">{r.latencyMs}ms</td>
+              <td className={`py-0.5 ${r.ok ? "text-emerald-300" : "text-red-300"}`}>
+                <div>{r.ok ? "ok" : "fail"}</div>
+                <div className="text-[10px] text-slate-500">http {r.httpStatus ?? "—"}</div>
+                {r.upstoxErrorCode ? (
+                  <div className="text-[10px] text-amber-300/80">{r.upstoxErrorCode}</div>
+                ) : null}
+              </td>
+              <td className={`py-0.5 ${r.ok ? "text-slate-500" : "text-red-300/80"}`}>
+                <div>{r.errorSource ?? ""}</div>
+                {r.endpointPath ? (
+                  <div className="text-[10px] text-slate-600 break-all">{r.endpointPath}</div>
+                ) : null}
+                {r.tokenType ? (
+                  <div className="text-[10px] text-slate-600">token: {r.tokenType}</div>
+                ) : null}
+              </td>
+              <td className="py-0.5 text-right">
+                <div>{r.latencyMs}ms</div>
+                {r.requestTimestamp ? (
+                  <div className="text-[10px] text-slate-600">{r.requestTimestamp.slice(11, 19)}Z</div>
+                ) : null}
+              </td>
             </tr>
           ))}
         </tbody>
