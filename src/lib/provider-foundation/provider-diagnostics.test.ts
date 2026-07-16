@@ -54,16 +54,30 @@ describe("provider diagnostics wiring", () => {
     expect(JSON.stringify(report)).not.toContain("primary-mock");
   });
 
-  it("falls back to mock adapters when credentials are not configured", async () => {
+  it("does NOT silently fall back to mock when live mode is set but credentials are missing", async () => {
     const report = await buildProviderDiagnosticsReport({
       env: { NODE_ENV: "production", UPSTOX_MARKET_DATA_MODE: "live" },
       nowIso: "2026-07-16T09:15:00.000Z",
     });
 
     expect(report.realProviderActive).toBe(false);
+    expect(report.mockActive).toBe(false);
+    expect(report.providerSelected).toBeNull();
+    expect([
+      "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE",
+      "SECRETS_SAVED_REDEPLOY_REQUIRED",
+    ]).toContain(report.configurationStatus);
+    expect(report.envPresence.UPSTOX_API_KEY).toBe("MISSING");
+    expect(report.envPresence.UPSTOX_ACCESS_TOKEN).toBe("MISSING");
+  });
+
+  it("uses mock only when explicitly selected via UPSTOX_MARKET_DATA_MODE=mock", async () => {
+    const report = await buildProviderDiagnosticsReport({
+      env: { NODE_ENV: "development", UPSTOX_MARKET_DATA_MODE: "mock" },
+      nowIso: "2026-07-16T09:15:00.000Z",
+    });
     expect(report.mockActive).toBe(true);
-    expect(report.providerSelected).toBe("primary-mock");
-    expect(report.diagnostics.wirings[0]?.primary).toBe("primary-mock");
+    expect(report.configurationStatus).toBe("MOCK_ACTIVE");
   });
 
   it("removes the mock demo banner when real provider is active", () => {

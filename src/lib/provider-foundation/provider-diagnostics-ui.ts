@@ -169,7 +169,7 @@ export function providerHeaderText(report: ProviderHeaderLike | null): string {
     return "Provider Foundation V1 · real Upstox ProviderAdapter active in read-only market-data mode.";
   }
   if (report.mockActive) {
-    return "Provider Foundation V1 · mock fallback active because live market-data credentials are unavailable or this is development mode.";
+    return "Provider Foundation V1 · mock fallback active because development or mock mode was explicitly selected.";
   }
-  return "Provider Foundation V1 · no live provider is active; configure live market-data credentials to enable diagnostics.";
+  return "Provider Foundation V1 · live provider configuration incomplete — save the required Upstox credentials to enable diagnostics.";
 }

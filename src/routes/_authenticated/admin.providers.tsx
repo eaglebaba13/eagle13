@@ -125,10 +125,76 @@ function AdminProvidersPage() {
         {loadError ? <FailureCard title="Provider diagnostics" message={loadError} /> : null}
         {report?.safeError ? <FailureCard title="Provider diagnostics" message={report.safeError} /> : null}
 
+        <EnvPresencePanel report={report} />
+
         <ProviderDiagnosticsTables diag={diag} />
         <UpstoxReadOnlySection report={report} />
       </div>
     </DiagnosticsErrorBoundary>
+  );
+}
+
+const PRESENCE_COLORS: Record<string, string> = {
+  PRESENT: "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+  MISSING: "border-red-500/40 bg-red-500/10 text-red-200",
+  PLACEHOLDER: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+  INVALID: "border-red-500/40 bg-red-500/10 text-red-200",
+};
+
+function EnvPresencePanel({ report }: { report: ProviderDiagnosticsReport | null }) {
+  if (!report) return null;
+  const p = report.envPresence;
+  const rows: readonly { name: string; status: string }[] = [
+    { name: "UPSTOX_MARKET_DATA_MODE", status: p.UPSTOX_MARKET_DATA_MODE },
+    { name: "UPSTOX_API_KEY", status: p.UPSTOX_API_KEY },
+    { name: "UPSTOX_API_SECRET", status: p.UPSTOX_API_SECRET },
+    { name: "UPSTOX_ACCESS_TOKEN", status: p.UPSTOX_ACCESS_TOKEN },
+  ];
+  const status = report.configurationStatus;
+  const banner =
+    status === "LIVE_ACTIVE"
+      ? { text: "LIVE_ACTIVE", cls: SMOKE_STATUS_COLORS.PASS }
+      : status === "MOCK_ACTIVE"
+        ? { text: "MOCK_ACTIVE", cls: SMOKE_STATUS_COLORS.PARTIAL }
+        : status === "SECRETS_SAVED_REDEPLOY_REQUIRED"
+          ? { text: "SECRETS_SAVED_REDEPLOY_REQUIRED", cls: SMOKE_STATUS_COLORS.PARTIAL }
+          : status === "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE"
+            ? { text: "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE", cls: SMOKE_STATUS_COLORS.FAIL }
+            : { text: "NOT_CONFIGURED", cls: SMOKE_STATUS_COLORS.NOT_CONFIGURED };
+  return (
+    <section
+      className="rounded-md border border-slate-800 bg-slate-950/60 p-4"
+      data-testid="env-presence-panel"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-200">Server environment presence</h2>
+        <span className={`rounded border px-2 py-0.5 text-[10px] ${banner.cls}`}>{banner.text}</span>
+      </div>
+      <div className="mb-3 flex flex-wrap gap-3 text-[11px] text-slate-500 font-mono">
+        <span>runtime: {p.runtimeEnvironment}</span>
+        <span>redeploy: {p.deploymentRestartRequired ? "REQUIRED" : "not-required"}</span>
+      </div>
+      <ul className="space-y-1 text-xs text-slate-200">
+        {rows.map((r) => (
+          <li key={r.name} className="flex items-center justify-between border-t border-slate-800 py-1 font-mono">
+            <span>{r.name}</span>
+            <span className={`rounded border px-2 py-0.5 text-[10px] ${PRESENCE_COLORS[r.status] ?? PRESENCE_COLORS.MISSING}`}>
+              {r.status}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {status === "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE" ? (
+        <p className="mt-3 text-[11px] text-red-300/90">
+          Live mode is enabled but one or more credentials are MISSING or PLACEHOLDER. Save them in the platform secret store — mock fallback is deliberately disabled in live mode.
+        </p>
+      ) : null}
+      {status === "SECRETS_SAVED_REDEPLOY_REQUIRED" ? (
+        <p className="mt-3 text-[11px] text-amber-300/90">
+          Secrets saved but not visible to this deployment yet. A restart/redeploy is required for them to reach server functions.
+        </p>
+      ) : null}
+    </section>
   );
 }
 
