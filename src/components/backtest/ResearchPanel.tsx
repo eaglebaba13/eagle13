@@ -5,7 +5,9 @@
 // or Run ID is modified.
 
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+
+const RegimeIntelligenceSection = lazy(() => import("./RegimeIntelligenceSection"));
 
 import {
   runBacktest,
@@ -1124,6 +1126,11 @@ export function MonteCarloSection({
         />
       ) : null}
       {tab === "batch" ? <BatchSection /> : null}
+      {tab === "regime" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading regime intelligence…</div>}>
+          <RegimeIntelligenceSection instrument={instrument} />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -1141,7 +1148,7 @@ function McCard({ label, value, accent }: { label: string; value: string; accent
 // Phase 21.6 · Stage 3 — Research sub-tabs, Monte Carlo equity-fan chart,
 // Sensitivity scaffold with typed empty state. UI only — no engine here.
 
-type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx" | "batch";
+type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx" | "batch" | "regime";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
@@ -1149,6 +1156,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "rob", label: "Robustness" },
   { id: "cx", label: "Cross-Asset" },
   { id: "batch", label: "Research Batch" },
+  { id: "regime", label: "Regime Intelligence" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
