@@ -1,6 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { IndexQuote } from "@/lib/market.functions";
 import type { Levels } from "@/lib/levels";
+import type { DashboardFreshnessMap } from "@/lib/dashboard-freshness-adapter";
+import type { ProviderStatus } from "@/lib/data-freshness";
 
 // Phase 24C · Shared dashboard data context.
 //
@@ -30,6 +32,14 @@ export type DashboardContextValue = {
   accent: string;
   safeBand: number;
   levels: Levels;
+  // Phase 24D · optional governance fields. Existing widgets ignore these
+  // safely; new widgets consume them.
+  queryReceivedAt?: number | null;
+  lastSuccessfulUpdate?: number | null;
+  freshnessByDependency?: DashboardFreshnessMap;
+  providerMetadata?: { name?: string; status?: ProviderStatus };
+  queryError?: unknown;
+  queryStale?: boolean;
 };
 
 const DashboardDataContext = createContext<DashboardContextValue | null>(null);
