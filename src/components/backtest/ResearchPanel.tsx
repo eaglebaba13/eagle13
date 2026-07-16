@@ -1106,6 +1106,7 @@ export function MonteCarloSection({
           to={to}
         />
       ) : null}
+      {tab === "batch" ? <BatchSection /> : null}
     </>
   );
 }
