@@ -8,6 +8,12 @@ import {
   type ManagerDiagnostics,
   type ProviderStatus,
 } from "@/lib/provider-foundation";
+import {
+  UPSTOX_ADAPTER_ID,
+  UPSTOX_ADAPTER_VERSION,
+  UPSTOX_INSTRUMENT_MASTER_VERSION,
+  UPSTOX_SUPPORTED_SYMBOLS,
+} from "@/lib/provider-foundation/upstox";
 
 export const Route = createFileRoute("/_authenticated/admin/providers")({
   head: () => ({
@@ -203,15 +209,39 @@ function AdminProvidersPage() {
           ))}
         </ul>
       </section>
+
+      <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
+        <h2 className="text-sm font-semibold text-slate-200 mb-3">
+          Upstox Historical V3 (read-only)
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono text-slate-300">
+          <Stat label="Adapter" value={UPSTOX_ADAPTER_ID} />
+          <Stat label="Version" value={UPSTOX_ADAPTER_VERSION} />
+          <Stat label="Instrument master" value={UPSTOX_INSTRUMENT_MASTER_VERSION} />
+          <Stat label="Symbols" value={UPSTOX_SUPPORTED_SYMBOLS.length} />
+        </div>
+        <p className="mt-3 text-[11px] text-slate-500">
+          Read-only historical + intraday candles. Token status, health,
+          latency and cache metrics are surfaced server-side only. API keys,
+          secrets and access tokens are never rendered here.
+        </p>
+        <div className="mt-2 text-[11px] text-slate-500">
+          Supported: {UPSTOX_SUPPORTED_SYMBOLS.join(", ")}
+        </div>
+        <div className="mt-1 text-[11px] text-slate-500">
+          Timeframes: 1m · 3m · 5m · 15m · 1h · 1d — dashboard/backtest wiring
+          is intentionally deferred to Stage 3.
+        </div>
+      </section>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded border border-slate-800 bg-slate-900/60 px-3 py-2">
       <div className="text-slate-500 text-[10px] uppercase tracking-wide">{label}</div>
-      <div className="text-slate-100 text-base">{value}</div>
+      <div className="text-slate-100 text-base break-all">{value}</div>
     </div>
   );
 }
