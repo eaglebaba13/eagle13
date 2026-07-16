@@ -381,7 +381,11 @@ function UpstoxLiveSmokeTestPanel() {
         />
       )}
 
-      {state.kind === "ok" && <UpstoxSmokeReportView report={state.report} />}
+      {state.kind === "ok" && (
+        <DiagnosticsErrorBoundary>
+          <UpstoxSmokeReportView report={state.report} />
+        </DiagnosticsErrorBoundary>
+      )}
     </div>
   );
 }
