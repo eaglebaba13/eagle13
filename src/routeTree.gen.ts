@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as OptionsChainRouteImport } from './routes/options-chain'
 import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
 import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
 import { Route as NewsRouteImport } from './routes/news'
@@ -60,6 +61,11 @@ const RiskRoute = RiskRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptionsChainRoute = OptionsChainRouteImport.update({
+  id: '/options-chain',
+  path: '/options-chain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OptionsAnalyticsRoute = OptionsAnalyticsRouteImport.update({
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
+  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
+  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
+  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
@@ -378,6 +387,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
+    | '/options-chain'
     | '/pricing'
     | '/risk'
     | '/signal-accuracy'
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
+    | '/options-chain'
     | '/pricing'
     | '/risk'
     | '/signal-accuracy'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
+    | '/options-chain'
     | '/pricing'
     | '/risk'
     | '/signal-accuracy'
@@ -495,6 +507,7 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   OptionStrategyRoute: typeof OptionStrategyRoute
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
+  OptionsChainRoute: typeof OptionsChainRoute
   PricingRoute: typeof PricingRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
@@ -528,6 +541,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/options-chain': {
+      id: '/options-chain'
+      path: '/options-chain'
+      fullPath: '/options-chain'
+      preLoaderRoute: typeof OptionsChainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/options-analytics': {
@@ -818,6 +838,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   OptionStrategyRoute: OptionStrategyRoute,
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
+  OptionsChainRoute: OptionsChainRoute,
   PricingRoute: PricingRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
