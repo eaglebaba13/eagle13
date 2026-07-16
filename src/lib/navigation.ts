@@ -48,6 +48,45 @@ export type NavItem = {
   requiredRole?: "user" | "admin";
 };
 
+export type NavContext = {
+  plan?: "free" | "pro" | "professional" | "elite" | "admin";
+  role?: "user" | "pro" | "professional" | "admin";
+  environment?: "development" | "production";
+  entitlements?: string[];
+  featureFlags?: string[];
+};
+
+const PLAN_ORDER = ["free", "pro", "professional", "elite", "admin"] as const;
+function planIndex(p: string | undefined): number {
+  if (!p) return 0;
+  const i = PLAN_ORDER.indexOf(p as (typeof PLAN_ORDER)[number]);
+  return i < 0 ? 0 : i;
+}
+
+function passesContext(it: NavItem, ctx: NavContext): boolean {
+  if (it.minimumPlan && planIndex(ctx.plan) < planIndex(it.minimumPlan)) return false;
+  if (it.requiredRole && ctx.role !== it.requiredRole && ctx.role !== "admin") return false;
+  return true;
+}
+
+export function resolveNavigationForContext(ctx: NavContext = {}): NavItem[] {
+  return NAV_REGISTRY.filter((it) => passesContext(it, ctx)).sort((a, b) => a.order - b.order);
+}
+
+export function resolveDesktopNav(ctx: NavContext = {}): NavItem[] {
+  return resolveNavigationForContext(ctx).filter((it) => it.desktopVisible);
+}
+
+export function resolveMobileDrawerNav(ctx: NavContext = {}): NavItem[] {
+  return resolveNavigationForContext(ctx).filter((it) => it.mobileVisible);
+}
+
+export function resolveMobileBottomNav(ctx: NavContext = {}): NavItem[] {
+  return resolveNavigationForContext(ctx)
+    .filter((it) => it.mobileBottom && it.mobileVisible)
+    .sort((a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999));
+}
+
 export const NAV_REGISTRY: NavItem[] = [
   // MAIN
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, to: "/", section: "MAIN", order: 10, desktopVisible: true, mobileVisible: true, mobileBottom: true, bottomOrder: 1 },
