@@ -408,6 +408,18 @@ export function buildUpstoxSmokeFailureReport(
   });
   return {
     at: nowIso,
+    generatedAt: nowIso,
+    requestStartedAt: nowIso,
+    requestCompletedAt: nowIso,
+    durationMs: 0,
+    status: tokenStatus.tokenUsable ? "FAIL" : "NOT_CONFIGURED",
+    errorSource,
+    safeError,
+    httpStatus: null,
+    endpointFailed: null,
+    serializationStatus: "OK",
+    checklist: emptyChecklist(tokenStatus.tokenUsable ? "FAIL" : "NOT_CONFIGURED"),
+    symbolResults: [],
     configured,
     authenticated: tokenStatus.tokenUsable,
     tokenStatus,
