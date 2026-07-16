@@ -22,7 +22,6 @@ import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
 import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
 import { Route as LiveLevelsRouteImport } from './routes/live-levels'
 import { Route as DecisionRouteImport } from './routes/decision'
-import { Route as CombinedPcrRouteImport } from './routes/combined-pcr'
 import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as BacktestRouteImport } from './routes/backtest'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -111,11 +110,6 @@ const LiveLevelsRoute = LiveLevelsRouteImport.update({
 const DecisionRoute = DecisionRouteImport.update({
   id: '/decision',
   path: '/decision',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CombinedPcrRoute = CombinedPcrRouteImport.update({
-  id: '/combined-pcr',
-  path: '/combined-pcr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrokerRoute = BrokerRouteImport.update({
@@ -256,7 +250,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
-  '/combined-pcr': typeof CombinedPcrRoute
   '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
@@ -295,7 +288,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
-  '/combined-pcr': typeof CombinedPcrRoute
   '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
@@ -336,7 +328,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
-  '/combined-pcr': typeof CombinedPcrRoute
   '/decision': typeof DecisionRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
@@ -377,7 +368,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/backtest'
     | '/broker'
-    | '/combined-pcr'
     | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
@@ -416,7 +406,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/backtest'
     | '/broker'
-    | '/combined-pcr'
     | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
@@ -456,7 +445,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/backtest'
     | '/broker'
-    | '/combined-pcr'
     | '/decision'
     | '/live-levels'
     | '/live-market-terminal'
@@ -497,7 +485,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BacktestRoute: typeof BacktestRoute
   BrokerRoute: typeof BrokerRoute
-  CombinedPcrRoute: typeof CombinedPcrRoute
   DecisionRoute: typeof DecisionRoute
   LiveLevelsRoute: typeof LiveLevelsRoute
   LiveMarketTerminalRoute: typeof LiveMarketTerminalRoute
@@ -611,13 +598,6 @@ declare module '@tanstack/react-router' {
       path: '/decision'
       fullPath: '/decision'
       preLoaderRoute: typeof DecisionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/combined-pcr': {
-      id: '/combined-pcr'
-      path: '/combined-pcr'
-      fullPath: '/combined-pcr'
-      preLoaderRoute: typeof CombinedPcrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/broker': {
@@ -828,7 +808,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BacktestRoute: BacktestRoute,
   BrokerRoute: BrokerRoute,
-  CombinedPcrRoute: CombinedPcrRoute,
   DecisionRoute: DecisionRoute,
   LiveLevelsRoute: LiveLevelsRoute,
   LiveMarketTerminalRoute: LiveMarketTerminalRoute,
