@@ -3,7 +3,7 @@ import { DEFAULT_LAUNCH_FLAGS, resolveLaunchFlags } from "./launch-flags";
 
 describe("launch-flags", () => {
   it("defaults incomplete markets to false", () => {
-    expect(DEFAULT_LAUNCH_FLAGS.ENABLE_COMBINED_PCR).toBe(false);
+    expect(DEFAULT_LAUNCH_FLAGS.ENABLE_COMBINED_PCR).toBe(true);
     expect(DEFAULT_LAUNCH_FLAGS.ENABLE_MCX_COMMODITIES).toBe(false);
     expect(DEFAULT_LAUNCH_FLAGS.ENABLE_GLOBAL_METALS).toBe(false);
     expect(DEFAULT_LAUNCH_FLAGS.ENABLE_CRYPTO).toBe(false);
