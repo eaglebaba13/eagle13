@@ -303,7 +303,17 @@ export class UpstoxHistoricalAdapter {
 
     const chunkResults = [] as (readonly import("../types").HistoricalCandle[])[];
     let totalLatency = 0;
-    let lastErr: { code: UpstoxErrorCode; message: string; retryAfterMs?: number } | null = null;
+    let lastErr:
+      | {
+          code: UpstoxErrorCode;
+          message: string;
+          retryAfterMs?: number;
+          httpStatus?: number;
+          upstoxErrorCode?: string;
+          path?: string;
+          requestId?: string;
+        }
+      | null = null;
     let totalRejected = 0;
 
     for (const chunk of plan.chunks) {
@@ -315,12 +325,20 @@ export class UpstoxHistoricalAdapter {
       const res: UpstoxHttpResult<unknown> = await this.http.request<unknown>({ path });
       totalLatency += res.latencyMs;
       if (!res.ok) {
-        lastErr = res.error;
+        lastErr = {
+          code: res.error.code,
+          message: res.error.message,
+          retryAfterMs: res.error.retryAfterMs,
+          httpStatus: res.error.httpStatus,
+          upstoxErrorCode: res.error.upstoxErrorCode,
+          path: res.error.path ?? path,
+          requestId: res.error.requestId,
+        };
         break;
       }
       const tuples = parseUpstoxCandles(res.data);
       if (!tuples) {
-        lastErr = { code: "UPSTOX_SCHEMA_ERROR", message: "missing data.candles[]" };
+        lastErr = { code: "UPSTOX_SCHEMA_ERROR", message: "missing data.candles[]", path };
         break;
       }
       const raws = tuples.map(tupleToRaw).filter((x): x is NonNullable<typeof x> => x != null);
@@ -340,6 +358,14 @@ export class UpstoxHistoricalAdapter {
           providerTime: null, reason: lastErr.message,
           retryAfterMs: lastErr.retryAfterMs,
         }),
+        providerDiagnostics: {
+          httpStatus: lastErr.httpStatus,
+          upstoxErrorCode: lastErr.upstoxErrorCode,
+          endpointPath: lastErr.path,
+          requestId: lastErr.requestId,
+          requestTimestamp: input.nowIso,
+          instrumentKey: instr.instrumentKey,
+        },
       };
     }
 
@@ -434,6 +460,14 @@ export class UpstoxHistoricalAdapter {
           nowIso, ageSec: Infinity, role: "PRIMARY", providerTime: null,
           reason: res.error.message, retryAfterMs: res.error.retryAfterMs,
         }),
+        providerDiagnostics: {
+          httpStatus: res.error.httpStatus,
+          upstoxErrorCode: res.error.upstoxErrorCode,
+          endpointPath: res.error.path ?? path,
+          requestId: res.error.requestId,
+          requestTimestamp: nowIso,
+          instrumentKey: instr.instrumentKey,
+        },
       };
     }
     const nowMs = Date.parse(nowIso);

@@ -161,7 +161,24 @@ export type ProviderFailure =
 
 export type ProviderResult<T> =
   | { readonly ok: true; readonly data: T; readonly telemetry: ProviderTelemetry }
-  | { readonly ok: false; readonly reason: ProviderFailure; readonly detail?: string; readonly telemetry: ProviderTelemetry };
+  | {
+      readonly ok: false;
+      readonly reason: ProviderFailure;
+      readonly detail?: string;
+      readonly telemetry: ProviderTelemetry;
+      /**
+       * Provider-specific diagnostic metadata for admin surfaces. Never
+       * contains tokens, API keys, secrets, or raw response bodies.
+       */
+      readonly providerDiagnostics?: {
+        readonly httpStatus?: number;
+        readonly upstoxErrorCode?: string;
+        readonly endpointPath?: string;
+        readonly requestId?: string;
+        readonly requestTimestamp?: string;
+        readonly instrumentKey?: string;
+      };
+    };
 
 // ---- Adapter capability ---------------------------------------------
 
