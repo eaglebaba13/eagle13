@@ -97,9 +97,24 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
   };
 }
 
+export type MarketDataResponse = {
+  nifty: IndexQuote;
+  banknifty: IndexQuote;
+  vix: IndexQuote | null;
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  silver: IndexQuote | null;
+  goldSilverRatio: number | null;
+  providerMetadata?: {
+    nifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
+    banknifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
+    vix: { name: string; status: string; receivedAt: string; providerTime: string | null };
+  };
+};
+
 export const getMarketData = createServerFn({ method: "GET" }).handler(
-  async () =>
-    cached(
+  async (): Promise<MarketDataResponse> =>
+    cached<MarketDataResponse>(
       "market-data",
       async () => {
     // Phase 26 · Stage 4 — Prefer Upstox for NIFTY/BANKNIFTY/VIX. Fall
