@@ -72,7 +72,11 @@ const cfgBase: PortfolioConfig = {
   startingCapital: 100000,
   sizingPolicy: defaultSizingPolicy(),
   rebalancePolicy: "NEVER",
-  constraints: { ...defaultConstraints(), minDiversificationCount: 1, minTradeCount: 0 },
+  constraints: {
+    minDiversificationCount: 1,
+    minTradeCount: 0,
+    maxLeverage: 1,
+  },
   costs: defaultCostModel(),
 };
 
