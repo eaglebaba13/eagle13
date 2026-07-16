@@ -33,7 +33,7 @@ import {
   type DashboardPreferences,
 } from "@/lib/dashboard-preferences";
 import { summarizeDashboardHealth } from "@/lib/dashboard-health";
-import { LEGACY_DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
+import type { FreshnessStatus, ProviderStatus } from "@/lib/data-freshness";
 
 const marketQuery = () =>
   queryOptions({
