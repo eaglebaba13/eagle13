@@ -238,6 +238,15 @@ function Dashboard() {
           </div>
         </DashboardDataProvider>
 
+        {import.meta.env.DEV ||
+        (typeof window !== "undefined" &&
+          window.localStorage?.getItem("eb-diagnostics") === "on") ? (
+          <DashboardParityDiagnostic
+            widgetContext={{ plan: "free" }}
+            navContext={{ plan: "free" }}
+          />
+        ) : null}
+
         <InsightsSection />
 
         <Suspense fallback={<SectionSkeleton label="Loading FII & DII activity…" />}>
