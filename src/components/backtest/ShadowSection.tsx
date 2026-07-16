@@ -703,12 +703,3 @@ function Metric({ label, v }: { label: string; v: string | number }) {
     </div>
   );
 }
-
-function Metric({ label, v }: { label: string; v: string | number }) {
-  return (
-    <div style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 8 }}>
-      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 14, color: C.text, marginTop: 4 }}>{v}</div>
-    </div>
-  );
-}
