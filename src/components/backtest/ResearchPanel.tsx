@@ -1097,7 +1097,15 @@ export function MonteCarloSection({
       ) : null}
 
       {tab === "sens" ? <SensitivitySection instrument={instrument} /> : null}
-      {tab === "cx" ? <CrossAssetSection rows={rows} researchRunId={runId ?? "unknown"} /> : null}
+      {tab === "cx" ? (
+        <CrossAssetSection
+          rows={rows}
+          researchRunId={researchRunId}
+          instrument={instrument}
+          from={from}
+          to={to}
+        />
+      ) : null}
     </>
   );
 }
