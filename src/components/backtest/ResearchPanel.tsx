@@ -8,6 +8,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 
 const RegimeIntelligenceSection = lazy(() => import("./RegimeIntelligenceSection"));
+const RecommendationValidationSection = lazy(
+  () => import("./RecommendationValidationSection"),
+);
 
 import {
   runBacktest,
@@ -1131,6 +1134,11 @@ export function MonteCarloSection({
           <RegimeIntelligenceSection instrument={instrument} />
         </Suspense>
       ) : null}
+      {tab === "recval" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading recommendation validation…</div>}>
+          <RecommendationValidationSection />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -1148,7 +1156,15 @@ function McCard({ label, value, accent }: { label: string; value: string; accent
 // Phase 21.6 · Stage 3 — Research sub-tabs, Monte Carlo equity-fan chart,
 // Sensitivity scaffold with typed empty state. UI only — no engine here.
 
-type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx" | "batch" | "regime";
+type ResearchTab =
+  | "wf"
+  | "mc"
+  | "sens"
+  | "rob"
+  | "cx"
+  | "batch"
+  | "regime"
+  | "recval";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
@@ -1157,6 +1173,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "cx", label: "Cross-Asset" },
   { id: "batch", label: "Research Batch" },
   { id: "regime", label: "Regime Intelligence" },
+  { id: "recval", label: "Recommendation Validation" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
