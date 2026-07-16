@@ -97,35 +97,69 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
   };
 }
 
+export type MarketDataResponse = {
+  nifty: IndexQuote;
+  banknifty: IndexQuote;
+  vix: IndexQuote | null;
+  btc: IndexQuote | null;
+  gold: IndexQuote | null;
+  silver: IndexQuote | null;
+  goldSilverRatio: number | null;
+  providerMetadata?: {
+    nifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
+    banknifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
+    vix: { name: string; status: string; receivedAt: string; providerTime: string | null };
+  };
+};
+
 export const getMarketData = createServerFn({ method: "GET" }).handler(
-  async () =>
-    cached(
+  async (): Promise<MarketDataResponse> =>
+    cached<MarketDataResponse>(
       "market-data",
       async () => {
-    // Core indices are required; secondary instruments degrade gracefully.
-    const [niftyR, bankniftyR, vix, btc, gold, silver] = await Promise.all([
+    // Phase 26 · Stage 4 — Prefer Upstox for NIFTY/BANKNIFTY/VIX. Fall
+    // back to Yahoo when Upstox is unavailable. Hidden markets (BTC,
+    // GOLD, SILVER) are set to null — dashboards render them as
+    // COMING SOON. No mock values, ever.
+    const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
+    const nowIso = new Date().toISOString();
+    const [uxNifty, uxBank, uxVix, niftyR, bankniftyR, vixYahoo] = await Promise.all([
+      fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
+      fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
+      fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
       fetchIndex("^NSEI").catch((e) => e as Error),
       fetchIndex("^NSEBANK").catch((e) => e as Error),
       fetchIndex("^INDIAVIX").catch(() => null),
-      fetchIndex("BTC-USD").catch(() => null),
-      fetchIndex("GC=F").catch(() => null),
-      fetchIndex("SI=F").catch(() => null),
     ]);
+    const vix: IndexQuote | null = uxVix && uxVix.ok ? uxVix.quote : vixYahoo;
+    const btc: IndexQuote | null = null;
+    const gold: IndexQuote | null = null;
+    const silver: IndexQuote | null = null;
 
-    if (niftyR instanceof Error && bankniftyR instanceof Error) {
-      throw new Error(
-        `Live market data is temporarily unavailable. ${niftyR.message}`,
-      );
+    const niftyFallback = niftyR instanceof Error ? null : niftyR;
+    const bankFallback = bankniftyR instanceof Error ? null : bankniftyR;
+    const nifty =
+      (uxNifty && uxNifty.ok ? uxNifty.quote : null) ??
+      niftyFallback ??
+      bankFallback;
+    const banknifty =
+      (uxBank && uxBank.ok ? uxBank.quote : null) ??
+      bankFallback ??
+      niftyFallback;
+    if (!nifty || !banknifty) {
+      const msg = niftyR instanceof Error ? niftyR.message : "provider unavailable";
+      throw new Error(`Live market data is temporarily unavailable. ${msg}`);
     }
-    const nifty = niftyR instanceof Error ? (bankniftyR as IndexQuote) : niftyR;
-    const banknifty = bankniftyR instanceof Error ? (niftyR as IndexQuote) : bankniftyR;
 
-    let goldSilverRatio: number | null = null;
-    if (gold && silver && silver.livePrice) {
-      goldSilverRatio = round2(gold.livePrice / silver.livePrice);
-    }
+    const goldSilverRatio: number | null = null;
 
-    return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio };
+    const providerMetadata = {
+      nifty: uxNifty && uxNifty.ok ? uxNifty.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
+      banknifty: uxBank && uxBank.ok ? uxBank.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
+      vix: uxVix && uxVix.ok ? uxVix.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
+    };
+
+    return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
       },
       { ttlMs: 30_000 },
     ),
