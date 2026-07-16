@@ -1,4 +1,4 @@
-import type { ReadinessResult } from "./production-readiness-types";
+import type { ReadinessResult, ReadinessSeverity } from "./production-readiness-types";
 
 export type Traffic = "green" | "yellow" | "red";
 
@@ -42,12 +42,12 @@ export function auditObservability(input: ObservabilityInput): ReadinessResult[]
     ["decisionCenter", input.decisionCenter],
     ["memory", input.memory],
   ];
-  const out = facets.map(([name, t]) => ({
+  const out: ReadinessResult[] = facets.map(([name, t]) => ({
     id: `obs.${name}`,
     category: "OBSERVABILITY" as const,
     title: `Health: ${name}`,
     status: TRAFFIC_STATUS[t],
-    severity: t === "red" ? "critical" : t === "yellow" ? "warning" : "info",
+    severity: (t === "red" ? "critical" : t === "yellow" ? "warning" : "info") as ReadinessSeverity,
   }));
 
   out.push({
