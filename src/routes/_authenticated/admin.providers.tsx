@@ -596,3 +596,132 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     </div>
   );
 }
+
+function fmtPct(n: number | null): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return `${(n * 100).toFixed(1)}%`;
+}
+
+function fmtNum(n: number | null, digits = 2): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return n.toFixed(digits);
+}
+
+function CombinedPcrDiagnosticsSection() {
+  const load = useServerFn(getCombinedPcrDiagnostics);
+  const [result, setResult] = useState<CombinedPcrDiagnosticsResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function refresh() {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = (await load()) as CombinedPcrDiagnosticsResult;
+      setResult(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message.slice(0, 180) : "diagnostics failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  const report = result?.ok ? result.report : null;
+
+  return (
+    <section
+      className="rounded-md border border-slate-800 bg-slate-950/60 p-4"
+      data-testid="combined-pcr-diagnostics"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-200">Combined PCR — Research diagnostics</h2>
+        <div className="flex items-center gap-2">
+          {report ? (
+            <span className={`rounded border px-2 py-0.5 text-[10px] ${
+              report.overall === "READY" ? SMOKE_STATUS_COLORS.PASS
+                : report.overall === "PARTIAL" ? SMOKE_STATUS_COLORS.PARTIAL
+                : SMOKE_STATUS_COLORS.FAIL
+            }`}>{report.overall}</span>
+          ) : null}
+          <button
+            onClick={() => void refresh()}
+            disabled={loading}
+            className="rounded border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] text-slate-200 disabled:opacity-50"
+          >
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+      </div>
+
+      {error && <FailureCard title="Combined PCR diagnostics" message={error} />}
+      {result && !result.ok && (
+        <FailureCard title="Combined PCR diagnostics" message={result.safeError ?? "unavailable"} />
+      )}
+
+      {report && (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-400 md:grid-cols-4">
+            <span>combined: {fmtNum(report.combinedScore)}</span>
+            <span>signal: {report.signalState ?? "—"}</span>
+            <span>weights renorm: {report.weightRenormalization.renormalized ? "YES" : "NO"}</span>
+            <span>generated: {report.generatedAt.slice(11, 19)}Z</span>
+          </div>
+          <div className="overflow-x-auto rounded border border-slate-800">
+            <table className="w-full text-[11px] font-mono text-slate-300">
+              <thead className="bg-slate-900/60 text-slate-400">
+                <tr>
+                  {["Underlying","Status","Expiry","ATM","Strikes","Call OI","Put OI","Call ΔOI+","Put ΔOI+","OI PCR","ΔOI PCR","Score","Cfg W","Eff W","Freshness","Cap","Provider"].map((h) => (
+                    <th key={h} className="px-2 py-1 text-left font-semibold">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {report.rows.map((r) => (
+                  <tr key={r.underlying} className="border-t border-slate-800">
+                    <td className="px-2 py-1">{r.underlying}</td>
+                    <td className="px-2 py-1">{r.status}</td>
+                    <td className="px-2 py-1">{r.expiry ?? "—"}</td>
+                    <td className="px-2 py-1">{r.atm ?? "—"}</td>
+                    <td className="px-2 py-1">{r.strikeCount}</td>
+                    <td className="px-2 py-1">{r.totalCallOi ?? "—"}</td>
+                    <td className="px-2 py-1">{r.totalPutOi ?? "—"}</td>
+                    <td className="px-2 py-1">{r.totalCallChangeOi ?? "—"}</td>
+                    <td className="px-2 py-1">{r.totalPutChangeOi ?? "—"}</td>
+                    <td className="px-2 py-1">{fmtNum(r.rawOiPcr, 3)}</td>
+                    <td className="px-2 py-1">{fmtNum(r.rawChangeOiPcr, 3)}</td>
+                    <td className="px-2 py-1">{fmtNum(r.instrumentScore)}</td>
+                    <td className="px-2 py-1">{fmtPct(r.configuredWeight)}</td>
+                    <td className="px-2 py-1">{fmtPct(r.effectiveWeight)}</td>
+                    <td className="px-2 py-1">{r.freshnessMs == null ? "—" : `${Math.round(r.freshnessMs/1000)}s`}</td>
+                    <td className="px-2 py-1">{r.capability}</td>
+                    <td className="px-2 py-1">{r.provider}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            className="mt-3 rounded border border-slate-800 bg-slate-900/40 p-3 text-[11px] text-slate-300"
+            data-testid="sensex-capability"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-slate-200">SENSEX capability gate</span>
+              <span className={`rounded border px-2 py-0.5 text-[10px] ${
+                report.sensex.status === "SUPPORTED" ? SMOKE_STATUS_COLORS.PASS
+                  : report.sensex.status === "PARTIAL" ? SMOKE_STATUS_COLORS.PARTIAL
+                  : SMOKE_STATUS_COLORS.FAIL
+              }`}>{report.sensex.status}</span>
+            </div>
+            <div className="text-slate-400">activate: <span className="font-mono">{String(report.sensex.activate)}</span> · missing: {report.sensex.missing.join(", ") || "—"}</div>
+            {report.sensex.safeError && (
+              <div className="mt-1 text-amber-300/80">{report.sensex.safeError}</div>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
