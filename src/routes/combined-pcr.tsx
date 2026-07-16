@@ -22,6 +22,16 @@ import {
   readingToCsv,
   readingToJson,
 } from "@/lib/combined-pcr/exports";
+import {
+  PersistentPcrHistory,
+  readingToPersisted,
+  type PersistedPcrPoint,
+} from "@/lib/combined-pcr/persistent-history";
+import {
+  readingToShadowSample,
+  summarizeShadowObservations,
+  type ShadowSample,
+} from "@/lib/combined-pcr/shadow-validation";
 
 export const Route = createFileRoute("/combined-pcr")({
   head: () => ({
@@ -66,6 +76,17 @@ function CombinedPcrPage() {
   const [useMock, setUseMock] = useState(false);
   const [mockScenario, setMockScenario] = useState("BULLISH");
   const [showResearch, setShowResearch] = useState(false);
+  const [persisted, setPersisted] = useState<readonly PersistedPcrPoint[]>([]);
+  const [shadowSamples, setShadowSamples] = useState<readonly ShadowSample[]>([]);
+
+  const historyRef = useRef<PersistentPcrHistory | null>(null);
+  if (!historyRef.current) {
+    historyRef.current = new PersistentPcrHistory();
+  }
+
+  useEffect(() => {
+    setPersisted(historyRef.current!.load());
+  }, []);
 
   const prevConf = useRef<{ confirmed: string; pending: string; count: number }>({
     confirmed: "NO_TRADE",
@@ -98,6 +119,12 @@ function CombinedPcrPage() {
           pending: res.reading.pendingState,
           count: res.reading.confirmationCount,
         };
+        try {
+          const point = readingToPersisted(res.reading, atmMode);
+          const next = historyRef.current!.append(point);
+          setPersisted(next);
+        } catch { /* best-effort */ }
+        setShadowSamples((prev) => [...prev, readingToShadowSample(res.reading!)].slice(-200));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "request failed");
