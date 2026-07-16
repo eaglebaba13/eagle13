@@ -1,0 +1,353 @@
+// Phase 27 · Stage 1 — Combined PCR (LIVE consumer).
+//
+// Research-only. Consumes ONLY the Option Chain Foundation via the
+// getCombinedPcr server function. Never touches broker paths.
+
+import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  getCombinedPcr,
+  type GetCombinedPcrResult,
+} from "@/lib/combined-pcr/combined-pcr.functions";
+import {
+  DEFAULT_COMBINED_PCR_WEIGHTS,
+  DISCLAIMER,
+  FORMULA_VERSION,
+  type CombinedPcrWeights,
+} from "@/lib/combined-pcr/types";
+import type { AtmMode } from "@/lib/option-chain/atm-engine";
+import {
+  buildCombinedPcrResearchBundle,
+  readingToCsv,
+  readingToJson,
+} from "@/lib/combined-pcr/exports";
+
+export const Route = createFileRoute("/combined-pcr")({
+  head: () => ({
+    meta: [
+      { title: "Combined PCR — NIFTY + BANKNIFTY · EagleBABA Research" },
+      {
+        name: "description",
+        content:
+          "Research-only Combined Put/Call Ratio for NIFTY and BANKNIFTY. Weighted score, EMA slope, and 7-state research signal — no BUY / SELL emitted.",
+      },
+      { property: "og:title", content: "Combined PCR — Research" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: CombinedPcrPage,
+});
+
+const CombinedPcrChart = lazy(() => import("@/components/combined-pcr/CombinedPcrChart"));
+
+function download(name: string, mime: string, body: string): void {
+  const blob = new Blob([body], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function fmt(v: number | null | undefined, digits = 2): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return v.toFixed(digits);
+}
+
+function CombinedPcrPage() {
+  const fetchPcr = useServerFn(getCombinedPcr);
+  const [result, setResult] = useState<GetCombinedPcrResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [atmMode, setAtmMode] = useState<AtmMode>("ATM_10");
+  const [weights, setWeights] = useState<CombinedPcrWeights>(DEFAULT_COMBINED_PCR_WEIGHTS);
+  const [useMock, setUseMock] = useState(false);
+  const [mockScenario, setMockScenario] = useState("BULLISH");
+  const [showResearch, setShowResearch] = useState(false);
+
+  const prevConf = useRef<{ confirmed: string; pending: string; count: number }>({
+    confirmed: "NO_TRADE",
+    pending: "NO_TRADE",
+    count: 1,
+  });
+
+  const weightSum = weights.NIFTY + weights.BANKNIFTY;
+  const weightsValid = Math.abs(weightSum - 1) < 1e-3;
+
+  const run = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchPcr({
+        data: {
+          atmMode,
+          weights,
+          useMock,
+          mockScenario: useMock ? mockScenario : undefined,
+          previousConfirmed: prevConf.current.confirmed,
+          previousPending: prevConf.current.pending,
+          previousCount: prevConf.current.count,
+        },
+      });
+      setResult(res);
+      if (res.ok && res.reading) {
+        prevConf.current = {
+          confirmed: res.reading.confirmedState,
+          pending: res.reading.pendingState,
+          count: res.reading.confirmationCount,
+        };
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "request failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPcr, atmMode, weights, useMock, mockScenario]);
+
+  useEffect(() => { void run(); }, [run]);
+
+  const reading = result && result.ok ? result.reading : null;
+  const freshness = useMemo(() => {
+    if (!reading) return null;
+    return Math.max(0, Date.now() - Date.parse(reading.timestamp));
+  }, [reading]);
+
+  return (
+    <div className="eb-page eb-content" style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
+      {/* Research badge */}
+      <div
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
+          padding: "4px 10px", borderRadius: 999,
+          background: "rgba(255,174,0,0.14)", color: "#f2b845",
+          border: "1px solid rgba(255,174,0,0.28)", marginBottom: 12,
+        }}
+      >
+        RESEARCH ONLY · NO BUY / SELL SIGNAL
+      </div>
+
+      <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 700 }}>Combined PCR</h1>
+      <p style={{ margin: "0 0 20px", opacity: 0.7, fontSize: 14 }}>
+        Weighted OI + ΔOI research score across NIFTY and BANKNIFTY. SENSEX{" "}
+        <span style={{ color: "#f2b845", fontWeight: 600 }}>COMING SOON</span>.
+      </p>
+
+      {/* Header stats */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: 10, marginBottom: 16,
+      }}>
+        <Stat label="Combined Score" value={fmt(reading?.combinedScore, 2)} />
+        <Stat label="Direction" value={reading?.direction ?? "—"} />
+        <Stat label="Research Signal" value={reading?.signalState ?? "—"} />
+        <Stat label="EMA Fast" value={fmt(reading?.emaFast, 2)} />
+        <Stat label="EMA Slow" value={fmt(reading?.emaSlow, 2)} />
+        <Stat label="Slope" value={fmt(reading?.slope, 3)} />
+        <Stat label="Prev Slope" value={fmt(reading?.previousSlope, 3)} />
+        <Stat label="Slope Δ" value={fmt(reading?.slopeChange, 3)} />
+        <Stat label="Confirmed" value={reading?.confirmedState ?? "—"} />
+        <Stat label="ATM Mode" value={atmMode} />
+        <Stat
+          label="Freshness"
+          value={freshness == null ? "—" : `${(freshness / 1000).toFixed(0)}s`}
+        />
+      </div>
+
+      {/* Controls */}
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center",
+        padding: 12, borderRadius: 10,
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        marginBottom: 16,
+      }}>
+        <label style={labelStyle}>ATM
+          <select value={atmMode} onChange={(e) => setAtmMode(e.target.value as AtmMode)} style={selectStyle}>
+            <option value="ATM">ATM</option>
+            <option value="ATM_5">ATM ±5</option>
+            <option value="ATM_10">ATM ±10</option>
+            <option value="ATM_20">ATM ±20</option>
+          </select>
+        </label>
+        <label style={labelStyle}>NIFTY %
+          <input
+            type="number" step={5} min={0} max={100}
+            value={Math.round(weights.NIFTY * 100)}
+            onChange={(e) => {
+              const n = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
+              setWeights({ NIFTY: n, BANKNIFTY: Math.max(0, 1 - n) });
+            }}
+            style={{ ...selectStyle, width: 80 }}
+          />
+        </label>
+        <label style={labelStyle}>BANKNIFTY %
+          <input
+            type="number" step={5} min={0} max={100}
+            value={Math.round(weights.BANKNIFTY * 100)}
+            onChange={(e) => {
+              const b = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
+              setWeights({ NIFTY: Math.max(0, 1 - b), BANKNIFTY: b });
+            }}
+            style={{ ...selectStyle, width: 80 }}
+          />
+        </label>
+        <label style={{ ...labelStyle, flexDirection: "row", gap: 6 }}>
+          <input type="checkbox" checked={useMock} onChange={(e) => setUseMock(e.target.checked)} />
+          Mock
+        </label>
+        {useMock && (
+          <select value={mockScenario} onChange={(e) => setMockScenario(e.target.value)} style={selectStyle}>
+            {["BULLISH", "BEARISH", "SIDEWAYS", "STALE", "MISSING_STRIKES", "PROVIDER_FAILURE"].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        )}
+        <button onClick={() => void run()} disabled={loading || !weightsValid} style={buttonStyle}>
+          {loading ? "Loading…" : "Refresh"}
+        </button>
+        {!weightsValid && (
+          <span style={{ fontSize: 12, color: "#fb7185" }}>Weights must sum to 100%</span>
+        )}
+      </div>
+
+      {/* Chart */}
+      <div style={{ marginBottom: 20 }}>
+        <Suspense fallback={<div style={{ fontSize: 12, opacity: 0.6 }}>Loading chart…</div>}>
+          {reading && <CombinedPcrChart reading={reading} />}
+        </Suspense>
+      </div>
+
+      {/* Warnings */}
+      {reading && reading.warnings.length > 0 && (
+        <div style={{
+          padding: 12, marginBottom: 16, borderRadius: 8,
+          background: "rgba(251,113,133,0.08)",
+          border: "1px solid rgba(251,113,133,0.28)",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#fb7185", marginBottom: 6 }}>Data quality</div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
+            {reading.warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {error && (
+        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>Error: {error}</div>
+      )}
+      {result && !result.ok && (
+        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>
+          Provider unavailable: {result.safeError ?? "unknown"}
+        </div>
+      )}
+
+      {/* Instrument table */}
+      {reading && (
+        <div style={{
+          overflowX: "auto",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 10,
+          marginBottom: 16,
+        }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead style={{ background: "rgba(255,255,255,0.03)", textAlign: "left" }}>
+              <tr>
+                {["Underlying", "Raw OI PCR", "Raw ΔOI PCR", "Norm OI", "Norm ΔOI", "Score", "Weight", "Strikes", "ATM", "Expiry", "Provider"].map((h) => (
+                  <th key={h} style={{ padding: "8px 10px", fontWeight: 600, opacity: 0.75 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {reading.instruments.map((i) => (
+                <tr key={i.underlying} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <td style={cell}>{i.underlying}</td>
+                  <td style={cell}>{fmt(i.rawOiPcr, 3)}</td>
+                  <td style={cell}>{fmt(i.rawChangeOiPcr, 3)}</td>
+                  <td style={cell}>{fmt(i.normalizedOiPcr)}</td>
+                  <td style={cell}>{fmt(i.normalizedChangeOiPcr)}</td>
+                  <td style={cell}>{fmt(i.instrumentScore)}</td>
+                  <td style={cell}>{fmt(i.weight * 100, 1)}%</td>
+                  <td style={cell}>{i.strikeCount}</td>
+                  <td style={cell}>{i.atm ?? "—"}</td>
+                  <td style={cell}>{i.expiry ?? "—"}</td>
+                  <td style={cell}>{i.provider}</td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: "1px solid rgba(255,255,255,0.05)", opacity: 0.55 }}>
+                <td style={cell}>SENSEX</td>
+                <td style={cell} colSpan={10}>COMING SOON</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Exports */}
+      {reading && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.csv`, "text/csv", readingToCsv(reading))}>Export CSV</button>
+          <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.json`, "application/json", readingToJson(reading))}>Export JSON</button>
+          <button style={buttonStyle} onClick={() => download(`combined-pcr-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildCombinedPcrResearchBundle(reading), null, 2))}>Research Bundle</button>
+        </div>
+      )}
+
+      {/* Research panel */}
+      <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
+        <button
+          onClick={() => setShowResearch((v) => !v)}
+          style={{
+            width: "100%", textAlign: "left", padding: "10px 14px",
+            background: "rgba(255,255,255,0.03)", color: "inherit",
+            border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
+          }}
+        >
+          {showResearch ? "▼" : "▶"} Research Panel
+        </button>
+        {showResearch && reading && (
+          <div style={{ padding: 14, fontSize: 12, lineHeight: 1.7 }}>
+            <div><b>Run ID:</b> {reading.runId}</div>
+            <div><b>Formula:</b> {FORMULA_VERSION}</div>
+            <div><b>Disclaimer:</b> {DISCLAIMER}</div>
+            <div><b>Confirmed:</b> {reading.confirmedState} · <b>Pending:</b> {reading.pendingState} · <b>Count:</b> {reading.confirmationCount}</div>
+            <div><b>Zero Cross:</b> {String(reading.zeroCross)}</div>
+            <div><b>Snapshots:</b> {reading.instruments.map((i) => i.snapshotId).join(" | ")}</div>
+            <div><b>Warnings:</b> {reading.warnings.length === 0 ? "none" : reading.warnings.join("; ")}</div>
+            <div><b>Provider Meta:</b> <code style={{ fontSize: 11 }}>{JSON.stringify(result?.ok ? (result as { providerMeta: unknown }).providerMeta : {})}</code></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const labelStyle: React.CSSProperties = {
+  display: "flex", flexDirection: "column", fontSize: 11, gap: 4, opacity: 0.85,
+};
+const selectStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12,
+};
+const buttonStyle: React.CSSProperties = {
+  background: "rgba(242,184,69,0.15)",
+  border: "1px solid rgba(242,184,69,0.4)",
+  color: "#f2b845", padding: "6px 12px", borderRadius: 6,
+  fontSize: 12, fontWeight: 600, cursor: "pointer",
+};
+const cell: React.CSSProperties = { padding: "6px 10px" };
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      padding: "8px 10px", borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.06)",
+      background: "rgba(255,255,255,0.02)",
+    }}>
+      <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
