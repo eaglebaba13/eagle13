@@ -86,6 +86,28 @@ const goldSilverLoader = () =>
     default: m.GoldSilverRatioCard as unknown as React.ComponentType<Record<string, unknown>>,
   }));
 
+// Phase 24C · Legacy dashboard adapters (context-driven, no fetching).
+const legacyGoldSilverLoader = () =>
+  import("@/components/dashboard/widgets/GoldSilverWidget").then((m) => ({ default: m.default }));
+const legacyQuoteLoader = () =>
+  import("@/components/dashboard/widgets/QuoteWidget").then((m) => ({ default: m.default }));
+const legacyVixLoader = () =>
+  import("@/components/dashboard/widgets/VixWidget").then((m) => ({ default: m.default }));
+const legacySignalLoader = () =>
+  import("@/components/dashboard/widgets/SignalWidget").then((m) => ({ default: m.default }));
+const legacyGlobalMarketsLoader = () =>
+  import("@/components/dashboard/widgets/GlobalMarketsWidget").then((m) => ({ default: m.default }));
+const legacyCprLoader = () =>
+  import("@/components/dashboard/widgets/CprWidget").then((m) => ({ default: m.default }));
+const legacySafeZonesLoader = () =>
+  import("@/components/dashboard/widgets/SafeZonesWidget").then((m) => ({ default: m.default }));
+const legacyGannLoader = () =>
+  import("@/components/dashboard/widgets/GannWidget").then((m) => ({ default: m.default }));
+const legacyPivotLoader = () =>
+  import("@/components/dashboard/widgets/PivotWidget").then((m) => ({ default: m.default }));
+const legacyGannCycleLoader = () =>
+  import("@/components/dashboard/widgets/GannCycleWidget").then((m) => ({ default: m.default }));
+
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
     id: "market-summary",
@@ -358,6 +380,193 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     required: true,
   },
 ];
+
+// ---- Legacy `/` dashboard widget set (Phase 24C migration) -----------------
+// The canonical `/` route consumes a curated set of widgets whose loaders
+// render legacy EagleBABA cards from the shared DashboardDataContext.
+// Kept separate from `DASHBOARD_WIDGETS` so the abstract registry (Phase
+// 24B) remains untouched and its tests continue to pass.
+
+export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
+  {
+    id: "legacy-quote",
+    title: "Index Quote",
+    section: "SUMMARY",
+    componentLoader: legacyQuoteLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 10,
+    desktopOrder: 10,
+    priority: 100,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: false,
+    required: true,
+  },
+  {
+    id: "legacy-vix",
+    title: "India VIX",
+    section: "SUMMARY",
+    componentLoader: legacyVixLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 20,
+    desktopOrder: 20,
+    priority: 90,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-gold-silver",
+    title: "Gold–Silver Ratio",
+    section: "SIGNAL",
+    componentLoader: legacyGoldSilverLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 30,
+    desktopOrder: 30,
+    priority: 95,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    formulaVersion: "GOLD_SILVER_RATIO_V1",
+    methodologyLabel: "Gold–Silver Ratio v1",
+    supportsFreshness: true,
+    supportsCollapse: true,
+    required: true,
+  },
+  {
+    id: "legacy-signal",
+    title: "Market Signal",
+    section: "SIGNAL",
+    componentLoader: legacySignalLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 40,
+    desktopOrder: 40,
+    priority: 85,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-global-markets",
+    title: "Global Markets",
+    section: "SUMMARY",
+    componentLoader: legacyGlobalMarketsLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 50,
+    desktopOrder: 50,
+    priority: 70,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-cpr",
+    title: "CPR Levels",
+    section: "SIGNAL",
+    componentLoader: legacyCprLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 60,
+    desktopOrder: 60,
+    priority: 80,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-safe-zones",
+    title: "Safe Zones",
+    section: "SIGNAL",
+    componentLoader: legacySafeZonesLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 1,
+    mobileOrder: 70,
+    desktopOrder: 70,
+    priority: 65,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-gann",
+    title: "Gann 360° Zones",
+    section: "SIGNAL",
+    componentLoader: legacyGannLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 1,
+    mobileOrder: 80,
+    desktopOrder: 80,
+    priority: 65,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-pivot",
+    title: "Pivot Levels",
+    section: "SIGNAL",
+    componentLoader: legacyPivotLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 90,
+    desktopOrder: 90,
+    priority: 60,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-gann-cycle",
+    title: "Gann Cycle",
+    section: "SIGNAL",
+    componentLoader: legacyGannCycleLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 100,
+    desktopOrder: 100,
+    priority: 55,
+    dataDependency: "MARKET_DATA",
+    refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+];
+
+export function legacyWidgetsById(): Map<string, WidgetDefinition> {
+  return new Map(LEGACY_DASHBOARD_WIDGETS.map((w) => [w.id, w]));
+}
 
 // ---- Dependency map --------------------------------------------------------
 // Every widget's data dependency maps to a TanStack Query key. Widgets that
