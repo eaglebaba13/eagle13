@@ -476,6 +476,18 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   if (!tokenStatus.tokenUsable) {
     return {
       at: nowIso,
+      generatedAt: nowIso,
+      requestStartedAt: nowIso,
+      requestCompletedAt: nowIso,
+      durationMs: 0,
+      status: "NOT_CONFIGURED",
+      errorSource: "PROVIDER_CONFIG",
+      safeError: redactUpstoxMessage(tokenStatus.reason).slice(0, 240),
+      httpStatus: null,
+      endpointFailed: null,
+      serializationStatus: "OK",
+      checklist: emptyChecklist("NOT_CONFIGURED"),
+      symbolResults: [],
       configured,
       authenticated: false,
       tokenStatus,
