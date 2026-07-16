@@ -7,3 +7,6 @@ export * from "./ema-engine";
 export * from "./signal-engine";
 export * from "./combined-pcr";
 export * from "./exports";
+export * from "./persistent-history";
+export * from "./sensex-capability";
+export * from "./shadow-validation";

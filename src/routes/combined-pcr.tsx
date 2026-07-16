@@ -22,6 +22,16 @@ import {
   readingToCsv,
   readingToJson,
 } from "@/lib/combined-pcr/exports";
+import {
+  PersistentPcrHistory,
+  readingToPersisted,
+  type PersistedPcrPoint,
+} from "@/lib/combined-pcr/persistent-history";
+import {
+  readingToShadowSample,
+  summarizeShadowObservations,
+  type ShadowSample,
+} from "@/lib/combined-pcr/shadow-validation";
 
 export const Route = createFileRoute("/combined-pcr")({
   head: () => ({
@@ -66,6 +76,17 @@ function CombinedPcrPage() {
   const [useMock, setUseMock] = useState(false);
   const [mockScenario, setMockScenario] = useState("BULLISH");
   const [showResearch, setShowResearch] = useState(false);
+  const [persisted, setPersisted] = useState<readonly PersistedPcrPoint[]>([]);
+  const [shadowSamples, setShadowSamples] = useState<readonly ShadowSample[]>([]);
+
+  const historyRef = useRef<PersistentPcrHistory | null>(null);
+  if (!historyRef.current) {
+    historyRef.current = new PersistentPcrHistory();
+  }
+
+  useEffect(() => {
+    setPersisted(historyRef.current!.load());
+  }, []);
 
   const prevConf = useRef<{ confirmed: string; pending: string; count: number }>({
     confirmed: "NO_TRADE",
@@ -98,6 +119,12 @@ function CombinedPcrPage() {
           pending: res.reading.pendingState,
           count: res.reading.confirmationCount,
         };
+        try {
+          const point = readingToPersisted(res.reading, atmMode);
+          const next = historyRef.current!.append(point);
+          setPersisted(next);
+        } catch { /* best-effort */ }
+        setShadowSamples((prev) => [...prev, readingToShadowSample(res.reading!)].slice(-200));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "request failed");
@@ -319,6 +346,33 @@ function CombinedPcrPage() {
           </div>
         )}
       </div>
+
+      {/* Persistent history + shadow validation */}
+      {(persisted.length > 0 || shadowSamples.length > 0) && (
+        <div style={{
+          marginTop: 16, border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10, padding: 12, fontSize: 12,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            History (persistent): {persisted.length} points · Shadow observations:{" "}
+            {summarizeShadowObservations(shadowSamples).length}
+          </div>
+          <div style={{ opacity: 0.7 }}>
+            Persistent storage retains up to {historyRef.current?.capacity ?? 500} readings across
+            reloads. Shadow validation is research-only — no BUY / SELL emitted.
+          </div>
+          <button
+            style={{ ...buttonStyle, marginTop: 8 }}
+            onClick={() => {
+              historyRef.current?.clear();
+              setPersisted([]);
+              setShadowSamples([]);
+            }}
+          >
+            Clear history
+          </button>
+        </div>
+      )}
     </div>
   );
 }
