@@ -16,6 +16,8 @@ import type { UpstoxErrorCode } from "./upstox-types";
 
 export type SmokeErrorSource =
   | "APPLICATION_AUTH"
+  | "SERVER_FUNCTION"
+  | "SERIALIZATION"
   | "UPSTOX_AUTH"
   | "UPSTOX_API"
   | "PROVIDER_CONFIG"
@@ -23,6 +25,118 @@ export type SmokeErrorSource =
   | "SCHEMA";
 
 export const UPSTOX_FORBIDDEN_SAFE_MESSAGE = "Upstox denied this request";
+
+/** Strict JSON-serializable checklist surfaced at the top of the report. */
+export interface SmokeChecklist {
+  readonly authentication: "PASS" | "FAIL" | "NOT_CONFIGURED";
+  readonly instrumentMaster: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+  readonly quoteApi: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+  readonly historicalApi: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+  readonly intradayApi: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+  readonly cache: "PASS" | "NOT_CONFIGURED";
+  readonly health: "PASS" | "PARTIAL" | "FAIL" | "NOT_CONFIGURED";
+}
+
+export interface SmokeSymbolResult {
+  readonly symbol: string;
+  readonly resolved: boolean;
+  readonly quoteOk: boolean;
+  readonly historicalOk: boolean;
+  readonly intradayOk: boolean;
+  readonly errorSource: SmokeErrorSource | null;
+  readonly safeError: string | null;
+}
+
+// Sensitive substrings that must never appear in a serialized report.
+const SECRET_KEY_NAMES = new Set([
+  "authorization",
+  "access_token",
+  "accesstoken",
+  "api_key",
+  "apikey",
+  "api_secret",
+  "apisecret",
+  "token",
+  "secret",
+  "cookie",
+  "set-cookie",
+  "bearer",
+]);
+
+/**
+ * Convert any input to a JSON-only value:
+ *  - Error → { message } (redacted)
+ *  - Date → ISO string
+ *  - Map/Set → array/object of values
+ *  - Headers/Response/Request/AbortSignal/function → dropped ("[unserializable]")
+ *  - BigInt → string
+ *  - NaN/Infinity → null
+ *  - circular references → "[circular]"
+ *  - keys matching secret names → removed
+ */
+export function sanitizeForJson(input: unknown): unknown {
+  const seen = new WeakSet<object>();
+  const walk = (value: unknown): unknown => {
+    if (value == null) return value ?? null;
+    const t = typeof value;
+    if (t === "string") {
+      return redactUpstoxMessage(value);
+    }
+    if (t === "number") {
+      return Number.isFinite(value as number) ? value : null;
+    }
+    if (t === "boolean") return value;
+    if (t === "bigint") return String(value);
+    if (t === "function") return "[unserializable:function]";
+    if (t === "symbol") return "[unserializable:symbol]";
+    if (t !== "object") return null;
+    if (value instanceof Date) return value.toISOString();
+    if (value instanceof Error) {
+      return { message: redactUpstoxMessage(value.message ?? "error").slice(0, 240) };
+    }
+    // Runtime objects we must never leak.
+    if (
+      typeof Response !== "undefined" && value instanceof Response
+    ) return "[unserializable:Response]";
+    if (
+      typeof Request !== "undefined" && value instanceof Request
+    ) return "[unserializable:Request]";
+    if (
+      typeof Headers !== "undefined" && value instanceof Headers
+    ) return "[unserializable:Headers]";
+    if (
+      typeof AbortSignal !== "undefined" && value instanceof AbortSignal
+    ) return "[unserializable:AbortSignal]";
+    if (value instanceof ArrayBuffer) return "[unserializable:ArrayBuffer]";
+    if (seen.has(value as object)) return "[circular]";
+    seen.add(value as object);
+    if (value instanceof Map) {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of value.entries()) {
+        const key = typeof k === "string" ? k : String(k);
+        if (SECRET_KEY_NAMES.has(key.toLowerCase())) continue;
+        out[key] = walk(v);
+      }
+      return out;
+    }
+    if (value instanceof Set) return Array.from(value.values()).map(walk);
+    if (Array.isArray(value)) return value.map(walk);
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (SECRET_KEY_NAMES.has(k.toLowerCase())) continue;
+      if (typeof v === "undefined") continue;
+      out[k] = walk(v);
+    }
+    return out;
+  };
+  try {
+    const sanitized = walk(input);
+    // Final defensive round-trip guarantees JSON-only output.
+    return JSON.parse(JSON.stringify(sanitized ?? null));
+  } catch {
+    return null;
+  }
+}
 
 /** Map an Upstox HTTP-error code to a SmokeErrorSource. Never leaks bodies. */
 export function errorSourceFromUpstoxCode(code: UpstoxErrorCode): SmokeErrorSource {
