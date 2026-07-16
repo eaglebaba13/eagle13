@@ -453,10 +453,14 @@ export function buildApplicationAuthFailureReport(
     authenticated: false,
     tokenStatus: {
       tokenPresent: false,
+      tokenSource: "NONE",
+      tokenExpiryStatus: "UNKNOWN",
       tokenUsable: false,
-      tokenSource: "APPLICATION_AUTH",
       reason: safeReason,
-    } as UpstoxTokenStatus,
+      mode: "disabled",
+      apiKeyConfigured: false,
+      apiSecretConfigured: false,
+    },
     instrumentResolved: [],
     quoteResults: [
       {
