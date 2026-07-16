@@ -46,6 +46,22 @@ import {
   buildResearchBundleJson,
 } from "@/lib/portfolio/bundle-exports";
 import { buildMonthlyHeatmap } from "@/lib/portfolio/rolling-metrics";
+import { computeEfficientFrontier, type FrontierResult } from "@/lib/portfolio/efficient-frontier";
+import { computeRiskBudget, type RiskBudgetResult } from "@/lib/portfolio/risk-budget";
+import {
+  computePortfolioRecommendation,
+  type PortfolioRecommendationResult,
+} from "@/lib/portfolio/portfolio-recommendation";
+import { compareScenarios } from "@/lib/portfolio/scenario-comparison";
+import {
+  buildAllocationTreemapCsv,
+  buildFrontierCsv,
+  buildInstitutionalBundleJson,
+  buildRecommendationCsv,
+  buildRecommendationJson,
+  buildRiskBudgetCsv,
+  buildScenarioComparisonCsv,
+} from "@/lib/portfolio/stage3-exports";
 
 const C = {
   border: "hsl(var(--border))",
@@ -112,7 +128,10 @@ export default function PortfolioSection({
   }, [candidates, registryAssets]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [subtab, setSubtab] = useState<"builder" | "alloc" | "corr" | "stress" | "history" | "compare" | "exports">("builder");
+  const [subtab, setSubtab] = useState<
+    | "builder" | "alloc" | "equity" | "corr" | "frontier" | "risk-budget"
+    | "stress" | "recommendation" | "history" | "compare" | "exports"
+  >("builder");
 
   const [method, setMethod] = useState<AllocationMethod>("EQUAL_WEIGHT");
   const [sizing, setSizing] = useState<PositionSizingMethod>("FIXED_RISK_PCT");
@@ -204,8 +223,12 @@ export default function PortfolioSection({
   const subtabs: { id: typeof subtab; label: string }[] = [
     { id: "builder", label: "Builder" },
     { id: "alloc", label: "Allocation" },
+    { id: "equity", label: "Equity" },
     { id: "corr", label: "Correlation" },
+    { id: "frontier", label: "Frontier" },
+    { id: "risk-budget", label: "Risk Budget" },
     { id: "stress", label: "Stress" },
+    { id: "recommendation", label: "Recommendation" },
     { id: "history", label: "History" },
     { id: "compare", label: "Comparison" },
     { id: "exports", label: "Exports" },
@@ -219,6 +242,27 @@ export default function PortfolioSection({
   const cmpA = historyEntries.find((e) => e.id === compareA)?.result ?? null;
   const cmpB = historyEntries.find((e) => e.id === compareB)?.result ?? null;
   const comparison = cmpA && cmpB ? compareResults(cmpA, cmpB) : null;
+
+  const frontier: FrontierResult | null = useMemo(
+    () => (chosen.length >= 2 ? computeEfficientFrontier({ candidates: chosen, startingCapital: capital, weightStep: 0.25 }) : null),
+    [chosen, capital],
+  );
+  const riskBudget: RiskBudgetResult | null = useMemo(
+    () => (result ? computeRiskBudget({ assets: chosen, contributions: result.riskContributions }) : null),
+    [result, chosen],
+  );
+  const recommendation: PortfolioRecommendationResult | null = useMemo(
+    () => (result ? computePortfolioRecommendation({ scenarios: [{ id: "current", label: `${method} · ${sizing}`, result, assets: chosen }] }) : null),
+    [result, chosen, method, sizing],
+  );
+  const scenarioComparison = useMemo(() => {
+    if (historyEntries.length < 2) return null;
+    return compareScenarios({
+      scenarios: historyEntries.slice(-5).map((e) => ({
+        id: e.id, label: `${e.result.config.method} · ${e.result.config.sizingPolicy.method}`, result: e.result,
+      })),
+    });
+  }, [historyEntries]);
 
   return (
     <div>
@@ -480,6 +524,23 @@ export default function PortfolioSection({
               {comparison ? (
                 <button style={btn} onClick={() => download(`portfolio-comparison-${result.runId}.csv`, buildComparisonCsv(comparison), "text/csv")}>Comparison CSV</button>
               ) : null}
+              {frontier ? (
+                <button style={btn} onClick={() => download(`portfolio-frontier-${result.runId}.csv`, buildFrontierCsv(frontier), "text/csv")}>Frontier CSV</button>
+              ) : null}
+              {riskBudget ? (
+                <button style={btn} onClick={() => download(`portfolio-risk-budget-${result.runId}.csv`, buildRiskBudgetCsv(riskBudget), "text/csv")}>Risk Budget CSV</button>
+              ) : null}
+              {recommendation ? (
+                <>
+                  <button style={btn} onClick={() => download(`portfolio-recommendation-${result.runId}.csv`, buildRecommendationCsv(recommendation), "text/csv")}>Recommendation CSV</button>
+                  <button style={btn} onClick={() => download(`portfolio-recommendation-${result.runId}.json`, buildRecommendationJson(recommendation), "application/json")}>Recommendation JSON</button>
+                </>
+              ) : null}
+              {scenarioComparison ? (
+                <button style={btn} onClick={() => download(`portfolio-scenarios-${result.runId}.csv`, buildScenarioComparisonCsv(scenarioComparison), "text/csv")}>Scenarios CSV</button>
+              ) : null}
+              <button style={btn} onClick={() => download(`portfolio-treemap-${result.runId}.csv`, buildAllocationTreemapCsv(result, chosen), "text/csv")}>Treemap CSV</button>
+              <button style={btn} onClick={() => download(`portfolio-institutional-bundle-${result.runId}.json`, buildInstitutionalBundleJson({ portfolio: result, frontier, riskBudget, recommendation, comparison: scenarioComparison }), "application/json")}>Institutional Bundle JSON</button>
               <button style={btn} onClick={() => download(`portfolio-bundle-${result.runId}.json`, buildResearchBundleJson({ portfolio: result, candidates: candidateRows, monteCarlo: mcResult ?? null, history: historyEntries, comparison }), "application/json")}>Full Bundle JSON</button>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
@@ -488,7 +549,23 @@ export default function PortfolioSection({
           </div>
       ) : null}
 
-      {(subtab === "alloc" || subtab === "corr" || subtab === "stress" || subtab === "exports") && !result ? (
+      {subtab === "equity" && result ? (
+        <EquityPanel result={result} section={section} label={label} />
+      ) : null}
+
+      {subtab === "frontier" ? (
+        <FrontierPanel frontier={frontier} section={section} label={label} />
+      ) : null}
+
+      {subtab === "risk-budget" && riskBudget ? (
+        <RiskBudgetPanel rb={riskBudget} section={section} />
+      ) : null}
+
+      {subtab === "recommendation" && recommendation ? (
+        <RecommendationPanel rec={recommendation} section={section} />
+      ) : null}
+
+      {(subtab === "alloc" || subtab === "corr" || subtab === "stress" || subtab === "exports" || subtab === "equity" || subtab === "recommendation" || subtab === "risk-budget") && !result ? (
         <div style={{ ...section, textAlign: "center", color: C.muted, fontSize: 12 }}>
           Run a portfolio from the Builder tab to see this view.
         </div>
