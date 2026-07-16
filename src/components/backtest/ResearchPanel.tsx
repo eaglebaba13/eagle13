@@ -1114,7 +1114,7 @@ function McCard({ label, value, accent }: { label: string; value: string; accent
 // Phase 21.6 · Stage 3 — Research sub-tabs, Monte Carlo equity-fan chart,
 // Sensitivity scaffold with typed empty state. UI only — no engine here.
 
-type ResearchTab = "wf" | "mc" | "sens" | "rob";
+type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
