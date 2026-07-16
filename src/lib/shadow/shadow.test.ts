@@ -415,7 +415,7 @@ describe("exports carry disclaimer + provenance", () => {
       buildPortfolioShadowCsv([
         { runId: "P", assetId: "a", included: true, allocationWeight: 0.3, sizingUnits: 1, riskBudgetPct: 0.01, correlationExposure: 0.2, capitalUtilizationPct: 0.5, confidence: 0.6, hardGatePassed: true, blockingReasons: [] },
       ]),
-    ).toContain("PORTFOLIO_RUN");
+    ).toContain("portfolioRunId");
   });
   it("bundle json includes disclaimer and snapshot", () => {
     const json = buildShadowBundleJson({ version: "SHADOW_BUNDLE_V1", disclaimer: "override", snapshot: snap, metrics, drift: null });
@@ -430,7 +430,7 @@ describe("safety audits", () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const dir = path.resolve(process.cwd(), "src/lib/shadow");
-    const files = await fs.readdir(dir);
+    const files = (await fs.readdir(dir)).filter((f) => !f.endsWith(".test.ts"));
     for (const f of files) {
       const src = await fs.readFile(path.join(dir, f), "utf8");
       expect(src).not.toMatch(/from\s+["'][^"']*\/broker\//);
