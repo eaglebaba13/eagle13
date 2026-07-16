@@ -33,7 +33,7 @@ const LOCALHOST_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
 function parseHost(url: string | null): string | null {
   if (!url) return null;
   try {
-    return new URL(url).host.toLowerCase();
+    return new URL(url).hostname.toLowerCase();
   } catch {
     return null;
   }
