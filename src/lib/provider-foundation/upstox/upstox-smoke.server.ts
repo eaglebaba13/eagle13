@@ -556,7 +556,7 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     try {
       const q = await fetchQuote(http, entry.instrumentKey!);
       return toEndpointResult("quote", entry.symbol, q, {
-        instrumentKey: entry.instrumentKey ?? null ?? undefined,
+        instrumentKey: entry.instrumentKey,
         requestTimestamp: new Date().toISOString(),
         tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
       });
