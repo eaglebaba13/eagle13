@@ -29,7 +29,10 @@ export interface HealthTransition {
 export class ProviderHealthManager {
   private readonly samples: HealthSample[] = [];
   private readonly transitions: HealthTransition[] = [];
-  private lastStatus: ProviderStatus = "OFFLINE";
+  // Untried providers are assumed usable so the manager attempts them at
+  // least once. Real status is recorded after the first call and drives
+  // subsequent failover decisions.
+  private lastStatus: ProviderStatus = "LIVE";
   private readonly maxSamples: number;
 
   constructor(
