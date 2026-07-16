@@ -61,6 +61,23 @@ import {
   type StrategyResearchRow,
 } from "@/lib/backtest/research-comparison";
 import {
+  createBatchOrchestrator,
+  summarizeBatch,
+  buildExecutionPlan,
+  type BatchController,
+  type BatchOrchestratorInput,
+  type BatchOrchestratorState,
+} from "@/lib/backtest/cross-asset-orchestrator";
+import {
+  buildBatchResultsCsv,
+  buildBatchFailuresCsv,
+  buildBatchCoverageCsv,
+  buildBatchSummaryJson,
+  buildBatchResultsJson,
+} from "@/lib/backtest/batch-exports";
+import { runUnifiedBacktest } from "@/lib/backtest/unified";
+import type { DataGranularity } from "@/lib/backtest/result";
+import {
   buildComparisonMatrixCsv,
   buildResearchJson,
 } from "@/lib/backtest/research-exports";
@@ -1106,6 +1123,7 @@ export function MonteCarloSection({
           to={to}
         />
       ) : null}
+      {tab === "batch" ? <BatchSection /> : null}
     </>
   );
 }
@@ -1123,13 +1141,14 @@ function McCard({ label, value, accent }: { label: string; value: string; accent
 // Phase 21.6 · Stage 3 — Research sub-tabs, Monte Carlo equity-fan chart,
 // Sensitivity scaffold with typed empty state. UI only — no engine here.
 
-type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx";
+type ResearchTab = "wf" | "mc" | "sens" | "rob" | "cx" | "batch";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
   { id: "sens", label: "Sensitivity" },
   { id: "rob", label: "Robustness" },
   { id: "cx", label: "Cross-Asset" },
+  { id: "batch", label: "Research Batch" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
@@ -2124,5 +2143,235 @@ function CrossAssetSection({
         </section>
       ) : null}
     </>
+  );
+}
+// ---------------------------------------------------------------------------
+// Phase 21.7 · Stage 2 — Research Batch tab.
+// Drives runUnifiedBacktest across a plan and surfaces progress, results,
+// summary, coverage and exports. Never creates another runner.
+
+const BATCH_STRATEGY_CHOICES: readonly StrategyId[] = ["ASTRO", "SMC", "ASTRO_SMC_HYBRID"];
+const BATCH_INSTRUMENTS: readonly string[] = ["NIFTY50", "BANKNIFTY"];
+const BATCH_TIMEFRAMES: readonly DataGranularity[] = ["1d", "5m"];
+const BATCH_PERIODS: readonly { label: string; from: string; to: string }[] = [
+  { label: "3M", from: isoDaysAgo(90), to: todayIso() },
+  { label: "6M", from: isoDaysAgo(180), to: todayIso() },
+  { label: "12M", from: isoDaysAgo(365), to: todayIso() },
+];
+
+function BatchSection() {
+  const [selectedStrategies, setSelectedStrategies] = useState<Record<StrategyId, boolean>>({
+    ASTRO: true, SMC: true, ASTRO_SMC_HYBRID: false, BASELINE: false,
+  });
+  const [selectedInstruments, setSelectedInstruments] = useState<Record<string, boolean>>({
+    NIFTY50: true, BANKNIFTY: false,
+  });
+  const [selectedTf, setSelectedTf] = useState<Record<DataGranularity, boolean>>({
+    "1d": true, "5m": false,
+  });
+  const [selectedPeriods, setSelectedPeriods] = useState<Record<string, boolean>>({
+    "3M": true, "6M": false, "12M": false,
+  });
+  const [concurrency, setConcurrency] = useState<1 | 2 | 4 | 8>(2);
+  const controllerRef = useRef<BatchController | null>(null);
+  const [state, setState] = useState<BatchOrchestratorState | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const formulas: Partial<Record<StrategyId, UnifiedFormulaId>> = useMemo(() => ({
+    ASTRO: ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1 as UnifiedFormulaId,
+    SMC: "SMC_V1" as UnifiedFormulaId,
+    ASTRO_SMC_HYBRID: "ASTRO_SMC_HYBRID_V1" as UnifiedFormulaId,
+  }), []);
+
+  const input: BatchOrchestratorInput = useMemo(() => ({
+    strategies: BATCH_STRATEGY_CHOICES.filter((s) => selectedStrategies[s]),
+    formulas,
+    instruments: BATCH_INSTRUMENTS.filter((i) => selectedInstruments[i]),
+    timeframes: BATCH_TIMEFRAMES.filter((t) => selectedTf[t]),
+    periods: BATCH_PERIODS.filter((p) => selectedPeriods[p.label]),
+    concurrency,
+  }), [selectedStrategies, selectedInstruments, selectedTf, selectedPeriods, concurrency, formulas]);
+
+  const plan = useMemo(() => buildExecutionPlan(input), [input]);
+
+  const start = useCallback(async () => {
+    if (running || plan.length === 0) return;
+    const ctrl = createBatchOrchestrator(input, {
+      execute: async (job, ctx) => {
+        void ctx;
+        return runUnifiedBacktest({
+          strategy: job.strategy,
+          formula: job.formula,
+          instrument: job.instrument,
+          timeframe: job.timeframe,
+          from: job.period.from,
+          to: job.period.to,
+        });
+      },
+    });
+    controllerRef.current = ctrl;
+    const unsub = ctrl.subscribe((s) => setState(s));
+    setRunning(true);
+    setState(ctrl.getState());
+    try {
+      await ctrl.start();
+    } finally {
+      setRunning(false);
+      unsub();
+      setState(ctrl.getState());
+    }
+  }, [running, plan.length, input]);
+
+  const doExport = useCallback((kind: "results-csv" | "results-json" | "failures-csv" | "coverage-csv" | "summary-json") => {
+    if (!state) return;
+    const prov = { generatedAt: new Date().toISOString(), source: "research-batch-ui" };
+    const map: Record<string, { name: string; mime: string; body: string }> = {
+      "results-csv": { name: "batch-results.csv", mime: "text/csv", body: buildBatchResultsCsv(state, prov) },
+      "results-json": { name: "batch-results.json", mime: "application/json", body: buildBatchResultsJson(state, prov) },
+      "failures-csv": { name: "batch-failures.csv", mime: "text/csv", body: buildBatchFailuresCsv(state, prov) },
+      "coverage-csv": { name: "batch-coverage.csv", mime: "text/csv", body: buildBatchCoverageCsv(state, prov) },
+      "summary-json": { name: "batch-summary.json", mime: "application/json", body: buildBatchSummaryJson(state, prov) },
+    };
+    const spec = map[kind];
+    downloadBlob(spec.name, spec.mime, spec.body);
+  }, [state]);
+
+  const summary = state ? summarizeBatch(state) : null;
+
+  return (
+    <section style={panel}>
+      <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 2, color: C.orange, marginBottom: 8 }}>
+        RESEARCH BATCH · MULTI-ASSET EXECUTION
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 10 }}>
+        <div>
+          <div style={lbl}>Strategies</div>
+          {BATCH_STRATEGY_CHOICES.map((s) => (
+            <label key={s} style={{ display: "block", fontFamily: "var(--eb-mono)", fontSize: 11, marginTop: 4 }}>
+              <input type="checkbox" checked={!!selectedStrategies[s]} onChange={(e) => setSelectedStrategies((x) => ({ ...x, [s]: e.target.checked }))} /> {s}
+            </label>
+          ))}
+        </div>
+        <div>
+          <div style={lbl}>Instruments</div>
+          {BATCH_INSTRUMENTS.map((i) => (
+            <label key={i} style={{ display: "block", fontFamily: "var(--eb-mono)", fontSize: 11, marginTop: 4 }}>
+              <input type="checkbox" checked={!!selectedInstruments[i]} onChange={(e) => setSelectedInstruments((x) => ({ ...x, [i]: e.target.checked }))} /> {i}
+            </label>
+          ))}
+        </div>
+        <div>
+          <div style={lbl}>Timeframes</div>
+          {BATCH_TIMEFRAMES.map((t) => (
+            <label key={t} style={{ display: "block", fontFamily: "var(--eb-mono)", fontSize: 11, marginTop: 4 }}>
+              <input type="checkbox" checked={!!selectedTf[t]} onChange={(e) => setSelectedTf((x) => ({ ...x, [t]: e.target.checked }))} /> {t}
+            </label>
+          ))}
+        </div>
+        <div>
+          <div style={lbl}>Periods</div>
+          {BATCH_PERIODS.map((p) => (
+            <label key={p.label} style={{ display: "block", fontFamily: "var(--eb-mono)", fontSize: 11, marginTop: 4 }}>
+              <input type="checkbox" checked={!!selectedPeriods[p.label]} onChange={(e) => setSelectedPeriods((x) => ({ ...x, [p.label]: e.target.checked }))} /> {p.label}
+            </label>
+          ))}
+        </div>
+        <div>
+          <div style={lbl}>Concurrency</div>
+          <select value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value) as 1 | 2 | 4 | 8)} style={{ ...sel, width: "auto" }}>
+            {[1, 2, 4, 8].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+        <button onClick={start} disabled={running || plan.length === 0} style={{ ...chip, background: running ? C.border : C.orange, color: "#04140b" }}>
+          Start ({plan.length} jobs)
+        </button>
+        <button onClick={() => controllerRef.current?.pause()} disabled={!running || state?.paused} style={chip}>Pause</button>
+        <button onClick={() => controllerRef.current?.resume()} disabled={!running || !state?.paused} style={chip}>Resume</button>
+        <button onClick={() => controllerRef.current?.cancel()} disabled={!running} style={chip}>Cancel</button>
+        <button onClick={() => controllerRef.current?.restartFailed()} disabled={running || !state} style={chip}>Restart Failed</button>
+        <button onClick={() => controllerRef.current?.restartAll()} disabled={running || !state} style={chip}>Restart All</button>
+      </div>
+
+      {state ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 10 }}>
+            <McCard label="Total" value={String(state.progress.total)} />
+            <McCard label="Completed" value={String(state.progress.completed)} accent={C.green} />
+            <McCard label="Running" value={String(state.progress.running)} accent={C.orange} />
+            <McCard label="Queued" value={String(state.progress.queued)} />
+            <McCard label="Failed" value={String(state.progress.failed)} accent={C.red} />
+            <McCard label="Cancelled" value={String(state.progress.cancelled)} />
+            <McCard label="ETA" value={state.progress.etaMs === null ? "—" : `${Math.round(state.progress.etaMs / 1000)}s`} />
+          </div>
+
+          {state.progress.currentJobs.length > 0 ? (
+            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, marginBottom: 8 }}>
+              Running: {state.progress.currentJobs.map((j) => `${j.strategy}/${j.instrument}/${j.timeframe}/${j.period.label}`).join(", ")}
+            </div>
+          ) : null}
+
+          <div style={{ overflowX: "auto", marginBottom: 10 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+              <thead>
+                <tr style={{ color: C.muted, textAlign: "left", borderBottom: `1px solid ${C.border}` }}>
+                  {["Strategy", "Formula", "Instrument", "TF", "Period", "Status", "Trades", "Net PnL", "RunID"].map((h) => (
+                    <th key={h} style={{ padding: "4px 6px" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {state.records.map((r) => {
+                  const pnl = r.result ? Math.round(r.result.trades.reduce((s, t) => s + t.pnl, 0) * 100) / 100 : null;
+                  const color = r.status === "completed" ? C.green : r.status === "failed" ? C.red : r.status === "running" ? C.orange : C.muted;
+                  return (
+                    <tr key={r.key} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={{ padding: "4px 6px" }}>{r.job.strategy}</td>
+                      <td style={{ padding: "4px 6px" }}>{r.job.formula}</td>
+                      <td style={{ padding: "4px 6px" }}>{r.job.instrument}</td>
+                      <td style={{ padding: "4px 6px" }}>{r.job.timeframe}</td>
+                      <td style={{ padding: "4px 6px" }}>{r.job.period.label}</td>
+                      <td style={{ padding: "4px 6px", color }}>{r.status}</td>
+                      <td style={{ padding: "4px 6px" }}>{r.result?.trades.length ?? "—"}</td>
+                      <td style={{ padding: "4px 6px" }}>{pnl === null ? "—" : pnl}</td>
+                      <td style={{ padding: "4px 6px", color: C.muted, fontSize: 10 }}>{r.runId ?? (r.error?.code ?? "—")}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {summary ? (
+            <div style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 10, marginBottom: 10 }}>
+              <div style={{ fontFamily: "var(--eb-head)", fontSize: 12, letterSpacing: 2, color: C.orange, marginBottom: 6 }}>BATCH SUMMARY</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 6, fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+                <div><span style={lbl}>Coverage</span><div>{summary.coveragePct}%</div></div>
+                <div><span style={lbl}>Best Strategy</span><div>{summary.bestStrategy ?? "—"}</div></div>
+                <div><span style={lbl}>Best Instrument</span><div>{summary.bestInstrument ?? "—"}</div></div>
+                <div><span style={lbl}>Best Timeframe</span><div>{summary.bestTimeframe ?? "—"}</div></div>
+                <div><span style={lbl}>Best Period</span><div>{summary.bestPeriod ?? "—"}</div></div>
+                <div><span style={lbl}>Highest Net PnL</span><div>{summary.highestNetPnl === null ? "—" : summary.highestNetPnl}</div></div>
+              </div>
+            </div>
+          ) : null}
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button onClick={() => doExport("results-csv")} style={chip}>Results CSV</button>
+            <button onClick={() => doExport("results-json")} style={chip}>Results JSON</button>
+            <button onClick={() => doExport("failures-csv")} style={chip}>Failures CSV</button>
+            <button onClick={() => doExport("coverage-csv")} style={chip}>Coverage CSV</button>
+            <button onClick={() => doExport("summary-json")} style={chip}>Summary JSON</button>
+          </div>
+        </>
+      ) : (
+        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, textAlign: "center", padding: 12 }}>
+          Configure your batch above and press Start. Runs use the shared unified backtest engine — no new runner.
+        </div>
+      )}
+    </section>
   );
 }
