@@ -1126,6 +1126,11 @@ export function MonteCarloSection({
         />
       ) : null}
       {tab === "batch" ? <BatchSection /> : null}
+      {tab === "regime" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading regime intelligence…</div>}>
+          <RegimeIntelligenceSection instrument={instrument} />
+        </Suspense>
+      ) : null}
     </>
   );
 }
