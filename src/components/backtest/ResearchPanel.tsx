@@ -1140,6 +1140,16 @@ export function MonteCarloSection({
           <RecommendationValidationSection />
         </Suspense>
       ) : null}
+      {tab === "opt" ? (
+        <Suspense fallback={<div style={{ padding: 12, opacity: 0.6 }}>Loading optimizer…</div>}>
+          <OptimizerSection
+            researchRunId={researchRunId}
+            instrument={instrument}
+            from={from}
+            to={to}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -1165,7 +1175,8 @@ type ResearchTab =
   | "cx"
   | "batch"
   | "regime"
-  | "recval";
+  | "recval"
+  | "opt";
 const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "wf", label: "Walk-Forward" },
   { id: "mc", label: "Monte Carlo" },
@@ -1175,6 +1186,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "batch", label: "Research Batch" },
   { id: "regime", label: "Regime Intelligence" },
   { id: "recval", label: "Recommendation Validation" },
+  { id: "opt", label: "Optimizer" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
