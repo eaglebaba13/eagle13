@@ -86,6 +86,28 @@ const goldSilverLoader = () =>
     default: m.GoldSilverRatioCard as unknown as React.ComponentType<Record<string, unknown>>,
   }));
 
+// Phase 24C · Legacy dashboard adapters (context-driven, no fetching).
+const legacyGoldSilverLoader = () =>
+  import("@/components/dashboard/widgets/GoldSilverWidget").then((m) => ({ default: m.default }));
+const legacyQuoteLoader = () =>
+  import("@/components/dashboard/widgets/QuoteWidget").then((m) => ({ default: m.default }));
+const legacyVixLoader = () =>
+  import("@/components/dashboard/widgets/VixWidget").then((m) => ({ default: m.default }));
+const legacySignalLoader = () =>
+  import("@/components/dashboard/widgets/SignalWidget").then((m) => ({ default: m.default }));
+const legacyGlobalMarketsLoader = () =>
+  import("@/components/dashboard/widgets/GlobalMarketsWidget").then((m) => ({ default: m.default }));
+const legacyCprLoader = () =>
+  import("@/components/dashboard/widgets/CprWidget").then((m) => ({ default: m.default }));
+const legacySafeZonesLoader = () =>
+  import("@/components/dashboard/widgets/SafeZonesWidget").then((m) => ({ default: m.default }));
+const legacyGannLoader = () =>
+  import("@/components/dashboard/widgets/GannWidget").then((m) => ({ default: m.default }));
+const legacyPivotLoader = () =>
+  import("@/components/dashboard/widgets/PivotWidget").then((m) => ({ default: m.default }));
+const legacyGannCycleLoader = () =>
+  import("@/components/dashboard/widgets/GannCycleWidget").then((m) => ({ default: m.default }));
+
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
     id: "market-summary",
