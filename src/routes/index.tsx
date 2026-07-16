@@ -24,6 +24,16 @@ import {
 } from "@/lib/dashboard-widgets";
 import { deriveDashboardFreshness } from "@/lib/dashboard-freshness-adapter";
 import { DashboardParityDiagnostic } from "@/components/dashboard/DashboardParityDiagnostic";
+import { CustomizeDashboardDrawer } from "@/components/dashboard/CustomizeDashboardDrawer";
+import {
+  DEFAULT_PREFERENCES,
+  loadPreferences,
+  savePreferences,
+  isHidden,
+  type DashboardPreferences,
+} from "@/lib/dashboard-preferences";
+import { summarizeDashboardHealth } from "@/lib/dashboard-health";
+import { LEGACY_DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
 
 const marketQuery = () =>
   queryOptions({
@@ -71,6 +81,16 @@ function Dashboard() {
     useSuspenseQuery(marketQuery());
   const clock = useIstClock();
   type TabKey = "nifty" | "banknifty" | "btc" | "gold";
+
+  const [prefs, setPrefs] = useState<DashboardPreferences>(DEFAULT_PREFERENCES);
+  useEffect(() => {
+    setPrefs(loadPreferences(typeof window !== "undefined" ? window.localStorage : null));
+  }, []);
+  const updatePrefs = (next: DashboardPreferences) => {
+    setPrefs(next);
+    if (typeof window !== "undefined") savePreferences(window.localStorage, next);
+  };
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const tabs = useMemo(() => {
     const list: {
@@ -158,15 +178,39 @@ function Dashboard() {
         "legacy-signal",
         "legacy-global-markets",
       ];
-      return ids.map((id) => widgetById.get(id)!).filter(Boolean);
+      return ids
+        .filter((id) => !isHidden(prefs, id))
+        .map((id) => widgetById.get(id)!)
+        .filter(Boolean);
     },
-    [widgetById, data.vix],
+    [widgetById, data.vix, prefs],
   );
-  const cprWidget = [widgetById.get("legacy-cpr")!];
-  const safeZonesWidget = [widgetById.get("legacy-safe-zones")!];
-  const gannWidget = [widgetById.get("legacy-gann")!];
-  const pivotWidget = [widgetById.get("legacy-pivot")!];
-  const gannCycleWidget = [widgetById.get("legacy-gann-cycle")!];
+  const rightRailPick = (id: string) =>
+    isHidden(prefs, id) ? [] : [widgetById.get(id)!].filter(Boolean);
+  const cprWidget = rightRailPick("legacy-cpr");
+  const safeZonesWidget = rightRailPick("legacy-safe-zones");
+  const gannWidget = rightRailPick("legacy-gann");
+  const pivotWidget = rightRailPick("legacy-pivot");
+  const gannCycleWidget = rightRailPick("legacy-gann-cycle");
+
+  const health = useMemo(
+    () =>
+      summarizeDashboardHealth({
+        freshness: freshnessByDependency,
+        providerStatus: "OK",
+        lastSuccessAt: dataUpdatedAt || null,
+        methodologies: [
+          "GANN_NIFTY_ASTRO_V1_1",
+          "GANN_ASTRO_INTRADAY_ABSOLUTE_V1",
+          "LEGACY_EAGLEBABA_CASCADE_V1",
+          "CPR_CENTRAL_PIVOT_V1",
+          "CLASSIC_PIVOT_V1",
+          "SAFE_ZONE_BAND_V1",
+          "GOLD_SILVER_RATIO_V1",
+        ],
+      }),
+    [freshnessByDependency, dataUpdatedAt],
+  );
 
   return (
     <div className="eb-shell eb-scanlines">
@@ -207,6 +251,34 @@ function Dashboard() {
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <ReferralBanner />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={drawerOpen}
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 11,
+              letterSpacing: 1,
+              padding: "6px 12px",
+              minHeight: 32,
+              borderRadius: 6,
+              border: "1px solid var(--eb-border)",
+              background: "transparent",
+              color: "var(--eb-text)",
+              cursor: "pointer",
+            }}
+          >
+            ⚙ CUSTOMIZE DASHBOARD
+          </button>
+        </div>
         <DashboardDataProvider value={dashboardCtx}>
           <div
             data-eb-dashboard-root
@@ -237,6 +309,15 @@ function Dashboard() {
             </div>
           </div>
         </DashboardDataProvider>
+
+        <CustomizeDashboardDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          prefs={prefs}
+          onChange={updatePrefs}
+          widgets={LEGACY_DASHBOARD_WIDGETS}
+          device="desktop"
+        />
 
         {import.meta.env.DEV ||
         (typeof window !== "undefined" &&
@@ -269,6 +350,10 @@ function Dashboard() {
         isFetching={isFetching}
         onRefresh={() => refetch()}
         quote={quote}
+        overall={health.overall}
+        staleCount={health.staleCount}
+        unavailableCount={health.unavailableCount}
+        providerStatus={health.providerStatus}
       />
 
       <style>{`
