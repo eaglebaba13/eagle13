@@ -116,10 +116,10 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
       fetchIndex("^NSEBANK").catch((e) => e as Error),
       fetchIndex("^INDIAVIX").catch(() => null),
     ]);
-    const vix = uxVix && uxVix.ok ? uxVix.quote : vixYahoo;
-    const btc = null;
-    const gold = null;
-    const silver = null;
+    const vix: IndexQuote | null = uxVix && uxVix.ok ? uxVix.quote : vixYahoo;
+    const btc: IndexQuote | null = null;
+    const gold: IndexQuote | null = null;
+    const silver: IndexQuote | null = null;
 
     const niftyFallback = niftyR instanceof Error ? null : niftyR;
     const bankFallback = bankniftyR instanceof Error ? null : bankniftyR;
