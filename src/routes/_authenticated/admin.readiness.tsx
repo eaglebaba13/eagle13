@@ -63,20 +63,7 @@ function AdminReadinessPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
-  const categories = useMemo(() => {
-    if (!report) return [] as Array<{ id: string; total: number; results: typeof report.results }>;
-    const groups = new Map<string, typeof report.results>();
-    for (const r of report.results) {
-      const arr = groups.get(r.category) ?? [];
-      arr.push(r);
-      groups.set(r.category, arr);
-    }
-    return Array.from(groups.entries()).map(([id, results]) => ({
-      id,
-      total: results.length,
-      results,
-    }));
-  }, [report]);
+  useMemo(() => report?.results.length ?? 0, [report]);
 
   if (role !== "admin") {
     return (
@@ -279,6 +266,3 @@ function AdminReadinessPage() {
     </div>
   );
 }
-
-// ignore unused warnings for helper vars in some builds
-void categories;
