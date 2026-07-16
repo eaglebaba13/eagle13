@@ -851,7 +851,7 @@ export function MonteCarloSection({
   instrument: string;
   from: string;
   to: string;
-  tab?: "wf" | "mc" | "sens" | "rob";
+  tab?: ResearchTab;
 }) {
   const [mcCfg, setMcCfg] = useState<MonteCarloUiConfig>({
     simulations: 500,
