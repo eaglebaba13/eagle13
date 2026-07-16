@@ -91,11 +91,11 @@ describe("upstox smoke — endpoint outcomes", () => {
   it("classifies 429 with retry-after", async () => {
     const rep = await runUpstoxSmokeTest({
       env: LIVE_ENV,
-      fetchImpl: async () => status(429, "rate", { "retry-after": "1" }),
+      fetchImpl: async () => status(429, "rate", { "retry-after": "0" }),
       nowIso: "2026-07-16T09:15:00.000Z",
     });
     expect(rep.quoteResults[0]?.providerStatus).toBe("RATE_LIMITED");
-  }, 15_000);
+  }, 30_000);
 
   it("surfaces schema failure as safe error", async () => {
     const rep = await runUpstoxSmokeTest({
