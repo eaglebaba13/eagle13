@@ -466,6 +466,18 @@ function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
         </div>
       ) : null}
 
+      <div
+        data-testid="smoke-run-diagnostics"
+        className="grid grid-cols-2 gap-2 rounded-md border border-slate-800 bg-slate-900/50 p-2 text-[11px] font-mono text-slate-400 md:grid-cols-4"
+      >
+        <span>started: {(report as unknown as { requestStartedAt?: string }).requestStartedAt ?? report.at}</span>
+        <span>completed: {(report as unknown as { requestCompletedAt?: string }).requestCompletedAt ?? "—"}</span>
+        <span>duration: {(report as unknown as { durationMs?: number }).durationMs ?? 0}ms</span>
+        <span>http: {(report as unknown as { httpStatus?: number | null }).httpStatus ?? "—"}</span>
+        <span>endpoint failed: {(report as unknown as { endpointFailed?: string | null }).endpointFailed ?? "—"}</span>
+        <span>serialization: {(report as unknown as { serializationStatus?: string }).serializationStatus ?? "OK"}</span>
+      </div>
+
       <div>
         {rows.map((row) => (
           <div key={row.label} className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs">
