@@ -87,7 +87,7 @@ export default function OptimizerSection(props: OptimizerSectionProps) {
     if (!r.recommendedParameters) return;
     navigator.clipboard?.writeText(JSON.stringify(r.recommendedParameters, null, 2));
   };
-  const dl = (name: string, body: string, mime: string) => downloadBlob(new Blob([body], { type: mime }), name);
+  const dl = (name: string, body: string, mime: string) => downloadBlob(body, name, mime);
 
   return (
     <section style={panel}>
