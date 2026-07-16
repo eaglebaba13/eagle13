@@ -346,6 +346,33 @@ function CombinedPcrPage() {
           </div>
         )}
       </div>
+
+      {/* Persistent history + shadow validation */}
+      {(persisted.length > 0 || shadowSamples.length > 0) && (
+        <div style={{
+          marginTop: 16, border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10, padding: 12, fontSize: 12,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            History (persistent): {persisted.length} points · Shadow observations:{" "}
+            {summarizeShadowObservations(shadowSamples).length}
+          </div>
+          <div style={{ opacity: 0.7 }}>
+            Persistent storage retains up to {historyRef.current?.capacity ?? 500} readings across
+            reloads. Shadow validation is research-only — no BUY / SELL emitted.
+          </div>
+          <button
+            style={{ ...buttonStyle, marginTop: 8 }}
+            onClick={() => {
+              historyRef.current?.clear();
+              setPersisted([]);
+              setShadowSamples([]);
+            }}
+          >
+            Clear history
+          </button>
+        </div>
+      )}
     </div>
   );
 }
