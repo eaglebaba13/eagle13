@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { runUpstoxSmokeTest } from "./upstox-smoke.server";
+import {
+  runUpstoxSmokeTest,
+  buildApplicationAuthFailureReport,
+  errorSourceFromUpstoxCode,
+  errorSourceFromAdapterReason,
+  UPSTOX_FORBIDDEN_SAFE_MESSAGE,
+} from "./upstox-smoke.server";
 
 const LIVE_ENV = {
   UPSTOX_MARKET_DATA_MODE: "live",
@@ -86,6 +92,24 @@ describe("upstox smoke — endpoint outcomes", () => {
     });
     expect(rep.summary.overall).toBe("FAIL");
     expect(rep.quoteResults[0]?.safeError).toMatch(/UPSTOX_AUTH_REQUIRED/);
+    expect(rep.quoteResults[0]?.errorSource).toBe("UPSTOX_AUTH");
+    expect(rep.summary.errorSource).toBe("UPSTOX_AUTH");
+  });
+
+  it("classifies Upstox 403 as UPSTOX_API with the safe forbidden message", async () => {
+    const rep = await runUpstoxSmokeTest({
+      env: LIVE_ENV,
+      fetchImpl: async () => status(403, "denied"),
+      nowIso: "2026-07-16T09:15:00.000Z",
+    });
+    expect(rep.summary.overall).toBe("FAIL");
+    expect(rep.quoteResults[0]?.errorSource).toBe("UPSTOX_API");
+    expect(rep.quoteResults[0]?.safeError).toBe(UPSTOX_FORBIDDEN_SAFE_MESSAGE);
+    // Never leaks tokens or provider body.
+    const json = JSON.stringify(rep);
+    expect(json).not.toContain("live-tok-abcdef");
+    expect(json).not.toContain("Authorization");
+    expect(json).not.toContain("denied");
   });
 
   it("classifies 429 with retry-after", async () => {
@@ -106,6 +130,7 @@ describe("upstox smoke — endpoint outcomes", () => {
     });
     expect(rep.quoteResults[0]?.ok).toBe(false);
     expect(rep.quoteResults[0]?.safeError).toMatch(/UPSTOX_SCHEMA_ERROR/);
+    expect(rep.quoteResults[0]?.errorSource).toBe("SCHEMA");
   });
 
   it("returns empty results when instrument-master lookup misses", async () => {
