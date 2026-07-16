@@ -131,22 +131,71 @@ export interface UpstoxSmokeOptions {
   readonly intradayTimeframe?: Timeframe;
 }
 
+function envFromProcess(): TokenPolicyEnv {
+  const p = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  return {
+    UPSTOX_MARKET_DATA_MODE: p.UPSTOX_MARKET_DATA_MODE ?? "live",
+    UPSTOX_API_KEY: p.UPSTOX_API_KEY,
+    UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
+    UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
+  };
+}
+
+export function buildUpstoxSmokeFailureReport(
+  error: unknown,
+  opts: Pick<UpstoxSmokeOptions, "env" | "nowIso"> = {},
+): UpstoxSmokeReport {
+  const nowIso = opts.nowIso ?? new Date().toISOString();
+  const envSource = opts.env ?? envFromProcess();
+  const tokenStatus = evaluateUpstoxTokenPolicy(envSource);
+  const configured = tokenStatus.tokenPresent && envSource.UPSTOX_API_KEY != null && envSource.UPSTOX_API_SECRET != null;
+  const safeError = redactUpstoxMessage(error instanceof Error ? error.message : String(error ?? "smoke test failed"));
+  const instrumentResolved = REQUIRED_SYMBOLS.map((sym) => {
+    const inst = resolveInstrument(sym as QuoteSymbol);
+    return inst
+      ? { symbol: sym, resolved: true, instrumentKey: inst.instrumentKey, exchange: inst.exchange, instrumentType: inst.instrumentType }
+      : { symbol: sym, resolved: false };
+  });
+  return {
+    at: nowIso,
+    configured,
+    authenticated: tokenStatus.tokenUsable,
+    tokenStatus,
+    instrumentResolved,
+    quoteResults: [
+      {
+        endpoint: "quote",
+        symbol: "SYSTEM",
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError,
+        dataQuality: null,
+      },
+    ],
+    historicalResults: [],
+    intradayResults: [],
+    summary: {
+      quoteSuccess: false,
+      historicalSuccess: false,
+      intradaySuccess: false,
+      overall: tokenStatus.tokenUsable ? "FAIL" : "NOT_CONFIGURED",
+    },
+    cache: { hits: 0, misses: 0, writes: 0 },
+    health: { totalCalls: 0, errors: 1, avgLatencyMs: 0 },
+  };
+}
+
 /** Read-only Upstox smoke test. Never touches order/broker paths. */
 export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise<UpstoxSmokeReport> {
   const nowIso = opts.nowIso ?? new Date().toISOString();
   const nowMs = Date.parse(nowIso);
 
   const envSource: TokenPolicyEnv =
-    opts.env ??
-    ((): TokenPolicyEnv => {
-      const p = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
-      return {
-        UPSTOX_MARKET_DATA_MODE: p.UPSTOX_MARKET_DATA_MODE ?? "live",
-        UPSTOX_API_KEY: p.UPSTOX_API_KEY,
-        UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
-        UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
-      };
-    })();
+    opts.env ?? envFromProcess();
 
   const tokenStatus = evaluateUpstoxTokenPolicy(envSource);
   const configured = tokenStatus.tokenPresent && envSource.UPSTOX_API_KEY != null && envSource.UPSTOX_API_SECRET != null;
