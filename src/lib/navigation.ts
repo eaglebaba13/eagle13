@@ -106,6 +106,7 @@ export const NAV_REGISTRY: NavItem[] = [
   // MARKET
   { id: "option-strategy", label: "NIFTY50 Buying Strategy", icon: Target, to: "/option-strategy", section: "MARKET", order: 210, desktopVisible: true, mobileVisible: true },
   { id: "options-analytics", label: "Options Analytics", icon: Layers, to: "/options-analytics", section: "MARKET", order: 220, desktopVisible: true, mobileVisible: true },
+  { id: "options-chain", label: "Options Chain", icon: Layers, to: "/options-chain", section: "MARKET", order: 225, desktopVisible: true, mobileVisible: true },
   { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
 
   // ACCOUNT
