@@ -2,77 +2,17 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
-  LayoutDashboard,
-  CandlestickChart,
-  Orbit,
-  Radio,
-  Activity,
-  Globe2,
-  Sparkles,
-  TrendingUp,
-  Radar,
-  LineChart,
-  FileBarChart,
-  Settings,
-  Target,
-  History,
-  BarChart3,
-  PlayCircle,
-  Layers,
-  Brain,
-  ShieldCheck,
-  Plug,
   Menu as MenuIcon,
-  User as UserIcon,
-  KeyRound,
   X,
 } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
+import {
+  mobileBottomNav,
+  mobileDrawerNav,
+  type NavItem,
+} from "@/lib/navigation";
 
-type NavItem = {
-  label: string;
-  icon: React.ComponentType<{ size?: number }>;
-  to?: string;
-  href?: string;
-};
-
-const DRAWER_ITEMS: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/" },
-  { label: "NIFTY50 Buying Strategy", icon: Target, to: "/option-strategy" },
-  { label: "Market", icon: CandlestickChart, to: "/" },
-  { label: "Live Astro", icon: Orbit, to: "/astro" },
-  { label: "Live Terminal", icon: Radio, to: "/live-terminal" },
-  { label: "Market Terminal", icon: Activity, to: "/live-market-terminal" },
-  { label: "Level Terminal", icon: TrendingUp, to: "/live-levels" },
-  { label: "Backtest", icon: History, to: "/backtest" },
-  { label: "Signal Accuracy", icon: BarChart3, to: "/signal-accuracy" },
-  { label: "Market Replay", icon: PlayCircle, to: "/market-replay" },
-  { label: "Options Analytics", icon: Layers, to: "/options-analytics" },
-  { label: "Decision Engine", icon: Brain, to: "/decision" },
-  { label: "Risk Manager", icon: ShieldCheck, to: "/risk" },
-  { label: "Broker", icon: Plug, to: "/broker" },
-  { label: "Profile", icon: UserIcon, to: "/profile" },
-  { label: "License", icon: KeyRound, to: "/license" },
-  { label: "Billing", icon: KeyRound, to: "/billing" },
-  { label: "Pricing", icon: KeyRound, to: "/pricing" },
-  { label: "Settings", icon: Settings, to: "/settings" },
-  { label: "Planets", icon: Globe2, href: "#planets" },
-  { label: "Nakshatra", icon: Sparkles, href: "#nakshatra" },
-  { label: "Support / Resistance", icon: TrendingUp, href: "#levels" },
-  { label: "Signals", icon: Radar, href: "#signals" },
-  { label: "Analysis", icon: LineChart, href: "#analysis" },
-  { label: "Reports", icon: FileBarChart, href: "#reports" },
-];
-
-type BottomItem = { label: string; icon: React.ComponentType<{ size?: number }>; to?: string; action?: "menu" };
-
-const BOTTOM_ITEMS: BottomItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/" },
-  { label: "Market", icon: CandlestickChart, to: "/live-levels" },
-  { label: "Signals", icon: Activity, to: "/live-market-terminal" },
-  { label: "Astro", icon: Orbit, to: "/astro" },
-  { label: "Menu", icon: MenuIcon, action: "menu" },
-];
+const DRAWER_ITEMS: NavItem[] = mobileDrawerNav();
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -122,9 +62,9 @@ export function MobileNav() {
     };
   }, [open]);
 
-  const isActive = (it: NavItem | BottomItem) => {
+  const isActive = (it: NavItem) => {
     if (!it.to) return false;
-    if (it.to === "/") return path === "/" && it.label === "Dashboard";
+    if (it.to === "/") return path === "/" && it.id === "dashboard";
     return path === it.to;
   };
 
@@ -239,27 +179,13 @@ export function MobileNav() {
 
       {/* Bottom navigation */}
       <nav className="eb-mbottomnav eb-glass" aria-label="Quick navigation">
-        {BOTTOM_ITEMS.map((it) => {
+        {mobileBottomNav().map((it) => {
           const Icon = it.icon;
-          if (it.action === "menu") {
-            return (
-              <button
-                key={it.label}
-                type="button"
-                className="eb-mbn-item"
-                aria-label="Open menu"
-                onClick={() => setOpen(true)}
-              >
-                <Icon size={21} />
-                <span>{it.label}</span>
-              </button>
-            );
-          }
-          const active = path === it.to;
+          const active = it.to ? path === it.to : false;
           return (
             <Link
-              key={it.label}
-              to={it.to}
+              key={it.id}
+              to={it.to!}
               className={`eb-mbn-item${active ? " is-active" : ""}`}
               aria-current={active ? "page" : undefined}
             >
@@ -268,6 +194,15 @@ export function MobileNav() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          className="eb-mbn-item"
+          aria-label="Open menu"
+          onClick={() => setOpen(true)}
+        >
+          <MenuIcon size={21} />
+          <span>Menu</span>
+        </button>
       </nav>
     </>
   );

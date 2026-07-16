@@ -14,6 +14,7 @@ import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
 import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
+import { GoldSilverRatioCard } from "@/components/dashboard/GoldSilverRatioCard";
 
 const marketQuery = () =>
   queryOptions({
@@ -139,6 +140,7 @@ function Dashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <QuoteCard quote={quote} accent={accent} />
             {data.vix ? <VixCard vix={data.vix} /> : null}
+            <GoldSilverRatioCard gold={data.gold} silver={data.silver} />
             <SignalCard levels={levels} />
             <GlobalMarketsCard
               btc={data.btc}
