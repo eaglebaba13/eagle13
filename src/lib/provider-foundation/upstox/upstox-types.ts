@@ -25,6 +25,10 @@ export interface UpstoxError {
   readonly retryAfterMs?: number;
   readonly requestId?: string;
   readonly httpStatus?: number;
+  /** Official Upstox error code parsed from the response body (e.g. UDAPI100050). */
+  readonly upstoxErrorCode?: string;
+  /** Redacted request path (no query token, no Authorization header). */
+  readonly path?: string;
 }
 
 export interface UpstoxUnit {
