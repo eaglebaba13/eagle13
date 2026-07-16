@@ -32,6 +32,7 @@ export interface UpstoxSuccess<T> {
   readonly data: T;
   readonly latencyMs: number;
   readonly requestId: string;
+  readonly path?: string;
   readonly rateLimit: {
     readonly limit: number | null;
     readonly remaining: number | null;
@@ -57,6 +58,26 @@ function redact(msg: string): string {
     .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
     // Never leak the raw HTTP response body — keep only the status prefix.
     .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1");
+}
+
+/**
+ * Best-effort parse of an Upstox error body for the official error code.
+ * Upstox shape: `{ status: "error", errors: [{ errorCode: "UDAPI100050", message: "..." }] }`.
+ * Returns `undefined` when the body is empty, non-JSON, or lacks an errorCode.
+ */
+export function parseUpstoxErrorCode(bodyText: string | undefined | null): string | undefined {
+  if (!bodyText) return undefined;
+  try {
+    const parsed = JSON.parse(bodyText) as { errors?: Array<{ errorCode?: string; error_code?: string }>; error_code?: string; errorCode?: string };
+    const list = Array.isArray(parsed?.errors) ? parsed.errors : [];
+    const first = list[0]?.errorCode ?? list[0]?.error_code;
+    const top = parsed?.errorCode ?? parsed?.error_code;
+    const code = first ?? top;
+    if (typeof code === "string" && /^[A-Z0-9_-]{3,64}$/i.test(code)) return code;
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function classifyStatus(status: number): { code: UpstoxErrorCode; retryable: boolean } {
@@ -195,6 +216,7 @@ export class UpstoxHttpClient {
                 code: "UPSTOX_SCHEMA_ERROR",
                 message: redact(`malformed JSON: ${(e as Error).message}`),
                 requestId,
+                path: opts.path,
               },
             };
           }
@@ -203,6 +225,7 @@ export class UpstoxHttpClient {
             data: body as T,
             latencyMs: latency,
             requestId,
+            path: opts.path,
             rateLimit: parseRateLimit(res.headers),
           };
         }
@@ -215,12 +238,15 @@ export class UpstoxHttpClient {
         } catch {
           /* ignore */
         }
+        const upstoxErrorCode = parseUpstoxErrorCode(bodyText);
         lastErr = {
           code: cls.code,
           message: redact(`HTTP ${res.status}: ${bodyText.slice(0, 240)}`),
           retryAfterMs,
           requestId,
           httpStatus: res.status,
+          upstoxErrorCode,
+          path: opts.path,
         };
         if (!cls.retryable || attempt === this.maxRetries) {
           return { ok: false, latencyMs: Date.now() - started, error: lastErr };
@@ -232,6 +258,7 @@ export class UpstoxHttpClient {
           code: aborted ? "UPSTOX_TIMEOUT" : "UPSTOX_NETWORK",
           message: redact(aborted ? "request timed out" : (err as Error).message),
           requestId,
+          path: opts.path,
         };
         if (attempt === this.maxRetries) {
           return { ok: false, latencyMs: Date.now() - started, error: lastErr };
