@@ -11,6 +11,7 @@ const RegimeIntelligenceSection = lazy(() => import("./RegimeIntelligenceSection
 const RecommendationValidationSection = lazy(
   () => import("./RecommendationValidationSection"),
 );
+const OptimizerSection = lazy(() => import("./OptimizerSection"));
 
 import {
   runBacktest,
