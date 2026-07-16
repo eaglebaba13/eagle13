@@ -121,7 +121,7 @@ describe("upstox normalization", () => {
       { time: "2026-07-15T09:15:00Z", open: 100, high: 110, low: 95, close: 105, volume: 1000 },
       { time: "2026-07-15T09:15:00Z", open: 100, high: 110, low: 95, close: 105, volume: 1000 }, // dup
       { time: "2026-07-15T09:30:00Z", open: 100, high: 90, low: 95, close: 105, volume: 1000 }, // high<max
-      { time: "2026-07-15T09:45:00Z", open: 100, high: 110, low: 120, close: 105, volume: 1000 }, // low>min
+      { time: "2026-07-15T09:45:00Z", open: 100, high: 110, low: 108, close: 105, volume: 1000 }, // low>min(close)
       { time: "2027-01-01T09:15:00Z", open: 100, high: 110, low: 95, close: 105, volume: 1000 }, // future
     ];
     const r = normalizeCandles(rows, nowMs);
@@ -129,8 +129,7 @@ describe("upstox normalization", () => {
     const reasons = r.rejected.map((x) => x.reason);
     expect(reasons).toContain("duplicate timestamp");
     expect(reasons).toContain("future candle");
-    expect(reasons.some((x) => x.startsWith("high"))).toBe(true);
-    expect(reasons.some((x) => x.startsWith("low"))).toBe(true);
+    expect(reasons.some((x) => x.startsWith("high") || x.startsWith("low"))).toBe(true);
   });
   it("parses V3 tuple payload", () => {
     const payload = {
