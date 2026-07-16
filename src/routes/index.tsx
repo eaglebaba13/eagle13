@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels } from "@/lib/levels";
@@ -86,7 +86,7 @@ function Dashboard() {
     return list;
   }, [data.nifty, data.banknifty, data.btc, data.gold]);
 
-  const [tab, setTab] = useState<TabKey>("nifty");
+  const [tab, setTab] = useState<DashboardTabKey>("nifty");
   const active = tabs.find((t) => t.key === tab) ?? tabs[0];
   const quote = active.quote;
   const accent = active.accent;
@@ -95,6 +95,44 @@ function Dashboard() {
     () => computeLevels(quote.prevDay, safeBand),
     [quote.prevDay, safeBand],
   );
+
+  const dashboardCtx = useMemo(
+    () => ({
+      data,
+      dataUpdatedAt,
+      isFetching,
+      activeTab: tab,
+      activeQuote: quote,
+      accent,
+      safeBand,
+      levels,
+    }),
+    [data, dataUpdatedAt, isFetching, tab, quote, accent, safeBand, levels],
+  );
+
+  // Legacy `/` widget set is registry-driven. Both rails render the same
+  // DashboardGrid renderer in single-column ("mobile") mode; the outer CSS
+  // grid preserves the pre-24C two-rail layout on desktop and collapses to
+  // one column via `.eb-grid` at <820px.
+  const widgetById = useMemo(() => legacyWidgetsById(), []);
+  const leftRail = useMemo(
+    () => {
+      const ids: string[] = [
+        "legacy-quote",
+        ...(data.vix ? ["legacy-vix"] : []),
+        "legacy-gold-silver",
+        "legacy-signal",
+        "legacy-global-markets",
+      ];
+      return ids.map((id) => widgetById.get(id)!).filter(Boolean);
+    },
+    [widgetById, data.vix],
+  );
+  const cprWidget = [widgetById.get("legacy-cpr")!];
+  const safeZonesWidget = [widgetById.get("legacy-safe-zones")!];
+  const gannWidget = [widgetById.get("legacy-gann")!];
+  const pivotWidget = [widgetById.get("legacy-pivot")!];
+  const gannCycleWidget = [widgetById.get("legacy-gann-cycle")!];
 
   return (
     <div className="eb-shell eb-scanlines">
@@ -135,37 +173,36 @@ function Dashboard() {
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <ReferralBanner />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(280px,1fr) minmax(360px,1.4fr)",
-            gap: 14,
-            alignItems: "start",
-          }}
-          className="eb-grid"
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <QuoteCard quote={quote} accent={accent} />
-            {data.vix ? <VixCard vix={data.vix} /> : null}
-            <GoldSilverRatioCard gold={data.gold} silver={data.silver} />
-            <SignalCard levels={levels} />
-            <GlobalMarketsCard
-              btc={data.btc}
-              gold={data.gold}
-              silver={data.silver}
-              goldSilverRatio={data.goldSilverRatio}
+        <DashboardDataProvider value={dashboardCtx}>
+          <div
+            data-eb-dashboard-root
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(280px,1fr) minmax(360px,1.4fr)",
+              gap: 14,
+              alignItems: "start",
+            }}
+            className="eb-grid"
+          >
+            <DashboardGrid
+              device="mobile"
+              context={{ plan: "free" }}
+              widgets={leftRail}
             />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <CprCard quote={quote} levels={levels} accent={accent} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="eb-grid">
-              <SafeZonesCard levels={levels} band={safeBand} />
-              <GannCard levels={levels} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={cprWidget} />
+              <div
+                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+                className="eb-grid"
+              >
+                <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={safeZonesWidget} />
+                <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannWidget} />
+              </div>
+              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={pivotWidget} />
+              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannCycleWidget} />
             </div>
-            <PivotCard levels={levels} accent={accent} />
-            <GannCycleCard levels={levels} />
           </div>
-        </div>
+        </DashboardDataProvider>
 
         <InsightsSection />
 
