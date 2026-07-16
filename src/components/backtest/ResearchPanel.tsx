@@ -1120,6 +1120,7 @@ const RESEARCH_TABS: readonly { id: ResearchTab; label: string }[] = [
   { id: "mc", label: "Monte Carlo" },
   { id: "sens", label: "Sensitivity" },
   { id: "rob", label: "Robustness" },
+  { id: "cx", label: "Cross-Asset" },
 ];
 
 export const RESEARCH_TABS_MARKER = "RESEARCH_TABS_V1";
