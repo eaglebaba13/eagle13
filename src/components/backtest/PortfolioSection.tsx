@@ -1,5 +1,7 @@
-// Phase 22 · Stage 1 — Portfolio Research UI. Lazy-loaded. Uses only existing
-// design tokens. No new route. Purely research — never mutates production.
+// Phase 22 · Stage 2 — Portfolio Research Workspace. Lazy-loaded. Uses only
+// existing design tokens. No new route. Purely research — never mutates
+// production. Consumes the global candidate registry so any other Research
+// surface can push completed backtests here without re-running strategies.
 
 import { useMemo, useState } from "react";
 import {
@@ -20,6 +22,7 @@ import {
   type PortfolioConfig,
   type PositionSizingMethod,
   type RebalancePolicy,
+  type PortfolioResearchResult,
 } from "@/lib/portfolio/portfolio-types";
 import {
   buildAllocationCsv,
@@ -29,6 +32,20 @@ import {
   buildRiskContributionCsv,
   buildStressTestCsv,
 } from "@/lib/portfolio/portfolio-exports";
+import {
+  buildCandidateRows,
+  globalCandidateRegistry,
+  type CandidateRow,
+} from "@/lib/portfolio/candidate-discovery";
+import { PortfolioHistory } from "@/lib/portfolio/portfolio-history";
+import { compareResults } from "@/lib/portfolio/preset-comparison";
+import {
+  buildCandidatesCsv,
+  buildComparisonCsv,
+  buildHistoryCsv,
+  buildResearchBundleJson,
+} from "@/lib/portfolio/bundle-exports";
+import { buildMonthlyHeatmap } from "@/lib/portfolio/rolling-metrics";
 
 const C = {
   border: "hsl(var(--border))",
@@ -85,6 +102,18 @@ export default function PortfolioSection({
 }: {
   candidates?: readonly PortfolioAsset[];
 }) {
+  // Merge externally-provided candidates with the shared registry.
+  const registryAssets = globalCandidateRegistry.list();
+  const allAssets: readonly PortfolioAsset[] = useMemo(() => {
+    const seen = new Map<string, PortfolioAsset>();
+    for (const a of registryAssets) seen.set(a.id, a);
+    for (const a of candidates) seen.set(a.id, a);
+    return [...seen.values()];
+  }, [candidates, registryAssets]);
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [subtab, setSubtab] = useState<"builder" | "alloc" | "corr" | "stress" | "history" | "compare" | "exports">("builder");
+
   const [method, setMethod] = useState<AllocationMethod>("EQUAL_WEIGHT");
   const [sizing, setSizing] = useState<PositionSizingMethod>("FIXED_RISK_PCT");
   const [rebalance, setRebalance] = useState<RebalancePolicy>("NEVER");
@@ -92,6 +121,10 @@ export default function PortfolioSection({
   const [riskPct, setRiskPct] = useState<number>(1);
   const [mcMode, setMcMode] = useState<PortfolioMcMode>("BLOCK_BOOTSTRAP");
   const [seed, setSeed] = useState<number>(42);
+  const [history] = useState<PortfolioHistory>(() => new PortfolioHistory());
+  const [historyTick, setHistoryTick] = useState(0);
+  const [compareA, setCompareA] = useState<string>("");
+  const [compareB, setCompareB] = useState<string>("");
 
   const config: PortfolioConfig = useMemo(
     () => ({
@@ -108,14 +141,24 @@ export default function PortfolioSection({
   const [result, setResult] = useState<ReturnType<typeof runPortfolioResearch> | null>(null);
   const [mcResult, setMcResult] = useState<ReturnType<typeof runPortfolioMonteCarlo> | null>(null);
 
-  const canRun = candidates.length >= 1;
+  const chosen = useMemo(
+    () => allAssets.filter((a) => selected.has(a.id)),
+    [allAssets, selected],
+  );
+  const candidateRows: readonly CandidateRow[] = useMemo(
+    () => buildCandidateRows(allAssets),
+    [allAssets],
+  );
+  const canRun = chosen.length >= 1;
 
   const run = () => {
     if (!canRun) return;
-    const input: PortfolioRunInput = { candidates, config };
+    const input: PortfolioRunInput = { candidates: chosen, config };
     const r = runPortfolioResearch(input);
     setResult(r);
     setMcResult(null);
+    history.record(r, `${method} · ${sizing}`);
+    setHistoryTick((t) => t + 1);
   };
 
   const runMc = () => {
@@ -149,62 +192,83 @@ export default function PortfolioSection({
     fontFamily: "var(--eb-mono, monospace)",
     fontSize: 12,
   };
+  const chip: React.CSSProperties = {
+    padding: "4px 10px",
+    border: `1px solid ${C.border}`,
+    borderRadius: 999,
+    cursor: "pointer",
+    fontSize: 12,
+    fontFamily: "var(--eb-mono, monospace)",
+  };
+
+  const subtabs: { id: typeof subtab; label: string }[] = [
+    { id: "builder", label: "Builder" },
+    { id: "alloc", label: "Allocation" },
+    { id: "corr", label: "Correlation" },
+    { id: "stress", label: "Stress" },
+    { id: "history", label: "History" },
+    { id: "compare", label: "Comparison" },
+    { id: "exports", label: "Exports" },
+  ];
+
+  const historyEntries = useMemo(() => {
+    void historyTick;
+    return history.list();
+  }, [history, historyTick]);
+
+  const cmpA = historyEntries.find((e) => e.id === compareA)?.result ?? null;
+  const cmpB = historyEntries.find((e) => e.id === compareB)?.result ?? null;
+  const comparison = cmpA && cmpB ? compareResults(cmpA, cmpB) : null;
 
   return (
     <div>
       <div style={{ ...section, borderColor: C.orange }}>
-        <div style={{ fontWeight: 600, marginBottom: 4 }}>Portfolio Research Laboratory</div>
+        <div style={{ fontWeight: 600, marginBottom: 4 }}>Portfolio Research Workspace</div>
         <div style={{ fontSize: 12, color: C.muted }}>{PORTFOLIO_DISCLAIMER}</div>
       </div>
 
-      <div style={section}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-          <div>
-            <div style={label}>Allocation Method</div>
-            <select value={method} onChange={(e) => setMethod(e.target.value as AllocationMethod)} style={{ width: "100%", marginTop: 4 }}>
-              {ALLOC_METHODS.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div style={label}>Position Sizing</div>
-            <select value={sizing} onChange={(e) => setSizing(e.target.value as PositionSizingMethod)} style={{ width: "100%", marginTop: 4 }}>
-              {SIZING_METHODS.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div style={label}>Rebalance</div>
-            <select value={rebalance} onChange={(e) => setRebalance(e.target.value as RebalancePolicy)} style={{ width: "100%", marginTop: 4 }}>
-              {REBALANCE_POLICIES.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div style={label}>Starting Capital</div>
-            <input type="number" value={capital} onChange={(e) => setCapital(Number(e.target.value) || 0)} style={{ width: "100%", marginTop: 4 }} />
-          </div>
-          <div>
-            <div style={label}>Risk % / Trade</div>
-            <input type="number" step={0.1} value={riskPct} onChange={(e) => setRiskPct(Number(e.target.value) || 0)} style={{ width: "100%", marginTop: 4 }} />
-          </div>
-        </div>
-        <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <button style={{ ...btn, background: C.orange, color: "#04140b", fontWeight: 600 }} onClick={run} disabled={!canRun}>
-            Run Portfolio Research
-          </button>
-          {!canRun ? (
-            <span style={{ fontSize: 12, color: C.muted }}>
-              Load at least one candidate strategy (Cross-Asset or Research Batch) to enable.
-            </span>
-          ) : null}
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {subtabs.map((s) => {
+          const active = subtab === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSubtab(s.id)}
+              style={{
+                ...chip,
+                background: active ? C.orange : "transparent",
+                color: active ? "#04140b" : C.text,
+                fontWeight: active ? 600 : 400,
+              }}
+            >
+              {s.label}
+            </button>
+          );
+        })}
       </div>
 
-      {result ? (
+      {subtab === "builder" ? (
+        <BuilderPanel
+          rows={candidateRows}
+          selected={selected}
+          onToggle={(id) => setSelected((prev) => {
+            const n = new Set(prev);
+            if (n.has(id)) n.delete(id); else n.add(id);
+            return n;
+          })}
+          section={section}
+          label={label}
+          btn={btn}
+          method={method} setMethod={setMethod}
+          sizing={sizing} setSizing={setSizing}
+          rebalance={rebalance} setRebalance={setRebalance}
+          capital={capital} setCapital={setCapital}
+          riskPct={riskPct} setRiskPct={setRiskPct}
+          run={run} canRun={canRun}
+        />
+      ) : null}
+
+      {subtab === "alloc" && result ? (
         <>
           <div style={section}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Allocation</div>
@@ -256,31 +320,6 @@ export default function PortfolioSection({
             </div>
           </div>
 
-          {result.correlations.assetIds.length > 1 ? (
-            <div style={section}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Correlation (returns)</div>
-              <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
-                <thead>
-                  <tr style={{ color: C.muted }}>
-                    <th></th>{result.correlations.assetIds.map((id) => <th key={id}>{id}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.correlations.assetIds.map((id, i) => (
-                    <tr key={id}>
-                      <td style={{ color: C.muted }}>{id}</td>
-                      {result.correlations.returns[i].map((v, j) => (
-                        <td key={j} style={{ background: `rgba(255,140,0,${Math.abs(v) * 0.3})`, textAlign: "center" }}>
-                          {v.toFixed(2)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-
           <div style={section}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Risk Contribution</div>
             <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
@@ -304,21 +343,15 @@ export default function PortfolioSection({
               </tbody>
             </table>
           </div>
+          <MonthlyHeatmap result={result} section={section} label={label} />
+          <ConstraintsPanel result={result} section={section} />
+        </>
+      ) : null}
 
-          {result.warnings.length > 0 || result.blockingReasons.length > 0 ? (
-            <div style={section}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Constraints & Warnings</div>
-              {result.blockingReasons.map((r) => (
-                <div key={r} style={{ color: "#e11", fontSize: 12 }}>BLOCK: {r}</div>
-              ))}
-              {result.warnings.map((w, i) => (
-                <div key={i} style={{ fontSize: 12, color: w.severity === "warn" ? "#f80" : C.muted }}>
-                  {w.severity.toUpperCase()}: [{w.code}] {w.message}
-                </div>
-              ))}
-            </div>
-          ) : null}
+      {subtab === "corr" && result ? <CorrelationPanel result={result} section={section} /> : null}
 
+      {subtab === "stress" && result ? (
+        <>
           <div style={section}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Portfolio Monte Carlo</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -349,8 +382,89 @@ export default function PortfolioSection({
               </div>
             ) : null}
           </div>
+        </>
+      ) : null}
 
-          <div style={section}>
+      {subtab === "history" ? (
+        <div style={section}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Portfolio History</div>
+          {historyEntries.length === 0 ? (
+            <div style={{ fontSize: 12, color: C.muted }}>No runs yet. Trigger a run from the Builder tab.</div>
+          ) : (
+            <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
+              <thead>
+                <tr style={{ color: C.muted, textAlign: "left" }}>
+                  <th>ID</th><th>At</th><th>Run ID</th><th>Method</th><th>Sizing</th><th>Net</th><th>Sharpe</th><th>DD%</th><th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyEntries.map((e) => (
+                  <tr key={e.id}>
+                    <td>{e.id}</td>
+                    <td>{e.recordedAt.slice(0, 19)}</td>
+                    <td>{e.result.runId}</td>
+                    <td>{e.result.config.method}</td>
+                    <td>{e.result.config.sizingPolicy.method}</td>
+                    <td>{e.result.metrics.netPnl.toFixed(0)}</td>
+                    <td>{e.result.metrics.sharpe.toFixed(2)}</td>
+                    <td>{(e.result.metrics.maxDrawdownPct * 100).toFixed(1)}%</td>
+                    <td style={{ color: C.muted }}>{e.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : null}
+
+      {subtab === "compare" ? (
+        <div style={section}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Preset Comparison (A vs B)</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+            <select value={compareA} onChange={(e) => setCompareA(e.target.value)}>
+              <option value="">— Select A —</option>
+              {historyEntries.map((e) => <option key={e.id} value={e.id}>{e.id} · {e.result.config.method}</option>)}
+            </select>
+            <span style={{ color: C.muted }}>vs</span>
+            <select value={compareB} onChange={(e) => setCompareB(e.target.value)}>
+              <option value="">— Select B —</option>
+              {historyEntries.map((e) => <option key={e.id} value={e.id}>{e.id} · {e.result.config.method}</option>)}
+            </select>
+          </div>
+          {comparison ? (
+            <>
+              {comparison.warnings.length > 0 ? (
+                <div style={{ marginBottom: 8, fontSize: 12, color: "#f80" }}>
+                  {comparison.warnings.join(" · ")}
+                </div>
+              ) : null}
+              <table style={{ width: "100%", fontSize: 12, fontFamily: "var(--eb-mono, monospace)" }}>
+                <thead>
+                  <tr style={{ color: C.muted, textAlign: "left" }}>
+                    <th>Metric</th><th>A</th><th>B</th><th>Δ</th><th>Δ%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.metrics.map((m) => (
+                    <tr key={m.metric}>
+                      <td>{m.metric}</td>
+                      <td>{m.a != null ? m.a.toFixed(4) : "—"}</td>
+                      <td>{m.b != null ? m.b.toFixed(4) : "—"}</td>
+                      <td>{m.delta != null ? m.delta.toFixed(4) : "—"}</td>
+                      <td>{m.pctDelta != null ? (m.pctDelta * 100).toFixed(2) + "%" : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: C.muted }}>Select two history entries to compare.</div>
+          )}
+        </div>
+      ) : null}
+
+      {subtab === "exports" && result ? (
+        <div style={section}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Exports</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button style={btn} onClick={() => download(`portfolio-summary-${result.runId}.csv`, buildPortfolioSummaryCsv(result), "text/csv")}>Summary CSV</button>
@@ -361,13 +475,220 @@ export default function PortfolioSection({
                 <button style={btn} onClick={() => download(`portfolio-stress-${result.runId}.csv`, buildStressTestCsv(result, mcResult), "text/csv")}>Stress CSV</button>
               ) : null}
               <button style={btn} onClick={() => download(`portfolio-${result.runId}.json`, buildPortfolioJson(result), "application/json")}>Portfolio JSON</button>
+              <button style={btn} onClick={() => download(`portfolio-candidates-${result.runId}.csv`, buildCandidatesCsv(candidateRows, result.runId), "text/csv")}>Candidates CSV</button>
+              <button style={btn} onClick={() => download(`portfolio-history-${result.runId}.csv`, buildHistoryCsv(historyEntries), "text/csv")}>History CSV</button>
+              {comparison ? (
+                <button style={btn} onClick={() => download(`portfolio-comparison-${result.runId}.csv`, buildComparisonCsv(comparison), "text/csv")}>Comparison CSV</button>
+              ) : null}
+              <button style={btn} onClick={() => download(`portfolio-bundle-${result.runId}.json`, buildResearchBundleJson({ portfolio: result, candidates: candidateRows, monteCarlo: mcResult ?? null, history: historyEntries, comparison }), "application/json")}>Full Bundle JSON</button>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
               Run ID: {result.runId} · Candidates: {result.candidateRunIds.length}
             </div>
           </div>
-        </>
       ) : null}
+
+      {(subtab === "alloc" || subtab === "corr" || subtab === "stress" || subtab === "exports") && !result ? (
+        <div style={{ ...section, textAlign: "center", color: C.muted, fontSize: 12 }}>
+          Run a portfolio from the Builder tab to see this view.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function BuilderPanel(props: {
+  rows: readonly CandidateRow[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  section: React.CSSProperties;
+  label: React.CSSProperties;
+  btn: React.CSSProperties;
+  method: AllocationMethod;
+  setMethod: (v: AllocationMethod) => void;
+  sizing: PositionSizingMethod;
+  setSizing: (v: PositionSizingMethod) => void;
+  rebalance: RebalancePolicy;
+  setRebalance: (v: RebalancePolicy) => void;
+  capital: number;
+  setCapital: (v: number) => void;
+  riskPct: number;
+  setRiskPct: (v: number) => void;
+  run: () => void;
+  canRun: boolean;
+}) {
+  const { rows, selected, onToggle, section, label, btn } = props;
+  return (
+    <>
+      <div style={section}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Candidate Library ({rows.length})</div>
+        {rows.length === 0 ? (
+          <div style={{ fontSize: 12, color: C.muted }}>
+            No candidates registered. Run backtests via Cross-Asset, Research Batch, or push results into the shared registry to populate this list.
+          </div>
+        ) : (
+          <div style={{ maxHeight: 280, overflow: "auto" }}>
+            <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
+              <thead>
+                <tr style={{ color: C.muted, textAlign: "left", position: "sticky", top: 0, background: C.panel }}>
+                  <th></th>
+                  <th>Run ID</th><th>Strategy</th><th>Formula</th><th>Instrument</th><th>TF</th>
+                  <th>Trades</th><th>Win</th><th>PF</th><th>Exp</th><th>DD</th>
+                  <th>Rob</th><th>Rec</th><th>Optz</th><th>Rel</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.assetId} style={{ opacity: r.selectable ? 1 : 0.5 }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        disabled={!r.selectable}
+                        checked={selected.has(r.assetId)}
+                        onChange={() => onToggle(r.assetId)}
+                        aria-label={`select ${r.assetId}`}
+                      />
+                    </td>
+                    <td title={r.runId}>{r.runId.slice(0, 16)}</td>
+                    <td>{r.strategy}</td>
+                    <td>{r.formulaVersion}</td>
+                    <td>{r.instrument}</td>
+                    <td>{r.timeframe}</td>
+                    <td>{r.trades}</td>
+                    <td>{(r.winRate * 100).toFixed(1)}%</td>
+                    <td>{r.profitFactor === Infinity ? "∞" : r.profitFactor.toFixed(2)}</td>
+                    <td>{r.expectancy.toFixed(2)}</td>
+                    <td>{r.maxDrawdown.toFixed(0)}</td>
+                    <td>{r.robustness != null ? r.robustness.toFixed(2) : "—"}</td>
+                    <td>{r.recommendation != null ? r.recommendation.toFixed(2) : "—"}</td>
+                    <td>{r.optimizerStatus}</td>
+                    <td>{r.reliability}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ marginTop: 8, fontSize: 12, color: C.muted }}>
+          Selected: {selected.size}
+        </div>
+      </div>
+      <div style={section}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
+          <div>
+            <div style={label}>Allocation Method</div>
+            <select value={props.method} onChange={(e) => props.setMethod(e.target.value as AllocationMethod)} style={{ width: "100%", marginTop: 4 }}>
+              {ALLOC_METHODS.map((m) => (<option key={m.id} value={m.id}>{m.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <div style={label}>Position Sizing</div>
+            <select value={props.sizing} onChange={(e) => props.setSizing(e.target.value as PositionSizingMethod)} style={{ width: "100%", marginTop: 4 }}>
+              {SIZING_METHODS.map((m) => (<option key={m.id} value={m.id}>{m.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <div style={label}>Rebalance</div>
+            <select value={props.rebalance} onChange={(e) => props.setRebalance(e.target.value as RebalancePolicy)} style={{ width: "100%", marginTop: 4 }}>
+              {REBALANCE_POLICIES.map((m) => (<option key={m.id} value={m.id}>{m.label}</option>))}
+            </select>
+          </div>
+          <div>
+            <div style={label}>Starting Capital</div>
+            <input type="number" value={props.capital} onChange={(e) => props.setCapital(Number(e.target.value) || 0)} style={{ width: "100%", marginTop: 4 }} />
+          </div>
+          <div>
+            <div style={label}>Risk % / Trade</div>
+            <input type="number" step={0.1} value={props.riskPct} onChange={(e) => props.setRiskPct(Number(e.target.value) || 0)} style={{ width: "100%", marginTop: 4 }} />
+          </div>
+        </div>
+        <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <button style={{ ...btn, background: C.orange, color: "#04140b", fontWeight: 600 }} onClick={props.run} disabled={!props.canRun}>
+            Run Portfolio Research
+          </button>
+          {!props.canRun ? (
+            <span style={{ fontSize: 12, color: C.muted }}>Select at least one candidate.</span>
+          ) : null}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CorrelationPanel({ result, section }: { result: PortfolioResearchResult; section: React.CSSProperties }) {
+  const ids = result.correlations.assetIds;
+  if (ids.length < 2) {
+    return <div style={section}>Add at least two candidates to visualise correlation.</div>;
+  }
+  return (
+    <div style={section}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>Correlation Heatmap (returns)</div>
+      <table style={{ width: "100%", fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
+        <thead>
+          <tr style={{ color: C.muted }}>
+            <th></th>{ids.map((id) => <th key={id}>{id.slice(0, 10)}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {ids.map((id, i) => (
+            <tr key={id}>
+              <td style={{ color: C.muted }}>{id.slice(0, 10)}</td>
+              {result.correlations.returns[i].map((v, j) => {
+                const bg = v >= 0
+                  ? `rgba(255,140,0,${Math.min(1, Math.abs(v))})`
+                  : `rgba(60,140,240,${Math.min(1, Math.abs(v))})`;
+                return (
+                  <td key={j} style={{ background: bg, textAlign: "center", padding: "4px 6px" }}>
+                    {v.toFixed(2)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
+        Aligned observations: {result.correlations.alignedObservations} · Simultaneous-loss rate: {(result.correlations.simultaneousLossRate * 100).toFixed(1)}%
+      </div>
+    </div>
+  );
+}
+
+function ConstraintsPanel({ result, section }: { result: PortfolioResearchResult; section: React.CSSProperties }) {
+  if (result.warnings.length === 0 && result.blockingReasons.length === 0) return null;
+  return (
+    <div style={section}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>Constraints &amp; Warnings</div>
+      {result.blockingReasons.map((r) => (<div key={r} style={{ color: "#e11", fontSize: 12 }}>BLOCK: {r}</div>))}
+      {result.warnings.map((w, i) => (
+        <div key={i} style={{ fontSize: 12, color: w.severity === "warn" ? "#f80" : C.muted }}>
+          {w.severity.toUpperCase()}: [{w.code}] {w.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MonthlyHeatmap({ result, section, label }: { result: PortfolioResearchResult; section: React.CSSProperties; label: React.CSSProperties }) {
+  const cells = buildMonthlyHeatmap(result.trades);
+  if (cells.length === 0) return null;
+  const max = Math.max(1, ...cells.map((c) => Math.abs(c.pnl)));
+  return (
+    <div style={section}>
+      <div style={{ ...label, marginBottom: 8 }}>Monthly PnL Heatmap</div>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {cells.map((c) => {
+          const intensity = Math.min(1, Math.abs(c.pnl) / max);
+          const bg = c.pnl >= 0
+            ? `rgba(80,200,120,${intensity})`
+            : `rgba(230,80,80,${intensity})`;
+          return (
+            <div key={`${c.year}-${c.month}`} style={{ background: bg, padding: "6px 10px", borderRadius: 4, fontSize: 11, fontFamily: "var(--eb-mono, monospace)" }}>
+              {c.year}-{String(c.month).padStart(2, "0")}: {c.pnl.toFixed(0)}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
