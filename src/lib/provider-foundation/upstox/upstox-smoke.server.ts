@@ -331,6 +331,65 @@ function envFromProcess(): TokenPolicyEnv {
   };
 }
 
+function emptyChecklist(status: SmokeChecklist["authentication"] = "NOT_CONFIGURED"): SmokeChecklist {
+  return {
+    authentication: status,
+    instrumentMaster: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
+    quoteApi: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
+    historicalApi: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
+    intradayApi: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
+    cache: "NOT_CONFIGURED",
+    health: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
+  };
+}
+
+function endpointChecklistStatus(rs: readonly EndpointResult[]): SmokeChecklist["quoteApi"] {
+  const required = rs.filter((r) => REQUIRED_SYMBOLS.includes(r.symbol as UpstoxSupportedSymbol));
+  if (required.length === 0) return rs.length === 0 ? "NOT_CONFIGURED" : "FAIL";
+  const okCount = required.filter((r) => r.ok).length;
+  if (okCount === required.length) return "PASS";
+  if (okCount === 0) return "FAIL";
+  return "PARTIAL";
+}
+
+/** Build a SERVER_FUNCTION-source failure report for outer-boundary throws. */
+export function buildServerFunctionFailureReport(
+  error: unknown,
+  opts: Pick<UpstoxSmokeOptions, "nowIso"> = {},
+): UpstoxSmokeReport {
+  const nowIso = opts.nowIso ?? new Date().toISOString();
+  const raw = error instanceof Error ? (error.message ?? "server function failed") : String(error ?? "server function failed");
+  const safeError = redactUpstoxMessage(raw).slice(0, 240);
+  const base = buildApplicationAuthFailureReport(safeError, { nowIso });
+  return sanitizeForJson({
+    ...base,
+    status: "FAIL",
+    errorSource: "SERVER_FUNCTION",
+    safeError,
+    endpointFailed: null,
+    httpStatus: null,
+    serializationStatus: "OK",
+    checklist: { ...emptyChecklist("FAIL") },
+    symbolResults: [],
+    summary: { ...base.summary, errorSource: "SERVER_FUNCTION", safeError },
+    quoteResults: [
+      {
+        endpoint: "quote",
+        symbol: "SYSTEM",
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
+        cacheHit: false,
+        safeError,
+        errorSource: "SERVER_FUNCTION",
+        dataQuality: null,
+      },
+    ],
+  }) as UpstoxSmokeReport;
+}
+
 export function buildUpstoxSmokeFailureReport(
   error: unknown,
   opts: Pick<UpstoxSmokeOptions, "env" | "nowIso"> = {},
