@@ -41,6 +41,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
+import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
@@ -210,6 +211,12 @@ const AuthenticatedAdminReadinessRoute =
     path: '/admin/readiness',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminProvidersRoute =
+  AuthenticatedAdminProvidersRouteImport.update({
+    id: '/admin/providers',
+    path: '/admin/providers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPaymentsRoute =
   AuthenticatedAdminPaymentsRouteImport.update({
     id: '/admin/payments',
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
@@ -297,6 +305,7 @@ export interface FileRoutesByTo {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
@@ -335,6 +344,7 @@ export interface FileRoutesById {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/payments'
+    | '/admin/providers'
     | '/admin/readiness'
     | '/admin/staging-validation'
     | '/api/public/webhooks/razorpay'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/payments'
+    | '/admin/providers'
     | '/admin/readiness'
     | '/admin/staging-validation'
     | '/api/public/webhooks/razorpay'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/payments'
+    | '/_authenticated/admin/providers'
     | '/_authenticated/admin/readiness'
     | '/_authenticated/admin/staging-validation'
     | '/api/public/webhooks/razorpay'
@@ -707,6 +720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReadinessRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/providers': {
+      id: '/_authenticated/admin/providers'
+      path: '/admin/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/payments': {
       id: '/_authenticated/admin/payments'
       path: '/admin/payments'
@@ -738,6 +758,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
+  AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminReadinessRoute: typeof AuthenticatedAdminReadinessRoute
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
 }
@@ -749,6 +770,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
+  AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
   AuthenticatedAdminReadinessRoute: AuthenticatedAdminReadinessRoute,
   AuthenticatedAdminStagingValidationRoute:
     AuthenticatedAdminStagingValidationRoute,
