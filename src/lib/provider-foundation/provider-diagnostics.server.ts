@@ -13,11 +13,25 @@ import {
   UPSTOX_SUPPORTED_SYMBOLS,
   type TokenPolicyEnv,
 } from "./upstox";
+import {
+  evaluateProviderEnvPresence,
+  liveCredentialsComplete,
+  type ProviderEnvPresence,
+  type ProviderEnvPresenceInput,
+} from "./env-presence.server";
 
 export interface ProviderDiagnosticsEnv extends TokenPolicyEnv {
   readonly NODE_ENV?: string;
   readonly MODE?: string;
+  readonly LOVABLE_ENVIRONMENT?: string;
 }
+
+export type ProviderConfigurationStatus =
+  | "LIVE_ACTIVE"
+  | "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE"
+  | "MOCK_ACTIVE"
+  | "SECRETS_SAVED_REDEPLOY_REQUIRED"
+  | "NOT_CONFIGURED";
 
 export interface ProviderDiagnosticsReport {
   readonly at: string;
@@ -27,6 +41,8 @@ export interface ProviderDiagnosticsReport {
   readonly mockActive: boolean;
   readonly fallbackReason: string | null;
   readonly tokenStatus: ReturnType<typeof evaluateUpstoxTokenPolicy>;
+  readonly envPresence: ProviderEnvPresence;
+  readonly configurationStatus: ProviderConfigurationStatus;
   readonly supportedSymbols: readonly string[];
   readonly supportedIntervals: readonly string[];
   readonly instrumentMaster: ReturnType<typeof instrumentMasterInfo>;
@@ -46,6 +62,7 @@ function readEnv(): ProviderDiagnosticsEnv {
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
     NODE_ENV: p.NODE_ENV,
     MODE: p.MODE,
+    LOVABLE_ENVIRONMENT: p.LOVABLE_ENVIRONMENT,
   };
 }
 
@@ -60,6 +77,24 @@ function redactProviderError(error: unknown): string {
 
 function isDevelopment(env: ProviderDiagnosticsEnv): boolean {
   return env.NODE_ENV === "development" || env.MODE === "development";
+}
+
+/** Live/mock/development mode is only entered when the operator opts in. */
+function isExplicitMockMode(env: ProviderDiagnosticsEnv): boolean {
+  const raw = (env.UPSTOX_MARKET_DATA_MODE ?? "").trim().toLowerCase();
+  return raw === "mock" || raw === "disabled" || raw === "development";
+}
+
+function toPresenceInput(env: ProviderDiagnosticsEnv): ProviderEnvPresenceInput {
+  return {
+    UPSTOX_MARKET_DATA_MODE: env.UPSTOX_MARKET_DATA_MODE,
+    UPSTOX_API_KEY: env.UPSTOX_API_KEY,
+    UPSTOX_API_SECRET: env.UPSTOX_API_SECRET,
+    UPSTOX_ACCESS_TOKEN: env.UPSTOX_ACCESS_TOKEN,
+    NODE_ENV: env.NODE_ENV,
+    MODE: env.MODE,
+    LOVABLE_ENVIRONMENT: env.LOVABLE_ENVIRONMENT,
+  };
 }
 
 export function buildMockProviderManager(startedAt: string): ProviderManager {
@@ -135,10 +170,14 @@ export async function buildProviderDiagnosticsReport(opts: {
   const at = opts.nowIso ?? new Date().toISOString();
   const env = opts.env ?? readEnv();
   const tokenStatus = evaluateUpstoxTokenPolicy(env);
+  const envPresence = evaluateProviderEnvPresence(toPresenceInput(env));
   const liveReady = tokenStatus.mode === "live" && tokenStatus.tokenUsable;
-  const credentialsMissing =
-    !tokenStatus.tokenPresent || !tokenStatus.apiKeyConfigured || !tokenStatus.apiSecretConfigured;
-  const mockAllowed = isDevelopment(env) || credentialsMissing;
+  const modeIsLive = tokenStatus.mode === "live";
+  const explicitMock = isExplicitMockMode(env);
+  // Never silently fall back to mock in live mode: the operator explicitly
+  // requested live market-data. Mock is only allowed when development or
+  // mock mode is explicitly selected.
+  const mockAllowed = explicitMock || (isDevelopment(env) && !modeIsLive);
 
   try {
     if (liveReady) {
@@ -151,6 +190,8 @@ export async function buildProviderDiagnosticsReport(opts: {
         mockActive: false,
         fallbackReason: null,
         tokenStatus,
+        envPresence,
+        configurationStatus: "LIVE_ACTIVE",
         supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
         supportedIntervals: SUPPORTED_INTERVALS,
         instrumentMaster: instrumentMasterInfo(at),
@@ -173,6 +214,8 @@ export async function buildProviderDiagnosticsReport(opts: {
         mockActive: true,
         fallbackReason: tokenStatus.tokenUsable ? "development mode" : tokenStatus.reason,
         tokenStatus,
+        envPresence,
+        configurationStatus: "MOCK_ACTIVE",
         supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
         supportedIntervals: SUPPORTED_INTERVALS,
         instrumentMaster: instrumentMasterInfo(at),
@@ -182,6 +225,11 @@ export async function buildProviderDiagnosticsReport(opts: {
     }
 
     const manager = new ProviderManager({ startedAt: at, primary: "none" });
+    const configurationStatus: ProviderConfigurationStatus = modeIsLive
+      ? envPresence.deploymentRestartRequired && !liveCredentialsComplete(envPresence)
+        ? "SECRETS_SAVED_REDEPLOY_REQUIRED"
+        : "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE"
+      : "NOT_CONFIGURED";
     return {
       at,
       providerSelected: null,
@@ -190,6 +238,8 @@ export async function buildProviderDiagnosticsReport(opts: {
       mockActive: false,
       fallbackReason: tokenStatus.reason,
       tokenStatus,
+      envPresence,
+      configurationStatus,
       supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
       supportedIntervals: SUPPORTED_INTERVALS,
       instrumentMaster: instrumentMasterInfo(at),
@@ -208,6 +258,7 @@ export function buildProviderDiagnosticsFailureReport(
   const at = opts.nowIso ?? new Date().toISOString();
   const env = opts.env ?? readEnv();
   const tokenStatus = evaluateUpstoxTokenPolicy(env);
+  const envPresence = evaluateProviderEnvPresence(toPresenceInput(env));
   const manager = new ProviderManager({ startedAt: at, primary: "none" });
   return {
     at,
@@ -217,6 +268,8 @@ export function buildProviderDiagnosticsFailureReport(
     mockActive: false,
     fallbackReason: "provider diagnostics failed",
     tokenStatus,
+    envPresence,
+    configurationStatus: "NOT_CONFIGURED",
     supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
     supportedIntervals: SUPPORTED_INTERVALS,
     instrumentMaster: instrumentMasterInfo(at),
