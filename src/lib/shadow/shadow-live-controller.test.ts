@@ -111,6 +111,8 @@ describe("shadow live controller", () => {
       nowIso,
     });
     ctl.start();
+    // Let the auto-run kicked off by start() complete before pausing.
+    await new Promise((r) => setTimeout(r, 5));
     ctl.pause();
     expect(ctl.snapshot().viewState).toBe("PAUSED");
     const res = await ctl.runOnce();
