@@ -739,11 +739,19 @@ function StatusBar({
   isFetching,
   onRefresh,
   quote,
+  overall,
+  staleCount,
+  unavailableCount,
+  providerStatus,
 }: {
   updatedAt: number;
   isFetching: boolean;
   onRefresh: () => void;
   quote: IndexQuote;
+  overall?: FreshnessStatus;
+  staleCount?: number;
+  unavailableCount?: number;
+  providerStatus?: ProviderStatus;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -779,6 +787,20 @@ function StatusBar({
             ? "↻ Updating live data…"
             : `✓ Live · updated ${t} IST · auto-refresh 30s`}
       </span>
+      {overall ? (
+        <span
+          aria-label={`Dashboard health ${overall}`}
+          style={{ color: "var(--eb-muted)" }}
+          data-eb-health
+        >
+          Health: {overall}
+          {typeof staleCount === "number" && staleCount > 0 ? ` · ${staleCount} stale` : ""}
+          {typeof unavailableCount === "number" && unavailableCount > 0
+            ? ` · ${unavailableCount} unavailable`
+            : ""}
+          {providerStatus ? ` · Provider ${providerStatus}` : ""}
+        </span>
+      ) : null}
       <button
         onClick={onRefresh}
         style={{
