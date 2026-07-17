@@ -5,6 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
 import {
+  getGannGapHistoricalValidation,
+  getGannGapPredictionHistory,
+  getGannGapOutcomeHistory,
+} from "@/lib/gann-gap/gann-gap.persistence.functions";
+import { classifySampleStatus } from "@/lib/gann-gap/analytics";
+import {
   GANN_GAP_DISCLAIMER,
   type GannGapOutlookLabel,
 } from "@/lib/gann-gap/types";
@@ -36,6 +42,9 @@ const LABEL_TEXT: Record<GannGapOutlookLabel, string> = {
 
 function GannGapOutlookPage() {
   const fetchOutlook = useServerFn(getGannGapOutlook);
+  const fetchHist = useServerFn(getGannGapHistoricalValidation);
+  const fetchPredHist = useServerFn(getGannGapPredictionHistory);
+  const fetchOutHist = useServerFn(getGannGapOutcomeHistory);
   const { data, error, isLoading } = useQuery({
     queryKey: ["gann-gap-outlook"],
     queryFn: () => fetchOutlook(),
@@ -43,6 +52,9 @@ function GannGapOutlookPage() {
     refetchInterval: 60_000,
     retry: false,
   });
+  const hist = useQuery({ queryKey: ["gann-gap-historical"], queryFn: () => fetchHist().catch(() => null), retry: false, staleTime: 5 * 60_000 });
+  const preds = useQuery({ queryKey: ["gann-gap-pred-history"], queryFn: () => fetchPredHist({ data: { limit: 30 } }).catch(() => [] as any[]), retry: false, staleTime: 5 * 60_000 });
+  const outs = useQuery({ queryKey: ["gann-gap-out-history"], queryFn: () => fetchOutHist({ data: { limit: 30 } }).catch(() => [] as any[]), retry: false, staleTime: 5 * 60_000 });
 
   return (
     <div className="min-h-screen bg-background px-4 py-6">
@@ -168,6 +180,97 @@ function GannGapOutlookPage() {
 
             <p className="text-[11px] text-muted-foreground/80">{GANN_GAP_DISCLAIMER}</p>
           </>
+        )}
+
+        {hist.data && (
+          <section className="rounded-xl border border-border bg-card/60 p-4">
+            <h2 className="text-sm font-semibold">Historical Accuracy</h2>
+            <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
+              <div><dt className="inline">Total: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.total}</dd></div>
+              <div><dt className="inline">Evaluated: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.evaluated}</dd></div>
+              <div><dt className="inline">Pending: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.pending}</dd></div>
+              <div><dt className="inline">Correct: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.correct}</dd></div>
+              <div><dt className="inline">Incorrect: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.incorrect}</dd></div>
+              <div>
+                <dt className="inline">Win rate: </dt>
+                <dd className="inline font-medium text-foreground">
+                  {hist.data.showRate && hist.data.metrics.winRatePct != null
+                    ? `${hist.data.metrics.winRatePct.toFixed(1)}%`
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="inline">Sample status: </dt>
+                <dd className="inline font-medium text-foreground">
+                  {classifySampleStatus(hist.data.metrics.evaluated).replace(/_/g, " ")}
+                </dd>
+              </div>
+              <div><dt className="inline">Leakage: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.leakageDetected}</dd></div>
+            </div>
+            {!hist.data.showRate && (
+              <p className="mt-2 text-[11px] text-amber-300">
+                Insufficient sample — figures are hidden until minimum sample is reached.
+              </p>
+            )}
+          </section>
+        )}
+
+        {Array.isArray(preds.data) && preds.data.length > 0 && (
+          <section className="rounded-xl border border-border bg-card/60 p-4">
+            <h2 className="text-sm font-semibold">Prediction Timeline</h2>
+            <div className="mt-2 overflow-x-auto">
+              <table className="min-w-full text-left text-xs">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-1">Trading date</th>
+                    <th className="px-2 py-1">Next</th>
+                    <th className="px-2 py-1">Label</th>
+                    <th className="px-2 py-1">Reference</th>
+                    <th className="px-2 py-1">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preds.data.map((p: any) => (
+                    <tr key={p.predictionId} className="border-t border-border/40">
+                      <td className="px-2 py-1">{p.tradingDate}</td>
+                      <td className="px-2 py-1">{p.nextTradingDate ?? "—"}</td>
+                      <td className="px-2 py-1 font-medium text-foreground">{p.baseOutlook}</td>
+                      <td className="px-2 py-1">{p.referencePrice?.toFixed?.(2) ?? "—"}</td>
+                      <td className="px-2 py-1">{p.confidenceBand ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {Array.isArray(outs.data) && outs.data.length > 0 && (
+          <section className="rounded-xl border border-border bg-card/60 p-4">
+            <h2 className="text-sm font-semibold">Outcome Timeline</h2>
+            <div className="mt-2 overflow-x-auto">
+              <table className="min-w-full text-left text-xs">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-1">Outcome date</th>
+                    <th className="px-2 py-1">Actual</th>
+                    <th className="px-2 py-1">Gap (pts)</th>
+                    <th className="px-2 py-1">Gap %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {outs.data.map((o: any) => (
+                    <tr key={o.id} className="border-t border-border/40">
+                      <td className="px-2 py-1">{o.outcomeTradingDate}</td>
+                      <td className="px-2 py-1 font-medium text-foreground">{o.actualOutcome}</td>
+                      <td className="px-2 py-1">{o.gapPoints?.toFixed?.(2) ?? "—"}</td>
+                      <td className="px-2 py-1">{o.gapPercent != null ? (o.gapPercent * 100).toFixed(3) + "%" : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
       </div>
     </div>

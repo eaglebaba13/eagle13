@@ -49,6 +49,7 @@ import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
+import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
@@ -262,6 +263,12 @@ const AuthenticatedAdminLaunchReadinessRoute =
     path: '/admin/launch-readiness',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminGannGapRoute =
+  AuthenticatedAdminGannGapRouteImport.update({
+    id: '/admin/gann-gap',
+    path: '/admin/gann-gap',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminBetaReadinessRoute =
   AuthenticatedAdminBetaReadinessRouteImport.update({
     id: '/admin/beta-readiness',
@@ -317,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -407,6 +416,7 @@ export interface FileRoutesById {
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/_authenticated/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/beta-readiness'
+    | '/admin/gann-gap'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/beta-readiness'
+    | '/admin/gann-gap'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -542,6 +554,7 @@ export interface FileRouteTypes {
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/beta-readiness'
+    | '/_authenticated/admin/gann-gap'
     | '/_authenticated/admin/launch-readiness'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/providers'
@@ -867,6 +880,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLaunchReadinessRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/gann-gap': {
+      id: '/_authenticated/admin/gann-gap'
+      path: '/admin/gann-gap'
+      fullPath: '/admin/gann-gap'
+      preLoaderRoute: typeof AuthenticatedAdminGannGapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/beta-readiness': {
       id: '/_authenticated/admin/beta-readiness'
       path: '/admin/beta-readiness'
@@ -898,6 +918,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
+  AuthenticatedAdminGannGapRoute: typeof AuthenticatedAdminGannGapRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
@@ -913,6 +934,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
+  AuthenticatedAdminGannGapRoute: AuthenticatedAdminGannGapRoute,
   AuthenticatedAdminLaunchReadinessRoute:
     AuthenticatedAdminLaunchReadinessRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,

@@ -5,6 +5,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
+import { getGannGapHistoricalValidation } from "@/lib/gann-gap/gann-gap.persistence.functions";
+import { classifySampleStatus } from "@/lib/gann-gap/analytics";
 import { GANN_GAP_DISCLAIMER, type GannGapOutlookLabel } from "@/lib/gann-gap/types";
 
 const LABEL_TEXT: Record<GannGapOutlookLabel, string> = {
@@ -27,11 +29,18 @@ const LABEL_TONE: Record<GannGapOutlookLabel, string> = {
 
 export function GannGapOutlookWidget() {
   const fetchOutlook = useServerFn(getGannGapOutlook);
+  const fetchHist = useServerFn(getGannGapHistoricalValidation);
   const { data, error, isLoading } = useQuery({
     queryKey: ["gann-gap-outlook"],
     queryFn: () => fetchOutlook(),
     staleTime: 30_000,
     refetchInterval: 60_000,
+    retry: false,
+  });
+  const hist = useQuery({
+    queryKey: ["gann-gap-historical"],
+    queryFn: () => fetchHist().catch(() => null),
+    staleTime: 5 * 60_000,
     retry: false,
   });
 
@@ -149,6 +158,21 @@ export function GannGapOutlookWidget() {
         )}
       </dl>
       <p className="mt-3 text-[11px] text-muted-foreground/80">{GANN_GAP_DISCLAIMER}</p>
+      {hist.data && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+          <span className="rounded-full border border-border/60 px-2 py-0.5 text-muted-foreground">
+            {classifySampleStatus(hist.data.metrics.evaluated).replace(/_/g, " ")}
+          </span>
+          {hist.data.metrics.winRatePct != null && hist.data.showRate && (
+            <span className="rounded-full border border-border/60 px-2 py-0.5 text-muted-foreground">
+              Accuracy {hist.data.metrics.winRatePct.toFixed(1)}% · n={hist.data.metrics.evaluated}
+            </span>
+          )}
+          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-amber-300">
+            Experimental
+          </span>
+        </div>
+      )}
     </div>
   );
 }
