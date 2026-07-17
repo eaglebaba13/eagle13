@@ -42,6 +42,7 @@ import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
@@ -218,6 +219,12 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminSystemStatusRoute =
+  AuthenticatedAdminSystemStatusRouteImport.update({
+    id: '/admin/system-status',
+    path: '/admin/system-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminStagingValidationRoute =
   AuthenticatedAdminStagingValidationRouteImport.update({
     id: '/admin/staging-validation',
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
+  '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
+  '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
@@ -384,6 +393,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
+  '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/readiness'
     | '/admin/staging-validation'
+    | '/admin/system-status'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/providers'
     | '/admin/readiness'
     | '/admin/staging-validation'
+    | '/admin/system-status'
     | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
@@ -510,6 +522,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/readiness'
     | '/_authenticated/admin/staging-validation'
+    | '/_authenticated/admin/system-status'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
@@ -779,6 +792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/system-status': {
+      id: '/_authenticated/admin/system-status'
+      path: '/admin/system-status'
+      fullPath: '/admin/system-status'
+      preLoaderRoute: typeof AuthenticatedAdminSystemStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/staging-validation': {
       id: '/_authenticated/admin/staging-validation'
       path: '/admin/staging-validation'
@@ -842,6 +862,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminReadinessRoute: typeof AuthenticatedAdminReadinessRoute
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
+  AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -857,6 +878,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminReadinessRoute: AuthenticatedAdminReadinessRoute,
   AuthenticatedAdminStagingValidationRoute:
     AuthenticatedAdminStagingValidationRoute,
+  AuthenticatedAdminSystemStatusRoute: AuthenticatedAdminSystemStatusRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
