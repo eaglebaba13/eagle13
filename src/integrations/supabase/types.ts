@@ -131,6 +131,179 @@ export type Database = {
         }
         Relationships: []
       }
+      gann_gap_outcomes: {
+        Row: {
+          actual_outcome: string
+          capability: Json | null
+          evaluated_at: string
+          gap_percent: number | null
+          gap_points: number | null
+          id: string
+          next_open: number | null
+          outcome_rule_version: string
+          outcome_trading_date: string
+          prediction_id: string
+          prediction_trading_date: string
+          previous_close: number | null
+          provider_alias: string | null
+          source: string | null
+        }
+        Insert: {
+          actual_outcome: string
+          capability?: Json | null
+          evaluated_at?: string
+          gap_percent?: number | null
+          gap_points?: number | null
+          id?: string
+          next_open?: number | null
+          outcome_rule_version: string
+          outcome_trading_date: string
+          prediction_id: string
+          prediction_trading_date: string
+          previous_close?: number | null
+          provider_alias?: string | null
+          source?: string | null
+        }
+        Update: {
+          actual_outcome?: string
+          capability?: Json | null
+          evaluated_at?: string
+          gap_percent?: number | null
+          gap_points?: number | null
+          id?: string
+          next_open?: number | null
+          outcome_rule_version?: string
+          outcome_trading_date?: string
+          prediction_id?: string
+          prediction_trading_date?: string
+          previous_close?: number | null
+          provider_alias?: string | null
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gann_gap_outcomes_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "gann_gap_predictions"
+            referencedColumns: ["prediction_id"]
+          },
+        ]
+      }
+      gann_gap_predictions: {
+        Row: {
+          base_outlook: string
+          calendar_provenance: Json | null
+          capability: Json | null
+          closing_zone: Json | null
+          confidence_band: string | null
+          config_version: string
+          confirmations: Json
+          created_at: string
+          distance_pct: number | null
+          distance_points: number | null
+          evaluated_at: string | null
+          formula_version: string
+          frozen_at: string | null
+          id: string
+          lifecycle: string
+          lower_level: number | null
+          next_trading_date: string | null
+          prediction_id: string
+          previous_close: number | null
+          provider_alias: string | null
+          reference_price: number | null
+          relevant_level: number | null
+          source: string | null
+          trading_date: string
+          updated_at: string
+          upper_level: number | null
+        }
+        Insert: {
+          base_outlook: string
+          calendar_provenance?: Json | null
+          capability?: Json | null
+          closing_zone?: Json | null
+          confidence_band?: string | null
+          config_version: string
+          confirmations?: Json
+          created_at?: string
+          distance_pct?: number | null
+          distance_points?: number | null
+          evaluated_at?: string | null
+          formula_version: string
+          frozen_at?: string | null
+          id?: string
+          lifecycle: string
+          lower_level?: number | null
+          next_trading_date?: string | null
+          prediction_id: string
+          previous_close?: number | null
+          provider_alias?: string | null
+          reference_price?: number | null
+          relevant_level?: number | null
+          source?: string | null
+          trading_date: string
+          updated_at?: string
+          upper_level?: number | null
+        }
+        Update: {
+          base_outlook?: string
+          calendar_provenance?: Json | null
+          capability?: Json | null
+          closing_zone?: Json | null
+          confidence_band?: string | null
+          config_version?: string
+          confirmations?: Json
+          created_at?: string
+          distance_pct?: number | null
+          distance_points?: number | null
+          evaluated_at?: string | null
+          formula_version?: string
+          frozen_at?: string | null
+          id?: string
+          lifecycle?: string
+          lower_level?: number | null
+          next_trading_date?: string | null
+          prediction_id?: string
+          previous_close?: number | null
+          provider_alias?: string | null
+          reference_price?: number | null
+          relevant_level?: number | null
+          source?: string | null
+          trading_date?: string
+          updated_at?: string
+          upper_level?: number | null
+        }
+        Relationships: []
+      }
+      gann_gap_scheduler_state: {
+        Row: {
+          enabled: boolean
+          id: number
+          last_error: string | null
+          last_run_at: string | null
+          last_run_kind: string | null
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: number
+          last_error?: string | null
+          last_run_at?: string | null
+          last_run_kind?: string | null
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: number
+          last_error?: string | null
+          last_run_at?: string | null
+          last_run_kind?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           created_at: string
@@ -949,6 +1122,68 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      gann_gap_upsert_outcome: {
+        Args: { _row: Json }
+        Returns: {
+          actual_outcome: string
+          capability: Json | null
+          evaluated_at: string
+          gap_percent: number | null
+          gap_points: number | null
+          id: string
+          next_open: number | null
+          outcome_rule_version: string
+          outcome_trading_date: string
+          prediction_id: string
+          prediction_trading_date: string
+          previous_close: number | null
+          provider_alias: string | null
+          source: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "gann_gap_outcomes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      gann_gap_upsert_prediction: {
+        Args: { _row: Json }
+        Returns: {
+          base_outlook: string
+          calendar_provenance: Json | null
+          capability: Json | null
+          closing_zone: Json | null
+          confidence_band: string | null
+          config_version: string
+          confirmations: Json
+          created_at: string
+          distance_pct: number | null
+          distance_points: number | null
+          evaluated_at: string | null
+          formula_version: string
+          frozen_at: string | null
+          id: string
+          lifecycle: string
+          lower_level: number | null
+          next_trading_date: string | null
+          prediction_id: string
+          previous_close: number | null
+          provider_alias: string | null
+          reference_price: number | null
+          relevant_level: number | null
+          source: string | null
+          trading_date: string
+          updated_at: string
+          upper_level: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "gann_gap_predictions"
           isOneToOne: true
           isSetofReturn: false
         }

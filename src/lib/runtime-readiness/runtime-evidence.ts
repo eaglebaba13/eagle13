@@ -51,7 +51,8 @@ export type ModuleId =
   | "RISK_MANAGER"
   | "BILLING"
   | "LICENSE"
-  | "BROKER_CONNECTIVITY";
+  | "BROKER_CONNECTIVITY"
+  | "GANN_GAP_OUTLOOK";
 
 export interface RuntimeEvidence {
   readonly module: ModuleId;
