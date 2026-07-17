@@ -317,7 +317,7 @@ function CombinedPcrPage() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.csv`, "text/csv", readingToCsv(reading))}>Export CSV</button>
           <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.json`, "application/json", readingToJson(reading))}>Export JSON</button>
-          <button style={buttonStyle} onClick={() => download(`combined-pcr-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildCombinedPcrResearchBundle(reading), null, 2))}>Research Bundle</button>
+        <button style={buttonStyle} onClick={() => download(`combined-pcr-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildCombinedPcrResearchBundle(reading, undefined, capabilities as never, capabilityStatus), null, 2))}>Research Bundle</button>
         </div>
       )}
 
