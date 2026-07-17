@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import {
   defaultVerificationReport,
   type CheckStatus,
   type ChecklistCategory,
 } from "@/lib/production-verification";
+import { getRuntimeReadinessReport } from "@/lib/runtime-readiness/collect.functions";
+import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
+import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
 
 export const Route = createFileRoute("/_authenticated/admin/beta-readiness")({
   head: () => ({
@@ -35,6 +39,23 @@ const VERDICT_STYLES: Record<string, string> = {
 function AdminBetaReadinessPage() {
   const { role } = useAuth();
   const report = useMemo(() => defaultVerificationReport(), []);
+  const fetchRuntime = useServerFn(getRuntimeReadinessReport);
+  const [runtime, setRuntime] = useState<RuntimeReadinessReport | null>(null);
+  useEffect(() => {
+    if (role !== "admin") return;
+    let c = false;
+    (async () => {
+      try {
+        const r = await fetchRuntime();
+        if (!c) setRuntime(r);
+      } catch {
+        /* surfaced by summary component when null */
+      }
+    })();
+    return () => {
+      c = true;
+    };
+  }, [role, fetchRuntime]);
 
   if (role !== "admin") {
     return (
@@ -58,6 +79,14 @@ function AdminBetaReadinessPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <h1 className="text-2xl font-semibold text-foreground">Beta Readiness</h1>
+        </header>
+        {runtime && (
+          <RuntimeReadinessSummary
+            report={runtime}
+            title="Canonical Runtime Readiness"
+            compact
+          />
+        )}
           <p className="text-sm text-muted-foreground">
             Phase 33 · verification & go-live certification. Read-only; never deploys.
           </p>
