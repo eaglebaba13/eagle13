@@ -39,6 +39,11 @@ export interface BuildRuntimeReportInput {
     readonly demo?: boolean;
     readonly reason: string;
   } | null;
+  readonly aiMarketAssistant?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -163,6 +168,20 @@ export function buildRuntimeReadinessReport(
         observedAt: now,
         diagnosticsPath: "/live-option-terminal",
         provenance: "OPTION_STRATEGY",
+      }),
+    );
+  }
+
+  if (input.aiMarketAssistant) {
+    evidence.push(
+      evidenceFromSimple({
+        module: "AI_MARKET_ASSISTANT",
+        available: input.aiMarketAssistant.available,
+        demo: input.aiMarketAssistant.demo,
+        reason: input.aiMarketAssistant.reason,
+        observedAt: now,
+        diagnosticsPath: "/ai-market-assistant",
+        provenance: "AI_ASSISTANT",
       }),
     );
   }
