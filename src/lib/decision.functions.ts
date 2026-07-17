@@ -4,6 +4,12 @@
 // never recomputes Astro, Signals, Support/Resistance, Backtest, Replay, or
 // Options analytics. If a module is unavailable it is marked absent so the
 // pure decision engine can redistribute weights transparently.
+//
+// Phase 2D wiring: Options + PCR now consume the CANONICAL option-chain
+// snapshot (same helper `/options-chain` and Combined PCR use). Legacy
+// Yahoo/NSE fetches are removed from the healthy path. Combined PCR is
+// computed once, in this scope, from the same canonical snapshots — the
+// pcrSignal is fed from that reading. Formulas are unchanged.
 
 import { createServerFn } from "@tanstack/react-start";
 import { cached } from "./server-cache";
@@ -15,7 +21,8 @@ import {
 } from "./engine-version";
 import { getAstro } from "./astro.functions";
 import { getMarketData } from "./market.functions";
-import { getOptionsChain } from "./options-chain.functions";
+import type { OptionUnderlying, OptionChainSnapshot } from "./option-chain/types";
+import type { OptionChainCapabilityStatus } from "./option-chain/capability";
 import { nseSession } from "./terminal-clock";
 import {
   computePCR,
@@ -38,8 +45,15 @@ import {
 } from "./decision-engine";
 import type { CapabilityExplainer, ModuleCapability } from "./decision/capability";
 import { explainCapability } from "./decision/capability";
-import type { LiveChainAdapterResult } from "./decision/live-chain-adapter";
-import { isAdaptedChainLive } from "./decision/live-chain-adapter";
+import {
+  buildOptionsModuleInput,
+  buildPcrModuleInput,
+  buildDecisionSummary,
+  type DecisionSummary,
+  type OptionsModuleInput,
+  type PcrModuleInput,
+} from "./decision/module-inputs";
+import { safeProviderLabel } from "./provider-labels";
 import {
   selectHistoricalAccuracy,
   type HistoricalAccuracyResult,
@@ -72,6 +86,43 @@ export type DecisionSnapshot = {
   capabilities: {
     options: CapabilityExplainer;
     pcr: CapabilityExplainer;
+    optionsCanonical: {
+      NIFTY: {
+        status: OptionChainCapabilityStatus;
+        reason: string;
+        suggestedAction: string;
+        retryable: boolean;
+        providerAlias: string;
+        freshnessSec: number | null;
+        latencyMs: number | null;
+        fetchedAt: string | null;
+        expiry: string | null;
+        strikeCount: number;
+      };
+      BANKNIFTY: {
+        status: OptionChainCapabilityStatus;
+        reason: string;
+        suggestedAction: string;
+        retryable: boolean;
+        providerAlias: string;
+        freshnessSec: number | null;
+        latencyMs: number | null;
+        fetchedAt: string | null;
+        expiry: string | null;
+        strikeCount: number;
+      };
+    };
+    pcrCombined: {
+      computed: boolean;
+      status: OptionChainCapabilityStatus;
+      reason: string;
+      pcrOi: number | null;
+      combinedScore: number | null;
+      direction: "CE" | "NEUTRAL" | "PE" | null;
+      instrumentCount: number;
+      formulaVersion: string;
+      providerAlias: string;
+    };
     historical: {
       capability: HistoricalAccuracyResult["capability"];
       source: HistoricalAccuracyResult["source"];
@@ -103,6 +154,7 @@ export type DecisionSnapshot = {
     fetchedAt: string | null;
     safeError: string | null;
   };
+  summary: DecisionSummary;
   generatedAt: string;
 };
 
@@ -111,39 +163,60 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
     cached<DecisionSnapshot>(
       astroCacheKey("decision-snapshot"),
       async () => {
-        // Reuse every existing engine — never recompute.
-        //
-        // Phase 31 wiring: prefer the live Upstox option-chain provider
-        // (same source Combined PCR uses). Fall back to the legacy
-        // Yahoo/NSE `getOptionsChain` only when Upstox is not usable, so
-        // the Decision matrix stops rendering "MISSING" whenever the live
-        // pipeline is healthy. Formulas below are unchanged.
-        const { fetchLiveDecisionChain } = await import(
-          "./decision/live-chain-source.server"
+        // Phase 2D: single canonical option-chain fetch per underlying.
+        // No legacy Yahoo/NSE fallback. Combined PCR is computed once
+        // from the same snapshots and reused for the pcrSignal input.
+        const { fetchCanonicalOptionChain } = await import(
+          "./option-chain/canonical-snapshot.server"
         );
-        const [astroRes, marketRes, liveChainRes] = await Promise.allSettled([
-          getAstro(),
-          getMarketData(),
-          fetchLiveDecisionChain("NIFTY"),
-        ]);
+        const { computeCombinedPcr } = await import("./combined-pcr/combined-pcr");
+        const { getSnapshotHistory } = await import("./option-chain/snapshot-history");
+
+        const [astroRes, marketRes, niftyCanonRes, banknCanonRes] =
+          await Promise.allSettled([
+            getAstro(),
+            getMarketData(),
+            fetchCanonicalOptionChain({ underlying: "NIFTY" }),
+            fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }),
+          ]);
 
         const astro = astroRes.status === "fulfilled" ? astroRes.value : null;
         const market = marketRes.status === "fulfilled" ? marketRes.value : null;
-        const liveAdapter: LiveChainAdapterResult | null =
-          liveChainRes.status === "fulfilled" ? liveChainRes.value : null;
+        const niftyCanon =
+          niftyCanonRes.status === "fulfilled" ? niftyCanonRes.value : null;
+        const banknCanon =
+          banknCanonRes.status === "fulfilled" ? banknCanonRes.value : null;
 
-        // Only fall back to the legacy provider when the live path is not
-        // usable — this avoids duplicate provider fetches when Upstox is
-        // healthy.
-        let chain = liveAdapter?.chain ?? null;
-        let usedLive = liveAdapter != null && isAdaptedChainLive(liveAdapter);
-        if (!usedLive) {
-          try {
-            chain = await getOptionsChain({ data: { symbol: "NIFTY" } });
-          } catch {
-            chain = chain; // keep any partial live chain if present
-          }
-        }
+        const nowIso = new Date().toISOString();
+
+        // ----- Options module input (from canonical envelope) -----
+        const niftyOptions: OptionsModuleInput | null = niftyCanon
+          ? buildOptionsModuleInput(
+              "NIFTY",
+              {
+                ok: niftyCanon.ok,
+                snapshot: niftyCanon.snapshot,
+                meta: niftyCanon.meta,
+                capability: niftyCanon.capability,
+              },
+              nowIso,
+            )
+          : null;
+        const banknOptionsInput: OptionsModuleInput | null = banknCanon
+          ? buildOptionsModuleInput(
+              "BANKNIFTY",
+              {
+                ok: banknCanon.ok,
+                snapshot: banknCanon.snapshot,
+                meta: banknCanon.meta,
+                capability: banknCanon.capability,
+              },
+              nowIso,
+            )
+          : null;
+
+        const chain = niftyOptions?.chain ?? null;
+        const usedLive = niftyOptions?.usable === true;
 
         const marketOpen = nseSession().isOpen;
 
@@ -157,12 +230,36 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             })
           : absentSignal("astro", 0.25, "Astro");
 
+        // ----- Combined PCR (once, from canonical snapshots) -----
+        const snapshotsForPcr: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {
+          NIFTY: niftyOptions?.usable ? (niftyCanon?.snapshot ?? null) : null,
+          BANKNIFTY: banknOptionsInput?.usable ? (banknCanon?.snapshot ?? null) : null,
+        };
+        const anyUsable = Object.values(snapshotsForPcr).some((s) => s != null);
+        let combinedReading = null as Awaited<ReturnType<typeof computeCombinedPcr>> | null;
+        if (anyUsable) {
+          try {
+            combinedReading = computeCombinedPcr({
+              snapshots: snapshotsForPcr,
+              history: getSnapshotHistory(),
+              runId: `decision-${Date.now().toString(36)}`,
+              nowIso,
+            });
+          } catch {
+            combinedReading = null;
+          }
+        }
+
         // ----- Options + PCR signals -----
         let optionsSig: ModuleSignal = absentSignal("options", 0.2, "Options");
         let pcrSig: ModuleSignal = absentSignal("pcr", 0.1, "PCR");
         let optionsSource = chain?.integrity.sourceStatus ?? "UNAVAILABLE";
-        if (chain && chain.integrity.sourceStatus !== "UNAVAILABLE") {
+        if (niftyOptions?.usable && chain && chain.integrity.sourceStatus !== "UNAVAILABLE") {
           const legs = chain.snapshot.legs;
+          // pcrOi is sourced from Combined PCR when available. If the
+          // combined reading is missing (e.g. history/aggregation edge),
+          // fall back to the SAME canonical legs — never a legacy fetch,
+          // never a fake zero.
           const pcr = computePCR(legs);
           const topPutWriting = rankWriting(legs, chain.snapshot.spot, "PE", 3);
           const topCallWriting = rankWriting(legs, chain.snapshot.spot, "CE", 3);
@@ -187,28 +284,44 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             present: chain.integrity.isTradable || chain.integrity.sourceStatus === "LIVE",
             note: `PCR-OI ${pcr.pcrOi.toFixed(2)} · put-write ${putWriteVol.toLocaleString()} vs call-write ${callWriteVol.toLocaleString()}`,
           });
-          pcrSig = pcrSignal({ pcrOi: pcr.pcrOi });
+          // Prefer Combined PCR's NIFTY OI-PCR when available.
+          const combinedNifty =
+            combinedReading?.instruments.find((i) => i.underlying === "NIFTY") ?? null;
+          const pcrOiForSignal = combinedNifty?.rawOiPcr ?? pcr.pcrOi;
+          pcrSig = pcrSignal({ pcrOi: pcrOiForSignal });
         }
 
-        // Capability explainers surface the exact failure/success stage.
-        const optionsCapability: ModuleCapability =
-          liveAdapter?.capability
-          ?? (chain && chain.integrity.sourceStatus !== "UNAVAILABLE"
-              ? "SUPPORTED"
-              : "NO_DATA");
-        const optionsExplainer =
-          liveAdapter?.explainer
-          ?? explainCapability(optionsCapability, {
-            module: "options",
-            stage: chain ? "delivery" : "provider-fetch",
-            provider: chain?.snapshot.provider ?? "unknown",
-          });
-        // PCR shares the option-chain pipeline; when Options is live, PCR
-        // is also live (we recompute PCR from the same legs).
-        const pcrExplainer = explainCapability(
-          isFullyLiveOptions(optionsCapability) ? "SUPPORTED" : optionsCapability,
-          { module: "pcr", stage: "derived-from-options", provider: optionsExplainer.provider },
+        // Capability explainers: canonical status → decision capability.
+        const pcrInput: PcrModuleInput = buildPcrModuleInput(
+          niftyOptions ?? {
+            underlying: "NIFTY",
+            usable: false,
+            chain: null,
+            capability: "NO_DATA",
+            canonicalStatus: "PROVIDER_ERROR",
+            explainer: explainCapability("NO_DATA", { module: "options", stage: "provider-fetch", provider: safeProviderLabel(null, "OPTIONS") }),
+            providerAlias: safeProviderLabel(null, "OPTIONS"),
+            fetchedAt: null,
+            latencyMs: null,
+            freshnessSec: null,
+            expiry: null,
+            strikeCount: 0,
+            safeError: null,
+            reason: "Canonical option-chain fetch failed.",
+            suggestedAction: "Retry, or check Admin → Providers.",
+            retryable: true,
+            failingStage: "provider-fetch",
+          },
+          combinedReading,
         );
+        const optionsExplainer: CapabilityExplainer =
+          niftyOptions?.explainer ??
+          explainCapability("NO_DATA", {
+            module: "options",
+            stage: "provider-fetch",
+            provider: safeProviderLabel(null, "OPTIONS"),
+          });
+        const pcrExplainer: CapabilityExplainer = pcrInput.explainer;
 
         // ----- Breadth: indices trending together = positive breadth -----
         const advancers: string[] = [];
@@ -321,6 +434,37 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           generatedAt: new Date().toISOString(),
         });
 
+        const providerAlias = safeProviderLabel(null, "OPTIONS");
+        const summary = buildDecisionSummary({
+          action: decision.action,
+          confidence: decision.confidence,
+          risk: decision.risk.level,
+          present: decision.contributions.filter((c) => c.present).length,
+          total: decision.contributions.length,
+          options:
+            niftyOptions ?? {
+              underlying: "NIFTY",
+              usable: false,
+              chain: null,
+              capability: "NO_DATA",
+              canonicalStatus: "PROVIDER_ERROR",
+              explainer: optionsExplainer,
+              providerAlias,
+              fetchedAt: null,
+              latencyMs: null,
+              freshnessSec: null,
+              expiry: null,
+              strikeCount: 0,
+              safeError: null,
+              reason: "Canonical option-chain fetch failed.",
+              suggestedAction: "Retry.",
+              retryable: true,
+              failingStage: "provider-fetch",
+            },
+          pcr: pcrInput,
+          generatedAt: new Date().toISOString(),
+        });
+
         return {
           decision,
           signals,
@@ -328,7 +472,7 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             symbol: "NIFTY",
             vix: vixVal,
             marketOpen,
-            provider: chain?.snapshot.provider ?? "Yahoo / EagleBABA engines",
+            provider: providerAlias,
             optionsSource,
             nifty: market?.nifty?.livePrice ?? null,
             banknifty: market?.banknifty?.livePrice ?? null,
@@ -342,6 +486,43 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           capabilities: {
             options: optionsExplainer,
             pcr: pcrExplainer,
+            optionsCanonical: {
+              NIFTY: {
+                status: niftyOptions?.canonicalStatus ?? "PROVIDER_ERROR",
+                reason: niftyOptions?.reason ?? "Option chain unavailable.",
+                suggestedAction: niftyOptions?.suggestedAction ?? "Retry.",
+                retryable: niftyOptions?.retryable ?? true,
+                providerAlias,
+                freshnessSec: niftyOptions?.freshnessSec ?? null,
+                latencyMs: niftyOptions?.latencyMs ?? null,
+                fetchedAt: niftyOptions?.fetchedAt ?? null,
+                expiry: niftyOptions?.expiry ?? null,
+                strikeCount: niftyOptions?.strikeCount ?? 0,
+              },
+              BANKNIFTY: {
+                status: banknOptionsInput?.canonicalStatus ?? "PROVIDER_ERROR",
+                reason: banknOptionsInput?.reason ?? "Option chain unavailable.",
+                suggestedAction: banknOptionsInput?.suggestedAction ?? "Retry.",
+                retryable: banknOptionsInput?.retryable ?? true,
+                providerAlias,
+                freshnessSec: banknOptionsInput?.freshnessSec ?? null,
+                latencyMs: banknOptionsInput?.latencyMs ?? null,
+                fetchedAt: banknOptionsInput?.fetchedAt ?? null,
+                expiry: banknOptionsInput?.expiry ?? null,
+                strikeCount: banknOptionsInput?.strikeCount ?? 0,
+              },
+            },
+            pcrCombined: {
+              computed: pcrInput.computed,
+              status: pcrInput.canonicalStatus,
+              reason: pcrInput.reason,
+              pcrOi: pcrInput.pcrOi,
+              combinedScore: pcrInput.combinedScore,
+              direction: pcrInput.direction,
+              instrumentCount: pcrInput.instrumentCount,
+              formulaVersion: pcrInput.formulaVersion,
+              providerAlias,
+            },
             historical: {
               capability: historicalResult.capability,
               source: historicalResult.source,
@@ -367,22 +548,19 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           },
           liveOptionChain: {
             used: usedLive,
-            provider: liveAdapter?.provider ?? "n/a",
-            capability: liveAdapter?.capability ?? "NO_DATA",
-            latencyMs: liveAdapter?.latencyMs ?? 0,
-            fetchedAt: liveAdapter?.fetchedAt ?? null,
-            safeError: liveAdapter?.safeError ?? null,
+            provider: providerAlias,
+            capability: niftyOptions?.capability ?? "NO_DATA",
+            latencyMs: niftyOptions?.latencyMs ?? 0,
+            fetchedAt: niftyOptions?.fetchedAt ?? null,
+            safeError: niftyOptions?.safeError ?? null,
           },
+          summary,
           generatedAt: new Date().toISOString(),
         };
       },
       { ttlMs: 30_000 },
     ),
 );
-
-function isFullyLiveOptions(cap: ModuleCapability): boolean {
-  return cap === "SUPPORTED";
-}
 
 function absentSignal(
   key: ModuleSignal["key"],

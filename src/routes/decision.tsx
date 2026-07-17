@@ -67,6 +67,7 @@ function DecisionPage() {
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         <Header snap={data} />
         <SummaryCards snap={data} />
+        <CapabilitySummary snap={data} />
         <div
           style={{
             display: "grid",
@@ -232,6 +233,75 @@ function Card({ label, children }: { label: string; children: React.ReactNode })
       </div>
       <div style={{ marginTop: 4 }}>{children}</div>
     </div>
+  );
+}
+
+function CapabilitySummary({ snap }: { snap: DecisionSnapshot }) {
+  const opt = snap.capabilities.optionsCanonical;
+  const pcr = snap.capabilities.pcrCombined;
+  const okStatuses = new Set(["SUPPORTED", "PARTIAL"]);
+  const chip = (label: string, status: string, extra: string | null) => {
+    const ok = okStatuses.has(status);
+    const tone = ok ? C.green : C.gold;
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: "0.4rem 0.6rem",
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          background: C.bg,
+          minWidth: 180,
+        }}
+      >
+        <div style={{ fontSize: "0.7rem", color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+        <div style={{ fontSize: "0.85rem", fontWeight: 700, color: tone }}>{status}</div>
+        {extra ? (
+          <div style={{ fontSize: "0.72rem", color: C.muted }}>{extra}</div>
+        ) : null}
+      </div>
+    );
+  };
+  return (
+    <section
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "0.75rem 1rem",
+        marginBottom: "1rem",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.5rem",
+        alignItems: "center",
+      }}
+      aria-label="Provider and capability summary"
+    >
+      <SectionTitle>Provider & Capability</SectionTitle>
+      {chip(
+        "Options · NIFTY",
+        opt.NIFTY.status,
+        opt.NIFTY.freshnessSec != null
+          ? `${opt.NIFTY.providerAlias} · ${opt.NIFTY.freshnessSec}s · ${opt.NIFTY.strikeCount} strikes`
+          : opt.NIFTY.reason,
+      )}
+      {chip(
+        "Options · BANK",
+        opt.BANKNIFTY.status,
+        opt.BANKNIFTY.freshnessSec != null
+          ? `${opt.BANKNIFTY.providerAlias} · ${opt.BANKNIFTY.freshnessSec}s · ${opt.BANKNIFTY.strikeCount} strikes`
+          : opt.BANKNIFTY.reason,
+      )}
+      {chip(
+        "Combined PCR",
+        pcr.status,
+        pcr.computed && pcr.pcrOi != null
+          ? `NIFTY OI-PCR ${pcr.pcrOi.toFixed(2)} · score ${pcr.combinedScore != null ? pcr.combinedScore.toFixed(1) : "—"}`
+          : pcr.reason,
+      )}
+    </section>
   );
 }
 
