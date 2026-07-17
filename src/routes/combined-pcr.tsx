@@ -136,6 +136,10 @@ function CombinedPcrPage() {
   useEffect(() => { void run(); }, [run]);
 
   const reading = result && result.ok ? result.reading : null;
+  const capabilities = result && result.ok ? result.capabilities : undefined;
+  const capabilityStatus = result && result.ok ? result.capabilityStatus : undefined;
+  const computed = result && result.ok ? result.computed : false;
+  const capabilityBlocking = Boolean(result?.ok) && !computed;
   const freshness = useMemo(() => {
     if (!reading) return null;
     return Math.max(0, Date.now() - Date.parse(reading.timestamp));
@@ -162,8 +166,47 @@ function CombinedPcrPage() {
         <span style={{ color: "#f2b845", fontWeight: 600 }}>COMING SOON</span>.
       </p>
 
-      {/* Header stats */}
-      <div style={{
+      {/* Capability panel — replaces fake NO_TRADE metrics when unsupported */}
+      {capabilityBlocking && capabilities && (
+        <div style={{
+          padding: 14, marginBottom: 16, borderRadius: 10,
+          background: "rgba(255, 174, 0, 0.06)",
+          border: "1px solid rgba(255, 174, 0, 0.3)",
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: "#ffb27a", marginBottom: 6 }}>
+            COMBINED PCR · {String(capabilityStatus ?? "UNAVAILABLE").replace(/_/g, " ")}
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            Score not calculated — option data unavailable for one or more underlyings.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 8 }}>
+            {Object.entries(capabilities).map(([u, cap]) => cap ? (
+              <div key={u} style={{
+                padding: 10, borderRadius: 8,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                fontSize: 12,
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>{u} · {cap.status.replace(/_/g, " ")}</div>
+                <div style={{ opacity: 0.85, marginBottom: 4 }}>{cap.reason}</div>
+                {cap.suggestedAction && (
+                  <div style={{ opacity: 0.7, marginBottom: 4 }}>Next: {cap.suggestedAction}</div>
+                )}
+                <div style={{ opacity: 0.6, fontSize: 11 }}>
+                  {cap.providerAlias} · stage {cap.failingStage ?? "—"} · observed {cap.observedAt}
+                  {cap.latencyMs != null ? ` · ${cap.latencyMs}ms` : ""}
+                </div>
+              </div>
+            ) : null)}
+          </div>
+          <button onClick={() => void run()} disabled={loading} style={{ ...buttonStyle, marginTop: 10 }}>
+            {loading ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+      )}
+
+      {/* Header stats — hidden when capability blocks calculation to avoid fake zeros */}
+      {!capabilityBlocking && <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
         gap: 10, marginBottom: 16,
@@ -182,7 +225,7 @@ function CombinedPcrPage() {
           label="Freshness"
           value={freshness == null ? "—" : `${(freshness / 1000).toFixed(0)}s`}
         />
-      </div>
+      </div>}
 
       {/* Controls */}
       <div style={{
@@ -317,7 +360,7 @@ function CombinedPcrPage() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.csv`, "text/csv", readingToCsv(reading))}>Export CSV</button>
           <button style={buttonStyle} onClick={() => download(`combined-pcr-${reading.runId}.json`, "application/json", readingToJson(reading))}>Export JSON</button>
-          <button style={buttonStyle} onClick={() => download(`combined-pcr-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildCombinedPcrResearchBundle(reading), null, 2))}>Research Bundle</button>
+        <button style={buttonStyle} onClick={() => download(`combined-pcr-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildCombinedPcrResearchBundle(reading, undefined, capabilities as never, capabilityStatus), null, 2))}>Research Bundle</button>
         </div>
       )}
 

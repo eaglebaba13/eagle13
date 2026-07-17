@@ -2,6 +2,7 @@
 // CSV / JSON / Research Bundle carriers.
 
 import { DISCLAIMER, FORMULA_VERSION, type CombinedPcrReading } from "./types";
+import type { OptionChainCapability } from "../option-chain/capability";
 
 function csvEscape(v: unknown): string {
   if (v == null) return "";
@@ -61,11 +62,15 @@ export interface CombinedPcrResearchBundle {
   readonly disclaimer: string;
   readonly generatedAt: string;
   readonly version: 1;
+  readonly capabilities?: Readonly<Record<string, OptionChainCapability>>;
+  readonly capabilityStatus?: OptionChainCapability["status"];
 }
 
 export function buildCombinedPcrResearchBundle(
   r: CombinedPcrReading,
   nowIso: string = new Date().toISOString(),
+  capabilities?: Readonly<Record<string, OptionChainCapability>>,
+  capabilityStatus?: OptionChainCapability["status"],
 ): CombinedPcrResearchBundle {
   return {
     reading: r,
@@ -73,5 +78,7 @@ export function buildCombinedPcrResearchBundle(
     disclaimer: DISCLAIMER,
     generatedAt: nowIso,
     version: 1,
+    ...(capabilities ? { capabilities } : {}),
+    ...(capabilityStatus ? { capabilityStatus } : {}),
   };
 }
