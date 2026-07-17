@@ -35,6 +35,11 @@ import {
 } from "@/lib/dashboard-preferences";
 import { summarizeDashboardHealth } from "@/lib/dashboard-health";
 import type { FreshnessStatus, ProviderStatus } from "@/lib/data-freshness";
+import {
+  RuntimeReadinessStrip,
+  RuntimeReadinessStripFallback,
+} from "@/components/runtime-readiness/RuntimeReadinessStrip";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 
 const marketQuery = () =>
   queryOptions({
