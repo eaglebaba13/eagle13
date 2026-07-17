@@ -40,6 +40,16 @@ import type { CapabilityExplainer, ModuleCapability } from "./decision/capabilit
 import { explainCapability } from "./decision/capability";
 import type { LiveChainAdapterResult } from "./decision/live-chain-adapter";
 import { isAdaptedChainLive } from "./decision/live-chain-adapter";
+import {
+  selectHistoricalAccuracy,
+  type HistoricalAccuracyResult,
+  type HistoricalRunCandidate,
+} from "./decision/historical-accuracy-adapter";
+import {
+  alignReplay,
+  type ReplayObservation,
+  type ReplayResult,
+} from "./decision/replay-adapter";
 
 export type DecisionSnapshot = {
   decision: Decision;
@@ -62,6 +72,28 @@ export type DecisionSnapshot = {
   capabilities: {
     options: CapabilityExplainer;
     pcr: CapabilityExplainer;
+    historical: {
+      capability: HistoricalAccuracyResult["capability"];
+      source: HistoricalAccuracyResult["source"];
+      reason: string;
+      sampleSize: number | null;
+      winRatePct: number | null;
+      runId: string | null;
+      freshness: HistoricalAccuracyResult["freshness"];
+      formulaVersion: string | null;
+    };
+    replay: {
+      capability: ReplayResult["capability"];
+      reason: string;
+      observationCount: number;
+      dominantDecision: ReplayResult["dominantDecision"];
+      quality: ReplayResult["quality"];
+      startTime: string | null;
+      endTime: string | null;
+      mfe: number | null;
+      mae: number | null;
+      transitions: number;
+    };
   };
   liveOptionChain: {
     used: boolean;
@@ -221,17 +253,55 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           changePct: market?.vix?.changePct ?? null,
         });
 
-        // ----- Historical accuracy / replay: not consumed at this time. -----
-        // The pure engine handles missing modules transparently.
-        const historicalSig = historicalSignal({
-          winRatePct: null,
-          direction: "NEUTRAL",
-          sampleSize: 0,
+        // Phase 32 · Historical Accuracy + Replay adapters.
+        // Both adapters consume ALREADY-computed results only. We pass
+        // empty candidate/observation arrays here as the default in-
+        // request path — persistent stores can plug in later without
+        // touching the decision formulas. If nothing compatible is
+        // available, the pure engine keeps the module absent and the UI
+        // shows the exact capability + reason.
+        const historicalCandidates: readonly HistoricalRunCandidate[] = [];
+        const replayObservations: readonly ReplayObservation[] = [];
+        const historicalResult = selectHistoricalAccuracy(historicalCandidates, {
+          instrument: "NIFTY",
+          strategyVersion: `astro@${DEFAULT_ASTRO_FORMULA_VERSION}`,
+          formulaVersion: "decision@1.0.0",
+          timeframe: "5m",
+          now: new Date().toISOString(),
         });
-        const replaySig = replaySignal({
-          agreesWithDirection: null,
-          direction: "NEUTRAL",
+        const replayResult = alignReplay(replayObservations, {
+          instrument: "NIFTY",
+          formulaVersion: "decision@1.0.0",
+          minObservations: 5,
         });
+        const historicalSig =
+          historicalResult.capability === "SUPPORTED"
+            ? historicalSignal({
+                winRatePct: historicalResult.winRatePct,
+                direction: historicalResult.direction,
+                sampleSize: historicalResult.sampleSize ?? 0,
+              })
+            : historicalSignal({
+                winRatePct: null,
+                direction: "NEUTRAL",
+                sampleSize: 0,
+              });
+        const replaySig =
+          replayResult.capability === "SUPPORTED" && replayResult.dominantDecision !== "UNKNOWN"
+            ? replaySignal({
+                agreesWithDirection: replayResult.dominantDecision !== "WAIT",
+                direction:
+                  replayResult.dominantDecision === "CE"
+                    ? "BULL"
+                    : replayResult.dominantDecision === "PE"
+                      ? "BEAR"
+                      : "NEUTRAL",
+                note: `Replay dominant=${replayResult.dominantDecision}, obs=${replayResult.observationCount}`,
+              })
+            : replaySignal({
+                agreesWithDirection: null,
+                direction: "NEUTRAL",
+              });
 
         const signals = [
           astroSig,
@@ -246,7 +316,7 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
 
         const decision = computeDecision(signals, {
           vix: vixVal,
-          historicalAccuracy: null,
+          historicalAccuracy: historicalResult.winRatePct,
           marketOpen,
           generatedAt: new Date().toISOString(),
         });
@@ -272,6 +342,28 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           capabilities: {
             options: optionsExplainer,
             pcr: pcrExplainer,
+            historical: {
+              capability: historicalResult.capability,
+              source: historicalResult.source,
+              reason: historicalResult.reason,
+              sampleSize: historicalResult.sampleSize,
+              winRatePct: historicalResult.winRatePct,
+              runId: historicalResult.runId,
+              freshness: historicalResult.freshness,
+              formulaVersion: historicalResult.formulaVersion,
+            },
+            replay: {
+              capability: replayResult.capability,
+              reason: replayResult.reason,
+              observationCount: replayResult.observationCount,
+              dominantDecision: replayResult.dominantDecision,
+              quality: replayResult.quality,
+              startTime: replayResult.startTime,
+              endTime: replayResult.endTime,
+              mfe: replayResult.mfe,
+              mae: replayResult.mae,
+              transitions: replayResult.transitions,
+            },
           },
           liveOptionChain: {
             used: usedLive,
