@@ -510,3 +510,15 @@ function fmtIn(ts: number): string {
   if (ms <= 0) return "now";
   return `in ${fmtMs(ms)}`;
 }
+
+function RuntimeEvidencePanel() {
+  const q = useRuntimeReadinessQuery();
+  const error = q.error ? q.error.message : null;
+  return (
+    <RuntimeReadinessDiagnostics
+      report={q.data ?? null}
+      error={error}
+      onRefresh={() => q.refetch()}
+    />
+  );
+}
