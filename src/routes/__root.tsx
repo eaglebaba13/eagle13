@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -14,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { MobileNav } from "../components/MobileNav";
 import { AuthProvider } from "../lib/auth-context";
 import { ProfileMenu } from "../components/ProfileMenu";
+import { AppShell, shouldSuppressShell } from "../components/AppShell";
 import { MigrationAssistant } from "../components/MigrationAssistant";
 import { supabase } from "../integrations/supabase/client";
 import { Toaster } from "sonner";
@@ -148,6 +150,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const suppressShell = shouldSuppressShell(pathname);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -161,13 +165,22 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="fixed top-3 right-3 z-40">
-          <ProfileMenu />
-        </div>
         {/* Global mobile navigation: sticky hamburger bar, slide drawer, bottom nav. */}
         <MobileNav />
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        {suppressShell ? (
+          <>
+            {/* Legacy floating profile menu for self-shelled routes (astro, live-*, option-strategy)
+                and pre-auth pages. Global AppShell renders it inside its header otherwise. */}
+            <div className="fixed top-3 right-3 z-40">
+              <ProfileMenu />
+            </div>
+            <Outlet />
+          </>
+        ) : (
+          <AppShell>
+            <Outlet />
+          </AppShell>
+        )}
         <MigrationAssistant />
         <Toaster richColors position="top-center" />
       </AuthProvider>
