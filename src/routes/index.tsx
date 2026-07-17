@@ -146,7 +146,7 @@ function Dashboard() {
       queryReceivedAt: dataUpdatedAt || null,
       lastSuccessfulUpdate: dataUpdatedAt || null,
       freshnessByDependency,
-      providerMetadata: { name: "Yahoo Finance", status: "OK" as const },
+      providerMetadata: { name: "Market Data Provider", status: "OK" as const },
       queryError: error,
       queryStale: isStale,
     }),

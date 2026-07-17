@@ -6,6 +6,7 @@ import {
   GOLD_SILVER_LOWER_THRESHOLD,
   GOLD_SILVER_UPPER_THRESHOLD,
 } from "@/lib/gold-silver-ratio";
+import { SAFE_PROVIDER_LABELS } from "@/lib/provider-labels";
 
 type Props = {
   gold: IndexQuote | null;
@@ -15,6 +16,13 @@ type Props = {
 // Shared Gold–Silver Ratio card. Rendered identically on desktop and
 // mobile from the same data hook (market-data / getMarketData).
 export function GoldSilverRatioCard({ gold, silver }: Props) {
+  // Phase 2A: when no verified commodity provider payload is present,
+  // hide the widget instead of showing "DATA UNAVAILABLE" on the launch
+  // dashboard. The card returns null and the grid collapses the slot.
+  const hasAnyPrice =
+    (gold?.livePrice != null && Number.isFinite(gold.livePrice)) ||
+    (silver?.livePrice != null && Number.isFinite(silver.livePrice));
+
   const snap = useMemo(
     () =>
       computeGoldSilverSnapshot({
@@ -24,10 +32,14 @@ export function GoldSilverRatioCard({ gold, silver }: Props) {
         silverUnit: "USD/oz",
         goldTimestamp: gold?.updatedAt ?? null,
         silverTimestamp: silver?.updatedAt ?? null,
-        provider: "Yahoo Finance (COMEX)",
+        provider: SAFE_PROVIDER_LABELS.COMMODITY,
       }),
     [gold, silver],
   );
+
+  if (!hasAnyPrice) {
+    return null;
+  }
 
   const isBuyGold = snap.signal === "BUY_GOLD";
   const isBuySilver = snap.signal === "BUY_SILVER";

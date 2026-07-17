@@ -1051,7 +1051,7 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div style={{ fontSize: "0.85rem", lineHeight: 1.55, color: C.muted }}>
-          <p><strong style={{ color: C.text }}>Data source.</strong> Live NSE option chain when reachable; a clearly-labelled deterministic SIMULATED chain built around the live Yahoo spot when the NSE endpoint is unavailable.</p>
+          <p><strong style={{ color: C.text }}>Data source.</strong> Live options provider chain when reachable; a clearly-labelled deterministic SIMULATED chain built around the reference spot when the live options provider is unavailable.</p>
           <p><strong style={{ color: C.text }}>Update frequency.</strong> 30-second cache, shared via the global scheduler.</p>
           <p><strong style={{ color: C.text }}>PCR.</strong> PCR OI = Σ Put OI / Σ Call OI; PCR Volume = Σ Put Volume / Σ Call Volume. Interpretation thresholds default to bullish ≥ 1.1 and bearish ≤ 0.85 and are configurable per instrument.</p>
           <p><strong style={{ color: C.text }}>Max Pain.</strong> Strike minimising Σ CE.oi · max(K − s, 0) + Σ PE.oi · max(s − K, 0), across the current chain.</p>
@@ -1061,7 +1061,7 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
           <p><strong style={{ color: C.text }}>Astro confluence.</strong> Distance from the options-derived level to the nearest EagleBaba Astro Level. Bands: ≤ tol very strong, ≤ 2·tol strong, ≤ 4·tol moderate, else weak. Tolerance is 5 pts for NIFTY, 20 pts for BANK NIFTY.</p>
           <p><strong style={{ color: C.text }}>Recommendation.</strong> Transparent weighted score of six components: options OI structure vs Max Pain, PCR, writing/unwinding balance, market breadth, VIX preference (informational), and astro confluence. Confidence = winning-side score / max score. WAIT when data is incomplete or the two sides tie within ±2 points.</p>
           <p><strong style={{ color: C.text }}>Greeks and IV.</strong> Provider values are used verbatim after validation. When the provider does not supply a value it is displayed as "—". Greeks and IV are never fabricated.</p>
-          <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When NSE feed access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
+          <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When live options provider access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
         </div>
       </div>
     </div>
@@ -1189,7 +1189,7 @@ function SourceBar(props: {
         {props.yahooSpot != null && (
           <span style={{ color: C.muted }}>
             {" "}
-            / Yahoo <strong style={{ color: C.text }}>{props.yahooSpot.toFixed(2)}</strong>
+            / Ref <strong style={{ color: C.text }}>{props.yahooSpot.toFixed(2)}</strong>
             {" · Δ "}
             <strong style={{ color: props.divergenceSevere ? "#ef4444" : C.text }}>
               {props.divergencePct.toFixed(2)}%
