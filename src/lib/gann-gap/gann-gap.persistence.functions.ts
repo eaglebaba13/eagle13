@@ -14,9 +14,35 @@ import {
   type OutcomeRecord,
 } from "./historical";
 import { redactValue } from "./diagnostics-redact";
+import { safeDiagnosticsJson } from "./diagnostics-redact";
 
 // A Seroval-serializable JSON value type used for RPC payload fields.
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
+export interface SerializableHistoricalMetrics {
+  readonly total: number;
+  readonly evaluated: number;
+  readonly pending: number;
+  readonly correct: number;
+  readonly incorrect: number;
+  readonly winRatePct: number | null;
+  readonly minSampleSize: number;
+  readonly meetsMinSample: boolean;
+  readonly perLabel: ReadonlyArray<{ readonly label: GannGapOutlookLabel; readonly n: number; readonly correct: number }>;
+  readonly leakageDetected: number;
+}
+
+function toSerializableMetrics(m: HistoricalAccuracyMetrics): SerializableHistoricalMetrics {
+  const perLabel: Array<{ label: GannGapOutlookLabel; n: number; correct: number }> = [];
+  m.perLabel.forEach((v, k) => perLabel.push({ label: k, n: v.n, correct: v.correct }));
+  return {
+    total: m.total, evaluated: m.evaluated, pending: m.pending,
+    correct: m.correct, incorrect: m.incorrect,
+    winRatePct: m.winRatePct, minSampleSize: m.minSampleSize,
+    meetsMinSample: m.meetsMinSample, perLabel,
+    leakageDetected: m.leakageDetected,
+  };
+}
 import type { GannGapOutlook, GannGapOutlookLabel } from "./types";
 import { getGannGapOutlook } from "./gann-gap.functions";
 
