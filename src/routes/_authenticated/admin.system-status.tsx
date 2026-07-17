@@ -5,16 +5,13 @@
 // does NOT trigger deploys; it visualises pre-computed policy.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
 import { PRODUCTION_PIPELINE } from "@/lib/ci-cd-pipeline";
 import { DEFAULT_ENV_REQUIREMENTS } from "@/lib/env-validation";
 import { RECOVERY_CHECKLIST } from "@/lib/backup-recovery";
 import { MIGRATION_CHECKLIST, ROLLBACK_CHECKLIST } from "@/lib/release-management";
 import { REQUIRED_SECURITY_HEADERS } from "@/lib/security-audit";
-import { getRuntimeReadinessReport } from "@/lib/runtime-readiness/collect.functions";
-import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
 import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 
 export const Route = createFileRoute("/_authenticated/admin/system-status")({
   head: () => ({
@@ -45,23 +42,9 @@ function SystemStatusPage() {
   const gitCommit = (import.meta.env.VITE_GIT_COMMIT as string | undefined) ?? "local";
   const deployedAt = (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? new Date().toISOString();
 
-  const fetchReport = useServerFn(getRuntimeReadinessReport);
-  const [report, setReport] = useState<RuntimeReadinessReport | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetchReport();
-        if (!cancelled) setReport(r);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "failed to load runtime readiness");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchReport]);
+  const rq = useRuntimeReadinessQuery();
+  const report = rq.data ?? null;
+  const error = rq.error ? rq.error.message : null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">

@@ -35,6 +35,11 @@ import {
 } from "@/lib/dashboard-preferences";
 import { summarizeDashboardHealth } from "@/lib/dashboard-health";
 import type { FreshnessStatus, ProviderStatus } from "@/lib/data-freshness";
+import {
+  RuntimeReadinessStrip,
+  RuntimeReadinessStripFallback,
+} from "@/components/runtime-readiness/RuntimeReadinessStrip";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 
 const marketQuery = () =>
   queryOptions({
@@ -252,6 +257,7 @@ function Dashboard() {
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <ReferralBanner />
+        <DashboardRuntimeStrip />
         <div
           style={{
             display: "flex",
@@ -819,6 +825,24 @@ function StatusBar({
       >
         ↺ REFRESH {quote.name}
       </button>
+    </div>
+  );
+}
+
+function DashboardRuntimeStrip() {
+  const q = useRuntimeReadinessQuery();
+  if (q.data) {
+    return (
+      <div style={{ marginBottom: 10 }}>
+        <RuntimeReadinessStrip report={q.data} />
+      </div>
+    );
+  }
+  if (q.isLoading) return null;
+  const reason = q.error ? q.error.message : "Runtime readiness unavailable";
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <RuntimeReadinessStripFallback reason={reason} />
     </div>
   );
 }

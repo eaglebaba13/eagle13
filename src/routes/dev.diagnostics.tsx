@@ -11,6 +11,8 @@ import { getErrorLog, recordError } from "@/lib/diagnostics";
 import { downloadBlob } from "@/lib/download";
 import { useTick } from "@/hooks/use-scheduler";
 import { runIntradayValidation } from "@/lib/gann-intraday-validation.functions";
+import { RuntimeReadinessDiagnostics } from "@/components/runtime-readiness/RuntimeReadinessDiagnostics";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 
 function AbsoluteIntradayValidationPanel() {
   const runVal = useServerFn(runIntradayValidation);
@@ -193,6 +195,10 @@ function DiagnosticsDashboard() {
           <StatCard label="Scheduler" value={sched.running ? "RUNNING" : "IDLE"} sub={`${sched.taskCount} tasks · ${sched.tickMs}ms tick`} tone={sched.running ? "green" : "muted"} />
           <StatCard label="Client FPS" value={String(perf.fps)} sub={perf.heapMb != null ? `${perf.heapMb} MB heap` : "heap n/a"} tone={perf.fps >= 50 ? "green" : perf.fps >= 30 ? "gold" : "red"} />
         </Grid>
+
+        <div style={{ marginTop: 20 }}>
+          <RuntimeEvidencePanel />
+        </div>
 
         <Section title="Astro Formula Version" sub={server?.formulaVersion.label ?? ""}>
           {!server ? <Skeleton /> : (
@@ -503,4 +509,16 @@ function fmtIn(ts: number): string {
   const ms = ts - Date.now();
   if (ms <= 0) return "now";
   return `in ${fmtMs(ms)}`;
+}
+
+function RuntimeEvidencePanel() {
+  const q = useRuntimeReadinessQuery();
+  const error = q.error ? q.error.message : null;
+  return (
+    <RuntimeReadinessDiagnostics
+      report={q.data ?? null}
+      error={error}
+      onRefresh={() => q.refetch()}
+    />
+  );
 }
