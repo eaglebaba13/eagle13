@@ -196,6 +196,10 @@ function DiagnosticsDashboard() {
           <StatCard label="Client FPS" value={String(perf.fps)} sub={perf.heapMb != null ? `${perf.heapMb} MB heap` : "heap n/a"} tone={perf.fps >= 50 ? "green" : perf.fps >= 30 ? "gold" : "red"} />
         </Grid>
 
+        <div style={{ marginTop: 20 }}>
+          <RuntimeEvidencePanel />
+        </div>
+
         <Section title="Astro Formula Version" sub={server?.formulaVersion.label ?? ""}>
           {!server ? <Skeleton /> : (
             <Table headers={["Default", "Cache Namespace", "Corrected Cache Entries", "Legacy Cache Entries", "Unversioned"]}>
