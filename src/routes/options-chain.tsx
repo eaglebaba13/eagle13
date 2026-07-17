@@ -15,6 +15,8 @@ import { computeAllMetrics } from "@/lib/option-chain/metrics";
 import { snapshotToCsv, snapshotToJson, buildResearchBundle } from "@/lib/option-chain/exports";
 import { assessDataQuality } from "@/lib/option-chain/data-quality";
 import type { OptionChainSnapshot, OptionUnderlying } from "@/lib/option-chain/types";
+import { evaluateOptionChainCapability, type OptionChainCapability } from "@/lib/option-chain/capability";
+import { safeProviderLabel } from "@/lib/provider-labels";
 
 export const Route = createFileRoute("/options-chain")({
   head: () => ({
