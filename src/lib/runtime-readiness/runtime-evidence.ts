@@ -53,7 +53,8 @@ export type ModuleId =
   | "LICENSE"
   | "BROKER_CONNECTIVITY"
   | "GANN_GAP_OUTLOOK"
-  | "OPTION_STRATEGY_TERMINAL";
+  | "OPTION_STRATEGY_TERMINAL"
+  | "AI_MARKET_ASSISTANT";
 
 export interface RuntimeEvidence {
   readonly module: ModuleId;
