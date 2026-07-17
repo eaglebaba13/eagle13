@@ -110,6 +110,21 @@ function OptionsChainPage() {
   const filtered = useMemo(() => snapshot ? filterStrikes(snapshot, atmMode) : null, [snapshot, atmMode]);
   const metrics = useMemo(() => filtered ? computeAllMetrics(filtered.included) : [], [filtered]);
   const quality = result?.ok ? result.quality : null;
+  const capability: OptionChainCapability | null = useMemo(() => {
+    if (!result) return null;
+    return evaluateOptionChainCapability({
+      underlying: state.underlying,
+      requestedExpiry: state.expiry,
+      ok: result.ok,
+      snapshot: result.ok ? result.snapshot : null,
+      quality: result.ok ? result.quality : null,
+      meta: result.meta,
+    });
+  }, [result, state.underlying, state.expiry]);
+  const providerAlias = safeProviderLabel(null, "OPTIONS");
+  const showBlocking = capability
+    ? capability.status !== "SUPPORTED" && capability.status !== "PARTIAL"
+    : false;
 
   return (
     <div className="eb-page eb-content" style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 16px" }}>
@@ -179,21 +194,29 @@ function OptionsChainPage() {
         )}
       </div>
 
-      {errorMsg && (
-        <div style={errorBox}>Provider: {errorMsg}</div>
+      {capability && showBlocking && (
+        <CapabilityCard capability={capability} onRetry={() => load()} onMock={() => load({ useMock: true, scenario: mockScenario || "SIDEWAYS" })} />
+      )}
+      {capability && !showBlocking && capability.status === "PARTIAL" && (
+        <div style={warnBox}>Partial snapshot · {capability.reason}</div>
+      )}
+      {errorMsg && !capability && (
+        <div style={errorBox}>{providerAlias}: {errorMsg}</div>
       )}
 
       {/* Header cards */}
+      {!showBlocking && (
       <div style={cardsGridStyle}>
         <Card label="Spot" value={snapshot?.spotPrice ?? "—"} />
         <Card label="ATM" value={atm?.atm ?? "—"} />
         <Card label="Expiry" value={snapshot?.expiry ?? "—"} />
         <Card label="Total Strikes" value={snapshot?.strikes.length ?? 0} />
         <Card label="Filtered" value={filtered?.included.length ?? 0} />
-        <Card label="Provider" value={result?.meta.providerId ?? "—"} />
+        <Card label="Provider" value={providerAlias} />
         <Card label="Freshness" value={snapshot?.timestamp ? relativeTime(snapshot.timestamp) : "—"} />
         <Card label="Quality" value={quality?.ok ? "OK" : quality ? `${quality.issues.length} issue(s)` : "—"} />
       </div>
+      )}
 
       {/* Chart */}
       {filtered && filtered.included.length > 0 && (
