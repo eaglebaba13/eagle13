@@ -828,3 +828,21 @@ function StatusBar({
     </div>
   );
 }
+
+function DashboardRuntimeStrip() {
+  const q = useRuntimeReadinessQuery();
+  if (q.data) {
+    return (
+      <div style={{ marginBottom: 10 }}>
+        <RuntimeReadinessStrip report={q.data} />
+      </div>
+    );
+  }
+  if (q.isLoading) return null;
+  const reason = q.error ? q.error.message : "Runtime readiness unavailable";
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <RuntimeReadinessStripFallback reason={reason} />
+    </div>
+  );
+}
