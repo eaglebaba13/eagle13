@@ -36,6 +36,10 @@ import {
   type ModuleSignal,
   type Bias,
 } from "./decision-engine";
+import type { CapabilityExplainer, ModuleCapability } from "./decision/capability";
+import { explainCapability } from "./decision/capability";
+import type { LiveChainAdapterResult } from "./decision/live-chain-adapter";
+import { isAdaptedChainLive } from "./decision/live-chain-adapter";
 
 export type DecisionSnapshot = {
   decision: Decision;
@@ -55,6 +59,18 @@ export type DecisionSnapshot = {
     signalMethod: string;
     decisionMethod: string;
   };
+  capabilities: {
+    options: CapabilityExplainer;
+    pcr: CapabilityExplainer;
+  };
+  liveOptionChain: {
+    used: boolean;
+    provider: string;
+    capability: ModuleCapability;
+    latencyMs: number;
+    fetchedAt: string | null;
+    safeError: string | null;
+  };
   generatedAt: string;
 };
 
@@ -64,15 +80,38 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
       astroCacheKey("decision-snapshot"),
       async () => {
         // Reuse every existing engine — never recompute.
-        const [astroRes, marketRes, chainRes] = await Promise.allSettled([
+        //
+        // Phase 31 wiring: prefer the live Upstox option-chain provider
+        // (same source Combined PCR uses). Fall back to the legacy
+        // Yahoo/NSE `getOptionsChain` only when Upstox is not usable, so
+        // the Decision matrix stops rendering "MISSING" whenever the live
+        // pipeline is healthy. Formulas below are unchanged.
+        const { fetchLiveDecisionChain } = await import(
+          "./decision/live-chain-source.server"
+        );
+        const [astroRes, marketRes, liveChainRes] = await Promise.allSettled([
           getAstro(),
           getMarketData(),
-          getOptionsChain({ data: { symbol: "NIFTY" } }),
+          fetchLiveDecisionChain("NIFTY"),
         ]);
 
         const astro = astroRes.status === "fulfilled" ? astroRes.value : null;
         const market = marketRes.status === "fulfilled" ? marketRes.value : null;
-        const chain = chainRes.status === "fulfilled" ? chainRes.value : null;
+        const liveAdapter: LiveChainAdapterResult | null =
+          liveChainRes.status === "fulfilled" ? liveChainRes.value : null;
+
+        // Only fall back to the legacy provider when the live path is not
+        // usable — this avoids duplicate provider fetches when Upstox is
+        // healthy.
+        let chain = liveAdapter?.chain ?? null;
+        let usedLive = liveAdapter != null && isAdaptedChainLive(liveAdapter);
+        if (!usedLive) {
+          try {
+            chain = await getOptionsChain({ data: { symbol: "NIFTY" } });
+          } catch {
+            chain = chain; // keep any partial live chain if present
+          }
+        }
 
         const marketOpen = nseSession().isOpen;
 
@@ -118,6 +157,26 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           });
           pcrSig = pcrSignal({ pcrOi: pcr.pcrOi });
         }
+
+        // Capability explainers surface the exact failure/success stage.
+        const optionsCapability: ModuleCapability =
+          liveAdapter?.capability
+          ?? (chain && chain.integrity.sourceStatus !== "UNAVAILABLE"
+              ? "SUPPORTED"
+              : "NO_DATA");
+        const optionsExplainer =
+          liveAdapter?.explainer
+          ?? explainCapability(optionsCapability, {
+            module: "options",
+            stage: chain ? "delivery" : "provider-fetch",
+            provider: chain?.snapshot.provider ?? "unknown",
+          });
+        // PCR shares the option-chain pipeline; when Options is live, PCR
+        // is also live (we recompute PCR from the same legs).
+        const pcrExplainer = explainCapability(
+          isFullyLiveOptions(optionsCapability) ? "SUPPORTED" : optionsCapability,
+          { module: "pcr", stage: "derived-from-options", provider: optionsExplainer.provider },
+        );
 
         // ----- Breadth: indices trending together = positive breadth -----
         const advancers: string[] = [];
@@ -210,12 +269,28 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             signalMethod: "EagleBaba Composite Signal",
             decisionMethod: "EagleBaba Decision Intelligence",
           },
+          capabilities: {
+            options: optionsExplainer,
+            pcr: pcrExplainer,
+          },
+          liveOptionChain: {
+            used: usedLive,
+            provider: liveAdapter?.provider ?? "n/a",
+            capability: liveAdapter?.capability ?? "NO_DATA",
+            latencyMs: liveAdapter?.latencyMs ?? 0,
+            fetchedAt: liveAdapter?.fetchedAt ?? null,
+            safeError: liveAdapter?.safeError ?? null,
+          },
           generatedAt: new Date().toISOString(),
         };
       },
       { ttlMs: 30_000 },
     ),
 );
+
+function isFullyLiveOptions(cap: ModuleCapability): boolean {
+  return cap === "SUPPORTED";
+}
 
 function absentSignal(
   key: ModuleSignal["key"],

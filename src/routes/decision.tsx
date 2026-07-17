@@ -74,7 +74,7 @@ function DecisionPage() {
             gap: "1rem",
           }}
         >
-          <DecisionMatrix decision={data.decision} />
+          <DecisionMatrix decision={data.decision} capabilities={data.capabilities} />
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <ConfidenceGauge decision={data.decision} />
             <RiskMeter decision={data.decision} />
@@ -235,7 +235,21 @@ function Card({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function DecisionMatrix({ decision }: { decision: Decision }) {
+function DecisionMatrix({
+  decision,
+  capabilities,
+}: {
+  decision: Decision;
+  capabilities?: DecisionSnapshot["capabilities"];
+}) {
+  // Phase 31 · replace generic "MISSING" with the exact capability state
+  // for options and pcr. Other absent modules keep the legacy label.
+  const capFor = (key: string): { label: string; hint: string } | null => {
+    if (!capabilities) return null;
+    if (key === "options") return { label: capabilities.options.capability, hint: capabilities.options.reason };
+    if (key === "pcr") return { label: capabilities.pcr.capability, hint: capabilities.pcr.reason };
+    return null;
+  };
   return (
     <section
       style={{
@@ -258,11 +272,13 @@ function DecisionMatrix({ decision }: { decision: Decision }) {
           </tr>
         </thead>
         <tbody>
-          {decision.contributions.map((c) => (
+          {decision.contributions.map((c) => {
+            const cap = c.present ? null : capFor(c.key);
+            return (
             <tr key={c.key} style={{ borderTop: `1px solid ${C.border}` }}>
               <td style={td}><strong>{c.label}</strong></td>
               <td style={{ ...td, color: c.present ? biasColor(c.bias) : C.muted, fontWeight: 700 }}>
-                {c.present ? c.bias : "MISSING"}
+                {c.present ? c.bias : cap?.label ?? "MISSING"}
               </td>
               <td style={{ ...td, textAlign: "right" }}>
                 {c.present ? c.signedScore.toFixed(2) : "—"}
@@ -274,9 +290,12 @@ function DecisionMatrix({ decision }: { decision: Decision }) {
                 {c.contribution >= 0 ? "+" : ""}
                 {(c.contribution * 100).toFixed(1)}
               </td>
-              <td style={{ ...td, color: C.muted }}>{c.note}</td>
+              <td style={{ ...td, color: C.muted }}>
+                {c.present ? c.note : cap?.hint ?? c.note}
+              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
       {decision.conflicts.length > 0 && (
