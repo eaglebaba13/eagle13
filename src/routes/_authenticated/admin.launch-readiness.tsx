@@ -17,8 +17,7 @@ import {
 } from "@/lib/launch-readiness";
 import { snapshotObservability } from "@/lib/observability";
 import { trafficLightLabel, type TrafficLight } from "@/lib/provider-health/traffic-light";
-import { getRuntimeReadinessReport } from "@/lib/runtime-readiness/collect.functions";
-import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
 
 export const Route = createFileRoute("/_authenticated/admin/launch-readiness")({
@@ -64,9 +63,9 @@ function deriveVerdict(core: LaunchReadinessReport, summary: GtiSummary | null):
 function LaunchReadinessPage() {
   const { role } = useAuth();
   const fetchSummary = useServerFn(getGtiSummary);
-  const fetchRuntime = useServerFn(getRuntimeReadinessReport);
   const [summary, setSummary] = useState<GtiSummary | null>(null);
-  const [runtime, setRuntime] = useState<RuntimeReadinessReport | null>(null);
+  const runtimeQuery = useRuntimeReadinessQuery();
+  const runtime = runtimeQuery.data ?? null;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -76,12 +75,6 @@ function LaunchReadinessPage() {
     try {
       const r = await fetchSummary();
       setSummary(r);
-      try {
-        const rr = await fetchRuntime();
-        setRuntime(rr);
-      } catch {
-        setRuntime(null);
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "failed to load");
     } finally {
