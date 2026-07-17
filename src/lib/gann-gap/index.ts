@@ -12,3 +12,4 @@ export * from "./aggregate";
 export * from "./historical";
 export * from "./outcome-rules";
 export * from "./diagnostics-redact";
+export * from "./research-report";
