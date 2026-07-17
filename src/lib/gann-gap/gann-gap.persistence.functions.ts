@@ -14,6 +14,9 @@ import {
   type OutcomeRecord,
 } from "./historical";
 import { redactValue } from "./diagnostics-redact";
+
+// A Seroval-serializable JSON value type used for RPC payload fields.
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 import type { GannGapOutlook, GannGapOutlookLabel } from "./types";
 import { getGannGapOutlook } from "./gann-gap.functions";
 
@@ -39,9 +42,9 @@ export interface PersistedPredictionRow {
   readonly frozenAt: string | null;
   readonly source: string | null;
   readonly providerAlias: string | null;
-  readonly confirmations: unknown[] | Record<string, unknown> | null;
-  readonly closingZone: Record<string, unknown> | null;
-  readonly capability: Record<string, unknown> | null;
+  readonly confirmations: JsonValue;
+  readonly closingZone: JsonValue;
+  readonly capability: JsonValue;
   readonly evaluatedAt: string | null;
   readonly createdAt: string;
 }
@@ -81,9 +84,9 @@ function mapPredictionRow(r: Record<string, unknown>): PersistedPredictionRow {
     frozenAt: r.frozen_at == null ? null : String(r.frozen_at),
     source: r.source == null ? null : String(r.source),
     providerAlias: r.provider_alias == null ? null : String(r.provider_alias),
-    confirmations: (r.confirmations as any) ?? [],
-    closingZone: (r.closing_zone as any) ?? null,
-    capability: (r.capability as any) ?? null,
+    confirmations: ((r.confirmations as JsonValue) ?? []) as JsonValue,
+    closingZone: ((r.closing_zone as JsonValue) ?? null) as JsonValue,
+    capability: ((r.capability as JsonValue) ?? null) as JsonValue,
     evaluatedAt: r.evaluated_at == null ? null : String(r.evaluated_at),
     createdAt: String(r.created_at ?? new Date().toISOString()),
   };
