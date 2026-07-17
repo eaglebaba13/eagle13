@@ -248,6 +248,14 @@ function DecisionMatrix({
     if (!capabilities) return null;
     if (key === "options") return { label: capabilities.options.capability, hint: capabilities.options.reason };
     if (key === "pcr") return { label: capabilities.pcr.capability, hint: capabilities.pcr.reason };
+    const cap = capabilities as unknown as {
+      historical?: { capability: string; reason: string };
+      replay?: { capability: string; reason: string };
+    };
+    if (key === "historical" && cap.historical)
+      return { label: cap.historical.capability, hint: cap.historical.reason };
+    if (key === "replay" && cap.replay)
+      return { label: cap.replay.capability, hint: cap.replay.reason };
     return null;
   };
   return (
