@@ -307,6 +307,7 @@ function Dashboard() {
               </div>
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={pivotWidget} />
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannCycleWidget} />
+              <GtiSummaryCard />
             </div>
           </div>
         </DashboardDataProvider>
