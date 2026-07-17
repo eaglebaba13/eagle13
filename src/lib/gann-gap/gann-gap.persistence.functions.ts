@@ -312,7 +312,7 @@ export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
 // ─────────────────────────────────────────────────────────────
 
 export interface GannGapHistoricalValidation {
-  readonly metrics: HistoricalAccuracyMetrics;
+  readonly metrics: SerializableHistoricalMetrics;
   readonly minSampleForRate: number;
   readonly minSampleForConfidence: number;
   readonly showRate: boolean;
@@ -368,7 +368,7 @@ export const getGannGapHistoricalValidation = createServerFn({ method: "GET" })
     });
 
     return {
-      metrics,
+      metrics: toSerializableMetrics(metrics),
       minSampleForRate: 30,
       minSampleForConfidence: 100,
       showRate: metrics.evaluated >= 30,
@@ -453,8 +453,8 @@ export const getGannGapDiagnostics = createServerFn({ method: "GET" })
       : null;
     const predictionCount = predCountRes.status === "fulfilled" ? Number((predCountRes.value as any)?.count ?? 0) : 0;
     const outcomeCount = outCountRes.status === "fulfilled" ? Number((outCountRes.value as any)?.count ?? 0) : 0;
-    const historical = histRes.status === "fulfilled" ? histRes.value : {
-      metrics: evaluateHistoricalAccuracy([], []),
+    const historical: GannGapHistoricalValidation = histRes.status === "fulfilled" ? histRes.value : {
+      metrics: toSerializableMetrics(evaluateHistoricalAccuracy([], [])),
       minSampleForRate: 30, minSampleForConfidence: 100,
       showRate: false, showConfidence: false,
       formulaVersion: GANN_GAP_FORMULA_VERSION,
@@ -474,5 +474,5 @@ export const getGannGapDiagnostics = createServerFn({ method: "GET" })
       outcomeRuleVersion: OUTCOME_RULE_VERSION,
       generatedAt: new Date().toISOString(),
     };
-    return { ...bundle, safeExport: redactDiagnostics(bundle) };
+    return { ...bundle, safeExport: safeDiagnosticsJson(bundle) };
   });
