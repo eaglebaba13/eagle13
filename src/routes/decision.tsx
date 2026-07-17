@@ -74,7 +74,7 @@ function DecisionPage() {
             gap: "1rem",
           }}
         >
-          <DecisionMatrix decision={data.decision} />
+          <DecisionMatrix decision={data.decision} capabilities={data.capabilities} />
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <ConfidenceGauge decision={data.decision} />
             <RiskMeter decision={data.decision} />
