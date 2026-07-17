@@ -476,6 +476,8 @@ export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
     refreshPolicy: { kind: "interval", intervalMs: 30_000 },
     supportsFreshness: true,
     supportsCollapse: true,
+    // Phase 34 · Hidden until a verified provider is wired.
+    featureFlag: "dashboard.global-markets",
   },
   {
     id: "legacy-cpr",
