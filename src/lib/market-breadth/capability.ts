@@ -66,7 +66,7 @@ function worstBreadthQuality(
   ...snaps: readonly (MarketBreadthSnapshot | null)[]
 ): "OK" | "PARTIAL" | "STALE" | "FAILED" | "MISSING" {
   let worst: "OK" | "PARTIAL" | "STALE" | "FAILED" | "MISSING" = "MISSING";
-  const order: Record<string, number> = { OK: 0, PARTIAL: 1, STALE: 2, FAILED: 3, MISSING: 4 };
+  const order: Record<string, number> = { OK: 0, PARTIAL: 1, MISSING: 2, STALE: 3, FAILED: 4 };
   for (const s of snaps) {
     const q = s ? s.dataQuality : "MISSING";
     if (order[q] > order[worst]) worst = q as typeof worst;
