@@ -34,6 +34,11 @@ export interface BuildRuntimeReportInput {
     readonly demo?: boolean;
     readonly reason: string;
   } | null;
+  readonly optionStrategyTerminal?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -144,6 +149,20 @@ export function buildRuntimeReadinessReport(
         observedAt: now,
         diagnosticsPath: "/gann-gap-outlook",
         provenance: "GANN_GAP",
+      }),
+    );
+  }
+
+  if (input.optionStrategyTerminal) {
+    evidence.push(
+      evidenceFromSimple({
+        module: "OPTION_STRATEGY_TERMINAL",
+        available: input.optionStrategyTerminal.available,
+        demo: input.optionStrategyTerminal.demo,
+        reason: input.optionStrategyTerminal.reason,
+        observedAt: now,
+        diagnosticsPath: "/live-option-terminal",
+        provenance: "OPTION_STRATEGY",
       }),
     );
   }

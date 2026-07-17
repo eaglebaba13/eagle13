@@ -39,6 +39,7 @@ import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
+import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -205,6 +206,12 @@ const AuthenticatedPaymentStatusRoute =
     path: '/payment-status',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLiveOptionTerminalRoute =
+  AuthenticatedLiveOptionTerminalRouteImport.update({
+    id: '/live-option-terminal',
+    path: '/live-option-terminal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
   id: '/license',
   path: '/license',
@@ -316,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -408,6 +417,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
+  '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/billing'
     | '/license'
+    | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
     | '/settings'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/billing'
     | '/license'
+    | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
     | '/settings'
@@ -546,6 +558,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/billing'
     | '/_authenticated/license'
+    | '/_authenticated/live-option-terminal'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
@@ -810,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/live-option-terminal': {
+      id: '/_authenticated/live-option-terminal'
+      path: '/live-option-terminal'
+      fullPath: '/live-option-terminal'
+      preLoaderRoute: typeof AuthenticatedLiveOptionTerminalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/license': {
       id: '/_authenticated/license'
       path: '/license'
@@ -914,6 +934,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
+  AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -930,6 +951,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
+  AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
