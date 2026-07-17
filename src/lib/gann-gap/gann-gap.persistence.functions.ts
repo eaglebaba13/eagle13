@@ -425,7 +425,7 @@ export interface GannGapDiagnostics {
   readonly configVersion: string;
   readonly outcomeRuleVersion: string;
   readonly generatedAt: string;
-  readonly safeExport: unknown;
+  readonly safeExport: string;
 }
 
 export const getGannGapDiagnostics = createServerFn({ method: "GET" })
