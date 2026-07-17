@@ -14,6 +14,7 @@ import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
+import { GtiSummaryCard } from "@/components/dashboard/GtiSummaryCard";
 import {
   DashboardDataProvider,
   type DashboardTabKey,
@@ -306,6 +307,7 @@ function Dashboard() {
               </div>
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={pivotWidget} />
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannCycleWidget} />
+              <GtiSummaryCard />
             </div>
           </div>
         </DashboardDataProvider>
