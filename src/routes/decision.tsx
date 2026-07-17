@@ -67,6 +67,7 @@ function DecisionPage() {
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         <Header snap={data} />
         <SummaryCards snap={data} />
+        <CapabilitySummary snap={data} />
         <div
           style={{
             display: "grid",
