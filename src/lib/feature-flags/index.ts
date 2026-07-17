@@ -30,6 +30,7 @@ export const FEATURE_FLAG_REGISTRY: readonly FeatureFlagDefinition[] = [
   { id: "exports.csv",           capability: "exports.csv",           enabled: true,  minPlan: "pro",          description: "CSV exports" },
   { id: "exports.pdf",           capability: "exports.pdf",           enabled: true,  minPlan: "professional", description: "PDF research bundles" },
   { id: "admin.console",         capability: "admin.console",         enabled: true,  minPlan: "enterprise",   description: "Admin console access" },
+  { id: "gann.gap.outlook",      capability: "signal.accuracy",       enabled: false, minPlan: "pro",          description: "Gann Square next-day gap outlook (research-only)" },
 ];
 
 export const FEATURE_FLAG_VERSION = "feature-flags@1.0.0";
