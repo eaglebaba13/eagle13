@@ -13,7 +13,7 @@ import {
   type HistoricalAccuracyMetrics,
   type OutcomeRecord,
 } from "./historical";
-import { redactDiagnostics } from "./diagnostics-redact";
+import { redactValue } from "./diagnostics-redact";
 import type { GannGapOutlook, GannGapOutlookLabel } from "./types";
 import { getGannGapOutlook } from "./gann-gap.functions";
 
@@ -39,9 +39,9 @@ export interface PersistedPredictionRow {
   readonly frozenAt: string | null;
   readonly source: string | null;
   readonly providerAlias: string | null;
-  readonly confirmations: unknown;
-  readonly closingZone: unknown;
-  readonly capability: unknown;
+  readonly confirmations: unknown[] | Record<string, unknown> | null;
+  readonly closingZone: Record<string, unknown> | null;
+  readonly capability: Record<string, unknown> | null;
   readonly evaluatedAt: string | null;
   readonly createdAt: string;
 }
@@ -81,9 +81,9 @@ function mapPredictionRow(r: Record<string, unknown>): PersistedPredictionRow {
     frozenAt: r.frozen_at == null ? null : String(r.frozen_at),
     source: r.source == null ? null : String(r.source),
     providerAlias: r.provider_alias == null ? null : String(r.provider_alias),
-    confirmations: r.confirmations ?? [],
-    closingZone: r.closing_zone ?? null,
-    capability: r.capability ?? null,
+    confirmations: (r.confirmations as any) ?? [],
+    closingZone: (r.closing_zone as any) ?? null,
+    capability: (r.capability as any) ?? null,
     evaluatedAt: r.evaluated_at == null ? null : String(r.evaluated_at),
     createdAt: String(r.created_at ?? new Date().toISOString()),
   };
@@ -157,7 +157,7 @@ export const freezeGannGapPrediction = createServerFn({ method: "POST" })
     if (outlook.reference == null) return { ok: false, row: null, reason: "reference-unavailable" };
 
     const row = buildRowFromOutlook({ ...outlook, lifecycle: "FROZEN" });
-    const { data, error } = await context.supabase.rpc("gann_gap_upsert_prediction", { _row: row });
+    const { data, error } = await context.supabase.rpc("gann_gap_upsert_prediction", { _row: row as any });
     if (error) throw new Error(error.message);
     return { ok: true, row: mapPredictionRow(data as Record<string, unknown>) };
   });
@@ -270,7 +270,7 @@ export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
         capability: { reason: cls.reason },
         outcome_rule_version: OUTCOME_RULE_VERSION,
       };
-      const { error } = await context.supabase.rpc("gann_gap_upsert_outcome", { _row: outcomeRow });
+      const { error } = await context.supabase.rpc("gann_gap_upsert_outcome", { _row: outcomeRow as any });
       if (error) { skipped++; details.push(`${pid}: ${error.message}`); continue; }
       evaluated++;
       details.push(`${pid}: ${cls.outcome}`);
