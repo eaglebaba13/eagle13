@@ -64,12 +64,12 @@ export const getGtiSummary = createServerFn({ method: "POST" })
       warnings.push(`quotes:${e instanceof Error ? e.message.slice(0, 80) : "error"}`);
     }
     const nifty = quotes?.nifty
-      ? { price: quotes.nifty.price, change: quotes.nifty.change, changePercent: quotes.nifty.changePercent }
+      ? { price: quotes.nifty.livePrice, change: quotes.nifty.change, changePercent: quotes.nifty.changePct }
       : null;
     const banknifty = quotes?.banknifty
-      ? { price: quotes.banknifty.price, change: quotes.banknifty.change, changePercent: quotes.banknifty.changePercent }
+      ? { price: quotes.banknifty.livePrice, change: quotes.banknifty.change, changePercent: quotes.banknifty.changePct }
       : null;
-    const vixValue = quotes?.vix?.price ?? null;
+    const vixValue = quotes?.vix?.livePrice ?? null;
 
     // ── 2. Combined PCR (option-chain foundation) ────────────
     let pcrReading: ReturnType<typeof computeCombinedPcr> | null = null;
