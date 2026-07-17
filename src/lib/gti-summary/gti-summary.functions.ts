@@ -16,6 +16,7 @@ import { adaptPcrConfirmation } from "../market-breadth/pcr-confirmation";
 import { classifyGti } from "../market-breadth/gti-classifier";
 import { evaluateTrafficLight, type TrafficLight } from "../provider-health/traffic-light";
 import type { OptionUnderlying, OptionChainSnapshot } from "../option-chain/types";
+import type { OptionChainCapability } from "../option-chain/capability";
 
 export interface GtiSummaryResponse {
   readonly nifty: { readonly price: number; readonly change: number; readonly changePercent: number } | null;
@@ -43,6 +44,11 @@ export interface GtiSummaryResponse {
   readonly generatedAt: string;
   readonly warnings: readonly string[];
   readonly disclaimer: string;
+  readonly source: "LIVE" | "MIXED" | "RESEARCH_DEMO" | "UNKNOWN";
+  readonly capability: {
+    readonly nifty: string;
+    readonly banknifty: string;
+  };
 }
 
 function newRunId(): string {
@@ -73,32 +79,35 @@ export const getGtiSummary = createServerFn({ method: "POST" })
 
     // ── 2. Combined PCR (option-chain foundation) ────────────
     let pcrReading: ReturnType<typeof computeCombinedPcr> | null = null;
+    const optionCapabilities: Record<OptionUnderlying, string> = {
+      NIFTY: "UNKNOWN",
+      BANKNIFTY: "UNKNOWN",
+    };
     try {
-      const { UpstoxOptionChainProvider } = await import("../option-chain/upstox-provider.server");
-      const { MockOptionChainProvider } = await import("../option-chain/mock-provider");
+      // Canonical option-chain path (Phase 2F): reuse the shared snapshot
+      // helper so GTI Summary never issues an independent provider fetch.
+      const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
-      const provider = new UpstoxOptionChainProvider();
-      const fallback = new MockOptionChainProvider({ scenario: "SIDEWAYS" });
-      const history = getSnapshotHistory();
       const snapshots: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {};
+      let anyUsable = false;
       for (const u of ["NIFTY", "BANKNIFTY"] as const) {
-        const res = await provider.fetchSnapshot({ underlying: u }).catch(() => null);
-        if (res?.ok && res.snapshot) {
-          snapshots[u] = res.snapshot;
-          try { history.push(res.snapshot); } catch { /* ignore */ }
-        } else {
-          const mock = await fallback.fetchSnapshot({ underlying: u });
-          snapshots[u] = mock.snapshot ?? null;
-          warnings.push(`pcr:${u}:fallback`);
-        }
+        const res = await fetchCanonicalOptionChain({ underlying: u });
+        const cap: OptionChainCapability = res.capability;
+        optionCapabilities[u] = cap.status;
+        const usable = cap.status === "SUPPORTED" || cap.status === "PARTIAL";
+        snapshots[u] = usable && res.snapshot ? res.snapshot : null;
+        if (usable && res.snapshot) anyUsable = true;
+        else warnings.push(`pcr:${u}:${cap.status}`);
       }
-      pcrReading = computeCombinedPcr({
-        snapshots,
-        weights: DEFAULT_COMBINED_PCR_WEIGHTS,
-        atmMode: "ATM_10",
-        history,
-        runId: newRunId(),
-      });
+      if (anyUsable) {
+        pcrReading = computeCombinedPcr({
+          snapshots,
+          weights: DEFAULT_COMBINED_PCR_WEIGHTS,
+          atmMode: "ATM_10",
+          history: getSnapshotHistory(),
+          runId: newRunId(),
+        });
+      }
     } catch (e) {
       warnings.push(`pcr:${e instanceof Error ? e.message.slice(0, 80) : "error"}`);
     }
@@ -153,6 +162,12 @@ export const getGtiSummary = createServerFn({ method: "POST" })
       "GREEN",
     );
 
+    // Breadth constituents flow from the deterministic research mock;
+    // GTI must never claim FULL LIVE coverage. VIX + Quotes may be live,
+    // so the aggregate source is MIXED when live inputs are present.
+    const hasLiveInputs = nifty != null || vixValue != null || pcrReading != null;
+    const source: "MIXED" | "RESEARCH_DEMO" = hasLiveInputs ? "MIXED" : "RESEARCH_DEMO";
+
     return {
       nifty,
       banknifty,
@@ -174,6 +189,11 @@ export const getGtiSummary = createServerFn({ method: "POST" })
       generatedAt,
       warnings,
       disclaimer: "RESEARCH ONLY — NOT INVESTMENT ADVICE",
+      source,
+      capability: {
+        nifty: optionCapabilities.NIFTY,
+        banknifty: optionCapabilities.BANKNIFTY,
+      },
     };
   });
 
