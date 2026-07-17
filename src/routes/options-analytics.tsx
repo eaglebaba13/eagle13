@@ -1061,7 +1061,7 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
           <p><strong style={{ color: C.text }}>Astro confluence.</strong> Distance from the options-derived level to the nearest EagleBaba Astro Level. Bands: ≤ tol very strong, ≤ 2·tol strong, ≤ 4·tol moderate, else weak. Tolerance is 5 pts for NIFTY, 20 pts for BANK NIFTY.</p>
           <p><strong style={{ color: C.text }}>Recommendation.</strong> Transparent weighted score of six components: options OI structure vs Max Pain, PCR, writing/unwinding balance, market breadth, VIX preference (informational), and astro confluence. Confidence = winning-side score / max score. WAIT when data is incomplete or the two sides tie within ±2 points.</p>
           <p><strong style={{ color: C.text }}>Greeks and IV.</strong> Provider values are used verbatim after validation. When the provider does not supply a value it is displayed as "—". Greeks and IV are never fabricated.</p>
-          <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When NSE feed access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
+          <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When live options provider access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
         </div>
       </div>
     </div>
