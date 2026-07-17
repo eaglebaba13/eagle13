@@ -80,6 +80,10 @@ function GannGapOutlookPage() {
               <h2 className="text-sm font-semibold">Current Outlook</h2>
               <p className="mt-2 text-lg font-semibold">{LABEL_TEXT[data.label]}</p>
               <p className="mt-1 text-xs text-muted-foreground">Lifecycle: {data.lifecycle} · For session {data.nextTradingDate || "—"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Source:{" "}
+                <span className="font-medium text-foreground">{data.source}</span>
+              </p>
               {data.reference != null && (
                 <p className="mt-1 text-xs text-muted-foreground">Reference NIFTY: {data.reference.toFixed(2)}</p>
               )}

@@ -78,13 +78,38 @@ export function GannGapOutlookWidget() {
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs uppercase text-muted-foreground">Gann Gap Outlook</p>
-        <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-sky-300">
-          Research Only
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide"
+            title={`Data source: ${data.source}`}
+          >
+            {data.source}
+          </span>
+          <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-sky-300">
+            Research Only
+          </span>
+        </div>
       </div>
       <div className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}>
         {text}
       </div>
+      {data.confirmations && data.confirmations.length > 0 && (
+        <div className="mt-3 text-[11px] text-muted-foreground">
+          Confirmations:{" "}
+          <span className="text-foreground font-medium">
+            {data.confirmations.filter((c) => c.alignment === "SUPPORTS_UP" || c.alignment === "SUPPORTS_DOWN").length}
+          </span>
+          {" aligned · "}
+          <span className="text-foreground font-medium">
+            {data.confirmations.filter((c) => c.alignment === "CONFLICT").length}
+          </span>
+          {" conflict · "}
+          <span className="text-foreground font-medium">
+            {data.confirmations.filter((c) => c.alignment === "UNAVAILABLE").length}
+          </span>
+          {" unavailable"}
+        </div>
+      )}
       <dl className="mt-3 grid gap-1 text-xs text-muted-foreground">
         <div>
           <dt className="inline">Lifecycle: </dt>
