@@ -79,6 +79,9 @@ function AdminBetaReadinessPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <h1 className="text-2xl font-semibold text-foreground">Beta Readiness</h1>
+          <p className="text-sm text-muted-foreground">
+            Phase 33 · verification & go-live certification. Read-only; never deploys.
+          </p>
         </header>
         {runtime && (
           <RuntimeReadinessSummary
@@ -87,10 +90,6 @@ function AdminBetaReadinessPage() {
             compact
           />
         )}
-          <p className="text-sm text-muted-foreground">
-            Phase 33 · verification & go-live certification. Read-only; never deploys.
-          </p>
-        </header>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className={`rounded-xl border p-4 ${VERDICT_STYLES[report.verdict] ?? "border-border bg-muted/20"}`}>
