@@ -108,6 +108,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "market-breadth", label: "Market Breadth", icon: Activity, to: "/market-breadth", section: "MARKET", order: 215, desktopVisible: true, mobileVisible: true },
   { id: "options-analytics", label: "Options Analytics", icon: Layers, to: "/options-analytics", section: "MARKET", order: 220, desktopVisible: true, mobileVisible: true },
   { id: "options-chain", label: "Options Chain", icon: Layers, to: "/options-chain", section: "MARKET", order: 225, desktopVisible: true, mobileVisible: true },
+  { id: "live-option-terminal", label: "Option Strategy Terminal", icon: Target, to: "/live-option-terminal", section: "MARKET", order: 227, desktopVisible: true, mobileVisible: true },
   { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
 
   // ACCOUNT
