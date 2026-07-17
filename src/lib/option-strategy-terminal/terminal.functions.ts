@@ -138,9 +138,9 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
         },
         pcr: {
           available: !!pcrC?.present,
-          state: decision?.inputs.pcrCombined.direction ?? "UNAVAILABLE",
-          direction: decision?.inputs.pcrCombined.direction ?? "UNAVAILABLE",
-          score: decision?.inputs.pcrCombined.combinedScore ?? null,
+          state: decision?.capabilities.pcrCombined.direction ?? "UNAVAILABLE",
+          direction: decision?.capabilities.pcrCombined.direction ?? "UNAVAILABLE",
+          score: decision?.capabilities.pcrCombined.combinedScore ?? null,
         },
         gti: {
           available: !!gti,
