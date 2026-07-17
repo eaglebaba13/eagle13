@@ -52,7 +52,7 @@ export function evaluateTrafficLight(
 ): TrafficLight {
   let level: TrafficLight = "GREEN";
 
-  const status = input.providerStatus ?? "UNKNOWN";
+  const status = input.providerStatus;
   if (status === "OFFLINE" || status === "FAILED") return "RED";
   if (status === "RATE_LIMITED" || status === "STALE") level = worse(level, "YELLOW");
   if (status === "UNKNOWN" || status === "DELAYED") level = worse(level, "YELLOW");
