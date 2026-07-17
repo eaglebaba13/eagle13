@@ -1,6 +1,7 @@
 // Phase 27 · Stage 3 — Exports for GTI research readings.
 
 import type { GtiResearchReading, MarketBreadthSnapshot } from "./types";
+import type { MarketBreadthCapability } from "./capability";
 import { MARKET_BREADTH_DISCLAIMER } from "./types";
 
 function csvRow(v: unknown): string {
@@ -48,7 +49,14 @@ export function readingToJson(r: GtiResearchReading): string {
   return JSON.stringify(r, null, 2);
 }
 
-export function buildResearchBundle(r: GtiResearchReading): Record<string, unknown> {
+export function buildResearchBundle(
+  r: GtiResearchReading,
+  extras?: {
+    readonly capability?: MarketBreadthCapability | null;
+    readonly providerAlias?: string | null;
+    readonly breadthSource?: string | null;
+  },
+): Record<string, unknown> {
   return {
     formulaVersion: r.formulaVersion,
     disclaimer: MARKET_BREADTH_DISCLAIMER,
@@ -62,5 +70,8 @@ export function buildResearchBundle(r: GtiResearchReading): Record<string, unkno
     pcr: r.pcr,
     breadth: r.breadth,
     warnings: r.warnings,
+    capability: extras?.capability ?? null,
+    providerAlias: extras?.providerAlias ?? null,
+    breadthSource: extras?.breadthSource ?? null,
   };
 }
