@@ -42,7 +42,7 @@ function AdminGannGapPage() {
 
   const history = useQuery({
     queryKey: ["admin", "gann-gap", "history"],
-    queryFn: () => fetchHistory({ data: { limit: 50 } as any } as any).catch(() => []),
+    queryFn: () => fetchHistory({ data: { limit: 50 } }).catch(() => [] as any[]),
     retry: false,
     staleTime: 30_000,
   });
@@ -62,7 +62,7 @@ function AdminGannGapPage() {
 
   const onExport = () => {
     if (!d) return;
-    downloadBlob(new Blob([d.safeExport], { type: "application/json" }), `gann-gap-diagnostics-${new Date().toISOString().slice(0,10)}.json`);
+    downloadBlob(d.safeExport, `gann-gap-diagnostics-${new Date().toISOString().slice(0,10)}.json`, "application/json");
   };
 
   return (
@@ -102,8 +102,8 @@ function AdminGannGapPage() {
                   <dl className="grid gap-1 text-xs">
                     <Row k="Trading date" v={d.latestPrediction.tradingDate} />
                     <Row k="For session" v={d.latestPrediction.nextTradingDate ?? "—"} />
-                    <Row k="Label" v={d.latestPrediction.label} />
-                    <Row k="Reference" v={d.latestPrediction.reference?.toFixed(2) ?? "—"} />
+                    <Row k="Label" v={d.latestPrediction.baseOutlook} />
+                    <Row k="Reference" v={d.latestPrediction.referencePrice?.toFixed(2) ?? "—"} />
                     <Row k="Confidence" v={d.latestPrediction.confidenceBand ?? "—"} />
                     <Row k="Frozen at" v={d.latestPrediction.frozenAt ?? "—"} />
                     <Row k="Source" v={d.latestPrediction.source ?? "—"} />
@@ -114,11 +114,11 @@ function AdminGannGapPage() {
                 {d.latestOutcome ? (
                   <dl className="grid gap-1 text-xs">
                     <Row k="For prediction" v={d.latestOutcome.predictionId} />
-                    <Row k="Outcome" v={d.latestOutcome.outcome} />
+                    <Row k="Outcome" v={d.latestOutcome.actualOutcome} />
                     <Row k="Gap (pts)" v={d.latestOutcome.gapPoints?.toFixed(2) ?? "—"} />
                     <Row k="Gap %" v={d.latestOutcome.gapPercent != null ? (d.latestOutcome.gapPercent * 100).toFixed(3) + "%" : "—"} />
                     <Row k="Evaluated at" v={d.latestOutcome.evaluatedAt ?? "—"} />
-                    <Row k="Rule" v={d.latestOutcome.ruleVersion} />
+                    <Row k="Rule" v={d.latestOutcome.outcomeRuleVersion} />
                   </dl>
                 ) : <p className="text-xs text-muted-foreground">No outcome evaluated yet.</p>}
               </Card>
@@ -182,8 +182,8 @@ function AdminGannGapPage() {
                         <tr key={h.predictionId} className="border-t border-border/40">
                           <td className="px-2 py-1">{h.tradingDate}</td>
                           <td className="px-2 py-1">{h.nextTradingDate ?? "—"}</td>
-                          <td className="px-2 py-1 font-medium text-foreground">{h.label}</td>
-                          <td className="px-2 py-1">{h.reference?.toFixed?.(2) ?? "—"}</td>
+                          <td className="px-2 py-1 font-medium text-foreground">{h.baseOutlook}</td>
+                          <td className="px-2 py-1">{h.referencePrice?.toFixed?.(2) ?? "—"}</td>
                           <td className="px-2 py-1">{h.confidenceBand ?? "—"}</td>
                           <td className="px-2 py-1">{h.frozenAt ?? "—"}</td>
                         </tr>
