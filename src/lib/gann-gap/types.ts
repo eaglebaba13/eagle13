@@ -50,6 +50,17 @@ export interface GannGapConfirmation {
   readonly label: string;
   readonly alignment: "SUPPORTS_UP" | "SUPPORTS_DOWN" | "NEUTRAL" | "CONFLICT" | "UNAVAILABLE";
   readonly detail: string;
+  // Phase 2I-C — canonical confirmation adapter metadata (optional so old
+  // records remain compatible).
+  readonly module?: string;
+  readonly available?: boolean;
+  readonly status?: string;
+  readonly direction?: "BULLISH" | "BEARISH" | "NEUTRAL" | "UNKNOWN";
+  readonly source?: string;
+  readonly capability?: string;
+  readonly observedAt?: string;
+  readonly freshnessSec?: number | null;
+  readonly reason?: string;
 }
 
 export interface GannGapOutlook {

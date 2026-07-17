@@ -7,3 +7,8 @@ export * from "./classifier";
 export * from "./confidence";
 export * from "./capability";
 export * from "./session-clock";
+export * from "./confirmations";
+export * from "./aggregate";
+export * from "./historical";
+export * from "./outcome-rules";
+export * from "./diagnostics-redact";

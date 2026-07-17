@@ -46,14 +46,14 @@ export function ProfileMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full bg-muted/60 hover:bg-muted pl-1 pr-3 py-1"
+        className="flex shrink-0 items-center gap-2 rounded-full bg-muted/60 hover:bg-muted pl-1 pr-3 py-1 max-w-[180px]"
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
           {initials(label)}
         </span>
-        <span className="text-xs font-medium max-w-[100px] truncate">{label}</span>
+        <span className="hidden sm:inline text-xs font-medium max-w-[100px] truncate">{label}</span>
       </button>
 
       {open && (

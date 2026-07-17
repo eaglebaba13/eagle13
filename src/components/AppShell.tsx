@@ -15,6 +15,7 @@ import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { NAV_REGISTRY } from "@/lib/navigation";
 
 // Routes that render their own sidebar/shell — global shell is suppressed on
@@ -124,6 +125,7 @@ function AppShellHeader() {
       </nav>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        <ThemeToggle />
         <ProfileMenu />
       </div>
     </header>

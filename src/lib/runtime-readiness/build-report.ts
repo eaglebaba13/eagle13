@@ -29,6 +29,11 @@ export interface BuildRuntimeReportInput {
   readonly combinedPcr: CombinedPcrReading | null;
   readonly breadthCapability: MarketBreadthCapability | null;
   readonly gtiComputed: boolean;
+  readonly gannGap?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -128,6 +133,20 @@ export function buildRuntimeReadinessReport(
       });
   evidence.push(breadthEv);
   evidence.push(evidenceFromGti(breadthEv, input.gtiComputed, now));
+
+  if (input.gannGap) {
+    evidence.push(
+      evidenceFromSimple({
+        module: "GANN_GAP_OUTLOOK",
+        available: input.gannGap.available,
+        demo: input.gannGap.demo,
+        reason: input.gannGap.reason,
+        observedAt: now,
+        diagnosticsPath: "/gann-gap-outlook",
+        provenance: "GANN_GAP",
+      }),
+    );
+  }
 
   return aggregateRuntimeReadiness(evidence, { generatedAt: now });
 }

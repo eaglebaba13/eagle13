@@ -6,6 +6,7 @@ import type { GannGapConfidenceBand, GannGapConfirmation } from "./types";
 export function deriveConfidence(
   confirmations: readonly GannGapConfirmation[],
   bias: "SUPPORTS_UP" | "SUPPORTS_DOWN",
+  opts: { staleInputs?: boolean } = {},
 ): GannGapConfidenceBand {
   let aligned = 0;
   let conflict = 0;
@@ -18,7 +19,8 @@ export function deriveConfidence(
   }
   if (conflict > aligned) return "EXPERIMENTAL_LOW";
   if (unavailable >= confirmations.length - 1) return "EXPERIMENTAL_LOW";
-  if (aligned >= 3 && conflict === 0) return "EXPERIMENTAL_HIGH";
-  if (aligned >= 2 && conflict <= 1) return "EXPERIMENTAL_MEDIUM";
+  const staleDowngrade = opts.staleInputs === true;
+  if (aligned >= 3 && conflict === 0) return staleDowngrade ? "EXPERIMENTAL_MEDIUM" : "EXPERIMENTAL_HIGH";
+  if (aligned >= 2 && conflict <= 1) return staleDowngrade ? "EXPERIMENTAL_LOW" : "EXPERIMENTAL_MEDIUM";
   return "EXPERIMENTAL_LOW";
 }
