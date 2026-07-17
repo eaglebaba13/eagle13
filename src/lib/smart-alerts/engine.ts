@@ -40,7 +40,8 @@ export function runAlertEngine(input: RunAlertsInput): RuleEvaluationOutput {
   const candidates = generateAlertEvents(ctx, input.checkpoint.previous, cfg);
 
   const emitted: AlertEvent[] = [];
-  const suppressed: RuleEvaluationOutput["suppressed"] = [];
+  type SuppressedItem = RuleEvaluationOutput["suppressed"][number];
+  const suppressed: SuppressedItem[] = [];
   let cp: AlertCheckpoint = input.checkpoint;
   const cooldownSec = effectiveCooldownSec(sub);
   const nowMs = Date.parse(ctx.generatedAt);
