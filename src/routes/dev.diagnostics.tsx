@@ -11,6 +11,8 @@ import { getErrorLog, recordError } from "@/lib/diagnostics";
 import { downloadBlob } from "@/lib/download";
 import { useTick } from "@/hooks/use-scheduler";
 import { runIntradayValidation } from "@/lib/gann-intraday-validation.functions";
+import { RuntimeReadinessDiagnostics } from "@/components/runtime-readiness/RuntimeReadinessDiagnostics";
+import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 
 function AbsoluteIntradayValidationPanel() {
   const runVal = useServerFn(runIntradayValidation);
