@@ -13,6 +13,9 @@ import {
 } from "@/lib/readiness/readiness-exports";
 import { INCIDENT_PLAYBOOKS } from "@/lib/readiness/incident-readiness";
 import { downloadBlob } from "@/lib/download";
+import { getRuntimeReadinessReport } from "@/lib/runtime-readiness/collect.functions";
+import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
+import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
 
 export const Route = createFileRoute("/_authenticated/admin/readiness")({
   head: () => ({
@@ -44,6 +47,8 @@ function AdminReadinessPage() {
   const [report, setReport] = useState<ProductionReadinessReport | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fetchRuntime = useServerFn(getRuntimeReadinessReport);
+  const [runtime, setRuntime] = useState<RuntimeReadinessReport | null>(null);
 
   const load = async () => {
     setErr(null);
@@ -51,6 +56,12 @@ function AdminReadinessPage() {
     try {
       const r = await fetchReport();
       setReport(r);
+      try {
+        const rr = await fetchRuntime();
+        setRuntime(rr);
+      } catch {
+        setRuntime(null);
+      }
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -129,6 +140,13 @@ function AdminReadinessPage() {
             )}
           </div>
         </header>
+        {runtime && (
+          <RuntimeReadinessSummary
+            report={runtime}
+            title="Canonical Runtime Readiness"
+            compact
+          />
+        )}
 
         {err && (
           <div className="rounded-md border border-red-500/40 bg-red-500/[0.06] p-3 text-sm text-red-300">

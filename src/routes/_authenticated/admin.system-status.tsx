@@ -5,11 +5,16 @@
 // does NOT trigger deploys; it visualises pre-computed policy.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { PRODUCTION_PIPELINE } from "@/lib/ci-cd-pipeline";
 import { DEFAULT_ENV_REQUIREMENTS } from "@/lib/env-validation";
 import { RECOVERY_CHECKLIST } from "@/lib/backup-recovery";
 import { MIGRATION_CHECKLIST, ROLLBACK_CHECKLIST } from "@/lib/release-management";
 import { REQUIRED_SECURITY_HEADERS } from "@/lib/security-audit";
+import { getRuntimeReadinessReport } from "@/lib/runtime-readiness/collect.functions";
+import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
+import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
 
 export const Route = createFileRoute("/_authenticated/admin/system-status")({
   head: () => ({
@@ -40,6 +45,24 @@ function SystemStatusPage() {
   const gitCommit = (import.meta.env.VITE_GIT_COMMIT as string | undefined) ?? "local";
   const deployedAt = (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? new Date().toISOString();
 
+  const fetchReport = useServerFn(getRuntimeReadinessReport);
+  const [report, setReport] = useState<RuntimeReadinessReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetchReport();
+        if (!cancelled) setReport(r);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "failed to load runtime readiness");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchReport]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <header>
@@ -49,6 +72,13 @@ function SystemStatusPage() {
           and broker paths are intentionally excluded from this surface.
         </p>
       </header>
+
+      {error && (
+        <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+          Runtime readiness: {error}
+        </div>
+      )}
+      {report && <RuntimeReadinessSummary report={report} title="Canonical Runtime Readiness" />}
 
       <Section title="Build Information">
         <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
