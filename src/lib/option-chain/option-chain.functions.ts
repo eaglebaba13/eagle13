@@ -30,37 +30,32 @@ export const getOptionChain = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();
     try {
-      const { UpstoxOptionChainProvider } = await import("./upstox-provider.server");
-      const { MockOptionChainProvider } = await import("./mock-provider");
-      const { assessDataQuality } = await import("./data-quality");
-      const { computeAtm } = await import("./atm-engine");
-      const { getSnapshotHistory } = await import("./snapshot-history");
-
-      const provider = data.useMock
-        ? new MockOptionChainProvider({ scenario: (data.mockScenario as never) ?? "SIDEWAYS" })
-        : new UpstoxOptionChainProvider();
-
-      const res = await provider.fetchSnapshot({ underlying: data.underlying, expiry: data.expiry });
-      if (!res.ok || !res.snapshot) {
+      const { fetchCanonicalOptionChain } = await import("./canonical-snapshot.server");
+      const r = await fetchCanonicalOptionChain({
+        underlying: data.underlying,
+        expiry: data.expiry,
+        useMock: data.useMock,
+        mockScenario: data.mockScenario,
+      });
+      if (!r.ok || !r.snapshot) {
         return {
           ok: false as const,
           snapshot: null,
           quality: null,
           atm: null,
-          meta: res.meta,
+          meta: r.meta,
+          capability: r.capability,
           startedAt,
           completedAt: new Date().toISOString(),
         };
       }
-      const quality = assessDataQuality(res.snapshot);
-      const atm = computeAtm(res.snapshot.strikes, res.snapshot.spotPrice, "ATM").atm;
-      try { getSnapshotHistory().push(res.snapshot); } catch { /* best-effort */ }
       return {
         ok: true as const,
-        snapshot: res.snapshot,
-        quality,
-        atm,
-        meta: res.meta,
+        snapshot: r.snapshot,
+        quality: r.quality,
+        atm: r.atm,
+        meta: r.meta,
+        capability: r.capability,
         startedAt,
         completedAt: new Date().toISOString(),
       };
