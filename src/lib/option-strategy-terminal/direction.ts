@@ -4,14 +4,9 @@
 
 import type { CanonicalBias, CanonicalSignals, DirectionResult } from "./types";
 
-const MODULES: ReadonlyArray<keyof CanonicalSignals> = [
-  "decision",
-  "pcr",
-  "gti",
-  "breadth",
-  "astro",
-  "gann",
-  "gannGap",
+type BiasKey = "decision" | "pcr" | "gti" | "breadth" | "astro" | "gann" | "gannGap";
+const MODULES: readonly BiasKey[] = [
+  "decision", "pcr", "gti", "breadth", "astro", "gann", "gannGap",
 ];
 
 export function normaliseBias(b: CanonicalBias | undefined): CanonicalBias {
@@ -23,10 +18,7 @@ export function mergeDirection(signals: CanonicalSignals): DirectionResult {
   let bull = 0, bear = 0, neu = 0, conflict = 0, unavail = 0;
   const reasons: string[] = [];
   for (const k of MODULES) {
-    if (k === "decisionConfidence") continue;
-    const raw = signals[k];
-    if (raw === "decisionConfidence") continue;
-    const bias = normaliseBias(raw as CanonicalBias | undefined);
+    const bias = normaliseBias(signals[k]);
     if (bias === "BULLISH") { bull++; reasons.push(`${k}: bullish`); }
     else if (bias === "BEARISH") { bear++; reasons.push(`${k}: bearish`); }
     else if (bias === "NEUTRAL") { neu++; reasons.push(`${k}: neutral`); }
