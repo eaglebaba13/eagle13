@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { OptionUnderlying, OptionChainSnapshot } from "../option-chain/types";
 import type { AtmMode } from "../option-chain/atm-engine";
+import type { OptionChainCapability } from "../option-chain/capability";
 import { computeCombinedPcr } from "./combined-pcr";
 import type { CombinedPcrWeights } from "./types";
 import { DEFAULT_COMBINED_PCR_WEIGHTS } from "./types";
@@ -55,13 +56,8 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();
     try {
-      const { UpstoxOptionChainProvider } = await import("../option-chain/upstox-provider.server");
-      const { MockOptionChainProvider } = await import("../option-chain/mock-provider");
+      const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
-
-      const provider = data.useMock
-        ? new MockOptionChainProvider({ scenario: (data.mockScenario as never) ?? "SIDEWAYS" })
-        : new UpstoxOptionChainProvider();
 
       const snapshots: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {};
       const providerMeta: Record<string, {
@@ -72,11 +68,17 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
         safeError: string | null;
         upstreamCode: string | null;
       }> = {};
+      const capabilities: Partial<Record<OptionUnderlying, OptionChainCapability>> = {};
       const history = getSnapshotHistory();
 
       for (const u of UNDERLYINGS) {
         const expiry = data.expiries?.[u];
-        const res = await provider.fetchSnapshot({ underlying: u, expiry });
+        const res = await fetchCanonicalOptionChain({
+          underlying: u,
+          expiry,
+          useMock: data.useMock,
+          mockScenario: data.mockScenario,
+        });
         providerMeta[u] = {
           providerId: res.meta.providerId,
           status: res.meta.status,
@@ -85,9 +87,10 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
           safeError: res.meta.safeError,
           upstreamCode: res.meta.upstreamCode,
         };
-        if (res.ok && res.snapshot) {
+        capabilities[u] = res.capability;
+        const usable = res.capability.status === "SUPPORTED" || res.capability.status === "PARTIAL";
+        if (res.ok && res.snapshot && usable) {
           snapshots[u] = res.snapshot;
-          try { history.push(res.snapshot); } catch { /* best-effort */ }
         } else {
           snapshots[u] = null;
         }
@@ -102,20 +105,36 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
         : undefined;
 
       const weights = data.weights ?? DEFAULT_COMBINED_PCR_WEIGHTS;
-      const reading = computeCombinedPcr({
-        snapshots,
-        weights,
-        atmMode: data.atmMode,
-        atmCustom: data.atmCustom,
-        history,
-        previousConfirmation,
-        runId: data.runId ?? newRunId(),
-      });
+      const hasAnyUsable = Object.values(snapshots).some((s) => s != null);
+      const reading = hasAnyUsable
+        ? computeCombinedPcr({
+            snapshots,
+            weights,
+            atmMode: data.atmMode,
+            atmCustom: data.atmCustom,
+            history,
+            previousConfirmation,
+            runId: data.runId ?? newRunId(),
+          })
+        : null;
+
+      // Top-level capability summary: aggregate across instruments.
+      const capList = Object.values(capabilities).filter(Boolean) as OptionChainCapability[];
+      const allSupported = capList.length > 0 && capList.every((c) => c.status === "SUPPORTED");
+      const anyUsable = capList.some((c) => c.status === "SUPPORTED" || c.status === "PARTIAL");
+      const topStatus: OptionChainCapability["status"] = allSupported
+        ? "SUPPORTED"
+        : anyUsable
+          ? "PARTIAL"
+          : (capList[0]?.status ?? "PROVIDER_ERROR");
 
       return {
         ok: true as const,
         reading,
         providerMeta,
+        capabilities,
+        capabilityStatus: topStatus,
+        computed: reading != null,
         startedAt,
         completedAt: new Date().toISOString(),
       };
@@ -125,6 +144,9 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
         ok: false as const,
         reading: null,
         providerMeta: {},
+        capabilities: {} as Partial<Record<OptionUnderlying, OptionChainCapability>>,
+        capabilityStatus: "PROVIDER_ERROR" as OptionChainCapability["status"],
+        computed: false,
         safeError: safe,
         startedAt,
         completedAt: new Date().toISOString(),
