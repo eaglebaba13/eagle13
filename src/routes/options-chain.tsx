@@ -296,6 +296,7 @@ const btnPrimary: React.CSSProperties = { padding: "8px 14px", borderRadius: 8, 
 const btnSecondary: React.CSSProperties = { ...btnPrimary, background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.16)", color: "#e6f1f7" };
 const btnGhost: React.CSSProperties = { ...btnSecondary, background: "transparent" };
 const errorBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,120,120,0.35)", background: "rgba(255,120,120,0.08)", color: "#ffb3b3", fontSize: 12, marginBottom: 12 };
+const warnBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,200,110,0.35)", background: "rgba(255,200,110,0.08)", color: "#ffd28a", fontSize: 12, marginBottom: 12 };
 const cardsGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 14 };
 
 function Card({ label, value }: { label: string; value: string | number }) {
@@ -326,6 +327,31 @@ function fmt(v: number | null): string {
   if (v == null) return "—";
   if (Math.abs(v) >= 100_000) return `${(v / 1000).toFixed(0)}k`;
   return Number.isInteger(v) ? String(v) : v.toFixed(2);
+}
+function CapabilityCard({ capability, onRetry, onMock }: { capability: OptionChainCapability; onRetry: () => void; onMock: () => void }) {
+  return (
+    <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, border: "1px solid rgba(255,180,120,0.35)", background: "rgba(255,180,120,0.06)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontSize: 11, letterSpacing: 0.6, color: "#ffb27a", fontWeight: 700 }}>OPTION CHAIN · {capability.status.replace(/_/g, " ")}</div>
+          <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600 }}>{capability.reason}</div>
+          {capability.suggestedAction && (
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>Next: {capability.suggestedAction}</div>
+          )}
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.7, textAlign: "right" }}>
+          <div>{capability.providerAlias}</div>
+          <div>Stage: {capability.failingStage ?? "—"}</div>
+          <div>Observed: {relativeTime(capability.observedAt)}</div>
+          {capability.latencyMs != null && <div>Latency: {capability.latencyMs}ms</div>}
+        </div>
+      </div>
+      <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {capability.retryable && <button onClick={onRetry} style={btnPrimary}>Retry</button>}
+        <button onClick={onMock} style={btnSecondary}>Load Demo Snapshot</button>
+      </div>
+    </div>
+  );
 }
 function relativeTime(iso: string): string {
   const t = Date.parse(iso); if (!Number.isFinite(t)) return "—";
