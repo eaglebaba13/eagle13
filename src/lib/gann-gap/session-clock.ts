@@ -18,27 +18,29 @@ export type TradingCalendar = {
 };
 
 /** Weekend-only default calendar. Unknown holidays fall through. */
+function dayOfWeek(istDate: string): number {
+  // Parse as UTC to avoid TZ shifting the day. 0=Sun..6=Sat.
+  return new Date(`${istDate}T00:00:00Z`).getUTCDay();
+}
+function addDays(istDate: string, days: number): string {
+  const d = new Date(`${istDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 export const WEEKEND_ONLY_CALENDAR: TradingCalendar = {
   isTradingDay(istDate: string) {
-    const d = istDateToUtcDate(istDate);
-    const dow = d.getUTCDay();
+    const dow = dayOfWeek(istDate);
     return dow !== 0 && dow !== 6;
   },
   nextTradingDay(istDate: string) {
-    let d = istDateToUtcDate(istDate);
+    let cur = istDate;
     for (let i = 0; i < 10; i++) {
-      d = new Date(d.getTime() + 86_400_000);
-      const iso = d.toISOString().slice(0, 10);
-      if (WEEKEND_ONLY_CALENDAR.isTradingDay(iso)) return iso;
+      cur = addDays(cur, 1);
+      if (WEEKEND_ONLY_CALENDAR.isTradingDay(cur)) return cur;
     }
-    return d.toISOString().slice(0, 10);
+    return cur;
   },
 };
-
-function istDateToUtcDate(istDate: string): Date {
-  // IST date at midnight IST → UTC.
-  return new Date(`${istDate}T00:00:00+05:30`);
-}
 
 export function toIstParts(now: Date): {
   date: string;
