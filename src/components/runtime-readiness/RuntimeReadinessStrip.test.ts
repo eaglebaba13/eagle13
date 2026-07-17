@@ -85,7 +85,7 @@ describe("Phase 2H · RuntimeReadinessDiagnostics", () => {
     );
     expect(html).toContain("Runtime Evidence");
     expect(html).toContain("runtime-readiness-json");
-    expect(html).toContain('"overall": "READY"');
+    expect(html).toContain("&quot;overall&quot;: &quot;READY&quot;");
   });
 });
 
