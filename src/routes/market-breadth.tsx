@@ -9,6 +9,7 @@ import {
   getMarketBreadth,
   type GetMarketBreadthResult,
 } from "@/lib/market-breadth/market-breadth.functions";
+import type { MarketBreadthCapability } from "@/lib/market-breadth/capability";
 import type { MockScenario } from "@/lib/market-breadth/mock-provider";
 import type { MarketBreadthSnapshot } from "@/lib/market-breadth/types";
 import {
@@ -119,6 +120,7 @@ function MarketBreadthPage() {
           mockScenario: scenario,
           vix: Number.isFinite(parsedVix) ? parsedVix : null,
           previousVix: Number.isFinite(parsedPrev) ? parsedPrev : null,
+          attachLive: true,
         },
       });
       setResult(res);
@@ -137,6 +139,11 @@ function MarketBreadthPage() {
   useEffect(() => { void run(); }, [run]);
 
   const reading = result && result.ok ? result.reading : null;
+  const capability: MarketBreadthCapability | null =
+    result && result.ok ? result.capability : result && !result.ok ? result.capability : null;
+  const vixMeta = result && result.ok ? result.vixMeta : null;
+  const pcrMeta = result && result.ok ? result.pcrMeta : null;
+  const providerAlias = result && (result.ok || !result.ok) ? (result.providerAlias ?? "Breadth Provider") : "Breadth Provider";
   const observations = useMemo(() => summarizeGtiShadow(samples), [samples]);
 
   const buttonStyle: React.CSSProperties = {
@@ -163,6 +170,10 @@ function MarketBreadthPage() {
         Combined breadth, VIX regime, sector rotation and Combined PCR confirmation.
         SENSEX, MCX, Crypto and Global metals COMING SOON.
       </p>
+
+      {capability && (
+        <CapabilityBanner c={capability} providerAlias={providerAlias} vixMeta={vixMeta} pcrMeta={pcrMeta} />
+      )}
 
       {/* Header stats */}
       <div style={{
@@ -250,7 +261,7 @@ function MarketBreadthPage() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
           <button style={buttonStyle} onClick={() => download(`market-breadth-${reading.runId}.csv`, "text/csv", readingToCsv(reading))}>Export CSV</button>
           <button style={buttonStyle} onClick={() => download(`market-breadth-${reading.runId}.json`, "application/json", readingToJson(reading))}>Export JSON</button>
-          <button style={buttonStyle} onClick={() => download(`market-breadth-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildResearchBundle(reading), null, 2))}>Research Bundle</button>
+          <button style={buttonStyle} onClick={() => download(`market-breadth-bundle-${reading.runId}.json`, "application/json", JSON.stringify(buildResearchBundle(reading, { capability, providerAlias, breadthSource: capability?.source ?? null }), null, 2))}>Research Bundle</button>
         </div>
       )}
 
@@ -306,6 +317,101 @@ function Stat({ label, value }: { label: string; value: string }) {
     }}>
       <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function CapabilityBanner({
+  c,
+  providerAlias,
+  vixMeta,
+  pcrMeta,
+}: {
+  c: MarketBreadthCapability;
+  providerAlias: string;
+  vixMeta: { providerAlias: string; freshness: string; timestamp: string; latencyMs: number | null; error: string | null } | null;
+  pcrMeta: { providerAlias: string; available: boolean; quality: string; latencyMs: number | null; error: string | null; instrumentCapabilities: Record<string, string> } | null;
+}) {
+  const ok = c.status === "SUPPORTED";
+  const partial = c.status === "PARTIAL" || c.status === "STALE";
+  const bg = ok
+    ? "rgba(74,222,128,0.10)"
+    : partial
+      ? "rgba(242,184,69,0.10)"
+      : "rgba(251,113,133,0.10)";
+  const border = ok
+    ? "rgba(74,222,128,0.30)"
+    : partial
+      ? "rgba(242,184,69,0.35)"
+      : "rgba(251,113,133,0.35)";
+  return (
+    <div
+      style={{
+        marginBottom: 14,
+        padding: 12,
+        borderRadius: 10,
+        background: bg,
+        border: `1px solid ${border}`,
+        display: "grid",
+        gap: 8,
+        gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+        fontSize: 12,
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 10, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          Capability
+        </div>
+        <div style={{ fontWeight: 700, marginTop: 2 }}>{c.status}</div>
+        <div style={{ opacity: 0.8, marginTop: 2 }}>{c.reason}</div>
+        <div style={{ opacity: 0.6, marginTop: 2 }}>
+          {providerAlias}
+          {c.latencyMs != null ? ` · ${c.latencyMs}ms` : ""}
+          {" · "}source: {c.source === "RESEARCH_DEMO" ? "RESEARCH DEMO" : c.source}
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 10, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          India VIX
+        </div>
+        {vixMeta ? (
+          <>
+            <div style={{ opacity: 0.85, marginTop: 2 }}>
+              {vixMeta.providerAlias} · {vixMeta.freshness}
+            </div>
+            <div style={{ opacity: 0.55, marginTop: 2 }}>
+              {vixMeta.timestamp}
+              {vixMeta.latencyMs != null ? ` · ${vixMeta.latencyMs}ms` : ""}
+            </div>
+            {vixMeta.error && (
+              <div style={{ color: "#fb7185", marginTop: 2 }}>{vixMeta.error}</div>
+            )}
+          </>
+        ) : (
+          <div style={{ opacity: 0.6 }}>—</div>
+        )}
+      </div>
+      <div>
+        <div style={{ fontSize: 10, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          Combined PCR
+        </div>
+        {pcrMeta ? (
+          <>
+            <div style={{ opacity: 0.85, marginTop: 2 }}>
+              {pcrMeta.providerAlias} · {pcrMeta.available ? pcrMeta.quality : "UNAVAILABLE"}
+            </div>
+            <div style={{ opacity: 0.55, marginTop: 2 }}>
+              {Object.entries(pcrMeta.instrumentCapabilities).map(([k, v]) => `${k}:${v}`).join(" · ") || "no instruments"}
+              {pcrMeta.latencyMs != null ? ` · ${pcrMeta.latencyMs}ms` : ""}
+            </div>
+            {pcrMeta.error && (
+              <div style={{ color: "#fb7185", marginTop: 2 }}>{pcrMeta.error}</div>
+            )}
+          </>
+        ) : (
+          <div style={{ opacity: 0.6 }}>—</div>
+        )}
+      </div>
     </div>
   );
 }
