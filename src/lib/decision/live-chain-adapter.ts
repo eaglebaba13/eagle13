@@ -155,8 +155,12 @@ export function adaptUpstoxToLegacyChain(
     };
   }
 
-  const hasCall = legs.some((l) => l.side === "CE");
-  const hasPut = legs.some((l) => l.side === "PE");
+  // An empty leg (from `makeStrike` with no call/put override) yields
+  // `oi = 0` here because `EMPTY_LEG.oi === null` falls through the
+  // `null ?? 0` in `toLegacyLegs`. Detect real presence by requiring at
+  // least one leg with non-zero oi or ltp on each side.
+  const hasCall = legs.some((l) => l.side === "CE" && ((l.oi ?? 0) > 0 || (l.ltp ?? 0) > 0));
+  const hasPut = legs.some((l) => l.side === "PE" && ((l.oi ?? 0) > 0 || (l.ltp ?? 0) > 0));
   const cov = atmCoverage(strikes, spot);
   const dq = snap.dataQuality;
 
