@@ -48,6 +48,7 @@ import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
+import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 
@@ -255,6 +256,12 @@ const AuthenticatedAdminLaunchReadinessRoute =
     path: '/admin/launch-readiness',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminBetaReadinessRoute =
+  AuthenticatedAdminBetaReadinessRouteImport.update({
+    id: '/admin/beta-readiness',
+    path: '/admin/beta-readiness',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/beta-readiness'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/beta-readiness'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -517,6 +529,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/launch-readiness'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/providers'
@@ -834,6 +847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLaunchReadinessRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/beta-readiness': {
+      id: '/_authenticated/admin/beta-readiness'
+      path: '/admin/beta-readiness'
+      fullPath: '/admin/beta-readiness'
+      preLoaderRoute: typeof AuthenticatedAdminBetaReadinessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -857,6 +877,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
@@ -871,6 +892,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminLaunchReadinessRoute:
     AuthenticatedAdminLaunchReadinessRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,

@@ -114,6 +114,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "profile", label: "Profile", icon: UserIcon, to: "/profile", section: "ACCOUNT", order: 310, desktopVisible: true, mobileVisible: true },
   { id: "admin-launch-readiness", label: "Launch Readiness", icon: ShieldCheck, to: "/admin/launch-readiness", section: "ACCOUNT", order: 305, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-system-status", label: "System Status", icon: Activity, to: "/admin/system-status", section: "ACCOUNT", order: 306, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
+  { id: "admin-beta-readiness", label: "Beta Readiness", icon: ShieldCheck, to: "/admin/beta-readiness", section: "ACCOUNT", order: 307, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "license", label: "License", icon: KeyRound, to: "/license", section: "ACCOUNT", order: 320, desktopVisible: true, mobileVisible: true },
   { id: "billing", label: "Billing", icon: ScrollText, to: "/billing", section: "ACCOUNT", order: 330, desktopVisible: true, mobileVisible: true },
   { id: "pricing", label: "Pricing", icon: FileBarChart, to: "/pricing", section: "ACCOUNT", order: 340, desktopVisible: true, mobileVisible: true },
