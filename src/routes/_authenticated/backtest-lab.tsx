@@ -2,7 +2,7 @@
 // Research-only. Consumer of canonical historical datasets.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BACKTEST_LAB_DISCLAIMER } from "@/lib/backtest-lab";
 import {
