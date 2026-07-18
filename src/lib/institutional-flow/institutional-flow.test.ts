@@ -8,7 +8,7 @@ import { computeGamma } from "./gamma";
 import { buildSectorFlow } from "./sector-flow";
 import { summariseFlow } from "./summary";
 import { buildInstitutionalFlowReport, classifyInstitutionalFlowReadiness } from "./report";
-import { LEGACY_DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
+import { DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
 
 function mkLeg(oi: number, dOi: number, gamma: number | null = null) {
   return {
@@ -63,8 +63,8 @@ describe("Institutional Flow — analytics", () => {
   });
 
   it("dashboard registry exposes Institutional Flow widget", () => {
-    const ids = LEGACY_DASHBOARD_WIDGETS.map((w) => w.id);
-    expect(ids).toContain("legacy-institutional-flow");
+    const ids = DASHBOARD_WIDGETS.map((w) => w.id);
+    expect(ids).toContain("institutional-flow");
   });
 
   it("diagnostics include methodology version and coverage metrics", () => {
