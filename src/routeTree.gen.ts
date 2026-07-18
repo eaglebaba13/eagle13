@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OptionsChainRouteImport } from './routes/options-chain'
@@ -87,6 +88,11 @@ const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReleaseNotesRoute = ReleaseNotesRouteImport.update({
+  id: '/release-notes',
+  path: '/release-notes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -447,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/terms': typeof TermsRoute
@@ -512,6 +519,7 @@ export interface FileRoutesByTo {
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/terms': typeof TermsRoute
@@ -579,6 +587,7 @@ export interface FileRoutesById {
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/terms': typeof TermsRoute
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/options-chain'
     | '/pricing'
     | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
     | '/terms'
@@ -711,6 +721,7 @@ export interface FileRouteTypes {
     | '/options-chain'
     | '/pricing'
     | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
     | '/terms'
@@ -777,6 +788,7 @@ export interface FileRouteTypes {
     | '/options-chain'
     | '/pricing'
     | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
     | '/terms'
@@ -844,6 +856,7 @@ export interface RootRouteChildren {
   OptionsChainRoute: typeof OptionsChainRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ReleaseNotesRoute: typeof ReleaseNotesRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   TermsRoute: typeof TermsRoute
@@ -877,6 +890,13 @@ declare module '@tanstack/react-router' {
       path: '/risk'
       fullPath: '/risk'
       preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/release-notes': {
+      id: '/release-notes'
+      path: '/release-notes'
+      fullPath: '/release-notes'
+      preLoaderRoute: typeof ReleaseNotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1442,6 +1462,7 @@ const rootRouteChildren: RootRouteChildren = {
   OptionsChainRoute: OptionsChainRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ReleaseNotesRoute: ReleaseNotesRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
   TermsRoute: TermsRoute,
