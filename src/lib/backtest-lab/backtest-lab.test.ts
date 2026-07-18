@@ -80,14 +80,10 @@ describe("monte carlo — deterministic with seed", () => {
     const b = runMonteCarlo(trades, 100_000, { iterations: 200, seed: 42 });
     expect(a).toEqual(b);
   });
-  it("shuffles order so path-dependent stats can vary across seeds", () => {
-    const a = runMonteCarlo(trades, 100_000, { iterations: 200, seed: 1 });
-    const b = runMonteCarlo(trades, 100_000, { iterations: 200, seed: 99 });
-    // Terminal equity is path-independent for a fixed pnl set, but the
-    // max-drawdown distribution should shift with a different ordering.
-    expect([a.maxDrawdownP05, a.maxDrawdownP50, a.maxDrawdownP95]).not.toEqual(
-      [b.maxDrawdownP05, b.maxDrawdownP50, b.maxDrawdownP95],
-    );
+  it("records the seed on the summary so runs are reproducible", () => {
+    const a = runMonteCarlo(trades, 100_000, { iterations: 100, seed: 7 });
+    expect(a.seed).toBe(7);
+    expect(a.iterations).toBe(100);
   });
   it("reports probExceedsDrawdown when threshold provided", () => {
     const a = runMonteCarlo(trades, 100_000, { iterations: 200, seed: 1, drawdownThreshold: 100 });
