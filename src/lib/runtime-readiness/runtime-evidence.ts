@@ -55,7 +55,8 @@ export type ModuleId =
   | "GANN_GAP_OUTLOOK"
   | "OPTION_STRATEGY_TERMINAL"
   | "AI_MARKET_ASSISTANT"
-  | "SMART_ALERT_ENGINE";
+  | "SMART_ALERT_ENGINE"
+  | "INSTITUTIONAL_FLOW";
 
 export interface RuntimeEvidence {
   readonly module: ModuleId;
