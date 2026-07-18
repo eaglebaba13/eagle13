@@ -65,6 +65,7 @@ import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
+import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
 
 const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
   id: '/signal-accuracy',
@@ -370,6 +371,12 @@ const ApiPublicWebhooksRazorpayRoute =
     path: '/api/public/webhooks/razorpay',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedResearchLabRunsRunIdRoute =
+  AuthenticatedResearchLabRunsRunIdRouteImport.update({
+    id: '/$runId',
+    path: '/$runId',
+    getParentRoute: () => AuthenticatedResearchLabRunsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -424,8 +431,9 @@ export interface FileRoutesByFullPath {
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
-  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
+  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
+  '/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
@@ -481,8 +489,9 @@ export interface FileRoutesByTo {
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
-  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
+  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
+  '/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
@@ -540,8 +549,9 @@ export interface FileRoutesById {
   '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/_authenticated/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/_authenticated/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
-  '/_authenticated/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
+  '/_authenticated/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/_authenticated/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
+  '/_authenticated/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/research-lab/institutional-flow'
     | '/research-lab/runs'
     | '/research-lab/signals'
+    | '/research-lab/runs/$runId'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/research-lab/institutional-flow'
     | '/research-lab/runs'
     | '/research-lab/signals'
+    | '/research-lab/runs/$runId'
     | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
@@ -716,6 +728,7 @@ export interface FileRouteTypes {
     | '/_authenticated/research-lab/institutional-flow'
     | '/_authenticated/research-lab/runs'
     | '/_authenticated/research-lab/signals'
+    | '/_authenticated/research-lab/runs/$runId'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
@@ -1147,14 +1160,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/research-lab/runs/$runId': {
+      id: '/_authenticated/research-lab/runs/$runId'
+      path: '/$runId'
+      fullPath: '/research-lab/runs/$runId'
+      preLoaderRoute: typeof AuthenticatedResearchLabRunsRunIdRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRunsRoute
+    }
   }
 }
+
+interface AuthenticatedResearchLabRunsRouteChildren {
+  AuthenticatedResearchLabRunsRunIdRoute: typeof AuthenticatedResearchLabRunsRunIdRoute
+}
+
+const AuthenticatedResearchLabRunsRouteChildren: AuthenticatedResearchLabRunsRouteChildren =
+  {
+    AuthenticatedResearchLabRunsRunIdRoute:
+      AuthenticatedResearchLabRunsRunIdRoute,
+  }
+
+const AuthenticatedResearchLabRunsRouteWithChildren =
+  AuthenticatedResearchLabRunsRoute._addFileChildren(
+    AuthenticatedResearchLabRunsRouteChildren,
+  )
 
 interface AuthenticatedResearchLabRouteChildren {
   AuthenticatedResearchLabAlertsRoute: typeof AuthenticatedResearchLabAlertsRoute
   AuthenticatedResearchLabGannGapRoute: typeof AuthenticatedResearchLabGannGapRoute
   AuthenticatedResearchLabInstitutionalFlowRoute: typeof AuthenticatedResearchLabInstitutionalFlowRoute
-  AuthenticatedResearchLabRunsRoute: typeof AuthenticatedResearchLabRunsRoute
+  AuthenticatedResearchLabRunsRoute: typeof AuthenticatedResearchLabRunsRouteWithChildren
   AuthenticatedResearchLabSignalsRoute: typeof AuthenticatedResearchLabSignalsRoute
 }
 
@@ -1164,7 +1199,8 @@ const AuthenticatedResearchLabRouteChildren: AuthenticatedResearchLabRouteChildr
     AuthenticatedResearchLabGannGapRoute: AuthenticatedResearchLabGannGapRoute,
     AuthenticatedResearchLabInstitutionalFlowRoute:
       AuthenticatedResearchLabInstitutionalFlowRoute,
-    AuthenticatedResearchLabRunsRoute: AuthenticatedResearchLabRunsRoute,
+    AuthenticatedResearchLabRunsRoute:
+      AuthenticatedResearchLabRunsRouteWithChildren,
     AuthenticatedResearchLabSignalsRoute: AuthenticatedResearchLabSignalsRoute,
   }
 
