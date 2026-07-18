@@ -672,16 +672,85 @@ export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AdminAlertDiagnostics> => {
     await assertAdmin(context);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const [{ count: total }, { count: unread }, { count: recent }] = await Promise.all([
+    const { classifySmartAlertReadiness, unknownEngineHealth } = await import("./readiness");
+
+    const [
+      { count: total },
+      { count: unread },
+      { count: recent },
+      { count: subs },
+      { count: cps },
+      { count: attempts },
+      { count: failures },
+      failingRows,
+      lastCheckpoint,
+    ] = await Promise.all([
       context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }),
       context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }).is("read_at", null),
       context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }).gte("generated_at", since),
+      context.supabase.from("smart_alert_subscriptions").select("user_id", { count: "exact", head: true }),
+      context.supabase.from("smart_alert_engine_checkpoints").select("user_id", { count: "exact", head: true }),
+      context.supabase.from("smart_alert_delivery_attempts").select("id", { count: "exact", head: true }),
+      context.supabase.from("smart_alert_delivery_attempts").select("id", { count: "exact", head: true }).neq("status", "OK"),
+      context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .select("last_error, updated_at")
+        .not("last_error", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(5),
+      context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .select("last_evaluated_at, last_success_at, last_error")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
+
+    const errorRows = ((failingRows.data as { last_error?: string }[] | null) ?? [])
+      .map((r) => String(r.last_error ?? ""))
+      .filter((s) => s.length > 0)
+      .slice(0, 5);
+
+    const lastRow = (lastCheckpoint.data as {
+      last_evaluated_at?: string | null;
+      last_success_at?: string | null;
+      last_error?: string | null;
+    } | null) ?? null;
+
+    const health = {
+      ...unknownEngineHealth(),
+      lastEvaluationAt: lastRow?.last_evaluated_at ?? null,
+      lastSuccessfulEvaluationAt: lastRow?.last_success_at ?? null,
+      lastEvaluationStatus: lastRow?.last_error
+        ? ("FAILED" as const)
+        : lastRow?.last_evaluated_at
+          ? ("OK" as const)
+          : ("UNKNOWN" as const),
+      lastError: lastRow?.last_error ?? null,
+      deliveryFailureRate: (attempts ?? 0) > 0 ? (failures ?? 0) / (attempts as number) : 0,
+    };
+    const readiness = classifySmartAlertReadiness(health);
+
     return {
       totalEvents: total ?? 0,
       unreadEvents: unread ?? 0,
       last24hCount: recent ?? 0,
       rulesVersion: SMART_ALERTS_RULES_VERSION,
       disclaimer: ALERT_DISCLAIMER,
+      activeSubscriptions: subs ?? 0,
+      checkpointCount: cps ?? 0,
+      deliveryAttempts: attempts ?? 0,
+      deliveryFailures: failures ?? 0,
+      ruleCount: health.ruleCount,
+      alertTypeCount: health.alertTypeCount,
+      externalAdaptersDisabledByConfiguration: true,
+      engineStatus: readiness.status,
+      engineReason: readiness.reason,
+      engineWarnings: readiness.warnings,
+      engineBlockers: readiness.blockers,
+      lastEvaluationAt: health.lastEvaluationAt,
+      lastSuccessfulEvaluationAt: health.lastSuccessfulEvaluationAt,
+      lastEvaluationStatus: health.lastEvaluationStatus,
+      latestErrors: errorRows,
     };
   });
