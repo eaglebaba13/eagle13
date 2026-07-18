@@ -381,6 +381,25 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     supportsCollapse: false,
     required: true,
   },
+  {
+    id: "institutional-flow",
+    title: "Institutional Flow",
+    section: "OPTIONS",
+    componentLoader: legacyInstitutionalFlowLoader,
+    minimumPlan: "pro",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 2,
+    mobileOrder: 125,
+    desktopOrder: 125,
+    priority: 55,
+    dataDependency: "OPTIONS_CHAIN",
+    refreshPolicy: { kind: "interval", intervalMs: 90_000 },
+    methodologyLabel: "Institutional Flow v1",
+    formulaVersion: "INSTITUTIONAL_FLOW_V1",
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
 ];
 
 // ---- Legacy `/` dashboard widget set (Phase 24C migration) -----------------
