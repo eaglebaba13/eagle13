@@ -308,13 +308,13 @@ export async function buildEvaluationContext(userId: string): Promise<AlertEvalu
     },
     strategy: {
       available: !!terminal && terminal.engine.recommended.length > 0,
-      topStrategyId: terminal?.engine.recommended[0]?.profile.id ?? null,
-      bias: (terminal?.engine.recommended[0]?.profile.bias as CanonicalDirection | undefined) ?? "UNKNOWN",
+      topStrategyId: terminal?.engine.recommended[0]?.profile.key ?? null,
+      bias: strategyBiasToCanonical(terminal?.engine.recommended[0]?.profile.bias),
       freshness: terminal ? "MIXED" : "UNKNOWN",
     },
     ai: {
       available: !!ai,
-      bias: (ai?.response.marketBias as CanonicalDirection | undefined) ?? "UNKNOWN",
+      bias: assistantBiasToCanonical(ai?.response.marketBias),
       confidence: ai?.response.confidence ?? null,
       freshness: ai ? "MIXED" : "UNKNOWN",
     },
