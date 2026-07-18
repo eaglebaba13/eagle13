@@ -565,6 +565,200 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_alert_delivery_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          event_id: string | null
+          fingerprint: string
+          id: string
+          provider: string
+          retryable: boolean
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          event_id?: string | null
+          fingerprint: string
+          id?: string
+          provider: string
+          retryable?: boolean
+          status: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          event_id?: string | null
+          fingerprint?: string
+          id?: string
+          provider?: string
+          retryable?: boolean
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_alert_delivery_attempts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "smart_alert_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_alert_engine_checkpoints: {
+        Row: {
+          created_at: string
+          fingerprints: Json
+          last_error: string | null
+          last_evaluated_at: string | null
+          last_success_at: string | null
+          previous: Json
+          rules_version: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fingerprints?: Json
+          last_error?: string | null
+          last_evaluated_at?: string | null
+          last_success_at?: string | null
+          previous?: Json
+          rules_version?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fingerprints?: Json
+          last_error?: string | null
+          last_evaluated_at?: string | null
+          last_success_at?: string | null
+          previous?: Json
+          rules_version?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      smart_alert_events: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          fingerprint: string
+          generated_at: string
+          id: string
+          instrument: string | null
+          payload: Json
+          priority: string
+          read_at: string | null
+          rules_version: string
+          source_modules: Json
+          summary: string
+          title: string
+          trading_date: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          fingerprint: string
+          generated_at: string
+          id?: string
+          instrument?: string | null
+          payload?: Json
+          priority: string
+          read_at?: string | null
+          rules_version: string
+          source_modules?: Json
+          summary: string
+          title: string
+          trading_date: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          fingerprint?: string
+          generated_at?: string
+          id?: string
+          instrument?: string | null
+          payload?: Json
+          priority?: string
+          read_at?: string | null
+          rules_version?: string
+          source_modules?: Json
+          summary?: string
+          title?: string
+          trading_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      smart_alert_subscriptions: {
+        Row: {
+          cooldown_override_sec: number | null
+          created_at: string
+          email_enabled: boolean
+          in_app_enabled: boolean
+          instruments: Json
+          minimum_priority: string
+          quiet_hours: Json | null
+          telegram_enabled: boolean
+          timezone: string
+          types: Json
+          updated_at: string
+          user_id: string
+          webhook_enabled: boolean
+        }
+        Insert: {
+          cooldown_override_sec?: number | null
+          created_at?: string
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          instruments?: Json
+          minimum_priority?: string
+          quiet_hours?: Json | null
+          telegram_enabled?: boolean
+          timezone?: string
+          types?: Json
+          updated_at?: string
+          user_id: string
+          webhook_enabled?: boolean
+        }
+        Update: {
+          cooldown_override_sec?: number | null
+          created_at?: string
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          instruments?: Json
+          minimum_priority?: string
+          quiet_hours?: Json | null
+          telegram_enabled?: boolean
+          timezone?: string
+          types?: Json
+          updated_at?: string
+          user_id?: string
+          webhook_enabled?: boolean
+        }
+        Relationships: []
+      }
       subscription_preferences: {
         Row: {
           billing_cycle_preference: string
