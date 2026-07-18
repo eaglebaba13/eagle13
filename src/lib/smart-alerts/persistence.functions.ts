@@ -533,8 +533,13 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
 
     const out = runAlertEngine({ context: ctx, checkpoint, subscription });
 
-    // Persist events (idempotent via unique fingerprint).
+    // Persist events (idempotent via unique (user_id, fingerprint) constraint).
+    // Track any failure so the checkpoint is NOT advanced if event
+    // persistence did not succeed — retries then remain idempotent because
+    // the unique fingerprint constraint blocks duplicates.
     const emittedIds: string[] = [];
+    let persistenceFailed = false;
+    let persistenceError: string | null = null;
     for (const ev of out.emitted) {
       const insertRow = {
         user_id: userId,
@@ -550,11 +555,16 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
         rules_version: ev.rulesVersion,
         payload: ev as unknown as never,
       };
-      const { data: ins } = await context.supabase
+      const { data: ins, error: insErr } = await context.supabase
         .from("smart_alert_events")
-        .upsert(insertRow as never, { onConflict: "user_id,fingerprint,trading_date" })
+        .upsert(insertRow as never, { onConflict: "user_id,fingerprint" })
         .select("id")
         .maybeSingle();
+      if (insErr) {
+        persistenceFailed = true;
+        persistenceError = insErr.message;
+        continue;
+      }
       const insertedId = (ins as { id?: string } | null)?.id;
       if (insertedId) emittedIds.push(insertedId);
 
@@ -573,25 +583,41 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       }
     }
 
-    // Persist checkpoint.
-    await context.supabase
-      .from("smart_alert_engine_checkpoints")
-      .upsert(
-        {
-          user_id: userId,
-          last_evaluated_at: ctx.generatedAt,
-          last_success_at: ctx.generatedAt,
-          last_error: null,
-          rules_version: SMART_ALERTS_RULES_VERSION,
-          previous: out.nextCheckpoint.previous as unknown as never,
-          fingerprints: {
-            lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
-            lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
-            emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
-          } as unknown as never,
-        } as never,
-        { onConflict: "user_id" },
-      );
+    // Only advance the checkpoint after every event persisted successfully.
+    // A failed insert must leave the previous checkpoint intact so that
+    // the next run retries emission (idempotent via unique fingerprint).
+    if (persistenceFailed) {
+      await context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .upsert(
+          {
+            user_id: userId,
+            last_evaluated_at: ctx.generatedAt,
+            last_error: persistenceError,
+            rules_version: SMART_ALERTS_RULES_VERSION,
+          } as never,
+          { onConflict: "user_id" },
+        );
+    } else {
+      await context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .upsert(
+          {
+            user_id: userId,
+            last_evaluated_at: ctx.generatedAt,
+            last_success_at: ctx.generatedAt,
+            last_error: null,
+            rules_version: SMART_ALERTS_RULES_VERSION,
+            previous: out.nextCheckpoint.previous as unknown as never,
+            fingerprints: {
+              lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
+              lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
+              emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
+            } as unknown as never,
+          } as never,
+          { onConflict: "user_id" },
+        );
+    }
 
     return {
       emittedIds,
@@ -601,6 +627,8 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       generatedAt: ctx.generatedAt,
       runtimeOverall: ctx.runtime.overall,
       disclaimer: ALERT_DISCLAIMER,
+      persistenceFailed,
+      persistenceError,
     };
   });
 
