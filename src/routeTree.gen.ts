@@ -9,8 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OptionsChainRouteImport } from './routes/options-chain'
 import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
@@ -72,6 +76,16 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
   id: '/signal-accuracy',
   path: '/signal-accuracy',
@@ -80,6 +94,16 @@ const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReleaseNotesRoute = ReleaseNotesRouteImport.update({
+  id: '/release-notes',
+  path: '/release-notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -434,8 +458,12 @@ export interface FileRoutesByFullPath {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -497,8 +525,12 @@ export interface FileRoutesByTo {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -562,8 +594,12 @@ export interface FileRoutesById {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -627,8 +663,12 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
@@ -690,8 +730,12 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
@@ -754,8 +798,12 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
+    | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/ai-market-assistant'
@@ -819,8 +867,12 @@ export interface RootRouteChildren {
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
   OptionsChainRoute: typeof OptionsChainRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  ReleaseNotesRoute: typeof ReleaseNotesRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
+  StatusRoute: typeof StatusRoute
+  TermsRoute: typeof TermsRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
@@ -832,6 +884,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signal-accuracy': {
       id: '/signal-accuracy'
       path: '/signal-accuracy'
@@ -844,6 +910,20 @@ declare module '@tanstack/react-router' {
       path: '/risk'
       fullPath: '/risk'
       preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/release-notes': {
+      id: '/release-notes'
+      path: '/release-notes'
+      fullPath: '/release-notes'
+      preLoaderRoute: typeof ReleaseNotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1401,8 +1481,12 @@ const rootRouteChildren: RootRouteChildren = {
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
   OptionsChainRoute: OptionsChainRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  ReleaseNotesRoute: ReleaseNotesRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
+  StatusRoute: StatusRoute,
+  TermsRoute: TermsRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
