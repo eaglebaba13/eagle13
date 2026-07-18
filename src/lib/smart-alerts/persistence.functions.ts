@@ -490,6 +490,8 @@ export interface SmartAlertRunResult {
   readonly generatedAt: string;
   readonly runtimeOverall: string;
   readonly disclaimer: string;
+  readonly persistenceFailed: boolean;
+  readonly persistenceError: string | null;
 }
 
 export const runSmartAlerts = createServerFn({ method: "POST" })
