@@ -46,6 +46,7 @@ import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_a
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedBacktestLabRouteImport } from './routes/_authenticated/backtest-lab'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -260,6 +261,12 @@ const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBacktestLabRoute =
+  AuthenticatedBacktestLabRouteImport.update({
+    id: '/backtest-lab',
+    path: '/backtest-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
   id: '/alerts',
   path: '/alerts',
@@ -433,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
+  '/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -495,6 +503,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
+  '/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -559,6 +568,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
+  '/_authenticated/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
     | '/alerts'
+    | '/backtest-lab'
     | '/billing'
     | '/institutional-flow'
     | '/license'
@@ -685,6 +696,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
     | '/alerts'
+    | '/backtest-lab'
     | '/billing'
     | '/institutional-flow'
     | '/license'
@@ -748,6 +760,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/ai-market-assistant'
     | '/_authenticated/alerts'
+    | '/_authenticated/backtest-lab'
     | '/_authenticated/billing'
     | '/_authenticated/institutional-flow'
     | '/_authenticated/license'
@@ -1078,6 +1091,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBillingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/backtest-lab': {
+      id: '/_authenticated/backtest-lab'
+      path: '/backtest-lab'
+      fullPath: '/backtest-lab'
+      preLoaderRoute: typeof AuthenticatedBacktestLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/alerts': {
       id: '/_authenticated/alerts'
       path: '/alerts'
@@ -1291,6 +1311,7 @@ const AuthenticatedResearchLabRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketAssistantRoute: typeof AuthenticatedAiMarketAssistantRoute
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
+  AuthenticatedBacktestLabRoute: typeof AuthenticatedBacktestLabRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
@@ -1316,6 +1337,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiMarketAssistantRoute: AuthenticatedAiMarketAssistantRoute,
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
+  AuthenticatedBacktestLabRoute: AuthenticatedBacktestLabRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
