@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OptionsChainRouteImport } from './routes/options-chain'
 import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
@@ -80,6 +81,11 @@ const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -434,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -562,6 +570,7 @@ export interface FileRoutesById {
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -627,6 +636,7 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
     | '/risk'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
@@ -690,6 +700,7 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
     | '/risk'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
@@ -754,6 +765,7 @@ export interface FileRouteTypes {
     | '/options-analytics'
     | '/options-chain'
     | '/pricing'
+    | '/privacy'
     | '/risk'
     | '/signal-accuracy'
     | '/.mcp/list-tools'
@@ -819,6 +831,7 @@ export interface RootRouteChildren {
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
   OptionsChainRoute: typeof OptionsChainRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -844,6 +857,13 @@ declare module '@tanstack/react-router' {
       path: '/risk'
       fullPath: '/risk'
       preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1401,6 +1421,7 @@ const rootRouteChildren: RootRouteChildren = {
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
   OptionsChainRoute: OptionsChainRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
