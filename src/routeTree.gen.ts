@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
@@ -78,6 +79,11 @@ import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -590,6 +598,7 @@ export interface FileRoutesById {
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
     | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -724,6 +734,7 @@ export interface FileRouteTypes {
     | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/release-notes'
     | '/risk'
     | '/signal-accuracy'
+    | '/status'
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -859,6 +871,7 @@ export interface RootRouteChildren {
   ReleaseNotesRoute: typeof ReleaseNotesRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
+  StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -876,6 +889,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signal-accuracy': {
@@ -1465,6 +1485,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReleaseNotesRoute: ReleaseNotesRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
+  StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
