@@ -66,6 +66,15 @@ export interface BuildRuntimeReportInput {
     readonly blockers?: readonly string[];
     readonly leakageDetected?: boolean;
   } | null;
+  readonly coindcxMarketData?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+    readonly discoveredMarkets?: number;
+    readonly tradingEnabled?: boolean;
+    readonly warnings?: readonly string[];
+    readonly blockers?: readonly string[];
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -252,6 +261,28 @@ export function buildRuntimeReadinessReport(
 
   if (input.researchLab) {
     evidence.push(buildResearchLabEvidence({ nowIso: now, researchLab: input.researchLab }));
+  }
+
+  if (input.coindcxMarketData) {
+    const cx = input.coindcxMarketData;
+    const ev = evidenceFromSimple({
+      module: "COINDCX_MARKET_DATA",
+      available: cx.available,
+      demo: cx.demo,
+      reason: cx.reason,
+      observedAt: now,
+      diagnosticsPath: "/admin/coindcx",
+      provenance: "COINDCX",
+    });
+    const warnings = [...(cx.warnings ?? [])];
+    const blockers = [...(cx.blockers ?? [])];
+    // Any accidental trading flag flip is a hard blocker.
+    if (cx.tradingEnabled === true) blockers.push("COINDCX_TRADING_FLAG_TRIPPED");
+    evidence.push({
+      ...ev,
+      warnings: warnings.length > 0 ? warnings : ev.warnings,
+      blockers: blockers.length > 0 ? blockers : ev.blockers,
+    });
   }
 
   return aggregateRuntimeReadiness(evidence, { generatedAt: now });
