@@ -31,6 +31,9 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     const { evaluateVixRegime } = await import("@/lib/market-breadth/vix-regime");
     const { adaptPcrConfirmation } = await import("@/lib/market-breadth/pcr-confirmation");
     const { classifyGti } = await import("@/lib/market-breadth/gti-classifier");
+    const { classifySmartAlertReadiness, unknownEngineHealth } = await import(
+      "@/lib/smart-alerts/readiness"
+    );
 
     // ── Quotes / VIX ────────────────────────────────────────────
     let quotes: Awaited<ReturnType<typeof getMarketData>> | null = null;
@@ -123,6 +126,19 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
       combinedPcr: pcrReading,
       breadthCapability: breadthCap,
       gtiComputed,
+      smartAlertEngine: (() => {
+        // Probe operational health. Non-fatal — engine module registration
+        // reflects import success + rule count + adapter configuration.
+        const health = unknownEngineHealth();
+        const readiness = classifySmartAlertReadiness(health);
+        return {
+          available: readiness.status !== "UNAVAILABLE",
+          demo: false,
+          reason: readiness.reason,
+          warnings: readiness.warnings,
+          blockers: readiness.blockers,
+        };
+      })(),
     });
   });
 
