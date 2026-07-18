@@ -49,6 +49,7 @@ import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_au
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedResearchLabSignalsRouteImport } from './routes/_authenticated/research-lab.signals'
+import { Route as AuthenticatedResearchLabRunsRouteImport } from './routes/_authenticated/research-lab.runs'
 import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
 import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
 import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
@@ -273,6 +274,12 @@ const AuthenticatedResearchLabSignalsRoute =
     path: '/signals',
     getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
+const AuthenticatedResearchLabRunsRoute =
+  AuthenticatedResearchLabRunsRouteImport.update({
+    id: '/runs',
+    path: '/runs',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
 const AuthenticatedResearchLabInstitutionalFlowRoute =
   AuthenticatedResearchLabInstitutionalFlowRouteImport.update({
     id: '/institutional-flow',
@@ -417,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
@@ -473,6 +481,7 @@ export interface FileRoutesByTo {
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
@@ -531,6 +540,7 @@ export interface FileRoutesById {
   '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/_authenticated/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/_authenticated/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/_authenticated/research-lab/runs': typeof AuthenticatedResearchLabRunsRoute
   '/_authenticated/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
@@ -589,6 +599,7 @@ export interface FileRouteTypes {
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
     | '/research-lab/institutional-flow'
+    | '/research-lab/runs'
     | '/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
     | '/research-lab/institutional-flow'
+    | '/research-lab/runs'
     | '/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   id:
@@ -702,6 +714,7 @@ export interface FileRouteTypes {
     | '/_authenticated/research-lab/alerts'
     | '/_authenticated/research-lab/gann-gap'
     | '/_authenticated/research-lab/institutional-flow'
+    | '/_authenticated/research-lab/runs'
     | '/_authenticated/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
@@ -1022,6 +1035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResearchLabSignalsRouteImport
       parentRoute: typeof AuthenticatedResearchLabRoute
     }
+    '/_authenticated/research-lab/runs': {
+      id: '/_authenticated/research-lab/runs'
+      path: '/runs'
+      fullPath: '/research-lab/runs'
+      preLoaderRoute: typeof AuthenticatedResearchLabRunsRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
     '/_authenticated/research-lab/institutional-flow': {
       id: '/_authenticated/research-lab/institutional-flow'
       path: '/institutional-flow'
@@ -1134,6 +1154,7 @@ interface AuthenticatedResearchLabRouteChildren {
   AuthenticatedResearchLabAlertsRoute: typeof AuthenticatedResearchLabAlertsRoute
   AuthenticatedResearchLabGannGapRoute: typeof AuthenticatedResearchLabGannGapRoute
   AuthenticatedResearchLabInstitutionalFlowRoute: typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  AuthenticatedResearchLabRunsRoute: typeof AuthenticatedResearchLabRunsRoute
   AuthenticatedResearchLabSignalsRoute: typeof AuthenticatedResearchLabSignalsRoute
 }
 
@@ -1143,6 +1164,7 @@ const AuthenticatedResearchLabRouteChildren: AuthenticatedResearchLabRouteChildr
     AuthenticatedResearchLabGannGapRoute: AuthenticatedResearchLabGannGapRoute,
     AuthenticatedResearchLabInstitutionalFlowRoute:
       AuthenticatedResearchLabInstitutionalFlowRoute,
+    AuthenticatedResearchLabRunsRoute: AuthenticatedResearchLabRunsRoute,
     AuthenticatedResearchLabSignalsRoute: AuthenticatedResearchLabSignalsRoute,
   }
 
@@ -1240,3 +1262,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
