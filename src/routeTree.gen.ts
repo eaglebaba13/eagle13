@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
 import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
+import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 
@@ -295,6 +296,12 @@ const AuthenticatedAdminBetaReadinessRoute =
     path: '/admin/beta-readiness',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminAlertsRoute =
+  AuthenticatedAdminAlertsRouteImport.update({
+    id: '/admin/alerts',
+    path: '/admin/alerts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -346,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -394,6 +402,7 @@ export interface FileRoutesByTo {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/gann-gap'
     | '/admin/launch-readiness'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/gann-gap'
     | '/admin/launch-readiness'
@@ -591,6 +603,7 @@ export interface FileRouteTypes {
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/gann-gap'
     | '/_authenticated/admin/launch-readiness'
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBetaReadinessRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/alerts': {
+      id: '/_authenticated/admin/alerts'
+      path: '/admin/alerts'
+      fullPath: '/admin/alerts'
+      preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -979,6 +999,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminGannGapRoute: typeof AuthenticatedAdminGannGapRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
@@ -998,6 +1019,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminGannGapRoute: AuthenticatedAdminGannGapRoute,
   AuthenticatedAdminLaunchReadinessRoute:
