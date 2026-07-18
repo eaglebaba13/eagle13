@@ -566,25 +566,6 @@ export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
     supportsFreshness: true,
     supportsCollapse: true,
   },
-  {
-    id: "legacy-institutional-flow",
-    title: "Institutional Flow",
-    section: "OPTIONS",
-    componentLoader: legacyInstitutionalFlowLoader,
-    minimumPlan: "pro",
-    enabled: true,
-    desktopSpan: 6,
-    tabletSpan: 2,
-    mobileOrder: 115,
-    desktopOrder: 115,
-    priority: 55,
-    dataDependency: "OPTIONS_CHAIN",
-    refreshPolicy: { kind: "interval", intervalMs: 90_000 },
-    methodologyLabel: "Institutional Flow v1",
-    formulaVersion: "INSTITUTIONAL_FLOW_V1",
-    supportsFreshness: true,
-    supportsCollapse: true,
-  },
 ];
 
 export function legacyWidgetsById(): Map<string, WidgetDefinition> {
