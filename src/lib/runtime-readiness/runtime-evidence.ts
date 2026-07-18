@@ -56,7 +56,8 @@ export type ModuleId =
   | "OPTION_STRATEGY_TERMINAL"
   | "AI_MARKET_ASSISTANT"
   | "SMART_ALERT_ENGINE"
-  | "INSTITUTIONAL_FLOW";
+  | "INSTITUTIONAL_FLOW"
+  | "RESEARCH_LAB";
 
 export interface RuntimeEvidence {
   readonly module: ModuleId;
