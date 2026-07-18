@@ -211,6 +211,22 @@ function labelToBias(label: string | null | undefined): CanonicalDirection {
   return "UNKNOWN";
 }
 
+function strategyBiasToCanonical(b: string | undefined | null): CanonicalDirection {
+  if (!b) return "UNKNOWN";
+  if (b === "BULL") return "BULLISH";
+  if (b === "BEAR") return "BEARISH";
+  if (b === "NEUTRAL" || b === "VOL_LONG" || b === "VOL_SHORT") return "NEUTRAL";
+  return "UNKNOWN";
+}
+
+function assistantBiasToCanonical(b: string | undefined | null): CanonicalDirection {
+  if (!b) return "UNKNOWN";
+  if (b === "BULLISH") return "BULLISH";
+  if (b === "BEARISH") return "BEARISH";
+  if (b === "NEUTRAL" || b === "CONFLICT") return "NEUTRAL";
+  return "UNKNOWN";
+}
+
 // ─────────────────────────────────────────────────────────────
 // Build AlertEvaluationContext from canonical envelopes.
 // ─────────────────────────────────────────────────────────────
