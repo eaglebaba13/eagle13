@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -73,6 +74,11 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
   id: '/signal-accuracy',
   path: '/signal-accuracy',
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -573,6 +581,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/signal-accuracy': typeof SignalAccuracyRoute
+  '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/signal-accuracy'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/signal-accuracy'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
@@ -768,6 +779,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/signal-accuracy'
+    | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/ai-market-assistant'
@@ -834,6 +846,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RiskRoute: typeof RiskRoute
   SignalAccuracyRoute: typeof SignalAccuracyRoute
+  TermsRoute: typeof TermsRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
@@ -845,6 +858,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signal-accuracy': {
       id: '/signal-accuracy'
       path: '/signal-accuracy'
@@ -1424,6 +1444,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RiskRoute: RiskRoute,
   SignalAccuracyRoute: SignalAccuracyRoute,
+  TermsRoute: TermsRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
