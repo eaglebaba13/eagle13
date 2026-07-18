@@ -24,6 +24,7 @@ import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-ter
 import { Route as LiveLevelsRouteImport } from './routes/live-levels'
 import { Route as GannGapOutlookRouteImport } from './routes/gann-gap-outlook'
 import { Route as DecisionRouteImport } from './routes/decision'
+import { Route as CryptoRouteImport } from './routes/crypto'
 import { Route as CombinedPcrRouteImport } from './routes/combined-pcr'
 import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as BacktestRouteImport } from './routes/backtest'
@@ -36,6 +37,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
+import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -62,6 +64,7 @@ import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
 import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
 import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
+import { Route as AuthenticatedAdminCoindcxRouteImport } from './routes/_authenticated/admin.coindcx'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -143,6 +146,11 @@ const DecisionRoute = DecisionRouteImport.update({
   path: '/decision',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CryptoRoute = CryptoRouteImport.update({
+  id: '/crypto',
+  path: '/crypto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CombinedPcrRoute = CombinedPcrRouteImport.update({
   id: '/combined-pcr',
   path: '/combined-pcr',
@@ -202,6 +210,11 @@ const DevAstroAuditRoute = DevAstroAuditRouteImport.update({
   id: '/dev/astro-audit',
   path: '/dev/astro-audit',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CryptoPairRoute = CryptoPairRouteImport.update({
+  id: '/$pair',
+  path: '/$pair',
+  getParentRoute: () => CryptoRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -354,6 +367,12 @@ const AuthenticatedAdminGannGapRoute =
     path: '/admin/gann-gap',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCoindcxRoute =
+  AuthenticatedAdminCoindcxRouteImport.update({
+    id: '/admin/coindcx',
+    path: '/admin/coindcx',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminBetaReadinessRoute =
   AuthenticatedAdminBetaReadinessRouteImport.update({
     id: '/admin/beta-readiness',
@@ -394,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/combined-pcr': typeof CombinedPcrRoute
+  '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
   '/live-levels': typeof LiveLevelsRoute
@@ -421,12 +441,14 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -453,6 +475,7 @@ export interface FileRoutesByTo {
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/combined-pcr': typeof CombinedPcrRoute
+  '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
   '/live-levels': typeof LiveLevelsRoute
@@ -480,12 +503,14 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -514,6 +539,7 @@ export interface FileRoutesById {
   '/backtest': typeof BacktestRoute
   '/broker': typeof BrokerRoute
   '/combined-pcr': typeof CombinedPcrRoute
+  '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
   '/live-levels': typeof LiveLevelsRoute
@@ -541,12 +567,14 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
+  '/_authenticated/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
   '/_authenticated/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/_authenticated/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
@@ -575,6 +603,7 @@ export interface FileRouteTypes {
     | '/backtest'
     | '/broker'
     | '/combined-pcr'
+    | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
     | '/live-levels'
@@ -602,12 +631,14 @@ export interface FileRouteTypes {
     | '/profile'
     | '/research-lab'
     | '/settings'
+    | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/alerts'
     | '/admin/beta-readiness'
+    | '/admin/coindcx'
     | '/admin/gann-gap'
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
@@ -634,6 +665,7 @@ export interface FileRouteTypes {
     | '/backtest'
     | '/broker'
     | '/combined-pcr'
+    | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
     | '/live-levels'
@@ -661,12 +693,14 @@ export interface FileRouteTypes {
     | '/profile'
     | '/research-lab'
     | '/settings'
+    | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/alerts'
     | '/admin/beta-readiness'
+    | '/admin/coindcx'
     | '/admin/gann-gap'
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
@@ -694,6 +728,7 @@ export interface FileRouteTypes {
     | '/backtest'
     | '/broker'
     | '/combined-pcr'
+    | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
     | '/live-levels'
@@ -721,12 +756,14 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/research-lab'
     | '/_authenticated/settings'
+    | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
+    | '/_authenticated/admin/coindcx'
     | '/_authenticated/admin/gann-gap'
     | '/_authenticated/admin/institutional-flow'
     | '/_authenticated/admin/launch-readiness'
@@ -755,6 +792,7 @@ export interface RootRouteChildren {
   BacktestRoute: typeof BacktestRoute
   BrokerRoute: typeof BrokerRoute
   CombinedPcrRoute: typeof CombinedPcrRoute
+  CryptoRoute: typeof CryptoRouteWithChildren
   DecisionRoute: typeof DecisionRoute
   GannGapOutlookRoute: typeof GannGapOutlookRoute
   LiveLevelsRoute: typeof LiveLevelsRoute
@@ -886,6 +924,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecisionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crypto': {
+      id: '/crypto'
+      path: '/crypto'
+      fullPath: '/crypto'
+      preLoaderRoute: typeof CryptoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/combined-pcr': {
       id: '/combined-pcr'
       path: '/combined-pcr'
@@ -969,6 +1014,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dev/astro-audit'
       preLoaderRoute: typeof DevAstroAuditRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/crypto/$pair': {
+      id: '/crypto/$pair'
+      path: '/$pair'
+      fullPath: '/crypto/$pair'
+      preLoaderRoute: typeof CryptoPairRouteImport
+      parentRoute: typeof CryptoRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -1152,6 +1204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGannGapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/coindcx': {
+      id: '/_authenticated/admin/coindcx'
+      path: '/admin/coindcx'
+      fullPath: '/admin/coindcx'
+      preLoaderRoute: typeof AuthenticatedAdminCoindcxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/beta-readiness': {
       id: '/_authenticated/admin/beta-readiness'
       path: '/admin/beta-readiness'
@@ -1242,6 +1301,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
+  AuthenticatedAdminCoindcxRoute: typeof AuthenticatedAdminCoindcxRoute
   AuthenticatedAdminGannGapRoute: typeof AuthenticatedAdminGannGapRoute
   AuthenticatedAdminInstitutionalFlowRoute: typeof AuthenticatedAdminInstitutionalFlowRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
@@ -1266,6 +1326,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
+  AuthenticatedAdminCoindcxRoute: AuthenticatedAdminCoindcxRoute,
   AuthenticatedAdminGannGapRoute: AuthenticatedAdminGannGapRoute,
   AuthenticatedAdminInstitutionalFlowRoute:
     AuthenticatedAdminInstitutionalFlowRoute,
@@ -1283,6 +1344,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface CryptoRouteChildren {
+  CryptoPairRoute: typeof CryptoPairRoute
+}
+
+const CryptoRouteChildren: CryptoRouteChildren = {
+  CryptoPairRoute: CryptoPairRoute,
+}
+
+const CryptoRouteWithChildren =
+  CryptoRoute._addFileChildren(CryptoRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1293,6 +1365,7 @@ const rootRouteChildren: RootRouteChildren = {
   BacktestRoute: BacktestRoute,
   BrokerRoute: BrokerRoute,
   CombinedPcrRoute: CombinedPcrRoute,
+  CryptoRoute: CryptoRouteWithChildren,
   DecisionRoute: DecisionRoute,
   GannGapOutlookRoute: GannGapOutlookRoute,
   LiveLevelsRoute: LiveLevelsRoute,
