@@ -8,6 +8,7 @@ import { computeGamma } from "./gamma";
 import { buildSectorFlow } from "./sector-flow";
 import { summariseFlow } from "./summary";
 import { buildInstitutionalFlowReport, classifyInstitutionalFlowReadiness } from "./report";
+import { LEGACY_DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
 
 function mkLeg(oi: number, dOi: number, gamma: number | null = null) {
   return {
@@ -37,6 +38,63 @@ function mkSnapshot(): OptionChainSnapshot {
 }
 
 describe("Institutional Flow — analytics", () => {
+  it("Max Pain tie-break prefers strike nearest to spot, then lower strike", () => {
+    const snap: OptionChainSnapshot = {
+      instrument: "NIFTY",
+      spotPrice: 20000,
+      timestamp: new Date().toISOString(),
+      provider: "MOCK",
+      expiry: "2026-08-14",
+      availableExpiries: ["2026-08-14"],
+      marketSession: "OPEN",
+      dataQuality: "OK",
+      // Symmetric OI around spot → multiple strikes share the minimum pain.
+      strikes: [
+        { strike: 19800, call: mkLeg(100, 0), put: mkLeg(100, 0) },
+        { strike: 19900, call: mkLeg(100, 0), put: mkLeg(100, 0) },
+        { strike: 20000, call: mkLeg(100, 0), put: mkLeg(100, 0) },
+        { strike: 20100, call: mkLeg(100, 0), put: mkLeg(100, 0) },
+        { strike: 20200, call: mkLeg(100, 0), put: mkLeg(100, 0) },
+      ],
+    };
+    const mp = computeMaxPain({ snapshot: snap });
+    // Nearest-to-spot wins over lowest-strike among tied minima.
+    expect(mp.currentMaxPain).toBe(20000);
+  });
+
+  it("dashboard registry exposes Institutional Flow widget", () => {
+    const ids = LEGACY_DASHBOARD_WIDGETS.map((w) => w.id);
+    expect(ids).toContain("legacy-institutional-flow");
+  });
+
+  it("diagnostics include methodology version and coverage metrics", () => {
+    const report = buildInstitutionalFlowReport({
+      underlying: "NIFTY",
+      snapshot: mkSnapshot(),
+      underlyingPriceChange: 25,
+      broadBreadth: null,
+      sectorSnapshots: [],
+      sectorRegistryVersion: "test",
+      pcrScore: 0.9,
+      pcrState: "NEUTRAL",
+      vix: 14,
+      decisionAction: null,
+      decisionConfidence: null,
+      gtiState: null,
+      gtiConfidence: null,
+      source: "MIXED",
+      nowMs: 0,
+    });
+    expect(report.diagnostics.methodologyVersion).toMatch(/institutional-flow@/);
+    expect(report.diagnostics.callOiCoverage).toBe(1);
+    expect(report.diagnostics.putOiCoverage).toBe(1);
+    expect(report.diagnostics.greeksCoverage).toBe(1);
+    // Sector coverage warning fires when the sector list is empty/partial.
+    expect(
+      report.diagnostics.warnings.some((w) => w.includes("Sector coverage")),
+    ).toBe(true);
+  });
+
   it("OI analysis identifies highest call/put and ATM strike", () => {
     const oi = analyzeOi(mkSnapshot());
     expect(oi.highestCallOiStrike).toBe(20000);
