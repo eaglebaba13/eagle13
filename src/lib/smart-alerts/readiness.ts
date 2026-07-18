@@ -6,7 +6,11 @@
 
 import { SMART_ALERTS_RULES_VERSION } from "./types";
 import { allAlertTypes } from "./subscriptions";
-import { EVENT_RULES } from "./events";
+
+// The Smart Alert engine is rule-per-transition. Each AlertType maps to one
+// deterministic rule inside `events.ts::generateAlertEvents`. The count is
+// therefore the number of alert types.
+const RULE_COUNT = allAlertTypes().length;
 
 export type SmartAlertEngineStatus = "HEALTHY" | "DEGRADED" | "UNAVAILABLE";
 
@@ -40,7 +44,7 @@ export interface SmartAlertReadiness {
 export function unknownEngineHealth(): SmartAlertEngineHealth {
   return {
     available: true,
-    ruleCount: EVENT_RULES.length,
+    ruleCount: RULE_COUNT,
     alertTypeCount: allAlertTypes().length,
     rulesVersion: SMART_ALERTS_RULES_VERSION,
     persistenceAvailable: true,
