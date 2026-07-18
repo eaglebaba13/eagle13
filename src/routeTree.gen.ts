@@ -42,6 +42,7 @@ import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authen
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -223,6 +224,11 @@ const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAiMarketAssistantRoute =
   AuthenticatedAiMarketAssistantRouteImport.update({
     id: '/ai-market-assistant',
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
+  '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
+    | '/alerts'
     | '/billing'
     | '/license'
     | '/live-option-terminal'
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
+    | '/alerts'
     | '/billing'
     | '/license'
     | '/live-option-terminal'
@@ -569,6 +580,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/ai-market-assistant'
+    | '/_authenticated/alerts'
     | '/_authenticated/billing'
     | '/_authenticated/license'
     | '/_authenticated/live-option-terminal'
@@ -857,6 +869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBillingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/alerts': {
+      id: '/_authenticated/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-market-assistant': {
       id: '/_authenticated/ai-market-assistant'
       path: '/ai-market-assistant'
@@ -953,6 +972,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketAssistantRoute: typeof AuthenticatedAiMarketAssistantRoute
+  AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
@@ -971,6 +991,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiMarketAssistantRoute: AuthenticatedAiMarketAssistantRoute,
+  AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
