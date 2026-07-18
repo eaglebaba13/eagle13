@@ -111,6 +111,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "options-chain", label: "Options Chain", icon: Layers, to: "/options-chain", section: "MARKET", order: 225, desktopVisible: true, mobileVisible: true },
   { id: "live-option-terminal", label: "Option Strategy Terminal", icon: Target, to: "/live-option-terminal", section: "MARKET", order: 227, desktopVisible: true, mobileVisible: true },
   { id: "ai-market-assistant", label: "AI Market Assistant", icon: Brain, to: "/ai-market-assistant", section: "MARKET", order: 228, desktopVisible: true, mobileVisible: true },
+  { id: "alerts", label: "Alert Center", icon: Bell, to: "/alerts", section: "MARKET", order: 229, desktopVisible: true, mobileVisible: true },
   { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
 
   // ACCOUNT
@@ -118,6 +119,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "admin-launch-readiness", label: "Launch Readiness", icon: ShieldCheck, to: "/admin/launch-readiness", section: "ACCOUNT", order: 305, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-system-status", label: "System Status", icon: Activity, to: "/admin/system-status", section: "ACCOUNT", order: 306, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-beta-readiness", label: "Beta Readiness", icon: ShieldCheck, to: "/admin/beta-readiness", section: "ACCOUNT", order: 307, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
+  { id: "admin-alerts", label: "Smart Alerts (Admin)", icon: Bell, to: "/admin/alerts", section: "ACCOUNT", order: 308, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "license", label: "License", icon: KeyRound, to: "/license", section: "ACCOUNT", order: 320, desktopVisible: true, mobileVisible: true },
   { id: "billing", label: "Billing", icon: ScrollText, to: "/billing", section: "ACCOUNT", order: 330, desktopVisible: true, mobileVisible: true },
   { id: "pricing", label: "Pricing", icon: FileBarChart, to: "/pricing", section: "ACCOUNT", order: 340, desktopVisible: true, mobileVisible: true },
