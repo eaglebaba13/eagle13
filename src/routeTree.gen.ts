@@ -53,6 +53,7 @@ import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
+import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
 import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
@@ -291,6 +292,12 @@ const AuthenticatedAdminLaunchReadinessRoute =
     path: '/admin/launch-readiness',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminInstitutionalFlowRoute =
+  AuthenticatedAdminInstitutionalFlowRouteImport.update({
+    id: '/admin/institutional-flow',
+    path: '/admin/institutional-flow',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminGannGapRoute =
   AuthenticatedAdminGannGapRouteImport.update({
     id: '/admin/gann-gap',
@@ -364,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
+  '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -414,6 +422,7 @@ export interface FileRoutesByTo {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
+  '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -466,6 +475,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
+  '/_authenticated/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/gann-gap'
+    | '/admin/institutional-flow'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/gann-gap'
+    | '/admin/institutional-flow'
     | '/admin/launch-readiness'
     | '/admin/payments'
     | '/admin/providers'
@@ -619,6 +631,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/gann-gap'
+    | '/_authenticated/admin/institutional-flow'
     | '/_authenticated/admin/launch-readiness'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/providers'
@@ -972,6 +985,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLaunchReadinessRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/institutional-flow': {
+      id: '/_authenticated/admin/institutional-flow'
+      path: '/admin/institutional-flow'
+      fullPath: '/admin/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedAdminInstitutionalFlowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/gann-gap': {
       id: '/_authenticated/admin/gann-gap'
       path: '/admin/gann-gap'
@@ -1023,6 +1043,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminGannGapRoute: typeof AuthenticatedAdminGannGapRoute
+  AuthenticatedAdminInstitutionalFlowRoute: typeof AuthenticatedAdminInstitutionalFlowRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
@@ -1044,6 +1065,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminGannGapRoute: AuthenticatedAdminGannGapRoute,
+  AuthenticatedAdminInstitutionalFlowRoute:
+    AuthenticatedAdminInstitutionalFlowRoute,
   AuthenticatedAdminLaunchReadinessRoute:
     AuthenticatedAdminLaunchReadinessRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,

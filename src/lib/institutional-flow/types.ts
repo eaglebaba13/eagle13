@@ -156,6 +156,21 @@ export interface InstitutionalFlowDiagnostics {
   readonly unavailableCalculations: readonly string[];
   readonly processingMs: number;
   readonly warnings: readonly string[];
+  readonly methodologyVersion: string;
+  readonly maxPainMethodology: string;
+  readonly buildUpMethodology: string;
+  readonly callOiCoverage: number;
+  readonly putOiCoverage: number;
+  readonly changeOiCoverage: number;
+  readonly volumeCoverage: number;
+  readonly ivCoverage: number;
+  readonly greeksCoverage: number;
+  readonly missingGreeksReason: string | null;
+  readonly maxPainAvailability: CalcAvailability;
+  readonly gammaAvailability: CalcAvailability;
+  readonly sectorCoverage: number;
+  readonly lastSuccessfulAt: string | null;
+  readonly lastFailedAt: string | null;
 }
 
 export interface InstitutionalFlowReport {

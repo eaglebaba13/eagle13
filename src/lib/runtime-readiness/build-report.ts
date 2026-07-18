@@ -230,7 +230,7 @@ export function buildRuntimeReadinessReport(
       demo: input.institutionalFlow.demo,
       reason: input.institutionalFlow.reason,
       observedAt: now,
-      diagnosticsPath: "/institutional-flow",
+      diagnosticsPath: "/admin/institutional-flow",
       provenance: "INSTITUTIONAL_FLOW",
     });
     const warnings = input.institutionalFlow.warnings ?? [];
