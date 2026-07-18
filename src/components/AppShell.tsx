@@ -16,6 +16,7 @@ import { type ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NAV_REGISTRY } from "@/lib/navigation";
 
 // Routes that render their own sidebar/shell — global shell is suppressed on
@@ -126,6 +127,7 @@ function AppShellHeader() {
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <ThemeToggle />
+        <HeaderAlertBell />
         <ProfileMenu />
       </div>
     </header>
