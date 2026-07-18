@@ -58,6 +58,14 @@ export interface BuildRuntimeReportInput {
     readonly warnings?: readonly string[];
     readonly blockers?: readonly string[];
   } | null;
+  readonly researchLab?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+    readonly warnings?: readonly string[];
+    readonly blockers?: readonly string[];
+    readonly leakageDetected?: boolean;
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -242,5 +250,34 @@ export function buildRuntimeReadinessReport(
     });
   }
 
+  if (input.researchLab) {
+    evidence.push(buildResearchLabEvidence({ nowIso: now, researchLab: input.researchLab }));
+  }
+
   return aggregateRuntimeReadiness(evidence, { generatedAt: now });
+}
+
+// RESEARCH_LAB is non-critical; leakage blocks research execution only
+// and MUST NOT block live-market readiness.
+export function buildResearchLabEvidence(input: {
+  readonly nowIso: string;
+  readonly researchLab: NonNullable<BuildRuntimeReportInput["researchLab"]>;
+}): RuntimeEvidence {
+  const ev = evidenceFromSimple({
+    module: "RESEARCH_LAB",
+    available: input.researchLab.available,
+    demo: input.researchLab.demo,
+    reason: input.researchLab.reason,
+    observedAt: input.nowIso,
+    diagnosticsPath: "/admin/research-lab",
+    provenance: "RESEARCH_LAB",
+  });
+  const warnings = [...(input.researchLab.warnings ?? [])];
+  const blockers: string[] = [...(input.researchLab.blockers ?? [])];
+  if (input.researchLab.leakageDetected) blockers.push("LEAKAGE_DETECTED");
+  return {
+    ...ev,
+    warnings: warnings.length > 0 ? warnings : ev.warnings,
+    blockers: blockers.length > 0 ? blockers : ev.blockers,
+  };
 }

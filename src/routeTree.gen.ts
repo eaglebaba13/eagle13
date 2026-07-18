@@ -37,6 +37,7 @@ import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
@@ -47,6 +48,10 @@ import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AuthenticatedResearchLabSignalsRouteImport } from './routes/_authenticated/research-lab.signals'
+import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
+import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
+import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
@@ -200,6 +205,12 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResearchLabRoute =
+  AuthenticatedResearchLabRouteImport.update({
+    id: '/research-lab',
+    path: '/research-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -255,6 +266,30 @@ const Char91DotmcpChar93ListToolsRoute =
     id: '/.mcp/list-tools',
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedResearchLabSignalsRoute =
+  AuthenticatedResearchLabSignalsRouteImport.update({
+    id: '/signals',
+    path: '/signals',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
+const AuthenticatedResearchLabInstitutionalFlowRoute =
+  AuthenticatedResearchLabInstitutionalFlowRouteImport.update({
+    id: '/institutional-flow',
+    path: '/institutional-flow',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
+const AuthenticatedResearchLabGannGapRoute =
+  AuthenticatedResearchLabGannGapRouteImport.update({
+    id: '/gann-gap',
+    path: '/gann-gap',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
+const AuthenticatedResearchLabAlertsRoute =
+  AuthenticatedResearchLabAlertsRouteImport.update({
+    id: '/alerts',
+    path: '/alerts',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
 const AuthenticatedAdminSystemStatusRoute =
   AuthenticatedAdminSystemStatusRouteImport.update({
@@ -363,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -378,6 +414,10 @@ export interface FileRoutesByFullPath {
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
+  '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
+  '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
@@ -414,6 +454,7 @@ export interface FileRoutesByTo {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -429,6 +470,10 @@ export interface FileRoutesByTo {
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
+  '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
+  '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
@@ -467,6 +512,7 @@ export interface FileRoutesById {
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -482,6 +528,10 @@ export interface FileRoutesById {
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
+  '/_authenticated/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
+  '/_authenticated/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  '/_authenticated/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
@@ -520,6 +570,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
+    | '/research-lab'
     | '/settings'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -535,6 +586,10 @@ export interface FileRouteTypes {
     | '/admin/readiness'
     | '/admin/staging-validation'
     | '/admin/system-status'
+    | '/research-lab/alerts'
+    | '/research-lab/gann-gap'
+    | '/research-lab/institutional-flow'
+    | '/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -571,6 +626,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
+    | '/research-lab'
     | '/settings'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -586,6 +642,10 @@ export interface FileRouteTypes {
     | '/admin/readiness'
     | '/admin/staging-validation'
     | '/admin/system-status'
+    | '/research-lab/alerts'
+    | '/research-lab/gann-gap'
+    | '/research-lab/institutional-flow'
+    | '/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
@@ -623,6 +683,7 @@ export interface FileRouteTypes {
     | '/_authenticated/live-option-terminal'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
+    | '/_authenticated/research-lab'
     | '/_authenticated/settings'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -638,6 +699,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/readiness'
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
+    | '/_authenticated/research-lab/alerts'
+    | '/_authenticated/research-lab/gann-gap'
+    | '/_authenticated/research-lab/institutional-flow'
+    | '/_authenticated/research-lab/signals'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
@@ -873,6 +938,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/research-lab': {
+      id: '/_authenticated/research-lab'
+      path: '/research-lab'
+      fullPath: '/research-lab'
+      preLoaderRoute: typeof AuthenticatedResearchLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -942,6 +1014,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/research-lab/signals': {
+      id: '/_authenticated/research-lab/signals'
+      path: '/signals'
+      fullPath: '/research-lab/signals'
+      preLoaderRoute: typeof AuthenticatedResearchLabSignalsRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
+    '/_authenticated/research-lab/institutional-flow': {
+      id: '/_authenticated/research-lab/institutional-flow'
+      path: '/institutional-flow'
+      fullPath: '/research-lab/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedResearchLabInstitutionalFlowRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
+    '/_authenticated/research-lab/gann-gap': {
+      id: '/_authenticated/research-lab/gann-gap'
+      path: '/gann-gap'
+      fullPath: '/research-lab/gann-gap'
+      preLoaderRoute: typeof AuthenticatedResearchLabGannGapRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
+    '/_authenticated/research-lab/alerts': {
+      id: '/_authenticated/research-lab/alerts'
+      path: '/alerts'
+      fullPath: '/research-lab/alerts'
+      preLoaderRoute: typeof AuthenticatedResearchLabAlertsRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
     }
     '/_authenticated/admin/system-status': {
       id: '/_authenticated/admin/system-status'
@@ -1030,6 +1130,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedResearchLabRouteChildren {
+  AuthenticatedResearchLabAlertsRoute: typeof AuthenticatedResearchLabAlertsRoute
+  AuthenticatedResearchLabGannGapRoute: typeof AuthenticatedResearchLabGannGapRoute
+  AuthenticatedResearchLabInstitutionalFlowRoute: typeof AuthenticatedResearchLabInstitutionalFlowRoute
+  AuthenticatedResearchLabSignalsRoute: typeof AuthenticatedResearchLabSignalsRoute
+}
+
+const AuthenticatedResearchLabRouteChildren: AuthenticatedResearchLabRouteChildren =
+  {
+    AuthenticatedResearchLabAlertsRoute: AuthenticatedResearchLabAlertsRoute,
+    AuthenticatedResearchLabGannGapRoute: AuthenticatedResearchLabGannGapRoute,
+    AuthenticatedResearchLabInstitutionalFlowRoute:
+      AuthenticatedResearchLabInstitutionalFlowRoute,
+    AuthenticatedResearchLabSignalsRoute: AuthenticatedResearchLabSignalsRoute,
+  }
+
+const AuthenticatedResearchLabRouteWithChildren =
+  AuthenticatedResearchLabRoute._addFileChildren(
+    AuthenticatedResearchLabRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketAssistantRoute: typeof AuthenticatedAiMarketAssistantRoute
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
@@ -1039,6 +1160,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedResearchLabRoute: typeof AuthenticatedResearchLabRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
@@ -1061,6 +1183,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedResearchLabRoute: AuthenticatedResearchLabRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
@@ -1117,13 +1240,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
