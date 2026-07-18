@@ -58,7 +58,8 @@ export type ModuleId =
   | "SMART_ALERT_ENGINE"
   | "INSTITUTIONAL_FLOW"
   | "RESEARCH_LAB"
-  | "COINDCX_MARKET_DATA";
+  | "COINDCX_MARKET_DATA"
+  | "BACKTEST_LAB";
 
 export interface RuntimeEvidence {
   readonly module: ModuleId;

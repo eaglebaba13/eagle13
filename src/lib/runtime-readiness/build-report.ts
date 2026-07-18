@@ -312,3 +312,34 @@ export function buildResearchLabEvidence(input: {
     blockers: blockers.length > 0 ? blockers : ev.blockers,
   };
 }
+
+// BACKTEST_LAB is non-critical research surface — mirrors RESEARCH_LAB.
+export function buildBacktestLabEvidence(input: {
+  readonly nowIso: string;
+  readonly backtestLab: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+    readonly warnings?: readonly string[];
+    readonly blockers?: readonly string[];
+    readonly leakageDetected?: boolean;
+  };
+}): RuntimeEvidence {
+  const ev = evidenceFromSimple({
+    module: "BACKTEST_LAB",
+    available: input.backtestLab.available,
+    demo: input.backtestLab.demo,
+    reason: input.backtestLab.reason,
+    observedAt: input.nowIso,
+    diagnosticsPath: "/admin/backtest-lab",
+    provenance: "BACKTEST_LAB",
+  });
+  const warnings = [...(input.backtestLab.warnings ?? [])];
+  const blockers: string[] = [...(input.backtestLab.blockers ?? [])];
+  if (input.backtestLab.leakageDetected) blockers.push("LEAKAGE_DETECTED");
+  return {
+    ...ev,
+    warnings: warnings.length > 0 ? warnings : ev.warnings,
+    blockers: blockers.length > 0 ? blockers : ev.blockers,
+  };
+}
