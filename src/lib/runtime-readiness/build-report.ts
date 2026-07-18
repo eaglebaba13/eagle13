@@ -44,6 +44,13 @@ export interface BuildRuntimeReportInput {
     readonly demo?: boolean;
     readonly reason: string;
   } | null;
+  readonly smartAlertEngine?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+    readonly warnings?: readonly string[];
+    readonly blockers?: readonly string[];
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -184,6 +191,29 @@ export function buildRuntimeReadinessReport(
         provenance: "AI_ASSISTANT",
       }),
     );
+  }
+
+  if (input.smartAlertEngine) {
+    const ev = evidenceFromSimple({
+      module: "SMART_ALERT_ENGINE",
+      available: input.smartAlertEngine.available,
+      demo: input.smartAlertEngine.demo,
+      reason: input.smartAlertEngine.reason,
+      observedAt: now,
+      diagnosticsPath: "/admin/alerts",
+      provenance: "SMART_ALERTS",
+    });
+    const warnings = input.smartAlertEngine.warnings ?? [];
+    const blockers = input.smartAlertEngine.blockers ?? [];
+    evidence.push({
+      ...ev,
+      // Merge structured warnings/blockers while keeping status derived from
+      // `available`/`demo`. Blockers keep the module NOT_READY without
+      // affecting overall critical launch modules (SMART_ALERT_ENGINE is
+      // non-critical).
+      warnings: warnings.length > 0 ? warnings : ev.warnings,
+      blockers: blockers.length > 0 ? blockers : ev.blockers,
+    });
   }
 
   return aggregateRuntimeReadiness(evidence, { generatedAt: now });
