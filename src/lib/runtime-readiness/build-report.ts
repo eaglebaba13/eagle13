@@ -343,4 +343,3 @@ export function buildBacktestLabEvidence(input: {
     blockers: blockers.length > 0 ? blockers : ev.blockers,
   };
 }
-}
