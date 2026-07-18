@@ -45,10 +45,25 @@ export function computeMaxPain(input: MaxPainInput): MaxPainResult {
     return { strike: row.strike, pain };
   });
 
+  // Deterministic tie-break: minimum pain, then nearest-to-spot, then lower strike.
+  const spotForTie = snapshot.spotPrice;
+  const distTo = (k: number) =>
+    spotForTie != null && Number.isFinite(spotForTie) ? Math.abs(k - spotForTie) : 0;
   let minStrike = perStrikePain[0].strike;
   let minPain = perStrikePain[0].pain;
   for (const p of perStrikePain) {
-    if (p.pain < minPain) { minPain = p.pain; minStrike = p.strike; }
+    if (p.pain < minPain) {
+      minPain = p.pain;
+      minStrike = p.strike;
+      continue;
+    }
+    if (p.pain === minPain) {
+      const dNew = distTo(p.strike);
+      const dCur = distTo(minStrike);
+      if (dNew < dCur || (dNew === dCur && p.strike < minStrike)) {
+        minStrike = p.strike;
+      }
+    }
   }
 
   const spot = snapshot.spotPrice;
