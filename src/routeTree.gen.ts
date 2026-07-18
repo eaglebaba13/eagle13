@@ -55,6 +55,7 @@ import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_a
 import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
+import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_authenticated/admin.research-lab'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
@@ -311,6 +312,12 @@ const AuthenticatedAdminStagingValidationRoute =
     path: '/admin/staging-validation',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminResearchLabRoute =
+  AuthenticatedAdminResearchLabRouteImport.update({
+    id: '/admin/research-lab',
+    path: '/admin/research-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminReadinessRoute =
   AuthenticatedAdminReadinessRouteImport.update({
     id: '/admin/readiness',
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
@@ -484,6 +492,7 @@ export interface FileRoutesByTo {
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
@@ -544,6 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/_authenticated/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
@@ -604,6 +614,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/providers'
     | '/admin/readiness'
+    | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/research-lab/alerts'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/providers'
     | '/admin/readiness'
+    | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/research-lab/alerts'
@@ -721,6 +733,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/readiness'
+    | '/_authenticated/admin/research-lab'
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
     | '/_authenticated/research-lab/alerts'
@@ -1090,6 +1103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStagingValidationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/research-lab': {
+      id: '/_authenticated/admin/research-lab'
+      path: '/admin/research-lab'
+      fullPath: '/admin/research-lab'
+      preLoaderRoute: typeof AuthenticatedAdminResearchLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/readiness': {
       id: '/_authenticated/admin/readiness'
       path: '/admin/readiness'
@@ -1228,6 +1248,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminReadinessRoute: typeof AuthenticatedAdminReadinessRoute
+  AuthenticatedAdminResearchLabRoute: typeof AuthenticatedAdminResearchLabRoute
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
   AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
 }
@@ -1253,6 +1274,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
   AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
   AuthenticatedAdminReadinessRoute: AuthenticatedAdminReadinessRoute,
+  AuthenticatedAdminResearchLabRoute: AuthenticatedAdminResearchLabRoute,
   AuthenticatedAdminStagingValidationRoute:
     AuthenticatedAdminStagingValidationRoute,
   AuthenticatedAdminSystemStatusRoute: AuthenticatedAdminSystemStatusRoute,
