@@ -3,7 +3,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BellRing, CheckCheck, X, RefreshCw } from "lucide-react";
+import { BellRing, CheckCheck, X, RefreshCw, Search as SearchIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   getSmartAlertEvents,
   getSmartAlertSubscription,
@@ -52,12 +53,38 @@ function AlertCenterPage() {
   const dismissFn = useServerFn(markSmartAlertDismissed);
   const readAllFn = useServerFn(markAllSmartAlertsRead);
 
+  const [tab, setTab] = useState<"unread" | "all" | "dismissed">("unread");
+  const [priorityFilter, setPriorityFilter] = useState<AlertPriority | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState<AlertType | "ALL">("ALL");
+  const [instrumentFilter, setInstrumentFilter] = useState<string>("ALL");
+  const [search, setSearch] = useState<string>("");
+
   const events = useQuery({
     queryKey: ["smart-alerts", "events"],
     queryFn: () => evFn({ data: { limit: 100 } }),
     staleTime: 15_000,
     refetchInterval: 60_000,
   });
+  const filtered = useMemo(() => {
+    const rows = events.data ?? [];
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (tab === "unread" && (r.readAt || r.dismissedAt)) return false;
+      if (tab === "all" && r.dismissedAt) return false;
+      if (tab === "dismissed" && !r.dismissedAt) return false;
+      if (priorityFilter !== "ALL" && r.priority !== priorityFilter) return false;
+      if (typeFilter !== "ALL" && r.type !== typeFilter) return false;
+      if (instrumentFilter !== "ALL" && (r.instrument ?? "—") !== instrumentFilter) return false;
+      if (q && !`${r.title} ${r.summary} ${r.type}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [events.data, tab, priorityFilter, typeFilter, instrumentFilter, search]);
+
+  const instrumentOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of events.data ?? []) set.add(r.instrument ?? "—");
+    return Array.from(set);
+  }, [events.data]);
   const subscription = useQuery({
     queryKey: ["smart-alerts", "subscription"],
     queryFn: () => subFn(),
@@ -120,14 +147,83 @@ function AlertCenterPage() {
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background p-2 text-xs">
+            <div role="tablist" aria-label="Alert filter" className="flex overflow-hidden rounded-md border border-border/60">
+              {(["unread", "all", "dismissed"] as const).map((k) => (
+                <button
+                  key={k}
+                  role="tab"
+                  aria-selected={tab === k}
+                  onClick={() => setTab(k)}
+                  className={`px-2.5 py-1 capitalize transition-colors ${tab === k ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted/40"}`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-1">
+              <span className="text-muted-foreground">Priority</span>
+              <select
+                aria-label="Priority filter"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as AlertPriority | "ALL")}
+                className="rounded border border-border/60 bg-background px-1 py-0.5"
+              >
+                <option value="ALL">All</option>
+                {(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as AlertPriority[]).map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-muted-foreground">Type</span>
+              <select
+                aria-label="Type filter"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as AlertType | "ALL")}
+                className="rounded border border-border/60 bg-background px-1 py-0.5"
+              >
+                <option value="ALL">All</option>
+                {allAlertTypes().map((t) => (
+                  <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-muted-foreground">Instrument</span>
+              <select
+                aria-label="Instrument filter"
+                value={instrumentFilter}
+                onChange={(e) => setInstrumentFilter(e.target.value)}
+                className="rounded border border-border/60 bg-background px-1 py-0.5"
+              >
+                <option value="ALL">All</option>
+                {instrumentOptions.map((i) => (
+                  <option key={i} value={i}>{i}</option>
+                ))}
+              </select>
+            </label>
+            <label className="ml-auto flex items-center gap-1">
+              <SearchIcon size={12} className="text-muted-foreground" aria-hidden />
+              <input
+                aria-label="Search alerts"
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search"
+                className="rounded border border-border/60 bg-background px-2 py-0.5"
+              />
+            </label>
+          </div>
+
           {events.isLoading && <div className="text-sm text-muted-foreground">Loading alerts…</div>}
           {events.error && <div className="text-sm text-red-300">Failed to load alerts.</div>}
-          {events.data && events.data.length === 0 && (
+          {events.data && filtered.length === 0 && (
             <div className="rounded-md border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
-              No alerts yet. Press <em>Evaluate now</em> to check current canonical state.
+              No alerts match the current filters. Press <em>Evaluate now</em> to check current canonical state.
             </div>
           )}
-          {(events.data ?? []).map((e) => (
+          {filtered.map((e) => (
             <AlertRow
               key={e.id}
               row={e}
