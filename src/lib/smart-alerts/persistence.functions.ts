@@ -644,6 +644,21 @@ export interface AdminAlertDiagnostics {
   readonly last24hCount: number;
   readonly rulesVersion: string;
   readonly disclaimer: string;
+  readonly activeSubscriptions: number;
+  readonly checkpointCount: number;
+  readonly deliveryAttempts: number;
+  readonly deliveryFailures: number;
+  readonly ruleCount: number;
+  readonly alertTypeCount: number;
+  readonly externalAdaptersDisabledByConfiguration: boolean;
+  readonly engineStatus: "HEALTHY" | "DEGRADED" | "UNAVAILABLE";
+  readonly engineReason: string;
+  readonly engineWarnings: readonly string[];
+  readonly engineBlockers: readonly string[];
+  readonly lastEvaluationAt: string | null;
+  readonly lastSuccessfulEvaluationAt: string | null;
+  readonly lastEvaluationStatus: "OK" | "FAILED" | "UNKNOWN";
+  readonly latestErrors: readonly string[];
 }
 
 async function assertAdmin(ctx: { supabase: unknown; userId: string }): Promise<void> {
