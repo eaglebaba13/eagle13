@@ -107,6 +107,8 @@ const legacyPivotLoader = () =>
   import("@/components/dashboard/widgets/PivotWidget").then((m) => ({ default: m.default }));
 const legacyGannCycleLoader = () =>
   import("@/components/dashboard/widgets/GannCycleWidget").then((m) => ({ default: m.default }));
+const legacyInstitutionalFlowLoader = () =>
+  import("@/components/dashboard/widgets/InstitutionalFlowWidget").then((m) => ({ default: m.default }));
 
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
@@ -561,6 +563,25 @@ export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
     priority: 55,
     dataDependency: "MARKET_DATA",
     refreshPolicy: { kind: "interval", intervalMs: 30_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "legacy-institutional-flow",
+    title: "Institutional Flow",
+    section: "OPTIONS",
+    componentLoader: legacyInstitutionalFlowLoader,
+    minimumPlan: "pro",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 2,
+    mobileOrder: 115,
+    desktopOrder: 115,
+    priority: 55,
+    dataDependency: "OPTIONS_CHAIN",
+    refreshPolicy: { kind: "interval", intervalMs: 90_000 },
+    methodologyLabel: "Institutional Flow v1",
+    formulaVersion: "INSTITUTIONAL_FLOW_V1",
     supportsFreshness: true,
     supportsCollapse: true,
   },
