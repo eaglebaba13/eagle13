@@ -51,6 +51,13 @@ export interface BuildRuntimeReportInput {
     readonly warnings?: readonly string[];
     readonly blockers?: readonly string[];
   } | null;
+  readonly institutionalFlow?: {
+    readonly available: boolean;
+    readonly demo?: boolean;
+    readonly reason: string;
+    readonly warnings?: readonly string[];
+    readonly blockers?: readonly string[];
+  } | null;
 }
 
 export function buildRuntimeReadinessReport(
@@ -211,6 +218,25 @@ export function buildRuntimeReadinessReport(
       // `available`/`demo`. Blockers keep the module NOT_READY without
       // affecting overall critical launch modules (SMART_ALERT_ENGINE is
       // non-critical).
+      warnings: warnings.length > 0 ? warnings : ev.warnings,
+      blockers: blockers.length > 0 ? blockers : ev.blockers,
+    });
+  }
+
+  if (input.institutionalFlow) {
+    const ev = evidenceFromSimple({
+      module: "INSTITUTIONAL_FLOW",
+      available: input.institutionalFlow.available,
+      demo: input.institutionalFlow.demo,
+      reason: input.institutionalFlow.reason,
+      observedAt: now,
+      diagnosticsPath: "/institutional-flow",
+      provenance: "INSTITUTIONAL_FLOW",
+    });
+    const warnings = input.institutionalFlow.warnings ?? [];
+    const blockers = input.institutionalFlow.blockers ?? [];
+    evidence.push({
+      ...ev,
       warnings: warnings.length > 0 ? warnings : ev.warnings,
       blockers: blockers.length > 0 ? blockers : ev.blockers,
     });

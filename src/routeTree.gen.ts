@@ -41,6 +41,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
+import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
@@ -220,6 +221,12 @@ const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
   path: '/license',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInstitutionalFlowRoute =
+  AuthenticatedInstitutionalFlowRouteImport.update({
+    id: '/institutional-flow',
+    path: '/institutional-flow',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -344,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/ai-market-assistant'
     | '/alerts'
     | '/billing'
+    | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
     | '/payment-status'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/ai-market-assistant'
     | '/alerts'
     | '/billing'
+    | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
     | '/payment-status'
@@ -594,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-market-assistant'
     | '/_authenticated/alerts'
     | '/_authenticated/billing'
+    | '/_authenticated/institutional-flow'
     | '/_authenticated/license'
     | '/_authenticated/live-option-terminal'
     | '/_authenticated/payment-status'
@@ -875,6 +888,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLicenseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/institutional-flow': {
+      id: '/_authenticated/institutional-flow'
+      path: '/institutional-flow'
+      fullPath: '/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedInstitutionalFlowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/billing': {
       id: '/_authenticated/billing'
       path: '/billing'
@@ -994,6 +1014,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketAssistantRoute: typeof AuthenticatedAiMarketAssistantRoute
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
@@ -1014,6 +1035,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiMarketAssistantRoute: AuthenticatedAiMarketAssistantRoute,
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,

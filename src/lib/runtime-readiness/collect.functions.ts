@@ -139,6 +139,23 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
           blockers: readiness.blockers,
         };
       })(),
+      institutionalFlow: (() => {
+        // Institutional Flow depends on canonical option-chain OI. Marked
+        // available whenever at least one underlying reports SUPPORTED or
+        // PARTIAL — heavier module reads still run under `/institutional-flow`.
+        const nifty = niftyRes?.capability?.status;
+        const bnk = bnkRes?.capability?.status;
+        const anyUsable = [nifty, bnk].some((s) => s === "SUPPORTED" || s === "PARTIAL");
+        return {
+          available: anyUsable,
+          demo: !anyUsable ? false : (nifty !== "SUPPORTED" && bnk !== "SUPPORTED"),
+          reason: anyUsable
+            ? "Institutional Flow consuming canonical option-chain snapshot"
+            : "Institutional Flow blocked — option chain unavailable",
+          warnings: anyUsable ? [] : ["Canonical option-chain snapshot missing"],
+          blockers: anyUsable ? [] : ["OPTION_CHAIN unavailable"],
+        };
+      })(),
     });
   });
 
