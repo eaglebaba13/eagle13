@@ -119,6 +119,8 @@ const cryptoWatchlistLoader = () =>
   import("@/components/dashboard/widgets/CryptoWatchlistWidget").then((m) => ({ default: m.default }));
 const cryptoSummaryLoader = () =>
   import("@/components/dashboard/widgets/CryptoSummaryWidget").then((m) => ({ default: m.default }));
+const goldSilverRatioLoader = () =>
+  import("@/components/dashboard/widgets/GoldSilverRatioWidget").then((m) => ({ default: m.default }));
 
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
@@ -616,6 +618,24 @@ export const CRYPTO_DASHBOARD_WIDGETS: WidgetDefinition[] = [
     dataDependency: "META_ONLY",
     refreshPolicy: { kind: "interval", intervalMs: 15_000 },
     methodologyLabel: "CoinDCX Public Market Data",
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "gold-silver-ratio-tokenized",
+    title: "Gold / Silver Ratio",
+    section: "SIGNAL",
+    componentLoader: goldSilverRatioLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 2,
+    mobileOrder: 205,
+    desktopOrder: 205,
+    priority: 48,
+    dataDependency: "META_ONLY",
+    refreshPolicy: { kind: "interval", intervalMs: 15_000 },
+    methodologyLabel: "Tokenized Gold / Silver · troy-ounce normalized",
     supportsFreshness: true,
     supportsCollapse: true,
   },
