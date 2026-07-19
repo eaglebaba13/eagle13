@@ -319,6 +319,27 @@ function Dashboard() {
           </div>
         </DashboardDataProvider>
 
+        <section
+          aria-label="Crypto and tokenized metals"
+          style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--eb-muted, #94a3b8)",
+            }}
+          >
+            Crypto & Tokenized Metals · CoinDCX
+          </div>
+          <DashboardGrid
+            device="desktop"
+            context={{ plan: "free" }}
+            widgets={CRYPTO_DASHBOARD_WIDGETS}
+          />
+        </section>
+
         <CustomizeDashboardDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
