@@ -21,6 +21,7 @@ import {
 } from "@/components/dashboard/DashboardDataContext";
 import {
   LEGACY_DASHBOARD_WIDGETS,
+  CRYPTO_DASHBOARD_WIDGETS,
   legacyWidgetsById,
 } from "@/lib/dashboard-widgets";
 import { deriveDashboardFreshness } from "@/lib/dashboard-freshness-adapter";
