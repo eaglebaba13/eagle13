@@ -86,6 +86,16 @@ function AdminCoindcxPage() {
             <div>Last latency: {data.lastDiscoveryLatencyMs != null ? `${data.lastDiscoveryLatencyMs} ms` : "—"}</div>
             <div>Last error: {data.lastError ?? "none"}</div>
           </section>
+
+          <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
+            <div className="mb-1 text-foreground/80 font-medium">Realtime & Widget Consumers</div>
+            <div>WebSocket: not enabled (REST polling authoritative)</div>
+            <div>Shared query key: <span className="font-mono">["coindcx-markets"]</span></div>
+            <div>Reconnect count: 0</div>
+            <div>Dropped messages: 0</div>
+            <div>Average freshness target: 15 s</div>
+            <div>Widget consumers: CryptoMarketWidget, CryptoHeatmapWidget, CryptoWatchlistWidget, CryptoSummaryWidget</div>
+          </section>
         </>
       )}
     </div>

@@ -110,6 +110,16 @@ const legacyGannCycleLoader = () =>
 const legacyInstitutionalFlowLoader = () =>
   import("@/components/dashboard/widgets/InstitutionalFlowWidget").then((m) => ({ default: m.default }));
 
+// Phase 3F.1 · Crypto dashboard widgets (share one query cache).
+const cryptoMarketLoader = () =>
+  import("@/components/dashboard/widgets/CryptoMarketWidget").then((m) => ({ default: m.default }));
+const cryptoHeatmapLoader = () =>
+  import("@/components/dashboard/widgets/CryptoHeatmapWidget").then((m) => ({ default: m.default }));
+const cryptoWatchlistLoader = () =>
+  import("@/components/dashboard/widgets/CryptoWatchlistWidget").then((m) => ({ default: m.default }));
+const cryptoSummaryLoader = () =>
+  import("@/components/dashboard/widgets/CryptoSummaryWidget").then((m) => ({ default: m.default }));
+
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
     id: "market-summary",
@@ -586,6 +596,80 @@ export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
     supportsCollapse: true,
   },
 ];
+
+// Phase 3F.1 · Crypto widgets appended to the legacy dashboard registry.
+LEGACY_DASHBOARD_WIDGETS.push(
+  {
+    id: "crypto-summary",
+    title: "Crypto Summary",
+    section: "SUMMARY",
+    componentLoader: cryptoSummaryLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 200,
+    desktopOrder: 200,
+    priority: 50,
+    dataDependency: "META_ONLY",
+    refreshPolicy: { kind: "interval", intervalMs: 15_000 },
+    methodologyLabel: "CoinDCX Public Market Data",
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "crypto-heatmap",
+    title: "Crypto Heatmap",
+    section: "SIGNAL",
+    componentLoader: cryptoHeatmapLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 1,
+    mobileOrder: 210,
+    desktopOrder: 210,
+    priority: 45,
+    dataDependency: "META_ONLY",
+    refreshPolicy: { kind: "interval", intervalMs: 15_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "crypto-watchlist",
+    title: "Crypto Watchlist",
+    section: "SIGNAL",
+    componentLoader: cryptoWatchlistLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 6,
+    tabletSpan: 1,
+    mobileOrder: 220,
+    desktopOrder: 220,
+    priority: 45,
+    dataDependency: "META_ONLY",
+    refreshPolicy: { kind: "interval", intervalMs: 15_000 },
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+  {
+    id: "crypto-market",
+    title: "Crypto Markets",
+    section: "OBSERVATION",
+    componentLoader: cryptoMarketLoader,
+    minimumPlan: "free",
+    enabled: true,
+    desktopSpan: 12,
+    tabletSpan: 2,
+    mobileOrder: 230,
+    desktopOrder: 230,
+    priority: 40,
+    dataDependency: "META_ONLY",
+    refreshPolicy: { kind: "interval", intervalMs: 15_000 },
+    methodologyLabel: "CoinDCX Public Market Data",
+    supportsFreshness: true,
+    supportsCollapse: true,
+  },
+);
 
 export function legacyWidgetsById(): Map<string, WidgetDefinition> {
   return new Map(LEGACY_DASHBOARD_WIDGETS.map((w) => [w.id, w]));
