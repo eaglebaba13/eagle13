@@ -597,8 +597,10 @@ export const LEGACY_DASHBOARD_WIDGETS: WidgetDefinition[] = [
   },
 ];
 
-// Phase 3F.1 · Crypto widgets appended to the legacy dashboard registry.
-LEGACY_DASHBOARD_WIDGETS.push(
+// Phase 3F.1 · Crypto widget registry — rendered by the `/` route as a
+// dedicated section BELOW the legacy dashboard. Kept separate so the
+// legacy parity oracle (Phase 24C) stays intact.
+export const CRYPTO_DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
     id: "crypto-summary",
     title: "Crypto Summary",
@@ -669,7 +671,7 @@ LEGACY_DASHBOARD_WIDGETS.push(
     supportsFreshness: true,
     supportsCollapse: true,
   },
-);
+];
 
 export function legacyWidgetsById(): Map<string, WidgetDefinition> {
   return new Map(LEGACY_DASHBOARD_WIDGETS.map((w) => [w.id, w]));
