@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { RefreshCw, Shield, Database } from "lucide-react";
 import { getCoindcxDiagnostics } from "@/lib/providers/coindcx/coindcx.functions";
+import { listCoindcxMarkets } from "@/lib/providers/coindcx/coindcx.functions";
+import { buildGoldSilverInput, computeGoldSilverRatio, formatRatio } from "@/lib/metal-ratio";
 
 export const Route = createFileRoute("/_authenticated/admin/coindcx")({
   component: AdminCoindcxPage,
@@ -31,6 +33,16 @@ function AdminCoindcxPage() {
     staleTime: 30_000,
     retry: false,
   });
+  const marketsFn = useServerFn(listCoindcxMarkets);
+  const marketsQuery = useQuery({
+    queryKey: ["coindcx-markets"],
+    queryFn: () => marketsFn(),
+    staleTime: 10_000,
+    retry: false,
+  });
+  const ratio = computeGoldSilverRatio(
+    buildGoldSilverInput(marketsQuery.data?.snapshots ?? []),
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
@@ -95,6 +107,21 @@ function AdminCoindcxPage() {
             <div>Dropped messages: 0</div>
             <div>Average freshness target: 15 s</div>
             <div>Widget consumers: CryptoMarketWidget, CryptoHeatmapWidget, CryptoWatchlistWidget, CryptoSummaryWidget</div>
+          </section>
+
+          <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
+            <div className="mb-1 text-foreground/80 font-medium">Gold / Silver Ratio Diagnostics</div>
+            <div>Gold instrument: <span className="font-mono">{ratio.goldInstrument ?? "—"}</span> ({ratio.goldClassification ?? "—"})</div>
+            <div>Silver instrument: <span className="font-mono">{ratio.silverInstrument ?? "—"}</span> ({ratio.silverClassification ?? "—"})</div>
+            <div>Raw gold price: {ratio.goldPrice ?? "—"} · Raw silver price: {ratio.silverPrice ?? "—"}</div>
+            <div>Normalized gold: {ratio.normalizedGoldPrice ?? "—"} · Normalized silver: {ratio.normalizedSilverPrice ?? "—"} / {ratio.normalizedUnit ?? "—"}</div>
+            <div>Quote compatible: {String(ratio.isQuoteCompatible)} · Unit compatible: {String(ratio.isUnitCompatible)}</div>
+            <div>Conversion method: {ratio.conversionMethod ?? "—"}</div>
+            <div>Current ratio: <span className="font-mono">{formatRatio(ratio.ratio)}</span></div>
+            <div>Current signal: <span className="font-mono">{ratio.signal}</span></div>
+            <div>Freshness: {ratio.freshness}</div>
+            <div>Last successful calculation: {ratio.calculatedAt ?? "—"}</div>
+            <div>Last unavailable reason: {ratio.reason ?? "none"}</div>
           </section>
         </>
       )}
