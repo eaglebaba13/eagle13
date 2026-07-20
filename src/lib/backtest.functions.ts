@@ -549,7 +549,26 @@ export const runBacktest = createServerFn({ method: "POST" })
         // Pull one extra day before `from` so day-1 has a prev-close reference.
         const fromExpanded = new Date(new Date(data.from + "T00:00:00Z").getTime() - 5 * 86400_000)
           .toISOString().slice(0, 10);
-        const rawCandles = await fetchCandles(map.yahoo, fromExpanded, data.to);
+        let rawCandles: Candle[] = [];
+        let providerError: NonNullable<BacktestResult["dataQuality"]["providerError"]> | null = null;
+        try {
+          rawCandles = await fetchCandles(map.yahoo, fromExpanded, data.to);
+        } catch (err) {
+          const raw = err instanceof Error ? err.message : String(err);
+          // Extract HTTP status when http.ts formatted it as "Data source error <status> for <host>".
+          const statusMatch = /Data source error\s+(\d{3})/i.exec(raw);
+          const hostMatch = /for\s+([^\s]+)/i.exec(raw);
+          providerError = {
+            provider: "Yahoo Finance",
+            host: hostMatch?.[1] ?? "query1.finance.yahoo.com",
+            httpStatus: statusMatch ? Number(statusMatch[1]) : null,
+            stage: /invalid json/i.test(raw) ? "parse" : "fetch",
+            message: raw.slice(0, 240),
+            observedAt: new Date().toISOString(),
+          };
+          // Fall through to the empty-result branch below with typed diagnostics.
+          rawCandles = [];
+        }
         let invalidSessions = 0;
         const candles = rawCandles.filter((c) => {
           const v = validateCandle(c);
@@ -566,10 +585,17 @@ export const runBacktest = createServerFn({ method: "POST" })
           coveragePct: expected > 0 ? Math.round((loadedInRange / expected) * 1000) / 10 : 0,
           dataSource: executionMeta.dataSource,
           adjusted: "unadjusted",
+          providerError,
         };
 
         if (candles.length < 2) {
           const empty = aggregate([]);
+          const degradedDisclaimers = providerError
+            ? [
+                ...disclaimers,
+                `Historical data source unavailable (${providerError.provider}${providerError.httpStatus ? ` · HTTP ${providerError.httpStatus}` : ""}) — no candles were loaded for this range.`,
+              ]
+            : disclaimers;
           return {
             symbol: data.symbol, yahooSymbol: map.yahoo, label: map.label,
             from: data.from, to: data.to, candles: candles.length,
@@ -589,7 +615,7 @@ export const runBacktest = createServerFn({ method: "POST" })
             benchmark: null,
             ambiguousCount: 0,
             invalidSetupCount: 0,
-            disclaimers,
+            disclaimers: degradedDisclaimers,
           };
         }
 
