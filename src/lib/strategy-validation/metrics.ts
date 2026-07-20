@@ -137,21 +137,17 @@ function vixBucketOf(v: number | null): VixBreakdownRow["bucket"] {
 export function vixBreakdown(results: readonly ReplayResult[]): VixBreakdownRow[] {
   const buckets: VixBreakdownRow["bucket"][] = ["LT_15", "B15_20", "B20_25", "GT_25", "UNKNOWN"];
   return buckets.map((b) => {
-    const rows = results.filter((res) => vixBucketOf(res.decision.leadingSector == null ? (res as ReplayResult).decision != null ? (res as ReplayResult).decision != null ? null : null : null) === b || vixBucketOf(vixFrom(res)) === b);
-    // Simpler: recompute using vix from decision input via saved reasoning is not available;
-    // fall back on vixRegime mapping.
-    const rowsClean = results.filter((res) => vixBucketFromRegime(res) === b);
-    const trades = rowsClean.filter(isTrade);
+    const rows = results.filter((res) => vixBucketFromRegime(res) === b);
+    const trades = rows.filter(isTrade);
     const wins = trades.filter((t) => t.outcome === "WIN").length;
     return {
       bucket: b,
-      signals: rowsClean.length,
+      signals: rows.length,
       winRate: trades.length ? r((wins / trades.length) * 100) : 0,
-      avgReturn: r(avg(rowsClean.map((x) => x.returnPct)), 3),
-      avgHoldingBars: r(avg(rowsClean.map((x) => x.holdingBars)), 2),
+      avgReturn: r(avg(rows.map((x) => x.returnPct)), 3),
+      avgHoldingBars: r(avg(rows.map((x) => x.holdingBars)), 2),
     };
   });
-  void rows_dead_ref;
 }
 
 // Helper kept intentionally simple; VIX is exposed via decision.vixRegime.
@@ -170,10 +166,9 @@ function vixBucketFromRegime(r: ReplayResult): VixBreakdownRow["bucket"] {
   }
 }
 
-function vixFrom(_r: ReplayResult): number | null {
-  return null;
+function _unused_vixBucketOf(v: number | null): VixBreakdownRow["bucket"] {
+  return vixBucketOf(v);
 }
-const rows_dead_ref = 0;
 
 export function strikeBreakdown(results: readonly ReplayResult[]): StrikeBreakdownRow[] {
   const keys: StrikeBreakdownRow["moneyness"][] = ["ATM", "ITM", "OTM", "UNKNOWN"];
