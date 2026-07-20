@@ -170,6 +170,15 @@ export type BacktestResult = {
     coveragePct: number;
     dataSource: string;
     adjusted: "adjusted" | "unadjusted" | "unknown";
+    /** Non-fatal provider failure captured while loading candles. */
+    providerError?: {
+      provider: string;
+      host: string;
+      httpStatus: number | null;
+      stage: "fetch" | "parse" | "unknown";
+      message: string;
+      observedAt: string;
+    } | null;
   };
   stats: StatBundle;
   benchmark: {
