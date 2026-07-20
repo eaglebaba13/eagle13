@@ -42,6 +42,7 @@ import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
+import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -242,6 +243,12 @@ const CryptoPairRoute = CryptoPairRouteImport.update({
   path: '/$pair',
   getParentRoute: () => CryptoRoute,
 } as any)
+const AuthenticatedStrategyAnalyticsRoute =
+  AuthenticatedStrategyAnalyticsRouteImport.update({
+    id: '/strategy-analytics',
+    path: '/strategy-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -484,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -552,6 +560,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -622,6 +631,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -692,6 +702,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/research-lab'
     | '/settings'
+    | '/strategy-analytics'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -760,6 +771,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/research-lab'
     | '/settings'
+    | '/strategy-analytics'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -829,6 +841,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/research-lab'
     | '/_authenticated/settings'
+    | '/_authenticated/strategy-analytics'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -1128,6 +1141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CryptoPairRouteImport
       parentRoute: typeof CryptoRoute
     }
+    '/_authenticated/strategy-analytics': {
+      id: '/_authenticated/strategy-analytics'
+      path: '/strategy-analytics'
+      fullPath: '/strategy-analytics'
+      preLoaderRoute: typeof AuthenticatedStrategyAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -1420,6 +1440,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResearchLabRoute: typeof AuthenticatedResearchLabRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStrategyAnalyticsRoute: typeof AuthenticatedStrategyAnalyticsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminCoindcxRoute: typeof AuthenticatedAdminCoindcxRoute
@@ -1447,6 +1468,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResearchLabRoute: AuthenticatedResearchLabRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStrategyAnalyticsRoute: AuthenticatedStrategyAnalyticsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminCoindcxRoute: AuthenticatedAdminCoindcxRoute,
