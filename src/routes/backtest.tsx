@@ -738,18 +738,31 @@ function uniq(arr: string[]): string[] {
   return Array.from(new Set(arr)).sort();
 }
 function mapTypedError(e: unknown): string {
-  const raw = e instanceof Error ? e.message : String(e ?? "Backtest failed");
-  const codes = [
-    "DATA_RANGE_UNAVAILABLE",
-    "PROVIDER_UNAVAILABLE",
-    "UNSUPPORTED_TIMEFRAME",
-    "UNSUPPORTED_INSTRUMENT",
-    "INSUFFICIENT_INTRADAY_HISTORY",
-    "STRATEGY_ADAPTER_NOT_AVAILABLE",
-    "DATA_QUALITY_FAILURE",
-  ];
-  const hit = codes.find((c) => raw.includes(c));
-  return hit ? `${hit} · ${raw}` : raw;
+  const raw = e instanceof Error ? e.message : String(e ?? "");
+  const friendly: Record<string, string> = {
+    DATA_RANGE_UNAVAILABLE:
+      "No historical data is available for that date range. Try a shorter or more recent window.",
+    PROVIDER_UNAVAILABLE:
+      "Market data provider is temporarily unavailable. Please retry in a few moments.",
+    UNSUPPORTED_TIMEFRAME:
+      "The selected timeframe isn't supported for this instrument.",
+    UNSUPPORTED_INSTRUMENT:
+      "The selected instrument isn't supported by the backtest engine.",
+    INSUFFICIENT_INTRADAY_HISTORY:
+      "Not enough intraday history for this range. Try a wider window or a daily timeframe.",
+    STRATEGY_ADAPTER_NOT_AVAILABLE:
+      "This strategy adapter is not available right now.",
+    DATA_QUALITY_FAILURE:
+      "Historical data failed quality checks for this range. Try a different window.",
+  };
+  for (const code of Object.keys(friendly)) {
+    if (raw.includes(code)) return friendly[code];
+  }
+  // Strip raw HTTP / JSON noise so the UI never surfaces server error bodies.
+  if (/^\s*[{\[]/.test(raw) || /HTTP\s*\d{3}|status\s*\d{3}|4\d\d|5\d\d/i.test(raw)) {
+    return "Backtest failed — please retry. If the problem persists, check diagnostics.";
+  }
+  return raw || "Backtest failed — please retry.";
 }
 function formatNum(n: number): string {
   if (!Number.isFinite(n)) return "—";

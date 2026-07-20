@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Scale } from "lucide-react";
 import { getCollectorGoldSilverRatio } from "@/lib/tradingview/tradingview.functions";
+import { safeProviderLabel } from "@/lib/provider-labels";
 import type {
   CollectorSnapshot,
   CollectorSignal,
@@ -155,7 +156,7 @@ export function GoldSilverRatioWidget() {
 
       <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
         <Row label="Symbol" value={data?.symbol ?? "TVC:GOLDSILVER"} />
-        <Row label="Source" value={data?.source ?? "TRADINGVIEW_UNOFFICIAL"} />
+        <Row label="Source" value={safeProviderLabel(null, "COMMODITY")} />
         <Row
           label="Market timestamp"
           value={

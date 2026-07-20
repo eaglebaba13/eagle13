@@ -31,6 +31,7 @@ import { ApexChart } from "@/components/ApexChart";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { FormulaBadge } from "@/components/FormulaBadge";
 import { astroFormulaSlug } from "@/lib/engine-version";
+import { ErrorState } from "@/components/common";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -56,6 +57,16 @@ function daysAgoIso(n: number): string {
 
 export const Route = createFileRoute("/market-replay")({
   component: MarketReplayPage,
+  errorComponent: ({ reset }) => (
+    <div className="mx-auto max-w-3xl p-6">
+      <ErrorState
+        title="Market Replay is temporarily unavailable."
+        description="Historical replay data could not be loaded. This is usually transient — retry, or check diagnostics if it persists."
+        onRetry={reset}
+        diagnosticsHref="/admin/system-status"
+      />
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Market Replay | EagleBABA Intraday Astro Levels" },

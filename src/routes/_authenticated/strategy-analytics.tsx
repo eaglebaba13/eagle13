@@ -3,6 +3,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/common";
 import {
   analyseHistory,
   STRATEGY_VALIDATION_DISCLAIMER,
@@ -88,13 +89,13 @@ function StrategyAnalyticsPage() {
       </nav>
 
       {!report.available ? (
-        <Card title="Status">
-          <p className="text-xs text-muted-foreground">{report.note}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Historical snapshot ingestion is not yet wired to this UI. Once ≥30 replayed
-            snapshots are cached, every panel populates deterministically.
-          </p>
-        </Card>
+        <EmptyState
+          title="No historical snapshots yet"
+          description={
+            report.note ||
+            "Historical snapshot ingestion is not yet wired to this UI. Once ≥30 replayed snapshots are cached, every panel populates deterministically."
+          }
+        />
       ) : (
         <ReportView tab={tab} report={report} />
       )}
