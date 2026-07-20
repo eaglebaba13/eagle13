@@ -1,4 +1,6 @@
-// Phase 3F.2B — Admin-only TradingView spike diagnostics.
+// Phase 3F.2C — Admin-only TradingView collector diagnostics. Talks to the
+// external Node collector service via a server-only bearer secret. Never
+// imports @mathieuc/tradingview.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/admin/tradingview")({
   component: AdminTradingViewPage,
   head: () => ({
     meta: [
-      { title: "Admin · TradingView Spike" },
+      { title: "Admin · TradingView Collector" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -47,11 +49,11 @@ function AdminTradingViewPage() {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            ADMIN · TRADINGVIEW SPIKE (Phase 3F.2B)
+            ADMIN · TRADINGVIEW COLLECTOR (Phase 3F.2C)
           </div>
-          <h1 className="text-xl font-semibold text-foreground">TradingView Provider Feasibility</h1>
+          <h1 className="text-xl font-semibold text-foreground">TradingView Gold/Silver Ratio Collector</h1>
           <p className="text-xs text-muted-foreground">
-            Isolated spike. Not wired to any dashboard or widget.
+            External Node service. Cloudflare app calls it via a server-only bearer secret.
           </p>
         </div>
         <button
@@ -72,26 +74,39 @@ function AdminTradingViewPage() {
 
       <section className="rounded border border-border/60 bg-card/40 p-4">
         <Row label="Symbol" value={data?.symbol ?? "TVC:GOLDSILVER"} />
-        <Row label="Import status" value={data?.importStatus} />
-        <Row label="Import error" value={data?.importError} />
+        <Row label="Collector enabled" value={data?.collector?.enabled ? "true" : "false"} />
+        <Row label="Collector URL configured" value={data?.collector?.urlConfigured ? "true" : "false"} />
         <Row
-          label="WebSocket connected"
-          value={data?.websocketConnected ? "true" : "false"}
+          label="API token configured"
+          value={
+            data?.collector?.tokenConfigured
+              ? `yes · ${data.collector.tokenMasked ?? "•••"}`
+              : "no"
+          }
         />
-        <Row label="Symbol resolved" value={data?.symbolResolved ? "true" : "false"} />
-        <Row label="Latest ratio" value={data?.latest?.value?.toFixed(4) ?? "—"} />
-        <Row label="Last update" value={data?.latest?.timestamp ?? "—"} />
-        <Row label="Freshness" value={data?.latest?.freshness ?? "UNAVAILABLE"} />
-        <Row label="Exchange" value={data?.latest?.source?.exchange ?? "—"} />
-        <Row label="Description" value={data?.latest?.source?.description ?? "—"} />
-        <Row label="Attempt error" value={data?.attemptError ?? "—"} />
+        <Row label="Base URL" value={data?.collector?.baseUrl ?? "—"} />
+        <Row label="Health status" value={data?.health?.status ?? "—"} />
+        <Row label="Connected" value={data?.health?.connected ? "true" : "false"} />
+        <Row label="Symbol resolved" value={data?.health?.symbolResolved ? "true" : "false"} />
+        <Row label="Last collector update" value={data?.health?.lastUpdateAt ?? "—"} />
+        <Row label="Error count" value={data?.health?.errorCount ?? 0} />
+        <Row label="Reconnect count" value={data?.health?.reconnectCount ?? 0} />
+        <Row label="Ratio" value={data?.snapshot?.ratio?.toFixed(4) ?? "—"} />
+        <Row label="Signal" value={data?.snapshot?.signal ?? "UNAVAILABLE"} />
+        <Row label="Freshness" value={data?.snapshot?.freshness ?? "UNAVAILABLE"} />
+        <Row label="Age (ms)" value={data?.snapshot?.ageMs ?? "—"} />
+        <Row label="Market timestamp" value={data?.snapshot?.marketTimestamp ?? "—"} />
+        <Row label="Received at" value={data?.snapshot?.receivedAt ?? "—"} />
+        <Row label="Last successful fetch" value={data?.lastSuccessAt ?? "—"} />
+        <Row label="Last failure reason" value={data?.lastFailureReason ?? "—"} />
+        <Row label="Health endpoint error" value={data?.healthError ?? "—"} />
         <Row label="Checked at" value={data?.checkedAt ?? "—"} />
       </section>
 
       <p className="text-xs text-muted-foreground">
-        The `@mathieuc/tradingview` package depends on Node's `ws` module. On the Cloudflare
-        Worker runtime the dynamic import is expected to fail; this route surfaces that state
-        without breaking the production build.
+        The Cloudflare application never imports `@mathieuc/tradingview`. This page verifies
+        the isolated Node collector service (`services/tradingview-ratio-collector/`) is
+        reachable, authenticated, and returning fresh snapshots. Secrets are never displayed.
       </p>
     </div>
   );
