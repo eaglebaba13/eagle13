@@ -2,6 +2,11 @@
 // Adds request timeouts and bounded retries with backoff so transient
 // upstream failures (rate limits, network blips) don't crash the app.
 import { recordApiRequest } from "./diagnostics";
+import {
+  categorizeFetchFailure,
+  categorizeHttpStatus,
+  makeProviderError,
+} from "./provider-errors";
 
 const DEFAULT_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
@@ -101,7 +106,18 @@ export async function fetchWithRetry(
     ok: false,
     error: reason,
   });
-  throw new Error(`Request failed for ${safeHost(url)}: ${reason}`);
+  throw makeProviderError({
+    message: `Request failed for ${safeHost(url)}: ${reason}`,
+    category:
+      finalStatus != null
+        ? categorizeHttpStatus(finalStatus)
+        : categorizeFetchFailure(lastError),
+    url,
+    httpStatus: finalStatus,
+    latencyMs: Date.now() - startAll,
+    retryCount: attemptsUsed,
+    stage: finalStatus != null ? "response" : "connect",
+  });
 }
 
 /** Fetch and parse JSON with retry/timeout. Throws on non-OK or invalid JSON. */
@@ -109,12 +125,31 @@ export async function fetchJson<T = unknown>(
   url: string,
   opts?: FetchOptions,
 ): Promise<T> {
+  const startedAt = Date.now();
   const res = await fetchWithRetry(url, opts);
-  if (!res.ok) throw new Error(`Data source error ${res.status} for ${safeHost(url)}`);
+  if (!res.ok) {
+    throw makeProviderError({
+      message: `Data source error ${res.status} for ${safeHost(url)}`,
+      category: categorizeHttpStatus(res.status),
+      url,
+      httpStatus: res.status,
+      latencyMs: Date.now() - startedAt,
+      retryCount: 0,
+      stage: "response",
+    });
+  }
   try {
     return (await res.json()) as T;
   } catch {
-    throw new Error(`Invalid JSON from ${safeHost(url)}`);
+    throw makeProviderError({
+      message: `Invalid JSON from ${safeHost(url)}`,
+      category: "InvalidResponse",
+      url,
+      httpStatus: res.status,
+      latencyMs: Date.now() - startedAt,
+      retryCount: 0,
+      stage: "parse",
+    });
   }
 }
 
