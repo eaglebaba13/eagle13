@@ -123,18 +123,20 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
     // COMING SOON. No mock values, ever.
     const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
     const nowIso = new Date().toISOString();
-    const [uxNifty, uxBank, uxVix, niftyR, bankniftyR, vixYahoo] = await Promise.all([
+    const [uxNifty, uxBank, uxVix, niftyR, bankniftyR, vixYahoo, goldR, silverR] = await Promise.all([
       fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
       fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
       fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
       fetchIndex("^NSEI").catch((e) => e as Error),
       fetchIndex("^NSEBANK").catch((e) => e as Error),
       fetchIndex("^INDIAVIX").catch(() => null),
+      fetchIndex("GC=F").catch(() => null),
+      fetchIndex("SI=F").catch(() => null),
     ]);
     const vix: IndexQuote | null = uxVix && uxVix.ok ? uxVix.quote : vixYahoo;
     const btc: IndexQuote | null = null;
-    const gold: IndexQuote | null = null;
-    const silver: IndexQuote | null = null;
+    const gold: IndexQuote | null = goldR;
+    const silver: IndexQuote | null = silverR;
 
     const niftyFallback = niftyR instanceof Error ? null : niftyR;
     const bankFallback = bankniftyR instanceof Error ? null : bankniftyR;
@@ -151,7 +153,10 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
       throw new Error(`Live market data is temporarily unavailable. ${msg}`);
     }
 
-    const goldSilverRatio: number | null = null;
+    const goldSilverRatio: number | null =
+      gold && silver && silver.livePrice > 0
+        ? Math.round((gold.livePrice / silver.livePrice) * 100) / 100
+        : null;
 
     const providerMetadata = {
       nifty: uxNifty && uxNifty.ok ? uxNifty.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
