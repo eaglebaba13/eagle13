@@ -8,6 +8,7 @@ import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/termin
 import type { ScoredStrategy, CanonicalBias } from "@/lib/option-strategy-terminal";
 import { describeVixRegime } from "@/lib/option-strategy-terminal";
 import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
+import type { InstitutionalFlowEngineOutput } from "@/lib/option-strategy-decision";
 
 export const Route = createFileRoute("/_authenticated/live-option-terminal")({
   head: () => ({
