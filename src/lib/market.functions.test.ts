@@ -78,10 +78,7 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
 
   it("prefers Upstox for NIFTY/BANKNIFTY/VIX and does NOT call Yahoo for those symbols", async () => {
     const mod = await import("./market.functions");
-    // Call the underlying handler (createServerFn stub in tests).
-    const fn = (mod.getMarketData as unknown as { (): Promise<unknown> }) as unknown as () => Promise<unknown>;
-    // getMarketData is a server-fn wrapper; call it directly.
-    const res = (await (mod.getMarketData as unknown as () => Promise<Awaited<ReturnType<typeof mod.getMarketData>>>)()) as {
+    const res = (await mod.getMarketDataImpl()) as {
       providerMetadata?: Record<string, { name: string }>;
     };
     // Yahoo should be called ONLY for GC=F and SI=F (commodities), never for indices.
@@ -94,6 +91,5 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
     expect(res.providerMetadata?.nifty.name).toBe("upstox-historical-v1");
     expect(res.providerMetadata?.banknifty.name).toBe("upstox-historical-v1");
     expect(res.providerMetadata?.vix.name).toBe("upstox-historical-v1");
-    void fn;
   });
 });
