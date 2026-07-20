@@ -18,6 +18,7 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NAV_REGISTRY } from "@/lib/navigation";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 // Routes that render their own sidebar/shell — global shell is suppressed on
 // these so we don't double-render the sidebar or break bespoke grid layouts.
@@ -77,8 +78,11 @@ function AppShellHeader() {
   const router = useRouter();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const crumbs = buildBreadcrumbs(pathname);
+  // Hydration-safe: server + first client render both see `false`, then we
+  // upgrade to the real history-aware value after mount.
+  const hydrated = useHydrated();
   const canGoBack =
-    typeof window !== "undefined" && window.history.length > 1 && pathname !== "/";
+    hydrated && typeof window !== "undefined" && window.history.length > 1 && pathname !== "/";
 
   return (
     <header
@@ -88,7 +92,7 @@ function AppShellHeader() {
       <button
         type="button"
         onClick={() => (canGoBack ? router.history.back() : router.navigate({ to: "/" }))}
-        disabled={!canGoBack}
+        disabled={canGoBack ? false : true}
         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Go back"
         title="Go back"
