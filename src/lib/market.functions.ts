@@ -112,44 +112,50 @@ export type MarketDataResponse = {
   };
 };
 
-export const getMarketData = createServerFn({ method: "GET" }).handler(
-  async (): Promise<MarketDataResponse> =>
-    cached<MarketDataResponse>(
-      "market-data",
-      async () => {
-    // Phase 26 · Stage 4 — Prefer Upstox for NIFTY/BANKNIFTY/VIX. Fall
-    // back to Yahoo when Upstox is unavailable. Hidden markets (BTC,
-    // GOLD, SILVER) are set to null — dashboards render them as
-    // COMING SOON. No mock values, ever.
+export async function getMarketDataImpl(): Promise<MarketDataResponse> {
+  return cached<MarketDataResponse>(
+    "market-data",
+    async () => {
+    // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX.
+    // Yahoo is called only when the Upstox path fails, so successful
+    // Upstox responses do NOT trigger a background Yahoo request. Gold
+    // and Silver remain on Yahoo as the retained historical/commodity
+    // provider (no Upstox spot equivalent — see provider-routing-matrix).
     const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
     const nowIso = new Date().toISOString();
-    const [uxNifty, uxBank, uxVix, niftyR, bankniftyR, vixYahoo, goldR, silverR] = await Promise.all([
+    const [uxNifty, uxBank, uxVix] = await Promise.all([
       fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
       fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
       fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
-      fetchIndex("^NSEI").catch((e) => e as Error),
-      fetchIndex("^NSEBANK").catch((e) => e as Error),
-      fetchIndex("^INDIAVIX").catch(() => null),
+    ]);
+
+    const upstoxNiftyQuote = uxNifty && uxNifty.ok ? uxNifty.quote : null;
+    const upstoxBankQuote = uxBank && uxBank.ok ? uxBank.quote : null;
+    const upstoxVixQuote = uxVix && uxVix.ok ? uxVix.quote : null;
+
+    // Lazy Yahoo fallback — only when the primary Upstox path failed.
+    const needsNifty = upstoxNiftyQuote == null;
+    const needsBank = upstoxBankQuote == null;
+    const needsVix = upstoxVixQuote == null;
+    const [yNifty, yBank, yVix, goldR, silverR] = await Promise.all([
+      needsNifty ? fetchIndex("^NSEI").catch((e) => e as Error) : Promise.resolve(null),
+      needsBank ? fetchIndex("^NSEBANK").catch((e) => e as Error) : Promise.resolve(null),
+      needsVix ? fetchIndex("^INDIAVIX").catch(() => null) : Promise.resolve(null),
       fetchIndex("GC=F").catch(() => null),
       fetchIndex("SI=F").catch(() => null),
     ]);
-    const vix: IndexQuote | null = uxVix && uxVix.ok ? uxVix.quote : vixYahoo;
+    const yahooNifty = yNifty instanceof Error ? null : yNifty;
+    const yahooBank = yBank instanceof Error ? null : yBank;
+
+    const nifty = upstoxNiftyQuote ?? yahooNifty ?? (yahooBank ?? null);
+    const banknifty = upstoxBankQuote ?? yahooBank ?? (yahooNifty ?? null);
+    const vix: IndexQuote | null = upstoxVixQuote ?? yVix ?? null;
     const btc: IndexQuote | null = null;
     const gold: IndexQuote | null = goldR;
     const silver: IndexQuote | null = silverR;
 
-    const niftyFallback = niftyR instanceof Error ? null : niftyR;
-    const bankFallback = bankniftyR instanceof Error ? null : bankniftyR;
-    const nifty =
-      (uxNifty && uxNifty.ok ? uxNifty.quote : null) ??
-      niftyFallback ??
-      bankFallback;
-    const banknifty =
-      (uxBank && uxBank.ok ? uxBank.quote : null) ??
-      bankFallback ??
-      niftyFallback;
     if (!nifty || !banknifty) {
-      const msg = niftyR instanceof Error ? niftyR.message : "provider unavailable";
+      const msg = yNifty instanceof Error ? yNifty.message : "provider unavailable";
       throw new Error(`Live market data is temporarily unavailable. ${msg}`);
     }
 
@@ -158,14 +164,31 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
         ? Math.round((gold.livePrice / silver.livePrice) * 100) / 100
         : null;
 
+    const nowStamp = new Date().toISOString();
+    const fallbackMeta = (reason: string) => ({
+      name: `yahoo-fallback (${reason})`,
+      status: "DELAYED" as const,
+      receivedAt: nowStamp,
+      providerTime: null,
+    });
     const providerMetadata = {
-      nifty: uxNifty && uxNifty.ok ? uxNifty.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
-      banknifty: uxBank && uxBank.ok ? uxBank.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
-      vix: uxVix && uxVix.ok ? uxVix.providerMetadata : { name: "yahoo-fallback", status: "DELAYED", receivedAt: new Date().toISOString(), providerTime: null },
+      nifty: uxNifty && uxNifty.ok
+        ? uxNifty.providerMetadata
+        : fallbackMeta(uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable"),
+      banknifty: uxBank && uxBank.ok
+        ? uxBank.providerMetadata
+        : fallbackMeta(uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable"),
+      vix: uxVix && uxVix.ok
+        ? uxVix.providerMetadata
+        : fallbackMeta(uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
     };
 
     return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
-      },
-      { ttlMs: 30_000 },
-    ),
+    },
+    { ttlMs: 30_000 },
+  );
+}
+
+export const getMarketData = createServerFn({ method: "GET" }).handler(
+  async (): Promise<MarketDataResponse> => getMarketDataImpl(),
 );
