@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { isProviderError } from "../lib/provider-errors";
 import { MobileNav } from "../components/MobileNav";
 import { AuthProvider } from "../lib/auth-context";
 import { ProfileMenu } from "../components/ProfileMenu";
@@ -169,6 +170,9 @@ function RootComponent() {
   // still forwarded to Lovable error reporting so diagnostics are preserved.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Prefer the typed `ProviderError` check below; the string hints are a
+    // legacy fallback for third-party promises we don't own (e.g. aborted
+    // fetches from libraries that throw plain DOMExceptions).
     const PROVIDER_HINTS = [
       "Data source error",
       "Request failed for",
@@ -179,6 +183,7 @@ function RootComponent() {
       "The user aborted a request",
     ];
     const isNonCriticalProviderError = (reason: unknown): boolean => {
+      if (isProviderError(reason)) return true;
       const msg =
         reason instanceof Error
           ? reason.message
