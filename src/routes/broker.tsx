@@ -90,6 +90,32 @@ function fmt(n: number | null | undefined, digits = 2) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/**
+ * Translate raw adapter/broker errors into a human-readable sentence while
+ * preserving the original message for the diagnostics tooltip.
+ */
+function humaniseBrokerError(raw: unknown, fallback: string): string {
+  const msg = raw instanceof Error ? raw.message : typeof raw === "string" ? raw : "";
+  const lower = msg.toLowerCase();
+  if (!msg) return fallback;
+  if (lower.includes("not connected")) return "Broker is not connected. Reconnect to continue.";
+  if (lower.includes("order not found")) return "That order could not be located. It may have already completed or been cancelled.";
+  if (lower.includes("network") || lower.includes("fetch"))
+    return "The broker service is unreachable right now. Please retry in a moment.";
+  if (lower.includes("timeout")) return "The broker request timed out. Please retry.";
+  return msg.length > 160 ? fallback : msg;
+}
+
+function connectionTone(status: string | null | undefined, paperMode: boolean): "ok" | "warn" | "bad" | undefined {
+  if (paperMode) return "ok";
+  if (!status) return undefined;
+  const s = status.toUpperCase();
+  if (s === "CONNECTED" || s === "OK") return "ok";
+  if (s === "DEGRADED" || s === "PARTIAL") return "warn";
+  if (s === "DISCONNECTED" || s === "ERROR" || s === "DOWN") return "bad";
+  return undefined;
+}
+
 function BrokerPage() {
   const hydrated = useHydrated();
 
@@ -195,7 +221,7 @@ function BrokerPage() {
       setAudit(appendAudit({ brokerId: p.brokerId, type: "CONNECT", message: `Connected to ${p.brokerName}` }));
       await refreshAccount();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Connection failed");
+      setError(humaniseBrokerError(e, "We couldn't connect to the broker. Please check your credentials and try again."));
     } finally {
       setConnecting(false);
     }
@@ -210,7 +236,7 @@ function BrokerPage() {
       setAudit(appendAudit({ brokerId: activeAdapter.brokerId, type: "DISCONNECT", message: `Disconnected from ${activeAdapter.brokerName}` }));
       await refreshHealth();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Disconnect failed");
+      setError(humaniseBrokerError(e, "We couldn't disconnect cleanly. Please refresh and try again."));
     }
   }
 
@@ -221,7 +247,7 @@ function BrokerPage() {
       setPreview(p);
       setAwaitingConfirm(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Preview failed");
+      setError(humaniseBrokerError(e, "Margin preview is temporarily unavailable."));
     }
   }
 
@@ -262,7 +288,7 @@ function BrokerPage() {
       setAwaitingConfirm(false);
       setPreview(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Order failed");
+      setError(humaniseBrokerError(e, "The order could not be submitted. Nothing was placed."));
     }
   }
 
@@ -277,7 +303,7 @@ function BrokerPage() {
       }));
       await refreshAccount();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Cancel failed");
+      setError(humaniseBrokerError(e, "The order could not be cancelled. Please retry."));
     }
   }
 
@@ -304,6 +330,8 @@ function BrokerPage() {
   const openOrders = orders.filter((o) => o.status === "OPEN" || o.status === "MODIFIED" || o.status === "PENDING");
 
   const connected = activeAdapter.isConnected() || paperMode;
+  const connectionLabel = paperMode ? "Paper" : health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED");
+  const connTone = connectionTone(paperMode ? "CONNECTED" : health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED"), paperMode);
 
   return (
     <div className="eb-page eb-broker">
@@ -318,10 +346,11 @@ function BrokerPage() {
             The trading engines remain frozen — this page is a pure integration layer.
           </p>
         </div>
-        <div className="eb-broker-modeswitch">
+        <div className="eb-broker-modeswitch" role="group" aria-label="Trading mode">
           <button
             type="button"
             className={`eb-chip${paperMode ? " is-active" : ""}`}
+            aria-pressed={paperMode}
             onClick={() => setPaperMode(true)}
           >
             <Beaker size={14} /> Paper Mode
@@ -329,12 +358,28 @@ function BrokerPage() {
           <button
             type="button"
             className={`eb-chip${!paperMode ? " is-active" : ""}`}
+            aria-pressed={!paperMode}
             onClick={() => setPaperMode(false)}
           >
             <PlugZap size={14} /> Live Broker
           </button>
         </div>
       </header>
+
+      <div
+        className="eb-mode-banner"
+        data-mode={paperMode ? "paper" : "live"}
+        role="status"
+        aria-live="polite"
+      >
+        <span className="eb-mode-dot" aria-hidden />
+        <strong>{paperMode ? "Paper Mode" : "Live Broker"}</strong>
+        <span>
+          {paperMode
+            ? "Trades are simulated locally in your browser. No real orders are sent."
+            : "Live broker adapter is selected. Orders still require an explicit Confirm & Place step."}
+        </span>
+      </div>
 
       {!paperMode ? (
         <section className="eb-card">
@@ -405,7 +450,7 @@ function BrokerPage() {
       <section className="eb-card">
         <header className="eb-card-head">
           <h2><Wallet size={16} /> Account</h2>
-          <button type="button" className="eb-btn eb-btn-ghost" onClick={refreshAccount}>
+          <button type="button" className="eb-btn eb-btn-ghost" onClick={refreshAccount} aria-label="Refresh account snapshot">
             <RefreshCw size={14} /> Refresh
           </button>
         </header>
@@ -416,10 +461,7 @@ function BrokerPage() {
           <Stat label="Realized / Unrealized" value={funds ? `${fmt(funds.realizedPnL)} / ${fmt(funds.unrealizedPnL)}` : "—"} />
           <Stat label="Open Positions" value="0" />
           <Stat label="Open Orders" value={String(openOrders.length)} />
-          <Stat
-            label="Connection"
-            value={paperMode ? "Paper" : health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED")}
-          />
+          <Stat label="Connection" value={connectionLabel} tone={connTone} />
           <Stat
             label="Latency"
             value={health?.latencyMs != null ? `${health.latencyMs} ms` : "—"}
@@ -431,7 +473,9 @@ function BrokerPage() {
       <section className="eb-card">
         <header className="eb-card-head">
           <h2><Send size={16} /> Order Ticket</h2>
-          <span className="eb-tag">{paperMode ? "PAPER" : activeAdapter.brokerName}</span>
+          <span className="eb-tag" data-mode={paperMode ? "paper" : "live"}>
+            {paperMode ? "PAPER" : `LIVE · ${activeAdapter.brokerName}`}
+          </span>
         </header>
         {!connected ? (
           <p className="eb-empty">Connect a broker or switch to Paper Mode to place orders.</p>
@@ -640,8 +684,16 @@ function BrokerPage() {
       <section className="eb-card">
         <header className="eb-card-head"><h2><Activity size={16} /> Broker Health</h2></header>
         <div className="eb-grid eb-grid-4">
-          <Stat label="Status" value={health?.status ?? (paperMode ? "PAPER" : "UNKNOWN")} />
-          <Stat label="API" value={health?.apiStatus ?? "UNKNOWN"} />
+          <Stat
+            label="Status"
+            value={health?.status ?? (paperMode ? "PAPER" : "UNKNOWN")}
+            tone={connectionTone(health?.status ?? (paperMode ? "CONNECTED" : "UNKNOWN"), paperMode)}
+          />
+          <Stat
+            label="API"
+            value={health?.apiStatus ?? "UNKNOWN"}
+            tone={connectionTone(health?.apiStatus, paperMode)}
+          />
           <Stat label="Latency" value={health?.latencyMs != null ? `${health.latencyMs} ms` : "—"} />
           <Stat label="Last Sync" value={health?.lastSync ? new Date(health.lastSync).toLocaleTimeString() : "—"} />
         </div>
@@ -678,9 +730,17 @@ function BrokerPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "ok" | "warn" | "bad";
+}) {
   return (
-    <div className="eb-stat">
+    <div className="eb-stat" data-tone={tone}>
       <div className="eb-stat-label">{label}</div>
       <div className="eb-stat-value">{value}</div>
     </div>
