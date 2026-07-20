@@ -8,6 +8,7 @@ import {
   type WidgetDefinition,
 } from "@/lib/dashboard-widgets";
 import { DashboardWidgetSkeleton } from "./DashboardStates";
+import { useAdminDisabledWidgets } from "@/hooks/use-admin-widget-toggles";
 
 type Props = {
   device: "desktop" | "tablet" | "mobile";
@@ -27,7 +28,11 @@ type Props = {
  * `DATA_DEPENDENCY_QUERY_KEY`.
  */
 export function DashboardGrid({ device, context, preferences, widgets = DASHBOARD_WIDGETS }: Props) {
-  const filtered = useMemo(() => resolveWidgetsForContext(context, widgets), [context, widgets]);
+  const adminDisabled = useAdminDisabledWidgets();
+  const filtered = useMemo(
+    () => resolveWidgetsForContext(context, widgets).filter((w) => !adminDisabled.has(w.id)),
+    [context, widgets, adminDisabled],
+  );
   const ordered = useMemo(
     () =>
       applyPreferences(filtered, preferences ?? {
