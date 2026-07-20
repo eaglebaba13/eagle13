@@ -147,17 +147,28 @@ function SettingsPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold capitalize">{tab}</h2>
-              <p className="text-sm text-muted-foreground">
-                {tab === "general" && "Manage core account preferences from your Profile page."}
-                {tab === "appearance" && "Theme is available in the top-right theme toggle."}
-                {tab === "trading" && "Trading defaults live in the Risk Manager and Decision Engine pages."}
-                {tab === "risk" && "Configure per-trade and daily loss limits inside the Risk Manager."}
-                {tab === "broker" && "Broker connections are managed on the Broker page."}
-                {tab === "privacy" && "Your journal, watchlists and settings are only visible to you."}
-                {tab === "security" && "Two-factor authentication and session management arrive in Phase 20.2."}
-                {tab === "language" && "Language switching is scheduled for a future release."}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold capitalize">{tab}</h2>
+                <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                  Settings · {tab}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+                <p className="text-sm text-muted-foreground">
+                  {tab === "general" && "Manage core account preferences from your Profile page."}
+                  {tab === "appearance" && "Theme is available in the top-right theme toggle."}
+                  {tab === "trading" && "Trading defaults live in the Risk Manager and Decision Engine pages."}
+                  {tab === "risk" && "Configure per-trade and daily loss limits inside the Risk Manager."}
+                  {tab === "broker" && "Broker connections are managed on the Broker page."}
+                  {tab === "privacy" && "Your journal, watchlists and settings are only visible to you."}
+                  {tab === "security" && "Two-factor authentication and session management arrive in a future release."}
+                  {tab === "language" && "Language switching is scheduled for a future release."}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Looking for something specific? Use the search in the top bar, or head to your
+                Profile page for account-level controls.
               </p>
             </div>
           )}

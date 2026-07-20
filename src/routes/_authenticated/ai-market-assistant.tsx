@@ -81,12 +81,29 @@ function AiMarketAssistantPage() {
         <>
           <section className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
             <div className="flex flex-wrap items-center gap-3">
-              <Chip className={BIAS_COLOR[res.marketBias]}>{res.marketBias}</Chip>
+              <Chip className={BIAS_COLOR[res.marketBias]}>
+                Aggregate: {res.marketBias}
+              </Chip>
+              {(() => {
+                const de =
+                  res.supportingEvidence.find((e) => e.module === "DECISION_ENGINE") ||
+                  res.conflictingEvidence.find((e) => e.module === "DECISION_ENGINE");
+                const bias = de?.bias ?? "UNAVAILABLE";
+                return (
+                  <Chip className={BIAS_COLOR[bias as AssistantBias] ?? ""}>
+                    Decision Engine: {bias}
+                  </Chip>
+                );
+              })()}
               <Chip className={CONF_COLOR[res.confidence]}>Confidence: {res.confidence}</Chip>
               <Chip>Data quality: {res.dataQuality.label}</Chip>
             </div>
             <p className="mt-3 text-base font-semibold text-[var(--eb-text)]">{res.headline}</p>
             <p className="mt-1 text-sm text-[var(--eb-muted)]">{res.summary}</p>
+            <p className="mt-2 text-[11px] text-[var(--eb-muted)]">
+              The Aggregate bias combines Decision, PCR, GTI, Breadth, Astro and Gann modules. It
+              may differ from the standalone Decision Engine view — both are shown for clarity.
+            </p>
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">

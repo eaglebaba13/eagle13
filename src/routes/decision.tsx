@@ -189,7 +189,7 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
         <div style={{ fontSize: "0.75rem", color: C.muted }}>Net score {(d.netScore * 100).toFixed(0)}</div>
       </Card>
       <Card label="Confidence">
-        <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>{d.confidence.toFixed(0)}%</div>
+        <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>{Math.round(d.confidence)}%</div>
         <div style={{ fontSize: "0.75rem", color: C.muted }}>Grade {" "}
           <span style={{ color: gradeColor(d.grade), fontWeight: 700 }}>{d.grade}</span>
         </div>

@@ -282,7 +282,14 @@ function MarketBreadthPage() {
             <div><b>Run ID:</b> {reading.runId}</div>
             <div><b>Formula:</b> {reading.formulaVersion}</div>
             <div><b>Disclaimer:</b> {reading.disclaimer}</div>
-            <div><b>Confidence breakdown:</b> <code style={{ fontSize: 11 }}>{JSON.stringify(reading.confidenceBreakdown)}</code></div>
+            <div>
+              <b>Confidence components</b>
+              <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>
+                Sub-scores that combine into the single canonical confidence value
+                <strong> ({reading.confidence})</strong> shown above.
+              </div>
+              <code style={{ fontSize: 11 }}>{JSON.stringify(reading.confidenceBreakdown)}</code>
+            </div>
             <div><b>PCR:</b> <code style={{ fontSize: 11 }}>{JSON.stringify(reading.pcr)}</code></div>
             <div><b>VIX:</b> <code style={{ fontSize: 11 }}>{JSON.stringify(reading.vix)}</code></div>
           </div>

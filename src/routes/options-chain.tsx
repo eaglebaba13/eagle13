@@ -288,15 +288,16 @@ function OptionsChainPage() {
 
 const toolbarStyle: React.CSSProperties = {
   display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end",
-  padding: 12, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, background: "rgba(255,255,255,0.03)",
+  padding: 12, border: "1px solid var(--eb-border)", borderRadius: 12,
+  background: "var(--eb-card)", color: "var(--eb-text)",
   marginBottom: 14,
 };
-const selectStyle: React.CSSProperties = { display: "block", marginTop: 4, padding: "6px 10px", background: "#0d1a24", color: "#e6f1f7", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 };
-const btnPrimary: React.CSSProperties = { padding: "8px 14px", borderRadius: 8, border: "1px solid rgba(107,211,255,0.4)", background: "rgba(107,211,255,0.15)", color: "#cfefff", fontSize: 12, fontWeight: 600, cursor: "pointer" };
-const btnSecondary: React.CSSProperties = { ...btnPrimary, background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.16)", color: "#e6f1f7" };
-const btnGhost: React.CSSProperties = { ...btnSecondary, background: "transparent" };
-const errorBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,120,120,0.35)", background: "rgba(255,120,120,0.08)", color: "#ffb3b3", fontSize: 12, marginBottom: 12 };
-const warnBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,200,110,0.35)", background: "rgba(255,200,110,0.08)", color: "#ffd28a", fontSize: 12, marginBottom: 12 };
+const selectStyle: React.CSSProperties = { display: "block", marginTop: 4, padding: "6px 10px", background: "var(--eb-bg)", color: "var(--eb-text)", border: "1px solid var(--eb-border)", borderRadius: 8, fontSize: 12 };
+const btnPrimary: React.CSSProperties = { padding: "8px 14px", borderRadius: 8, border: "1px solid var(--eb-accent)", background: "color-mix(in srgb, var(--eb-accent) 18%, transparent)", color: "var(--eb-text)", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const btnSecondary: React.CSSProperties = { ...btnPrimary, background: "var(--eb-card)", borderColor: "var(--eb-border)", color: "var(--eb-text)" };
+const btnGhost: React.CSSProperties = { ...btnSecondary, background: "transparent", color: "var(--eb-text)" };
+const errorBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid var(--eb-bear)", background: "color-mix(in srgb, var(--eb-bear) 10%, transparent)", color: "var(--eb-bear)", fontSize: 12, marginBottom: 12 };
+const warnBox: React.CSSProperties = { padding: "10px 14px", borderRadius: 8, border: "1px solid var(--eb-accent)", background: "color-mix(in srgb, var(--eb-accent) 10%, transparent)", color: "var(--eb-accent)", fontSize: 12, marginBottom: 12 };
 const cardsGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 14 };
 
 function Card({ label, value }: { label: string; value: string | number }) {

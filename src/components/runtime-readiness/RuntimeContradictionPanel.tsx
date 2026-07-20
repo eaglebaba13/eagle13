@@ -8,13 +8,21 @@ export interface RuntimeContradictionPanelProps {
 
 export function RuntimeContradictionPanel({ contradictions }: RuntimeContradictionPanelProps) {
   if (contradictions.length === 0) return null;
+  const hasCritical = contradictions.some((c) => c.severity === "critical");
+  const shellCls = hasCritical
+    ? "rounded-lg border border-red-500/40 bg-red-500/[0.05] p-4"
+    : "rounded-lg border border-amber-500/40 bg-amber-500/[0.05] p-4";
+  const heading = hasCritical ? "Contradictions detected" : "Advisories";
+  const headingCls = hasCritical
+    ? "mb-2 text-sm font-semibold text-red-300"
+    : "mb-2 text-sm font-semibold text-amber-300";
   return (
     <section
-      aria-label="Runtime contradictions"
+      aria-label={hasCritical ? "Runtime contradictions" : "Runtime advisories"}
       data-testid="runtime-contradiction-panel"
-      className="rounded-lg border border-red-500/40 bg-red-500/[0.05] p-4"
+      className={shellCls}
     >
-      <h2 className="mb-2 text-sm font-semibold text-red-300">Contradictions detected</h2>
+      <h2 className={headingCls}>{heading}</h2>
       <ul className="space-y-2 text-sm">
         {contradictions.map((c) => (
           <li
