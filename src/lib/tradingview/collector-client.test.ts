@@ -159,13 +159,18 @@ describe("collector-client secret exposure guard", () => {
     // The adapter module is `.server.ts` and TanStack blocks it from client
     // bundles. This test is a smoke assertion that nothing in the adapter
     // static-imports @mathieuc/tradingview.
-    const src = await import("fs").then((fs) =>
-      fs.promises.readFile("src/lib/tradingview/collector-client.server.ts", "utf8"),
+    const fs = await import("fs");
+    const src = await fs.promises.readFile(
+      "src/lib/tradingview/collector-client.server.ts",
+      "utf8",
     );
-    expect(src).not.toContain("@mathieuc/tradingview");
-    const contract = await import("fs").then((fs) =>
-      fs.promises.readFile("src/lib/tradingview/snapshot-contract.ts", "utf8"),
+    // Guard: no static or dynamic import of the Node-only package.
+    expect(src).not.toMatch(/from\s+["']@mathieuc\/tradingview["']/);
+    expect(src).not.toMatch(/import\(\s*["']@mathieuc\/tradingview["']\s*\)/);
+    const contract = await fs.promises.readFile(
+      "src/lib/tradingview/snapshot-contract.ts",
+      "utf8",
     );
-    expect(contract).not.toContain("@mathieuc/tradingview");
+    expect(contract).not.toMatch(/@mathieuc\/tradingview/);
   });
 });
