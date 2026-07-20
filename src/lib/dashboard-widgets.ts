@@ -198,7 +198,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     section: "SIGNAL",
     componentLoader: goldSilverLoader,
     minimumPlan: "free",
-    enabled: true,
+    enabled: false,
     desktopSpan: 4,
     tabletSpan: 1,
     mobileOrder: 50,
@@ -210,7 +210,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     methodologyLabel: "Gold–Silver Ratio v1",
     supportsFreshness: true,
     supportsCollapse: true,
-    required: true,
+    required: false,
   },
   {
     id: "astro-levels",
