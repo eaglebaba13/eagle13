@@ -13,8 +13,12 @@ import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
 import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
 import { getInstitutionalFlow } from "@/lib/institutional-flow/institutional-flow.functions";
-import { computeOptionDecision } from "@/lib/option-strategy-decision";
-import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
+import { computeOptionDecision, computeInstitutionalFlow } from "@/lib/option-strategy-decision";
+import type {
+  DecisionEngineOutput,
+  InstitutionalFlowEngineOutput,
+  IndicatorBias as IFEIndicatorBias,
+} from "@/lib/option-strategy-decision";
 
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import { runStrategyEngine } from "./strategies";
@@ -54,6 +58,7 @@ export interface TerminalResponse {
   readonly signals: CanonicalSignals;
   readonly engine: StrategyEngineOutput;
   readonly decisionEngine: DecisionEngineOutput;
+  readonly institutionalFlowEngine: InstitutionalFlowEngineOutput;
   readonly evidence: {
     readonly decision: { available: boolean; action: string; regime: string; confidence: number | null };
     readonly pcr: { available: boolean; state: string; direction: string; score: number | null };
