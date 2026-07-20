@@ -12,6 +12,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
 import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
+import { getInstitutionalFlow } from "@/lib/institutional-flow/institutional-flow.functions";
+import { computeOptionDecision } from "@/lib/option-strategy-decision";
+import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
 
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import { runStrategyEngine } from "./strategies";
@@ -50,6 +53,7 @@ function gapLabelToBias(label: string): CanonicalBias {
 export interface TerminalResponse {
   readonly signals: CanonicalSignals;
   readonly engine: StrategyEngineOutput;
+  readonly decisionEngine: DecisionEngineOutput;
   readonly evidence: {
     readonly decision: { available: boolean; action: string; regime: string; confidence: number | null };
     readonly pcr: { available: boolean; state: string; direction: string; score: number | null };
@@ -68,15 +72,17 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<TerminalResponse> => {
     const generatedAt = new Date().toISOString();
-    const [decisionRes, gtiRes, gapRes] = await Promise.allSettled([
+    const [decisionRes, gtiRes, gapRes, flowRes] = await Promise.allSettled([
       getDecisionSnapshot(),
       getGtiSummary(),
       getGannGapOutlook(),
+      getInstitutionalFlow({ data: { underlying: "NIFTY" } }),
     ]);
 
     const decision = decisionRes.status === "fulfilled" ? decisionRes.value : null;
     const gti = gtiRes.status === "fulfilled" ? gtiRes.value : null;
     const gap = gapRes.status === "fulfilled" ? gapRes.value : null;
+    const flow = flowRes.status === "fulfilled" ? flowRes.value : null;
 
     const findContribution = (key: ModuleKey) =>
       decision?.decision.contributions.find((c) => c.key === key) ?? null;
@@ -118,6 +124,56 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
       runStrategyEngine({ signals, vix, generatedAt }),
     );
 
+    // Phase 27 — Weighted Decision Engine (research-only).
+    const sectorRows = flow?.sectorFlow.rows ?? [];
+    const findSector = (needle: string) =>
+      sectorRows.find((r) => r.name.toUpperCase().includes(needle)) ?? null;
+    const bankingRow = findSector("BANK");
+    const itRow = findSector("IT") ?? findSector("TECH");
+    const oilGasRow = findSector("OIL") ?? findSector("ENERGY");
+    const sectorAvailable = !!flow && flow.sectorFlow.availability !== "UNAVAILABLE";
+    const decisionEngine = computeOptionDecision({
+      pcr: {
+        combinedScore: decision?.capabilities.pcrCombined.combinedScore ?? null,
+        state: decision?.capabilities.pcrCombined.direction ?? null,
+        available: !!pcrC?.present,
+      },
+      breadth: {
+        advances: flow?.internals.advances ?? null,
+        declines: flow?.internals.declines ?? null,
+        netBreadth: flow?.internals.netBreadth ?? null,
+        available:
+          !!flow &&
+          (flow.internals.availability !== "UNAVAILABLE" ||
+            flow.internals.netBreadth != null),
+      },
+      sector: {
+        banking: bankingRow?.bias ?? "UNAVAILABLE",
+        oilGas: oilGasRow?.bias ?? "UNAVAILABLE",
+        it: itRow?.bias ?? "UNAVAILABLE",
+        available: sectorAvailable,
+      },
+      oi: {
+        highestCallOiStrike: flow?.oi.highestCallOiStrike ?? null,
+        highestPutOiStrike: flow?.oi.highestPutOiStrike ?? null,
+        atmStrike: flow?.oi.atmStrike ?? null,
+        totalCallChangeOi: flow?.oi.totalCallChangeOi ?? null,
+        totalPutChangeOi: flow?.oi.totalPutChangeOi ?? null,
+        buildUp: flow?.buildUp.overall ?? null,
+        available: !!flow && flow.oi.availability !== "UNAVAILABLE",
+      },
+      maxPain: {
+        value: flow?.maxPain.currentMaxPain ?? null,
+        spot: flow?.spot ?? null,
+        distance: flow?.maxPain.distanceFromSpot ?? null,
+        distancePct: flow?.maxPain.distanceFromSpotPct ?? null,
+        available: !!flow && flow.maxPain.availability !== "UNAVAILABLE",
+      },
+      vix,
+      underlying: "NIFTY",
+      generatedAt,
+    });
+
     const sources = [decision ? "LIVE" : null, gti?.source, gap?.source].filter(
       Boolean,
     ) as string[];
@@ -129,6 +185,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
     return {
       signals,
       engine,
+      decisionEngine,
       evidence: {
         decision: {
           available: !!decision,

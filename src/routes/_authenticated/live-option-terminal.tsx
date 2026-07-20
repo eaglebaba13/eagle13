@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/terminal.functions";
 import type { ScoredStrategy, CanonicalBias } from "@/lib/option-strategy-terminal";
 import { describeVixRegime } from "@/lib/option-strategy-terminal";
+import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
 
 export const Route = createFileRoute("/_authenticated/live-option-terminal")({
   head: () => ({
@@ -30,6 +31,102 @@ const BIAS_COLOR: Record<CanonicalBias, string> = {
   CONFLICT: "text-[var(--eb-warn,#eab308)]",
   UNAVAILABLE: "text-[var(--eb-muted)] opacity-70",
 };
+
+const ACTION_TONE: Record<DecisionEngineOutput["action"], { bg: string; label: string }> = {
+  BUY_CALL: { bg: "bg-[var(--eb-bull)]/15 text-[var(--eb-bull)] border-[var(--eb-bull)]/40", label: "BUY CALL" },
+  BUY_PUT: { bg: "bg-[var(--eb-bear)]/15 text-[var(--eb-bear)] border-[var(--eb-bear)]/40", label: "BUY PUT" },
+  WAIT: { bg: "bg-[var(--eb-warn,#eab308)]/15 text-[var(--eb-warn,#eab308)] border-[var(--eb-warn,#eab308)]/40", label: "WAIT" },
+  NO_TRADE: { bg: "bg-[var(--eb-muted)]/15 text-[var(--eb-muted)] border-[var(--eb-muted)]/40", label: "NO TRADE" },
+};
+
+function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
+  const tone = ACTION_TONE[d.action];
+  return (
+    <section className="rounded-xl border border-[var(--eb-border)] bg-[var(--eb-card)] p-4 md:p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:justify-between">
+        <div className="flex-1">
+          <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
+            Market Decision Engine
+          </div>
+          <div className={`mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-lg font-bold ${tone.bg}`}>
+            {tone.label}
+          </div>
+          <div className="mt-2 text-sm text-[var(--eb-muted)]">
+            Confidence <span className="font-semibold text-[var(--eb-text)]">{d.confidence}%</span>
+            {" · "}Bull <span className="text-[var(--eb-bull)]">{d.bullScore}</span>
+            {" · "}Bear <span className="text-[var(--eb-bear)]">{d.bearScore}</span>
+          </div>
+          {d.strike.available && d.strike.strike != null && (
+            <div className="mt-2 text-sm text-[var(--eb-text)]">
+              Recommended strike:{" "}
+              <span className="font-semibold text-[var(--eb-accent)]">{d.strike.label}</span>
+            </div>
+          )}
+          <div className="mt-1 text-xs text-[var(--eb-muted)]">
+            VIX regime {d.vixRegime} · Sizing {d.sizing.suggestedSizePct}% ({d.sizing.risk})
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
+            Weighted Contributions
+          </div>
+          <ul className="mt-2 space-y-1 text-xs">
+            {d.indicators.map((i) => {
+              const color =
+                i.bias === "BULLISH" ? "text-[var(--eb-bull)]"
+                : i.bias === "BEARISH" ? "text-[var(--eb-bear)]"
+                : i.bias === "NEUTRAL" ? "text-[var(--eb-muted)]"
+                : "text-[var(--eb-muted)] opacity-70";
+              return (
+                <li key={i.key} className="flex items-center justify-between gap-2">
+                  <span className="text-[var(--eb-text)]">
+                    {i.label}{" "}
+                    <span className="text-[var(--eb-muted)]">({Math.round(i.weight * 100)}%)</span>
+                  </span>
+                  <span className={`font-mono ${color}`}>
+                    {i.available ? `+${i.bullContribution} / -${i.bearContribution}` : "UNAVAILABLE"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+
+      {d.reasoning.length > 0 && (
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
+              Reasoning
+            </div>
+            <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-text)]">
+              {d.reasoning.map((r, i) => <li key={i}>{r}</li>)}
+            </ul>
+          </div>
+          {(d.warnings.length > 0 || d.conflicts.length > 0) && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
+                Warnings & Conflicts
+              </div>
+              <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-warn,#eab308)]">
+                {d.warnings.map((w, i) => <li key={`w${i}`}>⚠ {w}</li>)}
+                {d.conflicts.map((c, i) => <li key={`c${i}`}>⚑ {c}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(d.leadingSector || d.weakestSector) && (
+        <div className="mt-3 text-xs text-[var(--eb-muted)]">
+          {d.leadingSector && <>Leading sector: <span className="text-[var(--eb-bull)]">{d.leadingSector}</span>. </>}
+          {d.weakestSector && <>Weakest: <span className="text-[var(--eb-bear)]">{d.weakestSector}</span>.</>}
+        </div>
+      )}
+      <div className="mt-3 text-[10px] text-[var(--eb-muted)]">{d.disclaimer}</div>
+    </section>
+  );
+}
 
 function BiasChip({ bias }: { bias: CanonicalBias }) {
   return (
@@ -121,6 +218,8 @@ function LiveOptionTerminalPage() {
 
       {data && (
         <>
+          <DecisionEnginePanel d={data.decisionEngine} />
+
           <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
               <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
