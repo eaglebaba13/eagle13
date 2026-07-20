@@ -1,0 +1,19 @@
+{
+  "name": "tradingview-ratio-collector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated Node service that subscribes to TVC:GOLDSILVER via @mathieuc/tradingview and exposes a canonical Gold/Silver ratio snapshot over HTTP. Server-only. No trading. No frontend.",
+  "type": "module",
+  "main": "src/index.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "dev": "node --watch src/index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@mathieuc/tradingview": "^3.5.2"
+  }
+}
