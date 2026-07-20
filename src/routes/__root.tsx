@@ -162,6 +162,49 @@ function RootComponent() {
     return () => sub.subscription.unsubscribe();
   }, [queryClient]);
 
+  // Phase 36.1 — Global provider-error safety net.
+  // Non-critical background provider failures (Yahoo Finance HTTP 4xx/5xx,
+  // aborted server-fn calls after unmount, transient CORS blips) must never
+  // reach the Vite dev overlay or the app-level error boundary. They are
+  // still forwarded to Lovable error reporting so diagnostics are preserved.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const PROVIDER_HINTS = [
+      "Data source error",
+      "Request failed for",
+      "Invalid JSON from",
+      "query1.finance.yahoo.com",
+      "query2.finance.yahoo.com",
+      "AbortError",
+      "The user aborted a request",
+    ];
+    const isNonCriticalProviderError = (reason: unknown): boolean => {
+      const msg =
+        reason instanceof Error
+          ? reason.message
+          : typeof reason === "string"
+            ? reason
+            : "";
+      if (!msg) return false;
+      return PROVIDER_HINTS.some((h) => msg.includes(h));
+    };
+    const handler = (ev: PromiseRejectionEvent) => {
+      if (!isNonCriticalProviderError(ev.reason)) return;
+      // Report diagnostics but swallow the overlay.
+      try {
+        reportLovableError(
+          ev.reason instanceof Error ? ev.reason : new Error(String(ev.reason)),
+          { boundary: "background_provider_rejection" },
+        );
+      } catch {
+        /* best-effort */
+      }
+      ev.preventDefault();
+    };
+    window.addEventListener("unhandledrejection", handler);
+    return () => window.removeEventListener("unhandledrejection", handler);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
