@@ -61,6 +61,7 @@ import { Route as AuthenticatedResearchLabRunsRouteImport } from './routes/_auth
 import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
 import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
 import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
+import { Route as AuthenticatedAdminWidgetsRouteImport } from './routes/_authenticated/admin.widgets'
 import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_authenticated/admin.tradingview'
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
@@ -352,6 +353,12 @@ const AuthenticatedResearchLabAlertsRoute =
     path: '/alerts',
     getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
+const AuthenticatedAdminWidgetsRoute =
+  AuthenticatedAdminWidgetsRouteImport.update({
+    id: '/admin/widgets',
+    path: '/admin/widgets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminTradingviewRoute =
   AuthenticatedAdminTradingviewRouteImport.update({
     id: '/admin/tradingview',
@@ -510,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
@@ -579,6 +587,7 @@ export interface FileRoutesByTo {
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
@@ -650,6 +659,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/_authenticated/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/_authenticated/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/_authenticated/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
   '/_authenticated/research-lab/institutional-flow': typeof AuthenticatedResearchLabInstitutionalFlowRoute
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/admin/tradingview'
+    | '/admin/widgets'
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
     | '/research-lab/institutional-flow'
@@ -790,6 +801,7 @@ export interface FileRouteTypes {
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/admin/tradingview'
+    | '/admin/widgets'
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
     | '/research-lab/institutional-flow'
@@ -860,6 +872,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
     | '/_authenticated/admin/tradingview'
+    | '/_authenticated/admin/widgets'
     | '/_authenticated/research-lab/alerts'
     | '/_authenticated/research-lab/gann-gap'
     | '/_authenticated/research-lab/institutional-flow'
@@ -1274,6 +1287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResearchLabAlertsRouteImport
       parentRoute: typeof AuthenticatedResearchLabRoute
     }
+    '/_authenticated/admin/widgets': {
+      id: '/_authenticated/admin/widgets'
+      path: '/admin/widgets'
+      fullPath: '/admin/widgets'
+      preLoaderRoute: typeof AuthenticatedAdminWidgetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/tradingview': {
       id: '/_authenticated/admin/tradingview'
       path: '/admin/tradingview'
@@ -1454,6 +1474,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
   AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
   AuthenticatedAdminTradingviewRoute: typeof AuthenticatedAdminTradingviewRoute
+  AuthenticatedAdminWidgetsRoute: typeof AuthenticatedAdminWidgetsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1485,6 +1506,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminStagingValidationRoute,
   AuthenticatedAdminSystemStatusRoute: AuthenticatedAdminSystemStatusRoute,
   AuthenticatedAdminTradingviewRoute: AuthenticatedAdminTradingviewRoute,
+  AuthenticatedAdminWidgetsRoute: AuthenticatedAdminWidgetsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
