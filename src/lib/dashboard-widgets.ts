@@ -119,8 +119,6 @@ const cryptoWatchlistLoader = () =>
   import("@/components/dashboard/widgets/CryptoWatchlistWidget").then((m) => ({ default: m.default }));
 const cryptoSummaryLoader = () =>
   import("@/components/dashboard/widgets/CryptoSummaryWidget").then((m) => ({ default: m.default }));
-const goldSilverRatioLoader = () =>
-  import("@/components/dashboard/widgets/GoldSilverRatioWidget").then((m) => ({ default: m.default }));
 
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
