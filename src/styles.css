@@ -1502,3 +1502,265 @@ a {
   .eb-news-title { font-size: 16px; }
   .eb-news-foot .eb-foot-btn { padding: 11px 4px; font-size: 12px; }
 }
+
+/* ============================================================
+ * Broker page layout primitives (previously undefined).
+ * Purely presentational — no interaction with adapters/logic.
+ * ============================================================ */
+
+.eb-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--eb-text);
+  min-width: 0;
+}
+.eb-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.eb-eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--eb-muted);
+}
+.eb-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--eb-muted);
+  max-width: 640px;
+}
+.eb-broker-modeswitch { display: inline-flex; gap: 6px; }
+.eb-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--eb-border);
+  background: var(--eb-card); color: var(--eb-text);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.eb-chip.is-active {
+  border-color: color-mix(in srgb, var(--eb-accent) 55%, var(--eb-border));
+  background: color-mix(in srgb, var(--eb-accent) 12%, var(--eb-card));
+  color: var(--eb-text);
+}
+.eb-card-head {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--eb-border);
+}
+.eb-card-head h2 {
+  margin: 0;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600;
+  color: var(--eb-text);
+}
+
+.eb-card > .eb-broker-picker,
+.eb-card > .eb-broker-connect,
+.eb-card > .eb-broker-status,
+.eb-card > .eb-broker-actions,
+.eb-card > .eb-preview,
+.eb-card > .eb-grid,
+.eb-card > .eb-table-wrap,
+.eb-card > .eb-audit-list,
+.eb-card > .eb-empty,
+.eb-card > .eb-err {
+  padding: 14px 16px;
+}
+
+.eb-broker-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.eb-broker-tile {
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--eb-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--eb-card) 60%, transparent);
+  color: var(--eb-text);
+  cursor: pointer;
+  min-width: 0;
+}
+.eb-broker-tile.is-active {
+  border-color: color-mix(in srgb, var(--eb-accent) 55%, var(--eb-border));
+  background: color-mix(in srgb, var(--eb-accent) 10%, var(--eb-card));
+}
+.eb-broker-tile-name { font-weight: 600; font-size: 13px; }
+.eb-broker-tile-id { margin-top: 2px; font-size: 11px; color: var(--eb-muted); }
+
+.eb-broker-connect {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.eb-broker-connect .eb-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11px;
+  color: var(--eb-muted);
+}
+
+.eb-broker-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.eb-kv {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  margin-right: 14px;
+  font-size: 12px;
+  color: var(--eb-muted);
+}
+.eb-kv strong { color: var(--eb-text); font-weight: 600; }
+
+.eb-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.eb-field label {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--eb-muted);
+}
+.eb-field input,
+.eb-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--eb-border);
+  border-radius: 8px;
+  background: var(--eb-bg);
+  color: var(--eb-text);
+  font-size: 13px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eb-grid { display: grid; gap: 10px; min-width: 0; }
+.eb-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.eb-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.eb-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) {
+  .eb-grid-3, .eb-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .eb-grid-2, .eb-grid-3, .eb-grid-4 { grid-template-columns: 1fr; }
+}
+
+.eb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--eb-border);
+  background: var(--eb-card);
+  color: var(--eb-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.eb-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--eb-accent) 55%, var(--eb-border));
+}
+.eb-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.eb-btn-primary {
+  border-color: color-mix(in srgb, var(--eb-accent) 65%, var(--eb-border));
+  background: color-mix(in srgb, var(--eb-accent) 18%, var(--eb-card));
+  color: var(--eb-text);
+}
+.eb-btn-ghost { background: transparent; }
+
+.eb-tag {
+  display: inline-flex; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--eb-border);
+  background: color-mix(in srgb, var(--eb-card) 70%, transparent);
+  font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--eb-muted);
+}
+.eb-empty {
+  padding: 18px 16px;
+  color: var(--eb-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.eb-err {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--eb-bear) 40%, var(--eb-border));
+  background: color-mix(in srgb, var(--eb-bear) 10%, transparent);
+  color: var(--eb-bear);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.eb-hint {
+  margin: 4px 0 0;
+  color: var(--eb-muted);
+  font-size: 11px;
+}
+
+.eb-broker-actions {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.eb-preview {
+  display: flex; flex-direction: column; gap: 8px;
+  border-top: 1px dashed var(--eb-border);
+}
+
+.eb-table-wrap { overflow-x: auto; }
+.eb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 520px;
+}
+.eb-table th, .eb-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--eb-border);
+  color: var(--eb-text);
+}
+.eb-table th {
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--eb-muted);
+  font-weight: 600;
+}
+.eb-row-inline { display: inline-flex; align-items: center; gap: 8px; }
+
+.eb-audit-list { display: flex; flex-direction: column; gap: 6px; }
+.eb-audit-row {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--eb-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--eb-card) 65%, transparent);
+  font-size: 12px;
+  color: var(--eb-muted);
+}
+
+/* Stat card helper reused by broker Stat component. */
+.eb-stat {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--eb-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--eb-card) 60%, transparent);
+  min-width: 0;
+}
+.eb-stat-label { font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--eb-muted); }
+.eb-stat-value { font-size: 15px; font-weight: 600; color: var(--eb-text); overflow-wrap: anywhere; }
