@@ -232,14 +232,7 @@ function Dashboard() {
         goldSilverRatio={data.goldSilverRatio}
       />
 
-      <LiveTicker
-        nifty={data.nifty}
-        banknifty={data.banknifty}
-        vix={data.vix}
-        btc={data.btc}
-        gold={data.gold}
-        silver={data.silver}
-      />
+      {/* LiveTicker removed — Header already renders the same instruments; second row was duplicative. */}
 
       {/* Tabs */}
       <div

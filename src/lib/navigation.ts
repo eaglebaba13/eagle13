@@ -106,7 +106,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "strategy-analytics", label: "Strategy Analytics", icon: BarChart3, to: "/strategy-analytics", section: "RESEARCH", order: 145, desktopVisible: true, mobileVisible: true },
 
   // MARKET
-  { id: "option-strategy", label: "NIFTY50 Buying Strategy", icon: Target, to: "/option-strategy", section: "MARKET", order: 210, desktopVisible: true, mobileVisible: true },
+  { id: "option-strategy", label: "NIFTY50 Buying", icon: Target, to: "/option-strategy", section: "MARKET", order: 210, desktopVisible: true, mobileVisible: true },
   { id: "market-breadth", label: "Market Breadth", icon: Activity, to: "/market-breadth", section: "MARKET", order: 215, desktopVisible: true, mobileVisible: true },
   { id: "options-analytics", label: "Options Analytics", icon: Layers, to: "/options-analytics", section: "MARKET", order: 220, desktopVisible: true, mobileVisible: true },
   { id: "options-chain", label: "Options Chain", icon: Layers, to: "/options-chain", section: "MARKET", order: 225, desktopVisible: true, mobileVisible: true },

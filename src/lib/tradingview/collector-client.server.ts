@@ -112,7 +112,7 @@ export async function getGoldSilverRatioSnapshot(): Promise<CollectorSnapshot> {
   const now = Date.now();
 
   if (!cfg.enabled) {
-    return unavailableSnapshot("Collector disabled (TRADINGVIEW_COLLECTOR_ENABLED=false)");
+    return unavailableSnapshot("Gold/Silver Ratio collector is currently disabled");
   }
   if (!cfg.urlConfigured || !cfg.tokenConfigured || !cfg.baseUrl) {
     return unavailableSnapshot("Collector URL or API token not configured");
