@@ -112,11 +112,10 @@ export type MarketDataResponse = {
   };
 };
 
-export const getMarketData = createServerFn({ method: "GET" }).handler(
-  async (): Promise<MarketDataResponse> =>
-    cached<MarketDataResponse>(
-      "market-data",
-      async () => {
+export async function getMarketDataImpl(): Promise<MarketDataResponse> {
+  return cached<MarketDataResponse>(
+    "market-data",
+    async () => {
     // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX.
     // Yahoo is called only when the Upstox path fails, so successful
     // Upstox responses do NOT trigger a background Yahoo request. Gold
@@ -185,7 +184,11 @@ export const getMarketData = createServerFn({ method: "GET" }).handler(
     };
 
     return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
-      },
-      { ttlMs: 30_000 },
-    ),
+    },
+    { ttlMs: 30_000 },
+  );
+}
+
+export const getMarketData = createServerFn({ method: "GET" }).handler(
+  async (): Promise<MarketDataResponse> => getMarketDataImpl(),
 );
