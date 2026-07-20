@@ -1,29 +1,32 @@
-// Phase 3F.2A — Gold / Silver Ratio dashboard widget.
-// Consumer-only. Shares the ["coindcx-markets"] query cache with other
-// crypto widgets. No trading, no execution controls.
+// Phase 3F.2C — Gold / Silver Ratio dashboard widget.
+// Source: external TradingView Node collector (TVC:GOLDSILVER) via
+// server-only bearer-auth adapter. Never reads PAXG/XAUT. Never trades.
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Scale } from "lucide-react";
-import { listCoindcxMarkets } from "@/lib/providers/coindcx/coindcx.functions";
-import {
-  buildGoldSilverInput,
-  computeGoldSilverRatio,
-  formatRatio,
-  GOLD_SILVER_BUY_GOLD_THRESHOLD,
-  GOLD_SILVER_BUY_SILVER_THRESHOLD,
-} from "@/lib/metal-ratio";
-import type { GoldSilverRatioResult, GoldSilverSignal } from "@/lib/metal-ratio";
+import { getCollectorGoldSilverRatio } from "@/lib/tradingview/tradingview.functions";
+import type {
+  CollectorSnapshot,
+  CollectorSignal,
+} from "@/lib/tradingview/snapshot-contract";
 
-const SIGNAL_LABEL: Record<GoldSilverSignal, string> = {
+const BUY_GOLD_THRESHOLD = 50;
+const BUY_SILVER_THRESHOLD = 80;
+
+function formatRatio(r: number | null): string {
+  if (r == null || !Number.isFinite(r)) return "—";
+  return (Math.round(r * 100) / 100).toFixed(2);
+}
+
+const SIGNAL_LABEL: Record<CollectorSignal, string> = {
   BUY_GOLD: "BUY GOLD",
   BUY_SILVER: "BUY SILVER",
   NEUTRAL: "WAIT / NEUTRAL",
   UNAVAILABLE: "UNAVAILABLE",
 };
 
-const SIGNAL_TONE: Record<GoldSilverSignal, string> = {
+const SIGNAL_TONE: Record<CollectorSignal, string> = {
   BUY_GOLD: "text-amber-300 border-amber-400/40 bg-amber-400/10",
   BUY_SILVER: "text-sky-200 border-sky-400/40 bg-sky-400/10",
   NEUTRAL: "text-muted-foreground border-border/60 bg-card/40",
@@ -41,11 +44,11 @@ function RatioScale({ ratio }: { ratio: number | null }) {
       <div className="relative h-2 rounded-full bg-gradient-to-r from-amber-400/40 via-slate-400/40 to-sky-400/40">
         <span
           className="absolute top-0 h-2 w-px bg-foreground/60"
-          style={{ left: `${pos(GOLD_SILVER_BUY_GOLD_THRESHOLD)}%` }}
+          style={{ left: `${pos(BUY_GOLD_THRESHOLD)}%` }}
         />
         <span
           className="absolute top-0 h-2 w-px bg-foreground/60"
-          style={{ left: `${pos(GOLD_SILVER_BUY_SILVER_THRESHOLD)}%` }}
+          style={{ left: `${pos(BUY_SILVER_THRESHOLD)}%` }}
         />
         {clamped != null && (
           <span
@@ -55,9 +58,9 @@ function RatioScale({ ratio }: { ratio: number | null }) {
         )}
       </div>
       <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
-        <span>BUY GOLD · &lt; {GOLD_SILVER_BUY_GOLD_THRESHOLD}</span>
-        <span>NEUTRAL {GOLD_SILVER_BUY_GOLD_THRESHOLD}–{GOLD_SILVER_BUY_SILVER_THRESHOLD}</span>
-        <span>BUY SILVER · &gt; {GOLD_SILVER_BUY_SILVER_THRESHOLD}</span>
+        <span>BUY GOLD · &lt; {BUY_GOLD_THRESHOLD}</span>
+        <span>NEUTRAL {BUY_GOLD_THRESHOLD}–{BUY_SILVER_THRESHOLD}</span>
+        <span>BUY SILVER · &gt; {BUY_SILVER_THRESHOLD}</span>
       </div>
     </div>
   );
@@ -68,8 +71,8 @@ function Methodology() {
     <details className="mt-3 rounded border border-border/40 bg-card/30 p-2 text-[11px] text-muted-foreground">
       <summary className="cursor-pointer font-medium text-foreground">Methodology</summary>
       <p className="mt-1">
-        Gold/Silver Ratio compares the normalized price of one troy ounce of Gold
-        with one troy ounce of Silver.
+        Sourced from TradingView symbol <code>TVC:GOLDSILVER</code> via a dedicated Node
+        collector service (server-to-server, bearer authenticated).
       </p>
       <ul className="mt-1 list-disc pl-4">
         <li>Above 80 — Silver is relatively cheaper (BUY SILVER).</li>
@@ -84,23 +87,23 @@ function Methodology() {
 }
 
 export function GoldSilverRatioWidget() {
-  const fn = useServerFn(listCoindcxMarkets);
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["coindcx-markets"],
+  const fn = useServerFn(getCollectorGoldSilverRatio);
+  const { data, isLoading, error } = useQuery<CollectorSnapshot>({
+    queryKey: ["tradingview-collector-gs-ratio"],
     queryFn: () => fn(),
     staleTime: 10_000,
     refetchInterval: 15_000,
     retry: false,
   });
 
-  const result: GoldSilverRatioResult = useMemo(() => {
-    const input = buildGoldSilverInput(data?.snapshots ?? []);
-    return computeGoldSilverRatio(input);
-  }, [data]);
-
-  const isUnavail = result.signal === "UNAVAILABLE";
-  const srSignal = SIGNAL_LABEL[result.signal];
-  const srRatio = result.ratio == null ? "unavailable" : formatRatio(result.ratio);
+  const signal: CollectorSignal = data?.signal ?? "UNAVAILABLE";
+  const isUnavail = signal === "UNAVAILABLE";
+  const srSignal = SIGNAL_LABEL[signal];
+  const srRatio = data?.ratio == null ? "unavailable" : formatRatio(data.ratio);
+  const freshness = data?.freshness ?? "UNAVAILABLE";
+  const reason =
+    data?.reason ??
+    (isUnavail ? "Gold/Silver Ratio provider unavailable" : null);
 
   return (
     <div
@@ -113,17 +116,17 @@ export function GoldSilverRatioWidget() {
           <Scale size={13} aria-hidden /> Gold / Silver Ratio
         </div>
         <span
-          className={`rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SIGNAL_TONE[result.signal]}`}
+          className={`rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SIGNAL_TONE[signal]}`}
           role={isUnavail ? "alert" : "status"}
           aria-label={`Signal: ${srSignal}. Ratio: ${srRatio}.`}
         >
-          {SIGNAL_LABEL[result.signal]}
+          {SIGNAL_LABEL[signal]}
         </span>
       </div>
 
       {isLoading && (
         <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
-          Loading gold and silver instruments…
+          Loading Gold/Silver Ratio…
         </p>
       )}
       {error && (
@@ -137,58 +140,44 @@ export function GoldSilverRatioWidget() {
           className="text-2xl font-semibold tabular-nums text-foreground"
           aria-label={`Current Gold Silver Ratio ${srRatio}`}
         >
-          {formatRatio(result.ratio)}
+          {formatRatio(data?.ratio ?? null)}
         </span>
         <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          {result.freshness}
+          {freshness}
         </span>
       </div>
 
-      {isUnavail && result.reason && (
+      {isUnavail && reason && (
         <p className="mt-1 text-[11px] text-red-300" role="alert">
-          {result.reason}
+          {reason}
         </p>
       )}
 
       <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+        <Row label="Symbol" value={data?.symbol ?? "TVC:GOLDSILVER"} />
+        <Row label="Source" value={data?.source ?? "TRADINGVIEW_UNOFFICIAL"} />
         <Row
-          label="Gold"
+          label="Market timestamp"
           value={
-            result.goldInstrument
-              ? `${result.goldInstrument}${result.normalizedGoldPrice != null ? ` · ${result.normalizedGoldPrice.toFixed(2)} ${result.quoteCurrency ?? ""}/oz` : ""}`
+            data?.marketTimestamp
+              ? new Date(data.marketTimestamp * 1000).toLocaleTimeString()
               : "—"
           }
         />
         <Row
-          label="Silver"
-          value={
-            result.silverInstrument
-              ? `${result.silverInstrument}${result.normalizedSilverPrice != null ? ` · ${result.normalizedSilverPrice.toFixed(2)} ${result.quoteCurrency ?? ""}/oz` : ""}`
-              : "—"
-          }
+          label="Received at"
+          value={data?.receivedAt ? new Date(data.receivedAt).toLocaleTimeString() : "—"}
         />
-        <Row label="Quote" value={result.quoteCurrency ?? "—"} />
-        <Row label="Unit" value={result.normalizedUnit ?? "—"} />
+        <Row label="Freshness" value={freshness} />
+        <Row label="Connection" value={data?.connectionStatus ?? "—"} />
+        <Row label="Formula" value={data?.formulaVersion ?? "GS_RATIO_50_80_V1"} />
         <Row
-          label="Gold source"
-          value={result.goldClassification ?? "—"}
-        />
-        <Row
-          label="Silver source"
-          value={result.silverClassification ?? "—"}
-        />
-        <Row label="Method" value={result.conversionMethod ?? "—"} />
-        <Row
-          label="Calculated"
-          value={
-            result.calculatedAt
-              ? new Date(result.calculatedAt).toLocaleTimeString()
-              : "—"
-          }
+          label="Age"
+          value={data?.ageMs != null ? `${Math.round(data.ageMs / 1000)}s` : "—"}
         />
       </dl>
 
-      <RatioScale ratio={result.ratio} />
+      <RatioScale ratio={data?.ratio ?? null} />
       <Methodology />
     </div>
   );
