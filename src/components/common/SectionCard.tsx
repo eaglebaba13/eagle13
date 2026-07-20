@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface SectionCardProps extends React.HTMLAttributes<HTMLElement> {
+export interface SectionCardProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   readonly title?: React.ReactNode;
   readonly description?: React.ReactNode;
   readonly actions?: React.ReactNode;
