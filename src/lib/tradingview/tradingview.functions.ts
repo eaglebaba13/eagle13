@@ -32,7 +32,7 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
     const cfg = client.readCollectorConfig();
 
     let snapshot: CollectorSnapshot;
-    let health: unknown = null;
+    let health: Record<string, unknown> | null = null;
     let healthError: string | null = null;
 
     if (!cfg.enabled || !cfg.urlConfigured || !cfg.tokenConfigured) {
@@ -55,7 +55,10 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
           headers: { Accept: "application/json" },
           signal: AbortSignal.timeout(3_000),
         });
-        if (res.ok) health = await res.json();
+        if (res.ok) {
+          const j = (await res.json()) as unknown;
+          health = j && typeof j === "object" ? (j as Record<string, unknown>) : null;
+        }
         else healthError = `HTTP ${res.status}`;
       } catch (err) {
         healthError = err instanceof Error ? err.message : String(err);
