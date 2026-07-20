@@ -416,6 +416,7 @@ function LiveOptionTerminalPage() {
       {data && (
         <>
           <DecisionEnginePanel d={data.decisionEngine} />
+          <InstitutionalFlowPanel ife={data.institutionalFlowEngine} />
 
           <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
