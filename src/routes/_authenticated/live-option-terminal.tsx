@@ -8,6 +8,7 @@ import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/termin
 import type { ScoredStrategy, CanonicalBias } from "@/lib/option-strategy-terminal";
 import { describeVixRegime } from "@/lib/option-strategy-terminal";
 import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
+import type { InstitutionalFlowEngineOutput } from "@/lib/option-strategy-decision";
 
 export const Route = createFileRoute("/_authenticated/live-option-terminal")({
   head: () => ({
@@ -138,6 +139,202 @@ function BiasChip({ bias }: { bias: CanonicalBias }) {
   );
 }
 
+// ---- Phase 28 — Institutional Flow & Probability Panel ----
+function statusIcon(s: "PASS" | "FAIL" | "UNAVAILABLE"): string {
+  return s === "PASS" ? "✓" : s === "FAIL" ? "✕" : "—";
+}
+function biasClass(b: string): string {
+  if (b === "BULLISH") return "text-[var(--eb-bull)]";
+  if (b === "BEARISH") return "text-[var(--eb-bear)]";
+  if (b === "NEUTRAL") return "text-[var(--eb-muted)]";
+  return "text-[var(--eb-muted)] opacity-70";
+}
+function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput }) {
+  return (
+    <section className="space-y-4 rounded-xl border border-[var(--eb-border)] bg-[var(--eb-card)] p-4 md:p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
+            Institutional Flow & Probability Engine
+          </div>
+          <div className="mt-1 text-sm text-[var(--eb-text)]">
+            Regime <span className="font-semibold text-[var(--eb-accent)]">{ife.regime.replaceAll("_", " ")}</span>
+            {" · "}Confidence <span className="font-semibold">{ife.confidence.value}%</span>
+            {" · "}Agreement <span className={biasClass(ife.signalAgreement.level === "STRONG" || ife.signalAgreement.level === "VERY_STRONG" ? "BULLISH" : "NEUTRAL")}>
+              {ife.signalAgreement.level.replaceAll("_", " ")}
+            </span>
+          </div>
+        </div>
+        <div className="text-xs text-[var(--eb-muted)]">
+          Data quality {ife.dataQuality.overall}
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {/* Combined PCR */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Combined PCR</div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-lg font-semibold text-[var(--eb-text)]">
+              {ife.combinedPcr.value != null ? ife.combinedPcr.value.toFixed(2) : "—"}
+            </span>
+            <span className={`text-xs ${biasClass(ife.combinedPcr.bias)}`}>{ife.combinedPcr.bias}</span>
+          </div>
+          <ul className="mt-2 space-y-0.5 text-xs">
+            {ife.combinedPcr.contributions.map((c) => (
+              <li key={c.index} className="flex justify-between">
+                <span className="text-[var(--eb-muted)]">{c.index}</span>
+                <span className={c.available ? "text-[var(--eb-text)]" : "text-[var(--eb-muted)] opacity-60"}>
+                  {c.available ? `${c.contributionPct}%` : "Unavailable"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* OI Structure */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">OI Build-up</div>
+          <div className="mt-1 text-sm font-semibold text-[var(--eb-text)]">
+            {ife.oiClassifier.classification.replaceAll("_", " ")}
+          </div>
+          <div className={`mt-1 text-xs ${biasClass(ife.oiClassifier.bias)}`}>{ife.oiClassifier.bias}</div>
+          <div className="mt-1 text-xs text-[var(--eb-muted)]">{ife.oiClassifier.note}</div>
+        </div>
+
+        {/* VWAP */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">VWAP Confirmation</div>
+          <div className="mt-1 text-sm font-semibold text-[var(--eb-text)]">
+            {ife.vwap.position.replaceAll("_", " ")}
+          </div>
+          <div className="mt-1 text-xs text-[var(--eb-muted)]">
+            {ife.vwap.available ? `${ife.vwap.distancePct}% vs VWAP` : "Feed unavailable"}
+          </div>
+        </div>
+
+        {/* Price Confirmation */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Price Position</div>
+          <div className="mt-1 text-sm font-semibold text-[var(--eb-text)]">
+            {ife.priceConfirmation.position.replaceAll("_", " ")}
+          </div>
+          <div className="mt-1 text-xs text-[var(--eb-muted)]">{ife.priceConfirmation.note}</div>
+          <div className="mt-1 text-[11px] text-[var(--eb-muted)]">
+            S {ife.priceConfirmation.support ?? "—"} · R {ife.priceConfirmation.resistance ?? "—"}
+          </div>
+        </div>
+
+        {/* Institutional Flow Summary */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Institutional Flow</div>
+          <div className="mt-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-[var(--eb-muted)]">Buying</span>
+              <span className="text-[var(--eb-bull)]">{ife.institutionalFlow.buyingPressurePct}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--eb-muted)]">Selling</span>
+              <span className="text-[var(--eb-bear)]">{ife.institutionalFlow.sellingPressurePct}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--eb-muted)]">Neutral</span>
+              <span>{ife.institutionalFlow.neutralFlowPct}%</span>
+            </div>
+          </div>
+          <div className={`mt-1 text-xs ${biasClass(ife.institutionalFlow.bias)}`}>
+            Current Bias {ife.institutionalFlow.bias}
+          </div>
+        </div>
+
+        {/* Strike Advice */}
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Strike Recommendation</div>
+          {ife.strikeAdvice.available ? (
+            <>
+              <div className="mt-1 text-sm font-semibold text-[var(--eb-accent)]">
+                {ife.strikeAdvice.strike} {ife.strikeAdvice.optionType}{" "}
+                <span className="text-xs text-[var(--eb-muted)]">({ife.strikeAdvice.moneyness})</span>
+              </div>
+              <div className="mt-1 text-xs text-[var(--eb-muted)]">{ife.strikeAdvice.reason}</div>
+              <div className="mt-1 text-[11px] text-[var(--eb-muted)]">
+                Risk {ife.strikeAdvice.risk} · {ife.strikeAdvice.expectedEnvironment}
+              </div>
+            </>
+          ) : (
+            <div className="mt-1 text-xs text-[var(--eb-muted)]">No strike — {ife.strikeAdvice.reason}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Trade readiness */}
+      <div className="rounded-lg border border-[var(--eb-border)] p-3">
+        <div className="flex items-baseline justify-between">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Trade Readiness</div>
+          <div className="text-xs text-[var(--eb-text)]">
+            Passed <span className="font-semibold">{ife.tradeReadiness.passed}</span> / {ife.tradeReadiness.total}
+          </div>
+        </div>
+        <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2 md:grid-cols-3">
+          {ife.tradeReadiness.items.map((it) => (
+            <li key={it.key} className="flex items-center justify-between gap-2 rounded border border-[var(--eb-border)] px-2 py-1">
+              <span className="text-[var(--eb-text)]">{it.label}</span>
+              <span
+                className={
+                  it.status === "PASS"
+                    ? "text-[var(--eb-bull)]"
+                    : it.status === "FAIL"
+                    ? "text-[var(--eb-bear)]"
+                    : "text-[var(--eb-muted)] opacity-70"
+                }
+              >
+                {statusIcon(it.status)} <span className="text-[var(--eb-muted)]">{it.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Signal Agreement + Explanation */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Signal Agreement</div>
+          <div className="mt-1 text-sm text-[var(--eb-text)]">
+            {ife.signalAgreement.level.replaceAll("_", " ")}{" "}
+            <span className="text-xs text-[var(--eb-muted)]">
+              ({ife.signalAgreement.agree} agree · {ife.signalAgreement.disagree} disagree ·{" "}
+              {ife.signalAgreement.neutral} neutral)
+            </span>
+          </div>
+          <ul className="mt-2 grid grid-cols-2 gap-1 text-xs">
+            {ife.signalAgreement.participants.map((p) => (
+              <li key={p.key} className="flex justify-between">
+                <span className="text-[var(--eb-muted)]">{p.label}</span>
+                <span className={biasClass(p.bias)}>{p.bias}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg border border-[var(--eb-border)] p-3">
+          <div className="text-[10px] uppercase text-[var(--eb-muted)]">Explainable Reasoning</div>
+          <div className="mt-1 text-sm text-[var(--eb-text)]">
+            {ife.explanation.action.replaceAll("_", " ")}{" "}
+            <span className="text-xs text-[var(--eb-muted)]">— {ife.explanation.confidence}% confidence</span>
+          </div>
+          <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-text)]">
+            {ife.explanation.bullets.slice(0, 8).map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="text-[10px] text-[var(--eb-muted)]">{ife.disclaimer}</div>
+    </section>
+  );
+}
+
 function StrategyCard({ s }: { s: ScoredStrategy }) {
   return (
     <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
@@ -219,6 +416,7 @@ function LiveOptionTerminalPage() {
       {data && (
         <>
           <DecisionEnginePanel d={data.decisionEngine} />
+          <InstitutionalFlowPanel ife={data.institutionalFlowEngine} />
 
           <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">

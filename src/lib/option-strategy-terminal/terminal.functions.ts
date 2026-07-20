@@ -13,8 +13,11 @@ import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
 import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
 import { getInstitutionalFlow } from "@/lib/institutional-flow/institutional-flow.functions";
-import { computeOptionDecision } from "@/lib/option-strategy-decision";
-import type { DecisionEngineOutput } from "@/lib/option-strategy-decision";
+import { computeOptionDecision, computeInstitutionalFlow } from "@/lib/option-strategy-decision";
+import type {
+  DecisionEngineOutput,
+  InstitutionalFlowEngineOutput,
+} from "@/lib/option-strategy-decision";
 
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import { runStrategyEngine } from "./strategies";
@@ -54,6 +57,7 @@ export interface TerminalResponse {
   readonly signals: CanonicalSignals;
   readonly engine: StrategyEngineOutput;
   readonly decisionEngine: DecisionEngineOutput;
+  readonly institutionalFlowEngine: InstitutionalFlowEngineOutput;
   readonly evidence: {
     readonly decision: { available: boolean; action: string; regime: string; confidence: number | null };
     readonly pcr: { available: boolean; state: string; direction: string; score: number | null };
@@ -182,10 +186,94 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
     else if (sources.includes("MIXED")) source = "MIXED";
     else if (sources.includes("RESEARCH_DEMO")) source = "RESEARCH_DEMO";
 
+    // Phase 28 — Institutional Flow & Probability Engine (additive).
+    const combinedPcrScore = decision?.capabilities.pcrCombined.combinedScore ?? null;
+    const combinedPcrBias: "BULLISH" | "BEARISH" | "NEUTRAL" | "UNAVAILABLE" =
+      combinedPcrScore == null
+        ? "UNAVAILABLE"
+        : combinedPcrScore > 0.1
+        ? "BULLISH"
+        : combinedPcrScore < -0.1
+        ? "BEARISH"
+        : "NEUTRAL";
+    const rawPcrOi = decision?.capabilities.pcrCombined.pcrOi ?? null;
+    const flowBias: "BULLISH" | "BEARISH" | "NEUTRAL" | "UNAVAILABLE" =
+      flow?.summary.bias === "PUT_WRITERS_ACTIVE"
+        ? "BULLISH"
+        : flow?.summary.bias === "CALL_WRITERS_ACTIVE"
+        ? "BEARISH"
+        : flow?.summary.bias === "BALANCED"
+        ? "NEUTRAL"
+        : "UNAVAILABLE";
+    const institutionalFlowEngine = computeInstitutionalFlow({
+      pcrIndices: [
+        {
+          index: "NIFTY",
+          pcr: rawPcrOi,
+          weight: 0.6,
+          available: !!pcrC?.present,
+        },
+        {
+          index: "BANKNIFTY",
+          pcr: null,
+          weight: 0.4,
+          available: !!pcrC?.present,
+        },
+        {
+          index: "SENSEX",
+          pcr: null,
+          weight: 0,
+          available: false,
+        },
+      ],
+      combinedPcrValue: rawPcrOi,
+      combinedPcrScore,
+      combinedPcrBias,
+      spot: flow?.spot ?? null,
+      vwap: null, // canonical VWAP feed not wired yet — flagged Unavailable in checklist
+      atmStrike: flow?.oi.atmStrike ?? null,
+      highestCallOiStrike: flow?.oi.highestCallOiStrike ?? null,
+      highestPutOiStrike: flow?.oi.highestPutOiStrike ?? null,
+      maxPain: flow?.maxPain.currentMaxPain ?? null,
+      oi: {
+        totalCallChangeOi: flow?.oi.totalCallChangeOi ?? null,
+        totalPutChangeOi: flow?.oi.totalPutChangeOi ?? null,
+        priceChange: flow?.buildUp.underlyingPriceChange ?? null,
+        buildUp: flow?.buildUp.overall ?? null,
+        available: !!flow && flow.oi.availability !== "UNAVAILABLE",
+      },
+      breadthNet: flow?.internals.netBreadth ?? null,
+      breadthAvailable:
+        !!flow &&
+        (flow.internals.availability !== "UNAVAILABLE" ||
+          flow.internals.netBreadth != null),
+      sectors: (flow?.sectorFlow.rows ?? []).map((r) => ({
+        name: r.name,
+        bias: r.bias,
+      })),
+      vix,
+      vixRegime: decisionEngine.vixRegime,
+      institutionalFlowBias: flowBias,
+      institutionalFlowAvailable:
+        !!flow && flow.summary.availability !== "UNAVAILABLE",
+      decisionAction: decisionEngine.action,
+      decisionConfidence: decisionEngine.confidence,
+      strikeRecommended: {
+        strike: decisionEngine.strike.strike,
+        type: decisionEngine.strike.optionType,
+        moneyness: decisionEngine.strike.moneyness,
+        available: decisionEngine.strike.available,
+      },
+      dataFreshness: flow?.diagnostics.snapshotFreshness ?? "UNKNOWN",
+      providerHealth: flow ? "OK" : "UNAVAILABLE",
+      generatedAt,
+    });
+
     return {
       signals,
       engine,
       decisionEngine,
+      institutionalFlowEngine,
       evidence: {
         decision: {
           available: !!decision,
