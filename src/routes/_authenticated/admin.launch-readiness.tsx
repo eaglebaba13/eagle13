@@ -19,6 +19,11 @@ import { snapshotObservability } from "@/lib/observability";
 import { trafficLightLabel, type TrafficLight } from "@/lib/provider-health/traffic-light";
 import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 import { RuntimeReadinessSummary } from "@/components/runtime-readiness";
+import {
+  deriveCanonicalVerdict,
+  verdictLabel,
+  verdictTone,
+} from "@/lib/readiness/canonical-verdict";
 
 export const Route = createFileRoute("/_authenticated/admin/launch-readiness")({
   head: () => ({
@@ -113,6 +118,10 @@ function LaunchReadinessPage() {
   });
   const verdict = deriveVerdict(core, summary);
   const obs = snapshotObservability();
+  // Phase 41 · Item 1 — Canonical triple verdict derived from the runtime
+  // report. Keeps runtime / subscription / closed beta gates in sync.
+  const canonical = deriveCanonicalVerdict(runtime);
+  const toneCls = { ok: "text-emerald-400", warn: "text-amber-300", err: "text-red-400" };
 
   return (
     <div className="min-h-screen bg-background px-4 py-6">
@@ -148,6 +157,43 @@ function LaunchReadinessPage() {
             compact
           />
         )}
+
+        <section
+          aria-label="Canonical Readiness"
+          className="rounded-xl border border-border bg-card/60 p-4"
+        >
+          <h2 className="text-sm font-semibold">Canonical Readiness Verdict</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Single source of truth. Subscription and closed-beta gates are
+            derived from the runtime aggregator — they cannot contradict it.
+          </p>
+          <dl className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md border border-border/60 p-2">
+              <dt className="text-xs uppercase text-muted-foreground">Runtime</dt>
+              <dd className="text-base font-semibold">
+                {canonical.runtime.replace(/_/g, " ")}
+              </dd>
+            </div>
+            <div className="rounded-md border border-border/60 p-2">
+              <dt className="text-xs uppercase text-muted-foreground">Subscription</dt>
+              <dd className={`text-base font-semibold ${toneCls[verdictTone(canonical.subscription)]}`}>
+                {verdictLabel(canonical.subscription)}
+              </dd>
+            </div>
+            <div className="rounded-md border border-border/60 p-2">
+              <dt className="text-xs uppercase text-muted-foreground">Closed Beta</dt>
+              <dd className={`text-base font-semibold ${toneCls[verdictTone(canonical.closedBeta)]}`}>
+                {verdictLabel(canonical.closedBeta)}
+              </dd>
+            </div>
+          </dl>
+          {canonical.caveats.length > 0 && (
+            <ul className="mt-3 list-disc pl-5 text-xs text-amber-300/90">
+              {canonical.caveats.map((c, i) => (<li key={i}>{c}</li>))}
+            </ul>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">{canonical.rationale}</p>
+        </section>
 
         <section
           aria-label="Verdict"
