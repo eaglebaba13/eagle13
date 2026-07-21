@@ -1905,3 +1905,89 @@ a {
   background: currentColor;
   box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent);
 }
+
+/* =========================================================================
+ * PHASE 42 — Canonical status & confidence utility classes.
+ * One palette for the entire application. Use these tokens/utilities
+ * instead of hardcoded colours in any status/confidence surface.
+ * ====================================================================== */
+.eb-status-buy     { color: var(--eb-status-buy); }
+.eb-status-sell    { color: var(--eb-status-sell); }
+.eb-status-wait    { color: var(--eb-status-wait); }
+.eb-status-info    { color: var(--eb-status-info); }
+.eb-status-astro   { color: var(--eb-status-astro); }
+.eb-status-success { color: var(--eb-status-success); }
+.eb-status-warning { color: var(--eb-status-warning); }
+.eb-status-error   { color: var(--eb-status-error); }
+
+.eb-bg-status-buy     { background: color-mix(in srgb, var(--eb-status-buy)   14%, transparent); border-color: color-mix(in srgb, var(--eb-status-buy)   40%, var(--eb-border)); }
+.eb-bg-status-sell    { background: color-mix(in srgb, var(--eb-status-sell)  14%, transparent); border-color: color-mix(in srgb, var(--eb-status-sell)  40%, var(--eb-border)); }
+.eb-bg-status-wait    { background: color-mix(in srgb, var(--eb-status-wait)  14%, transparent); border-color: color-mix(in srgb, var(--eb-status-wait)  40%, var(--eb-border)); }
+.eb-bg-status-info    { background: color-mix(in srgb, var(--eb-status-info)  12%, transparent); border-color: color-mix(in srgb, var(--eb-status-info)  40%, var(--eb-border)); }
+.eb-bg-status-astro   { background: color-mix(in srgb, var(--eb-status-astro) 12%, transparent); border-color: color-mix(in srgb, var(--eb-status-astro) 40%, var(--eb-border)); }
+
+/* Canonical status badge — pill shape, WCAG-legible in both themes. */
+.eb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--eb-border);
+  background: color-mix(in srgb, var(--eb-card) 70%, transparent);
+  font-family: var(--eb-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.eb-badge[data-status="buy"],
+.eb-badge[data-status="success"] { color: var(--eb-status-buy);   border-color: color-mix(in srgb, var(--eb-status-buy)   45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-status-buy) 12%, transparent); }
+.eb-badge[data-status="sell"],
+.eb-badge[data-status="error"]   { color: var(--eb-status-sell);  border-color: color-mix(in srgb, var(--eb-status-sell)  45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-status-sell) 12%, transparent); }
+.eb-badge[data-status="wait"],
+.eb-badge[data-status="warning"] { color: var(--eb-status-wait);  border-color: color-mix(in srgb, var(--eb-status-wait)  45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-status-wait) 12%, transparent); }
+.eb-badge[data-status="info"]    { color: var(--eb-status-info);  border-color: color-mix(in srgb, var(--eb-status-info)  45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-status-info) 10%, transparent); }
+.eb-badge[data-status="astro"]   { color: var(--eb-status-astro); border-color: color-mix(in srgb, var(--eb-status-astro) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-status-astro) 10%, transparent); }
+
+/* Canonical confidence pill: data-confidence is a 0-100 integer. */
+.eb-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: var(--eb-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--eb-border);
+  color: var(--eb-muted);
+  background: transparent;
+}
+.eb-confidence[data-band="deep"]   { color: var(--eb-conf-90); border-color: color-mix(in srgb, var(--eb-conf-90) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-conf-90) 12%, transparent); }
+.eb-confidence[data-band="high"]   { color: var(--eb-conf-75); border-color: color-mix(in srgb, var(--eb-conf-75) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-conf-75) 12%, transparent); }
+.eb-confidence[data-band="mid"]    { color: var(--eb-conf-60); border-color: color-mix(in srgb, var(--eb-conf-60) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-conf-60) 12%, transparent); }
+.eb-confidence[data-band="low"]    { color: var(--eb-conf-40); border-color: color-mix(in srgb, var(--eb-conf-40) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-conf-40) 12%, transparent); }
+.eb-confidence[data-band="weak"]   { color: var(--eb-conf-low); border-color: color-mix(in srgb, var(--eb-conf-low) 45%, var(--eb-border)); background: color-mix(in srgb, var(--eb-conf-low) 12%, transparent); }
+
+/* Price flash micro-interaction (opt-in via data attributes). */
+@keyframes eb-flash-up   { 0% { background-color: color-mix(in srgb, var(--eb-bull) 30%, transparent); } 100% { background-color: transparent; } }
+@keyframes eb-flash-down { 0% { background-color: color-mix(in srgb, var(--eb-bear) 30%, transparent); } 100% { background-color: transparent; } }
+[data-flash="up"]   { animation: eb-flash-up   0.9s ease-out 1; }
+[data-flash="down"] { animation: eb-flash-down 0.9s ease-out 1; }
+
+/* Loading shimmer skeleton — subtle, respects reduced-motion. */
+.eb-skeleton {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--eb-muted) 12%, transparent) 0%,
+    color-mix(in srgb, var(--eb-muted) 22%, transparent) 50%,
+    color-mix(in srgb, var(--eb-muted) 12%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: eb-skel 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes eb-skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
