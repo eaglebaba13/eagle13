@@ -87,7 +87,7 @@ describe("computeMacroRatio", () => {
   it("rejects stale inputs — never emits a bias from stale data", () => {
     const r = computeMacroRatio({
       gold: price({ freshness: "STALE" }),
-      silver: price(),
+      silver: price({}),
       now: FIXED_NOW,
     });
     expect(r.macroBias).toBe("UNAVAILABLE");
@@ -97,7 +97,7 @@ describe("computeMacroRatio", () => {
   it("rejects missing prices", () => {
     const r = computeMacroRatio({
       gold: price({ price: null }),
-      silver: price(),
+      silver: price({}),
       now: FIXED_NOW,
     });
     expect(r.macroBias).toBe("UNAVAILABLE");
