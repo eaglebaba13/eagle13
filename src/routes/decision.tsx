@@ -173,6 +173,13 @@ function gradeColor(g: Grade): string {
 
 function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
   const d = snap.decision;
+  // Phase 41 · Item 4 — Distinguish "computed but low" vs "unavailable".
+  // When the engine has no directional score (WAIT/NO_TRADE) and confidence
+  // is effectively zero, we surface "Unavailable" instead of "0%" so users
+  // can tell "not enough data" apart from "market says wait with low edge".
+  const confPct = Math.round(d.confidence);
+  const confUnavailable =
+    (d.action === "WAIT" || d.action === "NO_TRADE") && confPct <= 1;
   return (
     <div
       style={{
@@ -189,9 +196,17 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
         <div style={{ fontSize: "0.75rem", color: C.muted }}>Net score {(d.netScore * 100).toFixed(0)}</div>
       </Card>
       <Card label="Confidence">
-        <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>{Math.round(d.confidence)}%</div>
-        <div style={{ fontSize: "0.75rem", color: C.muted }}>Grade {" "}
-          <span style={{ color: gradeColor(d.grade), fontWeight: 700 }}>{d.grade}</span>
+        <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>
+          {confUnavailable ? "N/A" : `${confPct}%`}
+        </div>
+        <div style={{ fontSize: "0.75rem", color: C.muted }}>
+          {confUnavailable ? (
+            "Insufficient signals — engine waiting"
+          ) : (
+            <>Grade{" "}
+              <span style={{ color: gradeColor(d.grade), fontWeight: 700 }}>{d.grade}</span>
+            </>
+          )}
         </div>
       </Card>
       <Card label="Regime">
