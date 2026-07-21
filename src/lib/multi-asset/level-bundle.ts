@@ -71,7 +71,7 @@ export function buildLevelBundle(
   now: number = Date.now(),
 ): LevelBundle {
   const lv = computeLevels(
-    { open: candle.open, high: candle.high, low: candle.low, close: candle.close },
+    { open: candle.open, high: candle.high, low: candle.low, close: candle.close, date: candle.candleOpenTime.slice(0, 10) },
     0,
   );
   const pivot: PivotLevels = {
