@@ -1,6 +1,15 @@
 // Server function that fetches a live NIFTY / BANK NIFTY option-chain
-// snapshot, validates the provider payload with Zod, categorises expiries,
+// snapshot from the canonical Upstox pipeline, categorises expiries,
 // and normalises the result for the Options Analytics Terminal.
+//
+// Phase 41.3 — Canonical Upstox migration:
+//   * LIVE branch delegates entirely to `fetchCanonicalOptionChain`. The
+//     legacy nseindia.com fetch, Referer header block, `NSE_SYMBOLS`
+//     table, and NseFullChain Zod schema have been removed. There is now
+//     one option-chain pipeline shared with Combined PCR, Decision
+//     Engine, Institutional Flow, and OptionChainCapability.
+//   * Provider labels flow through `safeProviderLabel` — the wire never
+//     exposes raw broker names.
 //
 // Phase 16.1 — Data-integrity hardening:
 //   * Live mode NEVER auto-substitutes simulated data. If the upstream feed
@@ -29,54 +38,13 @@ import {
   type SourceStatus,
   type OptionsIntegrityMeta,
 } from "./options-integrity";
+import { safeProviderLabel } from "./provider-labels";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
-
-/* ---------------- NSE rich option-chain schema ---------------- */
-// Passthrough tolerates provider drift; only fields actually read here are
-// validated. Existing NseOptionChainSchema in providers.ts is left untouched.
-const RichLeg = z
-  .object({
-    strikePrice: z.number().optional(),
-    expiryDate: z.string().optional(),
-    openInterest: z.number().optional(),
-    changeinOpenInterest: z.number().optional(),
-    totalTradedVolume: z.number().optional(),
-    impliedVolatility: z.number().optional(),
-    lastPrice: z.number().optional(),
-    change: z.number().optional(),
-    pChange: z.number().optional(),
-    bidprice: z.number().optional(),
-    askPrice: z.number().optional(),
-  })
-  .passthrough();
-
-const NseFullChain = z.object({
-  records: z
-    .object({
-      expiryDates: z.array(z.string()).optional(),
-      underlyingValue: z.number().optional(),
-      data: z
-        .array(
-          z
-            .object({
-              strikePrice: z.number().optional(),
-              expiryDate: z.string().optional(),
-              CE: RichLeg.optional(),
-              PE: RichLeg.optional(),
-            })
-            .passthrough(),
-        )
-        .optional(),
-    })
-    .passthrough()
-    .optional(),
-});
 
 /* -------------------------- input ---------------------------- */
 
 const SYMBOLS = { NIFTY: "^NSEI", BANKNIFTY: "^NSEBANK" } as const;
-const NSE_SYMBOLS = { NIFTY: "NIFTY", BANKNIFTY: "BANKNIFTY" } as const;
 const STEPS = { NIFTY: 50, BANKNIFTY: 100 } as const;
 
 export type OptionsSymbol = keyof typeof SYMBOLS;
@@ -125,17 +93,6 @@ async function fetchSpotSafe(sym: OptionsSymbol): Promise<{ price: number | null
   } catch {
     return { price: null, prevClose: null };
   }
-}
-
-function toIsoDate(nseExpiry: string): string {
-  // NSE returns "17-Jul-2026". Convert to "2026-07-17".
-  const parts = nseExpiry.split("-");
-  if (parts.length !== 3) return nseExpiry;
-  const [d, mon, y] = parts;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const m = months.indexOf(mon);
-  if (m < 0) return nseExpiry;
-  return `${y}-${String(m + 1).padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
 /* ------------------- Last-known-good (LKG) cache ------------------- */
@@ -401,79 +358,69 @@ export const getOptionsChain = createServerFn({ method: "GET" })
 
         /* ------------------------ LIVE MODE ------------------------ */
         try {
-          const raw = await fetchJson<unknown>(
-            `https://www.nseindia.com/api/option-chain-indices?symbol=${NSE_SYMBOLS[sym]}`,
-            {
-              timeoutMs: 6000,
-              retries: 1,
-              headers: {
-                Accept: "application/json, text/plain, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                Referer: "https://www.nseindia.com/option-chain",
-              },
-            },
+          const { fetchCanonicalOptionChain } = await import(
+            "./option-chain/canonical-snapshot.server"
           );
-          const json = parseProvider(NseFullChain, raw, "NSE option chain");
-          const rows = json.records?.data ?? [];
-          const rawExpiries = json.records?.expiryDates ?? [];
-          if (!rows.length || !rawExpiries.length) throw new Error("empty chain");
-          const isoExpiries = rawExpiries
-            .map(toIsoDate)
+          const canonical = await fetchCanonicalOptionChain({
+            underlying: sym,
+            expiry: data.expiry,
+          });
+          if (!canonical.ok || !canonical.snapshot) {
+            throw new Error(
+              canonical.meta.safeError ?? "canonical option-chain snapshot unavailable",
+            );
+          }
+          const canonSnap = canonical.snapshot;
+          const isoExpiries = [...canonSnap.availableExpiries]
             .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e))
             .sort();
-          const expiries = categorizeExpiries(isoExpiries);
-          const selectedIso =
-            data.expiry && isoExpiries.includes(data.expiry) ? data.expiry : isoExpiries[0];
+          const expiries = categorizeExpiries(
+            isoExpiries.length ? isoExpiries : [canonSnap.expiry],
+          );
+          const selectedIso = canonSnap.expiry;
 
           const legs: OptionLeg[] = [];
           const strikeSet = new Set<number>();
-          for (const r of rows) {
-            const rowExpiry = toIsoDate(r.expiryDate ?? r.CE?.expiryDate ?? r.PE?.expiryDate ?? "");
-            if (rowExpiry !== selectedIso) continue;
-            const strike = r.strikePrice ?? r.CE?.strikePrice ?? r.PE?.strikePrice;
-            if (strike == null) continue;
-            strikeSet.add(strike);
-            if (r.CE) {
-              legs.push({
-                strike,
-                side: "CE",
-                oi: r.CE.openInterest ?? 0,
-                changeOi: r.CE.changeinOpenInterest ?? 0,
-                volume: r.CE.totalTradedVolume ?? 0,
-                ltp: r.CE.lastPrice ?? 0,
-                changePct: r.CE.pChange ?? 0,
-                iv: r.CE.impliedVolatility ?? null,
-                bid: r.CE.bidprice ?? null,
-                ask: r.CE.askPrice ?? null,
-              });
-            }
-            if (r.PE) {
-              legs.push({
-                strike,
-                side: "PE",
-                oi: r.PE.openInterest ?? 0,
-                changeOi: r.PE.changeinOpenInterest ?? 0,
-                volume: r.PE.totalTradedVolume ?? 0,
-                ltp: r.PE.lastPrice ?? 0,
-                changePct: r.PE.pChange ?? 0,
-                iv: r.PE.impliedVolatility ?? null,
-                bid: r.PE.bidprice ?? null,
-                ask: r.PE.askPrice ?? null,
-              });
-            }
+          for (const row of canonSnap.strikes) {
+            strikeSet.add(row.strike);
+            legs.push({
+              strike: row.strike,
+              side: "CE",
+              oi: row.call.oi ?? 0,
+              changeOi: row.call.changeOi ?? 0,
+              volume: row.call.volume ?? 0,
+              ltp: row.call.ltp ?? 0,
+              changePct: 0,
+              iv: row.call.iv,
+              bid: row.call.bid,
+              ask: row.call.ask,
+            });
+            legs.push({
+              strike: row.strike,
+              side: "PE",
+              oi: row.put.oi ?? 0,
+              changeOi: row.put.changeOi ?? 0,
+              volume: row.put.volume ?? 0,
+              ltp: row.put.ltp ?? 0,
+              changePct: 0,
+              iv: row.put.iv,
+              bid: row.put.bid,
+              ask: row.put.ask,
+            });
           }
           if (!legs.length) throw new Error("no legs for selected expiry");
           const strikes = Array.from(strikeSet).sort((a, b) => a - b);
-          const nseSpot = json.records?.underlyingValue ?? spotInfo.price ?? 0;
+          const canonSpot = canonSnap.spotPrice ?? spotInfo.price ?? 0;
+          const providerLabel = safeProviderLabel("UPSTOX", "OPTIONS");
           const snapshot: OptionChainSnapshot = {
             symbol: sym,
-            spot: nseSpot,
+            spot: canonSpot,
             expiry: selectedIso,
-            fetchedAt: new Date().toISOString(),
+            fetchedAt: canonSnap.timestamp,
             strikes,
             legs,
-            provider: "NSE",
-            source: "NSE",
+            provider: providerLabel,
+            source: "UPSTOX",
           };
           const integrity = computeIntegrity(snapshot, {
             demo: false,
@@ -502,8 +449,8 @@ export const getOptionsChain = createServerFn({ method: "GET" })
         } catch (err) {
           const errMsg =
             err instanceof Error
-              ? `Live NSE option-chain feed unavailable (${err.message}).`
-              : "Live NSE option-chain feed unavailable.";
+              ? `Live option-chain feed unavailable (${err.message}).`
+              : "Live option-chain feed unavailable.";
           // Try last-known-good cache — same symbol / expiry / trading date, within stale window.
           const today = currentTradingDate();
           const preferredExpiry = data.expiry;

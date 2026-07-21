@@ -29,7 +29,14 @@ export type OptionChainSnapshot = {
   strikes: number[];
   legs: OptionLeg[];
   provider: string;
-  source: "NSE" | "PROVIDER" | "SIMULATED" | "LAST_KNOWN_GOOD" | "UNAVAILABLE" | "DEMO";
+  source:
+    | "NSE"
+    | "UPSTOX"
+    | "PROVIDER"
+    | "SIMULATED"
+    | "LAST_KNOWN_GOOD"
+    | "UNAVAILABLE"
+    | "DEMO";
 };
 
 export type Moneyness = "ITM" | "ATM" | "OTM";
