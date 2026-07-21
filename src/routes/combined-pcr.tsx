@@ -153,8 +153,8 @@ function CombinedPcrPage() {
           display: "inline-flex", alignItems: "center", gap: 8,
           fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
           padding: "4px 10px", borderRadius: 999,
-          background: "rgba(255,174,0,0.14)", color: "#f2b845",
-          border: "1px solid rgba(255,174,0,0.28)", marginBottom: 12,
+          background: "var(--eb-warn-bg)", color: "var(--eb-warn-fg)",
+          border: "1px solid var(--eb-warn-border)", marginBottom: 12,
         }}
       >
         RESEARCH ONLY · NO BUY / SELL SIGNAL
@@ -163,17 +163,17 @@ function CombinedPcrPage() {
       <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 700 }}>Combined PCR</h1>
       <p style={{ margin: "0 0 20px", opacity: 0.7, fontSize: 14 }}>
         Weighted OI + ΔOI research score across NIFTY and BANKNIFTY. SENSEX{" "}
-        <span style={{ color: "#f2b845", fontWeight: 600 }}>COMING SOON</span>.
+        <span style={{ color: "var(--eb-warn-fg)", fontWeight: 600 }}>COMING SOON</span>.
       </p>
 
       {/* Capability panel — replaces fake NO_TRADE metrics when unsupported */}
       {capabilityBlocking && capabilities && (
         <div style={{
           padding: 14, marginBottom: 16, borderRadius: 10,
-          background: "rgba(255, 174, 0, 0.06)",
-          border: "1px solid rgba(255, 174, 0, 0.3)",
+          background: "var(--eb-warn-bg-soft)",
+          border: "1px solid var(--eb-warn-border-soft)",
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: "#ffb27a", marginBottom: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: "var(--eb-warn-fg)", marginBottom: 6 }}>
             COMBINED PCR · {String(capabilityStatus ?? "UNAVAILABLE").replace(/_/g, " ")}
           </div>
           <div style={{ fontSize: 13, marginBottom: 10 }}>
@@ -183,8 +183,8 @@ function CombinedPcrPage() {
             {Object.entries(capabilities).map(([u, cap]) => cap ? (
               <div key={u} style={{
                 padding: 10, borderRadius: 8,
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--eb-tint)",
+                border: "1px solid var(--eb-line)",
                 fontSize: 12,
               }}>
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>{u} · {cap.status.replace(/_/g, " ")}</div>
@@ -231,8 +231,8 @@ function CombinedPcrPage() {
       <div style={{
         display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center",
         padding: 12, borderRadius: 10,
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "var(--eb-tint-soft)",
+        border: "1px solid var(--eb-hairline)",
         marginBottom: 16,
       }}>
         <label style={labelStyle}>ATM
@@ -280,7 +280,7 @@ function CombinedPcrPage() {
           {loading ? "Loading…" : "Refresh"}
         </button>
         {!weightsValid && (
-          <span style={{ fontSize: 12, color: "#fb7185" }}>Weights must sum to 100%</span>
+          <span style={{ fontSize: 12, color: "var(--eb-danger-fg)" }}>Weights must sum to 100%</span>
         )}
       </div>
 
@@ -295,10 +295,10 @@ function CombinedPcrPage() {
       {reading && reading.warnings.length > 0 && (
         <div style={{
           padding: 12, marginBottom: 16, borderRadius: 8,
-          background: "rgba(251,113,133,0.08)",
-          border: "1px solid rgba(251,113,133,0.28)",
+          background: "var(--eb-danger-bg)",
+          border: "1px solid var(--eb-danger-border)",
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#fb7185", marginBottom: 6 }}>Data quality</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--eb-danger-fg)", marginBottom: 6 }}>Data quality</div>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
             {reading.warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
@@ -306,10 +306,10 @@ function CombinedPcrPage() {
       )}
 
       {error && (
-        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>Error: {error}</div>
+        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>Error: {error}</div>
       )}
       {result && !result.ok && (
-        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>
+        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>
           Provider unavailable: {result.safeError ?? "unknown"}
         </div>
       )}
@@ -318,12 +318,12 @@ function CombinedPcrPage() {
       {reading && (
         <div style={{
           overflowX: "auto",
-          border: "1px solid rgba(255,255,255,0.06)",
+          border: "1px solid var(--eb-hairline)",
           borderRadius: 10,
           marginBottom: 16,
         }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead style={{ background: "rgba(255,255,255,0.03)", textAlign: "left" }}>
+            <thead style={{ background: "var(--eb-tint)", textAlign: "left" }}>
               <tr>
                 {["Underlying", "Raw OI PCR", "Raw ΔOI PCR", "Norm OI", "Norm ΔOI", "Score", "Weight", "Strikes", "ATM", "Expiry", "Provider"].map((h) => (
                   <th key={h} style={{ padding: "8px 10px", fontWeight: 600, opacity: 0.75 }}>{h}</th>
@@ -332,7 +332,7 @@ function CombinedPcrPage() {
             </thead>
             <tbody>
               {reading.instruments.map((i) => (
-                <tr key={i.underlying} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <tr key={i.underlying} style={{ borderTop: "1px solid var(--eb-tint-strong)" }}>
                   <td style={cell}>{i.underlying}</td>
                   <td style={cell}>{fmt(i.rawOiPcr, 3)}</td>
                   <td style={cell}>{fmt(i.rawChangeOiPcr, 3)}</td>
@@ -346,7 +346,7 @@ function CombinedPcrPage() {
                   <td style={cell}>{i.provider}</td>
                 </tr>
               ))}
-              <tr style={{ borderTop: "1px solid rgba(255,255,255,0.05)", opacity: 0.55 }}>
+              <tr style={{ borderTop: "1px solid var(--eb-tint-strong)", opacity: 0.55 }}>
                 <td style={cell}>SENSEX</td>
                 <td style={cell} colSpan={10}>COMING SOON</td>
               </tr>
@@ -365,12 +365,12 @@ function CombinedPcrPage() {
       )}
 
       {/* Research panel */}
-      <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
+      <div style={{ border: "1px solid var(--eb-line)", borderRadius: 10, overflow: "hidden" }}>
         <button
           onClick={() => setShowResearch((v) => !v)}
           style={{
             width: "100%", textAlign: "left", padding: "10px 14px",
-            background: "rgba(255,255,255,0.03)", color: "inherit",
+            background: "var(--eb-tint)", color: "inherit",
             border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
           }}
         >
@@ -393,7 +393,7 @@ function CombinedPcrPage() {
       {/* Persistent history + shadow validation */}
       {(persisted.length > 0 || shadowSamples.length > 0) && (
         <div style={{
-          marginTop: 16, border: "1px solid rgba(255,255,255,0.08)",
+          marginTop: 16, border: "1px solid var(--eb-line)",
           borderRadius: 10, padding: 12, fontSize: 12,
         }}>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>
@@ -424,14 +424,14 @@ const labelStyle: React.CSSProperties = {
   display: "flex", flexDirection: "column", fontSize: 11, gap: 4, opacity: 0.85,
 };
 const selectStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "var(--eb-tint-strong)",
+  border: "1px solid var(--eb-divider)",
   color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12,
 };
 const buttonStyle: React.CSSProperties = {
-  background: "rgba(242,184,69,0.15)",
-  border: "1px solid rgba(242,184,69,0.4)",
-  color: "#f2b845", padding: "6px 12px", borderRadius: 6,
+  background: "var(--eb-warn-bg)",
+  border: "1px solid var(--eb-warn-border)",
+  color: "var(--eb-warn-fg)", padding: "6px 12px", borderRadius: 6,
   fontSize: 12, fontWeight: 600, cursor: "pointer",
 };
 const cell: React.CSSProperties = { padding: "6px 10px" };
@@ -440,8 +440,8 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       padding: "8px 10px", borderRadius: 8,
-      border: "1px solid rgba(255,255,255,0.06)",
-      background: "rgba(255,255,255,0.02)",
+      border: "1px solid var(--eb-hairline)",
+      background: "var(--eb-tint-soft)",
     }}>
       <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{value}</div>
