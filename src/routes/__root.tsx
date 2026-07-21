@@ -228,7 +228,7 @@ function RootComponent() {
           <>
             {/* Legacy floating profile menu for self-shelled routes (astro, live-*, option-strategy)
                 and pre-auth pages. Global AppShell renders it inside its header otherwise. */}
-            <div className="fixed top-3 right-3 z-40">
+            <div className="fixed top-3 right-3 z-40 hidden lg:block">
               <ProfileMenu />
             </div>
             <Outlet />
