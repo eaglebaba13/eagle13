@@ -117,7 +117,9 @@ export const NAV_REGISTRY: NavItem[] = [
 
   // ACCOUNT
   { id: "profile", label: "Profile", icon: UserIcon, to: "/profile", section: "ACCOUNT", order: 310, desktopVisible: true, mobileVisible: true },
+  { id: "referrals", label: "Referrals", icon: KeyRound, to: "/referrals", section: "ACCOUNT", order: 311, desktopVisible: true, mobileVisible: true },
   { id: "admin-launch-readiness", label: "Launch Readiness", icon: ShieldCheck, to: "/admin/launch-readiness", section: "ACCOUNT", order: 305, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
+  { id: "admin-referrals", label: "Referrals (Admin)", icon: KeyRound, to: "/admin/referrals", section: "ACCOUNT", order: 304, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-system-status", label: "System Status", icon: Activity, to: "/admin/system-status", section: "ACCOUNT", order: 306, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-beta-readiness", label: "Beta Readiness", icon: ShieldCheck, to: "/admin/beta-readiness", section: "ACCOUNT", order: 307, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-alerts", label: "Smart Alerts (Admin)", icon: Bell, to: "/admin/alerts", section: "ACCOUNT", order: 308, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ROLE_LABELS } from "@/lib/roles";
 import { initials } from "@/lib/profile";
 import { toast } from "sonner";
+import { ReferralBonusCard } from "@/components/referrals/ReferralBonusCard";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile — EagleBABA" }] }),
@@ -161,6 +162,8 @@ function ProfilePage() {
             </button>
           </div>
         </section>
+
+        <ReferralBonusCard />
       </div>
 
       <style>{`.input{width:100%;border:1px solid hsl(var(--input));background:hsl(var(--background));border-radius:0.375rem;padding:0.5rem 0.75rem;font-size:0.875rem;}`}</style>

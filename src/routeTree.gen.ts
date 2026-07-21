@@ -45,6 +45,7 @@ import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
 import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
+import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
@@ -66,6 +67,7 @@ import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
 import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_authenticated/admin.research-lab'
+import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
@@ -261,6 +263,11 @@ const AuthenticatedResearchLabRoute =
     path: '/research-lab',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReferralsRoute = AuthenticatedReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -383,6 +390,12 @@ const AuthenticatedAdminResearchLabRoute =
     path: '/admin/research-lab',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminReferralsRoute =
+  AuthenticatedAdminReferralsRouteImport.update({
+    id: '/admin/referrals',
+    path: '/admin/referrals',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminReadinessRoute =
   AuthenticatedAdminReadinessRouteImport.update({
     id: '/admin/readiness',
@@ -496,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/referrals': typeof AuthenticatedReferralsRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
@@ -513,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
@@ -566,6 +581,7 @@ export interface FileRoutesByTo {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/referrals': typeof AuthenticatedReferralsRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
@@ -583,6 +599,7 @@ export interface FileRoutesByTo {
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
@@ -638,6 +655,7 @@ export interface FileRoutesById {
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/referrals': typeof AuthenticatedReferralsRoute
   '/_authenticated/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
@@ -655,6 +673,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
+  '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
@@ -710,6 +729,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
+    | '/referrals'
     | '/research-lab'
     | '/settings'
     | '/strategy-analytics'
@@ -727,6 +747,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/providers'
     | '/admin/readiness'
+    | '/admin/referrals'
     | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
@@ -780,6 +801,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/payment-status'
     | '/profile'
+    | '/referrals'
     | '/research-lab'
     | '/settings'
     | '/strategy-analytics'
@@ -797,6 +819,7 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/providers'
     | '/admin/readiness'
+    | '/admin/referrals'
     | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
@@ -851,6 +874,7 @@ export interface FileRouteTypes {
     | '/_authenticated/live-option-terminal'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
+    | '/_authenticated/referrals'
     | '/_authenticated/research-lab'
     | '/_authenticated/settings'
     | '/_authenticated/strategy-analytics'
@@ -868,6 +892,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/readiness'
+    | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/research-lab'
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
@@ -1175,6 +1200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResearchLabRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/referrals': {
+      id: '/_authenticated/referrals'
+      path: '/referrals'
+      fullPath: '/referrals'
+      preLoaderRoute: typeof AuthenticatedReferralsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -1322,6 +1354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminResearchLabRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/referrals': {
+      id: '/_authenticated/admin/referrals'
+      path: '/admin/referrals'
+      fullPath: '/admin/referrals'
+      preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/readiness': {
       id: '/_authenticated/admin/readiness'
       path: '/admin/readiness'
@@ -1458,6 +1497,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedReferralsRoute: typeof AuthenticatedReferralsRoute
   AuthenticatedResearchLabRoute: typeof AuthenticatedResearchLabRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStrategyAnalyticsRoute: typeof AuthenticatedStrategyAnalyticsRoute
@@ -1470,6 +1510,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminReadinessRoute: typeof AuthenticatedAdminReadinessRoute
+  AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminResearchLabRoute: typeof AuthenticatedAdminResearchLabRoute
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
   AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
@@ -1487,6 +1528,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedReferralsRoute: AuthenticatedReferralsRoute,
   AuthenticatedResearchLabRoute: AuthenticatedResearchLabRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStrategyAnalyticsRoute: AuthenticatedStrategyAnalyticsRoute,
@@ -1501,6 +1543,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
   AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
   AuthenticatedAdminReadinessRoute: AuthenticatedAdminReadinessRoute,
+  AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminResearchLabRoute: AuthenticatedAdminResearchLabRoute,
   AuthenticatedAdminStagingValidationRoute:
     AuthenticatedAdminStagingValidationRoute,

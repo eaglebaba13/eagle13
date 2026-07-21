@@ -538,6 +538,77 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_requests: {
+        Row: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          broker?: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at?: string
+          declaration_accepted?: boolean
+          expires_at?: string
+          id?: string
+          referral_code: string
+          rejection_reason?: string | null
+          reward_grant_id?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+          user_note?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          broker?: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked?: string
+          created_at?: string
+          declaration_accepted?: boolean
+          expires_at?: string
+          id?: string
+          referral_code?: string
+          rejection_reason?: string | null
+          reward_grant_id?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+          user_note?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_requests_reward_grant_id_fkey"
+            columns: ["reward_grant_id"]
+            isOneToOne: false
+            referencedRelation: "user_entitlement_grants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       replay_presets: {
         Row: {
           created_at: string
@@ -1030,6 +1101,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_approve_referral: {
+        Args: { _admin_note: string; _id: string }
+        Returns: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "referral_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_change_plan: {
         Args: { _plan: string; _reason: string; _target: string }
         Returns: {
@@ -1146,6 +1246,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_mark_referral_under_review: {
+        Args: { _id: string }
+        Returns: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "referral_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_reject_manual_payment: {
         Args: { _id: string; _reason: string }
         Returns: {
@@ -1177,6 +1306,35 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reject_referral: {
+        Args: { _id: string; _reason: string }
+        Returns: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "referral_requests"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1269,6 +1427,35 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "manual_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_referral_request: {
+        Args: { _id: string }
+        Returns: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "referral_requests"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1489,6 +1676,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_referral_request: {
+        Args: {
+          _broker: Database["public"]["Enums"]["referral_broker"]
+          _client_id_masked: string
+          _declaration: boolean
+          _referral_code: string
+          _screenshot_url: string
+          _user_note: string
+        }
+        Returns: {
+          admin_note: string | null
+          broker: Database["public"]["Enums"]["referral_broker"]
+          broker_client_id_masked: string
+          created_at: string
+          declaration_accepted: boolean
+          expires_at: string
+          id: string
+          referral_code: string
+          rejection_reason: string | null
+          reward_grant_id: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+          user_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "referral_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       validate_subscription_transition: {
         Args: { _from: string; _to: string }
         Returns: boolean
@@ -1505,6 +1728,14 @@ export type Database = {
       manual_payment_status:
         | "CREATED"
         | "SUBMITTED"
+        | "UNDER_REVIEW"
+        | "APPROVED"
+        | "REJECTED"
+        | "EXPIRED"
+        | "CANCELED"
+      referral_broker: "INDMONEY"
+      referral_status:
+        | "PENDING"
         | "UNDER_REVIEW"
         | "APPROVED"
         | "REJECTED"
@@ -1641,6 +1872,15 @@ export const Constants = {
       manual_payment_status: [
         "CREATED",
         "SUBMITTED",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED",
+        "EXPIRED",
+        "CANCELED",
+      ],
+      referral_broker: ["INDMONEY"],
+      referral_status: [
+        "PENDING",
         "UNDER_REVIEW",
         "APPROVED",
         "REJECTED",
