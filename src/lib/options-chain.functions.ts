@@ -1,6 +1,15 @@
 // Server function that fetches a live NIFTY / BANK NIFTY option-chain
-// snapshot, validates the provider payload with Zod, categorises expiries,
+// snapshot from the canonical Upstox pipeline, categorises expiries,
 // and normalises the result for the Options Analytics Terminal.
+//
+// Phase 41.3 — Canonical Upstox migration:
+//   * LIVE branch delegates entirely to `fetchCanonicalOptionChain`. The
+//     legacy nseindia.com fetch, Referer header block, `NSE_SYMBOLS`
+//     table, and NseFullChain Zod schema have been removed. There is now
+//     one option-chain pipeline shared with Combined PCR, Decision
+//     Engine, Institutional Flow, and OptionChainCapability.
+//   * Provider labels flow through `safeProviderLabel` — the wire never
+//     exposes raw broker names.
 //
 // Phase 16.1 — Data-integrity hardening:
 //   * Live mode NEVER auto-substitutes simulated data. If the upstream feed
@@ -29,54 +38,13 @@ import {
   type SourceStatus,
   type OptionsIntegrityMeta,
 } from "./options-integrity";
+import { safeProviderLabel } from "./provider-labels";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
-
-/* ---------------- NSE rich option-chain schema ---------------- */
-// Passthrough tolerates provider drift; only fields actually read here are
-// validated. Existing NseOptionChainSchema in providers.ts is left untouched.
-const RichLeg = z
-  .object({
-    strikePrice: z.number().optional(),
-    expiryDate: z.string().optional(),
-    openInterest: z.number().optional(),
-    changeinOpenInterest: z.number().optional(),
-    totalTradedVolume: z.number().optional(),
-    impliedVolatility: z.number().optional(),
-    lastPrice: z.number().optional(),
-    change: z.number().optional(),
-    pChange: z.number().optional(),
-    bidprice: z.number().optional(),
-    askPrice: z.number().optional(),
-  })
-  .passthrough();
-
-const NseFullChain = z.object({
-  records: z
-    .object({
-      expiryDates: z.array(z.string()).optional(),
-      underlyingValue: z.number().optional(),
-      data: z
-        .array(
-          z
-            .object({
-              strikePrice: z.number().optional(),
-              expiryDate: z.string().optional(),
-              CE: RichLeg.optional(),
-              PE: RichLeg.optional(),
-            })
-            .passthrough(),
-        )
-        .optional(),
-    })
-    .passthrough()
-    .optional(),
-});
 
 /* -------------------------- input ---------------------------- */
 
 const SYMBOLS = { NIFTY: "^NSEI", BANKNIFTY: "^NSEBANK" } as const;
-const NSE_SYMBOLS = { NIFTY: "NIFTY", BANKNIFTY: "BANKNIFTY" } as const;
 const STEPS = { NIFTY: 50, BANKNIFTY: 100 } as const;
 
 export type OptionsSymbol = keyof typeof SYMBOLS;
@@ -125,17 +93,6 @@ async function fetchSpotSafe(sym: OptionsSymbol): Promise<{ price: number | null
   } catch {
     return { price: null, prevClose: null };
   }
-}
-
-function toIsoDate(nseExpiry: string): string {
-  // NSE returns "17-Jul-2026". Convert to "2026-07-17".
-  const parts = nseExpiry.split("-");
-  if (parts.length !== 3) return nseExpiry;
-  const [d, mon, y] = parts;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const m = months.indexOf(mon);
-  if (m < 0) return nseExpiry;
-  return `${y}-${String(m + 1).padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
 /* ------------------- Last-known-good (LKG) cache ------------------- */
