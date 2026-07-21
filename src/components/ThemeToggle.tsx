@@ -16,6 +16,7 @@ export function ThemeToggle() {
     }
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
+    document.documentElement.classList.toggle("dark", saved === "dark");
     setMounted(true);
   }, []);
 
@@ -28,6 +29,7 @@ export function ThemeToggle() {
       // Ignore persistence failures; theme still applies for this session.
     }
     document.documentElement.setAttribute("data-theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
   };
 
   const isDark = theme === "dark";
