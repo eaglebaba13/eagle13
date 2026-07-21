@@ -73,11 +73,43 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
   }
 
   async fetchSnapshot(req: OptionChainRequest): Promise<OptionChainResult> {
+    const t0 = Date.now();
+    // Upstox `v2/option/chain` REQUIRES both `instrument_key` and
+    // `expiry_date`. Omitting `expiry_date` returns HTTP 400 with
+    // Upstox error UDAPI1110 / UDAPI100013 depending on account. Resolve
+    // the nearest future expiry via `v2/option/contract` when the caller
+    // did not pin one explicitly.
+    let resolvedExpiry = req.expiry ?? null;
+    let expiryResolutionError: string | null = null;
+    if (!resolvedExpiry) {
+      try {
+        const expiries = await this.listExpiries(req.underlying);
+        resolvedExpiry = pickNearestExpiry(expiries);
+        if (!resolvedExpiry) {
+          expiryResolutionError = "no upcoming expiries returned by provider";
+        }
+      } catch (e) {
+        expiryResolutionError = `expiry resolution failed: ${(e as Error).message}`;
+      }
+    }
+    if (!resolvedExpiry) {
+      return {
+        ok: false,
+        snapshot: null,
+        meta: {
+          providerId: this.id,
+          status: "UNAVAILABLE",
+          latencyMs: Date.now() - t0,
+          fetchedAt: new Date().toISOString(),
+          safeError: redactUpstoxMessage(expiryResolutionError ?? "expiry unresolved"),
+          upstreamCode: null,
+        },
+      };
+    }
     const query: Record<string, string | number | undefined> = {
       instrument_key: INSTRUMENT_KEYS[req.underlying],
+      expiry_date: resolvedExpiry,
     };
-    if (req.expiry) query.expiry_date = req.expiry;
-    const t0 = Date.now();
     const res = await this.http.request<{ data?: UpstoxRow[] }>({
       path: "v2/option/chain",
       query,
@@ -87,6 +119,10 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
     if (!res.ok) {
       const status: OptionChainProviderStatus =
         res.error.httpStatus === 401 || res.error.httpStatus === 403 ? "AUTH_REQUIRED" : "UNAVAILABLE";
+      const code = res.error.upstoxErrorCode;
+      const baseMsg = res.error.message ?? "";
+      const redactedBase = redactUpstoxMessage(baseMsg);
+      const composed = code ? `${redactedBase} [${code}]` : redactedBase;
       return {
         ok: false,
         snapshot: null,
@@ -95,8 +131,8 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
           status,
           latencyMs: Date.now() - t0,
           fetchedAt,
-          safeError: redactUpstoxMessage(res.error.message ?? ""),
-          upstreamCode: res.error.upstoxErrorCode ?? null,
+          safeError: composed,
+          upstreamCode: code ?? null,
         },
       };
     }
@@ -116,7 +152,7 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
       };
     }
     const first = rows[0];
-    const expiry = req.expiry ?? (first.expiry ?? "");
+    const expiry = resolvedExpiry ?? first.expiry ?? "";
     const spot = nOrNull(first.underlying_spot_price);
     const seen = new Map<number, ReturnType<typeof makeStrike>>();
     for (const r of rows) {
@@ -149,4 +185,18 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
       },
     };
   }
+}
+
+/**
+ * Pick the nearest expiry that is today or later. Falls back to the first
+ * item in the list when no future expiry is present.
+ */
+function pickNearestExpiry(expiries: readonly string[]): string | null {
+  if (!expiries.length) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const future = [...expiries]
+    .filter((e) => typeof e === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e))
+    .sort();
+  const upcoming = future.find((e) => e >= today);
+  return upcoming ?? future[0] ?? null;
 }
