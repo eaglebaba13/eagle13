@@ -88,7 +88,7 @@ function AppShellHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="sticky top-0 z-30 hidden items-center gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:flex"
       aria-label="Page header"
     >
       <button
@@ -133,9 +133,13 @@ function AppShellHeader() {
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <ThemeToggle />
-        <SubscriptionBadge />
+        <div className="hidden lg:block">
+          <SubscriptionBadge />
+        </div>
         <NotificationBell />
-        <HeaderAlertBell />
+        <div className="hidden lg:block">
+          <HeaderAlertBell />
+        </div>
         <ProfileMenu />
       </div>
     </header>
@@ -145,8 +149,8 @@ function AppShellHeader() {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
-      {/* Sidebar: hidden below md via existing .eb-sidebar rule in styles.css. */}
-      <div className="hidden md:flex md:shrink-0 md:pl-3 md:pr-1 md:py-3">
+      {/* Sidebar: desktop only (lg+). Tablet + mobile use MobileNav drawer. */}
+      <div className="hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
         <AppSidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
