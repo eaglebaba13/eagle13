@@ -367,7 +367,7 @@ export const getOptionsChain = createServerFn({ method: "GET" })
           });
           if (!canonical.ok || !canonical.snapshot) {
             throw new Error(
-              canonical.meta.error ?? "canonical option-chain snapshot unavailable",
+              canonical.meta.safeError ?? "canonical option-chain snapshot unavailable",
             );
           }
           const canonSnap = canonical.snapshot;
