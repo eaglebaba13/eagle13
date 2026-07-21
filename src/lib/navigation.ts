@@ -113,10 +113,13 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "live-option-terminal", label: "Option Strategy Terminal", icon: Target, to: "/live-option-terminal", section: "MARKET", order: 227, desktopVisible: true, mobileVisible: true },
   { id: "ai-market-assistant", label: "AI Market Assistant", icon: Brain, to: "/ai-market-assistant", section: "MARKET", order: 228, desktopVisible: true, mobileVisible: true },
   { id: "alerts", label: "Alert Center", icon: Bell, to: "/alerts", section: "MARKET", order: 229, desktopVisible: true, mobileVisible: true },
+  { id: "signal-history", label: "Signal History", icon: History, to: "/signal-history", section: "MARKET", order: 231, desktopVisible: true, mobileVisible: true },
+  { id: "telegram-log", label: "Telegram Log", icon: Radio, to: "/telegram-log", section: "MARKET", order: 232, desktopVisible: true, mobileVisible: true },
   { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
 
   // ACCOUNT
   { id: "profile", label: "Profile", icon: UserIcon, to: "/profile", section: "ACCOUNT", order: 310, desktopVisible: true, mobileVisible: true },
+  { id: "notifications", label: "Notifications", icon: Bell, to: "/notifications", section: "ACCOUNT", order: 309, desktopVisible: true, mobileVisible: true },
   { id: "referrals", label: "Referrals", icon: KeyRound, to: "/referrals", section: "ACCOUNT", order: 311, desktopVisible: true, mobileVisible: true },
   { id: "admin-launch-readiness", label: "Launch Readiness", icon: ShieldCheck, to: "/admin/launch-readiness", section: "ACCOUNT", order: 305, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },
   { id: "admin-referrals", label: "Referrals (Admin)", icon: KeyRound, to: "/admin/referrals", section: "ACCOUNT", order: 304, desktopVisible: true, mobileVisible: true, requiredRole: "admin" },

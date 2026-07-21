@@ -42,12 +42,15 @@ import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
+import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
 import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
+import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
 import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
@@ -246,10 +249,22 @@ const CryptoPairRoute = CryptoPairRouteImport.update({
   path: '/$pair',
   getParentRoute: () => CryptoRoute,
 } as any)
+const AuthenticatedTelegramLogRoute =
+  AuthenticatedTelegramLogRouteImport.update({
+    id: '/telegram-log',
+    path: '/telegram-log',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStrategyAnalyticsRoute =
   AuthenticatedStrategyAnalyticsRouteImport.update({
     id: '/strategy-analytics',
     path: '/strategy-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSignalHistoryRoute =
+  AuthenticatedSignalHistoryRouteImport.update({
+    id: '/signal-history',
+    path: '/signal-history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -277,6 +292,12 @@ const AuthenticatedPaymentStatusRoute =
   AuthenticatedPaymentStatusRouteImport.update({
     id: '/payment-status',
     path: '/payment-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLiveOptionTerminalRoute =
@@ -507,12 +528,15 @@ export interface FileRoutesByFullPath {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/referrals': typeof AuthenticatedReferralsRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
+  '/telegram-log': typeof AuthenticatedTelegramLogRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -579,12 +603,15 @@ export interface FileRoutesByTo {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/referrals': typeof AuthenticatedReferralsRoute
   '/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
+  '/telegram-log': typeof AuthenticatedTelegramLogRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -653,12 +680,15 @@ export interface FileRoutesById {
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/referrals': typeof AuthenticatedReferralsRoute
   '/_authenticated/research-lab': typeof AuthenticatedResearchLabRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
+  '/_authenticated/telegram-log': typeof AuthenticatedTelegramLogRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -727,12 +757,15 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
+    | '/notifications'
     | '/payment-status'
     | '/profile'
     | '/referrals'
     | '/research-lab'
     | '/settings'
+    | '/signal-history'
     | '/strategy-analytics'
+    | '/telegram-log'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -799,12 +832,15 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
+    | '/notifications'
     | '/payment-status'
     | '/profile'
     | '/referrals'
     | '/research-lab'
     | '/settings'
+    | '/signal-history'
     | '/strategy-analytics'
+    | '/telegram-log'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -872,12 +908,15 @@ export interface FileRouteTypes {
     | '/_authenticated/institutional-flow'
     | '/_authenticated/license'
     | '/_authenticated/live-option-terminal'
+    | '/_authenticated/notifications'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
     | '/_authenticated/referrals'
     | '/_authenticated/research-lab'
     | '/_authenticated/settings'
+    | '/_authenticated/signal-history'
     | '/_authenticated/strategy-analytics'
+    | '/_authenticated/telegram-log'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -1179,11 +1218,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CryptoPairRouteImport
       parentRoute: typeof CryptoRoute
     }
+    '/_authenticated/telegram-log': {
+      id: '/_authenticated/telegram-log'
+      path: '/telegram-log'
+      fullPath: '/telegram-log'
+      preLoaderRoute: typeof AuthenticatedTelegramLogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/strategy-analytics': {
       id: '/_authenticated/strategy-analytics'
       path: '/strategy-analytics'
       fullPath: '/strategy-analytics'
       preLoaderRoute: typeof AuthenticatedStrategyAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/signal-history': {
+      id: '/_authenticated/signal-history'
+      path: '/signal-history'
+      fullPath: '/signal-history'
+      preLoaderRoute: typeof AuthenticatedSignalHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -1219,6 +1272,13 @@ declare module '@tanstack/react-router' {
       path: '/payment-status'
       fullPath: '/payment-status'
       preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/live-option-terminal': {
@@ -1495,12 +1555,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReferralsRoute: typeof AuthenticatedReferralsRoute
   AuthenticatedResearchLabRoute: typeof AuthenticatedResearchLabRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSignalHistoryRoute: typeof AuthenticatedSignalHistoryRoute
   AuthenticatedStrategyAnalyticsRoute: typeof AuthenticatedStrategyAnalyticsRoute
+  AuthenticatedTelegramLogRoute: typeof AuthenticatedTelegramLogRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminCoindcxRoute: typeof AuthenticatedAdminCoindcxRoute
@@ -1526,12 +1589,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReferralsRoute: AuthenticatedReferralsRoute,
   AuthenticatedResearchLabRoute: AuthenticatedResearchLabRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSignalHistoryRoute: AuthenticatedSignalHistoryRoute,
   AuthenticatedStrategyAnalyticsRoute: AuthenticatedStrategyAnalyticsRoute,
+  AuthenticatedTelegramLogRoute: AuthenticatedTelegramLogRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminCoindcxRoute: AuthenticatedAdminCoindcxRoute,

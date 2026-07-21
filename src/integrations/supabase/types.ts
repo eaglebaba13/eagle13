@@ -469,6 +469,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          payload: Json
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          payload?: Json
+          read_at?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          payload?: Json
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       paper_trades: {
         Row: {
           created_at: string
@@ -1577,6 +1616,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_all_notifications_read: { Args: never; Returns: number }
+      mark_notification_read: {
+        Args: { _id: string }
+        Returns: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          payload: Json
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       self_set_cancel_at_period_end: {
         Args: { _flag: boolean }
         Returns: {
@@ -1733,6 +1794,16 @@ export type Database = {
         | "REJECTED"
         | "EXPIRED"
         | "CANCELED"
+      notification_type:
+        | "BUY_CE"
+        | "BUY_PE"
+        | "EXIT"
+        | "HIGH_RISK"
+        | "REFERRAL_SUBMITTED"
+        | "REFERRAL_APPROVED"
+        | "REFERRAL_REJECTED"
+        | "TRIAL_EXPIRING"
+        | "SUBSCRIPTION_EXPIRED"
       referral_broker: "INDMONEY"
       referral_status:
         | "PENDING"
@@ -1877,6 +1948,17 @@ export const Constants = {
         "REJECTED",
         "EXPIRED",
         "CANCELED",
+      ],
+      notification_type: [
+        "BUY_CE",
+        "BUY_PE",
+        "EXIT",
+        "HIGH_RISK",
+        "REFERRAL_SUBMITTED",
+        "REFERRAL_APPROVED",
+        "REFERRAL_REJECTED",
+        "TRIAL_EXPIRING",
+        "SUBSCRIPTION_EXPIRED",
       ],
       referral_broker: ["INDMONEY"],
       referral_status: [
