@@ -158,7 +158,12 @@ export class UpstoxHttpClient {
     this.timeoutMs = cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.maxRetries = cfg.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.backoffBaseMs = cfg.backoffBaseMs ?? DEFAULT_BACKOFF_MS;
-    this.fetchImpl = cfg.fetchImpl ?? (globalThis.fetch as typeof fetch);
+    // Native `fetch` in Cloudflare Workers must be called with `globalThis`
+    // (or no) `this` — storing it as a method on the instance and invoking
+    // it via `this.fetchImpl(...)` throws "Illegal invocation". Bind to
+    // globalThis when using the platform fetch. Injected fetches (tests,
+    // custom transports) are used as-is.
+    this.fetchImpl = cfg.fetchImpl ?? (globalThis.fetch.bind(globalThis) as typeof fetch);
     this.env = envOf(cfg);
   }
 
