@@ -193,11 +193,15 @@ export function evaluateOptionChainCapability(input: EvaluateCapabilityInput): O
       };
     }
     if (q.issues.length > 0) {
+      const codes = q.issues.map((i) => i.code).join(", ");
+      const first = q.issues[0]?.detail ?? "";
       return {
         ...b,
         status: "PARTIAL",
         retryable: true,
-        reason: `${q.issues.length} data-quality warning(s).`,
+        reason:
+          `${q.issues.length} data-quality warning(s): ${codes}` +
+          (first ? ` — ${first}` : ""),
         failingStage: "quality-assessment",
         suggestedAction: "Snapshot is usable; check warnings in Research Panel.",
       };
