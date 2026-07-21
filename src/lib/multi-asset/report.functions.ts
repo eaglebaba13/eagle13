@@ -148,7 +148,7 @@ export async function runMorningBrief(opts?: { readonly forceRedeliver?: boolean
         report_type: MORNING_REPORT_TYPE,
         timezone: MORNING_REPORT_TIMEZONE,
         version: MORNING_REPORT_VERSION,
-        payload,
+        payload: payload as unknown as import("@/integrations/supabase/types").Json,
         data_quality: dataQuality,
         generated_at: generatedAt,
         delivery_status: "PENDING",
@@ -180,7 +180,7 @@ export async function runMorningBrief(opts?: { readonly forceRedeliver?: boolean
       delivery_status: nextStatus,
       delivery_error: outcome.error ?? null,
       delivery_attempts: record.deliveryAttempts + 1,
-      telegram_message_ids: outcome.messageIds,
+      telegram_message_ids: [...outcome.messageIds] as unknown as import("@/integrations/supabase/types").Json,
       last_attempted_at: new Date().toISOString(),
     })
     .eq("id", record.id)
