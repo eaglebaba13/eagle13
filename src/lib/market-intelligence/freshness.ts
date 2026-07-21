@@ -19,8 +19,8 @@ export interface EnvelopeInput<T> {
   readonly fetchedAt: string | null;
   readonly publishedAt: string | null;
   readonly data: T | null;
-  readonly completeness?: number; // 0..1
-  readonly confidence?: number; // 0..1
+  readonly completeness?: number;
+  readonly confidence?: number;
   readonly now?: number;
   readonly thresholds?: FreshnessThresholds;
 }
