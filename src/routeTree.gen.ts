@@ -51,6 +51,7 @@ import { Route as AuthenticatedReferralsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMultiAssetIntelligenceRouteImport } from './routes/_authenticated/multi-asset-intelligence'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
@@ -82,6 +83,7 @@ import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
+import { Route as ApiPublicHooksMorningBriefRouteImport } from './routes/api/public/hooks/morning-brief'
 import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -300,6 +302,12 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMultiAssetIntelligenceRoute =
+  AuthenticatedMultiAssetIntelligenceRouteImport.update({
+    id: '/multi-asset-intelligence',
+    path: '/multi-asset-intelligence',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLiveOptionTerminalRoute =
   AuthenticatedLiveOptionTerminalRouteImport.update({
     id: '/live-option-terminal',
@@ -483,6 +491,12 @@ const ApiPublicWebhooksRazorpayRoute =
     path: '/api/public/webhooks/razorpay',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMorningBriefRoute =
+  ApiPublicHooksMorningBriefRouteImport.update({
+    id: '/api/public/hooks/morning-brief',
+    path: '/api/public/hooks/morning-brief',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedResearchLabRunsRunIdRoute =
   AuthenticatedResearchLabRunsRunIdRouteImport.update({
     id: '/$runId',
@@ -528,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -563,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
+  '/api/public/hooks/morning-brief': typeof ApiPublicHooksMorningBriefRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
@@ -603,6 +619,7 @@ export interface FileRoutesByTo {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/license': typeof AuthenticatedLicenseRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -638,6 +655,7 @@ export interface FileRoutesByTo {
   '/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
+  '/api/public/hooks/morning-brief': typeof ApiPublicHooksMorningBriefRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
@@ -680,6 +698,7 @@ export interface FileRoutesById {
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
+  '/_authenticated/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -715,6 +734,7 @@ export interface FileRoutesById {
   '/_authenticated/research-lab/runs': typeof AuthenticatedResearchLabRunsRouteWithChildren
   '/_authenticated/research-lab/signals': typeof AuthenticatedResearchLabSignalsRoute
   '/_authenticated/research-lab/runs/$runId': typeof AuthenticatedResearchLabRunsRunIdRoute
+  '/api/public/hooks/morning-brief': typeof ApiPublicHooksMorningBriefRoute
   '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
@@ -757,6 +777,7 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
+    | '/multi-asset-intelligence'
     | '/notifications'
     | '/payment-status'
     | '/profile'
@@ -792,6 +813,7 @@ export interface FileRouteTypes {
     | '/research-lab/runs'
     | '/research-lab/signals'
     | '/research-lab/runs/$runId'
+    | '/api/public/hooks/morning-brief'
     | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -832,6 +854,7 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/license'
     | '/live-option-terminal'
+    | '/multi-asset-intelligence'
     | '/notifications'
     | '/payment-status'
     | '/profile'
@@ -867,6 +890,7 @@ export interface FileRouteTypes {
     | '/research-lab/runs'
     | '/research-lab/signals'
     | '/research-lab/runs/$runId'
+    | '/api/public/hooks/morning-brief'
     | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
@@ -908,6 +932,7 @@ export interface FileRouteTypes {
     | '/_authenticated/institutional-flow'
     | '/_authenticated/license'
     | '/_authenticated/live-option-terminal'
+    | '/_authenticated/multi-asset-intelligence'
     | '/_authenticated/notifications'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
@@ -943,6 +968,7 @@ export interface FileRouteTypes {
     | '/_authenticated/research-lab/runs'
     | '/_authenticated/research-lab/signals'
     | '/_authenticated/research-lab/runs/$runId'
+    | '/api/public/hooks/morning-brief'
     | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
@@ -982,6 +1008,7 @@ export interface RootRouteChildren {
   DevAstroFixtureCaptureRoute: typeof DevAstroFixtureCaptureRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicHooksMorningBriefRoute: typeof ApiPublicHooksMorningBriefRoute
   ApiPublicWebhooksRazorpayRoute: typeof ApiPublicWebhooksRazorpayRoute
 }
 
@@ -1281,6 +1308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/multi-asset-intelligence': {
+      id: '/_authenticated/multi-asset-intelligence'
+      path: '/multi-asset-intelligence'
+      fullPath: '/multi-asset-intelligence'
+      preLoaderRoute: typeof AuthenticatedMultiAssetIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/live-option-terminal': {
       id: '/_authenticated/live-option-terminal'
       path: '/live-option-terminal'
@@ -1498,6 +1532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/morning-brief': {
+      id: '/api/public/hooks/morning-brief'
+      path: '/api/public/hooks/morning-brief'
+      fullPath: '/api/public/hooks/morning-brief'
+      preLoaderRoute: typeof ApiPublicHooksMorningBriefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/research-lab/runs/$runId': {
       id: '/_authenticated/research-lab/runs/$runId'
       path: '/$runId'
@@ -1555,6 +1596,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
+  AuthenticatedMultiAssetIntelligenceRoute: typeof AuthenticatedMultiAssetIntelligenceRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -1589,6 +1631,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
+  AuthenticatedMultiAssetIntelligenceRoute:
+    AuthenticatedMultiAssetIntelligenceRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -1669,6 +1713,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevAstroFixtureCaptureRoute: DevAstroFixtureCaptureRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicHooksMorningBriefRoute: ApiPublicHooksMorningBriefRoute,
   ApiPublicWebhooksRazorpayRoute: ApiPublicWebhooksRazorpayRoute,
 }
 export const routeTree = rootRouteImport
