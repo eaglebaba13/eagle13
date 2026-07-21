@@ -262,7 +262,7 @@ function OptionStrategyTerminal() {
               <Stat label="A/D Ratio (NSE)" value={<span className="os-mono">{data.nseBreadth.ratio.toFixed(2)}</span>} color={data.nseBreadth.bias === "Bullish" ? C.green : data.nseBreadth.bias === "Bearish" ? C.red : C.gold} sub={`${data.nseBreadth.advances}▲ / ${data.nseBreadth.declines}▼`} />
               <Stat label="A/D Ratio (NIFTY50)" value={<span className="os-mono">{data.niftyBreadth.ratio.toFixed(2)}</span>} color={data.niftyBreadth.bias === "Bullish" ? C.green : data.niftyBreadth.bias === "Bearish" ? C.red : C.gold} sub={`${data.niftyBreadth.advances}▲ / ${data.niftyBreadth.declines}▼`} />
               <Stat label="Top-10 Strength" value={<span className="os-mono">{data.weightedBreadthScore.toFixed(0)}</span>} color={data.top10Bias === "Bullish" ? C.green : data.top10Bias === "Bearish" ? C.red : C.gold} sub={data.top10Bias} />
-              <Stat label="PCR" value={<span className="os-mono">{oc.pcr.toFixed(2)}</span>} color={oc.pcr >= 1 ? C.green : C.red} sub={oc.source === "NSE" ? "live chain" : "derived"} />
+              <Stat label="PCR" value={<span className="os-mono">{oc.pcr.toFixed(2)}</span>} color={oc.pcr >= 1 ? C.green : C.red} sub={oc.source === "UPSTOX" ? "live chain" : "derived"} />
               <Stat label="Market Breadth" value={data.nseBreadth.label} color={data.nseBreadth.bias === "Bullish" ? C.green : data.nseBreadth.bias === "Bearish" ? C.red : C.gold} />
               <Stat label="Sector Strength" value={<span className="os-mono">{data.sectorStrength.toFixed(0)}</span>} color={data.sectorStrength >= 0 ? C.green : C.red} sub={`${data.sectors.filter((s) => s.changePct >= 0).length}/${data.sectors.length} up`} />
               <Stat label="Recommendation" value={<span style={{ color: recColor }}>{rec.action}</span>} color={recColor} />
@@ -374,7 +374,7 @@ function OptionStrategyTerminal() {
             <AiReasoningPanel rec={rec} astro={data.astro} />
 
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 12 }} className="os-mono">
-              Last updated {lastUpdated} IST · auto-refresh 30s · {oc.source === "NSE" ? "live NSE option chain" : "PCR derived from live breadth & VIX when NSE chain is unreachable"}
+              Last updated {lastUpdated} IST · auto-refresh 30s · {oc.source === "UPSTOX" ? "canonical Upstox option chain" : "PCR derived from live breadth & VIX when option chain is unreachable"}
             </div>
 
             <Disclaimer />
