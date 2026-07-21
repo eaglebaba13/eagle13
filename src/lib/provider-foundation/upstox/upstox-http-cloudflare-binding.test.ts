@@ -33,7 +33,12 @@ describe("UpstoxHttpClient — Cloudflare `this` binding", () => {
     globalThis.fetch = strictFetch;
 
     const client = new UpstoxHttpClient({
-      env: { UPSTOX_ACCESS_TOKEN: "test-token" },
+      env: {
+        UPSTOX_MARKET_DATA_MODE: "live",
+        UPSTOX_API_KEY: "key",
+        UPSTOX_API_SECRET: "secret",
+        UPSTOX_ACCESS_TOKEN: "test-token",
+      },
     });
     const res = await client.request<{ ok: boolean }>({ path: "v2/ping" });
 
