@@ -63,8 +63,8 @@ function BreadthCard({ title, s }: { title: string; s: MarketBreadthSnapshot | n
   return (
     <div style={{
       padding: 12, borderRadius: 10,
-      border: "1px solid rgba(255,255,255,0.08)",
-      background: "rgba(255,255,255,0.02)",
+      border: "1px solid var(--eb-line)",
+      background: "var(--eb-tint-soft)",
     }}>
       <div style={{ fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase", opacity: 0.6, marginBottom: 4 }}>
         {title}
@@ -74,8 +74,8 @@ function BreadthCard({ title, s }: { title: string; s: MarketBreadthSnapshot | n
       ) : (
         <>
           <div style={{ display: "flex", gap: 10, fontSize: 12, flexWrap: "wrap" }}>
-            <span style={{ color: "#4ade80" }}>▲ {s.advances}</span>
-            <span style={{ color: "#fb7185" }}>▼ {s.declines}</span>
+            <span style={{ color: "var(--eb-ok-fg)" }}>▲ {s.advances}</span>
+            <span style={{ color: "var(--eb-danger-fg)" }}>▼ {s.declines}</span>
             <span style={{ opacity: 0.7 }}>= {s.unchanged}</span>
             <span style={{ opacity: 0.5 }}>? {s.unavailable}</span>
           </div>
@@ -147,9 +147,9 @@ function MarketBreadthPage() {
   const observations = useMemo(() => summarizeGtiShadow(samples), [samples]);
 
   const buttonStyle: React.CSSProperties = {
-    background: "rgba(242,184,69,0.15)",
-    border: "1px solid rgba(242,184,69,0.4)",
-    color: "#f2b845", padding: "6px 12px", borderRadius: 6,
+    background: "var(--eb-warn-bg)",
+    border: "1px solid var(--eb-warn-border)",
+    color: "var(--eb-warn-fg)", padding: "6px 12px", borderRadius: 6,
     fontSize: 12, fontWeight: 600, cursor: "pointer",
   };
 
@@ -159,8 +159,8 @@ function MarketBreadthPage() {
         display: "inline-flex", alignItems: "center", gap: 8,
         fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
         padding: "4px 10px", borderRadius: 999,
-        background: "rgba(255,174,0,0.14)", color: "#f2b845",
-        border: "1px solid rgba(255,174,0,0.28)", marginBottom: 12,
+        background: "var(--eb-warn-bg)", color: "var(--eb-warn-fg)",
+        border: "1px solid var(--eb-warn-border)", marginBottom: 12,
       }}>
         RESEARCH ONLY · NO BUY / SELL SIGNAL
       </div>
@@ -192,26 +192,26 @@ function MarketBreadthPage() {
       <div style={{
         display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center",
         padding: 12, borderRadius: 10,
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "var(--eb-tint-soft)",
+        border: "1px solid var(--eb-hairline)",
         marginBottom: 16,
       }}>
         <label style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}>
           Scenario
           <select value={scenario} onChange={(e) => setScenario(e.target.value as MockScenario)}
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12 }}>
+            style={{ background: "var(--eb-tint-strong)", border: "1px solid var(--eb-divider)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12 }}>
             {["BULLISH", "BEARISH", "MIXED", "PARTIAL", "STALE"].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
         <label style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}>
           VIX
           <input type="number" step={0.1} value={vix} onChange={(e) => setVix(e.target.value)} placeholder="—"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12, width: 80 }} />
+            style={{ background: "var(--eb-tint-strong)", border: "1px solid var(--eb-divider)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12, width: 80 }} />
         </label>
         <label style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}>
           Prev VIX
           <input type="number" step={0.1} value={previousVix} onChange={(e) => setPreviousVix(e.target.value)} placeholder="—"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12, width: 80 }} />
+            style={{ background: "var(--eb-tint-strong)", border: "1px solid var(--eb-divider)", color: "inherit", padding: "5px 8px", borderRadius: 6, fontSize: 12, width: 80 }} />
         </label>
         <button onClick={() => void run()} disabled={loading} style={buttonStyle}>
           {loading ? "Loading…" : "Refresh"}
@@ -237,10 +237,10 @@ function MarketBreadthPage() {
       {reading && reading.conflicts.length > 0 && (
         <div style={{
           padding: 12, marginBottom: 16, borderRadius: 8,
-          background: "rgba(251,113,133,0.08)",
-          border: "1px solid rgba(251,113,133,0.28)",
+          background: "var(--eb-danger-bg)",
+          border: "1px solid var(--eb-danger-border)",
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#fb7185", marginBottom: 6 }}>Conflicts</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--eb-danger-fg)", marginBottom: 6 }}>Conflicts</div>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
             {reading.conflicts.map((c) => <li key={c.code}><b>{c.code}</b> — {c.message}</li>)}
           </ul>
@@ -248,10 +248,10 @@ function MarketBreadthPage() {
       )}
 
       {error && (
-        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>Error: {error}</div>
+        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>Error: {error}</div>
       )}
       {result && !result.ok && (
-        <div style={{ color: "#fb7185", marginBottom: 16, fontSize: 13 }}>
+        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>
           Provider unavailable: {result.safeError ?? "unknown"}
         </div>
       )}
@@ -266,12 +266,12 @@ function MarketBreadthPage() {
       )}
 
       {/* Research panel */}
-      <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
+      <div style={{ border: "1px solid var(--eb-line)", borderRadius: 10, overflow: "hidden" }}>
         <button
           onClick={() => setShowResearch((v) => !v)}
           style={{
             width: "100%", textAlign: "left", padding: "10px 14px",
-            background: "rgba(255,255,255,0.03)", color: "inherit",
+            background: "var(--eb-tint)", color: "inherit",
             border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
           }}
         >
@@ -299,7 +299,7 @@ function MarketBreadthPage() {
       {/* Persistent history + shadow */}
       {(persisted.length > 0 || samples.length > 0) && (
         <div style={{
-          marginTop: 16, border: "1px solid rgba(255,255,255,0.08)",
+          marginTop: 16, border: "1px solid var(--eb-line)",
           borderRadius: 10, padding: 12, fontSize: 12,
         }}>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>
@@ -319,8 +319,8 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       padding: "8px 10px", borderRadius: 8,
-      border: "1px solid rgba(255,255,255,0.06)",
-      background: "rgba(255,255,255,0.02)",
+      border: "1px solid var(--eb-hairline)",
+      background: "var(--eb-tint-soft)",
     }}>
       <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{value}</div>
@@ -342,15 +342,15 @@ function CapabilityBanner({
   const ok = c.status === "SUPPORTED";
   const partial = c.status === "PARTIAL" || c.status === "STALE";
   const bg = ok
-    ? "rgba(74,222,128,0.10)"
+    ? "var(--eb-ok-bg)"
     : partial
-      ? "rgba(242,184,69,0.10)"
-      : "rgba(251,113,133,0.10)";
+      ? "var(--eb-warn-bg)"
+      : "var(--eb-danger-bg)";
   const border = ok
-    ? "rgba(74,222,128,0.30)"
+    ? "var(--eb-ok-border)"
     : partial
-      ? "rgba(242,184,69,0.35)"
-      : "rgba(251,113,133,0.35)";
+      ? "var(--eb-warn-border)"
+      : "var(--eb-danger-border)";
   return (
     <div
       style={{
@@ -391,7 +391,7 @@ function CapabilityBanner({
               {vixMeta.latencyMs != null ? ` · ${vixMeta.latencyMs}ms` : ""}
             </div>
             {vixMeta.error && (
-              <div style={{ color: "#fb7185", marginTop: 2 }}>{vixMeta.error}</div>
+              <div style={{ color: "var(--eb-danger-fg)", marginTop: 2 }}>{vixMeta.error}</div>
             )}
           </>
         ) : (
@@ -412,7 +412,7 @@ function CapabilityBanner({
               {pcrMeta.latencyMs != null ? ` · ${pcrMeta.latencyMs}ms` : ""}
             </div>
             {pcrMeta.error && (
-              <div style={{ color: "#fb7185", marginTop: 2 }}>{pcrMeta.error}</div>
+              <div style={{ color: "var(--eb-danger-fg)", marginTop: 2 }}>{pcrMeta.error}</div>
             )}
           </>
         ) : (

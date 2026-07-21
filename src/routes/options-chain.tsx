@@ -129,7 +129,7 @@ function OptionsChainPage() {
   return (
     <div className="eb-page eb-content" style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 16px" }}>
       <header style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, letterSpacing: 0.6, fontWeight: 700, color: "#6bd3ff", marginBottom: 6 }}>
+        <div style={{ fontSize: 11, letterSpacing: 0.6, fontWeight: 700, color: "var(--eb-blue)", marginBottom: 6 }}>
           MARKET · OPTIONS CHAIN
         </div>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>Live Option Chain — NIFTY & BANKNIFTY</h1>
@@ -227,10 +227,10 @@ function OptionsChainPage() {
 
       {/* Strike table */}
       {metrics.length > 0 && (
-        <div style={{ overflowX: "auto", marginTop: 16, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+        <div style={{ overflowX: "auto", marginTop: 16, border: "1px solid var(--eb-line)", borderRadius: 12 }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+              <tr style={{ background: "var(--eb-tint)" }}>
                 <Th>Call OI</Th><Th>Call ΔOI</Th><Th>Call Vol</Th><Th>Call IV</Th>
                 <Th center>Strike</Th>
                 <Th>Put IV</Th><Th>Put Vol</Th><Th>Put ΔOI</Th><Th>Put OI</Th>
@@ -240,7 +240,7 @@ function OptionsChainPage() {
               {metrics.map((m) => {
                 const isAtm = m.strike === atm?.atm;
                 return (
-                  <tr key={m.strike} style={{ background: isAtm ? "rgba(107,211,255,0.09)" : "transparent" }}>
+                  <tr key={m.strike} style={{ background: isAtm ? "var(--eb-atm-tint)" : "transparent" }}>
                     <Td>{fmt(m.callOi)}</Td><Td>{fmt(m.callChangeOi)}</Td><Td>{fmt(m.callVolume)}</Td><Td>{fmt(m.callIv)}</Td>
                     <Td center bold>{m.strike}</Td>
                     <Td>{fmt(m.putIv)}</Td><Td>{fmt(m.putVolume)}</Td><Td>{fmt(m.putChangeOi)}</Td><Td>{fmt(m.putOi)}</Td>
@@ -253,7 +253,7 @@ function OptionsChainPage() {
       )}
 
       {/* Research panel */}
-      <div style={{ marginTop: 20, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+      <div style={{ marginTop: 20, border: "1px solid var(--eb-line)", borderRadius: 12 }}>
         <button onClick={() => setShowResearch((s) => !s)} style={{ ...btnGhost, width: "100%", textAlign: "left", padding: "10px 14px" }}>
           {showResearch ? "▼" : "▶"} Research Panel {snapshot ? `(${snapshot.strikes.length} strikes)` : ""}
         </button>
@@ -302,23 +302,23 @@ const cardsGridStyle: React.CSSProperties = { display: "grid", gridTemplateColum
 
 function Card({ label, value }: { label: string; value: string | number }) {
   return (
-    <div style={{ padding: 10, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+    <div style={{ padding: 10, border: "1px solid var(--eb-line)", borderRadius: 10, background: "var(--eb-tint)" }}>
       <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{value}</div>
     </div>
   );
 }
 function Th({ children, center }: { children: React.ReactNode; center?: boolean }) {
-  return <th style={{ padding: "8px 10px", textAlign: center ? "center" : "right", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{children}</th>;
+  return <th style={{ padding: "8px 10px", textAlign: center ? "center" : "right", fontWeight: 600, borderBottom: "1px solid var(--eb-line)" }}>{children}</th>;
 }
 function Td({ children, center, bold }: { children: React.ReactNode; center?: boolean; bold?: boolean }) {
-  return <td style={{ padding: "6px 10px", textAlign: center ? "center" : "right", fontWeight: bold ? 700 : 400, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>{children}</td>;
+  return <td style={{ padding: "6px 10px", textAlign: center ? "center" : "right", fontWeight: bold ? 700 : 400, borderBottom: "1px solid var(--eb-tint)" }}>{children}</td>;
 }
 function ResearchBlock({ title, data }: { title: string; data: unknown }) {
   return (
     <details style={{ marginBottom: 8 }}>
       <summary style={{ cursor: "pointer", opacity: 0.85 }}>{title}</summary>
-      <pre style={{ margin: "6px 0 0", padding: 10, background: "rgba(0,0,0,0.35)", borderRadius: 8, overflowX: "auto", fontSize: 11 }}>
+      <pre style={{ margin: "6px 0 0", padding: 10, background: "var(--eb-code-bg)", borderRadius: 8, overflowX: "auto", fontSize: 11 }}>
         {JSON.stringify(data, null, 2)}
       </pre>
     </details>
@@ -331,10 +331,10 @@ function fmt(v: number | null): string {
 }
 function CapabilityCard({ capability, onRetry, onMock }: { capability: OptionChainCapability; onRetry: () => void; onMock: () => void }) {
   return (
-    <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, border: "1px solid rgba(255,180,120,0.35)", background: "rgba(255,180,120,0.06)" }}>
+    <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, border: "1px solid var(--eb-warn-border)", background: "var(--eb-warn-bg-soft)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 0.6, color: "#ffb27a", fontWeight: 700 }}>OPTION CHAIN · {capability.status.replace(/_/g, " ")}</div>
+          <div style={{ fontSize: 11, letterSpacing: 0.6, color: "var(--eb-warn-fg)", fontWeight: 700 }}>OPTION CHAIN · {capability.status.replace(/_/g, " ")}</div>
           <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600 }}>{capability.reason}</div>
           {capability.suggestedAction && (
             <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>Next: {capability.suggestedAction}</div>
