@@ -11,6 +11,9 @@ import {
   mobileDrawerNav,
   type NavItem,
 } from "@/lib/navigation";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DRAWER_ITEMS: NavItem[] = mobileDrawerNav();
 
@@ -92,6 +95,11 @@ export function MobileNav() {
           <img src={logoUrl} alt="EagleBABA logo" width={30} height={30} />
           <span>EagleBABA</span>
         </Link>
+        <div className="eb-mtopbar-actions">
+          <ThemeToggle />
+          <NotificationBell />
+          <ProfileMenu />
+        </div>
       </header>
 
       {/* Slide drawer */}

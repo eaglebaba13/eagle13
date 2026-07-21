@@ -849,7 +849,7 @@ a {
 @media (max-width: 1180px) {
   .eb-rightpanel { display: none; }
 }
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .eb-sidebar { display: none; }
 }
 
@@ -867,7 +867,7 @@ a {
   display: none;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   /* ---- Sticky top bar with hamburger + logo ---- */
   .eb-mtopbar {
     position: sticky;
@@ -922,6 +922,13 @@ a {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .eb-mtopbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
   }
 
   /* ---- Backdrop ---- */
@@ -1126,7 +1133,7 @@ a {
 .eb-scroll-x::-webkit-scrollbar {
   display: none;
 }
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .eb-bottomnav {
     position: fixed;
     left: 50%;
