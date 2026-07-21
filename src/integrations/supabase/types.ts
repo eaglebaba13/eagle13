@@ -433,6 +433,63 @@ export type Database = {
         }
         Relationships: []
       }
+      morning_reports: {
+        Row: {
+          created_at: string
+          data_quality: string
+          delivery_attempts: number
+          delivery_error: string | null
+          delivery_status: string
+          generated_at: string
+          id: string
+          last_attempted_at: string | null
+          payload: Json
+          report_date: string
+          report_key: string
+          report_type: string
+          telegram_message_ids: Json
+          timezone: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          data_quality?: string
+          delivery_attempts?: number
+          delivery_error?: string | null
+          delivery_status?: string
+          generated_at?: string
+          id?: string
+          last_attempted_at?: string | null
+          payload: Json
+          report_date: string
+          report_key: string
+          report_type: string
+          telegram_message_ids?: Json
+          timezone?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          data_quality?: string
+          delivery_attempts?: number
+          delivery_error?: string | null
+          delivery_status?: string
+          generated_at?: string
+          id?: string
+          last_attempted_at?: string | null
+          payload?: Json
+          report_date?: string
+          report_key?: string
+          report_type?: string
+          telegram_message_ids?: Json
+          timezone?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           broker_status: boolean
