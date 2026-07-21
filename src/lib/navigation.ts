@@ -116,6 +116,7 @@ export const NAV_REGISTRY: NavItem[] = [
   { id: "signal-history", label: "Signal History", icon: History, to: "/signal-history", section: "MARKET", order: 231, desktopVisible: true, mobileVisible: true },
   { id: "telegram-log", label: "Telegram Log", icon: Radio, to: "/telegram-log", section: "MARKET", order: 232, desktopVisible: true, mobileVisible: true },
   { id: "multi-asset-intelligence", label: "Multi-Asset Intelligence", icon: Radio, to: "/multi-asset-intelligence", section: "MARKET", order: 233, desktopVisible: true, mobileVisible: true },
+  { id: "institutional-intelligence", label: "Institutional Intelligence", icon: Activity, to: "/institutional-intelligence", section: "MARKET", order: 234, desktopVisible: true, mobileVisible: true },
   { id: "broker", label: "Broker", icon: Plug, to: "/broker", section: "MARKET", order: 230, desktopVisible: true, mobileVisible: true },
 
   // ACCOUNT
