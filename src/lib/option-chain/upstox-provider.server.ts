@@ -121,7 +121,8 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
         res.error.httpStatus === 401 || res.error.httpStatus === 403 ? "AUTH_REQUIRED" : "UNAVAILABLE";
       const code = res.error.upstoxErrorCode;
       const baseMsg = res.error.message ?? "";
-      const composed = code ? `${baseMsg} [${code}]` : baseMsg;
+      const redactedBase = redactUpstoxMessage(baseMsg);
+      const composed = code ? `${redactedBase} [${code}]` : redactedBase;
       return {
         ok: false,
         snapshot: null,
@@ -130,7 +131,7 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
           status,
           latencyMs: Date.now() - t0,
           fetchedAt,
-          safeError: redactUpstoxMessage(composed),
+          safeError: composed,
           upstreamCode: code ?? null,
         },
       };
