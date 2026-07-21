@@ -140,6 +140,15 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          // Pre-hydration theme init — prevents flash of incorrect theme
+          // and keeps `.dark` class in sync with `data-theme` so shadcn
+          // primitives and eb-* tokens paint the same surface.
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('eb-theme')||'dark';var r=document.documentElement;r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.classList.add('dark');}})();",
+          }}
+        />
       </head>
       <body>
         {children}
