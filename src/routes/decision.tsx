@@ -178,8 +178,7 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
   // is effectively zero, we surface "Unavailable" instead of "0%" so users
   // can tell "not enough data" apart from "market says wait with low edge".
   const confPct = Math.round(d.confidence);
-  const confUnavailable =
-    (d.action === "WAIT" || d.action === "NO_TRADE") && confPct <= 1;
+  const confUnavailable = d.action === "WAIT" && confPct <= 1;
   return (
     <div
       style={{
