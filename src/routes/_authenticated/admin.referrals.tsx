@@ -10,6 +10,7 @@ import {
   adminRejectReferral,
   listAdminReferralRequests,
 } from "@/lib/referrals/referrals.functions";
+import { adminReferralScreenshotUrl } from "@/lib/referrals/admin.functions";
 import {
   REFERRAL_STATUS_LABEL,
   type ReferralRequestRow,
@@ -191,9 +192,7 @@ function AdminRow({
           </span>
         </div>
         {row.screenshot_url ? (
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            Screenshot path: <span className="font-mono">{row.screenshot_url}</span>
-          </div>
+          <ScreenshotPreview path={row.screenshot_url} />
         ) : (
           <div className="mt-1 text-[11px] text-amber-500">No screenshot attached</div>
         )}
