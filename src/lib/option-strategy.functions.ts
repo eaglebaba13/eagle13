@@ -17,9 +17,9 @@ import {
 import { cached } from "./server-cache";
 import {
   YahooChartSchema,
-  NseOptionChainSchema,
   parseProvider,
 } from "./providers";
+import { fetchCanonicalOptionChain } from "./option-chain/canonical-snapshot.server";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
@@ -137,7 +137,7 @@ export type OptionChain = {
   highestPutOI: number; // strike
   support: number;
   resistance: number;
-  source: "NSE" | "DERIVED";
+  source: "UPSTOX" | "DERIVED";
   focus: "CALL" | "PUT" | "NEUTRAL";
 };
 
@@ -184,42 +184,27 @@ async function fetchOptionChain(
   bullFrac: number,
 ): Promise<OptionChain> {
   try {
-    const raw = await fetchJson<unknown>(
-      "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY",
-      {
-        timeoutMs: 6000,
-        retries: 1,
-        headers: {
-          Accept: "application/json, text/plain, */*",
-          "Accept-Language": "en-US,en;q=0.9",
-          Referer: "https://www.nseindia.com/option-chain",
-        },
-      },
-    );
-    const json = parseProvider(NseOptionChainSchema, raw, "NSE option chain");
-    const rows = json.records?.data ?? [];
-    if (!rows.length) throw new Error("empty chain");
+    const canon = await fetchCanonicalOptionChain({ underlying: "NIFTY" });
+    if (!canon.ok || !canon.snapshot || canon.snapshot.strikes.length === 0) {
+      throw new Error("canonical snapshot unavailable");
+    }
     let totalCallOI = 0,
       totalPutOI = 0,
       changeCallOI = 0,
       changePutOI = 0;
     let hiCall = { oi: -1, strike: 0 },
       hiPut = { oi: -1, strike: 0 };
-    for (const r of rows) {
-      const ce = r.CE,
-        pe = r.PE;
-      if (ce) {
-        totalCallOI += ce.openInterest ?? 0;
-        changeCallOI += ce.changeinOpenInterest ?? 0;
-        if ((ce.openInterest ?? 0) > hiCall.oi)
-          hiCall = { oi: ce.openInterest ?? 0, strike: ce.strikePrice ?? 0 };
-      }
-      if (pe) {
-        totalPutOI += pe.openInterest ?? 0;
-        changePutOI += pe.changeinOpenInterest ?? 0;
-        if ((pe.openInterest ?? 0) > hiPut.oi)
-          hiPut = { oi: pe.openInterest ?? 0, strike: pe.strikePrice ?? 0 };
-      }
+    for (const s of canon.snapshot.strikes) {
+      const ceOi = s.call.oi ?? 0;
+      const peOi = s.put.oi ?? 0;
+      const ceDo = s.call.changeOi ?? 0;
+      const peDo = s.put.changeOi ?? 0;
+      totalCallOI += ceOi;
+      totalPutOI += peOi;
+      changeCallOI += ceDo;
+      changePutOI += peDo;
+      if (ceOi > hiCall.oi) hiCall = { oi: ceOi, strike: s.strike };
+      if (peOi > hiPut.oi) hiPut = { oi: peOi, strike: s.strike };
     }
     const pcr = totalCallOI ? round2(totalPutOI / totalCallOI) : 1;
     return {
@@ -230,9 +215,9 @@ async function fetchOptionChain(
       changePutOI,
       highestCallOI: hiCall.strike,
       highestPutOI: hiPut.strike,
-      support: hiPut.strike, // max put OI = support
-      resistance: hiCall.strike, // max call OI = resistance
-      source: "NSE",
+      support: hiPut.strike,
+      resistance: hiCall.strike,
+      source: "UPSTOX",
       focus: pcrFocusFromOI(changeCallOI, changePutOI),
     };
   } catch {
