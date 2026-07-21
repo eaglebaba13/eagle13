@@ -62,14 +62,14 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
   }
 
   async listExpiries(underlying: OptionUnderlying): Promise<readonly string[]> {
-    const res = await this.http.request<{ data?: { expiries?: string[] } }>({
+    const res = await this.http.request<{
+      data?: { expiries?: string[] } | Array<{ expiry?: string }>;
+    }>({
       path: "v2/option/contract",
       query: { instrument_key: INSTRUMENT_KEYS[underlying] },
     });
     if (!res.ok) return [];
-    const list = res.data?.data?.expiries;
-    if (!Array.isArray(list)) return [];
-    return list.filter((e): e is string => typeof e === "string");
+    return extractExpiries(res.data?.data);
   }
 
   async fetchSnapshot(req: OptionChainRequest): Promise<OptionChainResult> {
@@ -199,4 +199,35 @@ function pickNearestExpiry(expiries: readonly string[]): string | null {
     .sort();
   const upcoming = future.find((e) => e >= today);
   return upcoming ?? future[0] ?? null;
+}
+
+/**
+ * Parse expiries from the Upstox `/v2/option/contract` response.
+ *
+ * Observed shapes:
+ *   1. `{ data: [ { expiry: "YYYY-MM-DD", ... }, ... ] }` (current live API)
+ *   2. `{ data: { expiries: ["YYYY-MM-DD", ...] } }` (legacy/mock shape)
+ *
+ * Returns a de-duplicated, sorted list of ISO date strings.
+ */
+export function extractExpiries(data: unknown): string[] {
+  const collected = new Set<string>();
+  if (Array.isArray(data)) {
+    for (const row of data) {
+      const e = (row as { expiry?: unknown } | null)?.expiry;
+      if (typeof e === "string" && /^\d{4}-\d{2}-\d{2}/.test(e)) {
+        collected.add(e.slice(0, 10));
+      }
+    }
+  } else if (data && typeof data === "object") {
+    const legacy = (data as { expiries?: unknown }).expiries;
+    if (Array.isArray(legacy)) {
+      for (const e of legacy) {
+        if (typeof e === "string" && /^\d{4}-\d{2}-\d{2}/.test(e)) {
+          collected.add(e.slice(0, 10));
+        }
+      }
+    }
+  }
+  return [...collected].sort();
 }
