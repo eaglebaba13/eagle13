@@ -11,6 +11,50 @@ import {
   listAdminReferralRequests,
 } from "@/lib/referrals/referrals.functions";
 import { adminReferralScreenshotUrl } from "@/lib/referrals/admin.functions";
+
+function ScreenshotPreview({ path }: { path: string }) {
+  const urlFn = useServerFn(adminReferralScreenshotUrl);
+  const q = useQuery({
+    queryKey: ["admin-referral-screenshot", path],
+    queryFn: () => urlFn({ data: { path } }),
+    staleTime: 60_000,
+  });
+  if (q.isLoading) {
+    return (
+      <div className="mt-1 text-[11px] text-muted-foreground">Loading screenshot…</div>
+    );
+  }
+  const url = q.data?.url;
+  if (!url) {
+    return (
+      <div className="mt-1 text-[11px] text-amber-500">
+        Could not load screenshot ({path})
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 space-y-1">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block overflow-hidden rounded-md border border-border"
+      >
+        <img
+          src={url}
+          alt="Referral screenshot"
+          className="max-h-40 max-w-xs object-contain bg-muted"
+          loading="lazy"
+        />
+      </a>
+      <div className="text-[10px] text-muted-foreground">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="underline">
+          Open full size
+        </a>
+      </div>
+    </div>
+  );
+}
 import {
   REFERRAL_STATUS_LABEL,
   type ReferralRequestRow,
