@@ -222,6 +222,67 @@ body {
   --eb-body: "Inter", system-ui, sans-serif;
 }
 
+/* --------------------------------------------------------------------------
+ * Phase 42.1 · Theme-aware surface tints.
+ *
+ * Every inline `rgba(255,255,255,X)` overlay across legacy pages must resolve
+ * to a token so both premium themes stay institutional. Dark mode = white on
+ * charcoal; light mode = warm ink on off-white. Never pure black on light.
+ * ------------------------------------------------------------------------ */
+:root {
+  --eb-tint-soft:     rgba(255, 255, 255, 0.02);
+  --eb-tint:          rgba(255, 255, 255, 0.03);
+  --eb-tint-strong:   rgba(255, 255, 255, 0.05);
+  --eb-tint-hover:    rgba(255, 255, 255, 0.06);
+  --eb-hairline:      rgba(255, 255, 255, 0.06);
+  --eb-line:          rgba(255, 255, 255, 0.08);
+  --eb-divider:       rgba(255, 255, 255, 0.10);
+  --eb-code-bg:       rgba(0, 0, 0, 0.35);
+
+  --eb-warn-fg:       #f2b845;
+  --eb-warn-bg:       rgba(242, 184, 69, 0.14);
+  --eb-warn-border:   rgba(242, 184, 69, 0.32);
+  --eb-warn-bg-soft:  rgba(255, 174, 0, 0.06);
+  --eb-warn-border-soft: rgba(255, 174, 0, 0.28);
+
+  --eb-danger-fg:     #fb7185;
+  --eb-danger-bg:     rgba(251, 113, 133, 0.08);
+  --eb-danger-border: rgba(251, 113, 133, 0.28);
+
+  --eb-ok-fg:         #4ade80;
+  --eb-ok-bg:         rgba(74, 222, 128, 0.10);
+  --eb-ok-border:     rgba(74, 222, 128, 0.30);
+
+  --eb-atm-tint:      rgba(107, 211, 255, 0.09);
+}
+
+:root[data-theme="light"] {
+  --eb-tint-soft:     rgba(31, 24, 8, 0.025);
+  --eb-tint:          rgba(31, 24, 8, 0.04);
+  --eb-tint-strong:   rgba(31, 24, 8, 0.06);
+  --eb-tint-hover:    rgba(31, 24, 8, 0.08);
+  --eb-hairline:      rgba(31, 24, 8, 0.08);
+  --eb-line:          rgba(31, 24, 8, 0.12);
+  --eb-divider:       rgba(31, 24, 8, 0.16);
+  --eb-code-bg:       rgba(31, 24, 8, 0.06);
+
+  --eb-warn-fg:       #8a6400;
+  --eb-warn-bg:       rgba(166, 124, 0, 0.10);
+  --eb-warn-border:   rgba(166, 124, 0, 0.32);
+  --eb-warn-bg-soft:  rgba(166, 124, 0, 0.06);
+  --eb-warn-border-soft: rgba(166, 124, 0, 0.28);
+
+  --eb-danger-fg:     #b91c1c;
+  --eb-danger-bg:     rgba(214, 68, 83, 0.10);
+  --eb-danger-border: rgba(214, 68, 83, 0.34);
+
+  --eb-ok-fg:         #0f7a55;
+  --eb-ok-bg:         rgba(15, 157, 107, 0.10);
+  --eb-ok-border:     rgba(15, 157, 107, 0.32);
+
+  --eb-atm-tint:      rgba(29, 111, 216, 0.10);
+}
+
 :root[data-theme="light"] {
   /* Warm off-white premium light theme — never pure white. */
   --eb-bg: #f7f4ee;
