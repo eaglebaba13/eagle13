@@ -25,7 +25,6 @@ function validate(input: unknown): GetOptionChainInput {
 }
 
 export const getOptionChain = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator(validate)
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();

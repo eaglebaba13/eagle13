@@ -68,6 +68,7 @@ export interface TokenPolicyEnv {
   readonly UPSTOX_API_KEY?: string;
   readonly UPSTOX_API_SECRET?: string;
   readonly UPSTOX_ACCESS_TOKEN?: string;
+  readonly UPSTOX_ANALYTICS_TOKEN?: string;
   readonly UPSTOX_SANDBOX_ACCESS_TOKEN?: string;
 }
 
@@ -82,8 +83,11 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
   const mode = (env.UPSTOX_MARKET_DATA_MODE ?? "").toLowerCase() === "live" ? "live" : "disabled";
   const apiKeyOk = !isPlaceholder(env.UPSTOX_API_KEY);
   const apiSecretOk = !isPlaceholder(env.UPSTOX_API_SECRET);
-  const liveOk = !isPlaceholder(env.UPSTOX_ACCESS_TOKEN);
-  const classified = classifyUpstoxTokenFormat(env.UPSTOX_ACCESS_TOKEN);
+  const accessOk = !isPlaceholder(env.UPSTOX_ACCESS_TOKEN);
+  const analyticsOk = !isPlaceholder(env.UPSTOX_ANALYTICS_TOKEN);
+  const liveOk = accessOk || analyticsOk;
+  const selectedToken = analyticsOk ? env.UPSTOX_ANALYTICS_TOKEN : env.UPSTOX_ACCESS_TOKEN;
+  const classified = classifyUpstoxTokenFormat(selectedToken);
 
   if (mode !== "live") {
     return {
@@ -107,7 +111,7 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
       tokenExpiryStatus: "UNKNOWN",
       tokenUsable: false,
       reason:
-        "Missing UPSTOX_ACCESS_TOKEN. Sandbox token is not accepted for market-data endpoints.",
+        "Missing UPSTOX_ANALYTICS_TOKEN and UPSTOX_ACCESS_TOKEN. Sandbox token is not accepted for live market-data endpoints.",
       mode: "live",
       apiKeyConfigured: apiKeyOk,
       apiSecretConfigured: apiSecretOk,

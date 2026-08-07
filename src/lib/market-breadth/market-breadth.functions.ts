@@ -47,7 +47,6 @@ function newRunId(): string {
 }
 
 export const getMarketBreadth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator(validate)
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();

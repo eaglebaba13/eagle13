@@ -25,6 +25,7 @@ export interface UpstoxRequestOptions {
   readonly method?: "GET" | "POST";
   readonly query?: Record<string, string | number | undefined>;
   readonly requestId?: string;
+  readonly tokenKind?: "access" | "analytics" | "auto";
 }
 
 export interface UpstoxSuccess<T> {
@@ -119,6 +120,7 @@ function envOf(cfg: UpstoxHttpConfig): TokenPolicyEnv {
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
     UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
     UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
+    UPSTOX_ANALYTICS_TOKEN: p.UPSTOX_ANALYTICS_TOKEN,
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
   };
 }
@@ -184,7 +186,28 @@ export class UpstoxHttpClient {
         },
       };
     }
-    const token = this.env.UPSTOX_ACCESS_TOKEN!;
+    const analyticsToken = this.env.UPSTOX_ANALYTICS_TOKEN?.trim();
+const accessToken = this.env.UPSTOX_ACCESS_TOKEN?.trim();
+
+const token =
+  opts.tokenKind === "access"
+    ? accessToken
+    : opts.tokenKind === "analytics"
+      ? analyticsToken
+      : analyticsToken || accessToken;
+
+if (!token) {
+  return {
+    ok: false,
+    latencyMs: 0,
+    error: {
+      code: "UPSTOX_AUTH_REQUIRED",
+      message: "No usable Upstox market-data token configured",
+      requestId: opts.requestId,
+      path: opts.path,
+    },
+  };
+}
     const url = buildUrl(this.baseUrl, opts.path, opts.query);
     const requestId = opts.requestId ?? nextRequestId();
 

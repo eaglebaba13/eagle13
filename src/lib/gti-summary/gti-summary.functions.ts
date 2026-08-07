@@ -6,7 +6,6 @@
 // module never touches Astro, Decision, Broker, or formulas.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getMarketData } from "../market.functions";
 import { computeCombinedPcr } from "../combined-pcr/combined-pcr";
 import { DEFAULT_COMBINED_PCR_WEIGHTS } from "../combined-pcr/types";
@@ -57,7 +56,6 @@ function newRunId(): string {
 }
 
 export const getGtiSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .handler(async (): Promise<GtiSummaryResponse> => {
     const generatedAt = new Date().toISOString();
     const warnings: string[] = [];
