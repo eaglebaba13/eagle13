@@ -564,9 +564,6 @@ a {
   -webkit-overflow-scrolling: touch;
 }
 
-#lovable-badge {
-  display: none !important;
-}
 
 /* =========================================================================
  * PREMIUM TERMINAL LAYER — deep-space backdrop, live ticker,
@@ -876,7 +873,7 @@ a {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
     padding-top: max(8px, env(safe-area-inset-top));
     border-bottom: 1px solid var(--eb-glass-border);
     border-radius: 0;
@@ -1115,6 +1112,18 @@ a {
   /* Keep page content clear of the fixed bottom navigation. */
   body {
     padding-bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+
+  /* Narrow strategy-builder rows stack instead of creating viewport overflow. */
+  .sb-details-grid,
+  .sb-condition-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 1023px) {
+  .sb-condition-grid {
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto !important;
   }
 }
 
@@ -2084,3 +2093,293 @@ a {
   border-radius: 6px;
 }
 @keyframes eb-skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* =========================================================================
+ * PHASE P1 — Premium Observatory / Astro-Trading Aesthetic Layer
+ * Refined institutional dark surface with celestial accents.
+ * No formula changes. Presentational only.
+ * ====================================================================== */
+
+/* Observatory card — elevated surface with faint starfield */
+.eb-observatory {
+  position: relative;
+  border-radius: 18px;
+  padding: 20px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--eb-bg2) 94%, transparent) 0%,
+    color-mix(in srgb, var(--eb-bg3) 90%, transparent) 100%
+  );
+  border: 1px solid var(--eb-border);
+  box-shadow: var(--eb-shadow-lg);
+  overflow: hidden;
+}
+.eb-observatory::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1px 1px at 15% 20%, rgba(212,175,55,0.3), transparent),
+    radial-gradient(1px 1px at 85% 35%, rgba(76,157,255,0.25), transparent),
+    radial-gradient(0.8px 0.8px at 45% 80%, rgba(168,85,247,0.2), transparent),
+    radial-gradient(1px 1px at 70% 10%, rgba(212,175,55,0.2), transparent);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Astro level card — gold-bordered with celestial accents */
+.eb-astro-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--eb-card) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--eb-accent) 20%, var(--eb-border));
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.eb-astro-card:hover {
+  border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
+  box-shadow: 0 0 24px -8px color-mix(in srgb, var(--eb-accent) 30%, transparent);
+}
+
+/* Signal pulse animation — used for BUY/SELL signal changes */
+@keyframes eb-signal-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--eb-status-buy) 50%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+.eb-signal-buy {
+  animation: eb-signal-buy-pulse 2s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--eb-status-buy) 50%, var(--eb-border));
+}
+@keyframes eb-signal-buy-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--eb-status-buy) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+.eb-signal-sell {
+  animation: eb-signal-sell-pulse 2s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--eb-status-sell) 50%, var(--eb-border));
+}
+@keyframes eb-signal-sell-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--eb-status-sell) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+.eb-signal-wait {
+  border-color: color-mix(in srgb, var(--eb-status-wait) 35%, var(--eb-border));
+}
+
+/* Signal transition alarm overlay */
+.eb-alarm-overlay {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1100;
+  max-width: 420px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--eb-bg2) 95%, transparent);
+  border: 1px solid var(--eb-border);
+  box-shadow: var(--eb-shadow-lg), var(--eb-shadow-gold);
+  backdrop-filter: blur(16px);
+  animation: eb-alarm-slide-in 0.3s ease-out;
+}
+@keyframes eb-alarm-slide-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.eb-alarm-title {
+  font-family: var(--eb-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--eb-text);
+  letter-spacing: 0.3px;
+}
+.eb-alarm-body {
+  font-size: 12.5px;
+  color: var(--eb-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.eb-alarm-dismiss {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--eb-border);
+  background: transparent;
+  color: var(--eb-muted);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.eb-alarm-dismiss:hover {
+  color: var(--eb-accent);
+  border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
+}
+
+/* Celestial gradient header for key pages */
+.eb-celestial-header {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--eb-bg) 92%, transparent) 0%,
+    color-mix(in srgb, var(--eb-purple) 8%, var(--eb-bg)) 50%,
+    color-mix(in srgb, var(--eb-accent) 5%, var(--eb-bg)) 100%
+  );
+  border-bottom: 1px solid var(--eb-border);
+  padding: 20px 24px;
+}
+
+/* Observatory chart frame — gold corner accents */
+.eb-chart-frame {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid var(--eb-border);
+  overflow: hidden;
+}
+.eb-chart-frame::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 24px; height: 24px;
+  border-top: 2px solid color-mix(in srgb, var(--eb-accent) 60%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--eb-accent) 60%, transparent);
+  border-radius: 14px 0 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.eb-chart-frame::after {
+  content: "";
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 24px; height: 24px;
+  border-bottom: 2px solid color-mix(in srgb, var(--eb-accent) 60%, transparent);
+  border-right: 2px solid color-mix(in srgb, var(--eb-accent) 60%, transparent);
+  border-radius: 0 0 14px 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Instrument ticker strip for level cards */
+.eb-instrument-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--eb-card) 60%, transparent);
+  border: 1px solid var(--eb-border);
+  font-family: var(--eb-mono);
+  font-size: 12px;
+}
+.eb-instrument-sym {
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--eb-accent);
+}
+.eb-instrument-price {
+  font-weight: 600;
+  color: var(--eb-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Historical accuracy / replay status display */
+.eb-accuracy-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--eb-border);
+  background: color-mix(in srgb, var(--eb-card) 60%, transparent);
+}
+.eb-accuracy-label {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--eb-muted);
+  font-weight: 600;
+}
+.eb-accuracy-value {
+  font-family: var(--eb-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--eb-text);
+  font-variant-numeric: tabular-nums;
+}
+.eb-accuracy-no-data {
+  font-size: 13px;
+  color: var(--eb-muted);
+  font-style: italic;
+}
+.eb-accuracy-explainer {
+  font-size: 11px;
+  color: var(--eb-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Chat container for AI Market Assistant */
+.eb-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+.eb-chat-msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.eb-chat-msg-user {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--eb-accent) 18%, var(--eb-card));
+  border: 1px solid color-mix(in srgb, var(--eb-accent) 35%, var(--eb-border));
+  color: var(--eb-text);
+}
+.eb-chat-msg-assistant {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--eb-card) 80%, transparent);
+  border: 1px solid var(--eb-border);
+  color: var(--eb-text);
+}
+.eb-chat-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--eb-border);
+  background: var(--eb-card);
+}
+.eb-chat-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--eb-text);
+  font-size: 13px;
+  font-family: var(--eb-body);
+}
+.eb-chat-input button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--eb-accent) 50%, var(--eb-border));
+  background: color-mix(in srgb, var(--eb-accent) 14%, var(--eb-card));
+  color: var(--eb-accent);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.eb-chat-input button:hover {
+  background: color-mix(in srgb, var(--eb-accent) 25%, var(--eb-card));
+}
