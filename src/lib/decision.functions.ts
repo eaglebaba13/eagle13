@@ -467,9 +467,10 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           generatedAt: new Date().toISOString(),
         });
 
-        void persistCompletedDecision(
+        const decisionTimestamp = new Date().toISOString();
+        const persistResult = await persistCompletedDecision(
           {
-            timestamp: new Date().toISOString(),
+            timestamp: decisionTimestamp,
             instrument: "NIFTY",
             spot: market?.nifty?.livePrice ?? null,
             decision: decision.action,
@@ -524,6 +525,24 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           },
           defaultDecisionHistoryRepository,
         );
+
+        // --- Signal Transition Lifecycle (non-blocking, safe-to-fail) ---
+        // Wire signal transitions into the Decision Engine evaluation lifecycle.
+        // This is the canonical integration point — fires on every valid evaluation.
+        try {
+          const { runSignalTransitionAfterDecision } = await import("@/lib/multi-asset/signal-transition-delivery.server");
+          await runSignalTransitionAfterDecision({
+            decisionAction: decision.action,
+            instrument: "NIFTY",
+            confidence: decision.confidence,
+            spot: market?.nifty?.livePrice ?? null,
+            decisionRunId: persistResult.runId,
+            evaluatedAt: decisionTimestamp,
+            explanation: decision.explanation ?? decision.action,
+          });
+        } catch {
+          // Signal transition failure must never break the Decision Engine lifecycle.
+        }
 
         return {
           decision,

@@ -263,6 +263,7 @@ export async function runMorningBrief(opts?: {
   });
   const updated = await persistDeliveryOutcome(record, outcome);
   if (updated.error || !updated.data) return record;
+
   return mapRow(updated.data as Record<string, unknown>);
 }
 

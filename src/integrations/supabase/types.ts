@@ -1412,6 +1412,93 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_transition_state: {
+        Row: {
+          id: string
+          instrument: string
+          signal_scope: string
+          current_state: string
+          previous_state: string | null
+          decision_action: string
+          decision_run_id: string
+          evaluated_at: string
+          fingerprint: string
+          updated_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          instrument: string
+          signal_scope?: string
+          current_state: string
+          previous_state?: string | null
+          decision_action: string
+          decision_run_id: string
+          evaluated_at: string
+          fingerprint: string
+          updated_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          instrument?: string
+          signal_scope?: string
+          current_state?: string
+          previous_state?: string | null
+          decision_action?: string
+          decision_run_id?: string
+          evaluated_at?: string
+          fingerprint?: string
+          updated_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      signal_transition_events: {
+        Row: {
+          id: string
+          instrument: string
+          signal_scope: string
+          previous_state: string | null
+          current_state: string
+          decision_action: string
+          decision_run_id: string
+          evaluated_at: string
+          fingerprint: string
+          telegram_delivered: boolean
+          telegram_error: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          instrument: string
+          signal_scope?: string
+          previous_state?: string | null
+          current_state: string
+          decision_action: string
+          decision_run_id: string
+          evaluated_at: string
+          fingerprint: string
+          telegram_delivered?: boolean
+          telegram_error?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          instrument?: string
+          signal_scope?: string
+          previous_state?: string | null
+          current_state?: string
+          decision_action?: string
+          decision_run_id?: string
+          evaluated_at?: string
+          fingerprint?: string
+          telegram_delivered?: boolean
+          telegram_error?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -2088,6 +2175,27 @@ export type Database = {
       validate_subscription_transition: {
         Args: { _from: string; _to: string }
         Returns: boolean
+      }
+      upsert_signal_transition: {
+        Args: {
+          _instrument: string
+          _signal_scope: string
+          _expected_previous: string
+          _new_state: string
+          _decision_action: string
+          _decision_run_id: string
+          _evaluated_at: string
+          _fingerprint: string
+        }
+        Returns: Json
+      }
+      update_signal_transition_event_delivery: {
+        Args: {
+          _fingerprint: string
+          _delivered: boolean
+          _error?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
