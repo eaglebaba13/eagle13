@@ -161,9 +161,13 @@ BEGIN
   UPDATE public.signal_transition_events
   SET telegram_delivered = _delivered,
       telegram_error = _error
-  WHERE fingerprint = _fingerprint
-  ORDER BY created_at DESC
-  LIMIT 1;
+  WHERE id = (
+    SELECT id
+    FROM public.signal_transition_events
+    WHERE fingerprint = _fingerprint
+    ORDER BY created_at DESC
+    LIMIT 1
+  );
 END;
 $$;
 
