@@ -22,20 +22,72 @@ create table if not exists public.provider_credential_audit (
 alter table public.provider_credentials enable row level security;
 alter table public.provider_credential_audit enable row level security;
 
-create policy if not exists provider_credentials_service_role_write on public.provider_credentials
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'provider_credentials'
+      and policyname = 'provider_credentials_service_role_write'
+  ) then
+    create policy provider_credentials_service_role_write
+      on public.provider_credentials
+      for all
+      using (auth.role() = 'service_role')
+      with check (auth.role() = 'service_role');
+  end if;
+end
+$$;
 
-create policy if not exists provider_credentials_service_role_read on public.provider_credentials
-  for select
-  using (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'provider_credentials'
+      and policyname = 'provider_credentials_service_role_read'
+  ) then
+    create policy provider_credentials_service_role_read
+      on public.provider_credentials
+      for select
+      using (auth.role() = 'service_role');
+  end if;
+end
+$$;
 
-create policy if not exists provider_credential_audit_service_role_write on public.provider_credential_audit
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'provider_credential_audit'
+      and policyname = 'provider_credential_audit_service_role_write'
+  ) then
+    create policy provider_credential_audit_service_role_write
+      on public.provider_credential_audit
+      for all
+      using (auth.role() = 'service_role')
+      with check (auth.role() = 'service_role');
+  end if;
+end
+$$;
 
-create policy if not exists provider_credential_audit_service_role_read on public.provider_credential_audit
-  for select
-  using (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'provider_credential_audit'
+      and policyname = 'provider_credential_audit_service_role_read'
+  ) then
+    create policy provider_credential_audit_service_role_read
+      on public.provider_credential_audit
+      for select
+      using (auth.role() = 'service_role');
+  end if;
+end
+$$;
