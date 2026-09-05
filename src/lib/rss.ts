@@ -1,5 +1,5 @@
 // Shared, Cloudflare-Worker-safe RSS helpers with multi-provider fallback.
-// Google News RSS is reachable from the Lovable preview sandbox (full Node
+// Google News RSS is reachable from the server environment (full Node
 // egress) but NOT from the published Cloudflare Worker egress — there it
 // returns nothing, which is why "Latest Market News" worked in Preview but
 // showed an empty list after Publish. These publisher RSS feeds (Economic

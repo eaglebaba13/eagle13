@@ -20,7 +20,6 @@ import { Route as OptionsChainRouteImport } from './routes/options-chain'
 import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
 import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
 import { Route as NewsRouteImport } from './routes/news'
-import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MarketReplayRouteImport } from './routes/market-replay'
 import { Route as MarketBreadthRouteImport } from './routes/market-breadth'
 import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
@@ -60,8 +59,6 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBacktestLabRouteImport } from './routes/_authenticated/backtest-lab'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedResearchLabSignalsRouteImport } from './routes/_authenticated/research-lab.signals'
 import { Route as AuthenticatedResearchLabRunsRouteImport } from './routes/_authenticated/research-lab.runs'
 import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
@@ -82,7 +79,6 @@ import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminCoindcxRouteImport } from './routes/_authenticated/admin.coindcx'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 import { Route as ApiPublicHooksMorningBriefRouteImport } from './routes/api/public/hooks/morning-brief'
 import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
@@ -140,11 +136,6 @@ const OptionStrategyRoute = OptionStrategyRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketReplayRoute = MarketReplayRouteImport.update({
@@ -354,18 +345,6 @@ const AuthenticatedAiMarketAssistantRoute =
     path: '/ai-market-assistant',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AuthenticatedResearchLabSignalsRoute =
   AuthenticatedResearchLabSignalsRouteImport.update({
     id: '/signals',
@@ -486,12 +465,6 @@ const AuthenticatedAdminAlertsRoute =
     path: '/admin/alerts',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicWebhooksRazorpayRoute =
   ApiPublicWebhooksRazorpayRouteImport.update({
     id: '/api/public/webhooks/razorpay',
@@ -528,7 +501,6 @@ export interface FileRoutesByFullPath {
   '/live-terminal': typeof LiveTerminalRoute
   '/market-breadth': typeof MarketBreadthRoute
   '/market-replay': typeof MarketReplayRoute
-  '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
@@ -540,8 +512,6 @@ export interface FileRoutesByFullPath {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/backtest-lab': typeof AuthenticatedBacktestLabRoute
@@ -564,7 +534,6 @@ export interface FileRoutesByFullPath {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -606,7 +575,6 @@ export interface FileRoutesByTo {
   '/live-terminal': typeof LiveTerminalRoute
   '/market-breadth': typeof MarketBreadthRoute
   '/market-replay': typeof MarketReplayRoute
-  '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
@@ -618,8 +586,6 @@ export interface FileRoutesByTo {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/backtest-lab': typeof AuthenticatedBacktestLabRoute
@@ -642,7 +608,6 @@ export interface FileRoutesByTo {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -686,7 +651,6 @@ export interface FileRoutesById {
   '/live-terminal': typeof LiveTerminalRoute
   '/market-breadth': typeof MarketBreadthRoute
   '/market-replay': typeof MarketReplayRoute
-  '/mcp': typeof McpRoute
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
@@ -698,8 +662,6 @@ export interface FileRoutesById {
   '/signal-accuracy': typeof SignalAccuracyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/ai-market-assistant': typeof AuthenticatedAiMarketAssistantRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/backtest-lab': typeof AuthenticatedBacktestLabRoute
@@ -722,7 +684,6 @@ export interface FileRoutesById {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -766,7 +727,6 @@ export interface FileRouteTypes {
     | '/live-terminal'
     | '/market-breadth'
     | '/market-replay'
-    | '/mcp'
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
@@ -778,8 +738,6 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/status'
     | '/terms'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
     | '/alerts'
     | '/backtest-lab'
@@ -802,7 +760,6 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
-    | '/.mcp/invoke-tool/$tool'
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
@@ -844,7 +801,6 @@ export interface FileRouteTypes {
     | '/live-terminal'
     | '/market-breadth'
     | '/market-replay'
-    | '/mcp'
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
@@ -856,8 +812,6 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/status'
     | '/terms'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/ai-market-assistant'
     | '/alerts'
     | '/backtest-lab'
@@ -880,7 +834,6 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
-    | '/.mcp/invoke-tool/$tool'
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
@@ -923,7 +876,6 @@ export interface FileRouteTypes {
     | '/live-terminal'
     | '/market-breadth'
     | '/market-replay'
-    | '/mcp'
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
@@ -935,8 +887,6 @@ export interface FileRouteTypes {
     | '/signal-accuracy'
     | '/status'
     | '/terms'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/ai-market-assistant'
     | '/_authenticated/alerts'
     | '/_authenticated/backtest-lab'
@@ -959,7 +909,6 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
-    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/coindcx'
@@ -1003,7 +952,6 @@ export interface RootRouteChildren {
   LiveTerminalRoute: typeof LiveTerminalRoute
   MarketBreadthRoute: typeof MarketBreadthRoute
   MarketReplayRoute: typeof MarketReplayRoute
-  McpRoute: typeof McpRoute
   NewsRoute: typeof NewsRoute
   OptionStrategyRoute: typeof OptionStrategyRoute
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
@@ -1015,12 +963,9 @@ export interface RootRouteChildren {
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
-  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
-  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
   DevAstroFixtureCaptureRoute: typeof DevAstroFixtureCaptureRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
-  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicHooksMorningBriefRoute: typeof ApiPublicHooksMorningBriefRoute
   ApiPublicWebhooksRazorpayRoute: typeof ApiPublicWebhooksRazorpayRoute
 }
@@ -1102,13 +1047,6 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/market-replay': {
@@ -1384,20 +1322,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiMarketAssistantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/research-lab/signals': {
       id: '/_authenticated/research-lab/signals'
       path: '/signals'
@@ -1537,13 +1461,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/alerts'
       preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/razorpay': {
       id: '/api/public/webhooks/razorpay'
@@ -1717,7 +1634,6 @@ const rootRouteChildren: RootRouteChildren = {
   LiveTerminalRoute: LiveTerminalRoute,
   MarketBreadthRoute: MarketBreadthRoute,
   MarketReplayRoute: MarketReplayRoute,
-  McpRoute: McpRoute,
   NewsRoute: NewsRoute,
   OptionStrategyRoute: OptionStrategyRoute,
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
@@ -1729,13 +1645,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignalAccuracyRoute: SignalAccuracyRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
-  Char91DotwellKnownChar93OauthProtectedResourceRoute:
-    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DevAstroAuditRoute: DevAstroAuditRoute,
   DevAstroFixtureCaptureRoute: DevAstroFixtureCaptureRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,
-  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicHooksMorningBriefRoute: ApiPublicHooksMorningBriefRoute,
   ApiPublicWebhooksRazorpayRoute: ApiPublicWebhooksRazorpayRoute,
 }

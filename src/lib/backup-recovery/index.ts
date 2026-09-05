@@ -38,7 +38,7 @@ export const RECOVERY_CHECKLIST: RecoveryChecklistItem[] = [
     id: "secrets-rotation",
     category: "secrets",
     label: "Rotation schedule documented",
-    detail: "Provider keys, Lovable API key, and OAuth secrets have owners.",
+    detail: "Provider keys and OAuth secrets have owners.",
   },
   {
     id: "dr-runbook",

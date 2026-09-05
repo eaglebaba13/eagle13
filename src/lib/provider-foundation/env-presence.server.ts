@@ -20,7 +20,7 @@ export interface ProviderEnvPresenceInput {
   readonly UPSTOX_ACCESS_TOKEN?: string;
   readonly NODE_ENV?: string;
   readonly MODE?: string;
-  readonly LOVABLE_ENVIRONMENT?: string;
+  readonly DEPLOYMENT_ENVIRONMENT?: string;
 }
 
 const PLACEHOLDER_PATTERNS = [
@@ -48,10 +48,10 @@ function classifyMode(v: string | undefined | null): EnvPresenceStatus {
 }
 
 function detectRuntime(env: ProviderEnvPresenceInput): RuntimeEnvironment {
-  const lovable = (env.LOVABLE_ENVIRONMENT ?? "").toLowerCase();
-  if (lovable === "preview") return "preview";
-  if (lovable === "production") return "production";
-  if (lovable === "development") return "development";
+  const deployment = (env.DEPLOYMENT_ENVIRONMENT ?? "").toLowerCase();
+  if (deployment === "preview") return "preview";
+  if (deployment === "production") return "production";
+  if (deployment === "development") return "development";
   const node = (env.NODE_ENV ?? env.MODE ?? "").toLowerCase();
   if (node === "development") return "development";
   if (node === "production") return "production";

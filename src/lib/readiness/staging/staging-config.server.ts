@@ -161,4 +161,4 @@ export function validateStagingConfig(input: StagingConfigInput): StagingConfigR
   return { ok, host, checks };
 }
 
-export const DEFAULT_ALLOWED_HOSTS: readonly string[] = ["lovable.app", "lovable.dev"];
+export const DEFAULT_ALLOWED_HOSTS: readonly string[] = [];

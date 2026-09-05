@@ -1,6 +1,6 @@
 /**
  * Offline-first sync helper. Local writes are queued to localStorage until
- * the network reports online, then replayed against Lovable Cloud. Pure
+ * the network reports online, then replayed against the server. Pure
  * logic — no DOM access — so it stays test-friendly.
  */
 export interface SyncOp {

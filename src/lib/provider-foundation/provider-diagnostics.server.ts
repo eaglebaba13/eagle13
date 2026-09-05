@@ -23,7 +23,7 @@ import {
 export interface ProviderDiagnosticsEnv extends TokenPolicyEnv {
   readonly NODE_ENV?: string;
   readonly MODE?: string;
-  readonly LOVABLE_ENVIRONMENT?: string;
+  readonly DEPLOYMENT_ENVIRONMENT?: string;
 }
 
 export type ProviderConfigurationStatus =
@@ -65,7 +65,7 @@ function readEnv(): ProviderDiagnosticsEnv {
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
     NODE_ENV: p.NODE_ENV,
     MODE: p.MODE,
-    LOVABLE_ENVIRONMENT: p.LOVABLE_ENVIRONMENT,
+    DEPLOYMENT_ENVIRONMENT: p.DEPLOYMENT_ENVIRONMENT,
   };
 }
 
@@ -97,7 +97,7 @@ function toPresenceInput(env: ProviderDiagnosticsEnv): ProviderEnvPresenceInput 
     UPSTOX_ACCESS_TOKEN: env.UPSTOX_ACCESS_TOKEN,
     NODE_ENV: env.NODE_ENV,
     MODE: env.MODE,
-    LOVABLE_ENVIRONMENT: env.LOVABLE_ENVIRONMENT,
+    DEPLOYMENT_ENVIRONMENT: env.DEPLOYMENT_ENVIRONMENT,
   };
 }
 

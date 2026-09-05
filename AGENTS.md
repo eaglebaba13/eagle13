@@ -1,10 +1,15 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# EagleBABA Astro Levels — Agent Instructions
+
+## Repository
+
+- **GitHub**: eaglebaba13/eagle13
+- **Branch**: public-unrestricted-upstox-fix
+- **Deployment**: Hostinger KVM 4 VPS (Node.js)
+
+## Key Rules
+
+1. Never force-push or rewrite published history.
+2. Protected formula files must remain byte-for-byte unchanged.
+3. Broker execution must remain disabled.
+4. Never expose secrets in client code.
+5. Run `npm test` and `npm run build` before committing.

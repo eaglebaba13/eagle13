@@ -20,8 +20,8 @@ describe("provider env-presence diagnostic", () => {
     expect(liveCredentialsComplete(p)).toBe(true);
   });
 
-  it("reports preview runtime via LOVABLE_ENVIRONMENT and full presence", () => {
-    const p = evaluateProviderEnvPresence({ ...FULL_LIVE, LOVABLE_ENVIRONMENT: "preview" });
+  it("reports preview runtime via DEPLOYMENT_ENVIRONMENT and full presence", () => {
+    const p = evaluateProviderEnvPresence({ ...FULL_LIVE, DEPLOYMENT_ENVIRONMENT: "preview" });
     expect(p.runtimeEnvironment).toBe("preview");
     expect(liveCredentialsComplete(p)).toBe(true);
   });

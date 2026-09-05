@@ -65,7 +65,7 @@ describe("staging-config", () => {
   it("flags build mismatch as hard blocker", () => {
     const r = validateStagingConfig({
       ...baseCfg,
-      baseUrl: "https://staging.lovable.app",
+      baseUrl: "https://staging.example.com",
       expectedBuildVersion: "b2",
     });
     expect(r.checks.some((c) => c.id === "build.version_mismatch" && c.hardBlocker)).toBe(true);
@@ -73,15 +73,15 @@ describe("staging-config", () => {
   it("flags environment mismatch", () => {
     const r = validateStagingConfig({
       ...baseCfg,
-      baseUrl: "https://staging.lovable.app",
+      baseUrl: "https://staging.example.com",
       environment: "production",
       expectedEnvironment: "staging",
     });
     expect(r.checks.some((c) => c.id === "config.env_mismatch")).toBe(true);
   });
   it("passes with a valid staging host", () => {
-    const r = validateStagingConfig({ ...baseCfg, baseUrl: "https://staging.lovable.app" });
-    expect(r.host).toBe("staging.lovable.app");
+    const r = validateStagingConfig({ ...baseCfg, baseUrl: "https://staging.example.com" });
+    expect(r.host).toBe("staging.example.com");
     expect(r.checks.every((c) => c.status !== "FAIL")).toBe(true);
   });
 });
@@ -486,7 +486,7 @@ describe("compose + exports + evidence store", () => {
     const toIso = (ms: number) => new Date(ms).toISOString();
     const journeys = STAGING_JOURNEY_PLANS.map((p) => runJourney(p, skipResolver, { now, toIso }));
     const report = composeStagingReport({
-      stagingHost: "staging.lovable.app",
+      stagingHost: "staging.example.com",
       environment: "staging",
       buildVersion: "b1",
       commitVersion: "c1",

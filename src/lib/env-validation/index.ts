@@ -49,12 +49,6 @@ export const DEFAULT_ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Direct database URL",
   },
   {
-    key: "LOVABLE_API_KEY",
-    category: "api-keys",
-    required: true,
-    description: "Lovable AI Gateway key",
-  },
-  {
     key: "UPSTOX_API_KEY",
     category: "provider-keys",
     required: true,

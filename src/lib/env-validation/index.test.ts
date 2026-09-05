@@ -21,9 +21,9 @@ describe("env-validation", () => {
   });
 
   it("treats empty strings as missing", () => {
-    const r = validateEnv(fullEnv({ LOVABLE_API_KEY: "   " }));
+    const r = validateEnv(fullEnv({ UPSTOX_API_KEY: "   " }));
     expect(r.ok).toBe(false);
-    expect(r.missingRequired).toContain("LOVABLE_API_KEY");
+    expect(r.missingRequired).toContain("UPSTOX_API_KEY");
   });
 
   it("separates optional keys into missingOptional", () => {

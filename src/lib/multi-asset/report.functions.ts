@@ -17,7 +17,6 @@ import {
   type IndiaContextBlock,
   type FiiDiiBlock,
 } from "./report-composer";
-import { deliverMorningBrief } from "./report-telegram.server";
 import { composeDisclaimerBlock } from "./disclaimers";
 import type { MacroRatioResult } from "./macro-ratio";
 
@@ -197,6 +196,7 @@ export async function runMorningBrief(opts?: {
   }
 
   const sections = composeMorningReport(payload);
+  const { deliverMorningBrief } = await import("./report-telegram.server");
   const outcome = await deliverMorningBrief({
     reportId: payload.reportId,
     generatedAt: payload.generatedAt,
