@@ -39,10 +39,6 @@ const CORE_PREVIEW_IDS = new Set<string>([
   "signal-accuracy",
   "market-replay",
   "option-strategy",
-  "profile",
-  "license",
-  "billing",
-  "pricing",
   "settings",
 ]);
 

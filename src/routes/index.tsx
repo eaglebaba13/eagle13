@@ -283,7 +283,6 @@ function Dashboard() {
       </div>
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
-        <ReferralBanner />
         <DashboardRuntimeStrip />
         <div
           style={{

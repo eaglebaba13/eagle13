@@ -21,16 +21,19 @@ describe("Phase 24A · shared navigation registry", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("desktop and mobile drawer share the same route set", () => {
-    const desk = new Set(desktopNav().map((n) => n.id));
-    const mob = new Set(mobileDrawerNav().map((n) => n.id));
-    expect([...desk].sort()).toEqual([...mob].sort());
+  it("every item has a status classification", () => {
+    const valid = ["LIVE", "RESEARCH", "PROVIDER_PENDING", "COMING_SOON", "INTERNAL"];
+    for (const item of NAV_REGISTRY) {
+      expect(valid).toContain(item.status);
+    }
   });
 
-  it("desktop and mobile drawer share the same ordering", () => {
-    const desk = desktopNav().map((n) => n.id);
-    const mob = mobileDrawerNav().map((n) => n.id);
-    expect(desk).toEqual(mob);
+  it("no commercial items in registry (license, billing, pricing, referrals)", () => {
+    const ids = NAV_REGISTRY.map((n) => n.id);
+    expect(ids).not.toContain("license");
+    expect(ids).not.toContain("billing");
+    expect(ids).not.toContain("pricing");
+    expect(ids).not.toContain("referrals");
   });
 
   it("mobile bottom nav is a small subset (≤5) of the full menu", () => {
@@ -49,25 +52,22 @@ describe("Phase 24A · shared navigation registry", () => {
   });
 });
 
-describe("Phase 24B · role/plan navigation filtering", () => {
-  it("desktop and mobile share filtered result", () => {
-    const ctx = { plan: "pro" as const };
-    const d = resolveDesktopNav(ctx).map((i) => i.id);
-    const m = resolveMobileDrawerNav(ctx).map((i) => i.id);
-    expect(d.sort()).toEqual(m.sort());
+describe("Phase 24B · navigation filtering (personal terminal)", () => {
+  it("resolveDesktopNav returns all desktop-visible items", () => {
+    const d = resolveDesktopNav().map((i) => i.id);
+    expect(d.length).toBeGreaterThan(0);
+    expect(d).toContain("dashboard");
+    expect(d).toContain("astro-levels");
   });
 
-  it("higher-plan-required items are filtered for free users when set", () => {
-    // Add a synthetic scoped item into a copy — but here we assert that the
-    // resolver honors minimumPlan on any existing item and returns a stable
-    // superset for admins.
-    const admin = resolveNavigationForContext({ plan: "admin" });
-    const free = resolveNavigationForContext({ plan: "free" });
-    expect(admin.length).toBeGreaterThanOrEqual(free.length);
+  it("resolveMobileDrawerNav returns all mobile-visible items", () => {
+    const m = resolveMobileDrawerNav().map((i) => i.id);
+    expect(m.length).toBeGreaterThan(0);
+    expect(m).toContain("dashboard");
   });
 
-  it("admin role bypasses requiredRole scoping", () => {
-    const list = resolveNavigationForContext({ plan: "admin", role: "admin" });
-    expect(list.length).toBeGreaterThan(0);
+  it("resolveNavigationForContext returns all items", () => {
+    const all = resolveNavigationForContext();
+    expect(all.length).toBe(NAV_REGISTRY.length);
   });
 });

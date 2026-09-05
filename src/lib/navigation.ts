@@ -1,37 +1,25 @@
-// Phase 24A · Single navigation registry.
-//
-// This is the ONE source of truth consumed by the desktop sidebar, the
-// mobile drawer, and the mobile bottom-nav. Menu arrays must not be
-// hard-coded anywhere else.
+// Navigation registry — single source of truth for desktop sidebar,
+// mobile drawer, and mobile bottom-nav.
 
 import {
   Activity,
   BarChart3,
   Bell,
   Brain,
-  CandlestickChart,
-  FileBarChart,
-  Globe2,
   History,
-  KeyRound,
   Layers,
   LayoutDashboard,
-  LineChart,
   Orbit,
   PlayCircle,
-  Plug,
-  Radar,
   Radio,
-  ScrollText,
-  Settings,
   ShieldCheck,
-  Sparkles,
   Target,
   TrendingUp,
-  User as UserIcon,
 } from "lucide-react";
 
-export type NavSection = "MAIN" | "RESEARCH" | "MARKET" | "ACCOUNT";
+export type NavStatus = "LIVE" | "RESEARCH" | "PROVIDER_PENDING" | "COMING_SOON" | "INTERNAL";
+
+export type NavSection = "CORE" | "ANALYTICS" | "ALERTS" | "INTELLIGENCE" | "SYSTEM";
 
 export type NavItem = {
   id: string;
@@ -41,62 +29,23 @@ export type NavItem = {
   href?: string;
   section: NavSection;
   order: number;
+  status: NavStatus;
   desktopVisible: boolean;
   mobileVisible: boolean;
-  mobileBottom?: boolean; // included in the mobile bottom-nav shortcuts
+  mobileBottom?: boolean;
   bottomOrder?: number;
-  minimumPlan?: "free" | "pro" | "elite";
-  requiredRole?: "user" | "admin";
 };
-
-export type NavContext = {
-  plan?: "free" | "pro" | "professional" | "elite" | "admin";
-  role?: "user" | "pro" | "professional" | "admin";
-  environment?: "development" | "production";
-  entitlements?: string[];
-  featureFlags?: string[];
-};
-
-const PLAN_ORDER = ["free", "pro", "professional", "elite", "admin"] as const;
-function planIndex(p: string | undefined): number {
-  if (!p) return 0;
-  const i = PLAN_ORDER.indexOf(p as (typeof PLAN_ORDER)[number]);
-  return i < 0 ? 0 : i;
-}
-
-function passesContext(it: NavItem, ctx: NavContext): boolean {
-  if (it.minimumPlan && planIndex(ctx.plan) < planIndex(it.minimumPlan)) return false;
-  if (it.requiredRole && ctx.role !== it.requiredRole && ctx.role !== "admin") return false;
-  return true;
-}
-
-export function resolveNavigationForContext(ctx: NavContext = {}): NavItem[] {
-  return NAV_REGISTRY.filter((it) => passesContext(it, ctx)).sort((a, b) => a.order - b.order);
-}
-
-export function resolveDesktopNav(ctx: NavContext = {}): NavItem[] {
-  return resolveNavigationForContext(ctx).filter((it) => it.desktopVisible);
-}
-
-export function resolveMobileDrawerNav(ctx: NavContext = {}): NavItem[] {
-  return resolveNavigationForContext(ctx).filter((it) => it.mobileVisible);
-}
-
-export function resolveMobileBottomNav(ctx: NavContext = {}): NavItem[] {
-  return resolveNavigationForContext(ctx)
-    .filter((it) => it.mobileBottom && it.mobileVisible)
-    .sort((a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999));
-}
 
 export const NAV_REGISTRY: NavItem[] = [
-  // MAIN
+  // CORE
   {
     id: "dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
     to: "/",
-    section: "MAIN",
+    section: "CORE",
     order: 10,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
     mobileBottom: true,
@@ -107,8 +56,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Astro Levels",
     icon: Orbit,
     to: "/astro",
-    section: "MAIN",
+    section: "CORE",
     order: 20,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
     mobileBottom: true,
@@ -119,8 +69,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Live Terminal",
     icon: Radio,
     to: "/live-terminal",
-    section: "MAIN",
+    section: "CORE",
     order: 30,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -129,8 +80,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Market Terminal",
     icon: Activity,
     to: "/live-market-terminal",
-    section: "MAIN",
+    section: "CORE",
     order: 40,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
     mobileBottom: true,
@@ -141,8 +93,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Level Terminal",
     icon: TrendingUp,
     to: "/live-levels",
-    section: "MAIN",
+    section: "CORE",
     order: 50,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -151,30 +104,22 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Decision",
     icon: Brain,
     to: "/decision",
-    section: "MAIN",
+    section: "CORE",
     order: 60,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "risk",
-    label: "Risk",
-    icon: ShieldCheck,
-    to: "/risk",
-    section: "MAIN",
-    order: 70,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
   },
 
-  // RESEARCH
+  // ANALYTICS
   {
     id: "backtest",
     label: "Backtest",
     icon: History,
     to: "/backtest",
-    section: "RESEARCH",
+    section: "ANALYTICS",
     order: 110,
+    status: "RESEARCH",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -183,8 +128,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Signal Accuracy",
     icon: BarChart3,
     to: "/signal-accuracy",
-    section: "RESEARCH",
+    section: "ANALYTICS",
     order: 120,
+    status: "RESEARCH",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -193,60 +139,9 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Market Replay",
     icon: PlayCircle,
     to: "/market-replay",
-    section: "RESEARCH",
+    section: "ANALYTICS",
     order: 130,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "combined-pcr",
-    label: "Combined PCR — Coming Next",
-    icon: Layers,
-    to: "/combined-pcr",
-    section: "RESEARCH",
-    order: 140,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "strategy-analytics",
-    label: "Strategy Analytics",
-    icon: BarChart3,
-    to: "/strategy-analytics",
-    section: "RESEARCH",
-    order: 145,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-
-  // MARKET
-  {
-    id: "option-strategy",
-    label: "NIFTY50 Buying",
-    icon: Target,
-    to: "/option-strategy",
-    section: "MARKET",
-    order: 210,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "market-breadth",
-    label: "Market Breadth",
-    icon: Activity,
-    to: "/market-breadth",
-    section: "MARKET",
-    order: 215,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "options-analytics",
-    label: "Options Analytics",
-    icon: Layers,
-    to: "/options-analytics",
-    section: "MARKET",
-    order: 220,
+    status: "RESEARCH",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -255,48 +150,77 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Options Chain",
     icon: Layers,
     to: "/options-chain",
-    section: "MARKET",
-    order: 225,
+    section: "ANALYTICS",
+    order: 140,
+    status: "PROVIDER_PENDING",
     desktopVisible: true,
     mobileVisible: true,
   },
   {
-    id: "live-option-terminal",
-    label: "Option Strategy Terminal",
+    id: "options-analytics",
+    label: "Options Analytics",
+    icon: Layers,
+    to: "/options-analytics",
+    section: "ANALYTICS",
+    order: 150,
+    status: "PROVIDER_PENDING",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "combined-pcr",
+    label: "Combined PCR",
+    icon: Layers,
+    to: "/combined-pcr",
+    section: "ANALYTICS",
+    order: 155,
+    status: "RESEARCH",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "market-breadth",
+    label: "Market Breadth",
+    icon: Activity,
+    to: "/market-breadth",
+    section: "ANALYTICS",
+    order: 160,
+    status: "PROVIDER_PENDING",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "strategy-analytics",
+    label: "Strategy Analytics",
+    icon: BarChart3,
+    to: "/strategy-analytics",
+    section: "ANALYTICS",
+    order: 170,
+    status: "RESEARCH",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "option-strategy",
+    label: "NIFTY50 Buying",
     icon: Target,
-    to: "/live-option-terminal",
-    section: "MARKET",
-    order: 227,
+    to: "/option-strategy",
+    section: "ANALYTICS",
+    order: 180,
+    status: "LIVE",
     desktopVisible: true,
     mobileVisible: true,
   },
-  {
-    id: "ai-market-assistant",
-    label: "AI Market Assistant",
-    icon: Brain,
-    to: "/ai-market-assistant",
-    section: "MARKET",
-    order: 228,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
+
+  // ALERTS
   {
     id: "alerts",
     label: "Alert Center",
     icon: Bell,
     to: "/alerts",
-    section: "MARKET",
-    order: 229,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "signal-history",
-    label: "Signal History",
-    icon: History,
-    to: "/signal-history",
-    section: "MARKET",
-    order: 231,
+    section: "ALERTS",
+    order: 210,
+    status: "RESEARCH",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -305,8 +229,44 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Telegram Log",
     icon: Radio,
     to: "/telegram-log",
-    section: "MARKET",
-    order: 232,
+    section: "ALERTS",
+    order: 220,
+    status: "RESEARCH",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+
+  // INTELLIGENCE
+  {
+    id: "live-option-terminal",
+    label: "Option Strategy Terminal",
+    icon: Target,
+    to: "/live-option-terminal",
+    section: "INTELLIGENCE",
+    order: 310,
+    status: "LIVE",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "ai-market-assistant",
+    label: "AI Market Assistant",
+    icon: Brain,
+    to: "/ai-market-assistant",
+    section: "INTELLIGENCE",
+    order: 320,
+    status: "RESEARCH",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
+    id: "institutional-flow",
+    label: "Institutional Flow",
+    icon: Activity,
+    to: "/institutional-flow",
+    section: "INTELLIGENCE",
+    order: 330,
+    status: "PROVIDER_PENDING",
     desktopVisible: true,
     mobileVisible: true,
   },
@@ -315,240 +275,35 @@ export const NAV_REGISTRY: NavItem[] = [
     label: "Multi-Asset Intelligence",
     icon: Radio,
     to: "/multi-asset-intelligence",
-    section: "MARKET",
-    order: 233,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "institutional-intelligence",
-    label: "Institutional Intelligence",
-    icon: Activity,
-    to: "/institutional-intelligence",
-    section: "MARKET",
-    order: 234,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "broker",
-    label: "Broker",
-    icon: Plug,
-    to: "/broker",
-    section: "MARKET",
-    order: 230,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-
-  // ACCOUNT
-  {
-    id: "profile",
-    label: "Profile",
-    icon: UserIcon,
-    to: "/profile",
-    section: "ACCOUNT",
-    order: 310,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    icon: Bell,
-    to: "/notifications",
-    section: "ACCOUNT",
-    order: 309,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "referrals",
-    label: "Referrals",
-    icon: KeyRound,
-    to: "/referrals",
-    section: "ACCOUNT",
-    order: 311,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "admin-launch-readiness",
-    label: "Launch Readiness",
-    icon: ShieldCheck,
-    to: "/admin/launch-readiness",
-    section: "ACCOUNT",
-    order: 305,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "admin-referrals",
-    label: "Referrals (Admin)",
-    icon: KeyRound,
-    to: "/admin/referrals",
-    section: "ACCOUNT",
-    order: 304,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "admin-system-status",
-    label: "System Status",
-    icon: Activity,
-    to: "/admin/system-status",
-    section: "ACCOUNT",
-    order: 306,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "admin-beta-readiness",
-    label: "Beta Readiness",
-    icon: ShieldCheck,
-    to: "/admin/beta-readiness",
-    section: "ACCOUNT",
-    order: 307,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "admin-alerts",
-    label: "Smart Alerts (Admin)",
-    icon: Bell,
-    to: "/admin/alerts",
-    section: "ACCOUNT",
-    order: 308,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "admin-widgets",
-    label: "Widget Toggles",
-    icon: Settings,
-    to: "/admin/widgets",
-    section: "ACCOUNT",
-    order: 309,
-    desktopVisible: true,
-    mobileVisible: true,
-    requiredRole: "admin",
-  },
-  {
-    id: "license",
-    label: "License",
-    icon: KeyRound,
-    to: "/license",
-    section: "ACCOUNT",
-    order: 320,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "billing",
-    label: "Billing",
-    icon: ScrollText,
-    to: "/billing",
-    section: "ACCOUNT",
-    order: 330,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "pricing",
-    label: "Pricing",
-    icon: FileBarChart,
-    to: "/pricing",
-    section: "ACCOUNT",
+    section: "INTELLIGENCE",
     order: 340,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
-    to: "/settings",
-    section: "ACCOUNT",
-    order: 350,
+    status: "RESEARCH",
     desktopVisible: true,
     mobileVisible: true,
   },
 
-  // Anchor shortcuts (hash links) — still available in both menus.
+  // SYSTEM
   {
-    id: "planets",
-    label: "Planets",
-    icon: Globe2,
-    href: "#planets",
-    section: "MARKET",
+    id: "status",
+    label: "System Status",
+    icon: ShieldCheck,
+    to: "/status",
+    section: "SYSTEM",
     order: 410,
+    status: "INTERNAL",
     desktopVisible: true,
-    mobileVisible: true,
+    mobileVisible: false,
   },
   {
-    id: "nakshatra",
-    label: "Nakshatra",
-    icon: Sparkles,
-    href: "#nakshatra",
-    section: "MARKET",
+    id: "provider-health",
+    label: "Provider Health",
+    icon: ShieldCheck,
+    to: "/admin/providers",
+    section: "SYSTEM",
     order: 420,
+    status: "INTERNAL",
     desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "support-resistance",
-    label: "Support / Resistance",
-    icon: TrendingUp,
-    href: "#levels",
-    section: "MARKET",
-    order: 430,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "signals",
-    label: "Signals",
-    icon: Radar,
-    href: "#signals",
-    section: "MARKET",
-    order: 440,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "analysis",
-    label: "Analysis",
-    icon: LineChart,
-    href: "#analysis",
-    section: "MARKET",
-    order: 450,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "reports",
-    label: "Reports",
-    icon: FileBarChart,
-    href: "#reports",
-    section: "MARKET",
-    order: 460,
-    desktopVisible: true,
-    mobileVisible: true,
-  },
-  {
-    id: "market-mini",
-    label: "Market",
-    icon: CandlestickChart,
-    to: "/live-levels",
-    section: "MARKET",
-    order: 470,
-    desktopVisible: true,
-    mobileVisible: true,
+    mobileVisible: false,
   },
 ];
 
@@ -564,4 +319,19 @@ export function mobileBottomNav(): NavItem[] {
   return NAV_REGISTRY.filter((it) => it.mobileBottom && it.mobileVisible).sort(
     (a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999),
   );
+}
+
+// Backward-compatible exports (personal terminal — all items visible)
+export type NavContext = Record<string, never>;
+export function resolveNavigationForContext(_ctx: NavContext = {}): NavItem[] {
+  return NAV_REGISTRY.sort((a, b) => a.order - b.order);
+}
+export function resolveDesktopNav(_ctx: NavContext = {}): NavItem[] {
+  return desktopNav();
+}
+export function resolveMobileDrawerNav(_ctx: NavContext = {}): NavItem[] {
+  return mobileDrawerNav();
+}
+export function resolveMobileBottomNav(_ctx: NavContext = {}): NavItem[] {
+  return mobileBottomNav();
 }
