@@ -6,3 +6,14 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+services
+docs
+.git
+src/lib/astro-engine.server.ts
+src/lib/astro-levels.ts
+src/lib/levels.ts
+src/lib/backtest-engine.ts
+src/lib/strategy-math.ts
+src/lib/gann-cube-engine.ts
+src/lib/fvg-engine.ts
+src/lib/astro-constants.ts
