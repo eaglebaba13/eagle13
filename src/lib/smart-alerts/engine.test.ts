@@ -42,8 +42,8 @@ function baseCtx(overrides: Partial<AlertEvaluationContext> = {}): AlertEvaluati
 }
 
 describe("smart-alerts engine", () => {
-  it("emits nothing on first evaluation (no prior state)", () => {
-    const r = runAlertEngine({
+  it("emits nothing on first evaluation (no prior state)", async () => {
+    const r = await runAlertEngine({
       context: baseCtx(),
       checkpoint: emptyCheckpoint("u1", "2026-07-17T04:30:00.000Z"),
       subscription: defaultSubscription("u1"),
@@ -51,9 +51,9 @@ describe("smart-alerts engine", () => {
     expect(r.emitted).toHaveLength(0);
   });
 
-  it("emits DECISION_CHANGED on bias flip and dedupes on repeat", () => {
+  it("emits DECISION_CHANGED on bias flip and dedupes on repeat", async () => {
     const ctx1 = baseCtx();
-    const first = runAlertEngine({
+    const first = await runAlertEngine({
       context: ctx1,
       checkpoint: emptyCheckpoint("u1", ctx1.generatedAt),
       subscription: defaultSubscription("u1"),
@@ -62,7 +62,7 @@ describe("smart-alerts engine", () => {
       decision: { available: true, action: "SELL", bias: "BEARISH", freshness: "LIVE" },
       generatedAt: "2026-07-17T04:31:00.000Z",
     });
-    const second = runAlertEngine({
+    const second = await runAlertEngine({
       context: ctx2,
       checkpoint: first.nextCheckpoint,
       subscription: defaultSubscription("u1"),
@@ -70,7 +70,7 @@ describe("smart-alerts engine", () => {
     const types = second.emitted.map((e) => e.type);
     expect(types).toContain("DECISION_CHANGED");
     // Repeat with identical context — must dedupe.
-    const third = runAlertEngine({
+    const third = await runAlertEngine({
       context: ctx2,
       checkpoint: second.nextCheckpoint,
       subscription: defaultSubscription("u1"),
@@ -78,9 +78,9 @@ describe("smart-alerts engine", () => {
     expect(third.emitted.map((e) => e.type)).not.toContain("DECISION_CHANGED");
   });
 
-  it("redacts execution-oriented wording via guardrails", () => {
+  it("redacts execution-oriented wording via guardrails", async () => {
     const ctx1 = baseCtx();
-    const first = runAlertEngine({
+    const first = await runAlertEngine({
       context: ctx1,
       checkpoint: emptyCheckpoint("u1", ctx1.generatedAt),
       subscription: defaultSubscription("u1"),
@@ -89,7 +89,7 @@ describe("smart-alerts engine", () => {
       decision: { available: true, action: "SELL", bias: "BEARISH", freshness: "LIVE" },
       generatedAt: "2026-07-17T04:31:00.000Z",
     });
-    const second = runAlertEngine({
+    const second = await runAlertEngine({
       context: ctx2,
       checkpoint: first.nextCheckpoint,
       subscription: defaultSubscription("u1"),
@@ -102,8 +102,8 @@ describe("smart-alerts engine", () => {
     }
   });
 
-  it("clamps CRITICAL to HIGH for market-signal alert types", () => {
-    const r = runAlertEngine({
+  it("clamps CRITICAL to HIGH for market-signal alert types", async () => {
+    const r = await runAlertEngine({
       context: baseCtx(),
       checkpoint: emptyCheckpoint("u1", "2026-07-17T04:30:00.000Z"),
       subscription: defaultSubscription("u1"),

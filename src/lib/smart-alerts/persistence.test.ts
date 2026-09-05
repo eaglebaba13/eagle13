@@ -42,8 +42,8 @@ function ctx(now = "2026-07-17T04:30:00.000Z"): AlertEvaluationContext {
 }
 
 describe("smart-alerts persistence (pure)", () => {
-  it("engine output rows serialize to strings suitable for DB insert", () => {
-    const first = runAlertEngine({
+  it("engine output rows serialize to strings suitable for DB insert", async () => {
+    const first = await runAlertEngine({
       context: ctx(),
       checkpoint: emptyCheckpoint("u1", "2026-07-17T04:30:00.000Z"),
       subscription: defaultSubscription("u1"),
@@ -52,7 +52,7 @@ describe("smart-alerts persistence (pure)", () => {
       ...ctx("2026-07-17T04:31:00.000Z"),
       decision: { available: true, action: "BUY_PE", bias: "BEARISH", freshness: "LIVE" },
     };
-    const second = runAlertEngine({
+    const second = await runAlertEngine({
       context: flipped,
       checkpoint: first.nextCheckpoint,
       subscription: defaultSubscription("u1"),
@@ -69,14 +69,14 @@ describe("smart-alerts persistence (pure)", () => {
     }
   });
 
-  it("checkpoint round-trip via JSON preserves dedupe behaviour", () => {
-    const first = runAlertEngine({
+  it("checkpoint round-trip via JSON preserves dedupe behaviour", async () => {
+    const first = await runAlertEngine({
       context: ctx(),
       checkpoint: emptyCheckpoint("u1", "2026-07-17T04:30:00.000Z"),
       subscription: defaultSubscription("u1"),
     });
     const roundTripped = JSON.parse(JSON.stringify(first.nextCheckpoint));
-    const second = runAlertEngine({
+    const second = await runAlertEngine({
       context: ctx("2026-07-17T04:31:00.000Z"),
       checkpoint: roundTripped,
       subscription: defaultSubscription("u1"),

@@ -591,7 +591,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       throw err;
     }
 
-    const out = runAlertEngine({ context: ctx, checkpoint, subscription });
+    const out = await runAlertEngine({ context: ctx, checkpoint, subscription });
 
     // Persist events (idempotent via unique (user_id, fingerprint) constraint).
     // Track any failure so the checkpoint is NOT advanced if event

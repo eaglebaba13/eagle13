@@ -30,7 +30,7 @@ export interface RunAlertsInput {
   readonly providers?: readonly AlertDeliveryProvider[];
 }
 
-export function runAlertEngine(input: RunAlertsInput): RuleEvaluationOutput {
+export async function runAlertEngine(input: RunAlertsInput): Promise<RuleEvaluationOutput> {
   const t0 = Date.now();
   const cfg = input.config ?? DEFAULT_RULE_CONFIG;
   const ctx = input.context;
@@ -84,7 +84,7 @@ export function runAlertEngine(input: RunAlertsInput): RuleEvaluationOutput {
       continue;
     }
 
-    const attempts = deliverEvent(evt, sub, ctx.generatedAt, providers);
+    const attempts = await deliverEvent(evt, sub, ctx.generatedAt, providers);
     const delivered: AlertEvent = { ...evt, deliveryStatus: attempts };
     emitted.push(delivered);
     cp = mergeCheckpointAfterEmit(cp, delivered, ctx.generatedAt);
