@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { classifyVixRegime, recommendStrikeRegime } from "./strike-regime";
 import { mergeDirection } from "./direction";
 import { runStrategyEngine, STRATEGY_CATALOGUE } from "./strategies";
@@ -146,7 +147,7 @@ describe("Explanation & determinism", () => {
 
 describe("No broker imports", () => {
   it("terminal module never imports broker code", () => {
-    const dir = new URL(".", import.meta.url).pathname;
+    const dir = fileURLToPath(new URL(".", import.meta.url));
     for (const f of readdirSync(dir)) {
       if (!f.endsWith(".ts") || f.endsWith(".test.ts")) continue;
       const src = readFileSync(join(dir, f), "utf-8");

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 
 function walk(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -20,7 +20,7 @@ const BANNED = /\b(BUY|SELL|LONG|SHORT|GO LONG|GO SHORT|ORDER|POSITION SIZE)\b/;
 describe("Gann Gap module — no broker wording", () => {
   const root = "src/lib/gann-gap";
   const skip = new Set(["no-broker-wording.test.ts"]);
-  const files = walk(root).filter((f) => !skip.has(f.split("/").pop()!));
+  const files = walk(root).filter((f) => !skip.has(basename(f)));
   for (const f of files) {
     it(`${f} contains no BUY/SELL/LONG/SHORT wording`, () => {
       const src = readFileSync(f, "utf8");
