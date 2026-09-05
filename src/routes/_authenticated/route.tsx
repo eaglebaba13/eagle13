@@ -1,17 +1,11 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 /**
- * Protected subtree. `ssr: false` because Supabase stores its session in
- * localStorage — the server can't see it, so we gate client-side and let
- * unauthenticated users bounce to `/auth`.
+ * Route group for authenticated/research pages.
+ * Authentication is disabled for the personal research terminal.
+ * All routes are accessible without sign-in.
  */
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
-  },
   component: () => <Outlet />,
 });

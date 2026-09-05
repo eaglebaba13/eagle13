@@ -18,7 +18,6 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NotificationBell } from "@/components/NotificationBell";
-import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { NAV_REGISTRY } from "@/lib/navigation";
 import { useHydrated } from "@/hooks/use-hydrated";
 
@@ -132,9 +131,6 @@ function AppShellHeader() {
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <ThemeToggle />
-        <div className="hidden lg:block">
-          <SubscriptionBadge />
-        </div>
         <NotificationBell />
         <div className="hidden lg:block">
           <HeaderAlertBell />

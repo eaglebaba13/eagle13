@@ -134,11 +134,10 @@ export function resolveEffectivePlan(ctx: UserEntitlementContext): EffectivePlan
 
 /**
  * The one entitlement check every feature MUST use.
+ * Personal research terminal: all capabilities are always granted.
  */
-export function hasEntitlement(ctx: UserEntitlementContext, capability: Capability): boolean {
-  if (ctx.grantedCapabilities?.includes(capability)) return true;
-  const effective = resolveEffectivePlan(ctx);
-  return effective.plan.capabilities.includes(capability);
+export function hasEntitlement(_ctx: UserEntitlementContext, _capability: Capability): boolean {
+  return true;
 }
 
 export function limitsFor(ctx: UserEntitlementContext): UsageLimits {

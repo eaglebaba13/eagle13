@@ -27,24 +27,26 @@ function ctx(over: Partial<UserEntitlementContext> = {}): UserEntitlementContext
 }
 
 describe("entitlements", () => {
-  it("free role without subscription cannot access premium", () => {
-    expect(hasEntitlement(ctx(), "decision.intelligence")).toBe(false);
+  it("personal terminal grants all capabilities regardless of subscription", () => {
+    expect(hasEntitlement(ctx(), "decision.intelligence")).toBe(true);
     expect(hasEntitlement(ctx(), "dashboard.basic")).toBe(true);
+    expect(hasEntitlement(ctx(), "market.terminal")).toBe(true);
+    expect(hasEntitlement(ctx(), "broker.live")).toBe(true);
   });
 
-  it("active pro subscription unlocks pro capabilities", () => {
+  it("active pro subscription still resolves plan correctly", () => {
     const c = ctx({ subscription: sub({ plan: "pro", status: "active" }) });
     expect(hasEntitlement(c, "market.terminal")).toBe(true);
-    expect(hasEntitlement(c, "decision.intelligence")).toBe(false);
+    expect(hasEntitlement(c, "decision.intelligence")).toBe(true);
   });
 
-  it("active professional subscription unlocks decision intelligence", () => {
+  it("active professional subscription still resolves plan correctly", () => {
     const c = ctx({ subscription: sub({ plan: "professional", status: "active" }) });
     expect(hasEntitlement(c, "decision.intelligence")).toBe(true);
-    expect(hasEntitlement(c, "broker.live")).toBe(false);
+    expect(hasEntitlement(c, "broker.live")).toBe(true);
   });
 
-  it("trialing plan unlocks premium features until trial ends", () => {
+  it("trialing plan grants access", () => {
     const trialing = ctx({
       subscription: sub({
         plan: "professional",
@@ -60,12 +62,12 @@ describe("entitlements", () => {
         trialEnd: new Date("2026-07-13T00:00:00Z"),
       }),
     });
-    expect(hasEntitlement(expired, "options.analytics")).toBe(false);
+    expect(hasEntitlement(expired, "options.analytics")).toBe(true);
   });
 
-  it("canceled subscription falls back to free", () => {
+  it("canceled subscription still grants access in personal terminal", () => {
     const c = ctx({ subscription: sub({ plan: "professional", status: "canceled" }) });
-    expect(hasEntitlement(c, "options.analytics")).toBe(false);
+    expect(hasEntitlement(c, "options.analytics")).toBe(true);
     expect(resolveEffectivePlan(c).planId).toBe("free");
   });
 
@@ -74,9 +76,9 @@ describe("entitlements", () => {
     expect(hasEntitlement(c, "market.terminal")).toBe(true);
   });
 
-  it("expired subscription falls back to free", () => {
+  it("expired subscription still grants access in personal terminal", () => {
     const c = ctx({ subscription: sub({ plan: "pro", status: "expired" }) });
-    expect(hasEntitlement(c, "market.terminal")).toBe(false);
+    expect(hasEntitlement(c, "market.terminal")).toBe(true);
   });
 
   it("admin role bypasses all plan checks", () => {
