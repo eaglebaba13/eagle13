@@ -16,12 +16,7 @@ export type ProviderErrorCategory =
   | "InvalidResponse"
   | "UnexpectedApplicationError";
 
-export type ProviderRequestStage =
-  | "connect"
-  | "response"
-  | "parse"
-  | "validate"
-  | "unknown";
+export type ProviderRequestStage = "connect" | "response" | "parse" | "validate" | "unknown";
 
 export interface ProviderErrorDiagnostics {
   readonly provider: string;
@@ -64,12 +59,7 @@ export function categorizeHttpStatus(status: number): ProviderErrorCategory {
 }
 
 export function categorizeFetchFailure(err: unknown): ProviderErrorCategory {
-  const msg =
-    err instanceof Error
-      ? err.message
-      : typeof err === "string"
-        ? err
-        : "";
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
   if (/aborted|AbortError|timeout|timed out/i.test(msg)) return "NetworkTimeout";
   return "ProviderUnavailable";
 }

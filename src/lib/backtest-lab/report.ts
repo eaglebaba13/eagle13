@@ -1,6 +1,13 @@
 // Phase 3G — Report builder + safe exports.
 
-import type { BacktestRunReport, HistoricalCandle, MonteCarloSummary, SimulatedTrade, StrategyDefinition, WalkForwardSummary } from "./types";
+import type {
+  BacktestRunReport,
+  HistoricalCandle,
+  MonteCarloSummary,
+  SimulatedTrade,
+  StrategyDefinition,
+  WalkForwardSummary,
+} from "./types";
 import { BACKTEST_LAB_DISCLAIMER, BACKTEST_LAB_SCHEMA_VERSION } from "./types";
 import { simulate } from "./trade-engine";
 import { buildEquityCurve, computeMetrics } from "./performance";
@@ -18,7 +25,12 @@ export function buildBacktestRunReport(input: BuildReportInput): BacktestRunRepo
   const s = simulate(input.strategy, input.candles);
   const trades: readonly SimulatedTrade[] = s.trades;
   const equity = buildEquityCurve(trades, input.strategy.capital);
-  const metrics = computeMetrics(trades, input.strategy.capital, input.strategy.from, input.strategy.to);
+  const metrics = computeMetrics(
+    trades,
+    input.strategy.capital,
+    input.strategy.from,
+    input.strategy.to,
+  );
   const warnings = [...s.warnings];
   if (metrics.sampleWarning !== "OK") warnings.push(`SAMPLE:${metrics.sampleWarning}`);
   const blockingReasons: string[] = [];
@@ -62,11 +74,28 @@ export function buildBacktestRunReport(input: BuildReportInput): BacktestRunRepo
 
 // ── Safe exports (redact any surprise fields) ────────────────────────
 const ALLOWLIST_TRADE_FIELDS: readonly (keyof SimulatedTrade)[] = [
-  "tradeId", "strategyId", "symbol", "direction",
-  "entryTs", "exitTs", "entryPrice", "exitPrice", "quantity",
-  "stop", "target", "grossPnl", "netPnl", "returnPct",
-  "fees", "slippage", "mfe", "mae", "holdingBars",
-  "entryReason", "exitReason", "ambiguous",
+  "tradeId",
+  "strategyId",
+  "symbol",
+  "direction",
+  "entryTs",
+  "exitTs",
+  "entryPrice",
+  "exitPrice",
+  "quantity",
+  "stop",
+  "target",
+  "grossPnl",
+  "netPnl",
+  "returnPct",
+  "fees",
+  "slippage",
+  "mfe",
+  "mae",
+  "holdingBars",
+  "entryReason",
+  "exitReason",
+  "ambiguous",
 ];
 
 export function exportRunJson(report: BacktestRunReport): string {

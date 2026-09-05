@@ -57,13 +57,7 @@ export function ThemeToggle() {
         lineHeight: 1,
       }}
     >
-      {!mounted ? (
-        <Moon size={15} />
-      ) : isDark ? (
-        <Sun size={15} />
-      ) : (
-        <Moon size={15} />
-      )}
+      {!mounted ? <Moon size={15} /> : isDark ? <Sun size={15} /> : <Moon size={15} />}
       <span suppressHydrationWarning>{!mounted ? "" : isDark ? "DAY" : "NIGHT"}</span>
     </button>
   );

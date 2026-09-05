@@ -5,10 +5,7 @@
 import type { ParsedCandle } from "./candle-csv-parser";
 import { groupBySessionDate } from "./candle-data-quality";
 import type { TimedCandle5m } from "./gann-intraday-touch";
-import {
-  GANN_ABSOLUTE_INTRADAY_INGEST_VERSION,
-  INTRADAY_FORMULA_VERSIONS,
-} from "./engine-version";
+import { GANN_ABSOLUTE_INTRADAY_INGEST_VERSION, INTRADAY_FORMULA_VERSIONS } from "./engine-version";
 
 export type BuiltSession = {
   tradingDate: string;

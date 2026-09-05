@@ -1,16 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
-import {
-  Menu as MenuIcon,
-  X,
-} from "lucide-react";
+import { Menu as MenuIcon, X } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
-import {
-  mobileBottomNav,
-  mobileDrawerNav,
-  type NavItem,
-} from "@/lib/navigation";
+import { mobileBottomNav, mobileDrawerNav, type NavItem } from "@/lib/navigation";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";

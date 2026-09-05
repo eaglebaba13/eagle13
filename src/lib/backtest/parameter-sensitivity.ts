@@ -33,11 +33,7 @@ export type SensitivityCell = {
 };
 
 export type SensitivityClassification =
-  | "STABLE_PLATEAU"
-  | "NARROW_OPTIMUM"
-  | "MONOTONIC"
-  | "ERRATIC"
-  | "INSUFFICIENT_DATA";
+  "STABLE_PLATEAU" | "NARROW_OPTIMUM" | "MONOTONIC" | "ERRATIC" | "INSUFFICIENT_DATA";
 
 export type SensitivitySurface = {
   readonly primaryMetric: keyof SensitivityMetrics;
@@ -58,7 +54,8 @@ function nearlyEqual(a: number, b: number, eps: number): boolean {
 export function generateParameterGrid(specs: readonly ParameterSpec[]): ParameterCombination[] {
   if (specs.length === 0) return [{}];
   const axes: Array<{ name: string; values: number[] }> = specs.map((s) => {
-    if (s.step <= 0 || s.max < s.min) throw new Error(`INVALID_GRID: ${s.name} min=${s.min} max=${s.max} step=${s.step}`);
+    if (s.step <= 0 || s.max < s.min)
+      throw new Error(`INVALID_GRID: ${s.name} min=${s.min} max=${s.max} step=${s.step}`);
     const vals: number[] = [];
     for (let v = s.min; v <= s.max + 1e-9; v += s.step) vals.push(Number(v.toFixed(6)));
     return { name: s.name, values: vals };
@@ -73,7 +70,8 @@ export function generateParameterGrid(specs: readonly ParameterSpec[]): Paramete
     while (k >= 0) {
       cursor[k]++;
       if (cursor[k] < axes[k].values.length) break;
-      cursor[k] = 0; k--;
+      cursor[k] = 0;
+      k--;
     }
     if (k < 0) break;
   }
@@ -90,7 +88,11 @@ export async function runParameterSensitivity(
     try {
       const metrics = await runFn(params);
       if (!metrics || metrics.trades < 5) {
-        cells.push({ params, metrics: null, reason: metrics ? `INSUFFICIENT_DATA: trades=${metrics.trades}` : "NO_METRICS" });
+        cells.push({
+          params,
+          metrics: null,
+          reason: metrics ? `INSUFFICIENT_DATA: trades=${metrics.trades}` : "NO_METRICS",
+        });
       } else {
         cells.push({ params, metrics });
       }
@@ -106,14 +108,18 @@ export function classifySensitivitySurface(
   cells: readonly SensitivityCell[],
   metric: keyof SensitivityMetrics = "expectancy",
 ): SensitivitySurface {
-  const valid = cells.filter((c): c is SensitivityCell & { metrics: SensitivityMetrics } => c.metrics !== null);
+  const valid = cells.filter(
+    (c): c is SensitivityCell & { metrics: SensitivityMetrics } => c.metrics !== null,
+  );
   if (valid.length < 3) {
     return {
       primaryMetric: metric,
       classification: "INSUFFICIENT_DATA",
-      bestParams: null, worstParams: null,
+      bestParams: null,
+      worstParams: null,
       stabilityBand: { p25: 0, p50: 0, p75: 0 },
-      meanValue: 0, stdDev: 0,
+      meanValue: 0,
+      stdDev: 0,
       reason: `INSUFFICIENT_DATA: only ${valid.length} valid parameter cells (need ≥ 3)`,
     };
   }
@@ -130,8 +136,11 @@ export function classifySensitivitySurface(
 
   // Monotonic: strictly increasing/decreasing when ordered by the first param axis.
   const firstKey = Object.keys(valid[0].params)[0];
-  const orderedByFirst = [...valid].sort((a, b) => (a.params[firstKey] ?? 0) - (b.params[firstKey] ?? 0));
-  let inc = 0, dec = 0;
+  const orderedByFirst = [...valid].sort(
+    (a, b) => (a.params[firstKey] ?? 0) - (b.params[firstKey] ?? 0),
+  );
+  let inc = 0,
+    dec = 0;
   for (let i = 1; i < orderedByFirst.length; i++) {
     const prev = orderedByFirst[i - 1].metrics[metric] as number;
     const curr = orderedByFirst[i].metrics[metric] as number;
@@ -144,7 +153,8 @@ export function classifySensitivitySurface(
   // Plateau: many values close to the top.
   const top = sorted[sorted.length - 1];
   const secondTop = sorted.length >= 2 ? sorted[sorted.length - 2] : top;
-  const peakDominance = Math.abs(secondTop) > 1e-9 ? Math.abs(top) / Math.abs(secondTop) : (top !== 0 ? Infinity : 1);
+  const peakDominance =
+    Math.abs(secondTop) > 1e-9 ? Math.abs(top) / Math.abs(secondTop) : top !== 0 ? Infinity : 1;
   const eps = Math.max(1e-9, Math.abs(top) * 0.1);
   const plateauCount = values.filter((v) => nearlyEqual(v, top, eps)).length;
   const plateauFrac = plateauCount / values.length;
@@ -206,10 +216,17 @@ export function computeSensitivityRunId(input: {
   to: string;
   dataHash: string;
 }): string {
-  const gridKey = input.grid
-    .map((s) => `${s.name}:${s.min}:${s.max}:${s.step}`)
-    .join(",");
-  const key = [input.baseRunId, input.researchRunId ?? "", input.strategy, input.formula, gridKey, input.from, input.to, input.dataHash].join("|");
+  const gridKey = input.grid.map((s) => `${s.name}:${s.min}:${s.max}:${s.step}`).join(",");
+  const key = [
+    input.baseRunId,
+    input.researchRunId ?? "",
+    input.strategy,
+    input.formula,
+    gridKey,
+    input.from,
+    input.to,
+    input.dataHash,
+  ].join("|");
   return `SENSITIVITY_V1:${fnv1a(key)}`;
 }
 

@@ -4,7 +4,11 @@ import { getInstrument } from "./instruments";
 import type { SelectedCandle } from "./daily-candle";
 
 const candle: SelectedCandle = {
-  open: 100, high: 110, low: 95, close: 105, volume: 1000,
+  open: 100,
+  high: 110,
+  low: 95,
+  close: 105,
+  volume: 1000,
   candleOpenTime: "2026-07-21T00:00:00.000Z",
   candleCloseTime: "2026-07-22T00:00:00.000Z",
   providerTimezone: "Asia/Kolkata",
@@ -30,7 +34,7 @@ describe("buildLevelBundle", () => {
   });
 
   it("marks Gann UNAVAILABLE for metals/crypto per Phase 44B spec", () => {
-    for (const id of ["GOLD","SILVER","XAUUSD","XAGUSD","BTC","ETH"] as const) {
+    for (const id of ["GOLD", "SILVER", "XAUUSD", "XAGUSD", "BTC", "ETH"] as const) {
       const b = buildLevelBundle(getInstrument(id), { ...candle, session24x7: true });
       expect(b.gann.status).toBe("UNAVAILABLE");
       expect(b.gann.up).toBeNull();

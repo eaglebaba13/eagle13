@@ -74,11 +74,7 @@ export function subscribeResearchPayload(fn: Listener): () => void {
 
 /** React hook that returns the current published payload (SSR-safe). */
 export function useResearchPayload(): PublishedResearchPayload | null {
-  return useSyncExternalStore(
-    subscribeResearchPayload,
-    getResearchPayload,
-    () => null,
-  );
+  return useSyncExternalStore(subscribeResearchPayload, getResearchPayload, () => null);
 }
 
 /** Convenience hook used only inside SMC / Hybrid panels to publish on mount+deps. */

@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildComparisonMatrixCsv,
-  buildResearchJson,
-} from "./research-exports";
+import { buildComparisonMatrixCsv, buildResearchJson } from "./research-exports";
 import {
   buildResearchComparison,
   buildStrategyRow,
@@ -14,10 +11,21 @@ import type { HistoricalBacktestResult } from "./result";
 const stubResult = {} as unknown as HistoricalBacktestResult;
 function m(over: Partial<WindowMetrics> = {}): WindowMetrics {
   return {
-    tradeCount: 30, winCount: 18, lossCount: 12, winRate: 60,
-    profitFactor: 2, netPnl: 100, expectancy: 3, drawdown: 20,
-    drawdownPct: 5, avgTrade: 3, returnPct: 100, recovery: 5,
-    longCount: 15, shortCount: 15, ...over,
+    tradeCount: 30,
+    winCount: 18,
+    lossCount: 12,
+    winRate: 60,
+    profitFactor: 2,
+    netPnl: 100,
+    expectancy: 3,
+    drawdown: 20,
+    drawdownPct: 5,
+    avgTrade: 3,
+    returnPct: 100,
+    recovery: 5,
+    longCount: 15,
+    shortCount: 15,
+    ...over,
   };
 }
 function wfr() {
@@ -25,10 +33,25 @@ function wfr() {
     config: { from: "2024-01-01", to: "2024-01-30", mode: "70_30" as const },
     windows: [
       {
-        window: { index: 0, training: { from: "2024-01-01", to: "2024-01-20" }, validation: { from: "2024-01-21", to: "2024-01-30" } },
-        training: stubResult, validation: stubResult,
-        trainingMetrics: m(), validationMetrics: m(),
-        degradation: { winRate: 0, profitFactor: 0, expectancy: 0, netPnl: 0, drawdown: 0, recovery: 0, avgTrade: 0, tradeCount: 0 },
+        window: {
+          index: 0,
+          training: { from: "2024-01-01", to: "2024-01-20" },
+          validation: { from: "2024-01-21", to: "2024-01-30" },
+        },
+        training: stubResult,
+        validation: stubResult,
+        trainingMetrics: m(),
+        validationMetrics: m(),
+        degradation: {
+          winRate: 0,
+          profitFactor: 0,
+          expectancy: 0,
+          netPnl: 0,
+          drawdown: 0,
+          recovery: 0,
+          avgTrade: 0,
+          tradeCount: 0,
+        },
       },
     ],
   };

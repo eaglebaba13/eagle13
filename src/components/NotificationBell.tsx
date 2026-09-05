@@ -117,16 +117,19 @@ export function NotificationBell() {
             </button>
           </header>
           <div className="max-h-[380px] overflow-y-auto">
-            {preview.isLoading && (
-              <div className="p-3 text-xs text-muted-foreground">Loading…</div>
-            )}
+            {preview.isLoading && <div className="p-3 text-xs text-muted-foreground">Loading…</div>}
             {preview.data && preview.data.length === 0 && (
               <div className="p-4 text-center text-xs text-muted-foreground">
                 You're all caught up.
               </div>
             )}
             {(preview.data ?? []).map((r) => (
-              <NotifRow key={r.id} row={r} onOpen={(id) => readOne.mutate(id)} onClose={() => setOpen(false)} />
+              <NotifRow
+                key={r.id}
+                row={r}
+                onOpen={(id) => readOne.mutate(id)}
+                onClose={() => setOpen(false)}
+              />
             ))}
           </div>
           <footer className="border-t border-border/60">
@@ -169,9 +172,7 @@ function NotifRow({
         <span className={`rounded border px-1 py-[1px] text-[10px] ${tone}`}>{label}</span>
         <span className="truncate font-medium text-foreground">{row.title}</span>
       </div>
-      {row.body ? (
-        <p className="mt-0.5 line-clamp-2 text-muted-foreground">{row.body}</p>
-      ) : null}
+      {row.body ? <p className="mt-0.5 line-clamp-2 text-muted-foreground">{row.body}</p> : null}
     </Link>
   );
 }

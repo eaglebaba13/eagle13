@@ -39,7 +39,10 @@ function base(overrides: Partial<InstitutionalFlowEngineInput> = {}): Institutio
     decisionAction: "BUY_CALL",
     decisionConfidence: 78,
     strikeRecommended: {
-      strike: 24800, type: "CE", moneyness: "ATM", available: true,
+      strike: 24800,
+      type: "CE",
+      moneyness: "ATM",
+      available: true,
     },
     dataFreshness: "FRESH",
     providerHealth: "OK",
@@ -52,7 +55,9 @@ describe("Institutional Flow & Probability Engine", () => {
   it("aggregates a bullish scenario", () => {
     const out = computeInstitutionalFlow(base());
     expect(out.combinedPcr.available).toBe(true);
-    expect(out.combinedPcr.contributions.find((c) => c.index === "NIFTY")?.contributionPct).toBe(60);
+    expect(out.combinedPcr.contributions.find((c) => c.index === "NIFTY")?.contributionPct).toBe(
+      60,
+    );
     expect(out.combinedPcr.contributions.find((c) => c.index === "SENSEX")?.available).toBe(false);
     expect(out.oiClassifier.classification).toBe("LONG_BUILDUP");
     expect(out.institutionalFlow.bias).toBe("BULLISH");
@@ -71,20 +76,28 @@ describe("Institutional Flow & Probability Engine", () => {
   });
 
   it("degrades quality when critical inputs missing", () => {
-    const out = computeInstitutionalFlow(base({
-      combinedPcrBias: "UNAVAILABLE",
-      combinedPcrValue: null,
-      combinedPcrScore: null,
-      oi: { totalCallChangeOi: null, totalPutChangeOi: null, priceChange: null, buildUp: null, available: false },
-      sectors: [],
-      breadthNet: null,
-      institutionalFlowAvailable: false,
-      institutionalFlowBias: "UNAVAILABLE",
-      dataFreshness: "STALE",
-      providerHealth: "DEGRADED",
-      strikeRecommended: { strike: null, type: null, moneyness: null, available: false },
-      decisionAction: "NO_TRADE",
-    }));
+    const out = computeInstitutionalFlow(
+      base({
+        combinedPcrBias: "UNAVAILABLE",
+        combinedPcrValue: null,
+        combinedPcrScore: null,
+        oi: {
+          totalCallChangeOi: null,
+          totalPutChangeOi: null,
+          priceChange: null,
+          buildUp: null,
+          available: false,
+        },
+        sectors: [],
+        breadthNet: null,
+        institutionalFlowAvailable: false,
+        institutionalFlowBias: "UNAVAILABLE",
+        dataFreshness: "STALE",
+        providerHealth: "DEGRADED",
+        strikeRecommended: { strike: null, type: null, moneyness: null, available: false },
+        decisionAction: "NO_TRADE",
+      }),
+    );
     expect(out.dataQuality.overall === "WARNING" || out.dataQuality.overall === "POOR").toBe(true);
     expect(out.strikeAdvice.available).toBe(false);
   });

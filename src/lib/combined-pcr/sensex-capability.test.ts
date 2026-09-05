@@ -5,9 +5,7 @@ import { makeStrike } from "../option-chain/types";
 
 function snap(overrides: Partial<OptionChainSnapshot> = {}): OptionChainSnapshot {
   const strikes = Array.from({ length: 15 }, (_, i) =>
-    makeStrike(60_000 + i * 100,
-      { oi: 100, changeOi: 10 },
-      { oi: 100, changeOi: 10 }),
+    makeStrike(60_000 + i * 100, { oi: 100, changeOi: 10 }, { oi: 100, changeOi: 10 }),
   );
   return {
     instrument: "NIFTY", // placeholder — SENSEX not in enum yet
@@ -39,7 +37,8 @@ describe("assessSensexCapability", () => {
 
   it("returns AUTH_REQUIRED when upstream requires auth", () => {
     const r = assessSensexCapability({
-      snapshot: null, providerId: "UPSTOX",
+      snapshot: null,
+      providerId: "UPSTOX",
       upstreamCode: "AUTH_REQUIRED",
     });
     expect(r.status).toBe("AUTH_REQUIRED");
@@ -48,7 +47,8 @@ describe("assessSensexCapability", () => {
   it("returns STALE when timestamp is old", () => {
     const old = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const r = assessSensexCapability({
-      snapshot: snap({ timestamp: old }), providerId: "UPSTOX",
+      snapshot: snap({ timestamp: old }),
+      providerId: "UPSTOX",
     });
     expect(r.status).toBe("STALE");
   });
@@ -71,7 +71,8 @@ describe("assessSensexCapability", () => {
 
   it("returns DATA_QUALITY_FAILURE when provider marks it FAILED", () => {
     const r = assessSensexCapability({
-      snapshot: snap({ dataQuality: "FAILED" }), providerId: "UPSTOX",
+      snapshot: snap({ dataQuality: "FAILED" }),
+      providerId: "UPSTOX",
     });
     expect(r.status).toBe("DATA_QUALITY_FAILURE");
   });

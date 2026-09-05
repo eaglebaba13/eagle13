@@ -4,13 +4,7 @@
 // and provider label — never inferred.
 
 export type ProviderLabel =
-  | "TradingView"
-  | "Zerodha"
-  | "Upstox"
-  | "Dhan"
-  | "AngelOne"
-  | "NSE"
-  | "Generic";
+  "TradingView" | "Zerodha" | "Upstox" | "Dhan" | "AngelOne" | "NSE" | "Generic";
 
 export type ParsedCandle = {
   timeIst: string; // ISO with +05:30 offset
@@ -67,10 +61,7 @@ function toIstIso(epochMs: number): string {
  * Supports: ISO 8601 with offset, "YYYY-MM-DD HH:mm[:ss]", "DD-MM-YYYY HH:mm[:ss]",
  * numeric epoch (seconds or milliseconds).
  */
-export function parseTimestamp(
-  raw: string,
-  tz: "Asia/Kolkata" | "UTC",
-): number | null {
+export function parseTimestamp(raw: string, tz: "Asia/Kolkata" | "UTC"): number | null {
   const s = raw.trim();
   if (!s) return null;
 
@@ -129,15 +120,7 @@ function splitCsvLine(line: string): string[] {
 }
 
 const HEADER_ALIASES: Record<keyof ParsedCandle | "timestamp", string[]> = {
-  timestamp: [
-    "timestamp",
-    "time",
-    "date",
-    "datetime",
-    "date/time",
-    "date_time",
-    "candle_time",
-  ],
+  timestamp: ["timestamp", "time", "date", "datetime", "date/time", "date_time", "candle_time"],
   open: ["open", "o"],
   high: ["high", "h"],
   low: ["low", "l"],
@@ -164,9 +147,7 @@ export function parseCandleCsv(args: ParseArgs): ParseResult {
     throw new Error("Timezone must be explicit: Asia/Kolkata or UTC");
   }
 
-  const lines = args.csv
-    .split(/\r?\n/)
-    .filter((l) => l.trim().length > 0 && !l.startsWith("#"));
+  const lines = args.csv.split(/\r?\n/).filter((l) => l.trim().length > 0 && !l.startsWith("#"));
   if (lines.length < 2) {
     return {
       provider: args.provider,

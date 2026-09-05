@@ -10,11 +10,7 @@ import { NAKSHATRAS, SIGNS } from "./astro-constants";
 import type { EvidenceTier, ReferenceFixture, ReferencePlanet } from "./astro-audit";
 
 export type FixtureSource =
-  | "SWISS_EPHEMERIS"
-  | "DRIK_PANCHANG"
-  | "MPANCHANG"
-  | "PROKERALA"
-  | "OTHER";
+  "SWISS_EPHEMERIS" | "DRIK_PANCHANG" | "MPANCHANG" | "PROKERALA" | "OTHER";
 
 export type OriginalSourceEvidence =
   | "UNKNOWN"
@@ -60,8 +56,15 @@ export type ValidationResult = {
 };
 
 const PLANET_NAMES = new Set([
-  "Sun", "Moon", "Mercury", "Venus", "Mars",
-  "Jupiter", "Saturn", "Rahu", "Ketu",
+  "Sun",
+  "Moon",
+  "Mercury",
+  "Venus",
+  "Mars",
+  "Jupiter",
+  "Saturn",
+  "Rahu",
+  "Ketu",
 ]);
 
 function isFiniteInRange(v: unknown, lo: number, hi: number): v is number {
@@ -86,8 +89,10 @@ export function validateFixture(f: ExtendedReferenceFixture): ValidationResult {
   if (!f.location) push("location", "required");
   else {
     if (!isFiniteInRange(f.location.latitude, -90, 90)) push("location.latitude", "out of range");
-    if (!isFiniteInRange(f.location.longitude, -180, 180)) push("location.longitude", "out of range");
-    if (!isFiniteInRange(f.location.elevationMeters, -500, 9000)) push("location.elevationMeters", "out of range");
+    if (!isFiniteInRange(f.location.longitude, -180, 180))
+      push("location.longitude", "out of range");
+    if (!isFiniteInRange(f.location.elevationMeters, -500, 9000))
+      push("location.elevationMeters", "out of range");
   }
   if (!f.referenceEngine) push("referenceEngine", "required");
   if (!f.ayanamshaMode) push("ayanamshaMode", "required (declare Lahiri/other)");
@@ -103,13 +108,16 @@ export function validateFixture(f: ExtendedReferenceFixture): ValidationResult {
     const seen = new Set<string>();
     f.planets.forEach((p, i) => {
       const base = `planets[${i}]`;
-      if (!p.planet || !PLANET_NAMES.has(p.planet)) push(`${base}.planet`, `unknown planet '${p.planet}'`);
+      if (!p.planet || !PLANET_NAMES.has(p.planet))
+        push(`${base}.planet`, `unknown planet '${p.planet}'`);
       if (seen.has(p.planet)) push(`${base}.planet`, `duplicate planet '${p.planet}'`);
       seen.add(p.planet);
-      if (!isFiniteInRange(p.siderealLongitude, 0, 360)) push(`${base}.siderealLongitude`, "expected 0..360°");
+      if (!isFiniteInRange(p.siderealLongitude, 0, 360))
+        push(`${base}.siderealLongitude`, "expected 0..360°");
       if (!isFiniteInRange(p.degreeInSign, 0, 30)) push(`${base}.degreeInSign`, "expected 0..30°");
       if (!isFiniteInRange(p.pada, 1, 4)) push(`${base}.pada`, "expected 1..4");
-      if (!SIGNS.includes(p.sign as (typeof SIGNS)[number])) push(`${base}.sign`, `unknown sign '${p.sign}'`);
+      if (!SIGNS.includes(p.sign as (typeof SIGNS)[number]))
+        push(`${base}.sign`, `unknown sign '${p.sign}'`);
       if (!NAKSHATRAS.includes(p.nakshatra as (typeof NAKSHATRAS)[number])) {
         push(`${base}.nakshatra`, `unknown nakshatra '${p.nakshatra}'`);
       }
@@ -131,9 +139,10 @@ export function validateFixture(f: ExtendedReferenceFixture): ValidationResult {
 }
 
 /** Duplicate detection across a fixture set. Groups by (source|timestamp|mode). */
-export function findDuplicates(
-  fixtures: ExtendedReferenceFixture[],
-): { ids: string[]; combos: string[] } {
+export function findDuplicates(fixtures: ExtendedReferenceFixture[]): {
+  ids: string[];
+  combos: string[];
+} {
   const ids = new Map<string, number>();
   const combos = new Map<string, number>();
   for (const f of fixtures) {

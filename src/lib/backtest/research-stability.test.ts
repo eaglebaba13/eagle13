@@ -79,14 +79,24 @@ describe("Phase 21.5 Stage 1 · stability", () => {
       config: { from: "a", to: "b", mode: "70_30" as const },
       windows: [
         {
-          window: { index: 0, training: { from: "a", to: "b" }, validation: { from: "c", to: "d" } },
+          window: {
+            index: 0,
+            training: { from: "a", to: "b" },
+            validation: { from: "c", to: "d" },
+          },
           training: {} as never,
           validation: {} as never,
           trainingMetrics: m,
           validationMetrics: m,
           degradation: {
-            winRate: 0, profitFactor: 0, expectancy: 0, netPnl: 0,
-            drawdown: 0, recovery: 0, avgTrade: 0, tradeCount: 0,
+            winRate: 0,
+            profitFactor: 0,
+            expectancy: 0,
+            netPnl: 0,
+            drawdown: 0,
+            recovery: 0,
+            avgTrade: 0,
+            tradeCount: 0,
           },
         },
       ],

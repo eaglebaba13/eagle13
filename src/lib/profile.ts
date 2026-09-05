@@ -48,10 +48,12 @@ export function serializeProfile(row: ProfileRow, role: AppRole): SerializedProf
 }
 
 export function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p.charAt(0).toUpperCase())
-    .join("") || "U";
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase())
+      .join("") || "U"
+  );
 }

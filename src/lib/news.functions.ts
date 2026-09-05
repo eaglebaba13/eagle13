@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
-import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
+import {
+  fetchFallback,
+  FALLBACK_MARKET_FEEDS,
+  FALLBACK_CRYPTO_FEEDS,
+  type RawRssItem,
+} from "./rss";
 import { cached } from "./server-cache";
 
 export type NewsItem = {
@@ -49,10 +54,7 @@ function pick(tag: string, block: string): string {
   return m ? decodeEntities(m[1]) : "";
 }
 
-async function fetchFeed(
-  category: NewsItem["category"],
-  query: string,
-): Promise<NewsItem[]> {
+async function fetchFeed(category: NewsItem["category"], query: string): Promise<NewsItem[]> {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(
     query + " when:2d",
   )}&hl=en-IN&gl=IN&ceid=IN:en`;
@@ -126,56 +128,61 @@ export const getMarketNews = createServerFn({ method: "GET" }).handler(
     cached<NewsResult>(
       "market-news",
       async () => {
-    const fetchedAt = new Date().toISOString();
+        const fetchedAt = new Date().toISOString();
 
-    // 1) Primary provider: Google News RSS (reachable from the preview sandbox).
-    let primaryError: string | null = null;
-    try {
-      const results = await Promise.all(
-        FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [])),
-      );
-      const items = dedupeSort(results.flat());
-      if (items.length > 0) {
-        return {
-          items,
-          fetchedAt,
-          diagnostics: { provider: "Google News", count: items.length, degraded: false, error: null },
-        };
-      }
-      primaryError = "Primary provider returned no items";
-    } catch (err) {
-      primaryError = err instanceof Error ? err.message : String(err);
-    }
+        // 1) Primary provider: Google News RSS (reachable from the preview sandbox).
+        let primaryError: string | null = null;
+        try {
+          const results = await Promise.all(
+            FEEDS.map((f) => fetchFeed(f.category, f.query).catch(() => [])),
+          );
+          const items = dedupeSort(results.flat());
+          if (items.length > 0) {
+            return {
+              items,
+              fetchedAt,
+              diagnostics: {
+                provider: "Google News",
+                count: items.length,
+                degraded: false,
+                error: null,
+              },
+            };
+          }
+          primaryError = "Primary provider returned no items";
+        } catch (err) {
+          primaryError = err instanceof Error ? err.message : String(err);
+        }
 
-    // 2) Fallback providers (reachable from the Cloudflare Worker in production).
-    try {
-      const [market, crypto] = await Promise.all([
-        fetchFallback(FALLBACK_MARKET_FEEDS),
-        fetchFallback(FALLBACK_CRYPTO_FEEDS),
-      ]);
-      const items = dedupeSort(toNewsItems([...market, ...crypto]));
-      return {
-        items,
-        fetchedAt,
-        diagnostics: {
-          provider: items.length ? "Fallback (ET/Livemint/BusinessLine/CoinDesk)" : "None",
-          count: items.length,
-          degraded: true,
-          error: items.length ? primaryError : "No news returned by provider.",
-        },
-      };
-    } catch (err) {
-      return {
-        items: [],
-        fetchedAt,
-        diagnostics: {
-          provider: "None",
-          count: 0,
-          degraded: true,
-          error: err instanceof Error ? err.message : "No news returned by provider.",
-        },
-      };
-    }
+        // 2) Fallback providers (reachable from the Cloudflare Worker in production).
+        try {
+          const [market, crypto] = await Promise.all([
+            fetchFallback(FALLBACK_MARKET_FEEDS),
+            fetchFallback(FALLBACK_CRYPTO_FEEDS),
+          ]);
+          const items = dedupeSort(toNewsItems([...market, ...crypto]));
+          return {
+            items,
+            fetchedAt,
+            diagnostics: {
+              provider: items.length ? "Fallback (ET/Livemint/BusinessLine/CoinDesk)" : "None",
+              count: items.length,
+              degraded: true,
+              error: items.length ? primaryError : "No news returned by provider.",
+            },
+          };
+        } catch (err) {
+          return {
+            items: [],
+            fetchedAt,
+            diagnostics: {
+              provider: "None",
+              count: 0,
+              degraded: true,
+              error: err instanceof Error ? err.message : "No news returned by provider.",
+            },
+          };
+        }
       },
       { ttlMs: 60_000 },
     ),

@@ -105,9 +105,7 @@ function isoDate(t: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-export async function loadSmcCandles(
-  args: LoadSmcCandlesArgs,
-): Promise<LoadSmcCandlesResult> {
+export async function loadSmcCandles(args: LoadSmcCandlesArgs): Promise<LoadSmcCandlesResult> {
   if (args.source.kind === "provider") {
     throw new SmcDataRangeUnavailableError(
       `DATA_RANGE_UNAVAILABLE — provider "${args.source.provider}" has no client-safe intraday feed for ${args.instrument} ${args.timeframe} between ${args.from} and ${args.to}. Import a ${args.timeframe} CSV instead.`,
@@ -146,8 +144,7 @@ export async function loadSmcCandles(
     granularity,
     coveragePct: report.coveragePct,
     missingSessions: report.gaps.length,
-    invalidCandles:
-      report.outOfOrderCount + report.outOfWindowCount + report.causalityFailures,
+    invalidCandles: report.outOfOrderCount + report.outOfWindowCount + report.causalityFailures,
     imported: parsed.rows.length,
     fetched: 0,
     previousCloseSource: "csv",
@@ -169,10 +166,5 @@ export async function loadSmcCandles(
   };
 }
 
-export const SMC_INSTRUMENTS: readonly SmcInstrument[] = [
-  "NIFTY50",
-  "BANKNIFTY",
-  "BTC",
-  "XAUUSD",
-];
+export const SMC_INSTRUMENTS: readonly SmcInstrument[] = ["NIFTY50", "BANKNIFTY", "BTC", "XAUUSD"];
 export const SMC_TIMEFRAMES: readonly SmcTimeframe[] = ["5m", "15m"];

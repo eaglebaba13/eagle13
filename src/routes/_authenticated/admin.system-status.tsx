@@ -40,7 +40,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function SystemStatusPage() {
   const buildVersion = (import.meta.env.VITE_BUILD_VERSION as string | undefined) ?? "dev";
   const gitCommit = (import.meta.env.VITE_GIT_COMMIT as string | undefined) ?? "local";
-  const deployedAt = (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? new Date().toISOString();
+  const deployedAt =
+    (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? new Date().toISOString();
 
   const rq = useRuntimeReadinessQuery();
   const report = rq.data ?? null;
@@ -51,13 +52,16 @@ function SystemStatusPage() {
       <header>
         <h1 className="text-2xl font-semibold">System Status</h1>
         <p className="text-sm text-muted-foreground">
-          Phase 31 · deployment framework overview. Research engines, formulas
-          and broker paths are intentionally excluded from this surface.
+          Phase 31 · deployment framework overview. Research engines, formulas and broker paths are
+          intentionally excluded from this surface.
         </p>
       </header>
 
       {error && (
-        <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+        <div
+          role="alert"
+          className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+        >
           Runtime readiness: {error}
         </div>
       )}
@@ -89,7 +93,9 @@ function SystemStatusPage() {
                 <div className="font-medium">
                   {s.label}
                   {!s.blocking && (
-                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">non-blocking</span>
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
+                      non-blocking
+                    </span>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">{s.description}</div>

@@ -105,11 +105,7 @@ export function runAstroAudit(fixture: ReferenceFixture): AuditReport {
   const originalSourceKnown = Boolean(
     fixture.notes && /original[\s-]?source[:=]\s*confirmed/i.test(fixture.notes),
   );
-  const { verdict, reason, evidence } = deriveVerdict(
-    planets,
-    levelImpacts,
-    originalSourceKnown,
-  );
+  const { verdict, reason, evidence } = deriveVerdict(planets, levelImpacts, originalSourceKnown);
 
   return {
     auditVersion: AUDIT_VERSION,

@@ -51,7 +51,11 @@ export function runAlertEngine(input: RunAlertsInput): RuleEvaluationOutput {
   for (const evt of candidates) {
     const subCheck = subscriptionMatches(sub, evt.type, evt.instrument);
     if (!subCheck.ok) {
-      suppressed.push({ reason: "SUBSCRIPTION_DISABLED", fingerprint: evt.fingerprint, type: evt.type });
+      suppressed.push({
+        reason: "SUBSCRIPTION_DISABLED",
+        fingerprint: evt.fingerprint,
+        type: evt.type,
+      });
       continue;
     }
     if (sub && !meetsMinimumPriority(evt.priority, sub.minimumPriority)) {
@@ -72,7 +76,10 @@ export function runAlertEngine(input: RunAlertsInput): RuleEvaluationOutput {
       suppressed.push({ reason: "COOLDOWN", fingerprint: evt.fingerprint, type: evt.type });
       continue;
     }
-    if ((evt.priority === "INFO" || evt.priority === "LOW") && isInQuietHours(sub, ctx.generatedAt)) {
+    if (
+      (evt.priority === "INFO" || evt.priority === "LOW") &&
+      isInQuietHours(sub, ctx.generatedAt)
+    ) {
       suppressed.push({ reason: "QUIET_HOURS", fingerprint: evt.fingerprint, type: evt.type });
       continue;
     }

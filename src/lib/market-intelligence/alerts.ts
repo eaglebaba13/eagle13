@@ -26,7 +26,11 @@ export function newsKey(n: NewsItem): string {
 
 export function diffAlerts(prev: AlertPrevState, curr: AlertCurrState): Alert[] {
   const alerts: Alert[] = [];
-  if (curr.institutionalBias && prev.institutionalBias && curr.institutionalBias !== prev.institutionalBias) {
+  if (
+    curr.institutionalBias &&
+    prev.institutionalBias &&
+    curr.institutionalBias !== prev.institutionalBias
+  ) {
     alerts.push({
       kind: "BIAS_CHANGE",
       message: `Institutional bias ${prev.institutionalBias} to ${curr.institutionalBias}`,

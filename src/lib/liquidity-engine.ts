@@ -8,11 +8,7 @@
 import type { Candle, Swing } from "./smc-types";
 import { detectSwings } from "./smc-types";
 
-export type LiquidityLevelKind =
-  | "equal_high"
-  | "equal_low"
-  | "buy_side"
-  | "sell_side";
+export type LiquidityLevelKind = "equal_high" | "equal_low" | "buy_side" | "sell_side";
 
 export type LiquidityLevel = {
   kind: LiquidityLevelKind;
@@ -25,11 +21,7 @@ export type LiquidityLevel = {
   takenIndex: number | null;
 };
 
-export type LiquidityEventType =
-  | "sweep"
-  | "grab"
-  | "stop_hunt"
-  | "inducement";
+export type LiquidityEventType = "sweep" | "grab" | "stop_hunt" | "inducement";
 
 export type LiquidityEvent = {
   type: LiquidityEventType;
@@ -59,10 +51,7 @@ function near(a: number, b: number, tol: number): boolean {
   return Math.abs(a - b) / denom <= tol;
 }
 
-export function analyzeLiquidity(
-  candles: Candle[],
-  opts: LiquidityOptions = {},
-): LiquidityReport {
+export function analyzeLiquidity(candles: Candle[], opts: LiquidityOptions = {}): LiquidityReport {
   const lookback = opts.lookback ?? 2;
   const tol = opts.equalTolerance ?? 0.0005;
   const grabMul = opts.grabVolumeMultiple ?? 1.8;
@@ -91,10 +80,8 @@ export function analyzeLiquidity(
       }
       if (group.length >= 2) {
         used.add(i);
-        const price =
-          group.reduce((a, s) => a + s.price, 0) / group.length;
-        const isExternal =
-          kind === "equal_high" ? price >= extHi - 1e-9 : price <= extLo + 1e-9;
+        const price = group.reduce((a, s) => a + s.price, 0) / group.length;
+        const isExternal = kind === "equal_high" ? price >= extHi - 1e-9 : price <= extLo + 1e-9;
         levels.push({
           kind,
           price,
@@ -137,8 +124,7 @@ export function analyzeLiquidity(
     const c = candles[i];
     const confirmedIdx = i - lookback;
     const win = candles.slice(Math.max(0, i - 20), i);
-    const avgVol =
-      win.length > 0 ? win.reduce((a, x) => a + x.v, 0) / win.length : c.v;
+    const avgVol = win.length > 0 ? win.reduce((a, x) => a + x.v, 0) / win.length : c.v;
 
     for (const lv of levels) {
       // Only consider levels whose latest source is confirmed by this candle.
@@ -182,9 +168,7 @@ export function analyzeLiquidity(
   const window = 50;
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
-    const lv = levels.find(
-      (l) => l.takenIndex === e.index && l.price === e.level,
-    );
+    const lv = levels.find((l) => l.takenIndex === e.index && l.price === e.level);
     if (!lv || lv.scope !== "internal") continue;
     const laterExternal = events
       .slice(i + 1)

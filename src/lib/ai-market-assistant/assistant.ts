@@ -1,10 +1,6 @@
 // Phase 3B — Pure deterministic assistant engine. No I/O. No LLM.
 
-import type {
-  AssistantModule,
-  AssistantResponse,
-  CanonicalContext,
-} from "./types";
+import type { AssistantModule, AssistantResponse, CanonicalContext } from "./types";
 import { RESEARCH_DISCLAIMER } from "./types";
 import {
   deriveMarketBias,
@@ -93,7 +89,8 @@ export function answerPreset(res: AssistantResponse, id: string): string {
       if (res.marketBias !== "BEARISH") return "The market view is not currently bearish.";
       return `Bearish because: ${res.supportingEvidence.map((s) => s.module).join(", ") || "no supporting modules"}.`;
     case "CONFLICTING_SIGNALS":
-      if (res.conflictingEvidence.length === 0) return "No conflicting canonical signals right now.";
+      if (res.conflictingEvidence.length === 0)
+        return "No conflicting canonical signals right now.";
       return `Conflicting modules: ${res.conflictingEvidence.map((c) => c.module).join(", ")}.`;
     case "STRATEGY_CONTEXT":
       if (!res.strategyContext.available) return "Strategy context is not currently available.";

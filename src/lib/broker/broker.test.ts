@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { ZerodhaAdapter, DhanAdapter, AngelAdapter, UpstoxAdapter, createAdapter } from "./adapters";
+import {
+  ZerodhaAdapter,
+  DhanAdapter,
+  AngelAdapter,
+  UpstoxAdapter,
+  createAdapter,
+} from "./adapters";
 import { openPaperTrade, closePaperTrade, computePaperStats } from "./paper-engine";
 import type { OrderRequest } from "./types";
 
@@ -67,7 +73,11 @@ describe("broker adapters", () => {
 describe("paper engine", () => {
   it("opens/closes and computes pnl for BUY", () => {
     const t = openPaperTrade({
-      symbol: "NIFTY", side: "BUY", quantity: 75, entryPrice: 100, entryAt: new Date().toISOString(),
+      symbol: "NIFTY",
+      side: "BUY",
+      quantity: 75,
+      entryPrice: 100,
+      entryAt: new Date().toISOString(),
     });
     const closed = closePaperTrade(t, 110);
     expect(closed.pnl).toBe(750);
@@ -76,7 +86,11 @@ describe("paper engine", () => {
 
   it("computes pnl for SELL", () => {
     const t = openPaperTrade({
-      symbol: "NIFTY", side: "SELL", quantity: 30, entryPrice: 200, entryAt: new Date().toISOString(),
+      symbol: "NIFTY",
+      side: "SELL",
+      quantity: 30,
+      entryPrice: 200,
+      entryAt: new Date().toISOString(),
     });
     const closed = closePaperTrade(t, 180);
     expect(closed.pnl).toBe(600);
@@ -84,9 +98,18 @@ describe("paper engine", () => {
 
   it("stats winRate + drawdown", () => {
     const base = { symbol: "X", entryAt: new Date().toISOString() };
-    const t1 = closePaperTrade(openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }), 110);
-    const t2 = closePaperTrade(openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }), 90);
-    const t3 = closePaperTrade(openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }), 105);
+    const t1 = closePaperTrade(
+      openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }),
+      110,
+    );
+    const t2 = closePaperTrade(
+      openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }),
+      90,
+    );
+    const t3 = closePaperTrade(
+      openPaperTrade({ ...base, side: "BUY", quantity: 1, entryPrice: 100 }),
+      105,
+    );
     const s = computePaperStats([t1, t2, t3]);
     expect(s.trades).toBe(3);
     expect(s.wins).toBe(2);

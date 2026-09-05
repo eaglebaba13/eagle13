@@ -23,7 +23,9 @@ export interface ConfidenceInput {
 
 export function computeConfidence(input: ConfidenceInput): ConfidenceBreakdown {
   const base = 50;
-  const present = input.breadthSnapshots.filter((s) => s && s.dataQuality !== "FAILED") as MarketBreadthSnapshot[];
+  const present = input.breadthSnapshots.filter(
+    (s) => s && s.dataQuality !== "FAILED",
+  ) as MarketBreadthSnapshot[];
   const total = input.breadthSnapshots.length;
   const coverageRatio = total === 0 ? 0 : present.length / total;
   const coveragePenalty = Math.round((1 - coverageRatio) * 30);
@@ -34,7 +36,9 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceBreakdown {
   const conflictPenalty = Math.min(30, input.conflicts.length * 6);
 
   // Agreement: count breadth snapshots agreeing with the majority direction.
-  const dirs = present.map((s) => directionOfBreadth(s)).filter((d) => d === "BULLISH" || d === "BEARISH");
+  const dirs = present
+    .map((s) => directionOfBreadth(s))
+    .filter((d) => d === "BULLISH" || d === "BEARISH");
   let agreementBonus = 0;
   if (dirs.length >= 2) {
     const bull = dirs.filter((d) => d === "BULLISH").length;
@@ -53,7 +57,13 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceBreakdown {
     0,
     Math.min(
       100,
-      base - coveragePenalty - freshnessPenalty - conflictPenalty + agreementBonus + pcrBonus + vixConsistencyBonus,
+      base -
+        coveragePenalty -
+        freshnessPenalty -
+        conflictPenalty +
+        agreementBonus +
+        pcrBonus +
+        vixConsistencyBonus,
     ),
   );
   return {

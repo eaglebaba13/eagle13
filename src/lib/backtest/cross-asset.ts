@@ -92,8 +92,10 @@ export function buildCrossAssetRow(input: CrossAssetInput): CrossAssetRow {
   const winRate = d.length ? (wins.length / d.length) * 100 : 0;
   const avgWin = wins.length ? grossWin / wins.length : 0;
   const avgLoss = losses.length ? grossLoss / losses.length : 0;
-  const expectancy = round2(((wins.length / Math.max(d.length, 1))) * avgWin -
-    ((losses.length / Math.max(d.length, 1))) * avgLoss);
+  const expectancy = round2(
+    (wins.length / Math.max(d.length, 1)) * avgWin -
+      (losses.length / Math.max(d.length, 1)) * avgLoss,
+  );
   const pf = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? 999 : 0;
   const maxDd = input.result.drawdown?.max ?? 0;
   const recovery = input.recoveryFactor ?? (maxDd > 0 ? netPnl / maxDd : netPnl > 0 ? 999 : 0);
@@ -132,7 +134,10 @@ export type Matrix<TKey extends string = string> = {
   readonly kind: TKey;
 };
 
-function emptyGrid(rowKeys: string[], colKeys: string[]): Record<string, Record<string, CrossAssetRow | null>> {
+function emptyGrid(
+  rowKeys: string[],
+  colKeys: string[],
+): Record<string, Record<string, CrossAssetRow | null>> {
   const out: Record<string, Record<string, CrossAssetRow | null>> = {};
   for (const r of rowKeys) {
     out[r] = {};
@@ -141,23 +146,41 @@ function emptyGrid(rowKeys: string[], colKeys: string[]): Record<string, Record<
   return out;
 }
 
-export function buildInstrumentStrategyMatrix(rows: readonly CrossAssetRow[]): Matrix<"instrument-x-strategy"> {
+export function buildInstrumentStrategyMatrix(
+  rows: readonly CrossAssetRow[],
+): Matrix<"instrument-x-strategy"> {
   const instruments = Array.from(new Set(rows.map((r) => r.instrument))).sort();
   const strategies = Array.from(new Set(rows.map((r) => r.strategy))).sort();
   const cells = emptyGrid(instruments, strategies);
   for (const r of rows) cells[r.instrument][r.strategy] = r;
-  return { rowKeys: instruments, colKeys: strategies, cells, metric: null, kind: "instrument-x-strategy" };
+  return {
+    rowKeys: instruments,
+    colKeys: strategies,
+    cells,
+    metric: null,
+    kind: "instrument-x-strategy",
+  };
 }
 
-export function buildInstrumentTimeframeMatrix(rows: readonly CrossAssetRow[]): Matrix<"instrument-x-timeframe"> {
+export function buildInstrumentTimeframeMatrix(
+  rows: readonly CrossAssetRow[],
+): Matrix<"instrument-x-timeframe"> {
   const instruments = Array.from(new Set(rows.map((r) => r.instrument))).sort();
   const timeframes = Array.from(new Set(rows.map((r) => r.timeframe))).sort();
   const cells = emptyGrid(instruments, timeframes);
   for (const r of rows) cells[r.instrument][r.timeframe] = r;
-  return { rowKeys: instruments, colKeys: timeframes, cells, metric: null, kind: "instrument-x-timeframe" };
+  return {
+    rowKeys: instruments,
+    colKeys: timeframes,
+    cells,
+    metric: null,
+    kind: "instrument-x-timeframe",
+  };
 }
 
-export function buildRegimeStrategyMatrix(rows: readonly CrossAssetRow[]): Matrix<"regime-x-strategy"> {
+export function buildRegimeStrategyMatrix(
+  rows: readonly CrossAssetRow[],
+): Matrix<"regime-x-strategy"> {
   const regimes = Array.from(new Set(rows.map((r) => r.regime ?? "UNKNOWN"))).sort();
   const strategies = Array.from(new Set(rows.map((r) => r.strategy))).sort();
   const cells = emptyGrid(regimes, strategies);
@@ -165,7 +188,9 @@ export function buildRegimeStrategyMatrix(rows: readonly CrossAssetRow[]): Matri
   return { rowKeys: regimes, colKeys: strategies, cells, metric: null, kind: "regime-x-strategy" };
 }
 
-export function buildRegimeTimeframeMatrix(rows: readonly CrossAssetRow[]): Matrix<"regime-x-timeframe"> {
+export function buildRegimeTimeframeMatrix(
+  rows: readonly CrossAssetRow[],
+): Matrix<"regime-x-timeframe"> {
   const regimes = Array.from(new Set(rows.map((r) => r.regime ?? "UNKNOWN"))).sort();
   const timeframes = Array.from(new Set(rows.map((r) => r.timeframe))).sort();
   const cells = emptyGrid(regimes, timeframes);
@@ -198,12 +223,12 @@ export type ConsistencyScore = {
 
 const CONSISTENCY_WEIGHTS: Readonly<Record<keyof ConsistencyBreakdown, number>> = Object.freeze({
   crossAsset: 0.15,
-  crossTimeframe: 0.10,
+  crossTimeframe: 0.1,
   crossRegime: 0.15,
   walkForward: 0.15,
-  monteCarlo: 0.10,
-  sensitivity: 0.10,
-  robustness: 0.10,
+  monteCarlo: 0.1,
+  sensitivity: 0.1,
+  robustness: 0.1,
   sample: 0.05,
   recovery: 0.05,
   drawdown: 0.05,
@@ -247,18 +272,39 @@ export function computeConsistencyScore(input: {
     if (!pfByRegime.has(rk)) pfByRegime.set(rk, []);
     pfByRegime.get(rk)!.push(r.profitFactor);
   }
-  const crossAsset = agreementScore([...pfByInstrument.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length));
-  const crossTimeframe = agreementScore([...pfByTimeframe.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length));
-  const crossRegime = agreementScore([...pfByRegime.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length));
+  const crossAsset = agreementScore(
+    [...pfByInstrument.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length),
+  );
+  const crossTimeframe = agreementScore(
+    [...pfByTimeframe.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length),
+  );
+  const crossRegime = agreementScore(
+    [...pfByRegime.values()].map((v) => v.reduce((a, b) => a + b, 0) / v.length),
+  );
 
-  const walkForward = input.walkForwardOos == null ? 0 : Math.max(0, Math.min(100, input.walkForwardOos));
-  const monteCarlo = input.monteCarloP5 == null ? 0
-    : input.monteCarloP5 > 0 ? Math.min(100, 50 + input.monteCarloP5 / 10) : Math.max(0, 50 + input.monteCarloP5 / 10);
-  const sensitivity = input.sensitivityStability == null ? 0 : Math.max(0, Math.min(100, input.sensitivityStability));
+  const walkForward =
+    input.walkForwardOos == null ? 0 : Math.max(0, Math.min(100, input.walkForwardOos));
+  const monteCarlo =
+    input.monteCarloP5 == null
+      ? 0
+      : input.monteCarloP5 > 0
+        ? Math.min(100, 50 + input.monteCarloP5 / 10)
+        : Math.max(0, 50 + input.monteCarloP5 / 10);
+  const sensitivity =
+    input.sensitivityStability == null ? 0 : Math.max(0, Math.min(100, input.sensitivityStability));
   const robustness = input.robustness == null ? 0 : Math.max(0, Math.min(100, input.robustness));
 
   const totalTrades = same.reduce((a, r) => a + r.trades, 0);
-  const sample = totalTrades >= 500 ? 100 : totalTrades >= 200 ? 80 : totalTrades >= 100 ? 60 : totalTrades >= 30 ? 40 : 0;
+  const sample =
+    totalTrades >= 500
+      ? 100
+      : totalTrades >= 200
+        ? 80
+        : totalTrades >= 100
+          ? 60
+          : totalTrades >= 30
+            ? 40
+            : 0;
 
   const meanRecovery = same.length
     ? same.reduce((a, r) => a + (r.recoveryFactor ?? 0), 0) / same.length
@@ -283,8 +329,10 @@ export function computeConsistencyScore(input: {
     drawdown: round2(drawdown),
   };
   const score = round2(
-    (Object.keys(CONSISTENCY_WEIGHTS) as (keyof ConsistencyBreakdown)[])
-      .reduce((a, k) => a + breakdown[k] * CONSISTENCY_WEIGHTS[k], 0),
+    (Object.keys(CONSISTENCY_WEIGHTS) as (keyof ConsistencyBreakdown)[]).reduce(
+      (a, k) => a + breakdown[k] * CONSISTENCY_WEIGHTS[k],
+      0,
+    ),
   );
   const formula =
     "score = Σ weight_k × factor_k where factors ∈ {crossAsset,crossTimeframe,crossRegime,walkForward,monteCarlo,sensitivity,robustness,sample,recovery,drawdown} and weights sum to 1.00.";
@@ -316,7 +364,10 @@ export type LeaderboardEntry = {
   readonly reason: string;
 };
 
-function groupBy<K extends string>(rows: readonly CrossAssetRow[], pick: (r: CrossAssetRow) => K): Map<K, CrossAssetRow[]> {
+function groupBy<K extends string>(
+  rows: readonly CrossAssetRow[],
+  pick: (r: CrossAssetRow) => K,
+): Map<K, CrossAssetRow[]> {
   const out = new Map<K, CrossAssetRow[]>();
   for (const r of rows) {
     const k = pick(r);
@@ -326,7 +377,10 @@ function groupBy<K extends string>(rows: readonly CrossAssetRow[], pick: (r: Cro
   return out;
 }
 
-function pickBest<T>(items: readonly T[], score: (t: T) => number | null): { winner: T; value: number } | null {
+function pickBest<T>(
+  items: readonly T[],
+  score: (t: T) => number | null,
+): { winner: T; value: number } | null {
   let best: { winner: T; value: number } | null = null;
   for (const it of items) {
     const s = score(it);
@@ -336,7 +390,10 @@ function pickBest<T>(items: readonly T[], score: (t: T) => number | null): { win
   return best;
 }
 
-function pickWorst<T>(items: readonly T[], score: (t: T) => number | null): { winner: T; value: number } | null {
+function pickWorst<T>(
+  items: readonly T[],
+  score: (t: T) => number | null,
+): { winner: T; value: number } | null {
   let worst: { winner: T; value: number } | null = null;
   for (const it of items) {
     const s = score(it);
@@ -356,7 +413,9 @@ export function buildLeaderboard(rows: readonly CrossAssetRow[]): LeaderboardEnt
   const out: LeaderboardEntry[] = [];
 
   const byStrategy = groupBy(eligible, (r) => r.strategy);
-  const bestStrategy = pickBest([...byStrategy.entries()], ([, rs]) => meanBy(rs, (r) => r.profitFactor));
+  const bestStrategy = pickBest([...byStrategy.entries()], ([, rs]) =>
+    meanBy(rs, (r) => r.profitFactor),
+  );
   out.push({
     category: "BEST_STRATEGY",
     winner: bestStrategy?.winner[0] ?? null,
@@ -366,43 +425,60 @@ export function buildLeaderboard(rows: readonly CrossAssetRow[]): LeaderboardEnt
   });
 
   const byFormula = groupBy(eligible, (r) => r.formula);
-  const bestFormula = pickBest([...byFormula.entries()], ([, rs]) => meanBy(rs, (r) => r.expectancy));
+  const bestFormula = pickBest([...byFormula.entries()], ([, rs]) =>
+    meanBy(rs, (r) => r.expectancy),
+  );
   out.push({
     category: "BEST_FORMULA",
     winner: bestFormula?.winner[0] ?? null,
     value: bestFormula ? round2(bestFormula.value) : null,
     metric: "mean expectancy",
-    reason: bestFormula ? `highest mean expectancy ${round2(bestFormula.value)}` : "insufficient sample",
+    reason: bestFormula
+      ? `highest mean expectancy ${round2(bestFormula.value)}`
+      : "insufficient sample",
   });
 
   const byInstrument = groupBy(eligible, (r) => r.instrument);
-  const bestInstrument = pickBest([...byInstrument.entries()], ([, rs]) => meanBy(rs, (r) => r.netPnl));
+  const bestInstrument = pickBest([...byInstrument.entries()], ([, rs]) =>
+    meanBy(rs, (r) => r.netPnl),
+  );
   out.push({
     category: "BEST_INSTRUMENT",
     winner: bestInstrument?.winner[0] ?? null,
     value: bestInstrument ? round2(bestInstrument.value) : null,
     metric: "mean netPnl",
-    reason: bestInstrument ? `highest mean net PnL ${round2(bestInstrument.value)}` : "insufficient sample",
+    reason: bestInstrument
+      ? `highest mean net PnL ${round2(bestInstrument.value)}`
+      : "insufficient sample",
   });
 
   const byTimeframe = groupBy(eligible, (r) => r.timeframe);
-  const bestTimeframe = pickBest([...byTimeframe.entries()], ([, rs]) => meanBy(rs, (r) => r.profitFactor));
+  const bestTimeframe = pickBest([...byTimeframe.entries()], ([, rs]) =>
+    meanBy(rs, (r) => r.profitFactor),
+  );
   out.push({
     category: "BEST_TIMEFRAME",
     winner: bestTimeframe?.winner[0] ?? null,
     value: bestTimeframe ? round2(bestTimeframe.value) : null,
     metric: "mean profitFactor",
-    reason: bestTimeframe ? `highest mean PF ${round2(bestTimeframe.value)}` : "insufficient sample",
+    reason: bestTimeframe
+      ? `highest mean PF ${round2(bestTimeframe.value)}`
+      : "insufficient sample",
   });
 
-  const byRegime = groupBy(eligible.filter((r) => r.regime), (r) => r.regime as string);
+  const byRegime = groupBy(
+    eligible.filter((r) => r.regime),
+    (r) => r.regime as string,
+  );
   const bestRegime = pickBest([...byRegime.entries()], ([, rs]) => meanBy(rs, (r) => r.expectancy));
   out.push({
     category: "BEST_REGIME",
     winner: bestRegime?.winner[0] ?? null,
     value: bestRegime ? round2(bestRegime.value) : null,
     metric: "mean expectancy per regime",
-    reason: bestRegime ? `regime with best expectancy ${round2(bestRegime.value)}` : "no regime-tagged rows",
+    reason: bestRegime
+      ? `regime with best expectancy ${round2(bestRegime.value)}`
+      : "no regime-tagged rows",
   });
 
   const bestStab = pickBest(eligible, (r) => r.stability);
@@ -511,15 +587,24 @@ export function buildResearchSummary(rows: readonly CrossAssetRow[]): CrossAsset
     };
   };
 
-  const inst = rank((r) => r.instrument, (r) => r.expectancy);
+  const inst = rank(
+    (r) => r.instrument,
+    (r) => r.expectancy,
+  );
   reasons.bestInstrument = `highest mean expectancy ${round2(inst.bestVal)}`;
   reasons.weakInstrument = `lowest mean expectancy ${round2(inst.worstVal)}`;
 
-  const tf = rank((r) => r.timeframe, (r) => r.profitFactor);
+  const tf = rank(
+    (r) => r.timeframe,
+    (r) => r.profitFactor,
+  );
   reasons.bestTimeframe = `highest mean profitFactor ${round2(tf.bestVal)}`;
   reasons.weakTimeframe = `lowest mean profitFactor ${round2(tf.worstVal)}`;
 
-  const reg = rank((r) => r.regime ?? "UNKNOWN", (r) => r.expectancy);
+  const reg = rank(
+    (r) => r.regime ?? "UNKNOWN",
+    (r) => r.expectancy,
+  );
   reasons.bestRegime = `regime with best mean expectancy ${round2(reg.bestVal)}`;
   reasons.worstRegime = `regime with worst mean expectancy ${round2(reg.worstVal)}`;
 
@@ -533,15 +618,25 @@ export function buildResearchSummary(rows: readonly CrossAssetRow[]): CrossAsset
   let highConf: [string, number] | null = null;
   let leastStable: [string, number] | null = null;
   for (const [k, rs] of byStrategy) {
-    const meanRob = meanBy(rs.filter((r) => r.robustness != null), (r) => r.robustness ?? 0);
-    const meanStab = meanBy(rs.filter((r) => r.stability != null), (r) => r.stability ?? 0);
+    const meanRob = meanBy(
+      rs.filter((r) => r.robustness != null),
+      (r) => r.robustness ?? 0,
+    );
+    const meanStab = meanBy(
+      rs.filter((r) => r.stability != null),
+      (r) => r.stability ?? 0,
+    );
     const confidence = meanRob + meanStab;
     if (highConf == null || confidence > highConf[1]) highConf = [k, confidence];
     // "least stable" = lowest stability score
     if (leastStable == null || meanStab < leastStable[1]) leastStable = [k, meanStab];
   }
-  reasons.highestConfidenceStrategy = highConf ? `robustness+stability=${round2(highConf[1])}` : "insufficient signals";
-  reasons.leastStableStrategy = leastStable ? `mean stability=${round2(leastStable[1])}` : "insufficient signals";
+  reasons.highestConfidenceStrategy = highConf
+    ? `robustness+stability=${round2(highConf[1])}`
+    : "insufficient signals";
+  reasons.leastStableStrategy = leastStable
+    ? `mean stability=${round2(leastStable[1])}`
+    : "insufficient signals";
 
   return {
     bestEnvironment: env.best,
@@ -561,7 +656,11 @@ export function buildResearchSummary(rows: readonly CrossAssetRow[]): CrossAsset
 // -------------------------------------------------------------------------
 // Heatmap builder
 
-export type HeatmapCell = { readonly row: string; readonly col: string; readonly value: number | null };
+export type HeatmapCell = {
+  readonly row: string;
+  readonly col: string;
+  readonly value: number | null;
+};
 export type Heatmap = {
   readonly metric: CrossAssetMetric;
   readonly rowKeys: readonly string[];
@@ -573,18 +672,30 @@ export type Heatmap = {
 
 function metricOf(row: CrossAssetRow, metric: CrossAssetMetric): number | null {
   switch (metric) {
-    case "trades": return row.trades;
-    case "winRate": return row.winRate;
-    case "profitFactor": return row.profitFactor;
-    case "expectancy": return row.expectancy;
-    case "netPnl": return row.netPnl;
-    case "maxDrawdown": return row.maxDrawdown;
-    case "recoveryFactor": return row.recoveryFactor;
-    case "stability": return row.stability;
-    case "robustness": return row.robustness;
-    case "monteCarloP5": return row.monteCarloP5;
-    case "walkForwardOos": return row.walkForwardOos;
-    case "consistency": return null; // computed separately
+    case "trades":
+      return row.trades;
+    case "winRate":
+      return row.winRate;
+    case "profitFactor":
+      return row.profitFactor;
+    case "expectancy":
+      return row.expectancy;
+    case "netPnl":
+      return row.netPnl;
+    case "maxDrawdown":
+      return row.maxDrawdown;
+    case "recoveryFactor":
+      return row.recoveryFactor;
+    case "stability":
+      return row.stability;
+    case "robustness":
+      return row.robustness;
+    case "monteCarloP5":
+      return row.monteCarloP5;
+    case "walkForwardOos":
+      return row.walkForwardOos;
+    case "consistency":
+      return null; // computed separately
   }
 }
 
@@ -631,23 +742,57 @@ export function buildCrossAssetCsv(
   provenance: CrossAssetExportProvenance,
 ): string {
   const header = [
-    "researchRunId", "generatedAt", "engineVersion",
-    "instrument", "timeframe", "strategy", "formula", "regime", "runId",
-    "trades", "wins", "losses", "winRate", "profitFactor", "expectancy",
-    "netPnl", "maxDrawdown", "recoveryFactor",
-    "stability", "robustness", "monteCarloP5", "walkForwardOos", "sufficient",
+    "researchRunId",
+    "generatedAt",
+    "engineVersion",
+    "instrument",
+    "timeframe",
+    "strategy",
+    "formula",
+    "regime",
+    "runId",
+    "trades",
+    "wins",
+    "losses",
+    "winRate",
+    "profitFactor",
+    "expectancy",
+    "netPnl",
+    "maxDrawdown",
+    "recoveryFactor",
+    "stability",
+    "robustness",
+    "monteCarloP5",
+    "walkForwardOos",
+    "sufficient",
   ].join(",");
-  const body = rows.map((r) => [
-    csvEscape(provenance.researchRunId),
-    csvEscape(provenance.generatedAt),
-    csvEscape(provenance.engineVersion),
-    csvEscape(r.instrument), csvEscape(r.timeframe), csvEscape(r.strategy),
-    csvEscape(r.formula), csvEscape(r.regime), csvEscape(r.runId),
-    r.trades, r.wins, r.losses, r.winRate, r.profitFactor, r.expectancy,
-    r.netPnl, r.maxDrawdown, r.recoveryFactor ?? "",
-    r.stability ?? "", r.robustness ?? "", r.monteCarloP5 ?? "", r.walkForwardOos ?? "",
-    r.sufficient ? "yes" : "no",
-  ].join(","));
+  const body = rows.map((r) =>
+    [
+      csvEscape(provenance.researchRunId),
+      csvEscape(provenance.generatedAt),
+      csvEscape(provenance.engineVersion),
+      csvEscape(r.instrument),
+      csvEscape(r.timeframe),
+      csvEscape(r.strategy),
+      csvEscape(r.formula),
+      csvEscape(r.regime),
+      csvEscape(r.runId),
+      r.trades,
+      r.wins,
+      r.losses,
+      r.winRate,
+      r.profitFactor,
+      r.expectancy,
+      r.netPnl,
+      r.maxDrawdown,
+      r.recoveryFactor ?? "",
+      r.stability ?? "",
+      r.robustness ?? "",
+      r.monteCarloP5 ?? "",
+      r.walkForwardOos ?? "",
+      r.sufficient ? "yes" : "no",
+    ].join(","),
+  );
   return [header, ...body].join("\n");
 }
 
@@ -660,13 +805,17 @@ export function buildCrossAssetJson(
     consistency?: Readonly<Record<string, ConsistencyScore>>;
   },
 ): string {
-  return JSON.stringify({
-    provenance,
-    rows,
-    leaderboard: extras?.leaderboard ?? null,
-    summary: extras?.summary ?? null,
-    consistency: extras?.consistency ?? null,
-  }, null, 2);
+  return JSON.stringify(
+    {
+      provenance,
+      rows,
+      leaderboard: extras?.leaderboard ?? null,
+      summary: extras?.summary ?? null,
+      consistency: extras?.consistency ?? null,
+    },
+    null,
+    2,
+  );
 }
 
 export const CROSS_ASSET_ENGINE_VERSION = "CROSS_ASSET_V1";

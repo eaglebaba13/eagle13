@@ -37,7 +37,12 @@ describe("VIX regime & strike rule", () => {
 
 describe("Direction merger", () => {
   it("resolves bullish consensus", () => {
-    const d = mergeDirection({ decision: "BULLISH", pcr: "BULLISH", gti: "BULLISH", breadth: "NEUTRAL" });
+    const d = mergeDirection({
+      decision: "BULLISH",
+      pcr: "BULLISH",
+      gti: "BULLISH",
+      breadth: "NEUTRAL",
+    });
     expect(d.bias).toBe("BULLISH");
     expect(d.confidence).toBeGreaterThan(0);
   });
@@ -55,7 +60,11 @@ describe("Direction merger", () => {
   });
   it("caps confidence by decisionConfidence", () => {
     const d = mergeDirection({
-      decision: "BULLISH", pcr: "BULLISH", gti: "BULLISH", breadth: "BULLISH", astro: "BULLISH",
+      decision: "BULLISH",
+      pcr: "BULLISH",
+      gti: "BULLISH",
+      breadth: "BULLISH",
+      astro: "BULLISH",
       decisionConfidence: 20,
     });
     expect(d.confidence).toBeLessThanOrEqual(20);
@@ -64,7 +73,10 @@ describe("Direction merger", () => {
 
 describe("Strategy engine — direction cases", () => {
   it("recommends bull-directional strategies on BULLISH + LOW-VIX", () => {
-    const out = run({ decision: "BULLISH", pcr: "BULLISH", gti: "BULLISH", breadth: "BULLISH" }, 12);
+    const out = run(
+      { decision: "BULLISH", pcr: "BULLISH", gti: "BULLISH", breadth: "BULLISH" },
+      12,
+    );
     expect(out.direction.bias).toBe("BULLISH");
     expect(out.strikeRegime).toBe("ITM");
     expect(out.recommended.length).toBeGreaterThan(0);
@@ -72,13 +84,19 @@ describe("Strategy engine — direction cases", () => {
     expect(bull).toBeDefined();
   });
   it("recommends bear-directional strategies on BEARISH + MID-VIX", () => {
-    const out = run({ decision: "BEARISH", pcr: "BEARISH", gti: "BEARISH", breadth: "BEARISH" }, 17);
+    const out = run(
+      { decision: "BEARISH", pcr: "BEARISH", gti: "BEARISH", breadth: "BEARISH" },
+      17,
+    );
     expect(out.direction.bias).toBe("BEARISH");
     expect(out.strikeRegime).toBe("ATM");
     expect(out.recommended.some((s) => s.profile.bias === "BEAR")).toBe(true);
   });
   it("prefers neutral/short-vol strategies on NEUTRAL + HIGH-VIX", () => {
-    const out = run({ decision: "NEUTRAL", pcr: "NEUTRAL", gti: "NEUTRAL", breadth: "NEUTRAL" }, 25);
+    const out = run(
+      { decision: "NEUTRAL", pcr: "NEUTRAL", gti: "NEUTRAL", breadth: "NEUTRAL" },
+      25,
+    );
     expect(out.strikeRegime).toBe("OTM");
     // Top strategy in neutral regime should be range/short-vol biased
     if (out.recommended.length > 0) {
@@ -86,7 +104,10 @@ describe("Strategy engine — direction cases", () => {
     }
   });
   it("suppresses recommendations on CONFLICT", () => {
-    const out = run({ decision: "BULLISH", pcr: "BEARISH", gti: "BULLISH", breadth: "BEARISH" }, 17);
+    const out = run(
+      { decision: "BULLISH", pcr: "BEARISH", gti: "BULLISH", breadth: "BEARISH" },
+      17,
+    );
     expect(out.direction.bias).toBe("CONFLICT");
     expect(out.recommended).toEqual([]);
   });
@@ -102,11 +123,26 @@ describe("Strategy catalogue coverage", () => {
   it("includes every required strategy key", () => {
     const keys = STRATEGY_CATALOGUE.map((s) => s.key);
     for (const k of [
-      "BUY_CE","BUY_PE","SELL_CE","SELL_PE",
-      "BULL_CALL_SPREAD","BEAR_PUT_SPREAD","BULL_PUT_SPREAD","BEAR_CALL_SPREAD",
-      "LONG_STRADDLE","SHORT_STRADDLE","LONG_STRANGLE","SHORT_STRANGLE",
-      "IRON_CONDOR","IRON_FLY","CALENDAR_SPREAD","DIAGONAL_SPREAD",
-      "RATIO_SPREAD","BUTTERFLY","BROKEN_WING_BUTTERFLY","JADE_LIZARD",
+      "BUY_CE",
+      "BUY_PE",
+      "SELL_CE",
+      "SELL_PE",
+      "BULL_CALL_SPREAD",
+      "BEAR_PUT_SPREAD",
+      "BULL_PUT_SPREAD",
+      "BEAR_CALL_SPREAD",
+      "LONG_STRADDLE",
+      "SHORT_STRADDLE",
+      "LONG_STRANGLE",
+      "SHORT_STRANGLE",
+      "IRON_CONDOR",
+      "IRON_FLY",
+      "CALENDAR_SPREAD",
+      "DIAGONAL_SPREAD",
+      "RATIO_SPREAD",
+      "BUTTERFLY",
+      "BROKEN_WING_BUTTERFLY",
+      "JADE_LIZARD",
     ]) {
       expect(keys).toContain(k);
     }
@@ -125,7 +161,18 @@ describe("Strategy catalogue coverage", () => {
 
 describe("Explanation & determinism", () => {
   it("explanation lists every canonical module and VIX", () => {
-    const out = run({ decision: "BULLISH", pcr: "BULLISH", gti: "BULLISH", breadth: "NEUTRAL", astro: "BULLISH", gann: "NEUTRAL", gannGap: "NEUTRAL" }, 13.4);
+    const out = run(
+      {
+        decision: "BULLISH",
+        pcr: "BULLISH",
+        gti: "BULLISH",
+        breadth: "NEUTRAL",
+        astro: "BULLISH",
+        gann: "NEUTRAL",
+        gannGap: "NEUTRAL",
+      },
+      13.4,
+    );
     expect(out.explanation).toMatch(/Decision Bullish/);
     expect(out.explanation).toMatch(/PCR Bullish/);
     expect(out.explanation).toMatch(/GTI Bullish/);

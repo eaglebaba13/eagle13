@@ -11,16 +11,9 @@ const csvEscape = (v: string | number | null | undefined): string => {
 };
 
 export type ExportSection =
-  | "summary"
-  | "trades"
-  | "dataQuality"
-  | "formulaComparison"
-  | "providerComparison";
+  "summary" | "trades" | "dataQuality" | "formulaComparison" | "providerComparison";
 
-function provenanceHeader(
-  r: HistoricalBacktestResult,
-  validationOnly: boolean,
-): string[] {
+function provenanceHeader(r: HistoricalBacktestResult, validationOnly: boolean): string[] {
   const lines = [
     `# formulaVersion=${r.formulaVersion}`,
     `# engineVersion=${r.engineVersion}`,
@@ -47,9 +40,7 @@ export function exportSummaryCsv(
 ): string {
   const meta = provenanceHeader(r, opts.validationOnly ?? false);
   const header = ["month", "trades", "wins", "losses", "netPnl"].join(",");
-  const rows = r.monthly.map((m) =>
-    [m.month, m.trades, m.wins, m.losses, m.netPnl].join(","),
-  );
+  const rows = r.monthly.map((m) => [m.month, m.trades, m.wins, m.losses, m.netPnl].join(","));
   return `${meta.join("\n")}\n${header}\n${rows.join("\n")}`;
 }
 

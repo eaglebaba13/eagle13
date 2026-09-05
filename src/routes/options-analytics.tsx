@@ -263,8 +263,7 @@ function OptionsAnalyticsPage() {
   }, [snapshot, astro, market, symbol, isUnavailable]);
 
   const spotChangePct = market.nifty.changePct;
-  const daysToExpiry =
-    expiries.find((e) => e.expiry === selectedExpiry)?.daysToExpiry ?? 0;
+  const daysToExpiry = expiries.find((e) => e.expiry === selectedExpiry)?.daysToExpiry ?? 0;
 
   // Tradability gate — always compute so the source bar can render.
   const coverage = analytics
@@ -443,12 +442,10 @@ function OptionsAnalyticsPage() {
           }}
         >
           <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>
-              Options Analytics Terminal
-            </div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>Options Analytics Terminal</div>
             <div style={{ color: C.muted, fontSize: "0.85rem" }}>
-              {symbol === "NIFTY" ? "NIFTY 50" : "BANK NIFTY"} · Provider:{" "}
-              {snapshot.provider} · Snapshot <HydratedTime iso={snapshot.fetchedAt} />
+              {symbol === "NIFTY" ? "NIFTY 50" : "BANK NIFTY"} · Provider: {snapshot.provider} ·
+              Snapshot <HydratedTime iso={snapshot.fetchedAt} />
             </div>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -595,8 +592,7 @@ function OptionsAnalyticsPage() {
                 style={{
                   padding: "0.4rem 0.6rem",
                   border: `1px solid ${e.expiry === selectedExpiry ? C.blue : C.border}`,
-                  background:
-                    e.expiry === selectedExpiry ? "rgba(70,130,255,0.1)" : "transparent",
+                  background: e.expiry === selectedExpiry ? "rgba(70,130,255,0.1)" : "transparent",
                   color: C.text,
                   borderRadius: 6,
                   cursor: "pointer",
@@ -612,319 +608,453 @@ function OptionsAnalyticsPage() {
         </div>
 
         {!analytics ? null : (
-        <>
-        {/* Summary cards */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "0.75rem",
-            marginBottom: "1rem",
-          }}
-        >
-          <Card label="Spot" value={fmt(snapshot.spot, 2)} sub={pct(spotChangePct)} tone={spotChangePct >= 0 ? "green" : "red"} />
-          <Card label="Expiry" value={selectedExpiry} sub={`${daysToExpiry} days`} />
-          <Card label="ATM Strike" value={fmt(analytics.atm)} sub={`Step ${step}`} />
-          <Card label="Max Pain" value={fmt(analytics.mp.strike)} sub={`Δ ${fmt(analytics.mp.strike - snapshot.spot)}`} />
-          <Card label="PCR OI" value={analytics.pcr.pcrOi.toFixed(2)} sub={interpretPcr(analytics.pcr.pcrOi)} />
-          <Card label="PCR Volume" value={analytics.pcr.pcrVolume.toFixed(2)} />
-          <Card label="Total Call OI" value={fmt(analytics.pcr.totalCallOi)} />
-          <Card label="Total Put OI" value={fmt(analytics.pcr.totalPutOi)} />
-          <Card label="Highest Call OI" value={fmt(analytics.hiCall?.strike ?? 0)} tone="red" sub="Resistance" />
-          <Card label="Highest Put OI" value={fmt(analytics.hiPut?.strike ?? 0)} tone="green" sub="Support" />
-          <Card label="India VIX" value={analytics.vix != null ? analytics.vix.toFixed(2) : "—"} sub={analytics.vix == null ? undefined : analytics.vix < 15 ? "Low — prefer ITM" : analytics.vix <= 20 ? "Moderate — prefer ATM" : "High — prefer OTM"} />
-          <Card label="Astro Bias" value={analytics.astroBias} tone={analytics.astroBias === "Bullish" ? "green" : analytics.astroBias === "Bearish" ? "red" : undefined} />
-        </div>
-
-        {/* Recommendation */}
-        <div
-          style={{
-            padding: "1rem",
-            border: `1px solid ${recColor}`,
-            borderRadius: 10,
-            background: `linear-gradient(180deg, ${recColor}18, transparent)`,
-            marginBottom: "1rem",
-          }}
-        >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: "0.8rem", color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
-                Recommendation
-              </div>
-              <div style={{ fontSize: "2rem", fontWeight: 800, color: recColor }}>
-                {recLabel}
-              </div>
-              <div style={{ fontSize: "0.85rem", color: C.muted }}>
-                {showRealRecommendation
-                  ? `Confidence ${safeConfidence}%${sourceStatus === "DELAYED" ? " (delayed-data penalty applied)" : ""}`
-                  : isDemo
-                    ? "Demo mode — live recommendations disabled"
-                    : safeAction === "MARKET_CLOSED"
-                      ? "Market closed — showing previous-session snapshot"
-                      : "Analytics paused until data integrity is restored"}
-              </div>
-            </div>
-            {analytics.focus && sourceStatus === "LIVE" && marketOpen && !isDemo && (
-              <div
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: `1px solid ${analytics.focus === "FOCUS_CALL" ? C.green : C.red}`,
-                  borderRadius: 8,
-                  color: analytics.focus === "FOCUS_CALL" ? C.green : C.red,
-                  fontWeight: 700,
-                  animation: "pulse 1.5s infinite",
-                }}
-              >
-                {analytics.focus === "FOCUS_CALL" ? "🟢 FOCUS ON CALL" : "🔴 FOCUS ON PUT"}
-              </div>
-            )}
-          </div>
-          {(tradability.blockingReasons.length > 0 || tradability.warnings.length > 0) && (
-            <ul
-              style={{
-                margin: "0.75rem 0 0",
-                paddingLeft: "1.25rem",
-                color: tradability.blockingReasons.length > 0 ? C.red : C.gold,
-                fontSize: "0.8rem",
-              }}
-            >
-              {tradability.blockingReasons.map((r) => (
-                <li key={`b-${r}`}>Blocking: {r}</li>
-              ))}
-              {tradability.warnings.map((r) => (
-                <li key={`w-${r}`}>Warning: {r}</li>
-              ))}
-            </ul>
-          )}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "0.5rem",
-              marginTop: "0.75rem",
-            }}
-          >
-            {(showRealRecommendation ? analytics.recommendation.scores : []).map((s) => (
-              <div
-                key={s.label}
-                style={{
-                  padding: "0.5rem 0.75rem",
-                  background: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  fontSize: "0.8rem",
-                }}
-              >
-                <div style={{ color: C.muted }}>{s.label}</div>
-                <div style={{ display: "flex", gap: "0.5rem", marginTop: 2 }}>
-                  <span style={{ color: C.green }}>CE {s.ce}</span>
-                  <span style={{ color: C.red }}>PE {s.pe}</span>
-                </div>
-                <div style={{ color: C.muted, fontSize: "0.72rem", marginTop: 2 }}>{s.note}</div>
-              </div>
-            ))}
-          </div>
-          {showRealRecommendation && analytics.recommendation.reasons.length > 0 && (
-            <ul
-              style={{
-                margin: "0.75rem 0 0",
-                paddingLeft: "1.25rem",
-                color: C.muted,
-                fontSize: "0.82rem",
-              }}
-            >
-              {analytics.recommendation.reasons.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Options S/R + Confluence */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "0.75rem",
-            marginBottom: "1rem",
-          }}
-        >
-          {analytics.levelsWithConfluence.map((lv) => (
+          <>
+            {/* Summary cards */}
             <div
-              key={`${lv.kind}-${lv.rank}`}
               style={{
-                padding: "0.75rem",
-                background: C.card,
-                border: `1px solid ${lv.kind === "RESISTANCE" ? C.red : C.green}`,
-                borderRadius: 8,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "0.75rem",
+                marginBottom: "1rem",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ fontWeight: 700 }}>
-                  {lv.rank === "PRIMARY" ? "Primary" : "Secondary"} {lv.kind === "RESISTANCE" ? "Resistance" : "Support"}
-                </div>
-                <div style={{ color: lv.kind === "RESISTANCE" ? C.red : C.green, fontWeight: 700 }}>
-                  {fmt(lv.strike)}
-                </div>
-              </div>
-              <div style={{ color: C.muted, fontSize: "0.8rem", marginTop: 4 }}>
-                OI {fmt(lv.oi)} · ΔOI {fmt(lv.changeOi)}
-              </div>
-              {lv.confluence && (
-                <div style={{ fontSize: "0.8rem", marginTop: 6 }}>
-                  Astro: {lv.confluence.level.label} ({fmt(lv.confluence.level.value)}) · Δ {fmt(lv.confluence.distance, 1)}
-                  <span
+              <Card
+                label="Spot"
+                value={fmt(snapshot.spot, 2)}
+                sub={pct(spotChangePct)}
+                tone={spotChangePct >= 0 ? "green" : "red"}
+              />
+              <Card label="Expiry" value={selectedExpiry} sub={`${daysToExpiry} days`} />
+              <Card label="ATM Strike" value={fmt(analytics.atm)} sub={`Step ${step}`} />
+              <Card
+                label="Max Pain"
+                value={fmt(analytics.mp.strike)}
+                sub={`Δ ${fmt(analytics.mp.strike - snapshot.spot)}`}
+              />
+              <Card
+                label="PCR OI"
+                value={analytics.pcr.pcrOi.toFixed(2)}
+                sub={interpretPcr(analytics.pcr.pcrOi)}
+              />
+              <Card label="PCR Volume" value={analytics.pcr.pcrVolume.toFixed(2)} />
+              <Card label="Total Call OI" value={fmt(analytics.pcr.totalCallOi)} />
+              <Card label="Total Put OI" value={fmt(analytics.pcr.totalPutOi)} />
+              <Card
+                label="Highest Call OI"
+                value={fmt(analytics.hiCall?.strike ?? 0)}
+                tone="red"
+                sub="Resistance"
+              />
+              <Card
+                label="Highest Put OI"
+                value={fmt(analytics.hiPut?.strike ?? 0)}
+                tone="green"
+                sub="Support"
+              />
+              <Card
+                label="India VIX"
+                value={analytics.vix != null ? analytics.vix.toFixed(2) : "—"}
+                sub={
+                  analytics.vix == null
+                    ? undefined
+                    : analytics.vix < 15
+                      ? "Low — prefer ITM"
+                      : analytics.vix <= 20
+                        ? "Moderate — prefer ATM"
+                        : "High — prefer OTM"
+                }
+              />
+              <Card
+                label="Astro Bias"
+                value={analytics.astroBias}
+                tone={
+                  analytics.astroBias === "Bullish"
+                    ? "green"
+                    : analytics.astroBias === "Bearish"
+                      ? "red"
+                      : undefined
+                }
+              />
+            </div>
+
+            {/* Recommendation */}
+            <div
+              style={{
+                padding: "1rem",
+                border: `1px solid ${recColor}`,
+                borderRadius: 10,
+                background: `linear-gradient(180deg, ${recColor}18, transparent)`,
+                marginBottom: "1rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "1rem",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div
                     style={{
-                      marginLeft: 8,
-                      padding: "1px 6px",
-                      borderRadius: 4,
-                      background:
-                        lv.confluence.strength === "VERY_STRONG"
-                          ? C.gold
-                          : lv.confluence.strength === "STRONG"
-                            ? C.blue
-                            : C.border,
-                      color: "#000",
-                      fontSize: "0.7rem",
-                      fontWeight: 700,
+                      fontSize: "0.8rem",
+                      color: C.muted,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
                     }}
                   >
-                    {lv.confluence.strength.replace("_", " ")}
-                  </span>
+                    Recommendation
+                  </div>
+                  <div style={{ fontSize: "2rem", fontWeight: 800, color: recColor }}>
+                    {recLabel}
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: C.muted }}>
+                    {showRealRecommendation
+                      ? `Confidence ${safeConfidence}%${sourceStatus === "DELAYED" ? " (delayed-data penalty applied)" : ""}`
+                      : isDemo
+                        ? "Demo mode — live recommendations disabled"
+                        : safeAction === "MARKET_CLOSED"
+                          ? "Market closed — showing previous-session snapshot"
+                          : "Analytics paused until data integrity is restored"}
+                  </div>
                 </div>
+                {analytics.focus && sourceStatus === "LIVE" && marketOpen && !isDemo && (
+                  <div
+                    style={{
+                      padding: "0.5rem 1rem",
+                      border: `1px solid ${analytics.focus === "FOCUS_CALL" ? C.green : C.red}`,
+                      borderRadius: 8,
+                      color: analytics.focus === "FOCUS_CALL" ? C.green : C.red,
+                      fontWeight: 700,
+                      animation: "pulse 1.5s infinite",
+                    }}
+                  >
+                    {analytics.focus === "FOCUS_CALL" ? "🟢 FOCUS ON CALL" : "🔴 FOCUS ON PUT"}
+                  </div>
+                )}
+              </div>
+              {(tradability.blockingReasons.length > 0 || tradability.warnings.length > 0) && (
+                <ul
+                  style={{
+                    margin: "0.75rem 0 0",
+                    paddingLeft: "1.25rem",
+                    color: tradability.blockingReasons.length > 0 ? C.red : C.gold,
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  {tradability.blockingReasons.map((r) => (
+                    <li key={`b-${r}`}>Blocking: {r}</li>
+                  ))}
+                  {tradability.warnings.map((r) => (
+                    <li key={`w-${r}`}>Warning: {r}</li>
+                  ))}
+                </ul>
+              )}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "0.5rem",
+                  marginTop: "0.75rem",
+                }}
+              >
+                {(showRealRecommendation ? analytics.recommendation.scores : []).map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      padding: "0.5rem 0.75rem",
+                      background: C.card,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    <div style={{ color: C.muted }}>{s.label}</div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: 2 }}>
+                      <span style={{ color: C.green }}>CE {s.ce}</span>
+                      <span style={{ color: C.red }}>PE {s.pe}</span>
+                    </div>
+                    <div style={{ color: C.muted, fontSize: "0.72rem", marginTop: 2 }}>
+                      {s.note}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {showRealRecommendation && analytics.recommendation.reasons.length > 0 && (
+                <ul
+                  style={{
+                    margin: "0.75rem 0 0",
+                    paddingLeft: "1.25rem",
+                    color: C.muted,
+                    fontSize: "0.82rem",
+                  }}
+                >
+                  {analytics.recommendation.reasons.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
               )}
             </div>
-          ))}
-        </div>
 
-        {/* Writing / Unwinding */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "0.75rem",
-            marginBottom: "1rem",
-          }}
-        >
-          <MatrixPanel title="Strongest Call Writing" rows={analytics.callWritingRows} tone="red" />
-          <MatrixPanel title="Strongest Put Writing" rows={analytics.putWritingRows} tone="green" />
-          <MatrixPanel title="Strongest Call Unwinding" rows={analytics.callUnwindingRows} tone="green" />
-          <MatrixPanel title="Strongest Put Unwinding" rows={analytics.putUnwindingRows} tone="red" />
-        </div>
-
-        {/* Option chain table */}
-        <div style={{ marginBottom: "1rem" }}>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
-            <div style={{ fontWeight: 700 }}>Option Chain</div>
-            <input
-              type="search"
-              placeholder="Filter strike…"
-              value={strikeSearch}
-              onChange={(e) => setStrikeSearch(e.target.value)}
+            {/* Options S/R + Confluence */}
+            <div
               style={{
-                padding: "0.35rem 0.5rem",
-                borderRadius: 6,
-                background: C.card,
-                border: `1px solid ${C.border}`,
-                color: C.text,
-                fontSize: "0.8rem",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "0.75rem",
+                marginBottom: "1rem",
               }}
-            />
-            <div style={{ color: C.muted, fontSize: "0.75rem" }}>
-              {filteredLegs.length} strikes
-            </div>
-          </div>
-          <div
-            style={{
-              overflowX: "auto",
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              background: C.card,
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
-              <thead style={{ position: "sticky", top: 0, background: C.card }}>
-                <tr style={{ color: C.muted }}>
-                  <th style={cellStyle("right")}>CE OI</th>
-                  <th style={cellStyle("right")}>CE ΔOI</th>
-                  <th style={cellStyle("right")}>CE Vol</th>
-                  <th style={cellStyle("right")}>CE IV</th>
-                  <th style={cellStyle("right")}>CE LTP</th>
-                  <th style={{ ...cellStyle("center"), background: C.card, fontWeight: 700 }}>Strike</th>
-                  <th style={cellStyle("right")}>PE LTP</th>
-                  <th style={cellStyle("right")}>PE IV</th>
-                  <th style={cellStyle("right")}>PE Vol</th>
-                  <th style={cellStyle("right")}>PE ΔOI</th>
-                  <th style={cellStyle("right")}>PE OI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLegs.map(([k, row]) => {
-                  const isAtm = k === analytics.atm;
-                  const ceMon = classifyMoneyness(k, snapshot.spot, "CE", step);
-                  const peMon = classifyMoneyness(k, snapshot.spot, "PE", step);
-                  return (
-                    <tr
-                      key={k}
-                      style={{
-                        background: isAtm ? "rgba(255,180,0,0.08)" : "transparent",
-                        borderTop: `1px solid ${C.border}`,
-                      }}
+            >
+              {analytics.levelsWithConfluence.map((lv) => (
+                <div
+                  key={`${lv.kind}-${lv.rank}`}
+                  style={{
+                    padding: "0.75rem",
+                    background: C.card,
+                    border: `1px solid ${lv.kind === "RESISTANCE" ? C.red : C.green}`,
+                    borderRadius: 8,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ fontWeight: 700 }}>
+                      {lv.rank === "PRIMARY" ? "Primary" : "Secondary"}{" "}
+                      {lv.kind === "RESISTANCE" ? "Resistance" : "Support"}
+                    </div>
+                    <div
+                      style={{ color: lv.kind === "RESISTANCE" ? C.red : C.green, fontWeight: 700 }}
                     >
-                      <td style={{ ...cellStyle("right"), background: ceMon === "ITM" ? "rgba(60,150,90,0.10)" : "transparent" }}>{fmt(row.ce?.oi ?? 0)}</td>
-                      <td style={{ ...cellStyle("right"), color: (row.ce?.changeOi ?? 0) >= 0 ? C.green : C.red }}>
-                        {fmt(row.ce?.changeOi ?? 0)}
-                      </td>
-                      <td style={cellStyle("right")}>{fmt(row.ce?.volume ?? 0)}</td>
-                      <td style={cellStyle("right")}>{row.ce?.iv != null ? row.ce.iv.toFixed(2) : "—"}</td>
-                      <td style={cellStyle("right")}>{fmt(row.ce?.ltp ?? 0, 2)}</td>
-                      <td style={{ ...cellStyle("center"), fontWeight: isAtm ? 800 : 600, color: isAtm ? C.gold : C.text }}>
-                        {fmt(k)}
-                        <div style={{ fontSize: "0.65rem", color: C.muted }}>
-                          {ceMon}/{peMon}
-                        </div>
-                      </td>
-                      <td style={cellStyle("right")}>{fmt(row.pe?.ltp ?? 0, 2)}</td>
-                      <td style={cellStyle("right")}>{row.pe?.iv != null ? row.pe.iv.toFixed(2) : "—"}</td>
-                      <td style={cellStyle("right")}>{fmt(row.pe?.volume ?? 0)}</td>
-                      <td style={{ ...cellStyle("right"), color: (row.pe?.changeOi ?? 0) >= 0 ? C.green : C.red }}>
-                        {fmt(row.pe?.changeOi ?? 0)}
-                      </td>
-                      <td style={{ ...cellStyle("right"), background: peMon === "ITM" ? "rgba(60,150,90,0.10)" : "transparent" }}>{fmt(row.pe?.oi ?? 0)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      {fmt(lv.strike)}
+                    </div>
+                  </div>
+                  <div style={{ color: C.muted, fontSize: "0.8rem", marginTop: 4 }}>
+                    OI {fmt(lv.oi)} · ΔOI {fmt(lv.changeOi)}
+                  </div>
+                  {lv.confluence && (
+                    <div style={{ fontSize: "0.8rem", marginTop: 6 }}>
+                      Astro: {lv.confluence.level.label} ({fmt(lv.confluence.level.value)}) · Δ{" "}
+                      {fmt(lv.confluence.distance, 1)}
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          padding: "1px 6px",
+                          borderRadius: 4,
+                          background:
+                            lv.confluence.strength === "VERY_STRONG"
+                              ? C.gold
+                              : lv.confluence.strength === "STRONG"
+                                ? C.blue
+                                : C.border,
+                          color: "#000",
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {lv.confluence.strength.replace("_", " ")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
-        {/* Data quality */}
-        <div
-          style={{
-            padding: "0.75rem 1rem",
-            border: `1px solid ${C.border}`,
-            borderRadius: 8,
-            background: C.card,
-            fontSize: "0.8rem",
-            color: C.muted,
-            marginBottom: "1rem",
-          }}
-        >
-          Provider: <strong style={{ color: C.text }}>{snapshot.provider}</strong> · Source:{" "}
-          <strong style={{ color: sourceStatus === "LIVE" ? C.green : sourceStatus === "DEMO" ? "#a855f7" : C.gold }}>
-            {sourceStatus}
-          </strong>{" "}
-          · Strikes: {analytics.dq.strikesLoaded} · IV:{" "}
-          {analytics.dq.hasIv ? "available" : "unavailable"} · Greeks: not provided · Data
-          age: {analytics.dq.ageSeconds}s · Missing: {analytics.dq.missingFields.length || "none"}
-        </div>
-        </>
+            {/* Writing / Unwinding */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: "0.75rem",
+                marginBottom: "1rem",
+              }}
+            >
+              <MatrixPanel
+                title="Strongest Call Writing"
+                rows={analytics.callWritingRows}
+                tone="red"
+              />
+              <MatrixPanel
+                title="Strongest Put Writing"
+                rows={analytics.putWritingRows}
+                tone="green"
+              />
+              <MatrixPanel
+                title="Strongest Call Unwinding"
+                rows={analytics.callUnwindingRows}
+                tone="green"
+              />
+              <MatrixPanel
+                title="Strongest Put Unwinding"
+                rows={analytics.putUnwindingRows}
+                tone="red"
+              />
+            </div>
+
+            {/* Option chain table */}
+            <div style={{ marginBottom: "1rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "center",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>Option Chain</div>
+                <input
+                  type="search"
+                  placeholder="Filter strike…"
+                  value={strikeSearch}
+                  onChange={(e) => setStrikeSearch(e.target.value)}
+                  style={{
+                    padding: "0.35rem 0.5rem",
+                    borderRadius: 6,
+                    background: C.card,
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                    fontSize: "0.8rem",
+                  }}
+                />
+                <div style={{ color: C.muted, fontSize: "0.75rem" }}>
+                  {filteredLegs.length} strikes
+                </div>
+              </div>
+              <div
+                style={{
+                  overflowX: "auto",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  background: C.card,
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
+                  <thead style={{ position: "sticky", top: 0, background: C.card }}>
+                    <tr style={{ color: C.muted }}>
+                      <th style={cellStyle("right")}>CE OI</th>
+                      <th style={cellStyle("right")}>CE ΔOI</th>
+                      <th style={cellStyle("right")}>CE Vol</th>
+                      <th style={cellStyle("right")}>CE IV</th>
+                      <th style={cellStyle("right")}>CE LTP</th>
+                      <th style={{ ...cellStyle("center"), background: C.card, fontWeight: 700 }}>
+                        Strike
+                      </th>
+                      <th style={cellStyle("right")}>PE LTP</th>
+                      <th style={cellStyle("right")}>PE IV</th>
+                      <th style={cellStyle("right")}>PE Vol</th>
+                      <th style={cellStyle("right")}>PE ΔOI</th>
+                      <th style={cellStyle("right")}>PE OI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLegs.map(([k, row]) => {
+                      const isAtm = k === analytics.atm;
+                      const ceMon = classifyMoneyness(k, snapshot.spot, "CE", step);
+                      const peMon = classifyMoneyness(k, snapshot.spot, "PE", step);
+                      return (
+                        <tr
+                          key={k}
+                          style={{
+                            background: isAtm ? "rgba(255,180,0,0.08)" : "transparent",
+                            borderTop: `1px solid ${C.border}`,
+                          }}
+                        >
+                          <td
+                            style={{
+                              ...cellStyle("right"),
+                              background: ceMon === "ITM" ? "rgba(60,150,90,0.10)" : "transparent",
+                            }}
+                          >
+                            {fmt(row.ce?.oi ?? 0)}
+                          </td>
+                          <td
+                            style={{
+                              ...cellStyle("right"),
+                              color: (row.ce?.changeOi ?? 0) >= 0 ? C.green : C.red,
+                            }}
+                          >
+                            {fmt(row.ce?.changeOi ?? 0)}
+                          </td>
+                          <td style={cellStyle("right")}>{fmt(row.ce?.volume ?? 0)}</td>
+                          <td style={cellStyle("right")}>
+                            {row.ce?.iv != null ? row.ce.iv.toFixed(2) : "—"}
+                          </td>
+                          <td style={cellStyle("right")}>{fmt(row.ce?.ltp ?? 0, 2)}</td>
+                          <td
+                            style={{
+                              ...cellStyle("center"),
+                              fontWeight: isAtm ? 800 : 600,
+                              color: isAtm ? C.gold : C.text,
+                            }}
+                          >
+                            {fmt(k)}
+                            <div style={{ fontSize: "0.65rem", color: C.muted }}>
+                              {ceMon}/{peMon}
+                            </div>
+                          </td>
+                          <td style={cellStyle("right")}>{fmt(row.pe?.ltp ?? 0, 2)}</td>
+                          <td style={cellStyle("right")}>
+                            {row.pe?.iv != null ? row.pe.iv.toFixed(2) : "—"}
+                          </td>
+                          <td style={cellStyle("right")}>{fmt(row.pe?.volume ?? 0)}</td>
+                          <td
+                            style={{
+                              ...cellStyle("right"),
+                              color: (row.pe?.changeOi ?? 0) >= 0 ? C.green : C.red,
+                            }}
+                          >
+                            {fmt(row.pe?.changeOi ?? 0)}
+                          </td>
+                          <td
+                            style={{
+                              ...cellStyle("right"),
+                              background: peMon === "ITM" ? "rgba(60,150,90,0.10)" : "transparent",
+                            }}
+                          >
+                            {fmt(row.pe?.oi ?? 0)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Data quality */}
+            <div
+              style={{
+                padding: "0.75rem 1rem",
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                background: C.card,
+                fontSize: "0.8rem",
+                color: C.muted,
+                marginBottom: "1rem",
+              }}
+            >
+              Provider: <strong style={{ color: C.text }}>{snapshot.provider}</strong> · Source:{" "}
+              <strong
+                style={{
+                  color:
+                    sourceStatus === "LIVE"
+                      ? C.green
+                      : sourceStatus === "DEMO"
+                        ? "#a855f7"
+                        : C.gold,
+                }}
+              >
+                {sourceStatus}
+              </strong>{" "}
+              · Strikes: {analytics.dq.strikesLoaded} · IV:{" "}
+              {analytics.dq.hasIv ? "available" : "unavailable"} · Greeks: not provided · Data age:{" "}
+              {analytics.dq.ageSeconds}s · Missing: {analytics.dq.missingFields.length || "none"}
+            </div>
+          </>
         )}
 
         <div style={{ fontSize: "0.75rem", color: C.muted }}>
-          Options analytics are derived from available market data and may be delayed or incomplete. OI,
-          IV, Greeks, Max Pain, and directional signals are analytical estimates, not guaranteed
+          Options analytics are derived from available market data and may be delayed or incomplete.
+          OI, IV, Greeks, Max Pain, and directional signals are analytical estimates, not guaranteed
           outcomes.
         </div>
 
@@ -963,10 +1093,23 @@ function Card({
         borderRadius: 8,
       }}
     >
-      <div style={{ color: C.muted, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <div
+        style={{
+          color: C.muted,
+          fontSize: "0.7rem",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
         {label}
       </div>
-      <div style={{ fontSize: "1.05rem", fontWeight: 700, color: tone === "green" ? C.green : tone === "red" ? C.red : C.text }}>
+      <div
+        style={{
+          fontSize: "1.05rem",
+          fontWeight: 700,
+          color: tone === "green" ? C.green : tone === "red" ? C.red : C.text,
+        }}
+      >
         {value}
       </div>
       {sub && <div style={{ color: C.muted, fontSize: "0.75rem" }}>{sub}</div>}
@@ -1002,8 +1145,16 @@ function MatrixPanel({
           <tbody>
             {rows.map((r) => (
               <tr key={r.strike}>
-                <td style={{ padding: "2px 0", fontWeight: 600 }}>{r.strike.toLocaleString("en-IN")}</td>
-                <td style={{ padding: "2px 0", textAlign: "right", color: r.changeOi >= 0 ? C.green : C.red }}>
+                <td style={{ padding: "2px 0", fontWeight: 600 }}>
+                  {r.strike.toLocaleString("en-IN")}
+                </td>
+                <td
+                  style={{
+                    padding: "2px 0",
+                    textAlign: "right",
+                    color: r.changeOi >= 0 ? C.green : C.red,
+                  }}
+                >
                   {r.changeOi >= 0 ? "+" : ""}
                   {r.changeOi.toLocaleString("en-IN")}
                 </td>
@@ -1044,24 +1195,83 @@ function MethodologyDrawer({ onClose }: { onClose: () => void }) {
           color: C.text,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "0.75rem",
+          }}
+        >
           <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>Methodology</div>
-          <button onClick={onClose} style={{ background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "0.25rem 0.6rem", cursor: "pointer" }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              color: C.text,
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              padding: "0.25rem 0.6rem",
+              cursor: "pointer",
+            }}
+          >
             Close
           </button>
         </div>
         <div style={{ fontSize: "0.85rem", lineHeight: 1.55, color: C.muted }}>
-          <p><strong style={{ color: C.text }}>Data source.</strong> Live options provider chain when reachable; a clearly-labelled deterministic SIMULATED chain built around the reference spot when the live options provider is unavailable.</p>
-          <p><strong style={{ color: C.text }}>Update frequency.</strong> 30-second cache, shared via the global scheduler.</p>
-          <p><strong style={{ color: C.text }}>PCR.</strong> PCR OI = Σ Put OI / Σ Call OI; PCR Volume = Σ Put Volume / Σ Call Volume. Interpretation thresholds default to bullish ≥ 1.1 and bearish ≤ 0.85 and are configurable per instrument.</p>
-          <p><strong style={{ color: C.text }}>Max Pain.</strong> Strike minimising Σ CE.oi · max(K − s, 0) + Σ PE.oi · max(s − K, 0), across the current chain.</p>
-          <p><strong style={{ color: C.text }}>Build-up.</strong> Price↑ & OI↑ = long buildup; Price↓ & OI↑ = short buildup / writing; Price↑ & OI↓ = short covering; Price↓ & OI↓ = long unwinding. Requires a previous snapshot.</p>
-          <p><strong style={{ color: C.text }}>Writing / unwinding.</strong> Ranked by change-in-OI; positive = writing, negative = unwinding.</p>
-          <p><strong style={{ color: C.text }}>Options S/R.</strong> Primary = highest OI strike; secondary = highest OI-addition strike. Puts → support, Calls → resistance.</p>
-          <p><strong style={{ color: C.text }}>Astro confluence.</strong> Distance from the options-derived level to the nearest EagleBaba Astro Level. Bands: ≤ tol very strong, ≤ 2·tol strong, ≤ 4·tol moderate, else weak. Tolerance is 5 pts for NIFTY, 20 pts for BANK NIFTY.</p>
-          <p><strong style={{ color: C.text }}>Recommendation.</strong> Transparent weighted score of six components: options OI structure vs Max Pain, PCR, writing/unwinding balance, market breadth, VIX preference (informational), and astro confluence. Confidence = winning-side score / max score. WAIT when data is incomplete or the two sides tie within ±2 points.</p>
-          <p><strong style={{ color: C.text }}>Greeks and IV.</strong> Provider values are used verbatim after validation. When the provider does not supply a value it is displayed as "—". Greeks and IV are never fabricated.</p>
-          <p><strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is directional-shape only and must not be traded from. When live options provider access is unavailable the "SIMULATED" badge and top banner make this explicit.</p>
+          <p>
+            <strong style={{ color: C.text }}>Data source.</strong> Live options provider chain when
+            reachable; a clearly-labelled deterministic SIMULATED chain built around the reference
+            spot when the live options provider is unavailable.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Update frequency.</strong> 30-second cache, shared via
+            the global scheduler.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>PCR.</strong> PCR OI = Σ Put OI / Σ Call OI; PCR
+            Volume = Σ Put Volume / Σ Call Volume. Interpretation thresholds default to bullish ≥
+            1.1 and bearish ≤ 0.85 and are configurable per instrument.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Max Pain.</strong> Strike minimising Σ CE.oi · max(K −
+            s, 0) + Σ PE.oi · max(s − K, 0), across the current chain.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Build-up.</strong> Price↑ & OI↑ = long buildup; Price↓
+            & OI↑ = short buildup / writing; Price↑ & OI↓ = short covering; Price↓ & OI↓ = long
+            unwinding. Requires a previous snapshot.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Writing / unwinding.</strong> Ranked by change-in-OI;
+            positive = writing, negative = unwinding.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Options S/R.</strong> Primary = highest OI strike;
+            secondary = highest OI-addition strike. Puts → support, Calls → resistance.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Astro confluence.</strong> Distance from the
+            options-derived level to the nearest EagleBaba Astro Level. Bands: ≤ tol very strong, ≤
+            2·tol strong, ≤ 4·tol moderate, else weak. Tolerance is 5 pts for NIFTY, 20 pts for BANK
+            NIFTY.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Recommendation.</strong> Transparent weighted score of
+            six components: options OI structure vs Max Pain, PCR, writing/unwinding balance, market
+            breadth, VIX preference (informational), and astro confluence. Confidence = winning-side
+            score / max score. WAIT when data is incomplete or the two sides tie within ±2 points.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Greeks and IV.</strong> Provider values are used
+            verbatim after validation. When the provider does not supply a value it is displayed as
+            "—". Greeks and IV are never fabricated.
+          </p>
+          <p>
+            <strong style={{ color: C.text }}>Limitations.</strong> Simulated fallback is
+            directional-shape only and must not be traded from. When live options provider access is
+            unavailable the "SIMULATED" badge and top banner make this explicit.
+          </p>
         </div>
       </div>
     </div>
@@ -1085,7 +1295,8 @@ function DemoBanner() {
         fontSize: "0.9rem",
       }}
     >
-      ⚠ DEMO DATA — NOT LIVE MARKET DATA. Recommendations, alerts and exports are disabled or watermarked.
+      ⚠ DEMO DATA — NOT LIVE MARKET DATA. Recommendations, alerts and exports are disabled or
+      watermarked.
     </div>
   );
 }

@@ -34,7 +34,9 @@ export type PaperStats = {
   profitFactor: number;
 };
 
-export function openPaperTrade(input: Omit<PaperFill, "id" | "exitPrice" | "exitAt" | "pnl" | "status">): PaperFill {
+export function openPaperTrade(
+  input: Omit<PaperFill, "id" | "exitPrice" | "exitAt" | "pnl" | "status">,
+): PaperFill {
   return {
     ...input,
     id: `paper_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -45,7 +47,11 @@ export function openPaperTrade(input: Omit<PaperFill, "id" | "exitPrice" | "exit
   };
 }
 
-export function closePaperTrade(t: PaperFill, exitPrice: number, exitAt = new Date().toISOString()): PaperFill {
+export function closePaperTrade(
+  t: PaperFill,
+  exitPrice: number,
+  exitAt = new Date().toISOString(),
+): PaperFill {
   if (t.status === "CLOSED") return t;
   const sign = t.side === "BUY" ? 1 : -1;
   const pnl = Math.round((exitPrice - t.entryPrice) * sign * t.quantity * 100) / 100;

@@ -51,14 +51,18 @@ function LicensePage() {
         <header>
           <h1 className="text-2xl font-semibold">License</h1>
           <p className="text-sm text-muted-foreground">
-            Your current plan, license key and the exact calculation engine that produced your results.
+            Your current plan, license key and the exact calculation engine that produced your
+            results.
           </p>
         </header>
 
         <section className="rounded-xl border border-border bg-card p-6 grid grid-cols-2 md:grid-cols-3 gap-6">
           <Stat label="Current plan" value={view.planLabel} />
           <Stat label="Status" value={<Badge status={view.status} />} />
-          <Stat label="Days remaining" value={view.daysRemaining === null ? "Unlimited" : `${view.daysRemaining}`} />
+          <Stat
+            label="Days remaining"
+            value={view.daysRemaining === null ? "Unlimited" : `${view.daysRemaining}`}
+          />
           <Stat
             label="License key"
             value={<span className="font-mono text-xs">{view.licenseKey}</span>}
@@ -83,8 +87,16 @@ function LicensePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <UsageMeter label="Watchlists" used={0} limit={effective.plan.limits.watchlists} />
             <UsageMeter label="Layouts" used={0} limit={effective.plan.limits.layouts} />
-            <UsageMeter label="Backtests / day" used={0} limit={effective.plan.limits.backtestsPerDay} />
-            <UsageMeter label="Exports / day" used={0} limit={effective.plan.limits.exportsPerDay} />
+            <UsageMeter
+              label="Backtests / day"
+              used={0}
+              limit={effective.plan.limits.backtestsPerDay}
+            />
+            <UsageMeter
+              label="Exports / day"
+              used={0}
+              limit={effective.plan.limits.exportsPerDay}
+            />
           </div>
           <div className="text-xs text-muted-foreground">
             Billing provider:{" "}
@@ -103,7 +115,10 @@ function LicensePage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
             {(Object.entries(ENGINE_VERSION) as [string, string][]).map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+              <div
+                key={k}
+                className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+              >
                 <span className="capitalize text-muted-foreground">{k}</span>
                 <span className="font-mono">{v}</span>
               </div>
@@ -115,9 +130,7 @@ function LicensePage() {
           </p>
         </section>
 
-        {loading && (
-          <p className="text-sm text-muted-foreground">Loading license…</p>
-        )}
+        {loading && <p className="text-sm text-muted-foreground">Loading license…</p>}
       </div>
     </div>
   );
@@ -140,7 +153,9 @@ function Badge({ status }: { status: string }) {
     inactive: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${map[status] ?? map.inactive}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${map[status] ?? map.inactive}`}
+    >
       {status}
     </span>
   );

@@ -173,10 +173,7 @@ function computeVwapSeries(candles: Candle[]): VwapSample[] {
   return out;
 }
 
-export function analyzeSmc(
-  candles: Candle[],
-  opts: SmcEngineOptions = {},
-): SmcEngineResult {
+export function analyzeSmc(candles: Candle[], opts: SmcEngineOptions = {}): SmcEngineResult {
   validateCandles(candles);
   const lookback = opts.lookback ?? 2;
   const emaFast = opts.emaFast ?? 13;

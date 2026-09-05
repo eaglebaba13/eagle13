@@ -24,19 +24,36 @@ import {
 describe("assertCausal — no future data leakage", () => {
   const T = (h: number) => new Date(`2024-01-15T${String(h).padStart(2, "0")}:00:00Z`).getTime();
   it("passes when signal < entry < exit and data is not newer than signal", () => {
-    expect(assertCausal({ signalTs: T(9), entryTs: T(10), exitTs: T(15), dataAvailableTs: T(8) })).toEqual({ ok: true });
+    expect(
+      assertCausal({ signalTs: T(9), entryTs: T(10), exitTs: T(15), dataAvailableTs: T(8) }),
+    ).toEqual({ ok: true });
   });
   it("fails when input datum is newer than the signal (data leakage)", () => {
-    const r = assertCausal({ signalTs: T(9), entryTs: T(10), exitTs: T(15), dataAvailableTs: T(12) });
+    const r = assertCausal({
+      signalTs: T(9),
+      entryTs: T(10),
+      exitTs: T(15),
+      dataAvailableTs: T(12),
+    });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/DATA_LEAKAGE_ERROR/);
   });
   it("fails when signal is produced after entry", () => {
-    const r = assertCausal({ signalTs: T(11), entryTs: T(10), exitTs: T(15), dataAvailableTs: T(8) });
+    const r = assertCausal({
+      signalTs: T(11),
+      entryTs: T(10),
+      exitTs: T(15),
+      dataAvailableTs: T(8),
+    });
     expect(r.ok).toBe(false);
   });
   it("fails when entry is after exit", () => {
-    const r = assertCausal({ signalTs: T(9), entryTs: T(16), exitTs: T(15), dataAvailableTs: T(8) });
+    const r = assertCausal({
+      signalTs: T(9),
+      entryTs: T(16),
+      exitTs: T(15),
+      dataAvailableTs: T(8),
+    });
     expect(r.ok).toBe(false);
   });
 });
@@ -50,7 +67,7 @@ describe("pickTargetStop", () => {
     { value: 100, isResistance: false }, // S3
     { value: 105, isResistance: false }, // S2
     { value: 108, isResistance: false }, // S1 (nearest support below 110)
-    { value: 112, isResistance: true },  // R1 (nearest resistance above 110)
+    { value: 112, isResistance: true }, // R1 (nearest resistance above 110)
     { value: 116, isResistance: true },
     { value: 120, isResistance: true },
   ];
@@ -72,7 +89,7 @@ describe("pickTargetStop", () => {
   });
   it("ignores same-side wrong-type levels", () => {
     const b: LevelPoint[] = [
-      { value: 105, isResistance: true },  // resistance BELOW entry — ignored for BUY target
+      { value: 105, isResistance: true }, // resistance BELOW entry — ignored for BUY target
       { value: 115, isResistance: false }, // support ABOVE entry — ignored for BUY stop
       { value: 112, isResistance: true },
       { value: 108, isResistance: false },
@@ -90,7 +107,14 @@ describe("resolveOutcome — deterministic execution model", () => {
 
   it("BUY: target-only touched → WIN at target", () => {
     const r = resolveOutcome({ ...base, signal: "BUY", high: 103, low: 99, close: 101 });
-    expect(r).toMatchObject({ result: "WIN", exit: 102, targetHit: true, stopHit: false, ambiguous: false, grossPnl: 2 });
+    expect(r).toMatchObject({
+      result: "WIN",
+      exit: 102,
+      targetHit: true,
+      stopHit: false,
+      ambiguous: false,
+      grossPnl: 2,
+    });
   });
   it("BUY: stop-only touched → LOSS at stop", () => {
     const r = resolveOutcome({ ...base, signal: "BUY", high: 101, low: 97, close: 99 });
@@ -102,8 +126,14 @@ describe("resolveOutcome — deterministic execution model", () => {
   });
   it("SELL: symmetric target/stop resolution", () => {
     // For SELL, target=98 (below), stop=102 (above)
-    const cfg = { entry: 100, target: 98, stop: 102, policy: "conservative" as const, signal: "SELL" as const };
-    const win  = resolveOutcome({ ...cfg, high: 101, low: 97, close: 99 });
+    const cfg = {
+      entry: 100,
+      target: 98,
+      stop: 102,
+      policy: "conservative" as const,
+      signal: "SELL" as const,
+    };
+    const win = resolveOutcome({ ...cfg, high: 101, low: 97, close: 99 });
     expect(win).toMatchObject({ result: "WIN", exit: 98, grossPnl: 2 });
     const loss = resolveOutcome({ ...cfg, high: 103, low: 99, close: 101 });
     expect(loss).toMatchObject({ result: "LOSS", exit: 102, grossPnl: -2 });
@@ -139,8 +169,30 @@ describe("resolveOutcome — deterministic execution model", () => {
     expect(r.result).toBe("SKIP");
   });
   it("missing target or stop → INVALID_SETUP (no fabricated level)", () => {
-    expect(resolveOutcome({ signal: "BUY", entry: 100, target: null, stop: 98, high: 103, low: 97, close: 101, policy: "conservative" }).result).toBe("INVALID_SETUP");
-    expect(resolveOutcome({ signal: "BUY", entry: 100, target: 102, stop: null, high: 103, low: 97, close: 101, policy: "conservative" }).result).toBe("INVALID_SETUP");
+    expect(
+      resolveOutcome({
+        signal: "BUY",
+        entry: 100,
+        target: null,
+        stop: 98,
+        high: 103,
+        low: 97,
+        close: 101,
+        policy: "conservative",
+      }).result,
+    ).toBe("INVALID_SETUP");
+    expect(
+      resolveOutcome({
+        signal: "BUY",
+        entry: 100,
+        target: 102,
+        stop: null,
+        high: 103,
+        low: 97,
+        close: 101,
+        policy: "conservative",
+      }).result,
+    ).toBe("INVALID_SETUP");
   });
 
   it("does not read future data: unused close on a win exits at target, not at close", () => {
@@ -150,13 +202,24 @@ describe("resolveOutcome — deterministic execution model", () => {
   });
 
   it("zero costs preserve grossPnl === netPnl (byte-identical to legacy)", () => {
-    const r = resolveOutcome({ ...base, signal: "BUY", high: 103, low: 99, close: 101, costs: ZERO_COSTS });
+    const r = resolveOutcome({
+      ...base,
+      signal: "BUY",
+      high: 103,
+      low: 99,
+      close: 101,
+      costs: ZERO_COSTS,
+    });
     expect(r.netPnl).toBe(r.grossPnl);
     expect(r.costs).toBe(0);
   });
   it("non-zero slippage subtracts from netPnl", () => {
     const r = resolveOutcome({
-      ...base, signal: "BUY", high: 103, low: 99, close: 101,
+      ...base,
+      signal: "BUY",
+      high: 103,
+      low: 99,
+      close: 101,
       costs: { ...ZERO_COSTS, slippagePct: 0.05 },
     });
     expect(r.costs).toBeGreaterThan(0);
@@ -170,20 +233,28 @@ describe("resolveOutcome — deterministic execution model", () => {
 
 describe("validateCandle", () => {
   it("accepts a well-formed candle", () => {
-    expect(validateCandle({ date: "d", open: 100, high: 105, low: 99, close: 103 }).valid).toBe(true);
+    expect(validateCandle({ date: "d", open: 100, high: 105, low: 99, close: 103 }).valid).toBe(
+      true,
+    );
   });
   it("rejects high < low", () => {
     const r = validateCandle({ date: "d", open: 100, high: 90, low: 99, close: 95 });
     expect(r).toEqual({ valid: false, reason: "high < low" });
   });
   it("rejects open outside [low,high]", () => {
-    expect(validateCandle({ date: "d", open: 200, high: 105, low: 99, close: 103 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: 200, high: 105, low: 99, close: 103 }).valid).toBe(
+      false,
+    );
   });
   it("rejects close outside [low,high]", () => {
-    expect(validateCandle({ date: "d", open: 100, high: 105, low: 99, close: 200 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: 100, high: 105, low: 99, close: 200 }).valid).toBe(
+      false,
+    );
   });
   it("rejects non-finite values", () => {
-    expect(validateCandle({ date: "d", open: NaN, high: 105, low: 99, close: 103 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: NaN, high: 105, low: 99, close: 103 }).valid).toBe(
+      false,
+    );
   });
 });
 
@@ -206,9 +277,14 @@ describe("expectedTradingSessions", () => {
 
 describe("hashConfig / computeRunId", () => {
   const cfg = {
-    symbol: "NIFTY50", from: "2024-01-01", to: "2024-06-30",
-    policy: "conservative" as const, invalidSetupPolicy: "fabricate" as const,
-    costs: ZERO_COSTS, dataSource: "yahoo", timezone: "Asia/Kolkata",
+    symbol: "NIFTY50",
+    from: "2024-01-01",
+    to: "2024-06-30",
+    policy: "conservative" as const,
+    invalidSetupPolicy: "fabricate" as const,
+    costs: ZERO_COSTS,
+    dataSource: "yahoo",
+    timezone: "Asia/Kolkata",
   };
   it("hashConfig is deterministic across calls", () => {
     expect(hashConfig({ a: 1, b: 2 })).toBe(hashConfig({ a: 1, b: 2 }));

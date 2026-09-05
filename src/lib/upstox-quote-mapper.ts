@@ -43,8 +43,7 @@ export function mapUpstoxToIndexQuote(input: MapUpstoxQuoteInput): IndexQuote {
   const prev = prevIdx >= 0 ? sorted[prevIdx] : null;
   const sessionBefore = prevIdx > 0 ? sorted[prevIdx - 1] : prev;
 
-  const prevClose =
-    prev?.close ?? tick.prevClose ?? tick.open ?? livePrice;
+  const prevClose = prev?.close ?? tick.prevClose ?? tick.open ?? livePrice;
   const change = round2(livePrice - prevClose);
   const changePct = prevClose ? round2((change / prevClose) * 100) : 0;
 

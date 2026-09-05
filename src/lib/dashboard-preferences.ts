@@ -30,9 +30,7 @@ export const DEFAULT_PREFERENCES: DashboardPreferences = {
 };
 
 function storageKey(userId?: string | null): string {
-  return userId
-    ? `${DASHBOARD_PREFERENCE_KEY_PREFIX}:${userId}`
-    : DASHBOARD_PREFERENCE_KEY_PREFIX;
+  return userId ? `${DASHBOARD_PREFERENCE_KEY_PREFIX}:${userId}` : DASHBOARD_PREFERENCE_KEY_PREFIX;
 }
 
 function isStrArray(v: unknown): v is string[] {
@@ -89,28 +87,19 @@ function withId(list: string[], id: string): string[] {
   return list.includes(id) ? list : [...list, id];
 }
 
-export function toggleCollapsed(
-  prefs: DashboardPreferences,
-  id: string,
-): DashboardPreferences {
+export function toggleCollapsed(prefs: DashboardPreferences, id: string): DashboardPreferences {
   const collapsed = prefs.collapsed.includes(id)
     ? withoutId(prefs.collapsed, id)
     : withId(prefs.collapsed, id);
   return { ...prefs, collapsed };
 }
 
-export function hideWidget(
-  prefs: DashboardPreferences,
-  id: string,
-): DashboardPreferences {
+export function hideWidget(prefs: DashboardPreferences, id: string): DashboardPreferences {
   if (REQUIRED_WIDGET_IDS.includes(id)) return prefs; // required cannot hide
   return { ...prefs, hidden: withId(prefs.hidden, id) };
 }
 
-export function showWidget(
-  prefs: DashboardPreferences,
-  id: string,
-): DashboardPreferences {
+export function showWidget(prefs: DashboardPreferences, id: string): DashboardPreferences {
   return { ...prefs, hidden: withoutId(prefs.hidden, id) };
 }
 

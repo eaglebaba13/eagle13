@@ -15,7 +15,7 @@ import type { StrategyId } from "./strategy";
 export type BatchPeriod = {
   readonly label: string;
   readonly from: string; // YYYY-MM-DD
-  readonly to: string;   // YYYY-MM-DD
+  readonly to: string; // YYYY-MM-DD
 };
 
 export type BatchJob = {
@@ -27,12 +27,7 @@ export type BatchJob = {
 };
 
 export type BatchJobStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "skipped"
-  | "cancelled";
+  "queued" | "running" | "completed" | "failed" | "skipped" | "cancelled";
 
 export type BatchJobError = { readonly code: string; readonly message: string };
 
@@ -281,8 +276,7 @@ export function createBatchOrchestrator(
           finishedAt: now(),
           result,
           runId: result.runId,
-          dataHash:
-            (result.formulaMeta as { dataHash?: string } | undefined)?.dataHash ?? null,
+          dataHash: (result.formulaMeta as { dataHash?: string } | undefined)?.dataHash ?? null,
         });
       }
     } catch (e) {

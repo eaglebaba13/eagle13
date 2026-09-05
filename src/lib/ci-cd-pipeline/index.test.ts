@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  PRODUCTION_PIPELINE,
-  evaluatePipelineRun,
-  validatePipeline,
-} from "./index";
+import { PRODUCTION_PIPELINE, evaluatePipelineRun, validatePipeline } from "./index";
 
 describe("ci-cd-pipeline", () => {
   it("production pipeline validates cleanly", () => {

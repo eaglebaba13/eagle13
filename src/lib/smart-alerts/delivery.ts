@@ -10,7 +10,11 @@ import type {
 export interface AlertDeliveryProvider {
   readonly id: AlertDeliveryProviderId;
   readonly enabled: boolean;
-  deliver(event: AlertEvent, subscription: AlertSubscription | null, nowIso: string): AlertDeliveryAttempt;
+  deliver(
+    event: AlertEvent,
+    subscription: AlertSubscription | null,
+    nowIso: string,
+  ): AlertDeliveryAttempt;
 }
 
 export const InAppAlertDeliveryProvider: AlertDeliveryProvider = {

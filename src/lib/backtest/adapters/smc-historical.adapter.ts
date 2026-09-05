@@ -8,15 +8,9 @@
 import { INTRADAY_FORMULA_VERSIONS } from "../../engine-version";
 import { applyCosts, ZERO_COSTS, type CostModel } from "../cost-model";
 import type { Candle } from "../../smc-types";
-import type {
-  SmcSignalDebug,
-  SmcSignalResult,
-} from "../../smc-signal-engine";
+import type { SmcSignalDebug, SmcSignalResult } from "../../smc-signal-engine";
 import type { SmcEngineResult } from "../../smc-engine";
-import type {
-  AdapterConfig,
-  HistoricalFormulaAdapter,
-} from "../adapter";
+import type { AdapterConfig, HistoricalFormulaAdapter } from "../adapter";
 import type { HistoricalTrade } from "../result";
 
 export const SMC_HISTORICAL_ENGINE_VERSION = "SMC_ENGINE_V1" as const;
@@ -157,8 +151,7 @@ function liquidityStop(
   let bestDist = Infinity;
   for (const l of engine.liquidityLevels) {
     const priceOk = dir === "bull" ? l.price < entry : l.price > entry;
-    if (l.kind !== want && l.kind !== (dir === "bull" ? "equal_low" : "equal_high"))
-      continue;
+    if (l.kind !== want && l.kind !== (dir === "bull" ? "equal_low" : "equal_high")) continue;
     if (!priceOk) continue;
     const d = Math.abs(entry - l.price);
     if (d < bestDist) {
@@ -180,8 +173,7 @@ function opposingLiquidityTarget(
   let bestDist = Infinity;
   for (const l of engine.liquidityLevels) {
     const priceOk = dir === "bull" ? l.price > entry : l.price < entry;
-    if (l.kind !== want && l.kind !== (dir === "bull" ? "equal_high" : "equal_low"))
-      continue;
+    if (l.kind !== want && l.kind !== (dir === "bull" ? "equal_high" : "equal_low")) continue;
     if (!priceOk) continue;
     const d = Math.abs(entry - l.price);
     if (d < bestDist) {
@@ -198,10 +190,10 @@ function nearestStructureTarget(
   dir: "bull" | "bear",
 ): number | null {
   const want = dir === "bull" ? "high" : "low";
-  return nearestSwing(engine, engine ? engine.swings.length - 1 : -1, want) ??
-    (want === "high"
-      ? entry * 1.01
-      : entry * 0.99);
+  return (
+    nearestSwing(engine, engine ? engine.swings.length - 1 : -1, want) ??
+    (want === "high" ? entry * 1.01 : entry * 0.99)
+  );
 }
 
 function deriveStop(
@@ -381,8 +373,8 @@ export const smcHistoricalAdapter: HistoricalFormulaAdapter = {
       // Update MFE/MAE while position is open.
       if (open) {
         const dirMul = open.dir === "bull" ? 1 : -1;
-        const bestMove = (open.dir === "bull" ? c.h - open.entry : open.entry - c.l);
-        const worstMove = (open.dir === "bull" ? c.l - open.entry : open.entry - c.h);
+        const bestMove = open.dir === "bull" ? c.h - open.entry : open.entry - c.l;
+        const worstMove = open.dir === "bull" ? c.l - open.entry : open.entry - c.h;
         if (bestMove > mfe) mfe = bestMove;
         if (worstMove < mae) mae = worstMove;
 
@@ -390,21 +382,34 @@ export const smcHistoricalAdapter: HistoricalFormulaAdapter = {
         const stopHit = open.dir === "bull" ? c.l <= open.stop : c.h >= open.stop;
         const targetHit = open.dir === "bull" ? c.h >= open.target : c.l <= open.target;
         const bars = i - open.entryIdx;
-        const maxHoldExceeded =
-          exec.maxHoldBars != null && bars >= exec.maxHoldBars;
+        const maxHoldExceeded = exec.maxHoldBars != null && bars >= exec.maxHoldBars;
 
         if (stopHit && targetHit) {
-          trades.push(closePosition(open, i, open.stop, "LOSS", candles, exec, costs, source, mfe, mae));
-          open = null; mfe = 0; mae = 0;
+          trades.push(
+            closePosition(open, i, open.stop, "LOSS", candles, exec, costs, source, mfe, mae),
+          );
+          open = null;
+          mfe = 0;
+          mae = 0;
         } else if (stopHit) {
-          trades.push(closePosition(open, i, open.stop, "LOSS", candles, exec, costs, source, mfe, mae));
-          open = null; mfe = 0; mae = 0;
+          trades.push(
+            closePosition(open, i, open.stop, "LOSS", candles, exec, costs, source, mfe, mae),
+          );
+          open = null;
+          mfe = 0;
+          mae = 0;
         } else if (targetHit) {
-          trades.push(closePosition(open, i, open.target, "WIN", candles, exec, costs, source, mfe, mae));
-          open = null; mfe = 0; mae = 0;
+          trades.push(
+            closePosition(open, i, open.target, "WIN", candles, exec, costs, source, mfe, mae),
+          );
+          open = null;
+          mfe = 0;
+          mae = 0;
         } else if (maxHoldExceeded) {
           trades.push(closePosition(open, i, c.c, "FLAT", candles, exec, costs, source, mfe, mae));
-          open = null; mfe = 0; mae = 0;
+          open = null;
+          mfe = 0;
+          mae = 0;
         }
         // suppress unused-variable warning for dirMul in strict TS
         void dirMul;
@@ -424,9 +429,7 @@ export const smcHistoricalAdapter: HistoricalFormulaAdapter = {
 
         const entryIdx = exec.entryMode === "next_open" ? i + 1 : i;
         if (entryIdx >= candles.length) continue;
-        const entry = exec.entryMode === "next_open"
-          ? candles[entryIdx].o
-          : candles[i].c;
+        const entry = exec.entryMode === "next_open" ? candles[entryIdx].o : candles[i].c;
 
         const stop = deriveStop(entry, i, dir, candles, engine, exec);
         if (stop == null || (dir === "bull" ? stop >= entry : stop <= entry)) continue;
@@ -466,7 +469,10 @@ export const smcHistoricalAdapter: HistoricalFormulaAdapter = {
     };
   },
   buildMetadata(_cfg, trades) {
-    let wins = 0, losses = 0, flats = 0, totalScore = 0;
+    let wins = 0,
+      losses = 0,
+      flats = 0,
+      totalScore = 0;
     for (const t of trades) {
       if (t.outcome === "WIN") wins++;
       else if (t.outcome === "LOSS") losses++;

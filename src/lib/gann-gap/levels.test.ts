@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  gannSquareLevel,
-  nearestGannN,
-  generateGannGapLevels,
-} from "./levels";
+import { gannSquareLevel, nearestGannN, generateGannGapLevels } from "./levels";
 
 describe("gannSquareLevel — spec §2 parity rule", () => {
   it("n=149 → 22201 (odd square, unchanged)", () => {

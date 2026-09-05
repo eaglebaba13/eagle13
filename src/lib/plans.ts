@@ -10,13 +10,7 @@ export const PLAN_IDS = ["free", "pro", "professional", "enterprise"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 export type SubscriptionStatus =
-  | "trialing"
-  | "active"
-  | "past_due"
-  | "canceled"
-  | "expired"
-  | "suspended"
-  | "incomplete";
+  "trialing" | "active" | "past_due" | "canceled" | "expired" | "suspended" | "incomplete";
 
 export type Capability =
   | "dashboard.basic"

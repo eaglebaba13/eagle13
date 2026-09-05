@@ -24,11 +24,7 @@ import { getMarketData } from "./market.functions";
 import type { OptionUnderlying, OptionChainSnapshot } from "./option-chain/types";
 import type { OptionChainCapabilityStatus } from "./option-chain/capability";
 import { nseSession } from "./terminal-clock";
-import {
-  computePCR,
-  rankWriting,
-  rankUnwinding,
-} from "./options-analytics";
+import { computePCR, rankWriting, rankUnwinding } from "./options-analytics";
 import {
   astroSignal,
   optionsSignal,
@@ -59,11 +55,7 @@ import {
   type HistoricalAccuracyResult,
   type HistoricalRunCandidate,
 } from "./decision/historical-accuracy-adapter";
-import {
-  alignReplay,
-  type ReplayObservation,
-  type ReplayResult,
-} from "./decision/replay-adapter";
+import { alignReplay, type ReplayObservation, type ReplayResult } from "./decision/replay-adapter";
 
 export type DecisionSnapshot = {
   decision: Decision;
@@ -166,26 +158,22 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
         // Phase 2D: single canonical option-chain fetch per underlying.
         // No legacy Yahoo/NSE fallback. Combined PCR is computed once
         // from the same snapshots and reused for the pcrSignal input.
-        const { fetchCanonicalOptionChain } = await import(
-          "./option-chain/canonical-snapshot.server"
-        );
+        const { fetchCanonicalOptionChain } =
+          await import("./option-chain/canonical-snapshot.server");
         const { computeCombinedPcr } = await import("./combined-pcr/combined-pcr");
         const { getSnapshotHistory } = await import("./option-chain/snapshot-history");
 
-        const [astroRes, marketRes, niftyCanonRes, banknCanonRes] =
-          await Promise.allSettled([
-            getAstro(),
-            getMarketData(),
-            fetchCanonicalOptionChain({ underlying: "NIFTY" }),
-            fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }),
-          ]);
+        const [astroRes, marketRes, niftyCanonRes, banknCanonRes] = await Promise.allSettled([
+          getAstro(),
+          getMarketData(),
+          fetchCanonicalOptionChain({ underlying: "NIFTY" }),
+          fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }),
+        ]);
 
         const astro = astroRes.status === "fulfilled" ? astroRes.value : null;
         const market = marketRes.status === "fulfilled" ? marketRes.value : null;
-        const niftyCanon =
-          niftyCanonRes.status === "fulfilled" ? niftyCanonRes.value : null;
-        const banknCanon =
-          banknCanonRes.status === "fulfilled" ? banknCanonRes.value : null;
+        const niftyCanon = niftyCanonRes.status === "fulfilled" ? niftyCanonRes.value : null;
+        const banknCanon = banknCanonRes.status === "fulfilled" ? banknCanonRes.value : null;
 
         const nowIso = new Date().toISOString();
 
@@ -267,16 +255,10 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           const topCallUnwind = rankUnwinding(legs, chain.snapshot.spot, "CE", 3);
           const putWriteVol = topPutWriting.reduce((a, r) => a + r.changeOi, 0);
           const callWriteVol = topCallWriting.reduce((a, r) => a + r.changeOi, 0);
-          const putUnwindVol = Math.abs(
-            topPutUnwind.reduce((a, r) => a + r.changeOi, 0),
-          );
-          const callUnwindVol = Math.abs(
-            topCallUnwind.reduce((a, r) => a + r.changeOi, 0),
-          );
-          const bull =
-            putWriteVol > callWriteVol * 1.1 || callUnwindVol > putUnwindVol * 1.1;
-          const bear =
-            callWriteVol > putWriteVol * 1.1 || putUnwindVol > callUnwindVol * 1.1;
+          const putUnwindVol = Math.abs(topPutUnwind.reduce((a, r) => a + r.changeOi, 0));
+          const callUnwindVol = Math.abs(topCallUnwind.reduce((a, r) => a + r.changeOi, 0));
+          const bull = putWriteVol > callWriteVol * 1.1 || callUnwindVol > putUnwindVol * 1.1;
+          const bear = callWriteVol > putWriteVol * 1.1 || putUnwindVol > callUnwindVol * 1.1;
           optionsSig = optionsSignal({
             pcrOi: pcr.pcrOi,
             writingBiasBull: bull,
@@ -299,7 +281,11 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
             chain: null,
             capability: "NO_DATA",
             canonicalStatus: "PROVIDER_ERROR",
-            explainer: explainCapability("NO_DATA", { module: "options", stage: "provider-fetch", provider: safeProviderLabel(null, "OPTIONS") }),
+            explainer: explainCapability("NO_DATA", {
+              module: "options",
+              stage: "provider-fetch",
+              provider: safeProviderLabel(null, "OPTIONS"),
+            }),
             providerAlias: safeProviderLabel(null, "OPTIONS"),
             fetchedAt: null,
             latencyMs: null,
@@ -441,26 +427,25 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           risk: decision.risk.level,
           present: decision.contributions.filter((c) => c.present).length,
           total: decision.contributions.length,
-          options:
-            niftyOptions ?? {
-              underlying: "NIFTY",
-              usable: false,
-              chain: null,
-              capability: "NO_DATA",
-              canonicalStatus: "PROVIDER_ERROR",
-              explainer: optionsExplainer,
-              providerAlias,
-              fetchedAt: null,
-              latencyMs: null,
-              freshnessSec: null,
-              expiry: null,
-              strikeCount: 0,
-              safeError: null,
-              reason: "Canonical option-chain fetch failed.",
-              suggestedAction: "Retry.",
-              retryable: true,
-              failingStage: "provider-fetch",
-            },
+          options: niftyOptions ?? {
+            underlying: "NIFTY",
+            usable: false,
+            chain: null,
+            capability: "NO_DATA",
+            canonicalStatus: "PROVIDER_ERROR",
+            explainer: optionsExplainer,
+            providerAlias,
+            fetchedAt: null,
+            latencyMs: null,
+            freshnessSec: null,
+            expiry: null,
+            strikeCount: 0,
+            safeError: null,
+            reason: "Canonical option-chain fetch failed.",
+            suggestedAction: "Retry.",
+            retryable: true,
+            failingStage: "provider-fetch",
+          },
           pcr: pcrInput,
           generatedAt: new Date().toISOString(),
         });
@@ -562,11 +547,7 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
     ),
 );
 
-function absentSignal(
-  key: ModuleSignal["key"],
-  weight: number,
-  label: string,
-): ModuleSignal {
+function absentSignal(key: ModuleSignal["key"], weight: number, label: string): ModuleSignal {
   return {
     key,
     label,

@@ -4,7 +4,13 @@ import { Card, StatBox } from "./legacy-primitives";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 
 export default function CprWidget() {
-  const { activeQuote: quote, levels, accent, freshnessByDependency, providerMetadata } = useDashboardData();
+  const {
+    activeQuote: quote,
+    levels,
+    accent,
+    freshnessByDependency,
+    providerMetadata,
+  } = useDashboardData();
   const bias = cprBias(levels);
   const freshness = freshnessByDependency?.MARKET_DATA;
   const gate = canDisplayActionableSignal({
@@ -12,10 +18,9 @@ export default function CprWidget() {
     providerStatus: providerMetadata?.status ?? "UNKNOWN",
     formulaVersion: "CPR_CENTRAL_PIVOT_V1",
   });
-  const toneColor =
-    !gate.allowed
-      ? "var(--eb-muted)"
-      : bias.tone === "bull"
+  const toneColor = !gate.allowed
+    ? "var(--eb-muted)"
+    : bias.tone === "bull"
       ? "var(--eb-bull)"
       : bias.tone === "bear"
         ? "var(--eb-bear)"
@@ -31,7 +36,9 @@ export default function CprWidget() {
       blocked={!gate.allowed}
       blockedReasons={gate.blockingReasons}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}
+      >
         <StatBox label="Top Central" value={levels.tc} color="var(--eb-bull)" />
         <StatBox label="Pivot (PP)" value={levels.pivot} color={accent} />
         <StatBox label="Bottom Central" value={levels.bc} color="var(--eb-bear)" />

@@ -13,7 +13,12 @@ export function walkForward(
 ): WalkForwardResult {
   const splits: WalkForwardSplit[] = [];
   const n = rows.length;
-  if (n === 0 || config.trainWindowSessions <= 0 || config.validationWindowSessions <= 0 || config.step <= 0) {
+  if (
+    n === 0 ||
+    config.trainWindowSessions <= 0 ||
+    config.validationWindowSessions <= 0 ||
+    config.step <= 0
+  ) {
     return { config, splits };
   }
   let start = 0;

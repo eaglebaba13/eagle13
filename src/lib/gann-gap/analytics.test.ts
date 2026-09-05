@@ -7,13 +7,26 @@ import {
 } from "./analytics";
 import type { FrozenPredictionRecord, OutcomeRecord } from "./historical";
 
-function fp(id: string, label: FrozenPredictionRecord["label"], frozenAt = "2024-01-01T10:00:00Z"): FrozenPredictionRecord {
+function fp(
+  id: string,
+  label: FrozenPredictionRecord["label"],
+  frozenAt = "2024-01-01T10:00:00Z",
+): FrozenPredictionRecord {
   return {
-    predictionId: id, tradingDate: "2024-01-01", nextTradingDate: "2024-01-02",
-    label, reference: 100, formulaVersion: "v", frozenAt,
+    predictionId: id,
+    tradingDate: "2024-01-01",
+    nextTradingDate: "2024-01-02",
+    label,
+    reference: 100,
+    formulaVersion: "v",
+    frozenAt,
   };
 }
-function oc(id: string, outcome: OutcomeRecord["outcome"], evaluatedAt = "2024-01-02T04:00:00Z"): OutcomeRecord {
+function oc(
+  id: string,
+  outcome: OutcomeRecord["outcome"],
+  evaluatedAt = "2024-01-02T04:00:00Z",
+): OutcomeRecord {
   return { predictionId: id, outcome, ruleVersion: "v", evaluatedAt };
 }
 
@@ -43,7 +56,7 @@ describe("gann-gap analytics", () => {
       fp("b", "GAP_UP_RESEARCH"),
       fp("c", "GAP_DOWN_RESEARCH"),
       fp("d", "INDECISION"),
-      fp("e", "GAP_UP_RESEARCH"),   // pending — no outcome
+      fp("e", "GAP_UP_RESEARCH"), // pending — no outcome
       fp("f", "GAP_DOWN_RESEARCH", "2024-01-02T05:00:00Z"), // leakage below
     ];
     const outs = [

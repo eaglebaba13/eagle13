@@ -52,11 +52,7 @@ function pickLink(block: string): string {
 }
 
 /** Parse a standard RSS/Atom feed into raw items. Never throws. */
-export async function parseFeed(
-  url: string,
-  source: string,
-  max = 12,
-): Promise<RawRssItem[]> {
+export async function parseFeed(url: string, source: string, max = 12): Promise<RawRssItem[]> {
   const xml = await fetchTextSafe(url, {
     accept: "application/rss+xml, application/xml, text/xml, */*",
     retries: 2,
@@ -72,7 +68,11 @@ export async function parseFeed(
     const title = pick("title", block);
     if (!title) continue;
     const link = pickLink(block);
-    const pd = pick("pubDate", block) || pick("published", block) || pick("updated", block) || pick("dc:date", block);
+    const pd =
+      pick("pubDate", block) ||
+      pick("published", block) ||
+      pick("updated", block) ||
+      pick("dc:date", block);
     let iso = new Date().toISOString();
     if (pd) {
       const d = new Date(pd);
@@ -85,10 +85,19 @@ export async function parseFeed(
 
 // Worker-reachable fallback publisher feeds, grouped by broad topic.
 export const FALLBACK_MARKET_FEEDS: { url: string; source: string }[] = [
-  { url: "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", source: "Economic Times" },
-  { url: "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms", source: "Economic Times" },
+  {
+    url: "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+    source: "Economic Times",
+  },
+  {
+    url: "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",
+    source: "Economic Times",
+  },
   { url: "https://www.livemint.com/rss/markets", source: "Livemint" },
-  { url: "https://www.thehindubusinessline.com/markets/feeder/default.rss", source: "BusinessLine" },
+  {
+    url: "https://www.thehindubusinessline.com/markets/feeder/default.rss",
+    source: "BusinessLine",
+  },
 ];
 
 export const FALLBACK_CRYPTO_FEEDS: { url: string; source: string }[] = [

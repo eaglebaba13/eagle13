@@ -6,7 +6,13 @@ import type { CanonicalBias, CanonicalSignals, DirectionResult } from "./types";
 
 type BiasKey = "decision" | "pcr" | "gti" | "breadth" | "astro" | "gann" | "gannGap";
 const MODULES: readonly BiasKey[] = [
-  "decision", "pcr", "gti", "breadth", "astro", "gann", "gannGap",
+  "decision",
+  "pcr",
+  "gti",
+  "breadth",
+  "astro",
+  "gann",
+  "gannGap",
 ];
 
 export function normaliseBias(b: CanonicalBias | undefined): CanonicalBias {
@@ -15,15 +21,30 @@ export function normaliseBias(b: CanonicalBias | undefined): CanonicalBias {
 }
 
 export function mergeDirection(signals: CanonicalSignals): DirectionResult {
-  let bull = 0, bear = 0, neu = 0, conflict = 0, unavail = 0;
+  let bull = 0,
+    bear = 0,
+    neu = 0,
+    conflict = 0,
+    unavail = 0;
   const reasons: string[] = [];
   for (const k of MODULES) {
     const bias = normaliseBias(signals[k]);
-    if (bias === "BULLISH") { bull++; reasons.push(`${k}: bullish`); }
-    else if (bias === "BEARISH") { bear++; reasons.push(`${k}: bearish`); }
-    else if (bias === "NEUTRAL") { neu++; reasons.push(`${k}: neutral`); }
-    else if (bias === "CONFLICT") { conflict++; reasons.push(`${k}: conflict`); }
-    else { unavail++; reasons.push(`${k}: unavailable`); }
+    if (bias === "BULLISH") {
+      bull++;
+      reasons.push(`${k}: bullish`);
+    } else if (bias === "BEARISH") {
+      bear++;
+      reasons.push(`${k}: bearish`);
+    } else if (bias === "NEUTRAL") {
+      neu++;
+      reasons.push(`${k}: neutral`);
+    } else if (bias === "CONFLICT") {
+      conflict++;
+      reasons.push(`${k}: conflict`);
+    } else {
+      unavail++;
+      reasons.push(`${k}: unavailable`);
+    }
   }
 
   const present = bull + bear + neu + conflict;
@@ -41,9 +62,10 @@ export function mergeDirection(signals: CanonicalSignals): DirectionResult {
 
   // Alignment-driven confidence:  |bull-bear| / (present) * 100, capped by decisionConfidence.
   const rawAlign = present === 0 ? 0 : Math.abs(bull - bear) / present;
-  const decisionConf = typeof signals.decisionConfidence === "number"
-    ? Math.max(0, Math.min(100, signals.decisionConfidence))
-    : null;
+  const decisionConf =
+    typeof signals.decisionConfidence === "number"
+      ? Math.max(0, Math.min(100, signals.decisionConfidence))
+      : null;
   let confidence = Math.round(rawAlign * 100);
   if (decisionConf != null) confidence = Math.min(confidence, decisionConf);
   if (bias === "CONFLICT" || bias === "UNAVAILABLE" || bias === "NEUTRAL") {

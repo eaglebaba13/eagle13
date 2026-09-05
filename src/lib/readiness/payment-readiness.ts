@@ -44,7 +44,14 @@ export function auditPaymentReadiness(input: PaymentReadinessInput): ReadinessRe
     return out;
   }
 
-  out.push(bool("payment.upi-configured", "UPI configuration", input.upiConfigured, "MANUAL_UPI_* env vars missing."));
+  out.push(
+    bool(
+      "payment.upi-configured",
+      "UPI configuration",
+      input.upiConfigured,
+      "MANUAL_UPI_* env vars missing.",
+    ),
+  );
   out.push(bool("payment.server-price", "Server-side pricing", input.serverSideAmountResolution));
   out.push(bool("payment.plan-cycle", "Plan/cycle validation", input.planCycleValidated));
   out.push({
@@ -56,15 +63,33 @@ export function auditPaymentReadiness(input: PaymentReadinessInput): ReadinessRe
     evidence: [{ key: "hours", value: input.requestExpiryHours }],
   });
   out.push(bool("payment.utr-validation", "UTR validation active", input.utrValidationActive));
-  out.push(bool("payment.bucket-private", "Screenshot bucket private", input.screenshotBucketPrivate));
-  out.push(bool("payment.admin-approve", "Admin approval role guarded", input.adminApprovalRoleGuarded));
-  out.push(bool("payment.dup-active", "Duplicate active-request prevented", input.duplicateActiveRequestBlocked));
+  out.push(
+    bool("payment.bucket-private", "Screenshot bucket private", input.screenshotBucketPrivate),
+  );
+  out.push(
+    bool("payment.admin-approve", "Admin approval role guarded", input.adminApprovalRoleGuarded),
+  );
+  out.push(
+    bool(
+      "payment.dup-active",
+      "Duplicate active-request prevented",
+      input.duplicateActiveRequestBlocked,
+    ),
+  );
   out.push(bool("payment.dup-utr", "Duplicate UTR detection", input.duplicateUtrDetection));
   out.push(bool("payment.amount-mismatch", "Amount mismatch flagged", input.amountMismatchFlagged));
   out.push(bool("payment.atomic-approval", "Approval is atomic", input.approvalIsAtomic));
   out.push(bool("payment.audit-log", "Payment audit logs enabled", input.auditLogsEnabled));
-  out.push(bool("payment.rejection-reason", "Rejection reason required", input.rejectionReasonRequired));
-  out.push(bool("payment.subscription-extend", "Subscription extended on approval", input.subscriptionExtendsOnActive));
+  out.push(
+    bool("payment.rejection-reason", "Rejection reason required", input.rejectionReasonRequired),
+  );
+  out.push(
+    bool(
+      "payment.subscription-extend",
+      "Subscription extended on approval",
+      input.subscriptionExtendsOnActive,
+    ),
+  );
   out.push({
     id: "payment.provider-label",
     category: "PAYMENTS",

@@ -11,8 +11,17 @@ import {
 
 function m(overrides: Partial<SensitivityMetrics>): SensitivityMetrics {
   return {
-    trades: 30, winRate: 0.5, profitFactor: 1.5, expectancy: 1, netPnl: 30, maxDrawdown: 5,
-    recoveryFactor: 6, stabilityScore: 0.5, oosScore: 0.5, monteCarloMedian: 1050, monteCarloP5: 950,
+    trades: 30,
+    winRate: 0.5,
+    profitFactor: 1.5,
+    expectancy: 1,
+    netPnl: 30,
+    maxDrawdown: 5,
+    recoveryFactor: 6,
+    stabilityScore: 0.5,
+    oosScore: 0.5,
+    monteCarloMedian: 1050,
+    monteCarloP5: 950,
     ...overrides,
   };
 }
@@ -30,8 +39,12 @@ describe("Phase 21.6 Stage 1 · parameter grid", () => {
     expect(grid[0]).toEqual({ a: 1, b: 0 });
   });
   it("rejects invalid grid specs", () => {
-    expect(() => generateParameterGrid([{ name: "a", min: 0, max: -1, step: 1 }])).toThrow(/INVALID_GRID/);
-    expect(() => generateParameterGrid([{ name: "a", min: 0, max: 1, step: 0 }])).toThrow(/INVALID_GRID/);
+    expect(() => generateParameterGrid([{ name: "a", min: 0, max: -1, step: 1 }])).toThrow(
+      /INVALID_GRID/,
+    );
+    expect(() => generateParameterGrid([{ name: "a", min: 0, max: 1, step: 0 }])).toThrow(
+      /INVALID_GRID/,
+    );
   });
 });
 
@@ -61,7 +74,9 @@ describe("Phase 21.6 Stage 1 · surface classification", () => {
     expect(classifySensitivitySurface(cells).classification).toBe("MONOTONIC");
   });
   it("classifies an isolated peak as NARROW_OPTIMUM", () => {
-    const cells = [1, 2, 3, 4, 5, 6, 7].map((a) => cell({ a }, m({ expectancy: a === 4 ? 100 : 1 })));
+    const cells = [1, 2, 3, 4, 5, 6, 7].map((a) =>
+      cell({ a }, m({ expectancy: a === 4 ? 100 : 1 })),
+    );
     expect(classifySensitivitySurface(cells).classification).toBe("NARROW_OPTIMUM");
   });
   it("classifies random high-dispersion surfaces as ERRATIC", () => {
@@ -77,8 +92,13 @@ describe("Phase 21.6 Stage 1 · surface classification", () => {
 
 describe("Phase 21.6 Stage 1 · sensitivity Run ID", () => {
   const base = {
-    baseRunId: "R", strategy: "SMC", formula: "SMC_V1", grid: [{ name: "minScore", min: 0, max: 1, step: 0.1 }],
-    from: "2024-01-01", to: "2024-01-31", dataHash: "hash",
+    baseRunId: "R",
+    strategy: "SMC",
+    formula: "SMC_V1",
+    grid: [{ name: "minScore", min: 0, max: 1, step: 0.1 }],
+    from: "2024-01-01",
+    to: "2024-01-31",
+    dataHash: "hash",
   };
   it("is deterministic and prefixed SENSITIVITY_V1", () => {
     expect(computeSensitivityRunId(base)).toBe(computeSensitivityRunId(base));

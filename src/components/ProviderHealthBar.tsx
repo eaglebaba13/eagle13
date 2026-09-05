@@ -36,7 +36,11 @@ function entryLight(state: UxState): ProviderHealthLight {
 export function ProviderHealthBar({ entries, className }: ProviderHealthBarProps) {
   const overall = rollupHealth(entries.map((e) => e.state));
   const overallCopy = humaniseStatus(
-    overall === "GREEN" ? "READY" : overall === "YELLOW" ? "PROVIDER_DEGRADED" : "PROVIDER_UNAVAILABLE",
+    overall === "GREEN"
+      ? "READY"
+      : overall === "YELLOW"
+        ? "PROVIDER_DEGRADED"
+        : "PROVIDER_UNAVAILABLE",
   );
 
   return (
@@ -45,7 +49,10 @@ export function ProviderHealthBar({ entries, className }: ProviderHealthBarProps
       aria-label={`Provider health: ${overallCopy.label}`}
       className={`flex flex-wrap items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${LIGHT_STYLES[overall]} ${className ?? ""}`}
     >
-      <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${DOT_STYLES[overall]}`} aria-hidden />
+      <span
+        className={`inline-block h-2 w-2 shrink-0 rounded-full ${DOT_STYLES[overall]}`}
+        aria-hidden
+      />
       <span className="font-medium">{overallCopy.label}</span>
       <span className="mx-1 h-3 w-px shrink-0 bg-current opacity-30" aria-hidden />
       <ul className="flex flex-wrap items-center gap-2">
@@ -54,7 +61,10 @@ export function ProviderHealthBar({ entries, className }: ProviderHealthBarProps
           const copy = humaniseStatus(e.state, e.provider);
           return (
             <li key={e.id} className="flex items-center gap-1.5" title={copy.detail}>
-              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${DOT_STYLES[light]}`} aria-hidden />
+              <span
+                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${DOT_STYLES[light]}`}
+                aria-hidden
+              />
               <span className="opacity-90">{e.label}</span>
             </li>
           );

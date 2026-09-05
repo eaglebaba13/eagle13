@@ -39,7 +39,13 @@ export function computeKelly(input: KellyInput): KellyResult {
   const formula = "k = (p*b - q) / b, where b = avgWin/avgLoss, q = 1 - p";
 
   if (input.tradeCount < minTrades) {
-    return { fraction: 0, raw: 0, formula, blocked: true, reason: `INSUFFICIENT_SAMPLE (${input.tradeCount}<${minTrades})` };
+    return {
+      fraction: 0,
+      raw: 0,
+      formula,
+      blocked: true,
+      reason: `INSUFFICIENT_SAMPLE (${input.tradeCount}<${minTrades})`,
+    };
   }
   if (input.averageLoss <= 0 || input.averageWin <= 0) {
     return { fraction: 0, raw: 0, formula, blocked: true, reason: "UNSTABLE_EXPECTANCY" };

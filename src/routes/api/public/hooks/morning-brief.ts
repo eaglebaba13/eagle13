@@ -8,7 +8,8 @@ import { runMorningBrief } from "@/lib/multi-asset/report.functions";
 
 function unauthorized(): Response {
   return new Response(JSON.stringify({ error: "unauthorized" }), {
-    status: 401, headers: { "Content-Type": "application/json" },
+    status: 401,
+    headers: { "Content-Type": "application/json" },
   });
 }
 

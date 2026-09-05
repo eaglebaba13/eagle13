@@ -6,10 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Grid2X2 } from "lucide-react";
 import { listCoindcxMarkets } from "@/lib/providers/coindcx/coindcx.functions";
-import {
-  buildWatchlist,
-  type CryptoWidgetRow,
-} from "@/lib/providers/coindcx/dashboard-selectors";
+import { buildWatchlist, type CryptoWidgetRow } from "@/lib/providers/coindcx/dashboard-selectors";
 
 function cellTone(pct: number | null): string {
   if (pct == null) return "bg-muted/30 text-muted-foreground";

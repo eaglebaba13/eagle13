@@ -66,8 +66,12 @@ describe("calcPositionSize", () => {
     expect(r.lots).toBe(0);
   });
   it("respects capital/risk validation", () => {
-    expect(calcPositionSize({ capital: 0, riskPct: 1, entry: 1, stopLoss: 0.5, lotSize: 1 }).valid).toBe(false);
-    expect(calcPositionSize({ capital: 1, riskPct: 0, entry: 1, stopLoss: 0.5, lotSize: 1 }).valid).toBe(false);
+    expect(
+      calcPositionSize({ capital: 0, riskPct: 1, entry: 1, stopLoss: 0.5, lotSize: 1 }).valid,
+    ).toBe(false);
+    expect(
+      calcPositionSize({ capital: 1, riskPct: 0, entry: 1, stopLoss: 0.5, lotSize: 1 }).valid,
+    ).toBe(false);
   });
 });
 
@@ -108,7 +112,8 @@ describe("suggestStopAndTarget", () => {
   });
   it("returns null when no support below entry (LONG)", () => {
     expect(
-      suggestStopAndTarget({ entry: 100, direction: "LONG", supports: [], resistances: [110] }).stop,
+      suggestStopAndTarget({ entry: 100, direction: "LONG", supports: [], resistances: [110] })
+        .stop,
     ).toBeNull();
   });
 });
@@ -117,8 +122,22 @@ describe("computePortfolioHeat", () => {
   it("sums risk / exposure / sector / direction", () => {
     const heat = computePortfolioHeat(
       [
-        { id: "a", symbol: "NIFTY", sector: "INDEX", direction: "LONG", riskAmount: 3000, capitalUsed: 100000 },
-        { id: "b", symbol: "BANKNIFTY", sector: "BANK", direction: "SHORT", riskAmount: 2000, capitalUsed: 80000 },
+        {
+          id: "a",
+          symbol: "NIFTY",
+          sector: "INDEX",
+          direction: "LONG",
+          riskAmount: 3000,
+          capitalUsed: 100000,
+        },
+        {
+          id: "b",
+          symbol: "BANKNIFTY",
+          sector: "BANK",
+          direction: "SHORT",
+          riskAmount: 2000,
+          capitalUsed: 80000,
+        },
       ],
       500000,
       3,
@@ -154,7 +173,8 @@ describe("dailyLimitCheck", () => {
   });
   it("stops on daily loss limit", () => {
     expect(
-      dailyLimitCheck({ trades: 3, wins: 0, losses: 3, pnl: -3500, riskUsed: 100 }, cap).stopTrading,
+      dailyLimitCheck({ trades: 3, wins: 0, losses: 3, pnl: -3500, riskUsed: 100 }, cap)
+        .stopTrading,
     ).toBe(true);
   });
 });
@@ -204,7 +224,12 @@ describe("preTradeChecklist", () => {
   const heat = computePortfolioHeat([], 500000, defaults.dailyRiskPct);
   const daily = dailyLimitCheck(
     { trades: 0, wins: 0, losses: 0, pnl: 0, riskUsed: 0 },
-    { capital: 500000, dailyRiskPct: defaults.dailyRiskPct, maxTradesPerDay: 5, maxDailyLossPct: 3 },
+    {
+      capital: 500000,
+      dailyRiskPct: defaults.dailyRiskPct,
+      maxTradesPerDay: 5,
+      maxDailyLossPct: 3,
+    },
   );
   it("all pass on clean setup", () => {
     const r = preTradeChecklist({
@@ -250,9 +275,45 @@ describe("preTradeChecklist", () => {
 
 describe("journal helpers", () => {
   const entries: JournalEntry[] = [
-    { id: "1", createdAt: "2026-07-14T05:00:00Z", symbol: "NIFTY", direction: "LONG", entry: 24000, exit: 24100, quantity: 75, pnl: 7500, reason: "", riskAmount: 3000, outcome: "WIN" },
-    { id: "2", createdAt: "2026-07-14T06:00:00Z", symbol: "NIFTY", direction: "LONG", entry: 24100, exit: 24050, quantity: 75, pnl: -3750, reason: "", riskAmount: 3750, outcome: "LOSS" },
-    { id: "3", createdAt: "2026-07-14T07:00:00Z", symbol: "NIFTY", direction: "LONG", entry: 24200, exit: null, quantity: 75, pnl: null, reason: "", riskAmount: 3000, outcome: "OPEN" },
+    {
+      id: "1",
+      createdAt: "2026-07-14T05:00:00Z",
+      symbol: "NIFTY",
+      direction: "LONG",
+      entry: 24000,
+      exit: 24100,
+      quantity: 75,
+      pnl: 7500,
+      reason: "",
+      riskAmount: 3000,
+      outcome: "WIN",
+    },
+    {
+      id: "2",
+      createdAt: "2026-07-14T06:00:00Z",
+      symbol: "NIFTY",
+      direction: "LONG",
+      entry: 24100,
+      exit: 24050,
+      quantity: 75,
+      pnl: -3750,
+      reason: "",
+      riskAmount: 3750,
+      outcome: "LOSS",
+    },
+    {
+      id: "3",
+      createdAt: "2026-07-14T07:00:00Z",
+      symbol: "NIFTY",
+      direction: "LONG",
+      entry: 24200,
+      exit: null,
+      quantity: 75,
+      pnl: null,
+      reason: "",
+      riskAmount: 3000,
+      outcome: "OPEN",
+    },
   ];
   it("summarises closed trades", () => {
     const r = summariseJournal(entries);

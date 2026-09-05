@@ -47,7 +47,10 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   SUBSCRIPTION_EXPIRED: "Subscription expired",
 };
 
-export const NOTIFICATION_TYPE_TONE: Record<NotificationType, "info" | "success" | "warn" | "danger"> = {
+export const NOTIFICATION_TYPE_TONE: Record<
+  NotificationType,
+  "info" | "success" | "warn" | "danger"
+> = {
   BUY_CE: "success",
   BUY_PE: "success",
   EXIT: "info",

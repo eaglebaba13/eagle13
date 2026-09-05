@@ -47,12 +47,18 @@ describe("splitBriefIntoParts", () => {
   });
 
   it("keeps every section intact — never splits mid-section", () => {
-    const disclaimers = [DISCLAIMER_GENERAL, DISCLAIMER_CRYPTO, DISCLAIMER_DERIVATIVES].join("\n\n");
+    const disclaimers = [DISCLAIMER_GENERAL, DISCLAIMER_CRYPTO, DISCLAIMER_DERIVATIVES].join(
+      "\n\n",
+    );
     const parts = splitBriefIntoParts({
       reportId: REPORT_ID,
       generatedAt: GENERATED_AT,
       sections: [
-        { id: "LEVELS", title: "Levels", body: "R3 24000\nR2 23950\nR1 23900\nPP 23850\nS1 23800\nS2 23750\nS3 23700" },
+        {
+          id: "LEVELS",
+          title: "Levels",
+          body: "R3 24000\nR2 23950\nR1 23900\nPP 23850\nS1 23800\nS2 23750\nS3 23700",
+        },
         { id: "DISCLAIMER", title: "Disclaimer", body: disclaimers, protectFromTruncation: true },
       ],
       maxChars: 400,

@@ -46,7 +46,11 @@ function tr(date: string, pnl: number, id = "t"): HistoricalTrade {
   };
 }
 
-function asset(id: string, pnls: readonly [string, number][], overrides: Partial<PortfolioAsset> = {}): PortfolioAsset {
+function asset(
+  id: string,
+  pnls: readonly [string, number][],
+  overrides: Partial<PortfolioAsset> = {},
+): PortfolioAsset {
   const trades = pnls.map(([d, p]) => tr(d, p, id));
   return {
     id,
@@ -80,9 +84,27 @@ const cfgBase: PortfolioConfig = {
   costs: defaultCostModel(),
 };
 
-const A = asset("A", [["2024-01-01", 10], ["2024-01-02", -5], ["2024-01-03", 8], ["2024-01-04", -2], ["2024-01-05", 6]]);
-const B = asset("B", [["2024-01-01", -3], ["2024-01-02", 6], ["2024-01-03", -1], ["2024-01-04", 4], ["2024-01-05", -2]]);
-const C = asset("C", [["2024-01-01", 5], ["2024-01-02", 4], ["2024-01-03", 5], ["2024-01-04", 4], ["2024-01-05", 5]]);
+const A = asset("A", [
+  ["2024-01-01", 10],
+  ["2024-01-02", -5],
+  ["2024-01-03", 8],
+  ["2024-01-04", -2],
+  ["2024-01-05", 6],
+]);
+const B = asset("B", [
+  ["2024-01-01", -3],
+  ["2024-01-02", 6],
+  ["2024-01-03", -1],
+  ["2024-01-04", 4],
+  ["2024-01-05", -2],
+]);
+const C = asset("C", [
+  ["2024-01-01", 5],
+  ["2024-01-02", 4],
+  ["2024-01-03", 5],
+  ["2024-01-04", 4],
+  ["2024-01-05", 5],
+]);
 
 describe("Phase 22 Stage 1 · Kelly", () => {
   it("Full Kelly = raw fraction, Half=0.5x, Quarter=0.25x", () => {
@@ -95,23 +117,45 @@ describe("Phase 22 Stage 1 · Kelly", () => {
     expect(qtr.fraction).toBeCloseTo(full.raw * 0.25, 6);
   });
   it("respects hard cap", () => {
-    const r = computeKelly({ winProbability: 0.9, averageWin: 100, averageLoss: 1, tradeCount: 100, fraction: "FULL", maxAllocation: 0.2 });
+    const r = computeKelly({
+      winProbability: 0.9,
+      averageWin: 100,
+      averageLoss: 1,
+      tradeCount: 100,
+      fraction: "FULL",
+      maxAllocation: 0.2,
+    });
     expect(r.fraction).toBeLessThanOrEqual(0.2);
   });
   it("blocks insufficient sample", () => {
-    const r = computeKelly({ winProbability: 0.6, averageWin: 10, averageLoss: 5, tradeCount: 5, fraction: "FULL" });
+    const r = computeKelly({
+      winProbability: 0.6,
+      averageWin: 10,
+      averageLoss: 5,
+      tradeCount: 5,
+      fraction: "FULL",
+    });
     expect(r.blocked).toBe(true);
     expect(r.reason).toContain("INSUFFICIENT_SAMPLE");
   });
   it("blocks negative edge", () => {
-    const r = computeKelly({ winProbability: 0.2, averageWin: 5, averageLoss: 10, tradeCount: 100, fraction: "FULL" });
+    const r = computeKelly({
+      winProbability: 0.2,
+      averageWin: 5,
+      averageLoss: 10,
+      tradeCount: 100,
+      fraction: "FULL",
+    });
     expect(r.blocked).toBe(true);
   });
 });
 
 describe("Phase 22 Stage 1 · Vol targeting", () => {
   it("returns scale within bounds", () => {
-    const r = computeVolTargetScale({ returns: [0.01, -0.02, 0.005, -0.01, 0.015], targetAnnualVol: 0.1 });
+    const r = computeVolTargetScale({
+      returns: [0.01, -0.02, 0.005, -0.01, 0.015],
+      targetAnnualVol: 0.1,
+    });
     expect(r.scale).toBeGreaterThanOrEqual(0.25);
     expect(r.scale).toBeLessThanOrEqual(2);
   });
@@ -150,7 +194,10 @@ describe("Phase 22 Stage 1 · Allocation methods", () => {
     expect(sum).toBeCloseTo(1, 6);
   });
   it("Custom weights honored", () => {
-    const a = computeAllocation([A, B], "FIXED_CUSTOM", { ...cfgBase, customWeights: { A: 0.7, B: 0.3 } });
+    const a = computeAllocation([A, B], "FIXED_CUSTOM", {
+      ...cfgBase,
+      customWeights: { A: 0.7, B: 0.3 },
+    });
     expect(a.allocations[0].weight).toBeCloseTo(0.7, 6);
     expect(a.allocations[1].weight).toBeCloseTo(0.3, 6);
   });
@@ -172,7 +219,10 @@ describe("Phase 22 Stage 1 · Allocation methods", () => {
     expect(a.allocations[0].weight).toBeGreaterThan(a.allocations[1].weight);
   });
   it("applyConstraints caps per-strategy weight", () => {
-    const { weights } = applyConstraints([0.9, 0.1], [A, B], { maxWeightPerStrategy: 0.5, maxLeverage: 1 });
+    const { weights } = applyConstraints([0.9, 0.1], [A, B], {
+      maxWeightPerStrategy: 0.5,
+      maxLeverage: 1,
+    });
     expect(weights[0]).toBeLessThanOrEqual(0.5);
   });
   it("Constraint rejects insufficient-trade candidates", () => {
@@ -189,8 +239,16 @@ describe("Phase 22 Stage 1 · Allocation methods", () => {
 
 describe("Phase 22 Stage 1 · Portfolio engine end-to-end", () => {
   it("produces deterministic Run ID", () => {
-    const r1 = runPortfolioResearch({ candidates: [A, B], config: cfgBase, now: () => "2024-06-04T00:00:00Z" });
-    const r2 = runPortfolioResearch({ candidates: [A, B], config: cfgBase, now: () => "2024-06-04T00:00:00Z" });
+    const r1 = runPortfolioResearch({
+      candidates: [A, B],
+      config: cfgBase,
+      now: () => "2024-06-04T00:00:00Z",
+    });
+    const r2 = runPortfolioResearch({
+      candidates: [A, B],
+      config: cfgBase,
+      now: () => "2024-06-04T00:00:00Z",
+    });
     expect(r1.runId).toBe(r2.runId);
     expect(r1.runId).toMatch(/^PORTFOLIO_RESEARCH_V1:[0-9a-f]{8}$/);
   });
@@ -208,7 +266,10 @@ describe("Phase 22 Stage 1 · Portfolio engine end-to-end", () => {
     const r = runPortfolioResearch({ candidates: [A, B, C], config: cfgBase });
     expect(r.equityCurve.length).toBeGreaterThan(0);
     expect(r.drawdownCurve.length).toBe(r.equityCurve.length);
-    expect(r.metrics.netPnl).toBeCloseTo(r.trades.reduce((s, t) => s + t.scaledPnl, 0), 6);
+    expect(r.metrics.netPnl).toBeCloseTo(
+      r.trades.reduce((s, t) => s + t.scaledPnl, 0),
+      6,
+    );
   });
   it("Does not mutate source trades", () => {
     const before = JSON.stringify(A.trades);
@@ -235,14 +296,41 @@ describe("Phase 22 Stage 1 · Portfolio engine end-to-end", () => {
 describe("Phase 22 Stage 1 · Portfolio Monte Carlo", () => {
   it("same seed ⇒ identical result", () => {
     const r = runPortfolioResearch({ candidates: [A, B, C], config: cfgBase });
-    const a = runPortfolioMonteCarlo({ result: r, startingCapital: cfgBase.startingCapital, simulations: 100, seed: 42, mode: "BLOCK_BOOTSTRAP", blockSize: 3 });
-    const b = runPortfolioMonteCarlo({ result: r, startingCapital: cfgBase.startingCapital, simulations: 100, seed: 42, mode: "BLOCK_BOOTSTRAP", blockSize: 3 });
+    const a = runPortfolioMonteCarlo({
+      result: r,
+      startingCapital: cfgBase.startingCapital,
+      simulations: 100,
+      seed: 42,
+      mode: "BLOCK_BOOTSTRAP",
+      blockSize: 3,
+    });
+    const b = runPortfolioMonteCarlo({
+      result: r,
+      startingCapital: cfgBase.startingCapital,
+      simulations: 100,
+      seed: 42,
+      mode: "BLOCK_BOOTSTRAP",
+      blockSize: 3,
+    });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
   it("Vol shock increases drawdown vs shuffle", () => {
     const r = runPortfolioResearch({ candidates: [A, B, C], config: cfgBase });
-    const shuf = runPortfolioMonteCarlo({ result: r, startingCapital: cfgBase.startingCapital, simulations: 200, seed: 7, mode: "SHUFFLE" });
-    const shock = runPortfolioMonteCarlo({ result: r, startingCapital: cfgBase.startingCapital, simulations: 200, seed: 7, mode: "VOL_SHOCK", volShockMultiplier: 3 });
+    const shuf = runPortfolioMonteCarlo({
+      result: r,
+      startingCapital: cfgBase.startingCapital,
+      simulations: 200,
+      seed: 7,
+      mode: "SHUFFLE",
+    });
+    const shock = runPortfolioMonteCarlo({
+      result: r,
+      startingCapital: cfgBase.startingCapital,
+      simulations: 200,
+      seed: 7,
+      mode: "VOL_SHOCK",
+      volShockMultiplier: 3,
+    });
     expect(shock.maxDrawdown.p95).toBeGreaterThanOrEqual(shuf.maxDrawdown.p95);
   });
 });
@@ -261,7 +349,13 @@ describe("Phase 22 Stage 1 · Exports carry provenance", () => {
   });
   it("Stress-test CSV emits mode and simulation count", () => {
     const r = runPortfolioResearch({ candidates: [A, B], config: cfgBase });
-    const mc = runPortfolioMonteCarlo({ result: r, startingCapital: cfgBase.startingCapital, simulations: 25, seed: 1, mode: "SHUFFLE" });
+    const mc = runPortfolioMonteCarlo({
+      result: r,
+      startingCapital: cfgBase.startingCapital,
+      simulations: 25,
+      seed: 1,
+      mode: "SHUFFLE",
+    });
     const csv = buildStressTestCsv(r, mc);
     expect(csv).toContain("SHUFFLE");
     expect(csv).toContain("25");
@@ -277,7 +371,14 @@ describe("Phase 22 Stage 1 · Exports carry provenance", () => {
 describe("Phase 22 Stage 1 · Preset library", () => {
   it("saves, renames, duplicates, deletes without production mutation", () => {
     const lib = new PortfolioPresetLibrary();
-    const p = lib.save({ id: "p1", name: "P1", createdAt: "2024-01-01", config: cfgBase, candidateRunIds: ["A", "B"], portfolioRunId: "PORTFOLIO_RESEARCH_V1:aaaaaaaa" });
+    const p = lib.save({
+      id: "p1",
+      name: "P1",
+      createdAt: "2024-01-01",
+      config: cfgBase,
+      candidateRunIds: ["A", "B"],
+      portfolioRunId: "PORTFOLIO_RESEARCH_V1:aaaaaaaa",
+    });
     expect(lib.list().length).toBe(1);
     lib.rename("p1", "P1v2");
     expect(lib.get("p1")!.name).toBe("P1v2");
@@ -289,7 +390,23 @@ describe("Phase 22 Stage 1 · Preset library", () => {
   });
   it("rejects duplicate IDs", () => {
     const lib = new PortfolioPresetLibrary();
-    lib.save({ id: "x", name: "X", createdAt: "t", config: cfgBase, candidateRunIds: [], portfolioRunId: "r" });
-    expect(() => lib.save({ id: "x", name: "Y", createdAt: "t", config: cfgBase, candidateRunIds: [], portfolioRunId: "r" })).toThrow();
+    lib.save({
+      id: "x",
+      name: "X",
+      createdAt: "t",
+      config: cfgBase,
+      candidateRunIds: [],
+      portfolioRunId: "r",
+    });
+    expect(() =>
+      lib.save({
+        id: "x",
+        name: "Y",
+        createdAt: "t",
+        config: cfgBase,
+        candidateRunIds: [],
+        portfolioRunId: "r",
+      }),
+    ).toThrow();
   });
 });

@@ -74,14 +74,18 @@ export function summariseFlow(i: SummaryInput): InstitutionalSummary {
   }
 
   const availability: CalcAvailability =
-    i.oi.availability === "OK" && (pcr != null) ? "OK" : "PARTIAL";
+    i.oi.availability === "OK" && pcr != null ? "OK" : "PARTIAL";
 
   const headline =
-    bias === "PUT_WRITERS_ACTIVE" ? "Put writers active"
-    : bias === "CALL_WRITERS_ACTIVE" ? "Call writers active"
-    : bias === "CONFLICT" ? "Conflicting positioning"
-    : bias === "BALANCED" ? "Balanced positioning"
-    : "Positioning unavailable";
+    bias === "PUT_WRITERS_ACTIVE"
+      ? "Put writers active"
+      : bias === "CALL_WRITERS_ACTIVE"
+        ? "Call writers active"
+        : bias === "CONFLICT"
+          ? "Conflicting positioning"
+          : bias === "BALANCED"
+            ? "Balanced positioning"
+            : "Positioning unavailable";
 
   return { bias, headline, rationale, evidence, availability };
 }

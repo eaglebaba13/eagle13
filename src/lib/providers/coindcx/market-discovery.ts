@@ -31,10 +31,12 @@ export function parseMarketsDetails(raw: unknown): readonly CoindcxMarket[] {
   for (const row of raw) {
     if (!row || typeof row !== "object") continue;
     const r = row as Record<string, unknown>;
-    const base = asString(r.base_currency_short_name ?? r.target_currency_short_name ?? "").toUpperCase();
-    const quote = asString(r.base_currency_short_name && r.target_currency_short_name
-      ? r.base_currency_short_name
-      : "").toUpperCase();
+    const base = asString(
+      r.base_currency_short_name ?? r.target_currency_short_name ?? "",
+    ).toUpperCase();
+    const quote = asString(
+      r.base_currency_short_name && r.target_currency_short_name ? r.base_currency_short_name : "",
+    ).toUpperCase();
     // CoinDCX schema: `symbol` = pair; `target_currency_short_name` = base asset;
     // `base_currency_short_name` = quote asset.
     const target = asString(r.target_currency_short_name).toUpperCase();

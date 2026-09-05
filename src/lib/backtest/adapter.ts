@@ -49,10 +49,7 @@ export type HistoricalFormulaAdapter = {
   /** Build the list of trading dates for this run. Pure/deterministic. */
   planSessions(cfg: AdapterConfig): AdapterSessionPlan | Promise<AdapterSessionPlan>;
   /** Load + evaluate a single trading date and emit zero or more trades. */
-  evaluateSession(
-    cfg: AdapterConfig,
-    date: string,
-  ): Promise<AdapterEvaluation>;
+  evaluateSession(cfg: AdapterConfig, date: string): Promise<AdapterEvaluation>;
   /** Return adapter-specific per-run metadata to attach to the shared result. */
   buildMetadata(
     cfg: AdapterConfig,

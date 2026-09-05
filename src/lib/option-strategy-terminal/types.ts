@@ -1,12 +1,7 @@
 // Phase 3A — Live Option Strategy Terminal (consumer-only).
 // Pure types. No formulas. No fetches. Never re-derives PCR/GTI/Decision/etc.
 
-export type CanonicalBias =
-  | "BULLISH"
-  | "BEARISH"
-  | "NEUTRAL"
-  | "CONFLICT"
-  | "UNAVAILABLE";
+export type CanonicalBias = "BULLISH" | "BEARISH" | "NEUTRAL" | "CONFLICT" | "UNAVAILABLE";
 
 export type VixRegime = "LOW" | "MID" | "HIGH" | "UNKNOWN";
 export type StrikeRegime = "ITM" | "ATM" | "OTM" | "UNKNOWN";
@@ -81,9 +76,9 @@ export interface StrategyProfile {
 
 export interface ScoredStrategy {
   readonly profile: StrategyProfile;
-  readonly alignmentPct: number;   // 0..100 — how well the profile matches the current direction
-  readonly overallPct: number;     // 0..100 — alignment × confidence penalties
-  readonly bullishScore: number;   // 0..100 — profile propensity, not a prediction
+  readonly alignmentPct: number; // 0..100 — how well the profile matches the current direction
+  readonly overallPct: number; // 0..100 — alignment × confidence penalties
+  readonly bullishScore: number; // 0..100 — profile propensity, not a prediction
   readonly bearishScore: number;
   readonly neutralScore: number;
   readonly rationale: readonly string[];

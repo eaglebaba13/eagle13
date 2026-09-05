@@ -99,11 +99,13 @@ export function classifySmartAlertReadiness(h: SmartAlertEngineHealth): SmartAle
   const reason =
     status === "HEALTHY"
       ? `Smart Alert engine healthy — ${h.ruleCount} rules loaded, in-app delivery active${
-          h.externalAdaptersDisabledByConfiguration ? " (external adapters disabled by configuration)" : ""
+          h.externalAdaptersDisabledByConfiguration
+            ? " (external adapters disabled by configuration)"
+            : ""
         }`
       : status === "DEGRADED"
-        ? warnings[0] ?? "Smart Alert engine degraded"
-        : blockers[0] ?? "Smart Alert engine unavailable";
+        ? (warnings[0] ?? "Smart Alert engine degraded")
+        : (blockers[0] ?? "Smart Alert engine unavailable");
 
   return { status, reason, warnings, blockers, health: h };
 }

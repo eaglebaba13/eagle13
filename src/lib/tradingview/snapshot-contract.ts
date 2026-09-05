@@ -54,8 +54,7 @@ interface BuildInput {
 export function buildSnapshot(input: BuildInput): CollectorSnapshot {
   const ratioValid =
     typeof input.ratio === "number" && Number.isFinite(input.ratio) && input.ratio > 0;
-  const ageMs =
-    input.receivedAtMs != null ? Math.max(0, input.now - input.receivedAtMs) : null;
+  const ageMs = input.receivedAtMs != null ? Math.max(0, input.now - input.receivedAtMs) : null;
 
   // Trust remote freshness when supplied AND compatible; recompute otherwise.
   const localFreshness = computeCollectorFreshness(ageMs);
@@ -64,9 +63,9 @@ export function buildSnapshot(input: BuildInput): CollectorSnapshot {
   // Never preserve an actionable signal after data becomes non-live.
   const signal =
     ratioValid && freshness === "LIVE"
-      ? (input.remoteSignal && input.remoteSignal !== "UNAVAILABLE"
-          ? input.remoteSignal
-          : classifyCollectorSignal(input.ratio))
+      ? input.remoteSignal && input.remoteSignal !== "UNAVAILABLE"
+        ? input.remoteSignal
+        : classifyCollectorSignal(input.ratio)
       : "UNAVAILABLE";
 
   return {

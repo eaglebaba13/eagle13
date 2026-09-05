@@ -60,9 +60,10 @@ export const testUpstoxProvider = createServerFn({ method: "GET" })
       }
     } catch (outer) {
       // Last-resort safe fallback that survives even a dynamic-import crash.
-      const safeMessage = outer instanceof Error
-        ? String(outer.message ?? "server function failed").slice(0, 240)
-        : "server function failed";
+      const safeMessage =
+        outer instanceof Error
+          ? String(outer.message ?? "server function failed").slice(0, 240)
+          : "server function failed";
       const redacted = safeMessage
         .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
         .replace(/UPSTOX_(API_KEY|API_SECRET|ACCESS_TOKEN)=[^\s"']+/gi, "UPSTOX_$1=[REDACTED]");

@@ -7,10 +7,7 @@
  * retries but NEVER mutate state.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  payloadHash,
-  verifyRazorpayWebhookSignature,
-} from "@/lib/razorpay-signature";
+import { payloadHash, verifyRazorpayWebhookSignature } from "@/lib/razorpay-signature";
 import { isSupportedEvent, decideEventOutcome } from "@/lib/razorpay-events";
 import type { SubscriptionStatus } from "@/lib/plans";
 
@@ -56,9 +53,7 @@ export const Route = createFileRoute("/api/public/webhooks/razorpay")({
         const eventType = typeof payload.event === "string" ? payload.event : "";
         const digest = payloadHash(rawBody);
         const providerEventId =
-          typeof payload.id === "string" && payload.id.length > 0
-            ? payload.id
-            : `sha256:${digest}`;
+          typeof payload.id === "string" && payload.id.length > 0 ? payload.id : `sha256:${digest}`;
         const providerSubscriptionId = extractSubscriptionId(payload);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

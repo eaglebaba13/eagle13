@@ -14,7 +14,11 @@ export type PortfolioHistoryEntry = {
 export class PortfolioHistory {
   private entries: PortfolioHistoryEntry[] = [];
 
-  record(result: PortfolioResearchResult, note = "", now: string = new Date().toISOString()): PortfolioHistoryEntry {
+  record(
+    result: PortfolioResearchResult,
+    note = "",
+    now: string = new Date().toISOString(),
+  ): PortfolioHistoryEntry {
     const id = `H_${this.entries.length + 1}_${result.runId}`;
     const entry: PortfolioHistoryEntry = { id, recordedAt: now, note, result };
     this.entries.push(entry);

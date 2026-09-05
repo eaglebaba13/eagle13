@@ -19,11 +19,7 @@ export type HistoricalSource =
   | "UNAVAILABLE";
 
 export type HistoricalCapability =
-  | "SUPPORTED"
-  | "NO_COMPATIBLE_RUN"
-  | "STALE"
-  | "INSUFFICIENT_SAMPLE"
-  | "NO_DATA";
+  "SUPPORTED" | "NO_COMPATIBLE_RUN" | "STALE" | "INSUFFICIENT_SAMPLE" | "NO_DATA";
 
 export type HistoricalDirection = "BULL" | "BEAR" | "NEUTRAL";
 
@@ -51,7 +47,7 @@ export interface HistoricalSelectionContext {
   readonly expiryContext?: string | null;
   readonly now: string; // ISO
   readonly minSample?: number; // default 20
-  readonly maxAgeMs?: number;  // default 30 days
+  readonly maxAgeMs?: number; // default 30 days
 }
 
 export interface HistoricalAccuracyResult {
@@ -87,8 +83,7 @@ function isCompatible(
 ): { ok: true } | { ok: false; reason: string } {
   if (!c.approved && c.source !== "RESEARCH_HISTORY")
     return { ok: false, reason: `${c.id}: not approved` };
-  if (c.instrument !== ctx.instrument)
-    return { ok: false, reason: `${c.id}: instrument mismatch` };
+  if (c.instrument !== ctx.instrument) return { ok: false, reason: `${c.id}: instrument mismatch` };
   if (c.strategyVersion !== ctx.strategyVersion)
     return { ok: false, reason: `${c.id}: strategy version mismatch` };
   if (c.formulaVersion !== ctx.formulaVersion)
@@ -115,10 +110,7 @@ function wilsonInterval(wins: number, total: number): [number, number] {
   const denom = 1 + (z * z) / total;
   const center = (p + (z * z) / (2 * total)) / denom;
   const margin = (z * Math.sqrt((p * (1 - p)) / total + (z * z) / (4 * total * total))) / denom;
-  return [
-    Math.max(0, (center - margin) * 100),
-    Math.min(100, (center + margin) * 100),
-  ];
+  return [Math.max(0, (center - margin) * 100), Math.min(100, (center + margin) * 100)];
 }
 
 function unavailable(
@@ -179,8 +171,7 @@ export function selectHistoricalAccuracy(
   const decidable = winner.wins + winner.losses;
   const winRatePct = decidable > 0 ? (winner.wins / decidable) * 100 : 50;
   const ageMs = Date.parse(ctx.now) - Date.parse(winner.evaluatedAt);
-  const freshness: "FRESH" | "STALE" =
-    ageMs <= 7 * 86400000 ? "FRESH" : "STALE";
+  const freshness: "FRESH" | "STALE" = ageMs <= 7 * 86400000 ? "FRESH" : "STALE";
   return {
     source: winner.source,
     capability: "SUPPORTED",

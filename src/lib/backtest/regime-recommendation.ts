@@ -17,11 +17,7 @@ import type { RobustnessStatus } from "./robustness";
 export const REGIME_RECOMMENDATION_VERSION = "REGIME_RECOMMENDATION_V1" as const;
 
 export type RecommendationStrategyId =
-  | "ASTRO"
-  | "LEGACY"
-  | "ABSOLUTE"
-  | "SMC_V1"
-  | "ASTRO_SMC_HYBRID_V1";
+  "ASTRO" | "LEGACY" | "ABSOLUTE" | "SMC_V1" | "ASTRO_SMC_HYBRID_V1";
 
 export type RecommendationFormulaId = string;
 
@@ -50,12 +46,12 @@ export type ScoringWeights = {
 };
 
 export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = Object.freeze({
-  oosConsistency: 0.20,
-  robustness: 0.20,
+  oosConsistency: 0.2,
+  robustness: 0.2,
   monteCarloP5: 0.15,
-  profitFactorConsistency: 0.10,
-  expectancyConsistency: 0.10,
-  drawdownResilience: 0.10,
+  profitFactorConsistency: 0.1,
+  expectancyConsistency: 0.1,
+  drawdownResilience: 0.1,
   sensitivityPlateauQuality: 0.05,
   crossAssetConsistency: 0.05,
   sampleAdequacy: 0.03,
@@ -516,8 +512,7 @@ export function buildRegimeRecommendation(
   const thresholds: SafetyThresholds = { ...DEFAULT_SAFETY_THRESHOLDS, ...input.thresholds };
 
   const dataIncomplete =
-    input.dataQualityOverride === "UNAVAILABLE" ||
-    input.strategies.length === 0;
+    input.dataQualityOverride === "UNAVAILABLE" || input.strategies.length === 0;
 
   const rankings: StrategyRanking[] = input.strategies.map((ev) => {
     const expected = input.expectedFormulaVersions?.[ev.strategy];
@@ -545,7 +540,7 @@ export function buildRegimeRecommendation(
   const best = eligible[0] ?? null;
   const second = eligible[1] ?? null;
   const bestEv =
-    best != null ? input.strategies.find((s) => s.strategy === best.strategy) ?? null : null;
+    best != null ? (input.strategies.find((s) => s.strategy === best.strategy) ?? null) : null;
   const confidence = computeConfidence(best, second, bestEv);
   const status = classifyStatus(
     best,
@@ -702,9 +697,7 @@ export function summarizeEnvironment(
   const blocking = rec.rejectedStrategies.flatMap((r) =>
     r.blockingReasons.map((br) => `${r.strategy}: ${br}`),
   );
-  const dq =
-    extras.dataQuality ??
-    (rec.evidence.strategies[0]?.dataQuality ?? "UNAVAILABLE");
+  const dq = extras.dataQuality ?? rec.evidence.strategies[0]?.dataQuality ?? "UNAVAILABLE";
   return {
     detectedRegime: rec.regime,
     volatilityState: volatility,

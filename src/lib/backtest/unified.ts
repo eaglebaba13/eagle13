@@ -7,11 +7,7 @@
 import type { AdapterConfig } from "./adapter";
 import type { HistoricalBacktestResult, DataGranularity, UnifiedFormulaId } from "./result";
 import { runHistoricalCore } from "./runner";
-import {
-  UnifiedBacktestConfigError,
-  validateUnifiedConfig,
-  type StrategyId,
-} from "./strategy";
+import { UnifiedBacktestConfigError, validateUnifiedConfig, type StrategyId } from "./strategy";
 
 export type RunUnifiedBacktestArgs = AdapterConfig & {
   strategy: StrategyId;

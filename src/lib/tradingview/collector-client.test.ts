@@ -167,10 +167,7 @@ describe("collector-client secret exposure guard", () => {
     // Guard: no static or dynamic import of the Node-only package.
     expect(src).not.toMatch(/from\s+["']@mathieuc\/tradingview["']/);
     expect(src).not.toMatch(/import\(\s*["']@mathieuc\/tradingview["']\s*\)/);
-    const contract = await fs.promises.readFile(
-      "src/lib/tradingview/snapshot-contract.ts",
-      "utf8",
-    );
+    const contract = await fs.promises.readFile("src/lib/tradingview/snapshot-contract.ts", "utf8");
     expect(contract).not.toMatch(/@mathieuc\/tradingview/);
   });
 });

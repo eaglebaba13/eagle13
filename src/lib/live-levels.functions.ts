@@ -98,7 +98,11 @@ type Quote = {
 
 async function fetchQuote(def: MarketDef): Promise<Quote> {
   const url = `${YAHOO}${encodeURIComponent(def.symbol)}?interval=1d&range=1mo`;
-  const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo (${def.symbol})`);
+  const json = parseProvider(
+    YahooChartSchema,
+    await fetchJson<unknown>(url),
+    `Yahoo (${def.symbol})`,
+  );
   const result = json.chart.result?.[0];
   if (!result) throw new Error(`No data for ${def.symbol}`);
   const meta = result.meta;
@@ -122,8 +126,7 @@ async function fetchQuote(def: MarketDef): Promise<Quote> {
   const changePct = prevClose ? round2((change / prevClose) * 100) : 0;
 
   // Crypto trades 24/7 → treat as OPEN; equities OPEN only if today's candle exists.
-  const marketState: "OPEN" | "CLOSED" =
-    def.crypto || last.date === today ? "OPEN" : "CLOSED";
+  const marketState: "OPEN" | "CLOSED" = def.crypto || last.date === today ? "OPEN" : "CLOSED";
 
   return { livePrice, prevClose, prevDate: prev.date, change, changePct, marketState };
 }
@@ -133,10 +136,7 @@ async function fetchQuote(def: MarketDef): Promise<Quote> {
 // EagleBaba EXTENDED levels (not part of the original Gann spec) and use
 // the legacy ±720 cascade purely so the existing terminal columns keep
 // rendering; they are excluded from the core Gann signal math.
-function levelsFor(
-  cycles: { base: number; upper: number; lower: number },
-  degree: number,
-) {
+function levelsFor(cycles: { base: number; upper: number; lower: number }, degree: number) {
   const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
   return {
     r1,
@@ -154,62 +154,62 @@ export const getLiveLevels = createServerFn({ method: "GET" }).handler(
     cached<LiveLevelsData>(
       astroCacheKey("live-levels"),
       async () => {
-    const { computeAstroPositions } = await import("./astro-engine.server");
-    // LIVE: positions for the current minute (unchanged formula, live moment).
-    const now = new Date();
-    const positions = computeAstroPositions(now);
+        const { computeAstroPositions } = await import("./astro-engine.server");
+        // LIVE: positions for the current minute (unchanged formula, live moment).
+        const now = new Date();
+        const positions = computeAstroPositions(now);
 
-    const quotes = await Promise.all(
-      MARKETS.map((def) =>
-        fetchQuote(def)
-          .then((q) => ({ def, q }))
-          .catch(() => null),
-      ),
-    );
+        const quotes = await Promise.all(
+          MARKETS.map((def) =>
+            fetchQuote(def)
+              .then((q) => ({ def, q }))
+              .catch(() => null),
+          ),
+        );
 
-    const markets: MarketBlock[] = quotes
-      .filter((x): x is { def: MarketDef; q: Quote } => x != null)
-      .map(({ def, q }) => {
-        const cycles = computeCycles(q.prevClose);
-        const planets: MarketPlanet[] = positions.planets.map((p) => ({
-          ...p,
-          ...levelsFor(cycles, p.degree),
-        }));
+        const markets: MarketBlock[] = quotes
+          .filter((x): x is { def: MarketDef; q: Quote } => x != null)
+          .map(({ def, q }) => {
+            const cycles = computeCycles(q.prevClose);
+            const planets: MarketPlanet[] = positions.planets.map((p) => ({
+              ...p,
+              ...levelsFor(cycles, p.degree),
+            }));
+            return {
+              key: def.key,
+              name: def.name,
+              symbol: def.symbol,
+              currency: def.currency,
+              crypto: !!def.crypto,
+              livePrice: q.livePrice,
+              prevClose: q.prevClose,
+              prevDate: q.prevDate,
+              change: q.change,
+              changePct: q.changePct,
+              marketState: q.marketState,
+              cycles,
+              planets,
+            };
+          });
+
+        if (markets.length === 0) throw new Error("No market data available");
+
         return {
-          key: def.key,
-          name: def.name,
-          symbol: def.symbol,
-          currency: def.currency,
-          crypto: !!def.crypto,
-          livePrice: q.livePrice,
-          prevClose: q.prevClose,
-          prevDate: q.prevDate,
-          change: q.change,
-          changePct: q.changePct,
-          marketState: q.marketState,
-          cycles,
-          planets,
+          asOf: now.toISOString(),
+          ayanamsa: positions.ayanamsa,
+          formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+          moonSign: positions.moonSign,
+          moonNakshatra: positions.moonNakshatra,
+          moonDegree: positions.moonDegree,
+          retroCount: positions.retroCount,
+          bullCount: positions.bullCount,
+          bearCount: positions.bearCount,
+          bullRetroCount: positions.bullRetroCount,
+          bearRetroCount: positions.bearRetroCount,
+          planets: positions.planets,
+          moonPhase: positions.moonPhase,
+          markets,
         };
-      });
-
-    if (markets.length === 0) throw new Error("No market data available");
-
-    return {
-      asOf: now.toISOString(),
-      ayanamsa: positions.ayanamsa,
-      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
-      moonSign: positions.moonSign,
-      moonNakshatra: positions.moonNakshatra,
-      moonDegree: positions.moonDegree,
-      retroCount: positions.retroCount,
-      bullCount: positions.bullCount,
-      bearCount: positions.bearCount,
-      bullRetroCount: positions.bullRetroCount,
-      bearRetroCount: positions.bearRetroCount,
-      planets: positions.planets,
-      moonPhase: positions.moonPhase,
-      markets,
-    };
       },
       { ttlMs: 30_000 },
     ),

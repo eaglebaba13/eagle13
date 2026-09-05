@@ -42,13 +42,14 @@ export function auditScheduler(input: SchedulerAuditInput): ReadinessResult[] {
       title: `Scheduler: ${t.name}`,
       status: tooFast || stale || highErr ? "FAIL" : "PASS",
       severity: tooFast ? "critical" : stale ? "warning" : highErr ? "warning" : "info",
-      detail: [
-        tooFast ? "actual cadence faster than provider minimum" : "",
-        stale ? "task has not run recently" : "",
-        highErr ? `${t.errorCount} recent errors` : "",
-      ]
-        .filter(Boolean)
-        .join("; ") || undefined,
+      detail:
+        [
+          tooFast ? "actual cadence faster than provider minimum" : "",
+          stale ? "task has not run recently" : "",
+          highErr ? `${t.errorCount} recent errors` : "",
+        ]
+          .filter(Boolean)
+          .join("; ") || undefined,
     });
   }
   return out;

@@ -3,8 +3,17 @@
 
 import type { AggregateBuildUp, BuildUpClass, CalcAvailability } from "./types";
 
-function classify(priceChange: number | null, oiChange: number | null, side: "CALL" | "PUT"): BuildUpClass {
-  if (priceChange == null || oiChange == null || !Number.isFinite(priceChange) || !Number.isFinite(oiChange)) {
+function classify(
+  priceChange: number | null,
+  oiChange: number | null,
+  side: "CALL" | "PUT",
+): BuildUpClass {
+  if (
+    priceChange == null ||
+    oiChange == null ||
+    !Number.isFinite(priceChange) ||
+    !Number.isFinite(oiChange)
+  ) {
     return "UNAVAILABLE";
   }
   const priceUp = priceChange > 0;

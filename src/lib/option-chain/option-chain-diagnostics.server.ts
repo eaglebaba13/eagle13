@@ -34,7 +34,10 @@ export interface OptionChainDiagnosticsReport {
   readonly generatedAt: string;
 }
 
-async function probe(underlying: OptionUnderlying, http: UpstoxHttpClient): Promise<OptionChainDiagnosticRow> {
+async function probe(
+  underlying: OptionUnderlying,
+  http: UpstoxHttpClient,
+): Promise<OptionChainDiagnosticRow> {
   const checkedAt = new Date().toISOString();
   const provider = new UpstoxOptionChainProvider(http);
   const t0 = Date.now();

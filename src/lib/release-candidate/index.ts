@@ -5,10 +5,7 @@
 // promotion requires an explicit human approver.
 
 export type StagingVerdict =
-  | "NOT_READY"
-  | "READY_FOR_INTERNAL_STAGING"
-  | "READY_FOR_BETA"
-  | "READY_FOR_PRODUCTION_SIGNOFF";
+  "NOT_READY" | "READY_FOR_INTERNAL_STAGING" | "READY_FOR_BETA" | "READY_FOR_PRODUCTION_SIGNOFF";
 
 export interface HardBlocker {
   readonly id: string;
@@ -47,15 +44,55 @@ const HARD_BLOCKER_MAP: Array<{
   title: string;
   detail: string;
 }> = [
-  { key: "mockDataOnSubscriptionPath", id: "mock.subscription", title: "Mock data on subscription path", detail: "Subscription-facing route serves mock data" },
-  { key: "providerTokenExpired", id: "provider.token", title: "Provider token expired", detail: "Live provider auth token expired" },
-  { key: "optionChainInvalid", id: "options.invalid", title: "Invalid option chain", detail: "Live option chain failed validation" },
+  {
+    key: "mockDataOnSubscriptionPath",
+    id: "mock.subscription",
+    title: "Mock data on subscription path",
+    detail: "Subscription-facing route serves mock data",
+  },
+  {
+    key: "providerTokenExpired",
+    id: "provider.token",
+    title: "Provider token expired",
+    detail: "Live provider auth token expired",
+  },
+  {
+    key: "optionChainInvalid",
+    id: "options.invalid",
+    title: "Invalid option chain",
+    detail: "Live option chain failed validation",
+  },
   { key: "pcrStale", id: "pcr.stale", title: "PCR stale", detail: "Combined PCR pipeline stale" },
-  { key: "authBroken", id: "auth.broken", title: "Auth broken", detail: "Auth end-to-end journey failing" },
-  { key: "billingWebhookBroken", id: "billing.webhook", title: "Billing webhook signature verification broken", detail: "Razorpay/Stripe webhook signature check failing" },
-  { key: "brokerExecutionEnabled", id: "broker.execution", title: "Broker execution enabled", detail: "Order execution path is enabled — must remain disabled" },
-  { key: "rollbackMissing", id: "release.rollback", title: "Rollback plan missing", detail: "No rollback plan configured for release" },
-  { key: "manualSignoffMissing", id: "release.signoff", title: "Manual sign-off missing", detail: "Human approver has not signed off" },
+  {
+    key: "authBroken",
+    id: "auth.broken",
+    title: "Auth broken",
+    detail: "Auth end-to-end journey failing",
+  },
+  {
+    key: "billingWebhookBroken",
+    id: "billing.webhook",
+    title: "Billing webhook signature verification broken",
+    detail: "Razorpay/Stripe webhook signature check failing",
+  },
+  {
+    key: "brokerExecutionEnabled",
+    id: "broker.execution",
+    title: "Broker execution enabled",
+    detail: "Order execution path is enabled — must remain disabled",
+  },
+  {
+    key: "rollbackMissing",
+    id: "release.rollback",
+    title: "Rollback plan missing",
+    detail: "No rollback plan configured for release",
+  },
+  {
+    key: "manualSignoffMissing",
+    id: "release.signoff",
+    title: "Manual sign-off missing",
+    detail: "Human approver has not signed off",
+  },
 ];
 
 export function computeStagingReport(input: StagingValidationInput): StagingReport {
@@ -63,7 +100,11 @@ export function computeStagingReport(input: StagingValidationInput): StagingRepo
     return {
       verdict: "NOT_READY",
       hardBlockers: [
-        { id: "staging.unconfigured", title: "Staging not configured", detail: "Staging environment is not configured" },
+        {
+          id: "staging.unconfigured",
+          title: "Staging not configured",
+          detail: "Staging environment is not configured",
+        },
       ],
       score: 0,
       passes: 0,
@@ -84,7 +125,14 @@ export function computeStagingReport(input: StagingValidationInput): StagingRepo
   else if (score < 100) verdict = "READY_FOR_BETA";
   else verdict = "READY_FOR_PRODUCTION_SIGNOFF";
 
-  return { verdict, hardBlockers: blockers, score, passes: input.passes, warnings: input.warnings, failures: input.failures };
+  return {
+    verdict,
+    hardBlockers: blockers,
+    score,
+    passes: input.passes,
+    warnings: input.warnings,
+    failures: input.failures,
+  };
 }
 
 export interface ReleaseCandidateInput {

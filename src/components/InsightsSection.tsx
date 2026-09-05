@@ -60,7 +60,9 @@ function Card({
           background: `linear-gradient(90deg, color-mix(in srgb, ${accent} 12%, transparent), transparent 60%)`,
         }}
       >
-        <span style={{ fontFamily: "var(--eb-head)", fontSize: 15, letterSpacing: 2, color: accent }}>
+        <span
+          style={{ fontFamily: "var(--eb-head)", fontSize: 15, letterSpacing: 2, color: accent }}
+        >
           {title}
         </span>
         {sub ? (
@@ -101,12 +103,21 @@ function MoverRow({ m }: { m: Mover }) {
     >
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 13, color: "var(--eb-text)", fontWeight: 700 }}>{m.name}</div>
-        <div style={{ fontSize: 9, color: "var(--eb-muted)", letterSpacing: 0.5, textTransform: "uppercase" }}>
+        <div
+          style={{
+            fontSize: 9,
+            color: "var(--eb-muted)",
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
+          }}
+        >
           {m.sector}
         </div>
       </div>
       <div style={{ textAlign: "right", fontFamily: "var(--eb-mono)" }}>
-        <div suppressHydrationWarning style={{ fontSize: 13, color: "var(--eb-text)" }}>{fmt(m.price)}</div>
+        <div suppressHydrationWarning style={{ fontSize: 13, color: "var(--eb-text)" }}>
+          {fmt(m.price)}
+        </div>
         <div suppressHydrationWarning style={{ fontSize: 12, color: col, fontWeight: 700 }}>
           {up ? "▲" : "▼"} {pct(m.changePct)}
         </div>
@@ -149,15 +160,35 @@ function SectorBar({ s }: { s: Sector }) {
     <div style={{ padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "var(--eb-text)", fontWeight: 700 }}>{s.name}</span>
-        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: col, fontWeight: 700 }}>
+        <span
+          suppressHydrationWarning
+          style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: col, fontWeight: 700 }}
+        >
           {up ? "▲" : "▼"} {pct(s.changePct)}
         </span>
       </div>
-      <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 3, marginTop: 5 }}>
-        <div style={{ height: "100%", width: `${width}%`, background: col, borderRadius: 3, transition: "width .4s" }} />
+      <div
+        style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 3, marginTop: 5 }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${width}%`,
+            background: col,
+            borderRadius: 3,
+            transition: "width .4s",
+          }}
+        />
       </div>
       {s.leaders.length ? (
-        <div style={{ fontSize: 10, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)", marginTop: 4 }}>
+        <div
+          style={{
+            fontSize: 10,
+            color: "var(--eb-muted)",
+            fontFamily: "var(--eb-mono)",
+            marginTop: 4,
+          }}
+        >
           {s.leaders.slice(0, 3).map((l) => (
             <span key={l.symbol} style={{ marginRight: 10 }}>
               {l.name}{" "}
@@ -189,8 +220,13 @@ function SectorsCard() {
               border: "1px solid rgba(0,201,122,0.22)",
             }}
           >
-            <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>Top Sector</div>
-            <div suppressHydrationWarning style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bull)" }}>
+            <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>
+              Top Sector
+            </div>
+            <div
+              suppressHydrationWarning
+              style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bull)" }}
+            >
               {top.name} {pct(top.changePct)}
             </div>
           </div>
@@ -203,8 +239,13 @@ function SectorsCard() {
               border: "1px solid rgba(255,58,92,0.22)",
             }}
           >
-            <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>Weakest Sector</div>
-            <div suppressHydrationWarning style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bear)" }}>
+            <div style={{ fontSize: 9, color: "var(--eb-muted)", textTransform: "uppercase" }}>
+              Weakest Sector
+            </div>
+            <div
+              suppressHydrationWarning
+              style={{ fontSize: 14, fontWeight: 700, color: "var(--eb-bear)" }}
+            >
               {bottom.name} {pct(bottom.changePct)}
             </div>
           </div>
@@ -242,7 +283,14 @@ function NewsCard() {
             }}
           >
             <div style={{ fontSize: 13, color: "var(--eb-text)", lineHeight: 1.4 }}>{n.title}</div>
-            <div style={{ fontSize: 10, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)", marginTop: 3 }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: "var(--eb-muted)",
+                fontFamily: "var(--eb-mono)",
+                marginTop: 3,
+              }}
+            >
               {n.source}
               {n.time ? ` · ${n.time} IST` : ""}
             </div>
@@ -286,7 +334,11 @@ export function InsightsSection() {
         <FnoBearish />
       </div>
       <div
-        style={{ display: "grid", gridTemplateColumns: "minmax(300px,1fr) minmax(320px,1fr)", gap: 14 }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(300px,1fr) minmax(320px,1fr)",
+          gap: 14,
+        }}
         className="eb-grid"
       >
         <SectorsCard />

@@ -3,11 +3,7 @@
 // input trades, never touches production formulas, adapters, cache keys,
 // engines, run-ids, or exports.
 
-export type MonteCarloSamplingMode =
-  | "SHUFFLE"
-  | "BOOTSTRAP"
-  | "BLOCK_BOOTSTRAP"
-  | "PERTURB";
+export type MonteCarloSamplingMode = "SHUFFLE" | "BOOTSTRAP" | "BLOCK_BOOTSTRAP" | "PERTURB";
 
 export type MonteCarloTrade = { readonly pnl: number };
 
@@ -78,17 +74,31 @@ function percentile(sorted: readonly number[], q: number): number {
 }
 function pctile5(values: number[]): MonteCarloPercentiles {
   const s = [...values].sort((a, b) => a - b);
-  return { p5: percentile(s, 0.05), p25: percentile(s, 0.25), p50: percentile(s, 0.5), p75: percentile(s, 0.75), p95: percentile(s, 0.95) };
+  return {
+    p5: percentile(s, 0.05),
+    p25: percentile(s, 0.25),
+    p50: percentile(s, 0.5),
+    p75: percentile(s, 0.75),
+    p95: percentile(s, 0.95),
+  };
 }
 
-function samplePath(trades: readonly MonteCarloTrade[], rng: () => number, mode: MonteCarloSamplingMode, blockSize: number, perturbPct: number): number[] {
+function samplePath(
+  trades: readonly MonteCarloTrade[],
+  rng: () => number,
+  mode: MonteCarloSamplingMode,
+  blockSize: number,
+  perturbPct: number,
+): number[] {
   const n = trades.length;
   const out = new Array<number>(n);
   if (mode === "SHUFFLE") {
     const idx = trades.map((_, i) => i);
     for (let i = n - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
-      const tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+      const tmp = idx[i];
+      idx[i] = idx[j];
+      idx[j] = tmp;
     }
     for (let i = 0; i < n; i++) out[i] = trades[idx[i]].pnl;
     return out;
@@ -135,21 +145,31 @@ function pathMetrics(startingCapital: number, pnls: readonly number[]) {
     if (dd > maxDD) maxDD = dd;
     const ddPct = peak > 0 ? dd / peak : 0;
     if (ddPct > maxDDPct) maxDDPct = ddPct;
-    if (pnls[i] > 0) { grossWin += pnls[i]; wins++; }
-    else if (pnls[i] < 0) { grossLoss += -pnls[i]; losses++; }
+    if (pnls[i] > 0) {
+      grossWin += pnls[i];
+      wins++;
+    } else if (pnls[i] < 0) {
+      grossLoss += -pnls[i];
+      losses++;
+    }
   }
-  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
+  const profitFactor =
+    grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
   const total = wins + losses;
   const expectancy = total > 0 ? (eq - startingCapital) / total : 0;
   return { path, finalEquity: eq, maxDD, maxDDPct, profitFactor, expectancy };
 }
 
 function ruinFormulaText(ruin: RuinThreshold): string {
-  if (ruin.kind === "DRAWDOWN_PCT") return `path.maxDrawdownPct >= ${(ruin.value * 100).toFixed(1)}%`;
+  if (ruin.kind === "DRAWDOWN_PCT")
+    return `path.maxDrawdownPct >= ${(ruin.value * 100).toFixed(1)}%`;
   return `min(path.equity) <= ${ruin.value}`;
 }
 
-export function runMonteCarlo(trades: readonly MonteCarloTrade[], cfg: MonteCarloConfig): MonteCarloResult {
+export function runMonteCarlo(
+  trades: readonly MonteCarloTrade[],
+  cfg: MonteCarloConfig,
+): MonteCarloResult {
   const ruin: RuinThreshold = cfg.ruin ?? { kind: "DRAWDOWN_PCT", value: 0.2 };
   const startingCapital = cfg.startingCapital;
   const n = trades.length;
@@ -157,12 +177,26 @@ export function runMonteCarlo(trades: readonly MonteCarloTrade[], cfg: MonteCarl
     const zero = { p5: 0, p25: 0, p50: 0, p75: 0, p95: 0 };
     return {
       version: "MONTE_CARLO_V1",
-      seed: cfg.seed, simulations: cfg.simulations, samplingMode: cfg.samplingMode,
-      startingCapital, ruin, ruinFormula: ruinFormulaText(ruin),
-      probabilityOfLoss: 0, probabilityOfRuin: 0,
-      finalEquity: zero, maxDrawdown: zero, profitFactor: zero, expectancy: zero,
-      percentileEquityCurves: { p5: [startingCapital], p50: [startingCapital], p95: [startingCapital] },
-      worstPath: [startingCapital], medianPath: [startingCapital], bestPath: [startingCapital],
+      seed: cfg.seed,
+      simulations: cfg.simulations,
+      samplingMode: cfg.samplingMode,
+      startingCapital,
+      ruin,
+      ruinFormula: ruinFormulaText(ruin),
+      probabilityOfLoss: 0,
+      probabilityOfRuin: 0,
+      finalEquity: zero,
+      maxDrawdown: zero,
+      profitFactor: zero,
+      expectancy: zero,
+      percentileEquityCurves: {
+        p5: [startingCapital],
+        p50: [startingCapital],
+        p95: [startingCapital],
+      },
+      worstPath: [startingCapital],
+      medianPath: [startingCapital],
+      bestPath: [startingCapital],
       tradeCount: 0,
       assumptions: ["INSUFFICIENT_DATA: no trades supplied"],
     };
@@ -186,7 +220,8 @@ export function runMonteCarlo(trades: readonly MonteCarloTrade[], cfg: MonteCarl
     pfs.push(Number.isFinite(m.profitFactor) ? m.profitFactor : 1e9);
     exps.push(m.expectancy);
     if (m.finalEquity < startingCapital) losses++;
-    if (ruin.kind === "DRAWDOWN_PCT" ? m.maxDDPct >= ruin.value : Math.min(...m.path) <= ruin.value) ruins++;
+    if (ruin.kind === "DRAWDOWN_PCT" ? m.maxDDPct >= ruin.value : Math.min(...m.path) <= ruin.value)
+      ruins++;
   }
   // Percentile equity curves (per-step p5/p50/p95).
   const steps = paths[0].length;

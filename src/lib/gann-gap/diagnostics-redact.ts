@@ -4,7 +4,8 @@
 const URL_RE = /\bhttps?:\/\/[^\s"'<>]+/gi;
 const BEARER_RE = /\b[Bb]earer\s+[A-Za-z0-9._-]+/g;
 const JWT_RE = /\beyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\b/g;
-const SENSITIVE_KEYS = /^(authorization|api[-_]?key|secret|token|service[-_]?role|password|supabase[-_]?url)$/i;
+const SENSITIVE_KEYS =
+  /^(authorization|api[-_]?key|secret|token|service[-_]?role|password|supabase[-_]?url)$/i;
 
 export function redactString(s: string): string {
   return s

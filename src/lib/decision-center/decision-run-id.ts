@@ -18,7 +18,9 @@ export function computeDecisionRunId(inp: DecisionEvidenceInput, res: DecisionRe
     res.state,
     res.score.toFixed(6),
     res.confidence.toFixed(6),
-    ...Object.entries(res.supportingRunIds).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`),
+    ...Object.entries(res.supportingRunIds)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`),
     `dh=${res.dataHash ?? ""}`,
     `gates=${res.hardGates.slice().sort().join(",")}`,
     `mt=${inp.minTrades ?? 50}`,

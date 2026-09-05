@@ -4,11 +4,7 @@
 
 export type InstrumentSymbol = "NIFTY50" | "BANKNIFTY";
 
-export type SnapshotStatus =
-  | "PREVIEW"
-  | "LOCKED"
-  | "HISTORICAL_LOCKED"
-  | "NO_TRADING_SESSION";
+export type SnapshotStatus = "PREVIEW" | "LOCKED" | "HISTORICAL_LOCKED" | "NO_TRADING_SESSION";
 
 export type SessionAnchor = {
   tradingDate: string; // YYYY-MM-DD (IST)
@@ -85,10 +81,7 @@ export function todayIst(now: Date = new Date()): string {
 }
 
 /** Determine snapshot status given a trading date and current instant. */
-export function computeSnapshotStatus(
-  tradingDate: string,
-  now: Date = new Date(),
-): SnapshotStatus {
+export function computeSnapshotStatus(tradingDate: string, now: Date = new Date()): SnapshotStatus {
   if (isWeekendIst(tradingDate)) return "NO_TRADING_SESSION";
   const today = todayIst(now);
   if (tradingDate < today) return "HISTORICAL_LOCKED";

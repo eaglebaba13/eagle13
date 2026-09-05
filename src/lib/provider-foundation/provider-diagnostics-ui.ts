@@ -37,7 +37,8 @@ export function describeSmokeErrorSource(source: SmokeErrorSource | null | undef
 /** Classify a dispatch-layer error into a SmokeErrorSource without leaking secrets. */
 export function classifySmokeError(message: string): SmokeErrorSource {
   const m = message.toLowerCase();
-  if (m.includes("unauthorized") || m.includes("forbidden") || m.includes("admin")) return "APPLICATION_AUTH";
+  if (m.includes("unauthorized") || m.includes("forbidden") || m.includes("admin"))
+    return "APPLICATION_AUTH";
   if (m.includes("timeout") || m.includes("network") || m.includes("fetch")) return "NETWORK";
   return "UPSTOX_API";
 }
@@ -55,7 +56,11 @@ export interface SmokeReportLike {
   readonly intradayResults: readonly { readonly ok: boolean; readonly latencyMs: number }[];
   readonly summary: { readonly overall: SmokeOverall; readonly safeError?: string | null };
   readonly cache: { readonly hits: number; readonly misses: number; readonly writes: number };
-  readonly health: { readonly totalCalls: number; readonly errors: number; readonly avgLatencyMs: number };
+  readonly health: {
+    readonly totalCalls: number;
+    readonly errors: number;
+    readonly avgLatencyMs: number;
+  };
 }
 
 export interface SmokeDiagnosticRow {
@@ -100,7 +105,10 @@ export async function dispatchSmokeTest<T extends SmokeReportLike>(
   }
 }
 
-function endpointStatus(report: SmokeReportLike, rows: readonly { readonly ok: boolean }[]): SmokeOverall {
+function endpointStatus(
+  report: SmokeReportLike,
+  rows: readonly { readonly ok: boolean }[],
+): SmokeOverall {
   if (report.summary.overall === "NOT_CONFIGURED") return "NOT_CONFIGURED";
   if (rows.length === 0) return "FAIL";
   if (rows.every((row) => row.ok)) return "PASS";
@@ -110,7 +118,8 @@ function endpointStatus(report: SmokeReportLike, rows: readonly { readonly ok: b
 
 function resolutionStatus(report: SmokeReportLike): SmokeOverall {
   const rows = report.instrumentResolved;
-  if (rows.length === 0) return report.summary.overall === "NOT_CONFIGURED" ? "NOT_CONFIGURED" : "FAIL";
+  if (rows.length === 0)
+    return report.summary.overall === "NOT_CONFIGURED" ? "NOT_CONFIGURED" : "FAIL";
   if (rows.every((row) => row.resolved)) return "PASS";
   if (rows.some((row) => row.resolved)) return "PARTIAL";
   return "FAIL";

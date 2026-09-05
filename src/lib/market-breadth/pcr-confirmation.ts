@@ -31,10 +31,18 @@ export function adaptPcrConfirmation(opts: PcrConfirmationOptions): PcrConfirmat
   const now = opts.now ?? Date.now();
   const stale = opts.staleAfterMs ?? 5 * 60 * 1000;
   const age = Math.max(0, now - Date.parse(opts.reading.timestamp));
-  const freshness: "FRESH" | "STALE" | "UNKNOWN" = Number.isFinite(age) ? (age <= stale ? "FRESH" : "STALE") : "UNKNOWN";
+  const freshness: "FRESH" | "STALE" | "UNKNOWN" = Number.isFinite(age)
+    ? age <= stale
+      ? "FRESH"
+      : "STALE"
+    : "UNKNOWN";
   const hasScore = opts.reading.combinedScore != null;
   const partial = opts.reading.warnings.length > 0;
-  const dataQuality: PcrConfirmation["dataQuality"] = !hasScore ? "FAILED" : partial ? "PARTIAL" : "OK";
+  const dataQuality: PcrConfirmation["dataQuality"] = !hasScore
+    ? "FAILED"
+    : partial
+      ? "PARTIAL"
+      : "OK";
   const stateAvailable = hasScore && freshness !== "STALE";
   const state: PcrConfirmationState = stateAvailable
     ? (opts.reading.confirmedState as PcrConfirmationState)

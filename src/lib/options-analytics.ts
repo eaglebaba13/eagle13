@@ -29,14 +29,7 @@ export type OptionChainSnapshot = {
   strikes: number[];
   legs: OptionLeg[];
   provider: string;
-  source:
-    | "NSE"
-    | "UPSTOX"
-    | "PROVIDER"
-    | "SIMULATED"
-    | "LAST_KNOWN_GOOD"
-    | "UNAVAILABLE"
-    | "DEMO";
+  source: "NSE" | "UPSTOX" | "PROVIDER" | "SIMULATED" | "LAST_KNOWN_GOOD" | "UNAVAILABLE" | "DEMO";
 };
 
 export type Moneyness = "ITM" | "ATM" | "OTM";
@@ -56,9 +49,7 @@ export function inferStrikeStep(strikes: number[]): number {
 /** ATM = strike closest to spot (within half a strike step). */
 export function atmStrike(spot: number, strikes: number[]): number {
   if (!strikes.length) return 0;
-  return strikes.reduce((best, s) =>
-    Math.abs(s - spot) < Math.abs(best - spot) ? s : best,
-  );
+  return strikes.reduce((best, s) => (Math.abs(s - spot) < Math.abs(best - spot) ? s : best));
 }
 
 export function classifyMoneyness(
@@ -163,11 +154,7 @@ export function computeMaxPain(legs: OptionLeg[]): {
 /* --------------------- Build-up classification -------------------- */
 
 export type Buildup =
-  | "LONG_BUILDUP"
-  | "SHORT_BUILDUP"
-  | "SHORT_COVERING"
-  | "LONG_UNWINDING"
-  | "UNKNOWN";
+  "LONG_BUILDUP" | "SHORT_BUILDUP" | "SHORT_COVERING" | "LONG_UNWINDING" | "UNKNOWN";
 
 export function classifyBuildup(
   prevPrice: number | null,

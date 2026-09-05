@@ -1,11 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { classifyBase, linkedUnderlyingFor, TOKENIZED_METAL_MAP, CRYPTO_MAJOR_BASES, isSurfacedMarket, marketSortKey } from "./symbols";
+import {
+  classifyBase,
+  linkedUnderlyingFor,
+  TOKENIZED_METAL_MAP,
+  CRYPTO_MAJOR_BASES,
+  isSurfacedMarket,
+  marketSortKey,
+} from "./symbols";
 import { parseMarketsDetails, discoverySummary } from "./market-discovery";
 import { normalizeTickerRow, indexTickers } from "./ticker";
 import { parseCandles } from "./candles";
 import { classifyCoindcxFreshness } from "./freshness";
 import { buildCoindcxDiagnostics } from "./diagnostics";
-import { COINDCX_TRADING_ENABLED, assertNoExecution, assertExecutionGuardIntact } from "./execution-guard";
+import {
+  COINDCX_TRADING_ENABLED,
+  assertNoExecution,
+  assertExecutionGuardIntact,
+} from "./execution-guard";
 import { assertAllowlistedEndpoint, COINDCX_ENDPOINTS } from "./endpoints";
 import type { CoindcxMarket } from "./types";
 
@@ -25,18 +36,63 @@ describe("coindcx · symbols", () => {
     expect(TOKENIZED_METAL_MAP.KAG).toBe("SILVER");
   });
   it("marketSortKey ranks crypto majors ahead of tokenized metals", () => {
-    const btc: CoindcxMarket = { pair: "BTCUSDT", ecode: "B", base: "BTC", quote: "USDT", assetClass: "CRYPTO_MAJOR", status: "ACTIVE", minQuantity: null, maxQuantity: null, tickSize: null, baseCurrencyPrecision: null, targetCurrencyPrecision: null, linkedUnderlying: null, notes: [] };
-    const paxg: CoindcxMarket = { ...btc, pair: "PAXGUSDT", base: "PAXG", assetClass: "TOKENIZED_METAL", linkedUnderlying: "GOLD" };
+    const btc: CoindcxMarket = {
+      pair: "BTCUSDT",
+      ecode: "B",
+      base: "BTC",
+      quote: "USDT",
+      assetClass: "CRYPTO_MAJOR",
+      status: "ACTIVE",
+      minQuantity: null,
+      maxQuantity: null,
+      tickSize: null,
+      baseCurrencyPrecision: null,
+      targetCurrencyPrecision: null,
+      linkedUnderlying: null,
+      notes: [],
+    };
+    const paxg: CoindcxMarket = {
+      ...btc,
+      pair: "PAXGUSDT",
+      base: "PAXG",
+      assetClass: "TOKENIZED_METAL",
+      linkedUnderlying: "GOLD",
+    };
     expect(marketSortKey(btc)[0]).toBeLessThan(marketSortKey(paxg)[0]);
   });
 });
 
 describe("coindcx · discovery parser", () => {
   const raw = [
-    { symbol: "BTCUSDT", ecode: "B", target_currency_short_name: "BTC", base_currency_short_name: "USDT", status: "active", min_quantity: "0.0001" },
-    { symbol: "PAXGUSDT", ecode: "B", target_currency_short_name: "PAXG", base_currency_short_name: "USDT", status: "active" },
-    { symbol: "DOGEUSDT", ecode: "B", target_currency_short_name: "DOGE", base_currency_short_name: "USDT", status: "active" },
-    { symbol: "BTCINR", ecode: "I", target_currency_short_name: "BTC", base_currency_short_name: "INR", status: "inactive" },
+    {
+      symbol: "BTCUSDT",
+      ecode: "B",
+      target_currency_short_name: "BTC",
+      base_currency_short_name: "USDT",
+      status: "active",
+      min_quantity: "0.0001",
+    },
+    {
+      symbol: "PAXGUSDT",
+      ecode: "B",
+      target_currency_short_name: "PAXG",
+      base_currency_short_name: "USDT",
+      status: "active",
+    },
+    {
+      symbol: "DOGEUSDT",
+      ecode: "B",
+      target_currency_short_name: "DOGE",
+      base_currency_short_name: "USDT",
+      status: "active",
+    },
+    {
+      symbol: "BTCINR",
+      ecode: "I",
+      target_currency_short_name: "BTC",
+      base_currency_short_name: "INR",
+      status: "inactive",
+    },
   ];
   it("surfaces only crypto-majors and tokenized-metals; filters OTHER + SUSPENDED", () => {
     const markets = parseMarketsDetails(raw);
@@ -67,7 +123,17 @@ describe("coindcx · discovery parser", () => {
 describe("coindcx · ticker + candles", () => {
   it("normalizes a valid ticker row", () => {
     const t = normalizeTickerRow(
-      { market: "BTCUSDT", last_price: "50000.5", bid: "49999", ask: "50001", high: "51000", low: "49000", change_24_hour: "1.5", volume: "12.3", timestamp: 1_700_000_000_000 },
+      {
+        market: "BTCUSDT",
+        last_price: "50000.5",
+        bid: "49999",
+        ask: "50001",
+        high: "51000",
+        low: "49000",
+        change_24_hour: "1.5",
+        volume: "12.3",
+        timestamp: 1_700_000_000_000,
+      },
       "2024-01-01T00:00:00Z",
     );
     expect(t?.pair).toBe("BTCUSDT");
@@ -78,7 +144,13 @@ describe("coindcx · ticker + candles", () => {
     expect(normalizeTickerRow({ market: "BTCUSDT" }, "2024-01-01T00:00:00Z")).toBeNull();
   });
   it("indexTickers keys by pair", () => {
-    const m = indexTickers([{ market: "BTCUSDT", last_price: 1 }, { market: "ETHUSDT", last_price: 2 }], "2024-01-01T00:00:00Z");
+    const m = indexTickers(
+      [
+        { market: "BTCUSDT", last_price: 1 },
+        { market: "ETHUSDT", last_price: 2 },
+      ],
+      "2024-01-01T00:00:00Z",
+    );
     expect(m.get("BTCUSDT")?.last).toBe(1);
     expect(m.get("ETHUSDT")?.last).toBe(2);
   });
@@ -116,10 +188,14 @@ describe("coindcx · execution guard", () => {
 describe("coindcx · endpoint allowlist", () => {
   it("accepts allowlisted URLs", () => {
     expect(() => assertAllowlistedEndpoint(COINDCX_ENDPOINTS.marketsDetails)).not.toThrow();
-    expect(() => assertAllowlistedEndpoint(`${COINDCX_ENDPOINTS.candles}?pair=BTCUSDT&interval=1m`)).not.toThrow();
+    expect(() =>
+      assertAllowlistedEndpoint(`${COINDCX_ENDPOINTS.candles}?pair=BTCUSDT&interval=1m`),
+    ).not.toThrow();
   });
   it("rejects non-allowlisted URLs (including any private/trade path)", () => {
-    expect(() => assertAllowlistedEndpoint("https://api.coindcx.com/exchange/v1/orders/create")).toThrow();
+    expect(() =>
+      assertAllowlistedEndpoint("https://api.coindcx.com/exchange/v1/orders/create"),
+    ).toThrow();
     expect(() => assertAllowlistedEndpoint("https://malicious.example.com/api")).toThrow();
   });
 });

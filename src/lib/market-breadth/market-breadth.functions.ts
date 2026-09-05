@@ -12,7 +12,11 @@ import { buildMockBreadthBundle, type MockScenario } from "./mock-provider";
 import { evaluateVixRegime } from "./vix-regime";
 import { adaptPcrConfirmation } from "./pcr-confirmation";
 import { classifyGti } from "./gti-classifier";
-import { evaluateMarketBreadthCapability, type MarketBreadthCapability, type MarketBreadthSourceKind } from "./capability";
+import {
+  evaluateMarketBreadthCapability,
+  type MarketBreadthCapability,
+  type MarketBreadthSourceKind,
+} from "./capability";
 import { safeProviderLabel } from "@/lib/provider-labels";
 import type { CombinedPcrReading } from "../combined-pcr/types";
 
@@ -94,7 +98,8 @@ export const getMarketBreadth = createServerFn({ method: "POST" })
         if (pcrReading == null) {
           const tp = Date.now();
           try {
-            const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
+            const { fetchCanonicalOptionChain } =
+              await import("../option-chain/canonical-snapshot.server");
             const { computeCombinedPcr } = await import("../combined-pcr/combined-pcr");
             const { DEFAULT_COMBINED_PCR_WEIGHTS } = await import("../combined-pcr/types");
             const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
@@ -106,7 +111,8 @@ export const getMarketBreadth = createServerFn({ method: "POST" })
                 useMock: data.useMockOptionChain,
               });
               pcrCapabilities[u] = res.capability.status;
-              const usable = res.capability.status === "SUPPORTED" || res.capability.status === "PARTIAL";
+              const usable =
+                res.capability.status === "SUPPORTED" || res.capability.status === "PARTIAL";
               snapshots[u] = usable && res.snapshot ? res.snapshot : null;
               if (usable && res.snapshot) anyUsable = true;
             }
@@ -235,17 +241,40 @@ export const getMarketBreadthDiagnostics = createServerFn({ method: "GET" })
     try {
       let isAdmin = false;
       try {
-        const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+        const { data } = await context.supabase.rpc("has_role", {
+          _user_id: context.userId,
+          _role: "admin",
+        });
         isAdmin = data === true;
-      } catch { isAdmin = false; }
+      } catch {
+        isAdmin = false;
+      }
       if (!isAdmin) {
-        return { ok: false as const, report: null, safeError: "admin required", startedAt, completedAt: new Date().toISOString() };
+        return {
+          ok: false as const,
+          report: null,
+          safeError: "admin required",
+          startedAt,
+          completedAt: new Date().toISOString(),
+        };
       }
       const { buildMarketBreadthDiagnostics } = await import("./diagnostics.server");
       const report = await buildMarketBreadthDiagnostics();
-      return { ok: true as const, report, safeError: null, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: true as const,
+        report,
+        safeError: null,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     } catch (e) {
       const safe = e instanceof Error ? e.message.slice(0, 200) : "diagnostics failed";
-      return { ok: false as const, report: null, safeError: safe, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: false as const,
+        report: null,
+        safeError: safe,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     }
   });

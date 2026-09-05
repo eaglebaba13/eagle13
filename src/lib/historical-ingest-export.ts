@@ -42,10 +42,7 @@ function provenanceBlock(p: ProvenanceHeader): string {
   ].join("\n");
 }
 
-export function cleanedCandlesToCsv(
-  rows: ParsedCandle[],
-  p: ProvenanceHeader,
-): string {
+export function cleanedCandlesToCsv(rows: ParsedCandle[], p: ProvenanceHeader): string {
   const header = "timeIst,open,high,low,close,volume";
   const body = rows
     .map((r) => `${r.timeIst},${r.open},${r.high},${r.low},${r.close},${r.volume ?? ""}`)
@@ -53,21 +50,13 @@ export function cleanedCandlesToCsv(
   return `${provenanceBlock(p)}\n${header}\n${body}`;
 }
 
-export function rejectedRowsToCsv(
-  rows: RejectedRow[],
-  p: ProvenanceHeader,
-): string {
+export function rejectedRowsToCsv(rows: RejectedRow[], p: ProvenanceHeader): string {
   const header = "rowIndex,reason,raw";
-  const body = rows
-    .map((r) => `${r.rowIndex},${esc(r.reason)},${esc(r.raw)}`)
-    .join("\n");
+  const body = rows.map((r) => `${r.rowIndex},${esc(r.reason)},${esc(r.raw)}`).join("\n");
   return `${provenanceBlock(p)}\n${header}\n${body}`;
 }
 
-export function sessionSummaryToCsv(
-  b: BuildResult,
-  p: ProvenanceHeader,
-): string {
+export function sessionSummaryToCsv(b: BuildResult, p: ProvenanceHeader): string {
   const header = "tradingDate,candles,previousCloseDate,previousClose,rejectionReason";
   const body = b.sessions
     .map(
@@ -93,10 +82,7 @@ export function providerComparisonToCsv(
   return `${provenanceBlock(p)}\n${header}\n${body}`;
 }
 
-export function dqReportToJson(
-  dq: DataQualityReport,
-  p: ProvenanceHeader,
-): string {
+export function dqReportToJson(dq: DataQualityReport, p: ProvenanceHeader): string {
   return JSON.stringify(
     {
       ...p,

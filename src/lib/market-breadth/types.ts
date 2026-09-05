@@ -35,26 +35,21 @@ export interface MarketBreadthSnapshot {
   readonly advanceDeclineRatio: number | null;
   readonly advancePercentage: number | null;
   readonly declinePercentage: number | null;
-  readonly netBreadth: number | null;                // advances - declines
-  readonly weightedBreadth: number | null;           // ∑ weight * dir (advance=+1, decline=-1)
+  readonly netBreadth: number | null; // advances - declines
+  readonly weightedBreadth: number | null; // ∑ weight * dir (advance=+1, decline=-1)
   readonly weightedAdvance: number | null;
   readonly weightedDecline: number | null;
   readonly weightedUnchanged: number | null;
   readonly totalWeight: number | null;
   readonly freshness: "FRESH" | "STALE" | "UNKNOWN";
   readonly dataQuality: BreadthQuality;
-  readonly constituentCoverage: number | null;       // 0..1 coverage of the requested universe
+  readonly constituentCoverage: number | null; // 0..1 coverage of the requested universe
   readonly snapshotId: string;
   readonly registryVersion: string | null;
   readonly warnings: readonly string[];
 }
 
-export type VixRegime =
-  | "BELOW_15"
-  | "BETWEEN_15_AND_20"
-  | "ABOVE_20"
-  | "ABOVE_25"
-  | "UNKNOWN";
+export type VixRegime = "BELOW_15" | "BETWEEN_15_AND_20" | "ABOVE_20" | "ABOVE_25" | "UNKNOWN";
 
 export interface VixRegimeReading {
   readonly currentVix: number | null;

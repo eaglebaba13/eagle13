@@ -10,9 +10,8 @@ export const getProviderDiagnostics = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Error("forbidden");
 
-    const { buildProviderDiagnosticsReport, buildProviderDiagnosticsFailureReport } = await import(
-      "./provider-diagnostics.server"
-    );
+    const { buildProviderDiagnosticsReport, buildProviderDiagnosticsFailureReport } =
+      await import("./provider-diagnostics.server");
     try {
       return await buildProviderDiagnosticsReport();
     } catch (error) {

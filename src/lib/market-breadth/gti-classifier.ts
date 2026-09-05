@@ -12,10 +12,7 @@ import type {
 } from "./types";
 import { detectConflicts, directionOfBreadth, directionOfPcr } from "./conflict-detector";
 import { computeConfidence } from "./confidence";
-import {
-  GTI_RESEARCH_FORMULA_VERSION,
-  MARKET_BREADTH_DISCLAIMER,
-} from "./types";
+import { GTI_RESEARCH_FORMULA_VERSION, MARKET_BREADTH_DISCLAIMER } from "./types";
 
 export interface GtiInputs {
   readonly broad: MarketBreadthSnapshot | null;
@@ -65,16 +62,19 @@ export function classifyGti(inputs: GtiInputs): GtiResearchReading {
   } else {
     const breadthScore =
       scoreBreadth(inputs.broad) * 0.15 +
-      scoreBreadth(inputs.nifty50) * 0.20 +
+      scoreBreadth(inputs.nifty50) * 0.2 +
       scoreBreadth(inputs.topWeighted) * 0.25 +
-      (scoreBreadth(inputs.banking) + scoreBreadth(inputs.it) +
-       scoreBreadth(inputs.oilGas) + scoreBreadth(inputs.auto)) * 0.10;
+      (scoreBreadth(inputs.banking) +
+        scoreBreadth(inputs.it) +
+        scoreBreadth(inputs.oilGas) +
+        scoreBreadth(inputs.auto)) *
+        0.1;
     const pcrDir = directionOfPcr(inputs.pcr);
     const pcrBias = pcrDir === "BULLISH" ? 0.25 : pcrDir === "BEARISH" ? -0.25 : 0;
     const composite = breadthScore + pcrBias;
     const conflicted = conflicts.length >= 2;
     const strong = 0.5;
-    const focus = 0.20;
+    const focus = 0.2;
 
     if (composite >= strong && !conflicted) state = "STRONG_CE_RESEARCH_FOCUS";
     else if (composite >= focus && !conflicted) state = "CE_RESEARCH_FOCUS";

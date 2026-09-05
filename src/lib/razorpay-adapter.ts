@@ -16,10 +16,7 @@ import type {
 } from "./billing-adapter";
 import type { PlanId } from "./plans";
 import { selfSetCancelAtPeriodEnd } from "./billing-rpc";
-import {
-  createRazorpayCheckout,
-  getBillingProviderHealth,
-} from "./razorpay-checkout.functions";
+import { createRazorpayCheckout, getBillingProviderHealth } from "./razorpay-checkout.functions";
 
 export class RazorpayBillingAdapter implements BillingProviderAdapter {
   readonly name = "razorpay" as const;

@@ -15,12 +15,28 @@ function baseCtx(overrides: Partial<AlertEvaluationContext> = {}): AlertEvaluati
     gti: { available: true, state: "BULLISH_TREND", bias: "BULLISH", freshness: "LIVE" },
     breadth: { available: true, state: "BULLISH", bias: "BULLISH", freshness: "MIXED" },
     vix: { available: true, value: 14, regime: "LOW", freshness: "LIVE" },
-    astro: { available: true, state: "NONE", label: null, startsInMinutes: null, freshness: "LIVE" },
+    astro: {
+      available: true,
+      state: "NONE",
+      label: null,
+      startsInMinutes: null,
+      freshness: "LIVE",
+    },
     gannLevels: [],
-    gannGap: { available: true, predictionId: "p1", lifecycle: "PROVISIONAL", label: null, freshness: "LIVE" },
+    gannGap: {
+      available: true,
+      predictionId: "p1",
+      lifecycle: "PROVISIONAL",
+      label: null,
+      freshness: "LIVE",
+    },
     strategy: { available: true, topStrategyId: "long_call", bias: "BULLISH", freshness: "LIVE" },
     ai: { available: true, bias: "BULLISH", confidence: "MEDIUM", freshness: "LIVE" },
-    runtime: { available: true, modules: [{ module: "DECISION_ENGINE", status: "HEALTHY", reason: null }], overall: "READY" },
+    runtime: {
+      available: true,
+      modules: [{ module: "DECISION_ENGINE", status: "HEALTHY", reason: null }],
+      overall: "READY",
+    },
     ...overrides,
   };
 }
@@ -79,7 +95,9 @@ describe("smart-alerts engine", () => {
       subscription: defaultSubscription("u1"),
     });
     for (const e of second.emitted) {
-      expect(e.summary.toLowerCase()).not.toMatch(/guaranteed|will\s+move|place\s+order|buy\s+now|sell\s+now/);
+      expect(e.summary.toLowerCase()).not.toMatch(
+        /guaranteed|will\s+move|place\s+order|buy\s+now|sell\s+now/,
+      );
       expect(e.disclaimer).toMatch(/Research Only/i);
     }
   });

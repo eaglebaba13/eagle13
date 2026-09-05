@@ -45,10 +45,7 @@ describe("summarizeShadowObservations", () => {
   });
 
   it("flags weakening when the next confirmed state is a weakening state", () => {
-    const obs = summarizeShadowObservations([
-      s(0, "CE_FOCUS", -10),
-      s(1, "BULLISH_WEAKENING", -4),
-    ]);
+    const obs = summarizeShadowObservations([s(0, "CE_FOCUS", -10), s(1, "BULLISH_WEAKENING", -4)]);
     expect(obs[0].weakening).toBe(true);
   });
 

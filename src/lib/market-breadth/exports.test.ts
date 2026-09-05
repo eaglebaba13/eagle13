@@ -8,10 +8,20 @@ import { adaptPcrConfirmation } from "./pcr-confirmation";
 function make() {
   const b = buildMockBreadthBundle({ scenario: "MIXED" });
   return classifyGti({
-    broad: b.broad, nifty50: b.nifty50, topWeighted: b.topWeighted,
-    banking: b.banking, it: b.it, oilGas: b.oilGas, auto: b.auto,
+    broad: b.broad,
+    nifty50: b.nifty50,
+    topWeighted: b.topWeighted,
+    banking: b.banking,
+    it: b.it,
+    oilGas: b.oilGas,
+    auto: b.auto,
     pcr: adaptPcrConfirmation({ reading: null }),
-    vix: evaluateVixRegime({ currentVix: 15, provider: "MOCK", timestamp: new Date().toISOString(), freshness: "FRESH" }),
+    vix: evaluateVixRegime({
+      currentVix: 15,
+      provider: "MOCK",
+      timestamp: new Date().toISOString(),
+      freshness: "FRESH",
+    }),
     runId: "run-1",
   });
 }

@@ -7,12 +7,7 @@
  */
 
 export type ReadinessStatus =
-  | "PASS"
-  | "WARNING"
-  | "FAIL"
-  | "MISSING"
-  | "NOT_APPLICABLE"
-  | "UNKNOWN";
+  "PASS" | "WARNING" | "FAIL" | "MISSING" | "NOT_APPLICABLE" | "UNKNOWN";
 
 export type ReadinessSeverity = "info" | "warning" | "critical" | "blocker";
 

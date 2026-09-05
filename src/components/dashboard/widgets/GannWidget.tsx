@@ -22,12 +22,26 @@ export default function GannWidget() {
       blockedReasons={gate.blockingReasons}
     >
       <Row label="Gann Up">
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: gate.allowed ? "var(--eb-bull)" : "var(--eb-muted)" }}>
+        <span
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 15,
+            fontWeight: 700,
+            color: gate.allowed ? "var(--eb-bull)" : "var(--eb-muted)",
+          }}
+        >
           {fmt(levels.gannUp)}
         </span>
       </Row>
       <Row label="Gann Down">
-        <span style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: gate.allowed ? "var(--eb-bear)" : "var(--eb-muted)" }}>
+        <span
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 15,
+            fontWeight: 700,
+            color: gate.allowed ? "var(--eb-bear)" : "var(--eb-muted)",
+          }}
+        >
           {fmt(levels.gannDown)}
         </span>
       </Row>

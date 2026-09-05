@@ -64,8 +64,7 @@ export function evaluateShadow(input: ShadowEvaluationInput): ShadowEvent {
     timeframe: input.timeframe,
     provider: input.provider,
     providerStatus: input.providerStatus,
-    astroDirection:
-      input.hybrid.direction === "FORMULA_MISMATCH" ? null : null,
+    astroDirection: input.hybrid.direction === "FORMULA_MISMATCH" ? null : null,
     smcDirection: null,
     hybridDirection: input.hybrid.direction,
     score: input.hybrid.hybridScore,
@@ -93,10 +92,7 @@ export function evaluateShadow(input: ShadowEvaluationInput): ShadowEvent {
   }
 
   const reasons: string[] = [...input.hybrid.reasons];
-  if (
-    input.astroFormula &&
-    input.astroFormula !== input.expectedAstroFormula
-  ) {
+  if (input.astroFormula && input.astroFormula !== input.expectedAstroFormula) {
     reasons.push("SHADOW_BLOCK: astro formula mismatch");
     return wrap("DATA_INCOMPLETE", reasons);
   }
@@ -175,10 +171,7 @@ export function loadShadowHistory(storage?: StorageLike | null): ShadowEvent[] {
   }
 }
 
-export function appendShadowEvent(
-  evt: ShadowEvent,
-  storage?: StorageLike | null,
-): ShadowEvent[] {
+export function appendShadowEvent(evt: ShadowEvent, storage?: StorageLike | null): ShadowEvent[] {
   const s = storage ?? defaultStorage();
   const list = loadShadowHistory(s);
   list.push(evt);

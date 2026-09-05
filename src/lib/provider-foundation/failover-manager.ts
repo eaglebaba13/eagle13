@@ -17,8 +17,12 @@ const HEALTHY: ReadonlySet<ProviderStatus> = new Set(["LIVE", "DELAYED"]);
 export class FailoverManager {
   choose(primary: ProviderView | null, secondary: ProviderView | null): FailoverDecision {
     const candidates: FailoverDecision["candidates"] = [
-      primary ? { id: primary.adapter.id, role: "PRIMARY" as ProviderRole, status: primary.status } : null,
-      secondary ? { id: secondary.adapter.id, role: "SECONDARY" as ProviderRole, status: secondary.status } : null,
+      primary
+        ? { id: primary.adapter.id, role: "PRIMARY" as ProviderRole, status: primary.status }
+        : null,
+      secondary
+        ? { id: secondary.adapter.id, role: "SECONDARY" as ProviderRole, status: secondary.status }
+        : null,
     ].filter(Boolean) as FailoverDecision["candidates"];
 
     if (primary && HEALTHY.has(primary.status)) {
@@ -41,10 +45,20 @@ export class FailoverManager {
     }
     // Both unhealthy: prefer STALE (still has data) over hard failures.
     if (primary?.status === "STALE") {
-      return { chosen: primary.adapter, role: "PRIMARY", reason: "primary stale (best-available)", candidates };
+      return {
+        chosen: primary.adapter,
+        role: "PRIMARY",
+        reason: "primary stale (best-available)",
+        candidates,
+      };
     }
     if (secondary?.status === "STALE") {
-      return { chosen: secondary.adapter, role: "SECONDARY", reason: "secondary stale (best-available)", candidates };
+      return {
+        chosen: secondary.adapter,
+        role: "SECONDARY",
+        reason: "secondary stale (best-available)",
+        candidates,
+      };
     }
     return {
       chosen: null,

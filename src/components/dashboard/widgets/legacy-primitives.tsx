@@ -40,8 +40,7 @@ export function Card({
   onToggleCollapse?: () => void;
   collapsible?: boolean;
 }) {
-  const hasMeta =
-    !!freshness || !!methodology || !!blocked || !!collapsible;
+  const hasMeta = !!freshness || !!methodology || !!blocked || !!collapsible;
   return (
     <div className="eb-card eb-glass" style={{ borderRadius: 12, overflow: "hidden" }}>
       <div
@@ -56,7 +55,9 @@ export function Card({
           flexWrap: "wrap",
         }}
       >
-        <span style={{ fontFamily: "var(--eb-head)", fontSize: 15, letterSpacing: 2, color: accent }}>
+        <span
+          style={{ fontFamily: "var(--eb-head)", fontSize: 15, letterSpacing: 2, color: accent }}
+        >
           {title}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -127,9 +128,7 @@ export function Card({
               {methodology}
             </span>
           ) : null}
-          {freshness ? (
-            <DataFreshnessPill result={freshness} provider={provider} compact />
-          ) : null}
+          {freshness ? <DataFreshnessPill result={freshness} provider={provider} compact /> : null}
           {blocked ? (
             <span
               role="status"
@@ -166,7 +165,9 @@ export function Row({ label, children }: { label: string; children: ReactNode })
         borderBottom: "1px solid rgba(255,255,255,0.04)",
       }}
     >
-      <span style={{ fontSize: 12, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+        {label}
+      </span>
       {children}
     </div>
   );
@@ -221,7 +222,9 @@ export function StatBox({ label, value, color }: { label: string; value: number;
       >
         {label}
       </div>
-      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color, marginTop: 3 }}>
+      <div
+        style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color, marginTop: 3 }}
+      >
         {fmt(value)}
       </div>
     </div>

@@ -1,8 +1,18 @@
 // Phase 27 · Stage 3 — Deterministic mock breadth provider for
 // research/testing. NOT a broker connection.
 
-import { NIFTY50_CONSTITUENTS, NIFTY50_REGISTRY_VERSION, nifty50WeightMap, topWeightedBasket } from "./nifty50-registry";
-import { SECTOR_REGISTRY, SECTOR_REGISTRY_VERSION, findSector, type SectorId } from "./sector-registry";
+import {
+  NIFTY50_CONSTITUENTS,
+  NIFTY50_REGISTRY_VERSION,
+  nifty50WeightMap,
+  topWeightedBasket,
+} from "./nifty50-registry";
+import {
+  SECTOR_REGISTRY,
+  SECTOR_REGISTRY_VERSION,
+  findSector,
+  type SectorId,
+} from "./sector-registry";
 import { computeBreadth } from "./breadth-calc";
 import type { MarketBreadthSnapshot, SymbolTick, BreadthDirection } from "./types";
 
@@ -12,8 +22,8 @@ function directionForScenario(sc: MockScenario, seed: number): BreadthDirection 
   const r = Math.abs(Math.sin(seed * 12.9898)) % 1;
   if (sc === "BULLISH") return r < 0.72 ? "ADVANCE" : r < 0.9 ? "DECLINE" : "UNCHANGED";
   if (sc === "BEARISH") return r < 0.72 ? "DECLINE" : r < 0.9 ? "ADVANCE" : "UNCHANGED";
-  if (sc === "MIXED")   return r < 0.45 ? "ADVANCE" : r < 0.90 ? "DECLINE" : "UNCHANGED";
-  if (sc === "PARTIAL") return r < 0.30 ? "UNAVAILABLE" : r < 0.65 ? "ADVANCE" : "DECLINE";
+  if (sc === "MIXED") return r < 0.45 ? "ADVANCE" : r < 0.9 ? "DECLINE" : "UNCHANGED";
+  if (sc === "PARTIAL") return r < 0.3 ? "UNAVAILABLE" : r < 0.65 ? "ADVANCE" : "DECLINE";
   return "UNAVAILABLE"; // STALE — most missing
 }
 
@@ -84,7 +94,10 @@ function buildTopWeighted(opts: MockBreadthOptions, size = 10): MarketBreadthSna
   });
 }
 
-const SECTOR_UNIVERSE: Record<SectorId, "SECTOR_BANKING" | "SECTOR_IT" | "SECTOR_OIL_GAS" | "SECTOR_AUTO"> = {
+const SECTOR_UNIVERSE: Record<
+  SectorId,
+  "SECTOR_BANKING" | "SECTOR_IT" | "SECTOR_OIL_GAS" | "SECTOR_AUTO"
+> = {
   BANKING: "SECTOR_BANKING",
   IT: "SECTOR_IT",
   OIL_GAS: "SECTOR_OIL_GAS",

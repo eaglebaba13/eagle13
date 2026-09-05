@@ -44,10 +44,9 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<NotificationRow> => {
-    const { data: row, error } = await context.supabase.rpc(
-      "mark_notification_read",
-      { _id: data.id },
-    );
+    const { data: row, error } = await context.supabase.rpc("mark_notification_read", {
+      _id: data.id,
+    });
     if (error) throw new Error(error.message);
     return row as unknown as NotificationRow;
   });
@@ -55,9 +54,7 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ updated: number }> => {
-    const { data, error } = await context.supabase.rpc(
-      "mark_all_notifications_read",
-    );
+    const { data, error } = await context.supabase.rpc("mark_all_notifications_read");
     if (error) throw new Error(error.message);
     return { updated: (data as unknown as number) ?? 0 };
   });

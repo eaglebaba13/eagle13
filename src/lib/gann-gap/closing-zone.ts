@@ -20,10 +20,7 @@ export function computeClosingZone(
     if (l.level >= reference && (above === null || l.level < above.level)) above = l;
   }
 
-  const tol = Math.max(
-    config.touchToleranceAbs,
-    reference * config.touchTolerancePct,
-  );
+  const tol = Math.max(config.touchToleranceAbs, reference * config.touchTolerancePct);
   const band = config.indecisionBandPoints;
 
   const nearest = [below, above]
@@ -38,9 +35,7 @@ export function computeClosingZone(
   // Rejected below: close is meaningfully below nearest-above level while
   // still very near it (i.e. tested and pushed back).
   const rejectedBelow =
-    above != null &&
-    above.level - reference > 0 &&
-    above.level - reference <= band;
+    above != null && above.level - reference > 0 && above.level - reference <= band;
 
   return {
     reference,

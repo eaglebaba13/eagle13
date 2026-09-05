@@ -2,8 +2,15 @@ import { describe, expect, it } from "vitest";
 import { aggregateHealth, PROD_HEALTH_VERSION } from "./index";
 
 const g = {
-  providers: "GREEN", gti: "GREEN", combinedPcr: "GREEN", breadth: "GREEN",
-  optionChain: "GREEN", dashboard: "GREEN", performance: "GREEN", cache: "GREEN", build: "GREEN",
+  providers: "GREEN",
+  gti: "GREEN",
+  combinedPcr: "GREEN",
+  breadth: "GREEN",
+  optionChain: "GREEN",
+  dashboard: "GREEN",
+  performance: "GREEN",
+  cache: "GREEN",
+  build: "GREEN",
 } as const;
 
 describe("prod-health", () => {

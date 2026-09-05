@@ -3,10 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  RuntimeReadinessStrip,
-  RuntimeReadinessStripFallback,
-} from "./RuntimeReadinessStrip";
+import { RuntimeReadinessStrip, RuntimeReadinessStripFallback } from "./RuntimeReadinessStrip";
 import { RuntimeReadinessDiagnostics } from "./RuntimeReadinessDiagnostics";
 import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
 import {
@@ -73,9 +70,7 @@ describe("Phase 2H · RuntimeReadinessStrip", () => {
 
 describe("Phase 2H · RuntimeReadinessDiagnostics", () => {
   it("renders empty state without a report", () => {
-    const html = renderToStaticMarkup(
-      createElement(RuntimeReadinessDiagnostics, { report: null }),
-    );
+    const html = renderToStaticMarkup(createElement(RuntimeReadinessDiagnostics, { report: null }));
     expect(html).toContain("No runtime evidence available");
   });
 

@@ -9,8 +9,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 type UxOk = {
   ok: true;
-  quote: { livePrice: number; prevSessionClose: number; change: number; changePct: number; symbol: string; name: string; marketState: "OPEN"; prevDay: { open: number; high: number; low: number; close: number; date: string }; updatedAt: string };
-  providerMetadata: { name: "upstox-historical-v1"; status: string; receivedAt: string; providerTime: string | null };
+  quote: {
+    livePrice: number;
+    prevSessionClose: number;
+    change: number;
+    changePct: number;
+    symbol: string;
+    name: string;
+    marketState: "OPEN";
+    prevDay: { open: number; high: number; low: number; close: number; date: string };
+    updatedAt: string;
+  };
+  providerMetadata: {
+    name: "upstox-historical-v1";
+    status: string;
+    receivedAt: string;
+    providerTime: string | null;
+  };
 };
 
 const makeUpstoxQuote = (label: string, price: number): UxOk => ({
@@ -23,7 +38,13 @@ const makeUpstoxQuote = (label: string, price: number): UxOk => ({
     change: 10,
     changePct: 0.5,
     marketState: "OPEN",
-    prevDay: { open: price - 20, high: price + 5, low: price - 25, close: price - 10, date: "2026-07-19" },
+    prevDay: {
+      open: price - 20,
+      high: price + 5,
+      low: price - 25,
+      close: price - 10,
+      date: "2026-07-19",
+    },
     updatedAt: new Date().toISOString(),
   },
   providerMetadata: {
@@ -48,7 +69,9 @@ vi.mock("./http", () => ({
           {
             meta: { regularMarketPrice: 2500, shortName: url },
             timestamp: [now - 172800, now - 86400, now],
-            indicators: { quote: [{ open: [1, 2, 3], high: [1, 2, 3], low: [1, 2, 3], close: [1, 2, 3] }] },
+            indicators: {
+              quote: [{ open: [1, 2, 3], high: [1, 2, 3], low: [1, 2, 3], close: [1, 2, 3] }],
+            },
           },
         ],
       },
@@ -57,7 +80,7 @@ vi.mock("./http", () => ({
 }));
 
 vi.mock("./server-cache", () => ({
-  cached: async <T,>(_k: string, fn: () => Promise<T>) => fn(),
+  cached: async <T>(_k: string, fn: () => Promise<T>) => fn(),
 }));
 
 vi.mock("./upstox-market-data.server", () => ({

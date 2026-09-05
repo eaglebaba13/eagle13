@@ -31,7 +31,7 @@ export function SectionCard({
         className,
       )}
     >
-      {(title || actions) ? (
+      {title || actions ? (
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/50 px-4 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0 space-y-0.5">
             {title ? (
@@ -39,9 +39,7 @@ export function SectionCard({
                 {title}
               </h2>
             ) : null}
-            {description ? (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            ) : null}
+            {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
           </div>
           {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
         </header>

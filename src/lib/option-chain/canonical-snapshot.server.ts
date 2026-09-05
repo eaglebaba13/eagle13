@@ -60,7 +60,11 @@ export async function fetchCanonicalOptionChain(
 
   const quality = assessDataQuality(res.snapshot);
   const atm = computeAtm(res.snapshot.strikes, res.snapshot.spotPrice, "ATM").atm;
-  try { getSnapshotHistory().push(res.snapshot); } catch { /* best-effort */ }
+  try {
+    getSnapshotHistory().push(res.snapshot);
+  } catch {
+    /* best-effort */
+  }
 
   const capability = evaluateOptionChainCapability({
     underlying: input.underlying,

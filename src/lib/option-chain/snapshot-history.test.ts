@@ -4,9 +4,15 @@ import type { OptionChainSnapshot } from "./types";
 
 function snap(i: number): OptionChainSnapshot {
   return {
-    instrument: "NIFTY", spotPrice: 24_000 + i, timestamp: new Date(i * 1000).toISOString(),
-    provider: "MOCK", expiry: "2025-01-16", availableExpiries: [], marketSession: "OPEN",
-    dataQuality: "OK", strikes: [],
+    instrument: "NIFTY",
+    spotPrice: 24_000 + i,
+    timestamp: new Date(i * 1000).toISOString(),
+    provider: "MOCK",
+    expiry: "2025-01-16",
+    availableExpiries: [],
+    marketSession: "OPEN",
+    dataQuality: "OK",
+    strikes: [],
   };
 }
 

@@ -6,10 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Activity } from "lucide-react";
 import { listCoindcxMarkets } from "@/lib/providers/coindcx/coindcx.functions";
-import {
-  buildWatchlist,
-  summarizeCrypto,
-} from "@/lib/providers/coindcx/dashboard-selectors";
+import { buildWatchlist, summarizeCrypto } from "@/lib/providers/coindcx/dashboard-selectors";
 
 const STATUS_TONE: Record<string, string> = {
   LIVE: "text-emerald-300",
@@ -41,16 +38,21 @@ export function CryptoSummaryWidget() {
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <Activity size={13} aria-hidden /> Crypto Summary
         </div>
-        <Link
-          to="/crypto"
-          className="text-[11px] font-medium text-sky-300 hover:underline"
-        >
+        <Link to="/crypto" className="text-[11px] font-medium text-sky-300 hover:underline">
           Details →
         </Link>
       </div>
 
-      {isLoading && <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">Loading…</p>}
-      {error && <p className="mt-2 text-xs text-red-300" role="alert">Summary unavailable</p>}
+      {isLoading && (
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+          Loading…
+        </p>
+      )}
+      {error && (
+        <p className="mt-2 text-xs text-red-300" role="alert">
+          Summary unavailable
+        </p>
+      )}
 
       {data && (
         <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">

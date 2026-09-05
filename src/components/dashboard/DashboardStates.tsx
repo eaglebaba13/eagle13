@@ -13,7 +13,9 @@ export function DashboardWidgetSkeleton({ title }: { title: string }) {
   return (
     <section role="status" aria-busy="true" aria-live="polite" style={baseCard}>
       <header style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        <h3 style={{ margin: 0, fontSize: 13, letterSpacing: 0.5, color: "var(--eb-muted)" }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: 13, letterSpacing: 0.5, color: "var(--eb-muted)" }}>
+          {title}
+        </h3>
         <span style={{ fontSize: 10, color: "var(--eb-muted)" }}>LOADING…</span>
       </header>
       <div style={{ display: "grid", gap: 8 }}>
@@ -103,7 +105,9 @@ export function DashboardWidgetLocked({
     <section style={{ ...baseCard, borderStyle: "dashed" }}>
       <header style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
         <h3 style={{ margin: 0, fontSize: 13 }}>{title}</h3>
-        <span style={{ fontSize: 10, color: "var(--eb-accent, #f5b642)" }}>{requiredPlan.toUpperCase()}</span>
+        <span style={{ fontSize: 10, color: "var(--eb-accent, #f5b642)" }}>
+          {requiredPlan.toUpperCase()}
+        </span>
       </header>
       <p style={{ fontSize: 12, color: "var(--eb-muted)", margin: 0 }}>
         Upgrade to <b>{requiredPlan}</b> to unlock this widget.

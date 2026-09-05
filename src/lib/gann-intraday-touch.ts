@@ -10,10 +10,7 @@
 //   touch.
 
 import type { RankedLevel } from "./gann-level-ranking";
-import {
-  getInstrumentPolicy,
-  type InstrumentSymbol,
-} from "./gann-intraday-policy";
+import { getInstrumentPolicy, type InstrumentSymbol } from "./gann-intraday-policy";
 
 export type TimedCandle5m = {
   /** ISO-8601 IST timestamp of the candle open, e.g. 2026-07-15T09:15:00+05:30. */

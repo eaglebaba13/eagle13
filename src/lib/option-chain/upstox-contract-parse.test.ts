@@ -12,11 +12,7 @@ describe("extractExpiries — Upstox /v2/option/contract response parsing", () =
         { name: "NIFTY", expiry: "2026-08-28", instrument_key: "NSE_FO|aa", weekly: false },
       ],
     };
-    expect(extractExpiries(body.data)).toEqual([
-      "2026-07-24",
-      "2026-07-31",
-      "2026-08-28",
-    ]);
+    expect(extractExpiries(body.data)).toEqual(["2026-07-24", "2026-07-31", "2026-08-28"]);
   });
 
   it("parses the legacy shape: { expiries: [...] }", () => {
@@ -37,9 +33,7 @@ describe("extractExpiries — Upstox /v2/option/contract response parsing", () =
   });
 
   it("strips time-of-day from ISO datetime expiries", () => {
-    expect(extractExpiries([{ expiry: "2026-07-31T14:30:00.000Z" }])).toEqual([
-      "2026-07-31",
-    ]);
+    expect(extractExpiries([{ expiry: "2026-07-31T14:30:00.000Z" }])).toEqual(["2026-07-31"]);
   });
 
   it("ignores malformed expiry strings", () => {

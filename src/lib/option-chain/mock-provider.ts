@@ -34,10 +34,25 @@ function buildStrikes(u: OptionUnderlying, spot: number, scenario: MockScenario,
     const callOi = Math.max(0, Math.round((1000 - i * 50) * (scenario === "BEARISH" ? 1.3 : 1)));
     const putOi = Math.max(0, Math.round((1000 + i * 50) * (scenario === "BULLISH" ? 1.3 : 1)));
     if (scenario === "MISSING_STRIKES" && i % 3 === 0) continue;
-    out.push(makeStrike(strike,
-      { oi: callOi, changeOi: Math.round(callOi * 0.05 * bias), volume: callOi * 3, iv: 15 + Math.abs(i) * 0.3, ltp: Math.max(1, 200 - i * 8) },
-      { oi: putOi, changeOi: Math.round(putOi * 0.05 / bias), volume: putOi * 3, iv: 15 + Math.abs(i) * 0.3, ltp: Math.max(1, 200 + i * 8) },
-    ));
+    out.push(
+      makeStrike(
+        strike,
+        {
+          oi: callOi,
+          changeOi: Math.round(callOi * 0.05 * bias),
+          volume: callOi * 3,
+          iv: 15 + Math.abs(i) * 0.3,
+          ltp: Math.max(1, 200 - i * 8),
+        },
+        {
+          oi: putOi,
+          changeOi: Math.round((putOi * 0.05) / bias),
+          volume: putOi * 3,
+          iv: 15 + Math.abs(i) * 0.3,
+          ltp: Math.max(1, 200 + i * 8),
+        },
+      ),
+    );
   }
   return out;
 }
@@ -60,10 +75,18 @@ export class MockOptionChainProvider implements OptionChainProvider {
     this.now = () => opts.nowIso ?? new Date().toISOString();
   }
 
-  setScenario(s: MockScenario): void { this.scenario = s; }
-  pause(): void { this.paused = true; }
-  resume(): void { this.paused = false; }
-  getScenario(): MockScenario { return this.scenario; }
+  setScenario(s: MockScenario): void {
+    this.scenario = s;
+  }
+  pause(): void {
+    this.paused = true;
+  }
+  resume(): void {
+    this.paused = false;
+  }
+  getScenario(): MockScenario {
+    return this.scenario;
+  }
 
   async listExpiries(): Promise<readonly string[]> {
     if (this.scenario === "MISSING_EXPIRY") return [];
@@ -89,17 +112,26 @@ export class MockOptionChainProvider implements OptionChainProvider {
     }
     if (this.scenario === "MISSING_EXPIRY") {
       return {
-        ok: false, snapshot: null,
-        meta: { providerId: this.id, status: "UNAVAILABLE", latencyMs: 0, fetchedAt: nowIso, safeError: "no expiries", upstreamCode: null },
+        ok: false,
+        snapshot: null,
+        meta: {
+          providerId: this.id,
+          status: "UNAVAILABLE",
+          latencyMs: 0,
+          fetchedAt: nowIso,
+          safeError: "no expiries",
+          upstreamCode: null,
+        },
       };
     }
     const expiries = await this.listExpiries();
     const expiry = req.expiry ?? expiries[0]!;
     const spot = SPOTS[req.underlying];
     const strikes = buildStrikes(req.underlying, spot, this.scenario);
-    const staleIso = this.scenario === "STALE"
-      ? new Date(Date.parse(nowIso) - 20 * 60 * 1000).toISOString()
-      : nowIso;
+    const staleIso =
+      this.scenario === "STALE"
+        ? new Date(Date.parse(nowIso) - 20 * 60 * 1000).toISOString()
+        : nowIso;
     const snap: OptionChainSnapshot = {
       instrument: req.underlying,
       spotPrice: spot,

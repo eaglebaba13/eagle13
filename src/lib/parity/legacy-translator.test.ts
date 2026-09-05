@@ -7,14 +7,8 @@
 // `runHistoricalValidation` with wrappers.
 
 import { describe, expect, it } from "vitest";
-import {
-  BACKTEST_GOLDEN,
-  BACKTEST_GOLDEN_INPUT,
-} from "../__fixtures__/parity/backtest-golden";
-import {
-  HISTORY_GOLDEN,
-  HISTORY_GOLDEN_INPUT,
-} from "../__fixtures__/parity/history-golden";
+import { BACKTEST_GOLDEN, BACKTEST_GOLDEN_INPUT } from "../__fixtures__/parity/backtest-golden";
+import { HISTORY_GOLDEN, HISTORY_GOLDEN_INPUT } from "../__fixtures__/parity/history-golden";
 import {
   LegacyErrorMappingMissingError,
   LegacyTranslationMetadataMissingError,
@@ -88,9 +82,7 @@ function buildBacktestFixture(): {
   unifiedResult: HistoricalBacktestResult;
   legacyContext: LegacyBacktestTranslationContext;
 } {
-  const unifiedTrades = BACKTEST_GOLDEN.trades.map((t, i) =>
-    unifiedTradeFromLegacy(t, i),
-  );
+  const unifiedTrades = BACKTEST_GOLDEN.trades.map((t, i) => unifiedTradeFromLegacy(t, i));
   const tradeExtras: Record<string, LegacyBacktestTradeExtras> = {};
   BACKTEST_GOLDEN.trades.forEach((t, i) => {
     tradeExtras[`t${i}`] = extrasFromLegacy(t);
@@ -177,9 +169,9 @@ describe("β1 · toLegacyBacktestResult reconstructs BACKTEST_GOLDEN exactly", (
       ...legacyContext,
       tradeExtras: {},
     };
-    expect(() =>
-      toLegacyBacktestResult({ unifiedResult, legacyContext: broken }),
-    ).toThrow(LegacyTranslationMetadataMissingError);
+    expect(() => toLegacyBacktestResult({ unifiedResult, legacyContext: broken })).toThrow(
+      LegacyTranslationMetadataMissingError,
+    );
   });
 
   it("translator is deterministic — same inputs → identical output", () => {

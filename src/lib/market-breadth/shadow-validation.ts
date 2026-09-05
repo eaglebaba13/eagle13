@@ -52,18 +52,28 @@ export function readingToShadowSample(
     niftyForwardMove: fwd.nifty ?? null,
     bankNiftyForwardMove: fwd.bankNifty ?? null,
     conflictCount: r.conflicts.length,
-    breadthWeighted: r.breadth.topWeighted?.weightedBreadth ?? r.breadth.nifty50?.weightedBreadth ?? null,
+    breadthWeighted:
+      r.breadth.topWeighted?.weightedBreadth ?? r.breadth.nifty50?.weightedBreadth ?? null,
     vixRegime: r.vix.regime,
     pcrScore: r.pcr.combinedScore,
   };
 }
 
-export function summarizeGtiShadow(samples: readonly GtiShadowSample[]): readonly GtiShadowObservation[] {
+export function summarizeGtiShadow(
+  samples: readonly GtiShadowSample[],
+): readonly GtiShadowObservation[] {
   const observations: GtiShadowObservation[] = [];
   let cur: {
-    id: string; state: GtiResearchState; startedAt: string;
-    lastAt: string; entryMove: number | null; mfe: number; mae: number;
-    confSum: number; confN: number; conflictSum: number;
+    id: string;
+    state: GtiResearchState;
+    startedAt: string;
+    lastAt: string;
+    entryMove: number | null;
+    mfe: number;
+    mae: number;
+    confSum: number;
+    confN: number;
+    conflictSum: number;
   } | null = null;
 
   const close = (endedAt: string, endMove: number | null, next: GtiResearchState | null) => {
@@ -71,7 +81,10 @@ export function summarizeGtiShadow(samples: readonly GtiShadowSample[]): readonl
     const dir = direction(cur.state);
     const forwardMove = cur.entryMove != null && endMove != null ? endMove - cur.entryMove : null;
     observations.push({
-      id: cur.id, state: cur.state, startedAt: cur.startedAt, endedAt,
+      id: cur.id,
+      state: cur.state,
+      startedAt: cur.startedAt,
+      endedAt,
       durationMs: Math.max(0, Date.parse(endedAt) - Date.parse(cur.startedAt)),
       forwardMove,
       mfe: cur.mfe === -Infinity ? null : cur.mfe,

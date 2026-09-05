@@ -69,7 +69,14 @@ export function classifyBacktestLabReadiness(input: {
   readonly persistenceAvailable: boolean;
   readonly datasetsInUse: number;
   readonly leakageDetections: number;
-}): { available: boolean; demo: boolean; reason: string; warnings: string[]; blockers: string[]; leakageDetected: boolean } {
+}): {
+  available: boolean;
+  demo: boolean;
+  reason: string;
+  warnings: string[];
+  blockers: string[];
+  leakageDetected: boolean;
+} {
   const warnings: string[] = [];
   const blockers: string[] = [];
   if (!input.persistenceAvailable) warnings.push("Persistence in memory-only mode");
@@ -78,9 +85,10 @@ export function classifyBacktestLabReadiness(input: {
   return {
     available,
     demo: input.datasetsInUse === 0,
-    reason: input.datasetsInUse === 0
-      ? "Backtest Lab idle — no datasets loaded"
-      : "Backtest Lab consuming canonical historical datasets",
+    reason:
+      input.datasetsInUse === 0
+        ? "Backtest Lab idle — no datasets loaded"
+        : "Backtest Lab consuming canonical historical datasets",
     warnings,
     blockers,
     leakageDetected: input.leakageDetections > 0,

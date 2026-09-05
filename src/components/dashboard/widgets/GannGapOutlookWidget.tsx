@@ -99,14 +99,20 @@ export function GannGapOutlookWidget() {
           </span>
         </div>
       </div>
-      <div className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}>
+      <div
+        className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}
+      >
         {text}
       </div>
       {data.confirmations && data.confirmations.length > 0 && (
         <div className="mt-3 text-[11px] text-muted-foreground">
           Confirmations:{" "}
           <span className="text-foreground font-medium">
-            {data.confirmations.filter((c) => c.alignment === "SUPPORTS_UP" || c.alignment === "SUPPORTS_DOWN").length}
+            {
+              data.confirmations.filter(
+                (c) => c.alignment === "SUPPORTS_UP" || c.alignment === "SUPPORTS_DOWN",
+              ).length
+            }
           </span>
           {" aligned · "}
           <span className="text-foreground font-medium">
@@ -153,7 +159,9 @@ export function GannGapOutlookWidget() {
         {data.confidence && (
           <div>
             <dt className="inline">Confidence band: </dt>
-            <dd className="inline font-medium text-foreground">{data.confidence.replace("EXPERIMENTAL_", "")}</dd>
+            <dd className="inline font-medium text-foreground">
+              {data.confidence.replace("EXPERIMENTAL_", "")}
+            </dd>
           </div>
         )}
       </dl>

@@ -4,8 +4,16 @@
 // exposes tokens. Failures return a safe result with redacted error.
 // Does NOT compute Combined PCR; snapshot only.
 
-import { UpstoxHttpClient, redactUpstoxMessage } from "../provider-foundation/upstox/upstox-http.server";
-import type { OptionChainProvider, OptionChainRequest, OptionChainResult, OptionChainProviderStatus } from "./provider";
+import {
+  UpstoxHttpClient,
+  redactUpstoxMessage,
+} from "../provider-foundation/upstox/upstox-http.server";
+import type {
+  OptionChainProvider,
+  OptionChainRequest,
+  OptionChainResult,
+  OptionChainProviderStatus,
+} from "./provider";
 import { makeStrike, type OptionChainSnapshot, type OptionUnderlying } from "./types";
 
 const INSTRUMENT_KEYS: Record<OptionUnderlying, string> = {
@@ -22,8 +30,22 @@ type UpstoxRow = {
   put_options?: UpstoxLeg;
 };
 type UpstoxLeg = {
-  market_data?: { oi?: number; prev_oi?: number; volume?: number; ltp?: number; bid_price?: number; ask_price?: number };
-  option_greeks?: { delta?: number; gamma?: number; theta?: number; vega?: number; rho?: number; iv?: number };
+  market_data?: {
+    oi?: number;
+    prev_oi?: number;
+    volume?: number;
+    ltp?: number;
+    bid_price?: number;
+    ask_price?: number;
+  };
+  option_greeks?: {
+    delta?: number;
+    gamma?: number;
+    theta?: number;
+    vega?: number;
+    rho?: number;
+    iv?: number;
+  };
 };
 
 function nOrNull(x: unknown): number | null {
@@ -118,7 +140,9 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
     const fetchedAt = new Date().toISOString();
     if (!res.ok) {
       const status: OptionChainProviderStatus =
-        res.error.httpStatus === 401 || res.error.httpStatus === 403 ? "AUTH_REQUIRED" : "UNAVAILABLE";
+        res.error.httpStatus === 401 || res.error.httpStatus === 403
+          ? "AUTH_REQUIRED"
+          : "UNAVAILABLE";
       const code = res.error.upstoxErrorCode;
       const baseMsg = res.error.message ?? "";
       const redactedBase = redactUpstoxMessage(baseMsg);
@@ -158,7 +182,10 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
     for (const r of rows) {
       const strike = nOrNull(r.strike_price);
       if (strike == null) continue;
-      seen.set(strike, makeStrike(strike, legFromUpstox(r.call_options), legFromUpstox(r.put_options)));
+      seen.set(
+        strike,
+        makeStrike(strike, legFromUpstox(r.call_options), legFromUpstox(r.put_options)),
+      );
     }
     const strikes = [...seen.values()].sort((a, b) => a.strike - b.strike);
     const snap: OptionChainSnapshot = {

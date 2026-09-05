@@ -36,9 +36,7 @@ describe("structured-logging", () => {
   });
 
   it("formatEntry produces valid JSON", () => {
-    const parsed = JSON.parse(
-      formatEntry({ level: "warn", message: "m", at: "t", context: {} }),
-    );
+    const parsed = JSON.parse(formatEntry({ level: "warn", message: "m", at: "t", context: {} }));
     expect(parsed.level).toBe("warn");
   });
 });

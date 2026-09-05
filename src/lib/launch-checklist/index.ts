@@ -22,10 +22,7 @@ export interface LaunchChecklistInputs {
 }
 
 export type LaunchVerdict =
-  | "NOT_READY"
-  | "READY_FOR_BETA"
-  | "READY_FOR_SUBSCRIPTION"
-  | "READY_FOR_PUBLIC";
+  "NOT_READY" | "READY_FOR_BETA" | "READY_FOR_SUBSCRIPTION" | "READY_FOR_PUBLIC";
 
 export interface LaunchChecklistReport {
   readonly verdict: LaunchVerdict;
@@ -36,11 +33,22 @@ export interface LaunchChecklistReport {
 export const LAUNCH_CHECKLIST_VERSION = "launch-checklist@1.0.0";
 
 const HARD: readonly (keyof LaunchChecklistInputs)[] = [
-  "authentication","authorization","noMockData","noBrokerExecution","testsPassing",
+  "authentication",
+  "authorization",
+  "noMockData",
+  "noBrokerExecution",
+  "testsPassing",
 ];
 const SUBSCRIPTION: readonly (keyof LaunchChecklistInputs)[] = [
-  "dashboard","mobile","desktop","performanceOk","caching",
-  "diagnostics","featureFlags","providerHealth","a11yPass",
+  "dashboard",
+  "mobile",
+  "desktop",
+  "performanceOk",
+  "caching",
+  "diagnostics",
+  "featureFlags",
+  "providerHealth",
+  "a11yPass",
 ];
 
 export function evaluateLaunchChecklist(inp: LaunchChecklistInputs): LaunchChecklistReport {
@@ -51,7 +59,11 @@ export function evaluateLaunchChecklist(inp: LaunchChecklistInputs): LaunchCheck
   }
   const subMissing = SUBSCRIPTION.filter((k) => !inp[k]);
   if (subMissing.length > 0) {
-    return { verdict: "READY_FOR_BETA", missing: subMissing, formulaVersion: LAUNCH_CHECKLIST_VERSION };
+    return {
+      verdict: "READY_FOR_BETA",
+      missing: subMissing,
+      formulaVersion: LAUNCH_CHECKLIST_VERSION,
+    };
   }
   if (!inp.manualPublicSignoff) {
     return {

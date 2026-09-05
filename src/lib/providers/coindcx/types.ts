@@ -3,18 +3,9 @@
 
 export type CoindcxAssetClass = "CRYPTO_MAJOR" | "TOKENIZED_METAL" | "OTHER";
 
-export type CoindcxMarketStatus =
-  | "ACTIVE"
-  | "INACTIVE"
-  | "SUSPENDED"
-  | "UNKNOWN";
+export type CoindcxMarketStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "UNKNOWN";
 
-export type MarketSourceStatus =
-  | "LIVE"
-  | "DELAYED"
-  | "STALE"
-  | "UNAVAILABLE"
-  | "TRADING_DISABLED";
+export type MarketSourceStatus = "LIVE" | "DELAYED" | "STALE" | "UNAVAILABLE" | "TRADING_DISABLED";
 
 export interface CoindcxMarket {
   /** CoinDCX pair symbol e.g. "BTCUSDT", "BTCINR", "PAXGUSDT". */

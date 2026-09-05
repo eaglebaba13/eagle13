@@ -3,9 +3,16 @@ import { BRIEF_INSTRUMENTS, getInstrument, resolveCoindcxPair } from "./instrume
 
 describe("BRIEF_INSTRUMENTS registry", () => {
   it("contains all 8 Phase 44 instruments", () => {
-    expect(BRIEF_INSTRUMENTS.map((i) => i.id).sort()).toEqual(
-      ["BANKNIFTY", "BTC", "ETH", "GOLD", "NIFTY", "SILVER", "XAGUSD", "XAUUSD"],
-    );
+    expect(BRIEF_INSTRUMENTS.map((i) => i.id).sort()).toEqual([
+      "BANKNIFTY",
+      "BTC",
+      "ETH",
+      "GOLD",
+      "NIFTY",
+      "SILVER",
+      "XAGUSD",
+      "XAUUSD",
+    ]);
   });
 
   it("routes NIFTY/BANKNIFTY to upstox and metals/crypto to coindcx", () => {
@@ -23,9 +30,9 @@ describe("BRIEF_INSTRUMENTS registry", () => {
 
 describe("resolveCoindcxPair", () => {
   const markets = [
-    { base: "BTC",  quote: "USDT", pair: "B-BTC_USDT" },
-    { base: "BTC",  quote: "INR",  pair: "I-BTC_INR" },
-    { base: "ETH",  quote: "USDT", pair: "B-ETH_USDT" },
+    { base: "BTC", quote: "USDT", pair: "B-BTC_USDT" },
+    { base: "BTC", quote: "INR", pair: "I-BTC_INR" },
+    { base: "ETH", quote: "USDT", pair: "B-ETH_USDT" },
     { base: "PAXG", quote: "USDT", pair: "B-PAXG_USDT" },
   ];
 

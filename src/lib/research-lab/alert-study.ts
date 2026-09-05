@@ -1,11 +1,7 @@
 // Phase 3E — Smart Alert historical study.
 
 import { computeOutcome } from "./outcomes";
-import type {
-  HistoricalRow,
-  OutcomeThresholds,
-  SmartAlertStudyReport,
-} from "./types";
+import type { HistoricalRow, OutcomeThresholds, SmartAlertStudyReport } from "./types";
 import { DEFAULT_OUTCOME_THRESHOLDS } from "./types";
 
 export function runSmartAlertStudy(

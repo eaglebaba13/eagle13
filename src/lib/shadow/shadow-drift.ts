@@ -3,11 +3,7 @@
 import type { ShadowMetrics } from "./shadow-types";
 
 export type ShadowDriftStatus =
-  | "STABLE"
-  | "WATCH"
-  | "MATERIAL_DRIFT"
-  | "CRITICAL_DRIFT"
-  | "INSUFFICIENT_DATA";
+  "STABLE" | "WATCH" | "MATERIAL_DRIFT" | "CRITICAL_DRIFT" | "INSUFFICIENT_DATA";
 
 export type ShadowDriftDimension =
   | "PERFORMANCE"
@@ -71,21 +67,65 @@ export function classifyShadowDrift(inp: DriftInputs): ShadowDriftReport {
   const perf = pct(inp.current.winRate, inp.baseline.winRate);
   const conf = pct(inp.current.highConfidenceAccuracy, inp.baseline.expectedConfidence);
   const cap = pct(inp.current.capitalUtilization, inp.baseline.capitalUtilization);
-  const dq = pct(inp.current.dataQualityScore ?? inp.baseline.dataQualityScore, inp.baseline.dataQualityScore);
+  const dq = pct(
+    inp.current.dataQualityScore ?? inp.baseline.dataQualityScore,
+    inp.baseline.dataQualityScore,
+  );
   const regime = inp.current.regimeShift ?? 0;
   const strat = inp.current.strategyMixShift ?? 0;
   const param = inp.current.parameterShift ?? 0;
-  const corr = inp.current.correlationShift ?? pct(inp.baseline.correlation, inp.baseline.correlation);
+  const corr =
+    inp.current.correlationShift ?? pct(inp.baseline.correlation, inp.baseline.correlation);
 
   const readings: ShadowDriftReading[] = [
-    { dimension: "PERFORMANCE", status: classify(perf, sampleOk), deltaPct: perf, reason: `winRate Δ=${perf.toFixed(1)}%` },
-    { dimension: "CONFIDENCE", status: classify(conf, sampleOk), deltaPct: conf, reason: `high-conf accuracy Δ=${conf.toFixed(1)}%` },
-    { dimension: "REGIME", status: classify(regime, sampleOk), deltaPct: regime, reason: `regime shift ${regime.toFixed(1)}%` },
-    { dimension: "DATA_QUALITY", status: classify(dq, sampleOk), deltaPct: dq, reason: `data quality Δ=${dq.toFixed(1)}%` },
-    { dimension: "STRATEGY_SELECTION", status: classify(strat, sampleOk), deltaPct: strat, reason: `strategy mix ${strat.toFixed(1)}%` },
-    { dimension: "PORTFOLIO_ALLOCATION", status: classify(cap, sampleOk), deltaPct: cap, reason: `capital util Δ=${cap.toFixed(1)}%` },
-    { dimension: "PARAMETER", status: classify(param, sampleOk), deltaPct: param, reason: `parameter drift ${param.toFixed(1)}%` },
-    { dimension: "CORRELATION", status: classify(corr, sampleOk), deltaPct: corr, reason: `correlation drift ${corr.toFixed(1)}%` },
+    {
+      dimension: "PERFORMANCE",
+      status: classify(perf, sampleOk),
+      deltaPct: perf,
+      reason: `winRate Δ=${perf.toFixed(1)}%`,
+    },
+    {
+      dimension: "CONFIDENCE",
+      status: classify(conf, sampleOk),
+      deltaPct: conf,
+      reason: `high-conf accuracy Δ=${conf.toFixed(1)}%`,
+    },
+    {
+      dimension: "REGIME",
+      status: classify(regime, sampleOk),
+      deltaPct: regime,
+      reason: `regime shift ${regime.toFixed(1)}%`,
+    },
+    {
+      dimension: "DATA_QUALITY",
+      status: classify(dq, sampleOk),
+      deltaPct: dq,
+      reason: `data quality Δ=${dq.toFixed(1)}%`,
+    },
+    {
+      dimension: "STRATEGY_SELECTION",
+      status: classify(strat, sampleOk),
+      deltaPct: strat,
+      reason: `strategy mix ${strat.toFixed(1)}%`,
+    },
+    {
+      dimension: "PORTFOLIO_ALLOCATION",
+      status: classify(cap, sampleOk),
+      deltaPct: cap,
+      reason: `capital util Δ=${cap.toFixed(1)}%`,
+    },
+    {
+      dimension: "PARAMETER",
+      status: classify(param, sampleOk),
+      deltaPct: param,
+      reason: `parameter drift ${param.toFixed(1)}%`,
+    },
+    {
+      dimension: "CORRELATION",
+      status: classify(corr, sampleOk),
+      deltaPct: corr,
+      reason: `correlation drift ${corr.toFixed(1)}%`,
+    },
   ];
 
   const rank: Record<ShadowDriftStatus, number> = {

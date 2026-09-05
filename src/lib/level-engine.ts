@@ -7,8 +7,12 @@ import type { Lvl, LevelKind, LevelStatus, LevelSignal } from "@/types/levels";
 
 export type PlanetWithLevels = {
   planet: string;
-  r1: number; r2: number; r3: number;
-  s1: number; s2: number; s3: number;
+  r1: number;
+  r2: number;
+  r3: number;
+  s1: number;
+  s2: number;
+  s3: number;
 };
 
 export function calculateDistance(price: number, value: number): number {
@@ -46,22 +50,19 @@ export function getLevelSignal(
 // Confidence identical to prior inline formula:
 //   max(5, min(99, round(100 - min(90, (distance / tolerance) * 7))))
 function computeConfidence(distance: number, tolerance: number): number {
-  return Math.max(
-    5,
-    Math.min(99, Math.round(100 - Math.min(90, (distance / tolerance) * 7))),
-  );
+  return Math.max(5, Math.min(99, Math.round(100 - Math.min(90, (distance / tolerance) * 7))));
 }
 
-export function buildLevels(
-  planets: PlanetWithLevels[],
-  price: number,
-  tolerance: number,
-): Lvl[] {
+export function buildLevels(planets: PlanetWithLevels[], price: number, tolerance: number): Lvl[] {
   const out: Lvl[] = [];
   for (const p of planets) {
     const defs: [LevelKind, number, boolean][] = [
-      ["R3", p.r3, true], ["R2", p.r2, true], ["R1", p.r1, true],
-      ["S1", p.s1, false], ["S2", p.s2, false], ["S3", p.s3, false],
+      ["R3", p.r3, true],
+      ["R2", p.r2, true],
+      ["R1", p.r1, true],
+      ["S1", p.s1, false],
+      ["S2", p.s2, false],
+      ["S3", p.s3, false],
     ];
     for (const [kind, value, isR] of defs) {
       const distance = calculateDistance(price, value);

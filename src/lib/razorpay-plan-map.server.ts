@@ -26,21 +26,30 @@ function readEnv(name: string): string | null {
  * Every paid (plan, cycle) EagleBABA slot MUST have a Razorpay Plan ID
  * configured before checkout unlocks. Enterprise is contact-sales only.
  */
-const SLOT_ENV_MATRIX: Record<`${PlanId}_${BillingCycle}`, { env: string; amount: number } | null> = {
-  free_monthly: null,
-  free_annual: null,
-  pro_monthly: { env: "RAZORPAY_PLAN_PRO_MONTHLY", amount: 99900 },
-  pro_annual: { env: "RAZORPAY_PLAN_PRO_ANNUAL", amount: 999000 },
-  professional_monthly: { env: "RAZORPAY_PLAN_PROFESSIONAL_MONTHLY", amount: 249900 },
-  professional_annual: { env: "RAZORPAY_PLAN_PROFESSIONAL_ANNUAL", amount: 2499000 },
-  enterprise_monthly: null,
-  enterprise_annual: null,
-};
+const SLOT_ENV_MATRIX: Record<`${PlanId}_${BillingCycle}`, { env: string; amount: number } | null> =
+  {
+    free_monthly: null,
+    free_annual: null,
+    pro_monthly: { env: "RAZORPAY_PLAN_PRO_MONTHLY", amount: 99900 },
+    pro_annual: { env: "RAZORPAY_PLAN_PRO_ANNUAL", amount: 999000 },
+    professional_monthly: { env: "RAZORPAY_PLAN_PROFESSIONAL_MONTHLY", amount: 249900 },
+    professional_annual: { env: "RAZORPAY_PLAN_PROFESSIONAL_ANNUAL", amount: 2499000 },
+    enterprise_monthly: null,
+    enterprise_annual: null,
+  };
 
 export function getServerPlanSlot(plan: PlanId, cycle: BillingCycle): ServerPlanSlot {
   const key = `${plan}_${cycle}` as const;
   const spec = SLOT_ENV_MATRIX[key];
-  if (!spec) return { plan, cycle, providerPlanId: null, expectedAmountInPaise: null, configured: false, currency: "INR" };
+  if (!spec)
+    return {
+      plan,
+      cycle,
+      providerPlanId: null,
+      expectedAmountInPaise: null,
+      configured: false,
+      currency: "INR",
+    };
   const providerPlanId = readEnv(spec.env);
   return {
     plan,

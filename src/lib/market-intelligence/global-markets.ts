@@ -23,9 +23,7 @@ export interface GlobalMarketInput {
   readonly status?: GlobalMarketRow["status"];
 }
 
-export function aggregateGlobalMarkets(
-  inputs: readonly GlobalMarketInput[],
-): GlobalMarketSection {
+export function aggregateGlobalMarkets(inputs: readonly GlobalMarketInput[]): GlobalMarketSection {
   const total = inputs.reduce(
     (s, r) => s + (r.changePct != null && Number.isFinite(r.changePct) ? Math.abs(r.changePct) : 0),
     0,
@@ -50,9 +48,7 @@ export function aggregateGlobalMarkets(
   const composite = valid.length
     ? valid.reduce(
         (s, r) =>
-          s +
-          Math.sign(r.changePct as number) *
-            Math.min(Math.abs(r.changePct as number), 5),
+          s + Math.sign(r.changePct as number) * Math.min(Math.abs(r.changePct as number), 5),
         0,
       ) /
       (valid.length * 5)

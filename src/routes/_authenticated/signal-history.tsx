@@ -19,7 +19,10 @@ export const Route = createFileRoute("/_authenticated/signal-history")({
   head: () => ({
     meta: [
       { title: "Signal History — EagleBABA" },
-      { name: "description", content: "Historical BUY CE / BUY PE / EXIT / HIGH RISK signals with context." },
+      {
+        name: "description",
+        content: "Historical BUY CE / BUY PE / EXIT / HIGH RISK signals with context.",
+      },
     ],
   }),
   component: SignalHistoryPage,
@@ -63,9 +66,7 @@ function SignalHistoryPage() {
           type: typeFilter === "ALL" ? null : typeFilter,
         },
       });
-      return typeFilter === "ALL"
-        ? rows.filter((r) => SIGNAL_TYPES.includes(r.type))
-        : rows;
+      return typeFilter === "ALL" ? rows.filter((r) => SIGNAL_TYPES.includes(r.type)) : rows;
     },
   });
 
@@ -87,17 +88,26 @@ function SignalHistoryPage() {
         <header>
           <h1 className="text-2xl font-semibold">Signal history</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Every signal event delivered to your account, with the market context
-            that produced it. Read-only — trading formulas are unchanged.
+            Every signal event delivered to your account, with the market context that produced it.
+            Read-only — trading formulas are unchanged.
           </p>
         </header>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setTypeFilter("ALL")} className={pill(typeFilter === "ALL")}>
+          <button
+            type="button"
+            onClick={() => setTypeFilter("ALL")}
+            className={pill(typeFilter === "ALL")}
+          >
             All signals
           </button>
           {SIGNAL_TYPES.map((t) => (
-            <button key={t} type="button" onClick={() => setTypeFilter(t)} className={pill(typeFilter === t)}>
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTypeFilter(t)}
+              className={pill(typeFilter === t)}
+            >
               {NOTIFICATION_TYPE_LABEL[t]}
             </button>
           ))}
@@ -143,7 +153,9 @@ function SignalHistoryPage() {
                           {new Date(r.created_at).toLocaleString()}
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`rounded border px-1.5 py-[1px] text-[10px] font-medium ${tone}`}>
+                          <span
+                            className={`rounded border px-1.5 py-[1px] text-[10px] font-medium ${tone}`}
+                          >
                             {NOTIFICATION_TYPE_LABEL[r.type]}
                           </span>
                         </td>
@@ -153,10 +165,18 @@ function SignalHistoryPage() {
                         <td className="px-3 py-2 text-right">
                           {fmtPct(readNumber(r.payload, "confidence"))}
                         </td>
-                        <td className="px-3 py-2 text-right">{fmt(readNumber(r.payload, "spot"))}</td>
-                        <td className="px-3 py-2 text-right">{fmt(readNumber(r.payload, "vix"))}</td>
-                        <td className="px-3 py-2 text-right">{fmt(readNumber(r.payload, "pcr"))}</td>
-                        <td className="px-3 py-2 text-right">{fmt(readNumber(r.payload, "score"))}</td>
+                        <td className="px-3 py-2 text-right">
+                          {fmt(readNumber(r.payload, "spot"))}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmt(readNumber(r.payload, "vix"))}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmt(readNumber(r.payload, "pcr"))}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {fmt(readNumber(r.payload, "score"))}
+                        </td>
                         <td className="px-3 py-2">
                           <span className="text-muted-foreground">{status}</span>
                         </td>

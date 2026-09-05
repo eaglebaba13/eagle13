@@ -18,7 +18,12 @@ export function aggregateConfirmations(
   confirmations: readonly GannGapConfirmation[],
   bias: "SUPPORTS_UP" | "SUPPORTS_DOWN",
 ): ConfirmationAggregate {
-  let aligned = 0, conflict = 0, neutral = 0, unavailable = 0, bullish = 0, bearish = 0;
+  let aligned = 0,
+    conflict = 0,
+    neutral = 0,
+    unavailable = 0,
+    bullish = 0,
+    bearish = 0;
   for (const c of confirmations) {
     if (c.alignment === bias) aligned++;
     else if (c.alignment === "NEUTRAL") neutral++;

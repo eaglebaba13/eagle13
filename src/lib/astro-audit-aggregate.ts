@@ -69,11 +69,12 @@ export function aggregateByMode(reports: AuditReport[]): ModeAggregate[] {
   const out: ModeAggregate[] = [];
   for (const [mode, rs] of byMode) {
     const byPlanet = new Map<string, PlanetComparison[]>();
-    for (const r of rs) for (const p of r.planets) {
-      const a = byPlanet.get(p.planet) ?? [];
-      a.push(p);
-      byPlanet.set(p.planet, a);
-    }
+    for (const r of rs)
+      for (const p of r.planets) {
+        const a = byPlanet.get(p.planet) ?? [];
+        a.push(p);
+        byPlanet.set(p.planet, a);
+      }
     const perPlanet: PlanetAggregate[] = [];
     let moon: PlanetAggregate | undefined;
     for (const [planet, comps] of byPlanet) {
@@ -112,8 +113,7 @@ export function boundaryRisks(reports: AuditReport[]): BoundaryRisk[] {
     for (const p of r.planets) {
       const li = r.levelImpacts.find((l) => l.planet === p.planet);
       const levelDelta = li?.maxLevelDelta ?? 0;
-      const anyBoundary =
-        !p.signMatch || !p.nakshatraMatch || !p.padaMatch || !p.retroMatch;
+      const anyBoundary = !p.signMatch || !p.nakshatraMatch || !p.padaMatch || !p.retroMatch;
       if (!anyBoundary && levelDelta === 0) continue;
       out.push({
         fixtureVersion: r.fixture.fixtureVersion,
@@ -137,27 +137,43 @@ export function planetComparisonCsv(reports: AuditReport[]): string {
   for (const r of reports) {
     for (const p of r.planets) {
       const li = r.levelImpacts.find((l) => l.planet === p.planet);
-      lines.push([
-        r.fixture.fixtureVersion, r.mode, p.planet,
-        p.current.siderealLongitude, p.reference.siderealLongitude,
-        p.diffDeg.toFixed(6), p.diffArcsec.toFixed(3),
-        p.toleranceStatus, p.signMatch, p.nakshatraMatch, p.padaMatch, p.retroMatch,
-        li?.maxLevelDelta ?? 0,
-      ].join(","));
+      lines.push(
+        [
+          r.fixture.fixtureVersion,
+          r.mode,
+          p.planet,
+          p.current.siderealLongitude,
+          p.reference.siderealLongitude,
+          p.diffDeg.toFixed(6),
+          p.diffArcsec.toFixed(3),
+          p.toleranceStatus,
+          p.signMatch,
+          p.nakshatraMatch,
+          p.padaMatch,
+          p.retroMatch,
+          li?.maxLevelDelta ?? 0,
+        ].join(","),
+      );
     }
   }
   return lines.join("\n");
 }
 
 export function boundaryRiskCsv(rows: BoundaryRisk[]): string {
-  const lines = [
-    "fixture,planet,diffDeg,signChange,nakChange,padaChange,retroChange,levelDelta",
-  ];
+  const lines = ["fixture,planet,diffDeg,signChange,nakChange,padaChange,retroChange,levelDelta"];
   for (const r of rows) {
-    lines.push([
-      r.fixtureVersion, r.planet, r.diffDeg.toFixed(6),
-      r.signChange, r.nakshatraChange, r.padaChange, r.retroChange, r.levelDelta,
-    ].join(","));
+    lines.push(
+      [
+        r.fixtureVersion,
+        r.planet,
+        r.diffDeg.toFixed(6),
+        r.signChange,
+        r.nakshatraChange,
+        r.padaChange,
+        r.retroChange,
+        r.levelDelta,
+      ].join(","),
+    );
   }
   return lines.join("\n");
 }

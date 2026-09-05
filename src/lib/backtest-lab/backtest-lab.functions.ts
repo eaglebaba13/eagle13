@@ -38,7 +38,10 @@ function newRunId(now: number): string {
 function sanitizeCandles(rows: readonly HistoricalCandle[]): HistoricalCandle[] {
   return rows.map((r) => ({
     ts: r.ts,
-    open: r.open, high: r.high, low: r.low, close: r.close,
+    open: r.open,
+    high: r.high,
+    low: r.low,
+    close: r.close,
     volume: r.volume ?? null,
     atr: r.atr ?? null,
     signalSnapshot: r.signalSnapshot ?? null,
@@ -113,12 +116,13 @@ export const runBacktestFn = createServerFn({ method: "POST" })
         generatedAt: nowIso,
         walkForward: walk,
       });
-      const mc: MonteCarloSummary | null = data.monteCarloIterations && data.monteCarloIterations > 0
-        ? runMonteCarlo(report.trades, data.strategy.capital, {
-            iterations: data.monteCarloIterations,
-            seed: data.monteCarloSeed ?? 1,
-          })
-        : null;
+      const mc: MonteCarloSummary | null =
+        data.monteCarloIterations && data.monteCarloIterations > 0
+          ? runMonteCarlo(report.trades, data.strategy.capital, {
+              iterations: data.monteCarloIterations,
+              seed: data.monteCarloSeed ?? 1,
+            })
+          : null;
       const finalReport: BacktestRunReport = { ...report, monteCarlo: mc };
       saveRun(finalReport, Date.now() - t0);
       return finalReport;
@@ -141,7 +145,9 @@ export const compareBacktestRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { runIds: readonly string[] }) => data)
   .handler(async ({ data }) => {
-    const runs = data.runIds.map((id) => readRunMem(id)).filter((r): r is BacktestRunReport => r != null);
+    const runs = data.runIds
+      .map((id) => readRunMem(id))
+      .filter((r): r is BacktestRunReport => r != null);
     if (runs.length < 2) return null;
     const pairs: ReturnType<typeof compareRuns>[] = [];
     for (let i = 0; i < runs.length; i++) {

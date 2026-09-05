@@ -41,9 +41,7 @@ export function ErrorState({
         />
         <div className="min-w-0 space-y-1">
           <p className="font-medium text-foreground">{title}</p>
-          {description ? (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          ) : null}
+          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
           {lastGoodAt ? (
             <p className="text-[11px] text-muted-foreground">
               Last successful snapshot: <span className="font-mono">{lastGoodAt}</span>
@@ -51,7 +49,7 @@ export function ErrorState({
           ) : null}
         </div>
       </div>
-      {(onRetry || diagnosticsHref) ? (
+      {onRetry || diagnosticsHref ? (
         <div className="flex flex-wrap gap-2">
           {onRetry ? (
             <Button size="sm" variant="outline" onClick={onRetry}>

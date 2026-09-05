@@ -36,7 +36,10 @@ const level: RankedLevel = {
 const c = (i: number, o: number, h: number, l: number, cl: number): TimedCandle5m => ({
   timeIst: `2026-07-15T09:${(15 + i * 5).toString().padStart(2, "0")}:00+05:30`,
   openTimeMs: 1_000_000_000 + i * 5 * 60_000,
-  open: o, high: h, low: l, close: cl,
+  open: o,
+  high: h,
+  low: l,
+  close: cl,
 });
 
 describe("Stage 4 · replay controller", () => {

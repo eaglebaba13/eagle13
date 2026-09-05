@@ -24,8 +24,15 @@ export interface HealthReport {
 export const PROD_HEALTH_VERSION = "prod-health@1.0.0";
 
 const KEYS: readonly (keyof HealthInputs)[] = [
-  "providers","gti","combinedPcr","breadth","optionChain",
-  "dashboard","performance","cache","build",
+  "providers",
+  "gti",
+  "combinedPcr",
+  "breadth",
+  "optionChain",
+  "dashboard",
+  "performance",
+  "cache",
+  "build",
 ];
 
 export function aggregateHealth(inp: HealthInputs): HealthReport {
@@ -35,7 +42,6 @@ export function aggregateHealth(inp: HealthInputs): HealthReport {
     if (inp[k] === "RED") reds.push(k);
     else if (inp[k] === "YELLOW") yellows.push(k);
   }
-  const overall: HealthGrade =
-    reds.length > 0 ? "RED" : yellows.length > 0 ? "YELLOW" : "GREEN";
+  const overall: HealthGrade = reds.length > 0 ? "RED" : yellows.length > 0 ? "YELLOW" : "GREEN";
   return { overall, reds, yellows, formulaVersion: PROD_HEALTH_VERSION };
 }

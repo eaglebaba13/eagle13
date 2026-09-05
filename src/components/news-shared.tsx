@@ -11,12 +11,7 @@ import {
   Minus,
   Zap,
 } from "lucide-react";
-import type {
-  RichNewsItem,
-  NewsImpact,
-  NewsCategory,
-  AiStance,
-} from "@/lib/news-feed.functions";
+import type { RichNewsItem, NewsImpact, NewsCategory, AiStance } from "@/lib/news-feed.functions";
 
 export const READ_KEY = "eb-news-read";
 export const SAVE_KEY = "eb-news-saved";
@@ -33,13 +28,26 @@ export const IMPACT_COLOR: Record<NewsImpact, string> = {
 };
 
 export const ALL_CATEGORIES: NewsCategory[] = [
-  "NIFTY", "BANKNIFTY", "Equity", "Options", "FII/DII",
-  "Global Markets", "Commodities", "RBI", "SEBI", "IPO", "Economy", "Corporate Results",
+  "NIFTY",
+  "BANKNIFTY",
+  "Equity",
+  "Options",
+  "FII/DII",
+  "Global Markets",
+  "Commodities",
+  "RBI",
+  "SEBI",
+  "IPO",
+  "Economy",
+  "Corporate Results",
 ];
 
 export const CATEGORIES: (NewsCategory | "All")[] = ["All", ...ALL_CATEGORIES];
 
-const STANCE_META: Record<AiStance, { color: string; Icon: React.ComponentType<{ size?: number }> }> = {
+const STANCE_META: Record<
+  AiStance,
+  { color: string; Icon: React.ComponentType<{ size?: number }> }
+> = {
   Bull: { color: "var(--eb-bull)", Icon: TrendingUp },
   Bear: { color: "var(--eb-bear)", Icon: TrendingDown },
   Volatile: { color: "var(--eb-accent)", Icon: Activity },
@@ -68,17 +76,26 @@ export function useLocalSet(key: string): [Set<string>, (id: string) => void] {
     try {
       const raw = localStorage.getItem(key);
       if (raw) setSet(new Set(JSON.parse(raw)));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [key]);
-  const toggle = useCallback((id: string) => {
-    setSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try { localStorage.setItem(key, JSON.stringify([...next])); } catch { /* ignore */ }
-      return next;
-    });
-  }, [key]);
+  const toggle = useCallback(
+    (id: string) => {
+      setSet((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        try {
+          localStorage.setItem(key, JSON.stringify([...next]));
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    [key],
+  );
   return [set, toggle];
 }
 
@@ -92,11 +109,17 @@ export function useNewsPrefs() {
     try {
       const raw = localStorage.getItem(PREFS_KEY);
       if (raw) setPrefs({ disabledCats: [], disabledSources: [], ...JSON.parse(raw) });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
   const persist = (next: NewsPrefs) => {
     setPrefs(next);
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
   };
   const toggleCat = (c: string) =>
     persist({
@@ -150,7 +173,11 @@ export function unreadBreaking(items: RichNewsItem[], read: Set<string>): RichNe
 /* ------------------------------ News card ---------------------------- */
 
 export function NewsCard({
-  n, isRead, isSaved, onRead, onSave,
+  n,
+  isRead,
+  isSaved,
+  onRead,
+  onSave,
 }: {
   n: RichNewsItem;
   isRead: boolean;
@@ -173,16 +200,24 @@ export function NewsCard({
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <span
           className="eb-src-logo"
-          style={{ background: `linear-gradient(135deg, hsl(${hue} 70% 45%), hsl(${(hue + 40) % 360} 70% 35%))` }}
+          style={{
+            background: `linear-gradient(135deg, hsl(${hue} 70% 45%), hsl(${(hue + 40) % 360} 70% 35%))`,
+          }}
         >
           {(n.source || "M").slice(0, 1).toUpperCase()}
         </span>
         <div style={{ minWidth: 0 }}>
           <div className="eb-src-name">
-            {n.breaking ? <span className="eb-mini-breaking"><Zap size={10} /> BREAKING</span> : null}
+            {n.breaking ? (
+              <span className="eb-mini-breaking">
+                <Zap size={10} /> BREAKING
+              </span>
+            ) : null}
             {n.source || "Markets"}
           </div>
-          <div className="eb-src-meta">{relTime(n.pubDate)} · {n.category}</div>
+          <div className="eb-src-meta">
+            {relTime(n.pubDate)} · {n.category}
+          </div>
         </div>
         <span className="eb-impact" style={{ marginLeft: "auto", color, borderColor: color }}>
           {n.impact}
@@ -198,9 +233,15 @@ export function NewsCard({
             <StanceIcon size={12} /> {n.ai.stance}
           </span>
         </div>
-        <div className="eb-ai-line"><b>Impact:</b> {n.ai.text}</div>
-        <div className="eb-ai-line"><b>Levels:</b> {n.ai.level}</div>
-        <div className="eb-ai-line"><b>Sector:</b> {n.ai.sector}</div>
+        <div className="eb-ai-line">
+          <b>Impact:</b> {n.ai.text}
+        </div>
+        <div className="eb-ai-line">
+          <b>Levels:</b> {n.ai.level}
+        </div>
+        <div className="eb-ai-line">
+          <b>Sector:</b> {n.ai.sector}
+        </div>
       </div>
 
       <p className="eb-news-summary">{n.summary}</p>
@@ -213,7 +254,8 @@ export function NewsCard({
           <Check size={13} /> {isRead ? "Read" : "Mark as read"}
         </button>
         <button className={`eb-card-btn${isSaved ? " is-on" : ""}`} onClick={onSave}>
-          {isSaved ? <BookmarkCheck size={13} /> : <Bookmark size={13} />} {isSaved ? "Saved" : "Save"}
+          {isSaved ? <BookmarkCheck size={13} /> : <Bookmark size={13} />}{" "}
+          {isSaved ? "Saved" : "Save"}
         </button>
       </div>
     </motion.div>
@@ -223,7 +265,12 @@ export function NewsCard({
 /* ---------------------------- Settings modal ------------------------- */
 
 export function NewsSettings({
-  sources, prefs, onToggleCat, onToggleSource, onReset, onClose,
+  sources,
+  prefs,
+  onToggleCat,
+  onToggleSource,
+  onReset,
+  onClose,
 }: {
   sources: string[];
   prefs: NewsPrefs;
@@ -248,7 +295,9 @@ export function NewsSettings({
       >
         <div className="eb-news-head">
           <div className="eb-news-title">News Settings</div>
-          <button className="eb-icon-btn" onClick={onClose} aria-label="Close settings">✕</button>
+          <button className="eb-icon-btn" onClick={onClose} aria-label="Close settings">
+            ✕
+          </button>
         </div>
         <div className="eb-news-body">
           <div className="eb-settings-section">Categories</div>
@@ -256,13 +305,19 @@ export function NewsSettings({
             {ALL_CATEGORIES.map((c) => {
               const on = !prefs.disabledCats.includes(c);
               return (
-                <button key={c} className={`eb-toggle${on ? " is-on" : ""}`} onClick={() => onToggleCat(c)}>
+                <button
+                  key={c}
+                  className={`eb-toggle${on ? " is-on" : ""}`}
+                  onClick={() => onToggleCat(c)}
+                >
                   <span className="eb-toggle-dot" /> {c}
                 </button>
               );
             })}
           </div>
-          <div className="eb-settings-section" style={{ marginTop: 14 }}>Sources</div>
+          <div className="eb-settings-section" style={{ marginTop: 14 }}>
+            Sources
+          </div>
           {sources.length === 0 ? (
             <p className="eb-news-summary">Sources appear here after news loads.</p>
           ) : (
@@ -270,7 +325,11 @@ export function NewsSettings({
               {sources.map((s) => {
                 const on = !prefs.disabledSources.includes(s);
                 return (
-                  <button key={s} className={`eb-toggle${on ? " is-on" : ""}`} onClick={() => onToggleSource(s)}>
+                  <button
+                    key={s}
+                    className={`eb-toggle${on ? " is-on" : ""}`}
+                    onClick={() => onToggleSource(s)}
+                  >
                     <span className="eb-toggle-dot" /> {s}
                   </button>
                 );
@@ -279,8 +338,12 @@ export function NewsSettings({
           )}
         </div>
         <div className="eb-news-foot">
-          <button className="eb-foot-btn" onClick={onReset}>Reset</button>
-          <button className="eb-foot-btn eb-foot-primary" onClick={onClose}>Done</button>
+          <button className="eb-foot-btn" onClick={onReset}>
+            Reset
+          </button>
+          <button className="eb-foot-btn eb-foot-primary" onClick={onClose}>
+            Done
+          </button>
         </div>
       </motion.div>
     </div>

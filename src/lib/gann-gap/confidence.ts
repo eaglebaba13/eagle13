@@ -20,7 +20,9 @@ export function deriveConfidence(
   if (conflict > aligned) return "EXPERIMENTAL_LOW";
   if (unavailable >= confirmations.length - 1) return "EXPERIMENTAL_LOW";
   const staleDowngrade = opts.staleInputs === true;
-  if (aligned >= 3 && conflict === 0) return staleDowngrade ? "EXPERIMENTAL_MEDIUM" : "EXPERIMENTAL_HIGH";
-  if (aligned >= 2 && conflict <= 1) return staleDowngrade ? "EXPERIMENTAL_LOW" : "EXPERIMENTAL_MEDIUM";
+  if (aligned >= 3 && conflict === 0)
+    return staleDowngrade ? "EXPERIMENTAL_MEDIUM" : "EXPERIMENTAL_HIGH";
+  if (aligned >= 2 && conflict <= 1)
+    return staleDowngrade ? "EXPERIMENTAL_LOW" : "EXPERIMENTAL_MEDIUM";
   return "EXPERIMENTAL_LOW";
 }

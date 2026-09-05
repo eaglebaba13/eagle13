@@ -17,7 +17,10 @@ const COINDCX_MARKETS_QUERY_KEY = ["coindcx-markets"] as const;
 
 function fmtNum(n: number | null, digits = 2): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 function statusDot(status: CryptoWidgetRow["status"]): { color: string; label: string } {
@@ -67,19 +70,12 @@ export function CryptoMarketWidget() {
       </div>
 
       {isLoading && (
-        <p
-          className="mt-2 text-xs text-muted-foreground"
-          aria-live="polite"
-          role="status"
-        >
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite" role="status">
           Loading crypto markets…
         </p>
       )}
       {error && (
-        <p
-          className="mt-2 text-xs text-red-300"
-          role="alert"
-        >
+        <p className="mt-2 text-xs text-red-300" role="alert">
           Crypto markets unavailable
         </p>
       )}

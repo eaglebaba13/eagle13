@@ -12,7 +12,13 @@ import { DASHBOARD_WIDGETS } from "@/lib/dashboard-widgets";
 
 function mkLeg(oi: number, dOi: number, gamma: number | null = null) {
   return {
-    oi, changeOi: dOi, volume: oi, iv: 15, ltp: 100, bid: null, ask: null,
+    oi,
+    changeOi: dOi,
+    volume: oi,
+    iv: 15,
+    ltp: 100,
+    bid: null,
+    ask: null,
     greeks: gamma == null ? null : { delta: 0.5, gamma, theta: -1, vega: 1, rho: 0 },
   };
 }
@@ -90,9 +96,7 @@ describe("Institutional Flow — analytics", () => {
     expect(report.diagnostics.putOiCoverage).toBe(1);
     expect(report.diagnostics.greeksCoverage).toBe(1);
     // Sector coverage warning fires when the sector list is empty/partial.
-    expect(
-      report.diagnostics.warnings.some((w) => w.includes("Sector coverage")),
-    ).toBe(true);
+    expect(report.diagnostics.warnings.some((w) => w.includes("Sector coverage"))).toBe(true);
   });
 
   it("OI analysis identifies highest call/put and ATM strike", () => {

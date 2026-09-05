@@ -82,7 +82,6 @@ export function assertFrozenPayload(ctx: ResearchDataContext): {
   if (Object.isFrozen(ctx.candles)) return { frozen: true };
   return {
     frozen: false,
-    warning:
-      "candles not frozen — pass Object.freeze(candles) to guarantee immutability",
+    warning: "candles not frozen — pass Object.freeze(candles) to guarantee immutability",
   };
 }

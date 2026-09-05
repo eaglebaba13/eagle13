@@ -3,12 +3,7 @@
 export type ReferralBroker = "INDMONEY";
 
 export type ReferralStatus =
-  | "PENDING"
-  | "UNDER_REVIEW"
-  | "APPROVED"
-  | "REJECTED"
-  | "EXPIRED"
-  | "CANCELED";
+  "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "EXPIRED" | "CANCELED";
 
 export interface ReferralRequestRow {
   id: string;

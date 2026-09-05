@@ -2,7 +2,12 @@
 // Determines whether the current instant should trigger a freeze or an
 // outcome evaluation. No side effects. No formula changes.
 
-import { resolveLifecycle, WEEKEND_ONLY_CALENDAR, toIstParts, type TradingCalendar } from "./session-clock";
+import {
+  resolveLifecycle,
+  WEEKEND_ONLY_CALENDAR,
+  toIstParts,
+  type TradingCalendar,
+} from "./session-clock";
 import type { GannGapConfig } from "./config";
 
 export type SchedulerAction =
@@ -38,14 +43,22 @@ export function decideSchedulerAction(input: SchedulerDecisionInput): SchedulerD
 
   if (!lifecycle.isTradingDay) {
     if (!input.hasOutcomeForPending && hour >= outcomeHour) {
-      return { action: "EVALUATE_OUTCOME_NOW", istDate: lifecycle.istDate, reason: "Non-trading day — evaluate pending outcome if next-session open available" };
+      return {
+        action: "EVALUATE_OUTCOME_NOW",
+        istDate: lifecycle.istDate,
+        reason: "Non-trading day — evaluate pending outcome if next-session open available",
+      };
     }
     return { action: "IDLE_NON_TRADING_DAY", istDate: lifecycle.istDate, reason: lifecycle.reason };
   }
 
   // Evaluate previous session's outcome as soon as market open is available.
   if (!input.hasOutcomeForPending && hour >= outcomeHour) {
-    return { action: "EVALUATE_OUTCOME_NOW", istDate: lifecycle.istDate, reason: "Trading day open — evaluate pending prior-session outcome" };
+    return {
+      action: "EVALUATE_OUTCOME_NOW",
+      istDate: lifecycle.istDate,
+      reason: "Trading day open — evaluate pending prior-session outcome",
+    };
   }
 
   if (lifecycle.lifecycle === "PENDING") {
@@ -53,8 +66,16 @@ export function decideSchedulerAction(input: SchedulerDecisionInput): SchedulerD
   }
 
   if (lifecycle.lifecycle === "EVAL" && !input.hasFrozenForToday) {
-    return { action: "FREEZE_NOW", istDate: lifecycle.istDate, reason: "Signal cutoff reached — freeze prediction" };
+    return {
+      action: "FREEZE_NOW",
+      istDate: lifecycle.istDate,
+      reason: "Signal cutoff reached — freeze prediction",
+    };
   }
 
-  return { action: "IDLE_AFTER_FREEZE", istDate: lifecycle.istDate, reason: "Already frozen for this session" };
+  return {
+    action: "IDLE_AFTER_FREEZE",
+    istDate: lifecycle.istDate,
+    reason: "Already frozen for this session",
+  };
 }

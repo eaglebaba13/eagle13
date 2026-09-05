@@ -19,15 +19,11 @@ export function computePortfolioRunId(
 ): string {
   const parts: string[] = [];
   for (const a of assets) {
-    parts.push([
-      a.runId,
-      a.formulaVersion,
-      a.instrument,
-      a.timeframe,
-      a.from,
-      a.to,
-      a.dataHash ?? "",
-    ].join(":"));
+    parts.push(
+      [a.runId, a.formulaVersion, a.instrument, a.timeframe, a.from, a.to, a.dataHash ?? ""].join(
+        ":",
+      ),
+    );
   }
   const cfgKey = JSON.stringify({
     m: config.method,

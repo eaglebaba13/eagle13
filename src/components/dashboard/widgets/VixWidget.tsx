@@ -32,10 +32,25 @@ export default function VixWidget() {
       blockedReasons={gate.blockingReasons}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
-        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 26, fontWeight: 700, color: "var(--eb-text)" }}>
+        <span
+          suppressHydrationWarning
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 26,
+            fontWeight: 700,
+            color: "var(--eb-text)",
+          }}
+        >
           {fmt(level)}
         </span>
-        <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 13, color: stale ? "var(--eb-muted)" : col }}>
+        <span
+          suppressHydrationWarning
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 13,
+            color: stale ? "var(--eb-muted)" : col,
+          }}
+        >
           {stale ? null : (up ? "▲" : "▼") + " "}
           {fmt(Math.abs(vix.change))} ({vix.changePct}%)
           {stale ? " · DATA STALE" : ""}

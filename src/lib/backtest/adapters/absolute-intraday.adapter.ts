@@ -2,10 +2,7 @@
 // (Stage-4 FSM: touch → confirm → retest → target/stop) into the unified
 // adapter contract. Snapshot + 5-minute candles arrive via `cfg.extras`.
 
-import {
-  simulateSession,
-  type AmbiguousPolicy,
-} from "../../gann-intraday-simulator";
+import { simulateSession, type AmbiguousPolicy } from "../../gann-intraday-simulator";
 import type { RankedLevel } from "../../gann-level-ranking";
 import type { CubeInputs } from "../../gann-cube-engine";
 import type { TimedCandle5m } from "../../gann-intraday-touch";
@@ -14,10 +11,7 @@ import {
   GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
   INTRADAY_FORMULA_VERSIONS,
 } from "../../engine-version";
-import type {
-  AdapterConfig,
-  HistoricalFormulaAdapter,
-} from "../adapter";
+import type { AdapterConfig, HistoricalFormulaAdapter } from "../adapter";
 import type { HistoricalTrade } from "../result";
 
 export type AbsoluteSessionInput = {
@@ -92,9 +86,7 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
   },
   planSessions(cfg) {
     const { sessions } = readExtras(cfg);
-    const dates = sessions
-      .map((s) => s.tradingDate)
-      .filter((d) => d >= cfg.from && d <= cfg.to);
+    const dates = sessions.map((s) => s.tradingDate).filter((d) => d >= cfg.from && d <= cfg.to);
     return { dates, causality: "intraday-5m" };
   },
   async evaluateSession(cfg, date) {
@@ -106,7 +98,8 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
       ranked: session.ranked as RankedLevel[],
       candles: session.candles as TimedCandle5m[],
       cubeInputs: session.cubeInputs ?? DEFAULT_CUBE_INPUTS,
-      ambiguousPolicy: ambiguousPolicy ?? (cfg.ambiguousPolicy as AmbiguousPolicy) ?? "conservative",
+      ambiguousPolicy:
+        ambiguousPolicy ?? (cfg.ambiguousPolicy as AmbiguousPolicy) ?? "conservative",
     });
     const trades: HistoricalTrade[] = sim.perLevel
       .filter(
@@ -118,12 +111,9 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
           p.level.tradeBias === "BUY" ? "BUY" : p.level.tradeBias === "SELL" ? "SELL" : "WAIT";
         const dir = side === "BUY" ? 1 : -1;
         const entry = p.entry ?? null;
-        const exit =
-          outcome === "WIN" ? p.target : outcome === "LOSS" ? p.stopLoss : null;
+        const exit = outcome === "WIN" ? p.target : outcome === "LOSS" ? p.stopLoss : null;
         const pnl =
-          entry != null && exit != null
-            ? Math.round((exit - entry) * dir * 100) / 100
-            : 0;
+          entry != null && exit != null ? Math.round((exit - entry) * dir * 100) / 100 : 0;
         return {
           id: `${date}-${p.level.planet}-${p.level.sourceLevel}-${i}`,
           date,
@@ -140,10 +130,7 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
             p.entryTimeIst && p.exitTimeIst
               ? Math.max(
                   0,
-                  Math.round(
-                    (Date.parse(p.exitTimeIst) - Date.parse(p.entryTimeIst)) /
-                      60000,
-                  ),
+                  Math.round((Date.parse(p.exitTimeIst) - Date.parse(p.entryTimeIst)) / 60000),
                 )
               : null,
           formulaVersion: INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1,
@@ -156,11 +143,12 @@ export const absoluteIntradayHistoricalAdapter: HistoricalFormulaAdapter = {
             safeRisky: p.level.safety,
             cubeGrade: p.cube.cubeGrade,
             cubeAction: p.cube.action,
-            touchTime: p.touchIndex != null ? session.candles[p.touchIndex]?.timeIst ?? null : null,
+            touchTime:
+              p.touchIndex != null ? (session.candles[p.touchIndex]?.timeIst ?? null) : null,
             confirmationTime:
-              p.confirmIndex != null ? session.candles[p.confirmIndex]?.timeIst ?? null : null,
+              p.confirmIndex != null ? (session.candles[p.confirmIndex]?.timeIst ?? null) : null,
             retestTime:
-              p.retestIndex != null ? session.candles[p.retestIndex]?.timeIst ?? null : null,
+              p.retestIndex != null ? (session.candles[p.retestIndex]?.timeIst ?? null) : null,
             pivotConfluence: p.level.pivotConfluence ?? null,
             ambiguousCandleCount: p.ambiguousCandleCount,
           },

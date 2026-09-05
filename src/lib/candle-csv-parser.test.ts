@@ -57,8 +57,11 @@ describe("Phase 21.2 Stage 5.1 · CSV parser", () => {
 2026-06-29 09:15:00,24000,24010,23990,24005
 `;
     const r = parseCandleCsv({
-      csv: dup, provider: "Generic", instrument: "NIFTY50",
-      timezone: "Asia/Kolkata", interval: "5m",
+      csv: dup,
+      provider: "Generic",
+      instrument: "NIFTY50",
+      timezone: "Asia/Kolkata",
+      interval: "5m",
     });
     expect(r.rows.length).toBe(1);
     expect(r.rejected.some((x) => /Duplicate/.test(x.reason))).toBe(true);
@@ -69,8 +72,11 @@ describe("Phase 21.2 Stage 5.1 · CSV parser", () => {
 2026-06-29 09:15:00,24000,23990,24010,24005
 `;
     const r = parseCandleCsv({
-      csv: bad, provider: "Generic", instrument: "NIFTY50",
-      timezone: "Asia/Kolkata", interval: "5m",
+      csv: bad,
+      provider: "Generic",
+      instrument: "NIFTY50",
+      timezone: "Asia/Kolkata",
+      interval: "5m",
     });
     expect(r.rows.length).toBe(0);
     expect(r.rejected[0].reason).toMatch(/OHLC/);
@@ -81,8 +87,11 @@ describe("Phase 21.2 Stage 5.1 · CSV parser", () => {
 2099-01-01 09:15:00,24000,24010,23990,24005
 `;
     const r = parseCandleCsv({
-      csv: fut, provider: "Generic", instrument: "NIFTY50",
-      timezone: "Asia/Kolkata", interval: "5m",
+      csv: fut,
+      provider: "Generic",
+      instrument: "NIFTY50",
+      timezone: "Asia/Kolkata",
+      interval: "5m",
     });
     expect(r.rejected[0].reason).toMatch(/Future/);
   });

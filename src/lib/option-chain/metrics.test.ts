@@ -4,7 +4,9 @@ import { makeStrike } from "./types";
 
 describe("metrics", () => {
   it("computes OI/volume differences", () => {
-    const m = computeStrikeMetrics(makeStrike(24_000, { oi: 100, volume: 300 }, { oi: 40, volume: 100 }));
+    const m = computeStrikeMetrics(
+      makeStrike(24_000, { oi: 100, volume: 300 }, { oi: 40, volume: 100 }),
+    );
     expect(m.oiDifference).toBe(60);
     expect(m.volumeDifference).toBe(200);
     expect(m.missing).not.toContain("call.oi");

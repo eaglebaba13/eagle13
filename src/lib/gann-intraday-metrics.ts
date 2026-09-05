@@ -104,12 +104,7 @@ export function computeCoreMetrics(sessions: SessionResult[]): CoreMetrics {
       maeSum += p.mae;
       if (p.level.tradeBias === "BUY") buys++;
       if (p.level.tradeBias === "SELL") sells++;
-      const pnl = pnlOf(
-        p,
-        s.instrument,
-        s.costPerTrade ?? 0,
-        s.slippagePerTrade ?? 0,
-      );
+      const pnl = pnlOf(p, s.instrument, s.costPerTrade ?? 0, s.slippagePerTrade ?? 0);
       netPnL += pnl;
       running += pnl;
       equity.push(running);
@@ -153,8 +148,7 @@ export function computeCoreMetrics(sessions: SessionResult[]): CoreMetrics {
 
   const totalTrades = wins + losses;
   const winRate = totalTrades > 0 ? wins / totalTrades : 0;
-  const profitFactor =
-    grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
+  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
   const expectancy = totalTrades > 0 ? netPnL / totalTrades : 0;
   const avgMfe = tradedCount > 0 ? mfeSum / tradedCount : 0;
   const avgMae = tradedCount > 0 ? maeSum / tradedCount : 0;
@@ -219,9 +213,7 @@ export function bucketBySafety(sessions: SessionResult[]): Record<SafetyBucket, 
 
 export type CubeGrade = "A" | "B" | "C" | "NONE";
 
-export function bucketByCubeGrade(
-  sessions: SessionResult[],
-): Record<CubeGrade, CoreMetrics> {
+export function bucketByCubeGrade(sessions: SessionResult[]): Record<CubeGrade, CoreMetrics> {
   const grades: CubeGrade[] = ["A", "B", "C", "NONE"];
   const out = {} as Record<CubeGrade, CoreMetrics>;
   for (const g of grades) {
@@ -238,7 +230,8 @@ export function bucketByCubeGrade(
 }
 
 /** IST time-of-day bucket derived from the entry timestamp. */
-export type TimeBucket = "09:15-10:00" | "10:00-11:30" | "11:30-13:30" | "13:30-14:30" | "14:30-15:30";
+export type TimeBucket =
+  "09:15-10:00" | "10:00-11:30" | "11:30-13:30" | "13:30-14:30" | "14:30-15:30";
 export const TIME_BUCKETS: TimeBucket[] = [
   "09:15-10:00",
   "10:00-11:30",
@@ -259,9 +252,7 @@ function bucketForTime(timeIst: string): TimeBucket | null {
   return null;
 }
 
-export function bucketByTimeOfDay(
-  sessions: SessionResult[],
-): Record<TimeBucket, CoreMetrics> {
+export function bucketByTimeOfDay(sessions: SessionResult[]): Record<TimeBucket, CoreMetrics> {
   const out = {} as Record<TimeBucket, CoreMetrics>;
   for (const bucket of TIME_BUCKETS) {
     const filtered = sessions.map((s) => ({

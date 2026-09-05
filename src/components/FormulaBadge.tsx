@@ -26,7 +26,10 @@ export function FormulaBadge({ version, extended, compact, title }: Props) {
   const border = legacy ? "var(--eb-bear, #b45309)" : "var(--eb-border, #22314a)";
   return (
     <span
-      title={title ?? `Astro Formula: ${label}${extended ? " · R3/S3 = EagleBaba Extended (non-Gann)" : ""}`}
+      title={
+        title ??
+        `Astro Formula: ${label}${extended ? " · R3/S3 = EagleBaba Extended (non-Gann)" : ""}`
+      }
       style={{
         display: "inline-flex",
         alignItems: "center",

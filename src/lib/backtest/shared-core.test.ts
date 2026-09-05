@@ -5,16 +5,8 @@ import { describe, it, expect } from "vitest";
 import { computeUnifiedRunId } from "./run-id";
 import { runHistoricalCore } from "./runner";
 import { buildUnifiedStats } from "./stats";
-import {
-  applyCosts,
-  INDEX_POINT_COSTS,
-  ZERO_COSTS,
-} from "./cost-model";
-import {
-  assertClosedCandle,
-  assertPostSnapshot,
-  requiredCausalityFor,
-} from "./causality";
+import { applyCosts, INDEX_POINT_COSTS, ZERO_COSTS } from "./cost-model";
+import { assertClosedCandle, assertPostSnapshot, requiredCausalityFor } from "./causality";
 import { exportSummaryCsv, exportTradesCsv, exportFilename } from "./export";
 import type { HistoricalFormulaAdapter } from "./adapter";
 import type { HistoricalTrade } from "./result";
@@ -102,9 +94,9 @@ describe("Phase 21.3a · Run ID", () => {
   it("costs/policy/source all participate in the hash", () => {
     const base = computeUnifiedRunId(cfg);
     expect(computeUnifiedRunId({ ...cfg, source: "kite" })).not.toBe(base);
-    expect(
-      computeUnifiedRunId({ ...cfg, costs: { ...ZERO_COSTS, slippagePct: 0.1 } }),
-    ).not.toBe(base);
+    expect(computeUnifiedRunId({ ...cfg, costs: { ...ZERO_COSTS, slippagePct: 0.1 } })).not.toBe(
+      base,
+    );
     expect(computeUnifiedRunId({ ...cfg, policy: "optimistic" })).not.toBe(base);
   });
 });

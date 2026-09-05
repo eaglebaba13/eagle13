@@ -30,9 +30,7 @@ function pickSnapshot(
   base: string,
 ): CoindcxMarketSnapshot | null {
   for (const q of QUOTE_PREFERENCE) {
-    const found = snapshots.find(
-      (s) => s.market.base === base && s.market.quote === q,
-    );
+    const found = snapshots.find((s) => s.market.base === base && s.market.quote === q);
     if (found) return found;
   }
   return snapshots.find((s) => s.market.base === base) ?? null;
@@ -62,8 +60,7 @@ export function buildCryptoRow(
   const ticker = snap?.ticker ?? null;
   const last = ticker?.last ?? null;
   const pct = ticker?.change24hPct ?? null;
-  const abs =
-    last != null && pct != null ? (last * pct) / (100 + pct) : null;
+  const abs = last != null && pct != null ? (last * pct) / (100 + pct) : null;
   return {
     base,
     pair: snap?.market.pair ?? base,
@@ -88,20 +85,17 @@ export function buildWatchlist(
 }
 
 /** Tokenized metals — only returned when the provider actually supplies them. */
-export function findTokenizedMetals(
-  snapshots: readonly CoindcxMarketSnapshot[],
-): { gold: CryptoWidgetRow | null; silver: CryptoWidgetRow | null } {
+export function findTokenizedMetals(snapshots: readonly CoindcxMarketSnapshot[]): {
+  gold: CryptoWidgetRow | null;
+  silver: CryptoWidgetRow | null;
+} {
   const goldSnap =
     snapshots.find(
-      (s) =>
-        s.market.assetClass === "TOKENIZED_METAL" &&
-        s.market.linkedUnderlying === "GOLD",
+      (s) => s.market.assetClass === "TOKENIZED_METAL" && s.market.linkedUnderlying === "GOLD",
     ) ?? null;
   const silverSnap =
     snapshots.find(
-      (s) =>
-        s.market.assetClass === "TOKENIZED_METAL" &&
-        s.market.linkedUnderlying === "SILVER",
+      (s) => s.market.assetClass === "TOKENIZED_METAL" && s.market.linkedUnderlying === "SILVER",
     ) ?? null;
   const toRow = (snap: CoindcxMarketSnapshot | null): CryptoWidgetRow | null => {
     if (!snap) return null;
@@ -134,9 +128,7 @@ export function summarizeCrypto(rows: readonly CryptoWidgetRow[]): CryptoDashboa
   const losers = known.filter((r) => (r.change24hPct ?? 0) < 0).length;
   const flat = known.length - gainers - losers;
   const avg =
-    known.length === 0
-      ? null
-      : known.reduce((s, r) => s + (r.change24hPct ?? 0), 0) / known.length;
+    known.length === 0 ? null : known.reduce((s, r) => s + (r.change24hPct ?? 0), 0) / known.length;
   let best: CryptoWidgetRow | null = null;
   let worst: CryptoWidgetRow | null = null;
   for (const r of known) {

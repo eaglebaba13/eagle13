@@ -60,7 +60,6 @@ export function validateCandles(candles: Candle[]): void {
       throw new Error(`Non-finite value at index ${i}`);
     if (c.h < Math.max(c.o, c.c) || c.l > Math.min(c.o, c.c))
       throw new Error(`Invalid OHLC ordering at index ${i}`);
-    if (i > 0 && candles[i - 1].t >= c.t)
-      throw new Error(`Non-monotonic timestamp at index ${i}`);
+    if (i > 0 && candles[i - 1].t >= c.t) throw new Error(`Non-monotonic timestamp at index ${i}`);
   }
 }

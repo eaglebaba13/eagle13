@@ -64,7 +64,7 @@ describe("Phase 21.3d-parity-α · historyToJson byte oracle", () => {
 
   it("is 2-space pretty-printed and parses back to a superset of the input", () => {
     // 2-space indent is a documented public contract.
-    expect(json.startsWith("{\n  \"version\":")).toBe(true);
+    expect(json.startsWith('{\n  "version":')).toBe(true);
     const parsed = JSON.parse(json);
     expect(parsed.exportVersion).toBe("GANN_ABSOLUTE_INTRADAY_VALIDATION_V1");
     expect(parsed.formulaVersion).toBe("GANN_ASTRO_INTRADAY_ABSOLUTE_V1");
@@ -172,9 +172,7 @@ const UNIFIED_GOLDEN: HistoricalBacktestResult = {
       metadata: {},
     },
   ],
-  monthly: [
-    { month: "2026-04", trades: 2, wins: 1, losses: 1, netPnl: 40 },
-  ],
+  monthly: [{ month: "2026-04", trades: 2, wins: 1, losses: 1, netPnl: 40 }],
   equityCurve: [
     { date: "2026-04-02", equity: 100 },
     { date: "2026-04-03", equity: 40 },
@@ -235,9 +233,7 @@ describe("Phase 21.3d-parity-α · unified exportSummaryCsv byte oracle", () => 
     expect(lines[9]).toBe(`# to=${UNIFIED_GOLDEN.to}`);
     expect(lines[10]).toBe(`# dataGranularity=${UNIFIED_GOLDEN.dataGranularity}`);
     expect(lines[11]).toBe(`# source=${UNIFIED_GOLDEN.source}`);
-    expect(lines[12]).toBe(
-      "# labeledAs=VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION",
-    );
+    expect(lines[12]).toBe("# labeledAs=VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION");
     expect(lines[13]).toBe("month,trades,wins,losses,netPnl");
     expect(lines[14]).toBe("2026-04,2,1,1,40");
   });
@@ -253,10 +249,10 @@ describe("Phase 21.3d-parity-α · unified exportTradesCsv byte oracle", () => {
     );
     expect(headerIdx).toBeGreaterThan(-1);
     expect(lines[headerIdx + 1]).toBe(
-      'T-001,2026-04-02,BUY,22000,21950,22100,22100,WIN,100,0,signal=BUY|target_hit',
+      "T-001,2026-04-02,BUY,22000,21950,22100,22100,WIN,100,0,signal=BUY|target_hit",
     );
     expect(lines[headerIdx + 2]).toBe(
-      'T-002,2026-04-03,SELL,22100,22160,21990,22160,LOSS,-60,1,both_touched|conservative_policy',
+      "T-002,2026-04-03,SELL,22100,22160,21990,22160,LOSS,-60,1,both_touched|conservative_policy",
     );
   });
 });
@@ -264,7 +260,7 @@ describe("Phase 21.3d-parity-α · unified exportTradesCsv byte oracle", () => {
 describe("Phase 21.3d-parity-α · unified exportResultJson byte oracle", () => {
   it("2-space pretty print with validationOnly annotation", () => {
     const json = exportResultJson(UNIFIED_GOLDEN, { validationOnly: true });
-    expect(json.startsWith("{\n  \"formulaVersion\":")).toBe(true);
+    expect(json.startsWith('{\n  "formulaVersion":')).toBe(true);
     const parsed = JSON.parse(json);
     expect(parsed.labeledAs).toBe("VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION");
     expect(parsed.runId).toBe(UNIFIED_GOLDEN.runId);
@@ -311,14 +307,54 @@ function inlineBacktestCsv(r: typeof BACKTEST_GOLDEN, slug: string): string {
       `runId=${r.runId}`,
     ],
     [
-      "date","time","symbol","signal","strength","confidence","entry","exit","high","low","target","stop","targetHit","stopHit","result","pnl","pnlPct","moonSign","moonNakshatra","retroCount","nearest","dayOfWeek","month",
+      "date",
+      "time",
+      "symbol",
+      "signal",
+      "strength",
+      "confidence",
+      "entry",
+      "exit",
+      "high",
+      "low",
+      "target",
+      "stop",
+      "targetHit",
+      "stopHit",
+      "result",
+      "pnl",
+      "pnlPct",
+      "moonSign",
+      "moonNakshatra",
+      "retroCount",
+      "nearest",
+      "dayOfWeek",
+      "month",
     ],
     ...r.trades.map((t) => [
-      t.date, t.time, t.symbol, t.signal, t.strength, t.confidence,
-      t.entry, t.exit, t.high, t.low, t.target, t.stop,
-      t.targetHit, t.stopHit, t.result, t.pnl, t.pnlPct,
-      t.moonSign, t.moonNakshatra, t.retroCount, t.nearest ?? "",
-      t.dayOfWeek, t.month,
+      t.date,
+      t.time,
+      t.symbol,
+      t.signal,
+      t.strength,
+      t.confidence,
+      t.entry,
+      t.exit,
+      t.high,
+      t.low,
+      t.target,
+      t.stop,
+      t.targetHit,
+      t.stopHit,
+      t.result,
+      t.pnl,
+      t.pnlPct,
+      t.moonSign,
+      t.moonNakshatra,
+      t.retroCount,
+      t.nearest ?? "",
+      t.dayOfWeek,
+      t.month,
     ]),
   ];
   void slug; // filename is separate; kept parameterised to mirror the route
@@ -362,8 +398,6 @@ describe("Phase 21.3d-parity-α · inline /backtest CSV byte oracle", () => {
   it("filename shape (from route) locked", () => {
     // Matches template: `eaglebaba-backtest-${symbol}-${slug}-${from}-${to}.csv`.
     const fname = `eaglebaba-backtest-NIFTY50-GANN_ASTRO_V1_1-${BACKTEST_GOLDEN.from}-${BACKTEST_GOLDEN.to}.csv`;
-    expect(fname).toBe(
-      "eaglebaba-backtest-NIFTY50-GANN_ASTRO_V1_1-2026-04-01-2026-06-30.csv",
-    );
+    expect(fname).toBe("eaglebaba-backtest-NIFTY50-GANN_ASTRO_V1_1-2026-04-01-2026-06-30.csv");
   });
 });

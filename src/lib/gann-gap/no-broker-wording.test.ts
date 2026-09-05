@@ -25,9 +25,7 @@ describe("Gann Gap module — no broker wording", () => {
     it(`${f} contains no BUY/SELL/LONG/SHORT wording`, () => {
       const src = readFileSync(f, "utf8");
       // Strip block/line comments to allow "long-form" prose that isn't a signal.
-      const stripped = src
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/(^|[^:])\/\/.*$/gm, "$1");
+      const stripped = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
       const m = stripped.match(BANNED);
       expect(m, `banned wording in ${f}: ${m?.[0]}`).toBeNull();
     });

@@ -24,8 +24,14 @@ export interface A11yReport {
 export const A11Y_REPORT_VERSION = "a11y-audit@1.0.0";
 
 const KEYS: readonly (keyof A11yInputs)[] = [
-  "keyboardNavigation","focusOrderLogical","focusVisible","screenReaderLandmarks",
-  "wcagContrastAA","reducedMotionRespected","iconButtonLabels","formLabelsAssociated",
+  "keyboardNavigation",
+  "focusOrderLogical",
+  "focusVisible",
+  "screenReaderLandmarks",
+  "wcagContrastAA",
+  "reducedMotionRespected",
+  "iconButtonLabels",
+  "formLabelsAssociated",
 ];
 
 export function evaluateA11y(inp: A11yInputs): A11yReport {
@@ -34,7 +40,9 @@ export function evaluateA11y(inp: A11yInputs): A11yReport {
   const fail = criteria.length - pass;
   return {
     grade: fail === 0 ? "PASS" : "FAIL",
-    pass, fail, criteria,
+    pass,
+    fail,
+    criteria,
     formulaVersion: A11Y_REPORT_VERSION,
   };
 }

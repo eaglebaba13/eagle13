@@ -26,7 +26,9 @@ import type {
 const NOW_ISO = "2026-07-16T09:15:00.000Z";
 const NOW_MS = 1_800_000_000_000;
 
-function makeQuoteAdapter(overrides: Partial<Parameters<typeof createFactoryAdapter>[0]> = {}): ProviderAdapter {
+function makeQuoteAdapter(
+  overrides: Partial<Parameters<typeof createFactoryAdapter>[0]> = {},
+): ProviderAdapter {
   return createFactoryAdapter({
     id: "primary-quotes",
     label: "Primary Quotes",
@@ -91,14 +93,40 @@ describe("provider foundation — types & freshness", () => {
 
 describe("provider run id", () => {
   it("is deterministic and prefixed", () => {
-    const a = computeProviderSessionId({ primary: "p", secondary: "s", domain: "ALL", symbols: ["A", "B"], timeframes: ["1m"], startedAt: NOW_ISO });
-    const b = computeProviderSessionId({ primary: "p", secondary: "s", domain: "ALL", symbols: ["B", "A"], timeframes: ["1m"], startedAt: NOW_ISO });
+    const a = computeProviderSessionId({
+      primary: "p",
+      secondary: "s",
+      domain: "ALL",
+      symbols: ["A", "B"],
+      timeframes: ["1m"],
+      startedAt: NOW_ISO,
+    });
+    const b = computeProviderSessionId({
+      primary: "p",
+      secondary: "s",
+      domain: "ALL",
+      symbols: ["B", "A"],
+      timeframes: ["1m"],
+      startedAt: NOW_ISO,
+    });
     expect(a).toBe(b);
     expect(a.startsWith(PROVIDER_SESSION_PREFIX + ":")).toBe(true);
   });
   it("changes with inputs", () => {
-    const a = computeProviderSessionId({ primary: "p", domain: "ALL", symbols: [], timeframes: [], startedAt: NOW_ISO });
-    const b = computeProviderSessionId({ primary: "q", domain: "ALL", symbols: [], timeframes: [], startedAt: NOW_ISO });
+    const a = computeProviderSessionId({
+      primary: "p",
+      domain: "ALL",
+      symbols: [],
+      timeframes: [],
+      startedAt: NOW_ISO,
+    });
+    const b = computeProviderSessionId({
+      primary: "q",
+      domain: "ALL",
+      symbols: [],
+      timeframes: [],
+      startedAt: NOW_ISO,
+    });
     expect(a).not.toBe(b);
   });
 });
@@ -180,8 +208,22 @@ describe("registry", () => {
   });
   it("lists adapters in deterministic order", () => {
     const r = new ProviderRegistry();
-    r.register(createFactoryAdapter({ id: "b", label: "B", role: "PRIMARY", capability: { domain: "QUOTES" } }));
-    r.register(createFactoryAdapter({ id: "a", label: "A", role: "SECONDARY", capability: { domain: "QUOTES" } }));
+    r.register(
+      createFactoryAdapter({
+        id: "b",
+        label: "B",
+        role: "PRIMARY",
+        capability: { domain: "QUOTES" },
+      }),
+    );
+    r.register(
+      createFactoryAdapter({
+        id: "a",
+        label: "A",
+        role: "SECONDARY",
+        capability: { domain: "QUOTES" },
+      }),
+    );
     expect(r.list().map((x) => x.id)).toEqual(["a", "b"]);
   });
 });
@@ -194,7 +236,12 @@ describe("failover manager", () => {
     expect(d.role).toBe("PRIMARY");
   });
   it("failovers to secondary when primary failed", () => {
-    const s = createFactoryAdapter({ id: "sec", label: "Sec", role: "SECONDARY", capability: { domain: "QUOTES" } });
+    const s = createFactoryAdapter({
+      id: "sec",
+      label: "Sec",
+      role: "SECONDARY",
+      capability: { domain: "QUOTES" },
+    });
     const d = f.choose({ adapter, status: "FAILED" }, { adapter: s, status: "LIVE" });
     expect(d.role).toBe("SECONDARY");
     expect(d.chosen?.id).toBe("sec");
@@ -225,7 +272,13 @@ describe("factory adapter — fetch behaviors", () => {
     }
   });
   it("rejects unsupported symbol", async () => {
-    const a = createFactoryAdapter({ id: "q", label: "Q", role: "PRIMARY", capability: { domain: "QUOTES", quotes: ["NIFTY50"] }, quotes: { NIFTY50: { last: 1, ageSec: 1 } } });
+    const a = createFactoryAdapter({
+      id: "q",
+      label: "Q",
+      role: "PRIMARY",
+      capability: { domain: "QUOTES", quotes: ["NIFTY50"] },
+      quotes: { NIFTY50: { last: 1, ageSec: 1 } },
+    });
     const res = await a.fetchQuote!("BTC" as QuoteSymbol, nowIso);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe("UNSUPPORTED_SYMBOL");
@@ -292,22 +345,40 @@ describe("factory adapter — fetch behaviors", () => {
       pcr: 2,
       maxPain: 25000,
       telemetry: {
-        status: "LIVE", latencyMs: 0, receivedAt: nowIso, providerTime: null,
-        marketSession: "REGULAR", rateLimit: null, retryAfterMs: null,
-        staleReason: null, providerId: "o", role: "PRIMARY",
+        status: "LIVE",
+        latencyMs: 0,
+        receivedAt: nowIso,
+        providerTime: null,
+        marketSession: "REGULAR",
+        rateLimit: null,
+        retryAfterMs: null,
+        staleReason: null,
+        providerId: "o",
+        role: "PRIMARY",
       },
     };
     const breadth: BreadthSnapshot = {
       universe: "NIFTY50",
-      advances: 30, declines: 18, unchanged: 2,
+      advances: 30,
+      declines: 18,
+      unchanged: 2,
       telemetry: {
-        status: "LIVE", latencyMs: 0, receivedAt: nowIso, providerTime: null,
-        marketSession: "REGULAR", rateLimit: null, retryAfterMs: null,
-        staleReason: null, providerId: "b", role: "PRIMARY",
+        status: "LIVE",
+        latencyMs: 0,
+        receivedAt: nowIso,
+        providerTime: null,
+        marketSession: "REGULAR",
+        rateLimit: null,
+        retryAfterMs: null,
+        staleReason: null,
+        providerId: "b",
+        role: "PRIMARY",
       },
     };
     const a = createFactoryAdapter({
-      id: "mix", label: "Mix", role: "PRIMARY",
+      id: "mix",
+      label: "Mix",
+      role: "PRIMARY",
       capability: { domain: "OPTIONS", options: ["NIFTY"], breadth: ["NIFTY50"] },
       options: { NIFTY: chain },
       breadth: { NIFTY50: breadth },
@@ -320,7 +391,12 @@ describe("factory adapter — fetch behaviors", () => {
 });
 
 describe("provider manager — orchestration", () => {
-  function build(opts: { primary?: Partial<Parameters<typeof createFactoryAdapter>[0]>; secondary?: Partial<Parameters<typeof createFactoryAdapter>[0]> } = {}) {
+  function build(
+    opts: {
+      primary?: Partial<Parameters<typeof createFactoryAdapter>[0]>;
+      secondary?: Partial<Parameters<typeof createFactoryAdapter>[0]>;
+    } = {},
+  ) {
     const primary = makeQuoteAdapter({ id: "p", ...opts.primary });
     const secondary = createFactoryAdapter({
       id: "s",
@@ -330,10 +406,19 @@ describe("provider manager — orchestration", () => {
       quotes: { NIFTY50: { last: 24990, prevClose: 24900, ageSec: 20 } },
       ...opts.secondary,
     });
-    const mgr = new ProviderManager({ startedAt: NOW_ISO, primary: primary.id, secondary: secondary.id });
+    const mgr = new ProviderManager({
+      startedAt: NOW_ISO,
+      primary: primary.id,
+      secondary: secondary.id,
+    });
     mgr.register(primary);
     mgr.register(secondary);
-    mgr.wire({ domain: "QUOTES", primaryId: primary.id, secondaryId: secondary.id, rateLimit: { capacity: 5, refillPerSec: 5 } });
+    mgr.wire({
+      domain: "QUOTES",
+      primaryId: primary.id,
+      secondaryId: secondary.id,
+      rateLimit: { capacity: 5, refillPerSec: 5 },
+    });
     return { mgr, primary, secondary };
   }
 
@@ -384,10 +469,23 @@ describe("provider manager — orchestration", () => {
     const primary = makeQuoteAdapter({ id: "p" });
     const mgr = new ProviderManager({ startedAt: NOW_ISO, primary: "p" });
     mgr.register(primary);
-    mgr.wire({ domain: "QUOTES", primaryId: "p", secondaryId: null, rateLimit: { capacity: 1, refillPerSec: 0.001 } });
-    const first = await mgr.getQuote("NIFTY50", { nowIso: NOW_ISO, nowMs: NOW_MS, bypassCache: true });
+    mgr.wire({
+      domain: "QUOTES",
+      primaryId: "p",
+      secondaryId: null,
+      rateLimit: { capacity: 1, refillPerSec: 0.001 },
+    });
+    const first = await mgr.getQuote("NIFTY50", {
+      nowIso: NOW_ISO,
+      nowMs: NOW_MS,
+      bypassCache: true,
+    });
     expect(first.ok).toBe(true);
-    const second = await mgr.getQuote("BANKNIFTY", { nowIso: NOW_ISO, nowMs: NOW_MS + 1, bypassCache: true });
+    const second = await mgr.getQuote("BANKNIFTY", {
+      nowIso: NOW_ISO,
+      nowMs: NOW_MS + 1,
+      bypassCache: true,
+    });
     expect(second.ok).toBe(false);
     if (!second.ok) {
       expect(second.reason).toBe("RATE_LIMITED");
@@ -416,7 +514,9 @@ describe("provider manager — orchestration", () => {
 
   it("supports historical, options, breadth wirings", async () => {
     const hist = createFactoryAdapter({
-      id: "h", label: "H", role: "PRIMARY",
+      id: "h",
+      label: "H",
+      role: "PRIMARY",
       capability: { domain: "HISTORICAL", historical: ["1m"] },
       historical: { "NIFTY50:1m": candles(3) },
     });

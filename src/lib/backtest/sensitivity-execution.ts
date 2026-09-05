@@ -18,11 +18,7 @@
 
 import { INTRADAY_FORMULA_VERSIONS } from "../engine-version";
 import type { Candle } from "../smc-types";
-import {
-  analyzeSmc,
-  type SmcEngineOptions,
-  type SmcEngineResult,
-} from "../smc-engine";
+import { analyzeSmc, type SmcEngineOptions, type SmcEngineResult } from "../smc-engine";
 import {
   analyzeSmcSignals,
   DEFAULT_SMC_SIGNAL_CONFIG,
@@ -39,10 +35,7 @@ import {
   hybridHistoricalAdapter,
   type HybridAstroPerDate,
 } from "./adapters/astro-smc-hybrid.adapter";
-import {
-  DEFAULT_HYBRID_CONFIG,
-  type HybridConfig,
-} from "./hybrid-decision";
+import { DEFAULT_HYBRID_CONFIG, type HybridConfig } from "./hybrid-decision";
 import type {
   ParameterCombination,
   SensitivityCell,
@@ -51,10 +44,7 @@ import type {
   HybridParameterKey,
 } from "./parameter-sensitivity";
 import type { HistoricalTrade } from "./result";
-import type {
-  ResearchComputeCounters,
-  ResearchDataContext,
-} from "./research-payload";
+import type { ResearchComputeCounters, ResearchDataContext } from "./research-payload";
 
 // ---------------- Safety caps
 export const MAX_SENSITIVITY_CELLS = 100;
@@ -86,10 +76,7 @@ const SMC_SIGNAL_KEYS: readonly SmcParameterKey[] = [
   "obValidityBars",
   "cooldownBars",
 ];
-const SMC_EXECUTION_KEYS: readonly SmcParameterKey[] = [
-  "atrStopMultiplier",
-  "rr",
-];
+const SMC_EXECUTION_KEYS: readonly SmcParameterKey[] = ["atrStopMultiplier", "rr"];
 const SMC_EXECUTION_KEY_ALIASES: Record<string, SmcParameterKey | "maxHoldBars"> = {
   atrStopMultiplier: "atrStopMultiplier",
   rr: "rr",
@@ -118,9 +105,7 @@ export function assertGridSize(cells: number): void {
 }
 
 // ---------------- Trade → metrics
-function metricsFromTrades(
-  trades: readonly HistoricalTrade[],
-): SensitivityMetrics {
+function metricsFromTrades(trades: readonly HistoricalTrade[]): SensitivityMetrics {
   const n = trades.length;
   let wins = 0;
   let losses = 0;
@@ -142,7 +127,8 @@ function metricsFromTrades(
   }
   const totalOutcomes = wins + losses;
   const winRate = totalOutcomes > 0 ? wins / totalOutcomes : 0;
-  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
+  const profitFactor =
+    grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Number.POSITIVE_INFINITY : 0;
   const expectancy = n > 0 ? netPnl / n : 0;
   const recoveryFactor = maxDD > 0 ? netPnl / maxDD : netPnl > 0 ? Number.POSITIVE_INFINITY : 0;
   return {
@@ -244,8 +230,7 @@ function paramsChangeSignals(params: ParameterCombination): boolean {
 
 function paramsChangeExecution(params: ParameterCombination): boolean {
   for (const k of Object.keys(params)) {
-    if ((SMC_EXECUTION_KEYS as readonly string[]).includes(k) || k === "maxHoldBars")
-      return true;
+    if ((SMC_EXECUTION_KEYS as readonly string[]).includes(k) || k === "maxHoldBars") return true;
   }
   return false;
 }
@@ -335,7 +320,10 @@ export async function runSmcSensitivity(
         source: ctx.source,
         extras: { candles, signals, engine, execution: exec },
       };
-      const evaluation = await smcHistoricalAdapter.evaluateSession(adapterCfg, ctx.actualRange.from);
+      const evaluation = await smcHistoricalAdapter.evaluateSession(
+        adapterCfg,
+        ctx.actualRange.from,
+      );
       counters.executionCount++;
       executionCount++;
 
@@ -412,9 +400,7 @@ export function resolveHybridWeights(
   const cfg: HybridConfig = {
     weights: final,
     scoreThreshold:
-      typeof params.hybridThreshold === "number"
-        ? params.hybridThreshold
-        : base.scoreThreshold,
+      typeof params.hybridThreshold === "number" ? params.hybridThreshold : base.scoreThreshold,
     minDataQualityPct: base.minDataQualityPct,
   };
   return {
@@ -465,8 +451,7 @@ export async function runHybridSensitivity(
       ...DEFAULT_HYBRID_CONFIG.weights,
       ...(opts.baseHybridConfig?.weights ?? {}),
     },
-    scoreThreshold:
-      opts.baseHybridConfig?.scoreThreshold ?? DEFAULT_HYBRID_CONFIG.scoreThreshold,
+    scoreThreshold: opts.baseHybridConfig?.scoreThreshold ?? DEFAULT_HYBRID_CONFIG.scoreThreshold,
     minDataQualityPct:
       opts.baseHybridConfig?.minDataQualityPct ?? DEFAULT_HYBRID_CONFIG.minDataQualityPct,
   };
@@ -485,7 +470,10 @@ export async function runHybridSensitivity(
 
     try {
       // 1) SMC signals (recompute only if smcMinScore or other signal keys change).
-      const signalCfg: SmcSignalConfig = { ...baseSignalCfg, weights: { ...baseSignalCfg.weights } };
+      const signalCfg: SmcSignalConfig = {
+        ...baseSignalCfg,
+        weights: { ...baseSignalCfg.weights },
+      };
       if (typeof params.smcMinScore === "number") signalCfg.minScore = params.smcMinScore;
       for (const k of Object.keys(params)) {
         if ((SMC_SIGNAL_KEYS as readonly string[]).includes(k)) {
@@ -531,18 +519,24 @@ export async function runHybridSensitivity(
           engine,
           astroByDate: opts.astroByDate,
           astroFormulaVersion: opts.astroFormulaVersion,
-          smcFormulaVersion:
-            opts.smcFormulaVersion ?? INTRADAY_FORMULA_VERSIONS.SMC_V1,
+          smcFormulaVersion: opts.smcFormulaVersion ?? INTRADAY_FORMULA_VERSIONS.SMC_V1,
           hybridConfig: hybridCfg,
           execution: exec,
           dataQualityPct: opts.dataQualityPct ?? ctx.dataQuality.coveragePct,
         },
       };
-      const evaluation = await hybridHistoricalAdapter.evaluateSession(adapterCfg, ctx.actualRange.from);
+      const evaluation = await hybridHistoricalAdapter.evaluateSession(
+        adapterCfg,
+        ctx.actualRange.from,
+      );
       counters.executionCount++;
       const metrics = metricsFromTrades(evaluation.trades);
       if (metrics.trades < 5) {
-        cells.push({ params, metrics: null, reason: `INSUFFICIENT_DATA: trades=${metrics.trades}` });
+        cells.push({
+          params,
+          metrics: null,
+          reason: `INSUFFICIENT_DATA: trades=${metrics.trades}`,
+        });
       } else {
         cells.push({ params, metrics });
       }

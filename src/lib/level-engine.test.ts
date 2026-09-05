@@ -11,8 +11,12 @@ import {
 
 const planet: PlanetWithLevels = {
   planet: "Sun",
-  r1: 24500, r2: 24600, r3: 24700,
-  s1: 24100, s2: 24000, s3: 23900,
+  r1: 24500,
+  r2: 24600,
+  r3: 24700,
+  s1: 24100,
+  s2: 24000,
+  s3: 23900,
 };
 
 describe("calculateDistance", () => {
@@ -66,9 +70,7 @@ describe("buildLevels", () => {
   it("emits 6 level rows per planet", () => {
     const rows = buildLevels([planet], 24300, 8);
     expect(rows).toHaveLength(6);
-    expect(rows.map((r) => r.kind).sort()).toEqual(
-      ["R1", "R2", "R3", "S1", "S2", "S3"].sort(),
-    );
+    expect(rows.map((r) => r.kind).sort()).toEqual(["R1", "R2", "R3", "S1", "S2", "S3"].sort());
   });
   it("distance matches |price - value|", () => {
     const rows = buildLevels([planet], 24300, 8);

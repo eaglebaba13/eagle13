@@ -58,13 +58,10 @@ export function absoluteIntradayValidationSignal(
       }
     }
     if (best) {
-      direction = best.cube.action === "BUY" || best.cube.action === "SELL"
-        ? best.cube.action
-        : "WAIT";
+      direction =
+        best.cube.action === "BUY" || best.cube.action === "SELL" ? best.cube.action : "WAIT";
       grade = best.cube.cubeGrade;
-      const alignedRatio =
-        best.cube.conditionsAligned /
-        Math.max(1, best.cube.conditionsAvailable);
+      const alignedRatio = best.cube.conditionsAligned / Math.max(1, best.cube.conditionsAvailable);
       confidence = Math.min(1, Math.max(0, alignedRatio));
       reasons.push(...best.cube.reasons);
     } else {

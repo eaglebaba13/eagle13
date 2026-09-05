@@ -16,11 +16,7 @@ export interface OptionChainRequest {
 }
 
 export type OptionChainProviderStatus =
-  | "LIVE"
-  | "DELAYED"
-  | "STALE"
-  | "AUTH_REQUIRED"
-  | "UNAVAILABLE";
+  "LIVE" | "DELAYED" | "STALE" | "AUTH_REQUIRED" | "UNAVAILABLE";
 
 export interface OptionChainProviderMeta {
   readonly providerId: string;

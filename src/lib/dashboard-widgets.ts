@@ -9,13 +9,7 @@
 // separately via the `dataDependency` field.
 
 export type WidgetSection =
-  | "SUMMARY"
-  | "SIGNAL"
-  | "DECISION"
-  | "RISK"
-  | "OPTIONS"
-  | "OBSERVATION"
-  | "META";
+  "SUMMARY" | "SIGNAL" | "DECISION" | "RISK" | "OPTIONS" | "OBSERVATION" | "META";
 
 export type PlanTier = "free" | "pro" | "professional" | "elite" | "admin";
 
@@ -96,7 +90,9 @@ const legacyVixLoader = () =>
 const legacySignalLoader = () =>
   import("@/components/dashboard/widgets/SignalWidget").then((m) => ({ default: m.default }));
 const legacyGlobalMarketsLoader = () =>
-  import("@/components/dashboard/widgets/GlobalMarketsWidget").then((m) => ({ default: m.default }));
+  import("@/components/dashboard/widgets/GlobalMarketsWidget").then((m) => ({
+    default: m.default,
+  }));
 const legacyCprLoader = () =>
   import("@/components/dashboard/widgets/CprWidget").then((m) => ({ default: m.default }));
 const legacySafeZonesLoader = () =>
@@ -108,17 +104,25 @@ const legacyPivotLoader = () =>
 const legacyGannCycleLoader = () =>
   import("@/components/dashboard/widgets/GannCycleWidget").then((m) => ({ default: m.default }));
 const legacyInstitutionalFlowLoader = () =>
-  import("@/components/dashboard/widgets/InstitutionalFlowWidget").then((m) => ({ default: m.default }));
+  import("@/components/dashboard/widgets/InstitutionalFlowWidget").then((m) => ({
+    default: m.default,
+  }));
 
 // Phase 3F.1 · Crypto dashboard widgets (share one query cache).
 const cryptoMarketLoader = () =>
   import("@/components/dashboard/widgets/CryptoMarketWidget").then((m) => ({ default: m.default }));
 const cryptoHeatmapLoader = () =>
-  import("@/components/dashboard/widgets/CryptoHeatmapWidget").then((m) => ({ default: m.default }));
+  import("@/components/dashboard/widgets/CryptoHeatmapWidget").then((m) => ({
+    default: m.default,
+  }));
 const cryptoWatchlistLoader = () =>
-  import("@/components/dashboard/widgets/CryptoWatchlistWidget").then((m) => ({ default: m.default }));
+  import("@/components/dashboard/widgets/CryptoWatchlistWidget").then((m) => ({
+    default: m.default,
+  }));
 const cryptoSummaryLoader = () =>
-  import("@/components/dashboard/widgets/CryptoSummaryWidget").then((m) => ({ default: m.default }));
+  import("@/components/dashboard/widgets/CryptoSummaryWidget").then((m) => ({
+    default: m.default,
+  }));
 
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
@@ -756,7 +760,9 @@ export function auditWidgetRegistry(
     depCounts.set(w.dataDependency, (depCounts.get(w.dataDependency) ?? 0) + 1);
   }
 
-  const allDeps: WidgetDataDependency[] = Object.keys(DATA_DEPENDENCY_QUERY_KEY) as WidgetDataDependency[];
+  const allDeps: WidgetDataDependency[] = Object.keys(
+    DATA_DEPENDENCY_QUERY_KEY,
+  ) as WidgetDataDependency[];
   const unconsumed = allDeps.filter((d) => !depCounts.has(d));
   const duplicated = [...depCounts.entries()].filter(([, n]) => n > 1).map(([d]) => d);
 

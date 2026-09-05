@@ -9,19 +9,39 @@ describe("decision capability", () => {
 
   it("all failure capabilities are not live", () => {
     const failures: ModuleCapability[] = [
-      "UNSUPPORTED", "AUTH_REQUIRED", "NO_DATA", "INVALID_RESPONSE",
-      "STALE", "DATA_QUALITY_FAILURE", "INVALID_EXPIRY", "NO_STRIKES", "PARTIAL_CHAIN",
+      "UNSUPPORTED",
+      "AUTH_REQUIRED",
+      "NO_DATA",
+      "INVALID_RESPONSE",
+      "STALE",
+      "DATA_QUALITY_FAILURE",
+      "INVALID_EXPIRY",
+      "NO_STRIKES",
+      "PARTIAL_CHAIN",
     ];
     for (const f of failures) expect(isCapabilityLive(f)).toBe(false);
   });
 
   it("explainCapability returns non-empty reason + suggestion for every state", () => {
     const all: ModuleCapability[] = [
-      "SUPPORTED","PARTIAL","UNSUPPORTED","AUTH_REQUIRED","NO_DATA","INVALID_RESPONSE",
-      "STALE","DATA_QUALITY_FAILURE","INVALID_EXPIRY","NO_STRIKES","PARTIAL_CHAIN",
+      "SUPPORTED",
+      "PARTIAL",
+      "UNSUPPORTED",
+      "AUTH_REQUIRED",
+      "NO_DATA",
+      "INVALID_RESPONSE",
+      "STALE",
+      "DATA_QUALITY_FAILURE",
+      "INVALID_EXPIRY",
+      "NO_STRIKES",
+      "PARTIAL_CHAIN",
     ];
     for (const c of all) {
-      const ex = explainCapability(c, { module: "options", stage: "provider-fetch", provider: "UPSTOX" });
+      const ex = explainCapability(c, {
+        module: "options",
+        stage: "provider-fetch",
+        provider: "UPSTOX",
+      });
       expect(ex.capability).toBe(c);
       expect(ex.reason.length).toBeGreaterThan(5);
       expect(ex.suggestion.length).toBeGreaterThan(5);

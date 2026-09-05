@@ -98,34 +98,48 @@ describe("Phase 24B · dashboard widget registry", () => {
 
   it("required widgets cannot be hidden through preferences", () => {
     const required = requiredWidgetIds();
-    const visible = applyPreferences(DASHBOARD_WIDGETS, {
-      hidden: [...required, "signal"],
-      collapsed: [],
-      desktopOrder: [],
-      mobileOrder: [],
-    }, "desktop").map((w) => w.id);
+    const visible = applyPreferences(
+      DASHBOARD_WIDGETS,
+      {
+        hidden: [...required, "signal"],
+        collapsed: [],
+        desktopOrder: [],
+        mobileOrder: [],
+      },
+      "desktop",
+    ).map((w) => w.id);
     for (const id of required) expect(visible).toContain(id);
     expect(visible).not.toContain("signal");
   });
 
   it("reset layout returns registry order", () => {
-    const reset = applyPreferences(DASHBOARD_WIDGETS, {
-      hidden: [],
-      collapsed: [],
-      desktopOrder: [],
-      mobileOrder: [],
-    }, "desktop").map((w) => w.id);
-    const orderCanon = [...DASHBOARD_WIDGETS].sort((a, b) => a.desktopOrder - b.desktopOrder).map((w) => w.id);
+    const reset = applyPreferences(
+      DASHBOARD_WIDGETS,
+      {
+        hidden: [],
+        collapsed: [],
+        desktopOrder: [],
+        mobileOrder: [],
+      },
+      "desktop",
+    ).map((w) => w.id);
+    const orderCanon = [...DASHBOARD_WIDGETS]
+      .sort((a, b) => a.desktopOrder - b.desktopOrder)
+      .map((w) => w.id);
     expect(reset).toEqual(orderCanon);
   });
 
   it("custom desktop order is respected", () => {
-    const custom = applyPreferences(DASHBOARD_WIDGETS, {
-      hidden: [],
-      collapsed: [],
-      desktopOrder: ["astro-levels", "gold-silver-ratio"],
-      mobileOrder: [],
-    }, "desktop").map((w) => w.id);
+    const custom = applyPreferences(
+      DASHBOARD_WIDGETS,
+      {
+        hidden: [],
+        collapsed: [],
+        desktopOrder: ["astro-levels", "gold-silver-ratio"],
+        mobileOrder: [],
+      },
+      "desktop",
+    ).map((w) => w.id);
     expect(custom[0]).toBe("astro-levels");
     expect(custom[1]).toBe("gold-silver-ratio");
   });
@@ -153,10 +167,7 @@ describe("Phase 24B · dashboard widget registry", () => {
   });
 
   it("registry audit detects duplicate IDs", () => {
-    const audit = auditWidgetRegistry([
-      DASHBOARD_WIDGETS[0],
-      { ...DASHBOARD_WIDGETS[0] },
-    ]);
+    const audit = auditWidgetRegistry([DASHBOARD_WIDGETS[0], { ...DASHBOARD_WIDGETS[0] }]);
     expect(audit.duplicateIds).toContain(DASHBOARD_WIDGETS[0].id);
   });
 

@@ -1,9 +1,6 @@
 // Phase 3E — Dataset construction and hashing.
 
-import type {
-  HistoricalDataset,
-  HistoricalRow,
-} from "./types";
+import type { HistoricalDataset, HistoricalRow } from "./types";
 
 /** Deterministic FNV-1a 64-bit hash (BigInt) rendered as hex. */
 export function hashRows(rows: readonly HistoricalRow[]): string {

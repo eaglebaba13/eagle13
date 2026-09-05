@@ -168,7 +168,9 @@ function Row({
   const when = new Date(row.created_at).toLocaleString();
   const unread = !row.read_at;
   return (
-    <li className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 sm:px-6 ${unread ? "bg-muted/20" : ""}`}>
+    <li
+      className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 py-3 sm:px-6 ${unread ? "bg-muted/20" : ""}`}
+    >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded border px-1.5 py-[1px] text-[10px] font-medium ${tone}`}>
@@ -185,7 +187,12 @@ function Row({
           ) : (
             <span className="truncate text-sm font-medium text-foreground">{row.title}</span>
           )}
-          {unread ? <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-label="Unread" /> : null}
+          {unread ? (
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
+              aria-label="Unread"
+            />
+          ) : null}
         </div>
         {row.body ? (
           <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{row.body}</p>

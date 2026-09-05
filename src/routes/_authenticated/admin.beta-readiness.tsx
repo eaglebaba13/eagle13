@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_authenticated/admin/beta-readiness")({
   head: () => ({
     meta: [
       { title: "Beta Readiness — EagleBABA" },
-      { name: "description", content: "Admin-only Phase 33 beta readiness certification & go-live checklist." },
+      {
+        name: "description",
+        content: "Admin-only Phase 33 beta readiness certification & go-live checklist.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -50,7 +53,7 @@ function AdminBetaReadinessPage() {
     );
   }
 
-  const byCat = new Map<ChecklistCategory, typeof report.items[number][]>();
+  const byCat = new Map<ChecklistCategory, (typeof report.items)[number][]>();
   for (const item of report.items) {
     const list = byCat.get(item.category) ?? [];
     list.push(item);
@@ -67,15 +70,13 @@ function AdminBetaReadinessPage() {
           </p>
         </header>
         {runtime && (
-          <RuntimeReadinessSummary
-            report={runtime}
-            title="Canonical Runtime Readiness"
-            compact
-          />
+          <RuntimeReadinessSummary report={runtime} title="Canonical Runtime Readiness" compact />
         )}
 
         <div className="grid gap-4 md:grid-cols-3">
-          <div className={`rounded-xl border p-4 ${VERDICT_STYLES[report.verdict] ?? "border-border bg-muted/20"}`}>
+          <div
+            className={`rounded-xl border p-4 ${VERDICT_STYLES[report.verdict] ?? "border-border bg-muted/20"}`}
+          >
             <p className="text-xs uppercase tracking-wide opacity-80">Final verdict</p>
             <p className="mt-1 text-lg font-semibold">{report.verdict.replace(/_/g, " ")}</p>
             <p className="mt-2 text-xs opacity-70">Manual sign-off required for production.</p>
@@ -84,7 +85,8 @@ function AdminBetaReadinessPage() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Score</p>
             <p className="mt-1 text-3xl font-bold text-foreground">{report.score}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              ✓ {report.counts.pass} · ⚠ {report.counts.partial} · ✗ {report.counts.fail} / {report.counts.total}
+              ✓ {report.counts.pass} · ⚠ {report.counts.partial} · ✗ {report.counts.fail} /{" "}
+              {report.counts.total}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-muted/10 p-4">
@@ -100,7 +102,9 @@ function AdminBetaReadinessPage() {
           <section className="rounded-xl border border-red-500/40 bg-red-500/[0.05] p-4">
             <h2 className="text-sm font-semibold text-red-300">Blockers</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-200/90">
-              {report.blockers.map((b) => <li key={b}>{b}</li>)}
+              {report.blockers.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
             </ul>
           </section>
         )}
@@ -118,12 +122,17 @@ function AdminBetaReadinessPage() {
               </div>
               <ul className="divide-y divide-border/40">
                 {items.map((i) => (
-                  <li key={i.id} className="flex items-start justify-between gap-4 px-4 py-2 text-sm">
+                  <li
+                    key={i.id}
+                    className="flex items-start justify-between gap-4 px-4 py-2 text-sm"
+                  >
                     <div>
                       <p className="text-foreground">{i.title}</p>
                       {i.detail && <p className="text-xs text-muted-foreground">{i.detail}</p>}
                     </div>
-                    <span className={`text-xs font-semibold ${STATUS_STYLES[i.status]}`}>{i.status}</span>
+                    <span className={`text-xs font-semibold ${STATUS_STYLES[i.status]}`}>
+                      {i.status}
+                    </span>
                   </li>
                 ))}
               </ul>

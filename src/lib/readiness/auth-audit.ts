@@ -31,11 +31,15 @@ export function auditAuth(input: AuthAuditInput): ReadinessResult[] {
         detail: bad
           ? `Protected route ${r.path} has no auth guard.`
           : !r.serverAuthorized
-          ? "Route is guarded but server does not re-authorize."
-          : undefined,
+            ? "Route is guarded but server does not re-authorize."
+            : undefined,
       });
     }
-    if (r.access === "dev" && input.environment === "production" && !input.diagnosticsOverrideEnabled) {
+    if (
+      r.access === "dev" &&
+      input.environment === "production" &&
+      !input.diagnosticsOverrideEnabled
+    ) {
       out.push({
         id: `auth.dev-route${r.path}`,
         category: "SECURITY",
@@ -67,8 +71,8 @@ export function auditAuth(input: AuthAuditInput): ReadinessResult[] {
       input.sessionExpiryMinutes == null
         ? "UNKNOWN"
         : input.sessionExpiryMinutes > 0 && input.sessionExpiryMinutes <= 60 * 24 * 30
-        ? "PASS"
-        : "WARNING",
+          ? "PASS"
+          : "WARNING",
     severity: "info",
     evidence: [{ key: "expiryMinutes", value: input.sessionExpiryMinutes ?? "unknown" }],
   });

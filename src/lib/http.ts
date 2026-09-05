@@ -2,11 +2,7 @@
 // Adds request timeouts and bounded retries with backoff so transient
 // upstream failures (rate limits, network blips) don't crash the app.
 import { recordApiRequest } from "./diagnostics";
-import {
-  categorizeFetchFailure,
-  categorizeHttpStatus,
-  makeProviderError,
-} from "./provider-errors";
+import { categorizeFetchFailure, categorizeHttpStatus, makeProviderError } from "./provider-errors";
 
 const DEFAULT_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
@@ -35,10 +31,7 @@ function backoff(base: number, attempt: number, exponential: boolean): number {
  * Retries on network errors, timeouts, and 429/5xx responses.
  * Throws a descriptive Error only after all attempts are exhausted.
  */
-export async function fetchWithRetry(
-  url: string,
-  opts: FetchOptions = {},
-): Promise<Response> {
+export async function fetchWithRetry(url: string, opts: FetchOptions = {}): Promise<Response> {
   const {
     timeoutMs = 8000,
     retries = 2,
@@ -109,9 +102,7 @@ export async function fetchWithRetry(
   throw makeProviderError({
     message: `Request failed for ${safeHost(url)}: ${reason}`,
     category:
-      finalStatus != null
-        ? categorizeHttpStatus(finalStatus)
-        : categorizeFetchFailure(lastError),
+      finalStatus != null ? categorizeHttpStatus(finalStatus) : categorizeFetchFailure(lastError),
     url,
     httpStatus: finalStatus,
     latencyMs: Date.now() - startAll,
@@ -121,10 +112,7 @@ export async function fetchWithRetry(
 }
 
 /** Fetch and parse JSON with retry/timeout. Throws on non-OK or invalid JSON. */
-export async function fetchJson<T = unknown>(
-  url: string,
-  opts?: FetchOptions,
-): Promise<T> {
+export async function fetchJson<T = unknown>(url: string, opts?: FetchOptions): Promise<T> {
   const startedAt = Date.now();
   const res = await fetchWithRetry(url, opts);
   if (!res.ok) {
@@ -154,10 +142,7 @@ export async function fetchJson<T = unknown>(
 }
 
 /** Fetch text with retry/timeout. Returns null instead of throwing on failure. */
-export async function fetchTextSafe(
-  url: string,
-  opts?: FetchOptions,
-): Promise<string | null> {
+export async function fetchTextSafe(url: string, opts?: FetchOptions): Promise<string | null> {
   try {
     const res = await fetchWithRetry(url, { accept: "text/xml, */*", ...opts });
     if (!res.ok) return null;

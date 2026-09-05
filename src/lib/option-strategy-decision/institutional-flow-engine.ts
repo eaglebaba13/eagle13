@@ -9,19 +9,10 @@ export type PcrIndex = "NIFTY" | "BANKNIFTY" | "SENSEX";
 export type VwapPosition = "ABOVE_VWAP" | "BELOW_VWAP" | "NEAR_VWAP" | "UNAVAILABLE";
 
 export type PricePosition =
-  | "NEAR_SUPPORT"
-  | "NEAR_RESISTANCE"
-  | "INSIDE_RANGE"
-  | "BREAKOUT"
-  | "BREAKDOWN"
-  | "UNAVAILABLE";
+  "NEAR_SUPPORT" | "NEAR_RESISTANCE" | "INSIDE_RANGE" | "BREAKOUT" | "BREAKDOWN" | "UNAVAILABLE";
 
 export type OiClassification =
-  | "LONG_BUILDUP"
-  | "SHORT_BUILDUP"
-  | "LONG_UNWINDING"
-  | "SHORT_COVERING"
-  | "UNAVAILABLE";
+  "LONG_BUILDUP" | "SHORT_BUILDUP" | "LONG_UNWINDING" | "SHORT_COVERING" | "UNAVAILABLE";
 
 export type MarketRegime =
   | "TRENDING_BULL"
@@ -238,8 +229,7 @@ function buildCombinedPcrPanel(inp: InstitutionalFlowEngineInput): CombinedPcrPa
     index: l.index,
     pcr: l.pcr,
     weight: l.weight,
-    contributionPct:
-      l.available && totalWeight > 0 ? round((l.weight / totalWeight) * 100, 0) : 0,
+    contributionPct: l.available && totalWeight > 0 ? round((l.weight / totalWeight) * 100, 0) : 0,
     available: l.available,
   }));
   return {
@@ -257,11 +247,15 @@ function buildOiPanel(inp: InstitutionalFlowEngineInput): OiBuildUpPanel {
   const priceChange = inp.oi.priceChange;
 
   let classification: OiClassification = "UNAVAILABLE";
-  if (build === "LONG_BUILDUP" || build === "SHORT_BUILDUP" ||
-      build === "LONG_UNWINDING" || build === "SHORT_COVERING") {
+  if (
+    build === "LONG_BUILDUP" ||
+    build === "SHORT_BUILDUP" ||
+    build === "LONG_UNWINDING" ||
+    build === "SHORT_COVERING"
+  ) {
     classification = build as OiClassification;
   } else if (priceChange != null && call != null && put != null) {
-    const oiUp = (put + call) > 0;
+    const oiUp = put + call > 0;
     if (priceChange > 0 && oiUp) classification = "LONG_BUILDUP";
     else if (priceChange < 0 && oiUp) classification = "SHORT_BUILDUP";
     else if (priceChange < 0 && !oiUp) classification = "LONG_UNWINDING";
@@ -272,13 +266,21 @@ function buildOiPanel(inp: InstitutionalFlowEngineInput): OiBuildUpPanel {
   let note = "OI data unavailable";
   switch (classification) {
     case "LONG_BUILDUP":
-      bias = "BULLISH"; note = "Long build-up — price up on rising OI"; break;
+      bias = "BULLISH";
+      note = "Long build-up — price up on rising OI";
+      break;
     case "SHORT_COVERING":
-      bias = "BULLISH"; note = "Short covering — price up on falling OI"; break;
+      bias = "BULLISH";
+      note = "Short covering — price up on falling OI";
+      break;
     case "SHORT_BUILDUP":
-      bias = "BEARISH"; note = "Short build-up — price down on rising OI"; break;
+      bias = "BEARISH";
+      note = "Short build-up — price down on rising OI";
+      break;
     case "LONG_UNWINDING":
-      bias = "BEARISH"; note = "Long unwinding — price down on falling OI"; break;
+      bias = "BEARISH";
+      note = "Long unwinding — price down on falling OI";
+      break;
     default:
       bias = "UNAVAILABLE";
   }
@@ -334,7 +336,8 @@ function buildPricePanel(inp: InstitutionalFlowEngineInput): PriceConfirmationPa
   if (spot > resistance) {
     return {
       position: "BREAKOUT",
-      support, resistance,
+      support,
+      resistance,
       note: `Spot ${spot} above call wall ${resistance}`,
       available: true,
     };
@@ -342,7 +345,8 @@ function buildPricePanel(inp: InstitutionalFlowEngineInput): PriceConfirmationPa
   if (spot < support) {
     return {
       position: "BREAKDOWN",
-      support, resistance,
+      support,
+      resistance,
       note: `Spot ${spot} below put wall ${support}`,
       available: true,
     };
@@ -350,7 +354,8 @@ function buildPricePanel(inp: InstitutionalFlowEngineInput): PriceConfirmationPa
   if (Math.abs(spot - resistance) <= near) {
     return {
       position: "NEAR_RESISTANCE",
-      support, resistance,
+      support,
+      resistance,
       note: `Spot ${spot} near call wall ${resistance}`,
       available: true,
     };
@@ -358,43 +363,53 @@ function buildPricePanel(inp: InstitutionalFlowEngineInput): PriceConfirmationPa
   if (Math.abs(spot - support) <= near) {
     return {
       position: "NEAR_SUPPORT",
-      support, resistance,
+      support,
+      resistance,
       note: `Spot ${spot} near put wall ${support}`,
       available: true,
     };
   }
   return {
     position: "INSIDE_RANGE",
-    support, resistance,
-    note: maxPain != null
-      ? `Inside ${support}–${resistance} range · Max Pain ${maxPain}`
-      : `Inside ${support}–${resistance} range`,
+    support,
+    resistance,
+    note:
+      maxPain != null
+        ? `Inside ${support}–${resistance} range · Max Pain ${maxPain}`
+        : `Inside ${support}–${resistance} range`,
     available: true,
   };
 }
 
-interface Participant { key: string; label: string; bias: IndicatorBias; }
+interface Participant {
+  key: string;
+  label: string;
+  bias: IndicatorBias;
+}
 
-function participants(inp: InstitutionalFlowEngineInput, extra: {
-  vwap: VwapPanel;
-  oi: OiBuildUpPanel;
-  price: PriceConfirmationPanel;
-}): Participant[] {
+function participants(
+  inp: InstitutionalFlowEngineInput,
+  extra: {
+    vwap: VwapPanel;
+    oi: OiBuildUpPanel;
+    price: PriceConfirmationPanel;
+  },
+): Participant[] {
   const priceBias: IndicatorBias =
     extra.price.position === "BREAKOUT" || extra.price.position === "NEAR_SUPPORT"
       ? "BULLISH"
       : extra.price.position === "BREAKDOWN" || extra.price.position === "NEAR_RESISTANCE"
-      ? "BEARISH"
-      : extra.price.position === "INSIDE_RANGE"
-      ? "NEUTRAL"
-      : "UNAVAILABLE";
+        ? "BEARISH"
+        : extra.price.position === "INSIDE_RANGE"
+          ? "NEUTRAL"
+          : "UNAVAILABLE";
   const maxPainBias: IndicatorBias =
     inp.maxPain != null && inp.spot != null
       ? Math.abs(inp.spot - inp.maxPain) / inp.maxPain < 0.003
         ? "NEUTRAL"
         : inp.spot < inp.maxPain
-        ? "BULLISH"
-        : "BEARISH"
+          ? "BULLISH"
+          : "BEARISH"
       : "UNAVAILABLE";
   const sectorBias: IndicatorBias = (() => {
     const known = inp.sectors.filter((s) => s.bias !== "UNAVAILABLE");
@@ -405,19 +420,23 @@ function participants(inp: InstitutionalFlowEngineInput, extra: {
     return "NEUTRAL";
   })();
   const vixBias: IndicatorBias =
-    inp.vix == null ? "UNAVAILABLE"
-    : inp.vix < 15 ? "BULLISH"
-    : inp.vix > 25 ? "BEARISH"
-    : "NEUTRAL";
+    inp.vix == null
+      ? "UNAVAILABLE"
+      : inp.vix < 15
+        ? "BULLISH"
+        : inp.vix > 25
+          ? "BEARISH"
+          : "NEUTRAL";
   return [
     { key: "pcr", label: "Combined PCR", bias: inp.combinedPcrBias },
     { key: "sector", label: "Sector Heat", bias: sectorBias },
     { key: "breadth", label: "Market Breadth", bias: biasFromScore(inp.breadthNet) },
     { key: "oi", label: "OI Structure", bias: extra.oi.bias },
-    { key: "vwap", label: "VWAP",
-      bias: extra.vwap.available
-        ? biasFromScore(extra.vwap.scoreContribution)
-        : "UNAVAILABLE" },
+    {
+      key: "vwap",
+      label: "VWAP",
+      bias: extra.vwap.available ? biasFromScore(extra.vwap.scoreContribution) : "UNAVAILABLE",
+    },
     { key: "price", label: "Price Confirmation", bias: priceBias },
     { key: "maxPain", label: "Max Pain Magnet", bias: maxPainBias },
     { key: "vix", label: "India VIX", bias: vixBias },
@@ -448,65 +467,117 @@ function buildAgreementPanel(parts: readonly Participant[]): SignalAgreementPane
   };
 }
 
-function buildReadinessPanel(inp: InstitutionalFlowEngineInput, parts: {
-  combined: CombinedPcrPanel;
-  oi: OiBuildUpPanel;
-  vwap: VwapPanel;
-  price: PriceConfirmationPanel;
-  sectors: IndicatorBias;
-  breadth: IndicatorBias;
-}): TradeReadinessPanel {
+function buildReadinessPanel(
+  inp: InstitutionalFlowEngineInput,
+  parts: {
+    combined: CombinedPcrPanel;
+    oi: OiBuildUpPanel;
+    vwap: VwapPanel;
+    price: PriceConfirmationPanel;
+    sectors: IndicatorBias;
+    breadth: IndicatorBias;
+  },
+): TradeReadinessPanel {
   const items: TradeReadinessItem[] = [];
   const push = (key: string, label: string, status: CheckStatus, detail: string) =>
     items.push({ key, label, status, detail });
 
-  push("pcr", "Combined PCR",
-    parts.combined.available ? (parts.combined.bias !== "NEUTRAL" ? "PASS" : "FAIL") : "UNAVAILABLE",
-    parts.combined.value != null ? String(parts.combined.value.toFixed(2)) : "—");
-  push("sector", "Sector Heat",
-    parts.sectors === "UNAVAILABLE" ? "UNAVAILABLE" : (parts.sectors !== "NEUTRAL" ? "PASS" : "FAIL"),
-    parts.sectors);
-  push("breadth", "Advance/Decline",
-    parts.breadth === "UNAVAILABLE" ? "UNAVAILABLE" : (parts.breadth !== "NEUTRAL" ? "PASS" : "FAIL"),
-    inp.breadthNet != null ? `${round(inp.breadthNet * 100)}%` : "—");
-  push("oi", "OI Structure",
-    parts.oi.available ? (parts.oi.bias !== "NEUTRAL" ? "PASS" : "FAIL") : "UNAVAILABLE",
-    parts.oi.classification);
-  push("vwap", "VWAP",
-    parts.vwap.available ? (parts.vwap.position !== "NEAR_VWAP" ? "PASS" : "FAIL") : "UNAVAILABLE",
-    parts.vwap.position);
-  push("vix", "India VIX",
-    inp.vix == null ? "UNAVAILABLE" : (inp.vix <= 25 ? "PASS" : "FAIL"),
-    inp.vix != null ? inp.vix.toFixed(2) : "—");
-  push("support", "Support",
-    inp.highestPutOiStrike != null ? "PASS" : "UNAVAILABLE",
-    inp.highestPutOiStrike != null ? String(inp.highestPutOiStrike) : "—");
-  push("resistance", "Resistance",
-    inp.highestCallOiStrike != null ? "PASS" : "UNAVAILABLE",
-    inp.highestCallOiStrike != null ? String(inp.highestCallOiStrike) : "—");
-  push("maxPain", "Max Pain",
-    inp.maxPain != null ? "PASS" : "UNAVAILABLE",
-    inp.maxPain != null ? String(inp.maxPain) : "—");
-  push("flow", "Institutional Flow",
-    inp.institutionalFlowAvailable
-      ? (inp.institutionalFlowBias !== "NEUTRAL" ? "PASS" : "FAIL")
+  push(
+    "pcr",
+    "Combined PCR",
+    parts.combined.available
+      ? parts.combined.bias !== "NEUTRAL"
+        ? "PASS"
+        : "FAIL"
       : "UNAVAILABLE",
-    inp.institutionalFlowBias);
-  push("price", "Price Confirmation",
-    parts.price.available ? (parts.price.position !== "INSIDE_RANGE" ? "PASS" : "FAIL") : "UNAVAILABLE",
-    parts.price.position);
-  push("strike", "Strike Recommendation",
+    parts.combined.value != null ? String(parts.combined.value.toFixed(2)) : "—",
+  );
+  push(
+    "sector",
+    "Sector Heat",
+    parts.sectors === "UNAVAILABLE" ? "UNAVAILABLE" : parts.sectors !== "NEUTRAL" ? "PASS" : "FAIL",
+    parts.sectors,
+  );
+  push(
+    "breadth",
+    "Advance/Decline",
+    parts.breadth === "UNAVAILABLE" ? "UNAVAILABLE" : parts.breadth !== "NEUTRAL" ? "PASS" : "FAIL",
+    inp.breadthNet != null ? `${round(inp.breadthNet * 100)}%` : "—",
+  );
+  push(
+    "oi",
+    "OI Structure",
+    parts.oi.available ? (parts.oi.bias !== "NEUTRAL" ? "PASS" : "FAIL") : "UNAVAILABLE",
+    parts.oi.classification,
+  );
+  push(
+    "vwap",
+    "VWAP",
+    parts.vwap.available ? (parts.vwap.position !== "NEAR_VWAP" ? "PASS" : "FAIL") : "UNAVAILABLE",
+    parts.vwap.position,
+  );
+  push(
+    "vix",
+    "India VIX",
+    inp.vix == null ? "UNAVAILABLE" : inp.vix <= 25 ? "PASS" : "FAIL",
+    inp.vix != null ? inp.vix.toFixed(2) : "—",
+  );
+  push(
+    "support",
+    "Support",
+    inp.highestPutOiStrike != null ? "PASS" : "UNAVAILABLE",
+    inp.highestPutOiStrike != null ? String(inp.highestPutOiStrike) : "—",
+  );
+  push(
+    "resistance",
+    "Resistance",
+    inp.highestCallOiStrike != null ? "PASS" : "UNAVAILABLE",
+    inp.highestCallOiStrike != null ? String(inp.highestCallOiStrike) : "—",
+  );
+  push(
+    "maxPain",
+    "Max Pain",
+    inp.maxPain != null ? "PASS" : "UNAVAILABLE",
+    inp.maxPain != null ? String(inp.maxPain) : "—",
+  );
+  push(
+    "flow",
+    "Institutional Flow",
+    inp.institutionalFlowAvailable
+      ? inp.institutionalFlowBias !== "NEUTRAL"
+        ? "PASS"
+        : "FAIL"
+      : "UNAVAILABLE",
+    inp.institutionalFlowBias,
+  );
+  push(
+    "price",
+    "Price Confirmation",
+    parts.price.available
+      ? parts.price.position !== "INSIDE_RANGE"
+        ? "PASS"
+        : "FAIL"
+      : "UNAVAILABLE",
+    parts.price.position,
+  );
+  push(
+    "strike",
+    "Strike Recommendation",
     inp.strikeRecommended.available ? "PASS" : "UNAVAILABLE",
     inp.strikeRecommended.strike != null
       ? `${inp.strikeRecommended.strike} ${inp.strikeRecommended.type ?? ""}`
-      : "—");
+      : "—",
+  );
 
   const passed = items.filter((i) => i.status === "PASS").length;
   const unavailable = items.filter((i) => i.status === "UNAVAILABLE").length;
   return { items, passed, total: items.length, unavailable };
 }
 
-function buildFlowSummary(inp: InstitutionalFlowEngineInput, oi: OiBuildUpPanel): InstitutionalFlowSummaryPanel {
+function buildFlowSummary(
+  inp: InstitutionalFlowEngineInput,
+  oi: OiBuildUpPanel,
+): InstitutionalFlowSummaryPanel {
   const call = inp.oi.totalCallChangeOi;
   const put = inp.oi.totalPutChangeOi;
   if (call == null || put == null) {
@@ -536,11 +607,7 @@ function buildFlowSummary(inp: InstitutionalFlowEngineInput, oi: OiBuildUpPanel)
   const selling = call > 0 ? (call / total) * 100 : 0;
   const neutral = clamp(100 - buying - selling, 0, 100);
   const bias: IndicatorBias =
-    Math.abs(buying - selling) < 5
-      ? "NEUTRAL"
-      : buying > selling
-      ? "BULLISH"
-      : "BEARISH";
+    Math.abs(buying - selling) < 5 ? "NEUTRAL" : buying > selling ? "BULLISH" : "BEARISH";
   return {
     buyingPressurePct: round(buying, 0),
     sellingPressurePct: round(selling, 0),
@@ -550,7 +617,10 @@ function buildFlowSummary(inp: InstitutionalFlowEngineInput, oi: OiBuildUpPanel)
   };
 }
 
-function buildRegime(inp: InstitutionalFlowEngineInput, agreement: SignalAgreementPanel): MarketRegime {
+function buildRegime(
+  inp: InstitutionalFlowEngineInput,
+  agreement: SignalAgreementPanel,
+): MarketRegime {
   const vix = inp.vix;
   if (vix != null && vix > 25) return "HIGH_VOLATILITY";
   if (vix != null && vix < 12) return "LOW_VOLATILITY";
@@ -566,7 +636,10 @@ function buildRegime(inp: InstitutionalFlowEngineInput, agreement: SignalAgreeme
   return "SIDEWAYS";
 }
 
-function buildDataQuality(inp: InstitutionalFlowEngineInput, missingCount: number): DataQualityPanel {
+function buildDataQuality(
+  inp: InstitutionalFlowEngineInput,
+  missingCount: number,
+): DataQualityPanel {
   const freshness = inp.dataFreshness;
   const providerHealth = inp.providerHealth;
   let calc: QualityGrade = "EXCELLENT";
@@ -595,18 +668,21 @@ function buildConfidence(
 ): ConfidencePanel {
   const known = agreement.agree + agreement.disagree + agreement.neutral;
   const agreementPct = known === 0 ? 0 : (agreement.agree / known) * 100;
-  const availPct = readiness.total === 0
-    ? 0
-    : ((readiness.total - readiness.unavailable) / readiness.total) * 100;
+  const availPct =
+    readiness.total === 0 ? 0 : ((readiness.total - readiness.unavailable) / readiness.total) * 100;
   const conflictPenalty = agreement.disagree * 4;
   const stabilityBonus =
-    quality.overall === "EXCELLENT" ? 5
-    : quality.overall === "GOOD" ? 2
-    : quality.overall === "WARNING" ? -3
-    : -10;
+    quality.overall === "EXCELLENT"
+      ? 5
+      : quality.overall === "GOOD"
+        ? 2
+        : quality.overall === "WARNING"
+          ? -3
+          : -10;
   const raw = clamp(
     agreementPct * 0.55 + availPct * 0.35 + stabilityBonus - conflictPenalty,
-    0, 100,
+    0,
+    100,
   );
   // Blend with the upstream decision engine confidence for stability.
   const value = clamp(round(raw * 0.7 + decisionConfidence * 0.3), 0, 100);
@@ -630,23 +706,35 @@ function buildStrikeAdvice(
   const rec = inp.strikeRecommended;
   if (!rec.available || rec.strike == null || rec.type == null) {
     return {
-      strike: null, optionType: null, moneyness: null,
+      strike: null,
+      optionType: null,
+      moneyness: null,
       reason: "No directional trade recommended",
       risk: inp.vixRegime === "HIGH" ? "VERY_HIGH" : inp.vixRegime,
       expectedEnvironment: inp.vixRegime === "LOW" ? "Calm, risk-on" : inp.vixRegime,
       available: false,
     };
   }
-  const dominant =
-    rec.type === "CE" ? "bullish confirmations" : "bearish confirmations";
-  const bulls = agreement.participants.filter((p) => p.bias === (rec.type === "CE" ? "BULLISH" : "BEARISH"));
-  const reason = `${agreement.level} ${dominant}: ${bulls.slice(0, 3).map((p) => p.label).join(", ") || "—"}`;
+  const dominant = rec.type === "CE" ? "bullish confirmations" : "bearish confirmations";
+  const bulls = agreement.participants.filter(
+    (p) => p.bias === (rec.type === "CE" ? "BULLISH" : "BEARISH"),
+  );
+  const reason = `${agreement.level} ${dominant}: ${
+    bulls
+      .slice(0, 3)
+      .map((p) => p.label)
+      .join(", ") || "—"
+  }`;
   const env =
-    inp.vixRegime === "LOW" ? "Low VIX — favour ATM buying"
-    : inp.vixRegime === "MEDIUM" ? "Medium VIX — 1-strike OTM"
-    : inp.vixRegime === "ELEVATED" ? "Elevated VIX — 2-strike OTM"
-    : inp.vixRegime === "HIGH" ? "High VIX — reduce size, ATM only"
-    : "Unknown VIX regime";
+    inp.vixRegime === "LOW"
+      ? "Low VIX — favour ATM buying"
+      : inp.vixRegime === "MEDIUM"
+        ? "Medium VIX — 1-strike OTM"
+        : inp.vixRegime === "ELEVATED"
+          ? "Elevated VIX — 2-strike OTM"
+          : inp.vixRegime === "HIGH"
+            ? "High VIX — reduce size, ATM only"
+            : "Unknown VIX regime";
   return {
     strike: rec.strike,
     optionType: rec.type,
@@ -663,9 +751,12 @@ function buildExplanation(
   agreement: SignalAgreementPanel,
   confidence: ConfidencePanel,
 ): ExplainablePanel {
-  const side = inp.decisionAction === "BUY_CALL" ? "BULLISH"
-    : inp.decisionAction === "BUY_PUT" ? "BEARISH"
-    : null;
+  const side =
+    inp.decisionAction === "BUY_CALL"
+      ? "BULLISH"
+      : inp.decisionAction === "BUY_PUT"
+        ? "BEARISH"
+        : null;
   const bullets: string[] = [];
   if (side) {
     for (const p of agreement.participants) {
@@ -697,7 +788,12 @@ export function computeInstitutionalFlow(
   const sectors = parts.find((p) => p.key === "sector")?.bias ?? "UNAVAILABLE";
   const breadth = parts.find((p) => p.key === "breadth")?.bias ?? "UNAVAILABLE";
   const readiness = buildReadinessPanel(inp, {
-    combined, oi, vwap, price, sectors, breadth,
+    combined,
+    oi,
+    vwap,
+    price,
+    sectors,
+    breadth,
   });
   const flowSummary = buildFlowSummary(inp, oi);
   const regime = buildRegime(inp, agreement);

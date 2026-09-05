@@ -172,10 +172,14 @@ function AdminPaymentsPage() {
         </header>
 
         {msg && (
-          <div className="rounded-md bg-emerald-500/10 text-emerald-300 text-xs px-3 py-2">{msg}</div>
+          <div className="rounded-md bg-emerald-500/10 text-emerald-300 text-xs px-3 py-2">
+            {msg}
+          </div>
         )}
         {err && (
-          <div className="rounded-md bg-red-500/10 text-red-300 text-xs px-3 py-2">Error: {err}</div>
+          <div className="rounded-md bg-red-500/10 text-red-300 text-xs px-3 py-2">
+            Error: {err}
+          </div>
         )}
 
         <div className="space-y-3">
@@ -201,11 +205,7 @@ function AdminPaymentsPage() {
                   )
                 }
                 onReject={(reason) =>
-                  doAction(
-                    r.id,
-                    () => reject({ data: { id: r.id, reason } }),
-                    "Rejected.",
-                  )
+                  doAction(r.id, () => reject({ data: { id: r.id, reason } }), "Rejected.")
                 }
                 onOpenProof={() => openProof(r.screenshotUrl)}
               />
@@ -283,11 +283,11 @@ function AdminRow({ r, dup, busy, onReview, onApprove, onReject, onOpenProof }: 
           </span>
           <span>App: {r.paymentApp ?? "—"}</span>
           <span>Submitted: {r.submittedAt ? new Date(r.submittedAt).toLocaleString() : "—"}</span>
-          <span>Payment date: {r.paymentDate ? new Date(r.paymentDate).toLocaleString() : "—"}</span>
+          <span>
+            Payment date: {r.paymentDate ? new Date(r.paymentDate).toLocaleString() : "—"}
+          </span>
         </div>
-        {r.userNote && (
-          <p className="mt-2 text-xs text-muted-foreground">Note: {r.userNote}</p>
-        )}
+        {r.userNote && <p className="mt-2 text-xs text-muted-foreground">Note: {r.userNote}</p>}
         {r.screenshotUrl && (
           <button
             type="button"

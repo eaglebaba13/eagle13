@@ -81,7 +81,8 @@ function paramsEqual(
   if (!a || !b) return false;
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const k of keys) {
-    const va = a[k]; const vb = b[k];
+    const va = a[k];
+    const vb = b[k];
     if (va === undefined || vb === undefined) return false;
     if (Math.abs(va - vb) > 1e-6) return false;
   }

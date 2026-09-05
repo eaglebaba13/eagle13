@@ -16,10 +16,16 @@ function buildDailyPnl(asset: PortfolioAsset): Series {
 function pearson(xs: readonly number[], ys: readonly number[]): number {
   const n = xs.length;
   if (n < 2) return 0;
-  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  let sx = 0,
+    sy = 0,
+    sxx = 0,
+    syy = 0,
+    sxy = 0;
   for (let i = 0; i < n; i++) {
-    sx += xs[i]; sy += ys[i];
-    sxx += xs[i] * xs[i]; syy += ys[i] * ys[i];
+    sx += xs[i];
+    sy += ys[i];
+    sxx += xs[i] * xs[i];
+    syy += ys[i] * ys[i];
     sxy += xs[i] * ys[i];
   }
   const num = n * sxy - sx * sy;
@@ -55,7 +61,8 @@ export function computeCorrelations(assets: readonly PortfolioAsset[]): Correlat
 
   // running drawdown per asset
   const ddSeries: number[][] = pnl.map((row) => {
-    let peak = 0, eq = 0;
+    let peak = 0,
+      eq = 0;
     return row.map((v) => {
       eq += v;
       peak = Math.max(peak, eq);
@@ -76,7 +83,8 @@ export function computeCorrelations(assets: readonly PortfolioAsset[]): Correlat
   // simultaneous loss rate across observations
   let simDays = 0;
   for (let d = 0; d < dates.length; d++) {
-    let anyLoss = false, allLoss = n > 0;
+    let anyLoss = false,
+      allLoss = n > 0;
     for (let i = 0; i < n; i++) {
       if (pnl[i][d] < 0) anyLoss = true;
       else allLoss = false;

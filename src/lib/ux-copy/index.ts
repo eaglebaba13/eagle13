@@ -28,27 +28,104 @@ export function humaniseStatus(state: UxState, providerName?: string): Humanised
   const p = providerName ?? "provider";
   switch (state) {
     case "IDLE":
-      return { state, label: "Waiting…", detail: "Preparing data.", tone: "neutral", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "Waiting…",
+        detail: "Preparing data.",
+        tone: "neutral",
+        showSkeleton: false,
+        retryable: false,
+      };
     case "LOADING":
-      return { state, label: "Loading", detail: "Fetching live data.", tone: "info", showSkeleton: true, retryable: false };
+      return {
+        state,
+        label: "Loading",
+        detail: "Fetching live data.",
+        tone: "info",
+        showSkeleton: true,
+        retryable: false,
+      };
     case "REFRESHING":
-      return { state, label: "Refreshing", detail: "Updating in the background.", tone: "info", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "Refreshing",
+        detail: "Updating in the background.",
+        tone: "info",
+        showSkeleton: false,
+        retryable: false,
+      };
     case "READY":
-      return { state, label: "Live", detail: "Data is current.", tone: "success", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "Live",
+        detail: "Data is current.",
+        tone: "success",
+        showSkeleton: false,
+        retryable: false,
+      };
     case "PARTIAL":
-      return { state, label: "Provider partial", detail: `${p} returned partial data. Some fields may be blank.`, tone: "warning", showSkeleton: false, retryable: true };
+      return {
+        state,
+        label: "Provider partial",
+        detail: `${p} returned partial data. Some fields may be blank.`,
+        tone: "warning",
+        showSkeleton: false,
+        retryable: true,
+      };
     case "WAITING_PROVIDER":
-      return { state, label: "Waiting for provider", detail: `Waiting for ${p} to publish data.`, tone: "info", showSkeleton: true, retryable: false };
+      return {
+        state,
+        label: "Waiting for provider",
+        detail: `Waiting for ${p} to publish data.`,
+        tone: "info",
+        showSkeleton: true,
+        retryable: false,
+      };
     case "PROVIDER_DEGRADED":
-      return { state, label: "Provider degraded", detail: `${p} is responding slowly. Retrying automatically.`, tone: "warning", showSkeleton: false, retryable: true };
+      return {
+        state,
+        label: "Provider degraded",
+        detail: `${p} is responding slowly. Retrying automatically.`,
+        tone: "warning",
+        showSkeleton: false,
+        retryable: true,
+      };
     case "PROVIDER_UNAVAILABLE":
-      return { state, label: "Provider temporarily unavailable", detail: `${p} is offline. We'll retry shortly.`, tone: "danger", showSkeleton: false, retryable: true };
+      return {
+        state,
+        label: "Provider temporarily unavailable",
+        detail: `${p} is offline. We'll retry shortly.`,
+        tone: "danger",
+        showSkeleton: false,
+        retryable: true,
+      };
     case "AUTH_REQUIRED":
-      return { state, label: "Sign in to continue", detail: "This widget needs an authenticated session.", tone: "info", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "Sign in to continue",
+        detail: "This widget needs an authenticated session.",
+        tone: "info",
+        showSkeleton: false,
+        retryable: false,
+      };
     case "COMING_SOON":
-      return { state, label: "Coming soon", detail: "This module is planned for a future release.", tone: "neutral", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "Coming soon",
+        detail: "This module is planned for a future release.",
+        tone: "neutral",
+        showSkeleton: false,
+        retryable: false,
+      };
     case "HIDDEN":
-      return { state, label: "", detail: "", tone: "neutral", showSkeleton: false, retryable: false };
+      return {
+        state,
+        label: "",
+        detail: "",
+        tone: "neutral",
+        showSkeleton: false,
+        retryable: false,
+      };
   }
 }
 
@@ -73,6 +150,7 @@ export type ProviderHealthLight = "GREEN" | "YELLOW" | "RED";
 
 export function rollupHealth(states: readonly UxState[]): ProviderHealthLight {
   if (states.some((s) => s === "PROVIDER_UNAVAILABLE")) return "RED";
-  if (states.some((s) => s === "PROVIDER_DEGRADED" || s === "PARTIAL" || s === "WAITING_PROVIDER")) return "YELLOW";
+  if (states.some((s) => s === "PROVIDER_DEGRADED" || s === "PARTIAL" || s === "WAITING_PROVIDER"))
+    return "YELLOW";
   return "GREEN";
 }

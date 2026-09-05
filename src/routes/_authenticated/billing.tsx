@@ -5,18 +5,11 @@ import { useEntitlements } from "@/lib/use-entitlements";
 import { getBillingAdapter, type Invoice } from "@/lib/billing-adapter";
 import { PlanBadge, SubscriptionStatusBadge, TrialCountdown } from "@/components/entitlements";
 import { useAuth } from "@/lib/auth-context";
-import {
-  selfStartTrial,
-  selfSetCancelAtPeriodEnd,
-} from "@/lib/billing-rpc";
+import { selfStartTrial, selfSetCancelAtPeriodEnd } from "@/lib/billing-rpc";
 import { getBillingProviderHealth } from "@/lib/razorpay-checkout.functions";
 import type { BillingProviderHealth } from "@/lib/razorpay-plan-map";
 import { listMyManualPayments } from "@/lib/manual-payment.functions";
-import {
-  isRequestActive,
-  statusTone,
-  type ManualPaymentRequest,
-} from "@/lib/manual-payment";
+import { isRequestActive, statusTone, type ManualPaymentRequest } from "@/lib/manual-payment";
 import { formatRupees } from "@/lib/manual-payment-config";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -57,8 +50,12 @@ function BillingPageInner() {
   useEffect(() => {
     if (!user) return;
     void adapter.getInvoices(user.id).then(setInvoices);
-    void getBillingProviderHealth().then(setHealth).catch(() => setHealth(null));
-    void listManual().then(setManualRows).catch(() => setManualRows([]));
+    void getBillingProviderHealth()
+      .then(setHealth)
+      .catch(() => setHealth(null));
+    void listManual()
+      .then(setManualRows)
+      .catch(() => setManualRows([]));
   }, [user, adapter, listManual]);
 
   const isDev = import.meta.env.DEV;
@@ -109,7 +106,9 @@ function BillingPageInner() {
         <section className="rounded-xl border border-border bg-card p-6 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Current plan</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Current plan
+              </div>
               <div className="mt-1 flex items-center gap-2 flex-wrap">
                 <PlanBadge plan={effective.planId} />
                 <SubscriptionStatusBadge status={effective.status} />
@@ -117,13 +116,17 @@ function BillingPageInner() {
               </div>
             </div>
             <div className="text-right text-xs text-muted-foreground">
-              <div>Renews: {effective.renewsAt ? effective.renewsAt.toLocaleDateString() : "—"}</div>
+              <div>
+                Renews: {effective.renewsAt ? effective.renewsAt.toLocaleDateString() : "—"}
+              </div>
               <div>Cancel at period end: {effective.cancelAtPeriodEnd ? "Yes" : "No"}</div>
               <div>Provider: {effective.provider ?? "not configured"}</div>
             </div>
           </div>
           {msg && (
-            <div className="rounded-md bg-emerald-500/10 text-emerald-300 text-xs px-3 py-2">{msg}</div>
+            <div className="rounded-md bg-emerald-500/10 text-emerald-300 text-xs px-3 py-2">
+              {msg}
+            </div>
           )}
         </section>
 
@@ -206,10 +209,7 @@ function BillingPageInner() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Manual UPI payments
             </h2>
-            <Link
-              to="/payment-status"
-              className="text-xs text-amber-300 underline"
-            >
+            <Link to="/payment-status" className="text-xs text-amber-300 underline">
               Open payment center
             </Link>
           </div>

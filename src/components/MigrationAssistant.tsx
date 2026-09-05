@@ -12,11 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { LOCAL_KEYS, scanLocalData, type LocalDataSummary } from "@/lib/local-migration";
-import {
-  fetchAppliedMigrations,
-  markMigrationApplied,
-  writeUserSettings,
-} from "@/lib/cloud-sync";
+import { fetchAppliedMigrations, markMigrationApplied, writeUserSettings } from "@/lib/cloud-sync";
 import { supabase } from "@/integrations/supabase/client";
 
 const SCOPE_LABEL: Record<string, string> = {
@@ -130,9 +126,7 @@ export function MigrationAssistant() {
       const applied = await fetchAppliedMigrations(user.id);
       const pending = found.filter((r) => !applied.includes(r.migrationKey));
       if (cancelled || !pending.length) return;
-      setRows(
-        pending.map((r) => ({ ...r, selected: true, status: "idle" as Status })),
-      );
+      setRows(pending.map((r) => ({ ...r, selected: true, status: "idle" as Status })));
       setOpen(true);
     })();
     return () => {
@@ -141,10 +135,7 @@ export function MigrationAssistant() {
   }, [user, isAuthenticated, dismissed]);
 
   const hasPending = rows.some((r) => r.status !== "done");
-  const totalItems = useMemo(
-    () => rows.reduce((a, r) => a + r.itemCount, 0),
-    [rows],
-  );
+  const totalItems = useMemo(() => rows.reduce((a, r) => a + r.itemCount, 0), [rows]);
 
   if (!open || !user) return null;
 
@@ -159,15 +150,11 @@ export function MigrationAssistant() {
       try {
         await importScope(user.id, r);
         await markMigrationApplied(user.id, r.migrationKey);
-        setRows((rs) =>
-          rs.map((x) => (x.scope === r.scope ? { ...x, status: "done" } : x)),
-        );
+        setRows((rs) => rs.map((x) => (x.scope === r.scope ? { ...x, status: "done" } : x)));
       } catch (err) {
         setRows((rs) =>
           rs.map((x) =>
-            x.scope === r.scope
-              ? { ...x, status: "error", message: (err as Error).message }
-              : x,
+            x.scope === r.scope ? { ...x, status: "error", message: (err as Error).message } : x,
           ),
         );
       }
@@ -203,8 +190,8 @@ export function MigrationAssistant() {
           Local data found
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          We found {totalItems} item{totalItems === 1 ? "" : "s"} saved on this device.
-          Sync it to your cloud account so it works on every browser.
+          We found {totalItems} item{totalItems === 1 ? "" : "s"} saved on this device. Sync it to
+          your cloud account so it works on every browser.
         </p>
 
         <ul className="mt-4 divide-y divide-white/5 rounded-md border border-white/5 max-h-72 overflow-auto">
@@ -221,7 +208,8 @@ export function MigrationAssistant() {
                 <span className="truncate">
                   <span className="font-medium">{SCOPE_LABEL[r.scope] ?? r.scope}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
-                    {r.itemCount} item{r.itemCount === 1 ? "" : "s"} · {Math.round(r.sizeBytes / 1024)} KB
+                    {r.itemCount} item{r.itemCount === 1 ? "" : "s"} ·{" "}
+                    {Math.round(r.sizeBytes / 1024)} KB
                   </span>
                 </span>
               </label>
@@ -264,9 +252,7 @@ export function MigrationAssistant() {
         </div>
 
         {!hasPending && (
-          <p className="mt-3 text-xs text-emerald-400">
-            All done. You can close this dialog.
-          </p>
+          <p className="mt-3 text-xs text-emerald-400">All done. You can close this dialog.</p>
         )}
         <p className="mt-3 text-[10px] text-muted-foreground">
           Local copies are kept until each scope has synced successfully. Duplicate imports are

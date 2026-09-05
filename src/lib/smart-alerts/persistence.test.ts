@@ -16,12 +16,28 @@ function ctx(now = "2026-07-17T04:30:00.000Z"): AlertEvaluationContext {
     gti: { available: true, state: "BULLISH_TREND", bias: "BULLISH", freshness: "LIVE" },
     breadth: { available: true, state: "BULLISH", bias: "BULLISH", freshness: "MIXED" },
     vix: { available: true, value: 22, regime: "HIGH", freshness: "LIVE" },
-    astro: { available: true, state: "NONE", label: null, startsInMinutes: null, freshness: "LIVE" },
+    astro: {
+      available: true,
+      state: "NONE",
+      label: null,
+      startsInMinutes: null,
+      freshness: "LIVE",
+    },
     gannLevels: [],
-    gannGap: { available: true, predictionId: "p1", lifecycle: "PROVISIONAL", label: null, freshness: "LIVE" },
+    gannGap: {
+      available: true,
+      predictionId: "p1",
+      lifecycle: "PROVISIONAL",
+      label: null,
+      freshness: "LIVE",
+    },
     strategy: { available: true, topStrategyId: "long_call", bias: "BULLISH", freshness: "LIVE" },
     ai: { available: true, bias: "BULLISH", confidence: "MEDIUM", freshness: "LIVE" },
-    runtime: { available: true, modules: [{ module: "DECISION_ENGINE", status: "HEALTHY", reason: null }], overall: "READY" },
+    runtime: {
+      available: true,
+      modules: [{ module: "DECISION_ENGINE", status: "HEALTHY", reason: null }],
+      overall: "READY",
+    },
   };
 }
 

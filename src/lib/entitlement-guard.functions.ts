@@ -101,9 +101,7 @@ export const requireEntitlement = createServerFn({ method: "POST" })
 
     const now = Date.now();
     const trialExpired =
-      status === "trialing" && sub?.trial_end
-        ? new Date(sub.trial_end).getTime() < now
-        : false;
+      status === "trialing" && sub?.trial_end ? new Date(sub.trial_end).getTime() < now : false;
     const periodExpired =
       status !== "trialing" && sub?.current_period_end
         ? new Date(sub.current_period_end).getTime() < now

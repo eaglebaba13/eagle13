@@ -22,12 +22,7 @@ export type MarketBreadthCapabilityStatus =
   | "PROVIDER_ERROR"
   | "UNSUPPORTED";
 
-export type MarketBreadthFailingStage =
-  | "NONE"
-  | "VIX"
-  | "PCR"
-  | "BREADTH"
-  | "AGGREGATION";
+export type MarketBreadthFailingStage = "NONE" | "VIX" | "PCR" | "BREADTH" | "AGGREGATION";
 
 export type MarketBreadthSourceKind = "LIVE" | "RESEARCH_DEMO" | "MIXED";
 
@@ -98,7 +93,10 @@ export function evaluateMarketBreadthCapability(
 
   const vixOk = input.vix.currentVix != null && Number.isFinite(input.vix.currentVix);
   const vixStale = vixOk && input.vix.freshness === "STALE";
-  const pcrOk = input.pcr.available && input.pcr.dataQuality !== "FAILED" && input.pcr.dataQuality !== "UNAVAILABLE";
+  const pcrOk =
+    input.pcr.available &&
+    input.pcr.dataQuality !== "FAILED" &&
+    input.pcr.dataQuality !== "UNAVAILABLE";
   const pcrStale = pcrOk && input.pcr.freshness === "STALE";
   const bq = worstBreadthQuality(input.breadth.broad, input.breadth.nifty50);
 
@@ -157,8 +155,7 @@ export function evaluateMarketBreadthCapability(
   }
 
   const anyStale = vixStale || pcrStale || bq === "STALE";
-  const partial =
-    !vixOk || !pcrOk || bq === "PARTIAL" || input.breadthSource !== "LIVE";
+  const partial = !vixOk || !pcrOk || bq === "PARTIAL" || input.breadthSource !== "LIVE";
 
   if (anyStale && !partial) {
     return {

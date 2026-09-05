@@ -8,13 +8,7 @@
 import type { ReadinessCategory } from "../production-readiness-types";
 
 export type StagingStatus =
-  | "PASS"
-  | "WARNING"
-  | "FAIL"
-  | "SKIPPED"
-  | "BLOCKED"
-  | "NOT_APPLICABLE"
-  | "UNKNOWN";
+  "PASS" | "WARNING" | "FAIL" | "SKIPPED" | "BLOCKED" | "NOT_APPLICABLE" | "UNKNOWN";
 
 export type StagingSeverity = "info" | "warning" | "critical" | "blocker";
 
@@ -88,11 +82,7 @@ export interface PerformanceMeasurement {
 }
 
 export type DrillOutcome =
-  | "EXECUTED_PASS"
-  | "EXECUTED_FAIL"
-  | "DOCUMENTED_ONLY"
-  | "NOT_CONFIGURED"
-  | "UNKNOWN";
+  "EXECUTED_PASS" | "EXECUTED_FAIL" | "DOCUMENTED_ONLY" | "NOT_CONFIGURED" | "UNKNOWN";
 
 export interface RecoveryDrill {
   id: string;

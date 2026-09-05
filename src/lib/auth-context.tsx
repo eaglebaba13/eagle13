@@ -117,13 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (event: string, metadata: Record<string, unknown> = {}) => {
       if (!session?.user) return;
       try {
-        await supabase
-          .from("audit_log")
-          .insert({
-            user_id: session.user.id,
-            event,
-            metadata: metadata as never,
-          });
+        await supabase.from("audit_log").insert({
+          user_id: session.user.id,
+          event,
+          metadata: metadata as never,
+        });
       } catch {
         /* audit failures never block UX */
       }
@@ -131,10 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [session],
   );
 
-  const role = useMemo<AppRole>(
-    () => highestRole(roles.length ? roles : ["free"]),
-    [roles],
-  );
+  const role = useMemo<AppRole>(() => highestRole(roles.length ? roles : ["free"]), [roles]);
 
   const value: AuthContextValue = {
     loading,

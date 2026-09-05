@@ -49,7 +49,8 @@ export function computePortfolioMetrics(
 
   const vol = stdev(dailyReturns);
   const annualizedVol = vol * Math.sqrt(252);
-  const meanRet = dailyReturns.length > 0 ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length : 0;
+  const meanRet =
+    dailyReturns.length > 0 ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length : 0;
   const sharpe = vol > 0 ? (meanRet / vol) * Math.sqrt(252) : 0;
 
   const downside = dailyReturns.filter((r) => r < 0);
@@ -88,9 +89,10 @@ export function computePortfolioMetrics(
   const from = equity[0]?.date ?? "";
   const to = equity[equity.length - 1]?.date ?? "";
   const years = daysBetween(from, to) / 365.25;
-  const cagr = years > 0 && startingCapital > 0 && startingCapital + netPnl > 0
-    ? Math.pow((startingCapital + netPnl) / startingCapital, 1 / years) - 1
-    : null;
+  const cagr =
+    years > 0 && startingCapital > 0 && startingCapital + netPnl > 0
+      ? Math.pow((startingCapital + netPnl) / startingCapital, 1 / years) - 1
+      : null;
 
   const weights = allocations.map((a) => a.weight);
   const hhiStrat = hhi(weights);
@@ -118,7 +120,10 @@ export function computePortfolioMetrics(
   const activeDays = new Set(trades.map((t) => t.date)).size;
   const totalDays = new Set(equity.map((e) => e.date)).size || 1;
   const exposurePct = activeDays / totalDays;
-  const capUtil = Math.min(1, allocations.reduce((s, a) => s + a.weight, 0));
+  const capUtil = Math.min(
+    1,
+    allocations.reduce((s, a) => s + a.weight, 0),
+  );
 
   return {
     totalReturnPct,

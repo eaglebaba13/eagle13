@@ -48,10 +48,8 @@ export function classifyCandleClose(
     return { status: "DATA_INCOMPLETE", reason: "BAD_TIMESTAMP" };
   const tfSec = timeframeSeconds(policy.timeframe);
   const closeAtMs = t + tfSec * 1000;
-  if (now < closeAtMs - policy.gracePeriodSeconds * 1000)
-    return { status: "FUTURE_CANDLE" };
-  if (now - closeAtMs > policy.staleAfterSeconds * 1000)
-    return { status: "STALE_CANDLE" };
+  if (now < closeAtMs - policy.gracePeriodSeconds * 1000) return { status: "FUTURE_CANDLE" };
+  if (now - closeAtMs > policy.staleAfterSeconds * 1000) return { status: "STALE_CANDLE" };
   if (policy.lastAcceptedCandleDate && policy.lastAcceptedCandleDate === candle.date)
     return { status: "DUPLICATE_CANDLE" };
   if (!policy.is247 && policy.sessionOpenIso && policy.sessionCloseIso) {

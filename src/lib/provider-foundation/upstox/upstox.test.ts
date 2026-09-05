@@ -35,7 +35,15 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   });
 }
 
-function tuple(t: string, o: number, h: number, l: number, c: number, v: number, oi?: number): UpstoxCandleTuple {
+function tuple(
+  t: string,
+  o: number,
+  h: number,
+  l: number,
+  c: number,
+  v: number,
+  oi?: number,
+): UpstoxCandleTuple {
   return [t, o, h, l, c, v, oi] as UpstoxCandleTuple;
 }
 
@@ -146,10 +154,36 @@ describe("upstox normalization", () => {
     expect(raws.every((x) => x !== null)).toBe(true);
   });
   it("dedupes across chunk boundaries", () => {
-    const c1 = [{ time: "2026-07-15T09:15:00Z", open: 1, high: 1, low: 1, close: 1, volume: 0, closed: true as const }];
+    const c1 = [
+      {
+        time: "2026-07-15T09:15:00Z",
+        open: 1,
+        high: 1,
+        low: 1,
+        close: 1,
+        volume: 0,
+        closed: true as const,
+      },
+    ];
     const c2 = [
-      { time: "2026-07-15T09:15:00Z", open: 1, high: 1, low: 1, close: 1, volume: 0, closed: true as const },
-      { time: "2026-07-15T09:30:00Z", open: 2, high: 2, low: 2, close: 2, volume: 0, closed: true as const },
+      {
+        time: "2026-07-15T09:15:00Z",
+        open: 1,
+        high: 1,
+        low: 1,
+        close: 1,
+        volume: 0,
+        closed: true as const,
+      },
+      {
+        time: "2026-07-15T09:30:00Z",
+        open: 2,
+        high: 2,
+        low: 2,
+        close: 2,
+        volume: 0,
+        closed: true as const,
+      },
     ];
     const merged = mergeCandleChunks([c1, c2]);
     expect(merged.length).toBe(2);
@@ -166,9 +200,13 @@ describe("upstox http redaction", () => {
   it("returns AUTH_REQUIRED when token is missing", async () => {
     const client = new UpstoxHttpClient({
       env: { UPSTOX_MARKET_DATA_MODE: "disabled" },
-      fetchImpl: async () => { throw new Error("should not be called"); },
+      fetchImpl: async () => {
+        throw new Error("should not be called");
+      },
     });
-    const res = await client.request({ path: "v3/historical-candle/x/minutes/1/2026-07-16/2026-07-15" });
+    const res = await client.request({
+      path: "v3/historical-candle/x/minutes/1/2026-07-16/2026-07-15",
+    });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("UPSTOX_AUTH_REQUIRED");
   });
@@ -250,9 +288,12 @@ describe("upstox adapter (mock HTTP)", () => {
   it("rejects unsupported symbols", async () => {
     const adapter = makeAdapter(async () => jsonResponse({ data: { candles: [] } }));
     const res = await adapter.fetchRange({
-      symbol: "BTC" as never, timeframe: "1d",
-      from: "2025-01-01", to: "2025-01-05",
-      nowIso: "2026-07-16T00:00:00Z", nowMs: Date.parse("2026-07-16T00:00:00Z"),
+      symbol: "BTC" as never,
+      timeframe: "1d",
+      from: "2025-01-01",
+      to: "2025-01-05",
+      nowIso: "2026-07-16T00:00:00Z",
+      nowMs: Date.parse("2026-07-16T00:00:00Z"),
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe("UNSUPPORTED_SYMBOL");
@@ -272,9 +313,12 @@ describe("upstox adapter (mock HTTP)", () => {
       });
     });
     const res = await adapter.fetchRange({
-      symbol: "NIFTY50", timeframe: "1d",
-      from: "2025-01-01", to: "2025-01-05",
-      nowIso: "2026-07-16T00:00:00Z", nowMs: Date.parse("2026-07-16T00:00:00Z"),
+      symbol: "NIFTY50",
+      timeframe: "1d",
+      from: "2025-01-01",
+      to: "2025-01-05",
+      nowIso: "2026-07-16T00:00:00Z",
+      nowMs: Date.parse("2026-07-16T00:00:00Z"),
     });
     expect(res.ok).toBe(true);
     if (res.ok) {
@@ -292,9 +336,12 @@ describe("upstox adapter (mock HTTP)", () => {
       return jsonResponse({ data: { candles: [] } });
     });
     const res = await adapter.fetchRange({
-      symbol: "NIFTY50", timeframe: "1m",
-      from: "2024-01-01", to: "2024-04-30",
-      nowIso: "2026-07-16T00:00:00Z", nowMs: Date.parse("2026-07-16T00:00:00Z"),
+      symbol: "NIFTY50",
+      timeframe: "1m",
+      from: "2024-01-01",
+      to: "2024-04-30",
+      nowIso: "2026-07-16T00:00:00Z",
+      nowMs: Date.parse("2026-07-16T00:00:00Z"),
     });
     expect(res.ok).toBe(true);
     expect(calls).toBeGreaterThan(1);
@@ -303,9 +350,12 @@ describe("upstox adapter (mock HTTP)", () => {
   it("propagates AUTH_REQUIRED from the HTTP client", async () => {
     const adapter = makeAdapter(async () => new Response("no", { status: 401 }));
     const res = await adapter.fetchRange({
-      symbol: "NIFTY50", timeframe: "1d",
-      from: "2025-01-01", to: "2025-01-05",
-      nowIso: "2026-07-16T00:00:00Z", nowMs: Date.parse("2026-07-16T00:00:00Z"),
+      symbol: "NIFTY50",
+      timeframe: "1d",
+      from: "2025-01-01",
+      to: "2025-01-05",
+      nowIso: "2026-07-16T00:00:00Z",
+      nowMs: Date.parse("2026-07-16T00:00:00Z"),
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe("AUTH_REQUIRED");
@@ -314,7 +364,9 @@ describe("upstox adapter (mock HTTP)", () => {
   it("cache key is deterministic and namespaced", () => {
     const k = upstoxHistoricalCacheKey({
       instrumentKey: "NSE_INDEX|Nifty 50",
-      timeframe: "1d", from: "2025-01-01", to: "2025-01-31",
+      timeframe: "1d",
+      from: "2025-01-01",
+      to: "2025-01-31",
     });
     expect(k.startsWith(UPSTOX_CACHE_NAMESPACE + ":historical:")).toBe(true);
     expect(k).toContain("NSE_INDEX|Nifty 50");
@@ -323,7 +375,10 @@ describe("upstox adapter (mock HTTP)", () => {
   });
 
   it("registers as HISTORICAL primary in the provider registry shape", () => {
-    const adapter = buildUpstoxProviderAdapter({ env: LIVE_ENV, fetchImpl: async () => jsonResponse({ data: { candles: [] } }) });
+    const adapter = buildUpstoxProviderAdapter({
+      env: LIVE_ENV,
+      fetchImpl: async () => jsonResponse({ data: { candles: [] } }),
+    });
     expect(adapter.id).toBe(UPSTOX_ADAPTER_ID);
     expect(adapter.capability.domain).toBe("HISTORICAL");
     expect(adapter.role).toBe("PRIMARY");

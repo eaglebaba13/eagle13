@@ -2,9 +2,9 @@
 // Research-only. Never produces BUY/SELL/LONG/SHORT wording.
 
 export type GannGapLifecycle =
-  | "PENDING"        // before 15:26 IST cutoff
-  | "EVAL"           // between cutoff and market close
-  | "FROZEN";        // final prediction persisted for the trading day
+  | "PENDING" // before 15:26 IST cutoff
+  | "EVAL" // between cutoff and market close
+  | "FROZEN"; // final prediction persisted for the trading day
 
 export type GannGapOutlookLabel =
   | "PENDING"
@@ -15,9 +15,7 @@ export type GannGapOutlookLabel =
   | "DATA_UNAVAILABLE";
 
 export type GannGapConfidenceBand =
-  | "EXPERIMENTAL_LOW"
-  | "EXPERIMENTAL_MEDIUM"
-  | "EXPERIMENTAL_HIGH";
+  "EXPERIMENTAL_LOW" | "EXPERIMENTAL_MEDIUM" | "EXPERIMENTAL_HIGH";
 
 export interface GannSquareLevel {
   /** Root n such that levelBase = n*n (spec §2). */
@@ -66,8 +64,8 @@ export interface GannGapConfirmation {
 export interface GannGapOutlook {
   readonly formulaVersion: string;
   readonly configVersion: string;
-  readonly tradingDate: string;         // IST YYYY-MM-DD (session in question)
-  readonly nextTradingDate: string;     // IST YYYY-MM-DD (the day the outlook is for)
+  readonly tradingDate: string; // IST YYYY-MM-DD (session in question)
+  readonly nextTradingDate: string; // IST YYYY-MM-DD (the day the outlook is for)
   readonly lifecycle: GannGapLifecycle;
   readonly label: GannGapOutlookLabel;
   readonly reference: number | null;

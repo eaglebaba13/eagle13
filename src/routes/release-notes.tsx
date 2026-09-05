@@ -22,7 +22,9 @@ function ReleaseNotesPage() {
         <h2 className="text-lg font-medium">v1.0-RC1 — Release Candidate</h2>
         <ul className="list-disc space-y-1 pl-6">
           <li>Application shell, sidebar, breadcrumbs and responsive drawer</li>
-          <li>Provider label sanitization and live data wiring for Options, PCR, Decision Engine</li>
+          <li>
+            Provider label sanitization and live data wiring for Options, PCR, Decision Engine
+          </li>
           <li>Gann Square next-day gap outlook with outcome tracking</li>
           <li>Professional Option Strategy Terminal (VIX-aware, deterministic)</li>
           <li>AI Market Assistant (template-based, guardrailed)</li>
@@ -32,7 +34,10 @@ function ReleaseNotesPage() {
           <li>CoinDCX market-data integration (execution disabled)</li>
           <li>Release checklist, legal pages, health &amp; environment validators</li>
         </ul>
-        <p className="text-muted-foreground">Live order execution remains disabled by platform flags. Billing is manual UPI verification.</p>
+        <p className="text-muted-foreground">
+          Live order execution remains disabled by platform flags. Billing is manual UPI
+          verification.
+        </p>
       </section>
     </article>
   );

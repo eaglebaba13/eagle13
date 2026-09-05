@@ -6,12 +6,23 @@ import { computeConflictBuckets } from "../../components/backtest/CompareAstroSm
 describe("Phase 21.4 Stage 4A · SMC unified dispatch", () => {
   it("same config + same candles + same signals → identical Run ID (determinism)", async () => {
     const candles = Array.from({ length: 20 }, (_, i) => ({
-      t: i * 300_000, o: 100, h: 102, l: 99, c: 101, v: 10,
+      t: i * 300_000,
+      o: 100,
+      h: 102,
+      l: 99,
+      c: 101,
+      v: 10,
     }));
     const signals = candles.map((_, i) => ({
-      index: i, signal: "WAIT" as const, direction: null,
-      score: 0, bias: "neutral" as const, structureDirection: null,
-      reasons: [], triggeredRules: [], missingRules: [],
+      index: i,
+      signal: "WAIT" as const,
+      direction: null,
+      score: 0,
+      bias: "neutral" as const,
+      structureDirection: null,
+      reasons: [],
+      triggeredRules: [],
+      missingRules: [],
     }));
     const args = {
       strategy: "SMC" as const,
@@ -29,22 +40,39 @@ describe("Phase 21.4 Stage 4A · SMC unified dispatch", () => {
 
   it("data hash change (different source string) → different Run ID", async () => {
     const candles = Array.from({ length: 10 }, (_, i) => ({
-      t: i * 300_000, o: 100, h: 102, l: 99, c: 101, v: 10,
+      t: i * 300_000,
+      o: 100,
+      h: 102,
+      l: 99,
+      c: 101,
+      v: 10,
     }));
     const signals = candles.map((_, i) => ({
-      index: i, signal: "WAIT" as const, direction: null,
-      score: 0, bias: "neutral" as const, structureDirection: null,
-      reasons: [], triggeredRules: [], missingRules: [],
+      index: i,
+      signal: "WAIT" as const,
+      direction: null,
+      score: 0,
+      bias: "neutral" as const,
+      structureDirection: null,
+      reasons: [],
+      triggeredRules: [],
+      missingRules: [],
     }));
     const a = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-31",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-31",
       source: "Zerodha#hash-a#5m",
       extras: { candles, signals },
     });
     const b = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-31",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-31",
       source: "Zerodha#hash-b#5m",
       extras: { candles, signals },
     });

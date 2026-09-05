@@ -14,7 +14,8 @@ function statusTone(s: string): string {
   if (up === "SUCCESS" || up === "DELIVERED" || up === "SENT")
     return "border-emerald-500/40 bg-emerald-500/10 text-emerald-500";
   if (up === "FAILED" || up === "ERROR") return "border-red-500/40 bg-red-500/10 text-red-500";
-  if (up === "RETRYING" || up === "PENDING") return "border-amber-500/40 bg-amber-500/10 text-amber-500";
+  if (up === "RETRYING" || up === "PENDING")
+    return "border-amber-500/40 bg-amber-500/10 text-amber-500";
   return "border-border bg-muted/40 text-muted-foreground";
 }
 
@@ -69,7 +70,9 @@ function TelegramLogPage() {
                       <td className="px-3 py-2">{r.event?.type ?? "—"}</td>
                       <td className="px-3 py-2">{r.provider}</td>
                       <td className="px-3 py-2">
-                        <span className={`rounded border px-1.5 py-[1px] text-[10px] font-medium ${statusTone(r.status)}`}>
+                        <span
+                          className={`rounded border px-1.5 py-[1px] text-[10px] font-medium ${statusTone(r.status)}`}
+                        >
                           {r.status}
                         </span>
                       </td>

@@ -45,6 +45,8 @@ describe("plans", () => {
 
   it("limits are configurable per plan", () => {
     expect(PLANS.free.limits.watchlists).toBeLessThan(PLANS.pro.limits.watchlists);
-    expect(PLANS.pro.limits.backtestsPerDay).toBeLessThan(PLANS.professional.limits.backtestsPerDay);
+    expect(PLANS.pro.limits.backtestsPerDay).toBeLessThan(
+      PLANS.professional.limits.backtestsPerDay,
+    );
   });
 });

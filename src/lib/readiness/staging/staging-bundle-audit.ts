@@ -26,7 +26,8 @@ export function auditBundle(input: BundleAuditInput): StagingCheck[] {
   if (hasSecret) hardIssues.push("secret_in_bundle");
   if (input.serverOnlyModulesInClient.length > 0) hardIssues.push("server_only_module_leaked");
   if (input.nativeBinaries.length > 0) hardIssues.push("native_binary_in_bundle");
-  if (input.mediaAssets.some((m) => LARGE_MEDIA_EXT.test(m))) hardIssues.push("large_media_bundled");
+  if (input.mediaAssets.some((m) => LARGE_MEDIA_EXT.test(m)))
+    hardIssues.push("large_media_bundled");
   if (hardIssues.length > 0) {
     checks.push({
       id: "bundle.secret_or_leak",

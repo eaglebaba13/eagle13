@@ -20,30 +20,96 @@ export interface FeatureFlagDefinition {
 // Registry is deterministic — flags are additions, never re-definitions
 // of research formulas or provider paths.
 export const FEATURE_FLAG_REGISTRY: readonly FeatureFlagDefinition[] = [
-  { id: "dashboard.basic",       capability: "dashboard.basic",       enabled: true,  minPlan: "free",         description: "Basic market dashboard" },
-  { id: "dashboard.premium",     capability: "dashboard.premium",     enabled: true,  minPlan: "pro",          description: "Full dashboard with GTI summary" },
-  { id: "options.chain",         capability: "options.analytics",     enabled: true,  minPlan: "pro",          description: "Live option chain viewer" },
-  { id: "combined.pcr",          capability: "options.analytics",     enabled: true,  minPlan: "pro",          description: "Combined PCR research" },
-  { id: "market.breadth",        capability: "signal.accuracy",       enabled: true,  minPlan: "pro",          description: "Market breadth + GTI research" },
-  { id: "backtest.basic",        capability: "backtest.basic",        enabled: true,  minPlan: "pro",          description: "Basic backtest engine" },
-  { id: "backtest.advanced",     capability: "backtest.advanced",     enabled: true,  minPlan: "professional", description: "Advanced backtest engine" },
-  { id: "exports.csv",           capability: "exports.csv",           enabled: true,  minPlan: "pro",          description: "CSV exports" },
-  { id: "exports.pdf",           capability: "exports.pdf",           enabled: true,  minPlan: "professional", description: "PDF research bundles" },
-  { id: "admin.console",         capability: "admin.console",         enabled: true,  minPlan: "enterprise",   description: "Admin console access" },
-  { id: "gann.gap.outlook",      capability: "signal.accuracy",       enabled: false, minPlan: "pro",          description: "Gann Square next-day gap outlook (research-only)" },
+  {
+    id: "dashboard.basic",
+    capability: "dashboard.basic",
+    enabled: true,
+    minPlan: "free",
+    description: "Basic market dashboard",
+  },
+  {
+    id: "dashboard.premium",
+    capability: "dashboard.premium",
+    enabled: true,
+    minPlan: "pro",
+    description: "Full dashboard with GTI summary",
+  },
+  {
+    id: "options.chain",
+    capability: "options.analytics",
+    enabled: true,
+    minPlan: "pro",
+    description: "Live option chain viewer",
+  },
+  {
+    id: "combined.pcr",
+    capability: "options.analytics",
+    enabled: true,
+    minPlan: "pro",
+    description: "Combined PCR research",
+  },
+  {
+    id: "market.breadth",
+    capability: "signal.accuracy",
+    enabled: true,
+    minPlan: "pro",
+    description: "Market breadth + GTI research",
+  },
+  {
+    id: "backtest.basic",
+    capability: "backtest.basic",
+    enabled: true,
+    minPlan: "pro",
+    description: "Basic backtest engine",
+  },
+  {
+    id: "backtest.advanced",
+    capability: "backtest.advanced",
+    enabled: true,
+    minPlan: "professional",
+    description: "Advanced backtest engine",
+  },
+  {
+    id: "exports.csv",
+    capability: "exports.csv",
+    enabled: true,
+    minPlan: "pro",
+    description: "CSV exports",
+  },
+  {
+    id: "exports.pdf",
+    capability: "exports.pdf",
+    enabled: true,
+    minPlan: "professional",
+    description: "PDF research bundles",
+  },
+  {
+    id: "admin.console",
+    capability: "admin.console",
+    enabled: true,
+    minPlan: "enterprise",
+    description: "Admin console access",
+  },
+  {
+    id: "gann.gap.outlook",
+    capability: "signal.accuracy",
+    enabled: false,
+    minPlan: "pro",
+    description: "Gann Square next-day gap outlook (research-only)",
+  },
 ];
 
 export const FEATURE_FLAG_VERSION = "feature-flags@1.0.0";
 
 const PLAN_RANK: Record<PlanId, number> = {
-  free: 0, pro: 1, professional: 2, enterprise: 3,
+  free: 0,
+  pro: 1,
+  professional: 2,
+  enterprise: 3,
 };
 
 export type FeatureFlagDenyReason =
-  | "flag_disabled"
-  | "unknown_flag"
-  | "plan_below_minimum"
-  | "subscription_not_active";
+  "flag_disabled" | "unknown_flag" | "plan_below_minimum" | "subscription_not_active";
 
 export interface FeatureFlagDecision {
   readonly allowed: boolean;

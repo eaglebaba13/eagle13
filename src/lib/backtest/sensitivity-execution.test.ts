@@ -91,9 +91,7 @@ describe("sensitivity-execution · SMC dispatch", () => {
     const counters = createComputeCounters();
     // Two rows sharing the same signal config (execution-only change) so signal
     // recompute happens exactly once, structure exactly once.
-    const combos = generateParameterGrid([
-      { name: "rr", min: 1, max: 2, step: 1 },
-    ]);
+    const combos = generateParameterGrid([{ name: "rr", min: 1, max: 2, step: 1 }]);
     const result = await runSmcSensitivity(ctx, combos, counters, {
       baseSignalConfig: { minScore: 40 },
     });
@@ -107,9 +105,7 @@ describe("sensitivity-execution · SMC dispatch", () => {
   it("recomputes signals when minScore changes", async () => {
     const ctx = buildCtx();
     const counters = createComputeCounters();
-    const combos = generateParameterGrid([
-      { name: "minScore", min: 40, max: 60, step: 10 },
-    ]);
+    const combos = generateParameterGrid([{ name: "minScore", min: 40, max: 60, step: 10 }]);
     const result = await runSmcSensitivity(ctx, combos, counters, {
       baseSignalConfig: { minScore: 40 },
     });
@@ -121,12 +117,9 @@ describe("sensitivity-execution · SMC dispatch", () => {
   it("marks low-sample cells as INSUFFICIENT_DATA", async () => {
     const ctx = buildCtx(buildCandles(60));
     const counters = createComputeCounters();
-    const result = await runSmcSensitivity(
-      ctx,
-      [{ minScore: 99 }],
-      counters,
-      { baseSignalConfig: { minScore: 99 } },
-    );
+    const result = await runSmcSensitivity(ctx, [{ minScore: 99 }], counters, {
+      baseSignalConfig: { minScore: 99 },
+    });
     expect(result.cells[0].metrics).toBeNull();
     expect(result.cells[0].reason).toContain("INSUFFICIENT_DATA");
   });
@@ -134,9 +127,7 @@ describe("sensitivity-execution · SMC dispatch", () => {
   it("respects abort signal and reports partial results", async () => {
     const ctx = buildCtx();
     const counters = createComputeCounters();
-    const combos = generateParameterGrid([
-      { name: "rr", min: 1, max: 4, step: 1 },
-    ]);
+    const combos = generateParameterGrid([{ name: "rr", min: 1, max: 4, step: 1 }]);
     const controller = new AbortController();
     controller.abort();
     const result = await runSmcSensitivity(ctx, combos, counters, {
@@ -176,24 +167,23 @@ describe("sensitivity-execution · Hybrid weight resolution", () => {
   });
 
   it("rejects negative or non-finite weights", () => {
-    expect(() =>
-      resolveHybridWeights(DEFAULT_HYBRID_CONFIG, { astroWeight: -0.1 }, false),
-    ).toThrow(/INVALID_PARAMETER_GRID|non-negative/);
+    expect(() => resolveHybridWeights(DEFAULT_HYBRID_CONFIG, { astroWeight: -0.1 }, false)).toThrow(
+      /INVALID_PARAMETER_GRID|non-negative/,
+    );
   });
 });
 
 describe("sensitivity-execution · Hybrid dispatch", () => {
   it("executes a small Hybrid grid using shared candles", async () => {
     const ctx = buildCtx();
-    const astroByDate: Record<string, { direction: "BUY" | "SELL" | "WAIT"; confidence: number }> = {};
+    const astroByDate: Record<string, { direction: "BUY" | "SELL" | "WAIT"; confidence: number }> =
+      {};
     for (const c of ctx.candles) {
       const d = new Date(c.t).toISOString().slice(0, 10);
       astroByDate[d] = { direction: "BUY", confidence: 70 };
     }
     const counters = createComputeCounters();
-    const combos = generateParameterGrid([
-      { name: "hybridThreshold", min: 40, max: 55, step: 15 },
-    ]);
+    const combos = generateParameterGrid([{ name: "hybridThreshold", min: 40, max: 55, step: 15 }]);
     const result = await runHybridSensitivity(ctx, combos, counters, {
       astroByDate,
       astroFormulaVersion: "ASTRO_DAILY_V1",

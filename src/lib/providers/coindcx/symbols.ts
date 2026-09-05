@@ -4,12 +4,7 @@
 import type { CoindcxAssetClass, CoindcxMarket, CoindcxMarketStatus } from "./types";
 
 /** Canonical crypto majors surfaced to the UI (see Phase 3F requirements). */
-export const CRYPTO_MAJOR_BASES: readonly string[] = [
-  "BTC",
-  "ETH",
-  "SOL",
-  "XRP",
-] as const;
+export const CRYPTO_MAJOR_BASES: readonly string[] = ["BTC", "ETH", "SOL", "XRP"] as const;
 
 /**
  * Tokenized-metal bases. These are ERC-20 style representations that TRACK
@@ -60,9 +55,9 @@ export function isSurfacedMarket(m: CoindcxMarket): boolean {
 
 /** Sort helper: crypto majors first (in declared order), then tokenized metals. */
 export function marketSortKey(m: CoindcxMarket): [number, number, string] {
-  const classRank = m.assetClass === "CRYPTO_MAJOR" ? 0 : m.assetClass === "TOKENIZED_METAL" ? 1 : 2;
-  const baseRank = m.assetClass === "CRYPTO_MAJOR"
-    ? CRYPTO_MAJOR_BASES.indexOf(m.base.toUpperCase())
-    : 100;
+  const classRank =
+    m.assetClass === "CRYPTO_MAJOR" ? 0 : m.assetClass === "TOKENIZED_METAL" ? 1 : 2;
+  const baseRank =
+    m.assetClass === "CRYPTO_MAJOR" ? CRYPTO_MAJOR_BASES.indexOf(m.base.toUpperCase()) : 100;
   return [classRank, baseRank, m.pair];
 }

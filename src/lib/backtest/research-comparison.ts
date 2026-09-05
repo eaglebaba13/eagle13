@@ -39,15 +39,18 @@ function averageMetrics(source: readonly WindowMetrics[]): WindowMetrics {
     shortCount: 0,
   };
   if (n === 0) return empty;
-  const sum = source.reduce((acc, m) => {
-    (Object.keys(m) as (keyof WindowMetrics)[]).forEach((k) => {
-      const v = m[k];
-      if (Number.isFinite(v as number)) {
-        (acc[k] as number) += v as number;
-      }
-    });
-    return acc;
-  }, { ...empty });
+  const sum = source.reduce(
+    (acc, m) => {
+      (Object.keys(m) as (keyof WindowMetrics)[]).forEach((k) => {
+        const v = m[k];
+        if (Number.isFinite(v as number)) {
+          (acc[k] as number) += v as number;
+        }
+      });
+      return acc;
+    },
+    { ...empty },
+  );
   return Object.fromEntries(
     (Object.keys(sum) as (keyof WindowMetrics)[]).map((k) => [
       k,
@@ -69,15 +72,18 @@ function averageDegradation(source: readonly DegradationReport[]): DegradationRe
   };
   const n = source.length;
   if (n === 0) return empty;
-  const sum = source.reduce((acc, m) => {
-    (Object.keys(m) as (keyof DegradationReport)[]).forEach((k) => {
-      const v = m[k];
-      if (Number.isFinite(v as number)) {
-        acc[k] += v as number;
-      }
-    });
-    return acc;
-  }, { ...empty });
+  const sum = source.reduce(
+    (acc, m) => {
+      (Object.keys(m) as (keyof DegradationReport)[]).forEach((k) => {
+        const v = m[k];
+        if (Number.isFinite(v as number)) {
+          acc[k] += v as number;
+        }
+      });
+      return acc;
+    },
+    { ...empty },
+  );
   return Object.fromEntries(
     (Object.keys(sum) as (keyof DegradationReport)[]).map((k) => [
       k,
@@ -106,9 +112,7 @@ export function buildStrategyRow(
   };
 }
 
-export function buildResearchComparison(
-  rows: readonly StrategyResearchRow[],
-): ResearchComparison {
+export function buildResearchComparison(rows: readonly StrategyResearchRow[]): ResearchComparison {
   return { rows };
 }
 
@@ -126,9 +130,7 @@ export type ResearchSummary = {
   weaknesses: readonly string[];
 };
 
-export function generateResearchSummary(
-  comparison: ResearchComparison,
-): ResearchSummary {
+export function generateResearchSummary(comparison: ResearchComparison): ResearchSummary {
   const rows = comparison.rows;
   if (rows.length === 0) {
     return {
@@ -142,12 +144,8 @@ export function generateResearchSummary(
       weaknesses: [],
     };
   }
-  const byExpectancy = [...rows].sort(
-    (a, b) => b.validation.expectancy - a.validation.expectancy,
-  );
-  const byDrawdown = [...rows].sort(
-    (a, b) => b.validation.drawdown - a.validation.drawdown,
-  );
+  const byExpectancy = [...rows].sort((a, b) => b.validation.expectancy - a.validation.expectancy);
+  const byDrawdown = [...rows].sort((a, b) => b.validation.drawdown - a.validation.drawdown);
   const byStability = [...rows].sort((a, b) => b.stability.score - a.stability.score);
   const byDegradation = [...rows].sort(
     (a, b) => Math.abs(b.degradation.netPnl) - Math.abs(a.degradation.netPnl),
@@ -160,13 +158,19 @@ export function generateResearchSummary(
   const weaknesses: string[] = [];
   for (const r of rows) {
     if (r.stability.status === "EXCELLENT" || r.stability.status === "GOOD") {
-      strengths.push(`${r.strategy}: ${r.stability.status} stability (score ${r.stability.score}).`);
+      strengths.push(
+        `${r.strategy}: ${r.stability.status} stability (score ${r.stability.score}).`,
+      );
     }
     if (r.stability.status === "UNSTABLE" || r.stability.status === "WEAK") {
-      weaknesses.push(`${r.strategy}: ${r.stability.status} — score ${r.stability.score}, degradation ${r.degradation.netPnl}%.`);
+      weaknesses.push(
+        `${r.strategy}: ${r.stability.status} — score ${r.stability.score}, degradation ${r.degradation.netPnl}%.`,
+      );
     }
     if (r.status === "INSUFFICIENT_DATA") {
-      weaknesses.push(`${r.strategy}: insufficient validation trades (${r.validation.tradeCount}).`);
+      weaknesses.push(
+        `${r.strategy}: insufficient validation trades (${r.validation.tradeCount}).`,
+      );
     }
   }
 

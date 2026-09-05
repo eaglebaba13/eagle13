@@ -3,16 +3,9 @@
 // from daily data. Any unsupported (instrument, timeframe, range) tuple
 // throws DATA_RANGE_UNAVAILABLE via SmcDataRangeUnavailableError.
 
-import type {
-  LoadSmcCandlesResult,
-  SmcInstrument,
-  SmcTimeframe,
-} from "../smc-data-source";
+import type { LoadSmcCandlesResult, SmcInstrument, SmcTimeframe } from "../smc-data-source";
 
-export type IntradayProviderId =
-  | "CSV"
-  | "BROKER_CSV"
-  | "YAHOO_INTRADAY";
+export type IntradayProviderId = "CSV" | "BROKER_CSV" | "YAHOO_INTRADAY";
 
 export type IntradayFetchRequest = {
   instrument: SmcInstrument;
@@ -77,9 +70,7 @@ export function assertProviderSupports(
   }
   const span = daysBetween(req.from, req.to);
   if (span < 0) {
-    throw new Error(
-      `DATA_RANGE_UNAVAILABLE — invalid range ${req.from} → ${req.to}`,
-    );
+    throw new Error(`DATA_RANGE_UNAVAILABLE — invalid range ${req.from} → ${req.to}`);
   }
   const max = adapter.maxRangeByTimeframe[req.timeframe];
   if (span > max) {

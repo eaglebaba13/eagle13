@@ -19,7 +19,10 @@ export const Route = createFileRoute("/_authenticated/admin/gann-gap")({
   head: () => ({
     meta: [
       { title: "Gann Gap Ops — Admin" },
-      { name: "description", content: "Admin console for Gann Gap Outlook freeze, outcome and analytics." },
+      {
+        name: "description",
+        content: "Admin console for Gann Gap Outlook freeze, outcome and analytics.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -51,18 +54,32 @@ function AdminGannGapPage() {
 
   const onFreeze = async () => {
     setMsg(null);
-    try { await doFreeze(); await diag.refetch(); setMsg("Freeze completed"); }
-    catch (e) { setMsg((e as Error).message); }
+    try {
+      await doFreeze();
+      await diag.refetch();
+      setMsg("Freeze completed");
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
   };
   const onEval = async () => {
     setMsg(null);
-    try { await doEvaluate(); await diag.refetch(); setMsg("Outcome evaluation attempted"); }
-    catch (e) { setMsg((e as Error).message); }
+    try {
+      await doEvaluate();
+      await diag.refetch();
+      setMsg("Outcome evaluation attempted");
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
   };
 
   const onExport = () => {
     if (!d) return;
-    downloadBlob(d.safeExport, `gann-gap-diagnostics-${new Date().toISOString().slice(0,10)}.json`, "application/json");
+    downloadBlob(
+      d.safeExport,
+      `gann-gap-diagnostics-${new Date().toISOString().slice(0, 10)}.json`,
+      "application/json",
+    );
   };
 
   return (
@@ -76,15 +93,47 @@ function AdminGannGapPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => diag.refetch()} className="rounded-md border border-border bg-card px-3 py-1.5 text-xs hover:bg-muted/40">Refresh</button>
-            <button onClick={onFreeze} className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/20">Freeze now</button>
-            <button onClick={onEval} className="rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-500/20">Evaluate outcomes</button>
-            <button onClick={onExport} disabled={!d} className="rounded-md border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50 hover:bg-muted/40">Export diagnostics</button>
+            <button
+              onClick={() => diag.refetch()}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs hover:bg-muted/40"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={onFreeze}
+              className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/20"
+            >
+              Freeze now
+            </button>
+            <button
+              onClick={onEval}
+              className="rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-500/20"
+            >
+              Evaluate outcomes
+            </button>
+            <button
+              onClick={onExport}
+              disabled={!d}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs disabled:opacity-50 hover:bg-muted/40"
+            >
+              Export diagnostics
+            </button>
           </div>
         </header>
 
-        {msg && <div className="rounded-md border border-border bg-muted/20 p-2 text-xs text-muted-foreground">{msg}</div>}
-        {diag.error && <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{(diag.error as Error).message}</div>}
+        {msg && (
+          <div className="rounded-md border border-border bg-muted/20 p-2 text-xs text-muted-foreground">
+            {msg}
+          </div>
+        )}
+        {diag.error && (
+          <div
+            role="alert"
+            className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+          >
+            {(diag.error as Error).message}
+          </div>
+        )}
         {diag.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
         {d && (
@@ -108,7 +157,9 @@ function AdminGannGapPage() {
                     <Row k="Frozen at" v={d.latestPrediction.frozenAt ?? "—"} />
                     <Row k="Source" v={d.latestPrediction.source ?? "—"} />
                   </dl>
-                ) : <p className="text-xs text-muted-foreground">No frozen prediction yet.</p>}
+                ) : (
+                  <p className="text-xs text-muted-foreground">No frozen prediction yet.</p>
+                )}
               </Card>
               <Card title="Latest outcome">
                 {d.latestOutcome ? (
@@ -116,11 +167,20 @@ function AdminGannGapPage() {
                     <Row k="For prediction" v={d.latestOutcome.predictionId} />
                     <Row k="Outcome" v={d.latestOutcome.actualOutcome} />
                     <Row k="Gap (pts)" v={d.latestOutcome.gapPoints?.toFixed(2) ?? "—"} />
-                    <Row k="Gap %" v={d.latestOutcome.gapPercent != null ? (d.latestOutcome.gapPercent * 100).toFixed(3) + "%" : "—"} />
+                    <Row
+                      k="Gap %"
+                      v={
+                        d.latestOutcome.gapPercent != null
+                          ? (d.latestOutcome.gapPercent * 100).toFixed(3) + "%"
+                          : "—"
+                      }
+                    />
                     <Row k="Evaluated at" v={d.latestOutcome.evaluatedAt ?? "—"} />
                     <Row k="Rule" v={d.latestOutcome.outcomeRuleVersion} />
                   </dl>
-                ) : <p className="text-xs text-muted-foreground">No outcome evaluated yet.</p>}
+                ) : (
+                  <p className="text-xs text-muted-foreground">No outcome evaluated yet.</p>
+                )}
               </Card>
             </section>
 
@@ -129,7 +189,14 @@ function AdminGannGapPage() {
                 <Row k="Total" v={d.historical.metrics.total} />
                 <Row k="Correct" v={d.historical.metrics.correct} />
                 <Row k="Incorrect" v={d.historical.metrics.incorrect} />
-                <Row k="Win rate" v={d.historical.metrics.winRatePct != null ? d.historical.metrics.winRatePct.toFixed(1) + "%" : "—"} />
+                <Row
+                  k="Win rate"
+                  v={
+                    d.historical.metrics.winRatePct != null
+                      ? d.historical.metrics.winRatePct.toFixed(1) + "%"
+                      : "—"
+                  }
+                />
                 <Row k="Meets min sample" v={String(d.historical.metrics.meetsMinSample)} />
                 <Row k="Leakage detected" v={d.historical.metrics.leakageDetected} />
               </div>
@@ -160,7 +227,9 @@ function AdminGannGapPage() {
             </Card>
 
             <Card title="Recent predictions">
-              {history.isLoading && <p className="text-xs text-muted-foreground">Loading history…</p>}
+              {history.isLoading && (
+                <p className="text-xs text-muted-foreground">Loading history…</p>
+              )}
               {Array.isArray(history.data) && history.data.length === 0 && (
                 <p className="text-xs text-muted-foreground">No historical predictions yet.</p>
               )}

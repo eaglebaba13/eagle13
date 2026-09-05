@@ -34,13 +34,17 @@ function CryptoPairPage() {
   const candles = data?.candles ?? [];
   const first = candles[0]?.close ?? null;
   const last = candles[candles.length - 1]?.close ?? null;
-  const changePct = first != null && last != null && first !== 0 ? ((last - first) / first) * 100 : null;
+  const changePct =
+    first != null && last != null && first !== 0 ? ((last - first) / first) * 100 : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <Link to="/crypto" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <Link
+            to="/crypto"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-3 w-3" /> Markets
           </Link>
           <h1 className="mt-1 text-xl font-semibold">{pair}</h1>
@@ -53,7 +57,9 @@ function CryptoPairPage() {
             className="rounded border border-border/60 bg-background px-2 py-1 text-xs"
           >
             {INTERVALS.map((i) => (
-              <option key={i} value={i}>{i}</option>
+              <option key={i} value={i}>
+                {i}
+              </option>
             ))}
           </select>
           <button
@@ -68,18 +74,26 @@ function CryptoPairPage() {
       </header>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading candles…</p>}
-      {error && <p className="rounded border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-300">Unable to load candles.</p>}
+      {error && (
+        <p className="rounded border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-300">
+          Unable to load candles.
+        </p>
+      )}
 
       {data && (
         <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs">
           <div className="flex flex-wrap items-baseline gap-4">
             <div>
               <div className="text-muted-foreground">Last</div>
-              <div className="text-lg font-semibold tabular-nums">{last?.toLocaleString() ?? "—"}</div>
+              <div className="text-lg font-semibold tabular-nums">
+                {last?.toLocaleString() ?? "—"}
+              </div>
             </div>
             <div>
               <div className="text-muted-foreground">Window change</div>
-              <div className={`text-lg tabular-nums ${(changePct ?? 0) >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+              <div
+                className={`text-lg tabular-nums ${(changePct ?? 0) >= 0 ? "text-emerald-300" : "text-red-300"}`}
+              >
                 {changePct != null ? `${changePct.toFixed(2)}%` : "—"}
               </div>
             </div>
@@ -109,16 +123,21 @@ function CryptoPairPage() {
               </tr>
             </thead>
             <tbody>
-              {candles.slice(-50).reverse().map((c) => (
-                <tr key={c.time} className="border-b border-border/20 last:border-0 tabular-nums">
-                  <td className="px-3 py-1">{c.time.slice(0, 16).replace("T", " ")}</td>
-                  <td className="px-3 py-1 text-right">{c.open}</td>
-                  <td className="px-3 py-1 text-right">{c.high}</td>
-                  <td className="px-3 py-1 text-right">{c.low}</td>
-                  <td className="px-3 py-1 text-right font-medium">{c.close}</td>
-                  <td className="px-3 py-1 text-right text-muted-foreground">{c.volume ?? "—"}</td>
-                </tr>
-              ))}
+              {candles
+                .slice(-50)
+                .reverse()
+                .map((c) => (
+                  <tr key={c.time} className="border-b border-border/20 last:border-0 tabular-nums">
+                    <td className="px-3 py-1">{c.time.slice(0, 16).replace("T", " ")}</td>
+                    <td className="px-3 py-1 text-right">{c.open}</td>
+                    <td className="px-3 py-1 text-right">{c.high}</td>
+                    <td className="px-3 py-1 text-right">{c.low}</td>
+                    <td className="px-3 py-1 text-right font-medium">{c.close}</td>
+                    <td className="px-3 py-1 text-right text-muted-foreground">
+                      {c.volume ?? "—"}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </section>

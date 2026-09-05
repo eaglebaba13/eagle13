@@ -38,7 +38,8 @@ function PricingPage() {
             Institutional trading intelligence
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Every plan runs on the frozen EagleBABA Engine v1.0 — deterministic, versioned, transparent.
+            Every plan runs on the frozen EagleBABA Engine v1.0 — deterministic, versioned,
+            transparent.
           </p>
           <div className="mt-5 inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-xs">
             {(["monthly", "annual"] as const).map((c) => (
@@ -63,7 +64,8 @@ function PricingPage() {
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Prices shown are placeholders. Live billing will activate once a payment provider is connected.
+          Prices shown are placeholders. Live billing will activate once a payment provider is
+          connected.
         </p>
       </div>
     </div>
@@ -92,9 +94,7 @@ function PlanCard({
   return (
     <div
       className={`relative rounded-2xl border p-6 flex flex-col ${
-        plan.recommended
-          ? "border-amber-400/50 bg-amber-500/5"
-          : "border-white/10 bg-white/[0.03]"
+        plan.recommended ? "border-amber-400/50 bg-amber-500/5" : "border-white/10 bg-white/[0.03]"
       }`}
     >
       {plan.recommended ? (
@@ -160,11 +160,7 @@ function PlanCard({
           <div className="space-y-2">
             <Link
               to={isAuthenticated ? "/payment-status" : "/auth"}
-              search={
-                isAuthenticated
-                  ? { plan: id as "pro" | "professional", cycle }
-                  : undefined
-              }
+              search={isAuthenticated ? { plan: id as "pro" | "professional", cycle } : undefined}
               className="block w-full rounded-md bg-amber-400/90 hover:bg-amber-400 py-2 text-center text-sm font-semibold text-slate-900"
             >
               Pay via UPI QR

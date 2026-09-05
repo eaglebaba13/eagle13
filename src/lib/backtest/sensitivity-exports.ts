@@ -51,7 +51,9 @@ function provenanceHeaderLines(p: SensitivityExportProvenance): string[] {
     `# requestedRange=${p.requestedRange.from}→${p.requestedRange.to} actualRange=${p.actualRange.from}→${p.actualRange.to}`,
     `# grid=${p.grid.map((g) => `${g.name}:${g.min}:${g.max}:${g.step}`).join(",")}`,
     `# normalize=${p.normalizeWeights} monteCarlo=${p.includeMonteCarlo} classification=${p.classification} partial=${p.partial}`,
-    `# counters=${Object.entries(p.counters).map(([k, v]) => `${k}=${v}`).join(",")}`,
+    `# counters=${Object.entries(p.counters)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(",")}`,
     `# generatedAt=${p.generatedAt}`,
   ];
 }
@@ -133,9 +135,7 @@ export function buildSensitivityMatrixCsv(
     const name = grid[0].name;
     rows.push([name, metric].join(","));
     for (const c of cells) {
-      rows.push(
-        [csvCell(c.params[name]), c.metrics ? csvCell(c.metrics[metric]) : ""].join(","),
-      );
+      rows.push([csvCell(c.params[name]), c.metrics ? csvCell(c.metrics[metric]) : ""].join(","));
     }
     return rows.join("\n");
   }

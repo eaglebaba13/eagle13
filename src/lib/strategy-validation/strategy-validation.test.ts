@@ -25,7 +25,12 @@ function baseInput(over: Partial<DecisionEngineInput> = {}): DecisionEngineInput
   };
 }
 
-function snap(ts: string, spot: number, fwd: number, over: Partial<HistoricalSnapshot> = {}): HistoricalSnapshot {
+function snap(
+  ts: string,
+  spot: number,
+  fwd: number,
+  over: Partial<HistoricalSnapshot> = {},
+): HistoricalSnapshot {
   return {
     timestamp: ts,
     spotPrice: spot,

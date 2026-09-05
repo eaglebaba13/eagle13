@@ -54,7 +54,9 @@ function providerTelemetry(input: {
       ? "RATE_LIMITED"
       : input.code === "UPSTOX_AUTH_REQUIRED" || input.code === "UPSTOX_FORBIDDEN"
         ? "OFFLINE"
-        : input.code === "UPSTOX_DATA_UNAVAILABLE" || input.code === "UPSTOX_UNSUPPORTED_RANGE" || input.code === "UPSTOX_UNSUPPORTED_TIMEFRAME"
+        : input.code === "UPSTOX_DATA_UNAVAILABLE" ||
+            input.code === "UPSTOX_UNSUPPORTED_RANGE" ||
+            input.code === "UPSTOX_UNSUPPORTED_TIMEFRAME"
           ? "OFFLINE"
           : "FAILED";
   return {
@@ -71,18 +73,39 @@ function providerTelemetry(input: {
   };
 }
 
-function errorToReason(code: UpstoxErrorCode): "UNAVAILABLE" | "RATE_LIMITED" | "AUTH_REQUIRED" | "UNSUPPORTED_SYMBOL" | "UNSUPPORTED_TIMEFRAME" | "SCHEMA_ERROR" | "TIMEOUT" | "NETWORK" | "UNKNOWN" {
+function errorToReason(
+  code: UpstoxErrorCode,
+):
+  | "UNAVAILABLE"
+  | "RATE_LIMITED"
+  | "AUTH_REQUIRED"
+  | "UNSUPPORTED_SYMBOL"
+  | "UNSUPPORTED_TIMEFRAME"
+  | "SCHEMA_ERROR"
+  | "TIMEOUT"
+  | "NETWORK"
+  | "UNKNOWN" {
   switch (code) {
-    case "UPSTOX_AUTH_REQUIRED": return "AUTH_REQUIRED";
-    case "UPSTOX_FORBIDDEN": return "UNAVAILABLE";
-    case "UPSTOX_RATE_LIMITED": return "RATE_LIMITED";
-    case "UPSTOX_TIMEOUT": return "TIMEOUT";
-    case "UPSTOX_SCHEMA_ERROR": return "SCHEMA_ERROR";
-    case "UPSTOX_DATA_UNAVAILABLE": return "UNAVAILABLE";
-    case "UPSTOX_UNSUPPORTED_RANGE": return "UNAVAILABLE";
-    case "UPSTOX_UNSUPPORTED_TIMEFRAME": return "UNSUPPORTED_TIMEFRAME";
-    case "UPSTOX_NETWORK": return "NETWORK";
-    default: return "UNKNOWN";
+    case "UPSTOX_AUTH_REQUIRED":
+      return "AUTH_REQUIRED";
+    case "UPSTOX_FORBIDDEN":
+      return "UNAVAILABLE";
+    case "UPSTOX_RATE_LIMITED":
+      return "RATE_LIMITED";
+    case "UPSTOX_TIMEOUT":
+      return "TIMEOUT";
+    case "UPSTOX_SCHEMA_ERROR":
+      return "SCHEMA_ERROR";
+    case "UPSTOX_DATA_UNAVAILABLE":
+      return "UNAVAILABLE";
+    case "UPSTOX_UNSUPPORTED_RANGE":
+      return "UNAVAILABLE";
+    case "UPSTOX_UNSUPPORTED_TIMEFRAME":
+      return "UNSUPPORTED_TIMEFRAME";
+    case "UPSTOX_NETWORK":
+      return "NETWORK";
+    default:
+      return "UNKNOWN";
   }
 }
 
@@ -252,7 +275,8 @@ export class UpstoxHistoricalAdapter {
       low: row?.ohlc?.low ?? null,
       prevClose,
       change: prevClose != null ? last - prevClose : null,
-      changePct: prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
+      changePct:
+        prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
       volume: row?.volume ?? null,
       currency: "INR",
       telemetry,
@@ -269,9 +293,14 @@ export class UpstoxHistoricalAdapter {
         reason: "UNSUPPORTED_SYMBOL",
         detail: `${input.symbol} is not in the Upstox instrument master`,
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_DATA_UNAVAILABLE", latencyMs: 0,
-          nowIso: input.nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: "unsupported symbol",
+          ok: false,
+          code: "UPSTOX_DATA_UNAVAILABLE",
+          latencyMs: 0,
+          nowIso: input.nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: "unsupported symbol",
         }),
       };
     }
@@ -280,9 +309,14 @@ export class UpstoxHistoricalAdapter {
         ok: false,
         reason: "UNSUPPORTED_TIMEFRAME",
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_UNSUPPORTED_TIMEFRAME", latencyMs: 0,
-          nowIso: input.nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: "unsupported timeframe",
+          ok: false,
+          code: "UPSTOX_UNSUPPORTED_TIMEFRAME",
+          latencyMs: 0,
+          nowIso: input.nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: "unsupported timeframe",
         }),
       };
     }
@@ -294,26 +328,29 @@ export class UpstoxHistoricalAdapter {
         reason: "UNAVAILABLE",
         detail: plan.reason,
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_UNSUPPORTED_RANGE", latencyMs: 0,
-          nowIso: input.nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: plan.reason,
+          ok: false,
+          code: "UPSTOX_UNSUPPORTED_RANGE",
+          latencyMs: 0,
+          nowIso: input.nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: plan.reason,
         }),
       };
     }
 
     const chunkResults = [] as (readonly import("../types").HistoricalCandle[])[];
     let totalLatency = 0;
-    let lastErr:
-      | {
-          code: UpstoxErrorCode;
-          message: string;
-          retryAfterMs?: number;
-          httpStatus?: number;
-          upstoxErrorCode?: string;
-          path?: string;
-          requestId?: string;
-        }
-      | null = null;
+    let lastErr: {
+      code: UpstoxErrorCode;
+      message: string;
+      retryAfterMs?: number;
+      httpStatus?: number;
+      upstoxErrorCode?: string;
+      path?: string;
+      requestId?: string;
+    } | null = null;
     let totalRejected = 0;
 
     for (const chunk of plan.chunks) {
@@ -353,9 +390,14 @@ export class UpstoxHistoricalAdapter {
         reason: errorToReason(lastErr.code),
         detail: lastErr.message,
         telemetry: providerTelemetry({
-          ok: false, code: lastErr.code, latencyMs: totalLatency,
-          nowIso: input.nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: lastErr.message,
+          ok: false,
+          code: lastErr.code,
+          latencyMs: totalLatency,
+          nowIso: input.nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: lastErr.message,
           retryAfterMs: lastErr.retryAfterMs,
         }),
         providerDiagnostics: {
@@ -377,8 +419,12 @@ export class UpstoxHistoricalAdapter {
       timeframe: input.timeframe,
       candles: merged,
       telemetry: providerTelemetry({
-        ok: true, latencyMs: totalLatency, nowIso: input.nowIso, ageSec,
-        role: "PRIMARY", providerTime: dq.actualTo,
+        ok: true,
+        latencyMs: totalLatency,
+        nowIso: input.nowIso,
+        ageSec,
+        role: "PRIMARY",
+        providerTime: dq.actualTo,
         reason: totalRejected > 0 ? `rejected ${totalRejected} rows` : null,
       }),
     };
@@ -395,17 +441,28 @@ export class UpstoxHistoricalAdapter {
     const nowMs = Date.parse(nowIso);
     if (!Number.isFinite(nowMs)) {
       return {
-        ok: false, reason: "UNKNOWN",
+        ok: false,
+        reason: "UNKNOWN",
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_UNKNOWN", latencyMs: 0, nowIso,
-          ageSec: Infinity, role: "PRIMARY", providerTime: null,
+          ok: false,
+          code: "UPSTOX_UNKNOWN",
+          latencyMs: 0,
+          nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
           reason: "invalid nowIso",
         }),
       };
     }
     // Approximate calendar span from candle count and timeframe.
     const perDay: Record<Timeframe, number> = {
-      "1m": 375, "3m": 125, "5m": 75, "15m": 25, "1h": 6, "1d": 1,
+      "1m": 375,
+      "3m": 125,
+      "5m": 75,
+      "15m": 25,
+      "1h": 6,
+      "1d": 1,
     };
     const days = Math.max(1, Math.ceil(limit / (perDay[timeframe] ?? 1)));
     const to = new Date(nowMs);
@@ -430,22 +487,34 @@ export class UpstoxHistoricalAdapter {
     const instr = resolveInstrument(symbol);
     if (!instr) {
       return {
-        ok: false, reason: "UNSUPPORTED_SYMBOL",
+        ok: false,
+        reason: "UNSUPPORTED_SYMBOL",
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_DATA_UNAVAILABLE", latencyMs: 0,
-          nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: "unsupported symbol",
+          ok: false,
+          code: "UPSTOX_DATA_UNAVAILABLE",
+          latencyMs: 0,
+          nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: "unsupported symbol",
         }),
       };
     }
     const path = buildIntradayPath(instr.instrumentKey, timeframe);
     if (!path) {
       return {
-        ok: false, reason: "UNSUPPORTED_TIMEFRAME",
+        ok: false,
+        reason: "UNSUPPORTED_TIMEFRAME",
         telemetry: providerTelemetry({
-          ok: false, code: "UPSTOX_UNSUPPORTED_TIMEFRAME", latencyMs: 0,
-          nowIso, ageSec: Infinity, role: "PRIMARY",
-          providerTime: null, reason: "unsupported timeframe",
+          ok: false,
+          code: "UPSTOX_UNSUPPORTED_TIMEFRAME",
+          latencyMs: 0,
+          nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: "unsupported timeframe",
         }),
       };
     }
@@ -456,9 +525,15 @@ export class UpstoxHistoricalAdapter {
         reason: errorToReason(res.error.code),
         detail: res.error.message,
         telemetry: providerTelemetry({
-          ok: false, code: res.error.code, latencyMs: res.latencyMs,
-          nowIso, ageSec: Infinity, role: "PRIMARY", providerTime: null,
-          reason: res.error.message, retryAfterMs: res.error.retryAfterMs,
+          ok: false,
+          code: res.error.code,
+          latencyMs: res.latencyMs,
+          nowIso,
+          ageSec: Infinity,
+          role: "PRIMARY",
+          providerTime: null,
+          reason: res.error.message,
+          retryAfterMs: res.error.retryAfterMs,
         }),
         providerDiagnostics: {
           httpStatus: res.error.httpStatus,
@@ -482,14 +557,22 @@ export class UpstoxHistoricalAdapter {
         timeframe,
         candles: norm.candles,
         telemetry: providerTelemetry({
-          ok: true, latencyMs: res.latencyMs, nowIso, ageSec,
-          role: "PRIMARY", providerTime: norm.candles[norm.candles.length - 1]?.time ?? null,
+          ok: true,
+          latencyMs: res.latencyMs,
+          nowIso,
+          ageSec,
+          role: "PRIMARY",
+          providerTime: norm.candles[norm.candles.length - 1]?.time ?? null,
           reason: null,
         }),
       },
       telemetry: providerTelemetry({
-        ok: true, latencyMs: res.latencyMs, nowIso, ageSec,
-        role: "PRIMARY", providerTime: norm.candles[norm.candles.length - 1]?.time ?? null,
+        ok: true,
+        latencyMs: res.latencyMs,
+        nowIso,
+        ageSec,
+        role: "PRIMARY",
+        providerTime: norm.candles[norm.candles.length - 1]?.time ?? null,
         reason: null,
       }),
     };
@@ -508,8 +591,14 @@ export function buildUpstoxProviderAdapter(opts: UpstoxAdapterOptions = {}): Pro
       quotes: [...UPSTOX_SUPPORTED_SYMBOLS],
       historical: ["1m", "3m", "5m", "15m", "1h", "1d"],
       historicalSymbols: [
-        "NIFTY50", "BANKNIFTY", "INDIA_VIX",
-        "GOLD", "SILVER", "CRUDEOIL", "NATURAL_GAS", "USDINR",
+        "NIFTY50",
+        "BANKNIFTY",
+        "INDIA_VIX",
+        "GOLD",
+        "SILVER",
+        "CRUDEOIL",
+        "NATURAL_GAS",
+        "USDINR",
       ],
     },
     freshness: DEFAULT_FRESHNESS.HISTORICAL,

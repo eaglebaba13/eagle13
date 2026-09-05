@@ -11,7 +11,10 @@ import { buildWatchlist } from "@/lib/providers/coindcx/dashboard-selectors";
 
 function fmt(n: number | null, digits = 2): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 export function CryptoWatchlistWidget() {
@@ -39,8 +42,16 @@ export function CryptoWatchlistWidget() {
         <span className="text-[10px] text-muted-foreground">Default</span>
       </div>
 
-      {isLoading && <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">Loading…</p>}
-      {error && <p className="mt-2 text-xs text-red-300" role="alert">Watchlist unavailable</p>}
+      {isLoading && (
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+          Loading…
+        </p>
+      )}
+      {error && (
+        <p className="mt-2 text-xs text-red-300" role="alert">
+          Watchlist unavailable
+        </p>
+      )}
 
       {data && (
         <ul className="mt-2 space-y-1">

@@ -2,10 +2,7 @@
 // Pure. Reuses existing sensitivity cells and the optimizer result to
 // classify every cell as ACCEPTED / ALTERNATIVE / REJECTED / UNAVAILABLE.
 
-import type {
-  ParameterCombination,
-  SensitivityCell,
-} from "./parameter-sensitivity";
+import type { ParameterCombination, SensitivityCell } from "./parameter-sensitivity";
 import type { OptimizerResult } from "./explainable-optimizer";
 
 export type HeatmapClass = "ACCEPTED" | "ALTERNATIVE" | "REJECTED" | "UNAVAILABLE";
@@ -27,7 +24,8 @@ export type HeatmapCell = {
 function sameParams(a: ParameterCombination, b: ParameterCombination): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const k of keys) {
-    const va = a[k]; const vb = b[k];
+    const va = a[k];
+    const vb = b[k];
     if (va === undefined || vb === undefined) return false;
     if (Math.abs(va - vb) > 1e-6) return false;
   }
@@ -44,16 +42,19 @@ export function buildHeatmapOverlay(
   const rejectedCenters = result.rejectedRegions.map((r) => r.center);
 
   const isAccepted = (p: ParameterCombination): boolean =>
-    acceptedCenters.some((c) => sameParams(c, p)) ||
-    inSafeRange(p, recommended);
-  const isAlt = (p: ParameterCombination): boolean =>
-    altCenters.some((c) => sameParams(c, p));
+    acceptedCenters.some((c) => sameParams(c, p)) || inSafeRange(p, recommended);
+  const isAlt = (p: ParameterCombination): boolean => altCenters.some((c) => sameParams(c, p));
   const isRejected = (p: ParameterCombination): boolean =>
     rejectedCenters.some((c) => sameParams(c, p));
 
   return cells.map((c) => {
     if (!c.metrics) {
-      return { params: c.params, classification: "UNAVAILABLE", color: HEATMAP_COLORS.UNAVAILABLE, note: c.reason };
+      return {
+        params: c.params,
+        classification: "UNAVAILABLE",
+        color: HEATMAP_COLORS.UNAVAILABLE,
+        note: c.reason,
+      };
     }
     if (isAccepted(c.params)) {
       return { params: c.params, classification: "ACCEPTED", color: HEATMAP_COLORS.ACCEPTED };

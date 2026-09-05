@@ -11,7 +11,11 @@ export const Route = createFileRoute("/crypto")({
   head: () => ({
     meta: [
       { title: "Crypto & Tokenized Metals — Market Data · EagleBABA" },
-      { name: "description", content: "24×7 crypto and tokenized metal reference data via CoinDCX public market feeds. Market data only — no trading." },
+      {
+        name: "description",
+        content:
+          "24×7 crypto and tokenized metal reference data via CoinDCX public market feeds. Market data only — no trading.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -20,7 +24,10 @@ export const Route = createFileRoute("/crypto")({
 
 function fmt(n: number | null | undefined, digits = 2): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 function CryptoMarketsPage() {
@@ -41,10 +48,13 @@ function CryptoMarketsPage() {
     <div className="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">CRYPTO & TOKENIZED METALS · COINDCX PUBLIC</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            CRYPTO & TOKENIZED METALS · COINDCX PUBLIC
+          </div>
           <h1 className="text-xl font-semibold text-foreground">Multi-Asset Market Data</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Reference market data from CoinDCX public endpoints. 24×7 sessions. Trading is not enabled from this application.
+            Reference market data from CoinDCX public endpoints. 24×7 sessions. Trading is not
+            enabled from this application.
           </p>
         </div>
         <button
@@ -68,9 +78,9 @@ function CryptoMarketsPage() {
       <Section title="Tokenized Metals (Reference Only)" rows={metals} formatter={fmt} disclaimer />
 
       <footer className="pt-4 text-[11px] text-muted-foreground">
-        Data source: CoinDCX public API. Tokenized metals (PAXG, XAUT, KAG) are ERC-20 representations that
-        track spot metals; they are NOT the physical instrument and are not consumed by the Gold/Silver trading
-        formulas. Nothing on this page is investment advice.
+        Data source: CoinDCX public API. Tokenized metals (PAXG, XAUT, KAG) are ERC-20
+        representations that track spot metals; they are NOT the physical instrument and are not
+        consumed by the Gold/Silver trading formulas. Nothing on this page is investment advice.
       </footer>
     </div>
   );
@@ -83,7 +93,22 @@ function Section({
   disclaimer,
 }: {
   title: string;
-  rows: { market: { pair: string; base: string; quote: string; linkedUnderlying: "GOLD" | "SILVER" | null; notes: readonly string[] }; ticker: { last: number; change24hPct: number | null; volume24h: number | null; high24h: number | null; low24h: number | null } | null }[];
+  rows: {
+    market: {
+      pair: string;
+      base: string;
+      quote: string;
+      linkedUnderlying: "GOLD" | "SILVER" | null;
+      notes: readonly string[];
+    };
+    ticker: {
+      last: number;
+      change24hPct: number | null;
+      volume24h: number | null;
+      high24h: number | null;
+      low24h: number | null;
+    } | null;
+  }[];
   formatter: (n: number | null | undefined, digits?: number) => string;
   disclaimer?: boolean;
 }) {
@@ -126,9 +151,15 @@ function Section({
                 >
                   {ticker?.change24hPct != null ? `${ticker.change24hPct.toFixed(2)}%` : "—"}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatter(ticker?.high24h, 2)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatter(ticker?.low24h, 2)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatter(ticker?.volume24h, 4)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {formatter(ticker?.high24h, 2)}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {formatter(ticker?.low24h, 2)}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {formatter(ticker?.volume24h, 4)}
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">
                   {market.linkedUnderlying ? (
                     <span className="inline-flex items-center gap-1">

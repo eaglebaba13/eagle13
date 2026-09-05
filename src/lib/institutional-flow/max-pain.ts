@@ -73,7 +73,10 @@ export function computeMaxPain(input: MaxPainInput): MaxPainResult {
     let bd = Math.abs(best - spot);
     for (const s of strikes) {
       const d = Math.abs(s.strike - spot);
-      if (d < bd) { bd = d; best = s.strike; }
+      if (d < bd) {
+        bd = d;
+        best = s.strike;
+      }
     }
     nearest = best;
   }

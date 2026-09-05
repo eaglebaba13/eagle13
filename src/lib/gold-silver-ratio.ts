@@ -73,7 +73,11 @@ export function classifyRatio(ratio: number): GoldSilverSignal {
   return "WAIT";
 }
 
-function unavailable(input: GoldSilverInput, dataQuality: GoldSilverDataQuality, reason: string): GoldSilverSnapshot {
+function unavailable(
+  input: GoldSilverInput,
+  dataQuality: GoldSilverDataQuality,
+  reason: string,
+): GoldSilverSnapshot {
   return {
     goldPrice: input.goldPrice,
     silverPrice: input.silverPrice,
@@ -111,9 +115,8 @@ export function computeGoldSilverSnapshot(input: GoldSilverInput): GoldSilverSna
   const gAge = ageMs(input.goldTimestamp ?? null, now);
   const sAge = ageMs(input.silverTimestamp ?? null, now);
   const worst = Math.max(gAge ?? 0, sAge ?? 0);
-  const freshness = input.goldTimestamp && input.silverTimestamp
-    ? classifyFreshness(worst)
-    : "UNAVAILABLE";
+  const freshness =
+    input.goldTimestamp && input.silverTimestamp ? classifyFreshness(worst) : "UNAVAILABLE";
 
   if (freshness === "STALE" || freshness === "UNAVAILABLE") {
     // Even if we can compute a numeric ratio, do NOT emit a trade signal

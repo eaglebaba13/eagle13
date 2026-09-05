@@ -78,7 +78,9 @@ describe("shadow live controller", () => {
       nowIso: () => "2026-01-01T00:05:10Z",
     });
     let seen = 0;
-    const off = ctl.subscribe(() => { seen++; });
+    const off = ctl.subscribe(() => {
+      seen++;
+    });
     expect(seen).toBe(1);
     off();
   });
@@ -134,11 +136,10 @@ describe("shadow live controller", () => {
   });
 
   it("unavailable provider yields PAUSED view state", async () => {
-    const ctl = new ShadowLiveController(
-      createUnavailableAdapter("yahoo", "Yahoo"),
-      baseConfig(),
-      { evidenceProvider: evidence, nowIso: () => "2026-01-01T00:05:10Z" },
-    );
+    const ctl = new ShadowLiveController(createUnavailableAdapter("yahoo", "Yahoo"), baseConfig(), {
+      evidenceProvider: evidence,
+      nowIso: () => "2026-01-01T00:05:10Z",
+    });
     await ctl.runOnce();
     expect(ctl.snapshot().viewState).toBe("PAUSED");
   });

@@ -18,7 +18,7 @@ export type ReplayState = "CE" | "PE" | "WAIT" | "UNKNOWN";
 export interface ReplayObservation {
   readonly timestamp: string; // ISO
   readonly instrument: string;
-  readonly session: string;   // e.g. "REGULAR" | "PREOPEN"
+  readonly session: string; // e.g. "REGULAR" | "PREOPEN"
   readonly expiry?: string | null;
   readonly provider: string;
   readonly formulaVersion: string;
@@ -92,7 +92,11 @@ const EMPTY: ReplayResult = {
   provenance: { provider: null, formulaVersion: null, snapshotIds: [] },
 };
 
-function fail(cap: ReplayCapability, reason: string, base: Partial<ReplayResult> = {}): ReplayResult {
+function fail(
+  cap: ReplayCapability,
+  reason: string,
+  base: Partial<ReplayResult> = {},
+): ReplayResult {
   return { ...EMPTY, ...base, capability: cap, reason };
 }
 
@@ -114,7 +118,9 @@ export function alignReplay(
     valid.push(o);
   }
   if (valid.length === 0)
-    return fail("INVALID", "All observations invalid or wrong instrument", { invalidCount: invalid });
+    return fail("INVALID", "All observations invalid or wrong instrument", {
+      invalidCount: invalid,
+    });
 
   // Dedupe by snapshotId+timestamp
   const seen = new Set<string>();
@@ -122,7 +128,10 @@ export function alignReplay(
   let dedupe = 0;
   for (const o of valid) {
     const k = `${o.snapshotId}@${o.timestamp}`;
-    if (seen.has(k)) { dedupe++; continue; }
+    if (seen.has(k)) {
+      dedupe++;
+      continue;
+    }
     seen.add(k);
     deduped.push(o);
   }
@@ -134,26 +143,40 @@ export function alignReplay(
   const formulas = new Set(deduped.map((o) => o.formulaVersion));
   if (sessions.size > 1)
     return fail("MIXED_SESSIONS", `Mixed sessions: ${[...sessions].join(", ")}`, {
-      observationCount: deduped.length, dedupeCount: dedupe, invalidCount: invalid,
+      observationCount: deduped.length,
+      dedupeCount: dedupe,
+      invalidCount: invalid,
     });
   if (providers.size > 1)
     return fail("MIXED_PROVIDERS", `Mixed providers: ${[...providers].join(", ")}`, {
-      observationCount: deduped.length, dedupeCount: dedupe, invalidCount: invalid,
+      observationCount: deduped.length,
+      dedupeCount: dedupe,
+      invalidCount: invalid,
     });
   if (formulas.size > 1)
     return fail("MIXED_FORMULA_VERSIONS", `Mixed formula versions: ${[...formulas].join(", ")}`, {
-      observationCount: deduped.length, dedupeCount: dedupe, invalidCount: invalid,
+      observationCount: deduped.length,
+      dedupeCount: dedupe,
+      invalidCount: invalid,
     });
   const provider = [...providers][0];
   const formulaVersion = [...formulas][0];
   if (formulaVersion !== ctx.formulaVersion)
-    return fail("MIXED_FORMULA_VERSIONS", `Formula ${formulaVersion} ≠ current ${ctx.formulaVersion}`, {
-      observationCount: deduped.length, dedupeCount: dedupe, invalidCount: invalid,
-    });
+    return fail(
+      "MIXED_FORMULA_VERSIONS",
+      `Formula ${formulaVersion} ≠ current ${ctx.formulaVersion}`,
+      {
+        observationCount: deduped.length,
+        dedupeCount: dedupe,
+        invalidCount: invalid,
+      },
+    );
 
   if (deduped.length < min)
     return fail("TOO_FEW_OBSERVATIONS", `Only ${deduped.length} observations (<${min})`, {
-      observationCount: deduped.length, dedupeCount: dedupe, invalidCount: invalid,
+      observationCount: deduped.length,
+      dedupeCount: dedupe,
+      invalidCount: invalid,
     });
 
   // Duration & state buckets
@@ -180,8 +203,9 @@ export function alignReplay(
       if (next.confidence < cur.confidence - 5) weakening++;
     }
   }
-  const dominant = (Object.entries(buckets) as [ReplayState, number][])
-    .sort((a, b) => b[1] - a[1])[0][0];
+  const dominant = (Object.entries(buckets) as [ReplayState, number][]).sort(
+    (a, b) => b[1] - a[1],
+  )[0][0];
 
   // Missing intervals estimate
   let missing = 0;

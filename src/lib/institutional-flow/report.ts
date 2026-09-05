@@ -47,7 +47,10 @@ export function buildInstitutionalFlowReport(input: BuildReportInput): Instituti
     totalCallChangeOi: oi.totalCallChangeOi,
     totalPutChangeOi: oi.totalPutChangeOi,
   });
-  const maxPain = computeMaxPain({ snapshot: input.snapshot, historicalMaxPain: input.historicalMaxPain });
+  const maxPain = computeMaxPain({
+    snapshot: input.snapshot,
+    historicalMaxPain: input.historicalMaxPain,
+  });
   const gamma = computeGamma(input.snapshot);
   const heatmap = buildHeatmap(oi, { atm: oi.atmStrike, maxPain: maxPain.currentMaxPain });
   const sectorFlow = buildSectorFlow({

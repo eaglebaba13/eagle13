@@ -2,12 +2,7 @@
 // Consumer-only: reads snapshots off dataset rows. Never mutates
 // canonical logic.
 
-import type {
-  HistoricalRow,
-  ReadinessState,
-  SignalEvent,
-  SignalFamily,
-} from "./types";
+import type { HistoricalRow, ReadinessState, SignalEvent, SignalFamily } from "./types";
 
 function readiness(available: boolean, partial: boolean): ReadinessState {
   if (!available) return "UNAVAILABLE";
@@ -19,8 +14,7 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
   const ts = row.timestamp;
   if (row.decision) {
     const state = row.decision.state;
-    const predicted =
-      state === "BULLISH" ? "GAP_UP" : state === "BEARISH" ? "GAP_DOWN" : null;
+    const predicted = state === "BULLISH" ? "GAP_UP" : state === "BEARISH" ? "GAP_DOWN" : null;
     events.push({
       family: "DECISION",
       label: state,
@@ -38,8 +32,7 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
   }
   if (row.gannGap) {
     const outlook = row.gannGap.outlook;
-    const predicted =
-      outlook === "GAP_UP" ? "GAP_UP" : outlook === "GAP_DOWN" ? "GAP_DOWN" : null;
+    const predicted = outlook === "GAP_UP" ? "GAP_UP" : outlook === "GAP_DOWN" ? "GAP_DOWN" : null;
     const eligible = outlook === "GAP_UP" || outlook === "GAP_DOWN";
     events.push({
       family: "GANN_GAP",
@@ -48,7 +41,10 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
       sessionDate: row.sessionDate,
       signalTimestamp: ts,
       formulaVersion: row.gannGap.formulaVersion,
-      readiness: readiness(outlook !== "UNAVAILABLE", outlook === "NO_TRADE" || outlook === "CONFLICT"),
+      readiness: readiness(
+        outlook !== "UNAVAILABLE",
+        outlook === "NO_TRADE" || outlook === "CONFLICT",
+      ),
       confidence: null,
       blockingWarnings: [],
       eligible,
@@ -66,7 +62,11 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
       formulaVersion: "smart-alerts",
       readiness: alert.readinessBlocked ? "BLOCKED" : alert.staleData ? "STALE" : "READY",
       confidence: null,
-      blockingWarnings: alert.readinessBlocked ? ["READINESS_BLOCKED"] : alert.staleData ? ["STALE_DATA"] : [],
+      blockingWarnings: alert.readinessBlocked
+        ? ["READINESS_BLOCKED"]
+        : alert.staleData
+          ? ["STALE_DATA"]
+          : [],
       eligible: !alert.readinessBlocked && !alert.staleData && !alert.duplicateSuppressed,
       inputAvailability: "OK",
       predictedDirection: null,
@@ -75,8 +75,11 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
   if (row.institutionalFlow) {
     const summary = row.institutionalFlow.summary;
     const predicted =
-      summary === "PUT_WRITERS_ACTIVE" ? "GAP_UP" :
-      summary === "CALL_WRITERS_ACTIVE" ? "GAP_DOWN" : null;
+      summary === "PUT_WRITERS_ACTIVE"
+        ? "GAP_UP"
+        : summary === "CALL_WRITERS_ACTIVE"
+          ? "GAP_DOWN"
+          : null;
     events.push({
       family: "INSTITUTIONAL_FLOW",
       label: summary,
@@ -84,7 +87,10 @@ export function eventsForRow(row: HistoricalRow): readonly SignalEvent[] {
       sessionDate: row.sessionDate,
       signalTimestamp: ts,
       formulaVersion: "institutional-flow",
-      readiness: readiness(summary !== "UNAVAILABLE", summary === "CONFLICT" || summary === "BALANCED"),
+      readiness: readiness(
+        summary !== "UNAVAILABLE",
+        summary === "CONFLICT" || summary === "BALANCED",
+      ),
       confidence: null,
       blockingWarnings: [],
       eligible: summary === "PUT_WRITERS_ACTIVE" || summary === "CALL_WRITERS_ACTIVE",
@@ -99,8 +105,14 @@ export function eventsByFamily(
   rows: readonly HistoricalRow[],
 ): Readonly<Record<SignalFamily, readonly SignalEvent[]>> {
   const out: Record<SignalFamily, SignalEvent[]> = {
-    DECISION: [], GTI: [], COMBINED_PCR: [], BREADTH: [],
-    GANN_GAP: [], SMART_ALERT: [], INSTITUTIONAL_FLOW: [], OPTION_STRATEGY: [],
+    DECISION: [],
+    GTI: [],
+    COMBINED_PCR: [],
+    BREADTH: [],
+    GANN_GAP: [],
+    SMART_ALERT: [],
+    INSTITUTIONAL_FLOW: [],
+    OPTION_STRATEGY: [],
   };
   for (const r of rows) {
     for (const e of eventsForRow(r)) out[e.family].push(e);

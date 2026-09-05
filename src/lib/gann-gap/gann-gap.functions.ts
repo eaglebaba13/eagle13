@@ -20,11 +20,7 @@ import {
   vixConfirmation,
   astroConfirmation,
 } from "./confirmations";
-import type {
-  GannGapConfirmation,
-  GannGapOutlook,
-  GannGapOutlookLabel,
-} from "./types";
+import type { GannGapConfirmation, GannGapOutlook, GannGapOutlookLabel } from "./types";
 
 function emptyOutlook(
   label: GannGapOutlookLabel,

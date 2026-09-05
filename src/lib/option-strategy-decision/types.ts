@@ -11,13 +11,7 @@ export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH" | "UNKNOWN";
 export type StrikeMoneyness = "ATM" | "ITM" | "OTM";
 
 export interface IndicatorScore {
-  readonly key:
-    | "pcr"
-    | "sector"
-    | "breadth"
-    | "oi"
-    | "vix"
-    | "maxPain";
+  readonly key: "pcr" | "sector" | "breadth" | "oi" | "vix" | "maxPain";
   readonly label: string;
   readonly weight: number; // 0..1
   readonly bias: IndicatorBias;

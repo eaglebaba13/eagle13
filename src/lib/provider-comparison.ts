@@ -22,17 +22,16 @@ export type ProviderComparisonResult = {
   overall: "MATCH" | "MINOR_DIFFERENCE" | "MATERIAL_DIFFERENCE";
 };
 
-function classify(c: Omit<SessionComparison, "classification">): SessionComparison["classification"] {
+function classify(
+  c: Omit<SessionComparison, "classification">,
+): SessionComparison["classification"] {
   if (c.ohlcDiffs === 0 && c.missingInA === 0 && c.missingInB === 0) return "MATCH";
   if (c.highDiff > 5 || c.lowDiff > 5 || c.missingInA > 3 || c.missingInB > 3)
     return "MATERIAL_DIFFERENCE";
   return "MINOR_DIFFERENCE";
 }
 
-export function compareProviders(
-  a: ParsedCandle[],
-  b: ParsedCandle[],
-): ProviderComparisonResult {
+export function compareProviders(a: ParsedCandle[], b: ParsedCandle[]): ProviderComparisonResult {
   const ga = groupBySessionDate(a);
   const gb = groupBySessionDate(b);
   const overlap = [...ga.keys()].filter((d) => gb.has(d)).sort();

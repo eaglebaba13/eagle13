@@ -12,8 +12,7 @@ import type { ComparisonReport } from "./optimizer-comparison";
 import type { ParameterDriftReport } from "./optimizer-drift";
 import type { OptimizerResult } from "./explainable-optimizer";
 
-const DISCLAIMER =
-  "RESEARCH OPTIMIZATION ONLY — NO PRODUCTION PARAMETER CHANGES";
+const DISCLAIMER = "RESEARCH OPTIMIZATION ONLY — NO PRODUCTION PARAMETER CHANGES";
 
 function csvEscape(v: string | number | null | undefined): string {
   if (v == null) return "";
@@ -64,10 +63,18 @@ export function buildOptimizerComparisonCsv(input: {
   const rows: string[] = [
     ["runId", input.a.runId, input.b.runId],
     ["strategy", input.a.strategy, input.b.strategy],
-    ["objectiveScore", input.a.result.objectiveScore.toFixed(4), input.b.result.objectiveScore.toFixed(4)],
+    [
+      "objectiveScore",
+      input.a.result.objectiveScore.toFixed(4),
+      input.b.result.objectiveScore.toFixed(4),
+    ],
     ["overfitRisk", input.a.result.overfitRisk, input.b.result.overfitRisk],
     ["confidence", input.a.result.confidence, input.b.result.confidence],
-    ["parameters", JSON.stringify(input.a.result.recommendedParameters ?? {}), JSON.stringify(input.b.result.recommendedParameters ?? {})],
+    [
+      "parameters",
+      JSON.stringify(input.a.result.recommendedParameters ?? {}),
+      JSON.stringify(input.b.result.recommendedParameters ?? {}),
+    ],
   ].map((r) => r.map(csvEscape).join(","));
   return [
     `# disclaimer=${DISCLAIMER}`,

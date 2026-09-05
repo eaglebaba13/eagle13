@@ -36,15 +36,28 @@ function csvEscape(v: unknown): string {
 }
 
 export function buildCandidatesCsv(rows: readonly CandidateRow[], portfolioRunId: string): string {
-  const header = [
-    `# ${PORTFOLIO_DISCLAIMER}`,
-    `# portfolioRunId=${portfolioRunId}`,
-    "",
-  ].join("\n");
+  const header = [`# ${PORTFOLIO_DISCLAIMER}`, `# portfolioRunId=${portfolioRunId}`, ""].join("\n");
   const cols = [
-    "assetId","runId","strategy","formulaVersion","instrument","timeframe","from","to",
-    "trades","winRate","profitFactor","expectancy","maxDrawdown","netPnl",
-    "robustness","recommendation","optimizerStatus","reliability","selectable","blockReason",
+    "assetId",
+    "runId",
+    "strategy",
+    "formulaVersion",
+    "instrument",
+    "timeframe",
+    "from",
+    "to",
+    "trades",
+    "winRate",
+    "profitFactor",
+    "expectancy",
+    "maxDrawdown",
+    "netPnl",
+    "robustness",
+    "recommendation",
+    "optimizerStatus",
+    "reliability",
+    "selectable",
+    "blockReason",
   ];
   const lines = [cols.join(",")];
   for (const r of rows) {
@@ -54,15 +67,16 @@ export function buildCandidatesCsv(rows: readonly CandidateRow[], portfolioRunId
 }
 
 export function buildComparisonCsv(cmp: PortfolioComparison): string {
-  const header = [
-    `# ${PORTFOLIO_DISCLAIMER}`,
-    `# a=${cmp.aRunId}`,
-    `# b=${cmp.bRunId}`,
-    "",
-  ].join("\n");
+  const header = [`# ${PORTFOLIO_DISCLAIMER}`, `# a=${cmp.aRunId}`, `# b=${cmp.bRunId}`, ""].join(
+    "\n",
+  );
   const lines = ["metric,a,b,delta,pctDelta"];
   for (const m of cmp.metrics) {
-    lines.push([m.metric, csvEscape(m.a), csvEscape(m.b), csvEscape(m.delta), csvEscape(m.pctDelta)].join(","));
+    lines.push(
+      [m.metric, csvEscape(m.a), csvEscape(m.b), csvEscape(m.delta), csvEscape(m.pctDelta)].join(
+        ",",
+      ),
+    );
   }
   lines.push("");
   lines.push("assetId,a,b,delta");
@@ -74,21 +88,34 @@ export function buildComparisonCsv(cmp: PortfolioComparison): string {
 
 export function buildHistoryCsv(entries: readonly PortfolioHistoryEntry[]): string {
   const header = [`# ${PORTFOLIO_DISCLAIMER}`, ""].join("\n");
-  const cols = ["id","recordedAt","runId","method","sizingMethod","rebalance","netPnl","sharpe","maxDrawdownPct","note"];
+  const cols = [
+    "id",
+    "recordedAt",
+    "runId",
+    "method",
+    "sizingMethod",
+    "rebalance",
+    "netPnl",
+    "sharpe",
+    "maxDrawdownPct",
+    "note",
+  ];
   const lines = [cols.join(",")];
   for (const e of entries) {
-    lines.push([
-      e.id,
-      e.recordedAt,
-      e.result.runId,
-      e.result.config.method,
-      e.result.config.sizingPolicy.method,
-      e.result.config.rebalancePolicy,
-      String(e.result.metrics.netPnl),
-      String(e.result.metrics.sharpe),
-      String(e.result.metrics.maxDrawdownPct),
-      csvEscape(e.note),
-    ].join(","));
+    lines.push(
+      [
+        e.id,
+        e.recordedAt,
+        e.result.runId,
+        e.result.config.method,
+        e.result.config.sizingPolicy.method,
+        e.result.config.rebalancePolicy,
+        String(e.result.metrics.netPnl),
+        String(e.result.metrics.sharpe),
+        String(e.result.metrics.maxDrawdownPct),
+        csvEscape(e.note),
+      ].join(","),
+    );
   }
   return header + lines.join("\n") + "\n";
 }

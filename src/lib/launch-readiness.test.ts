@@ -24,7 +24,9 @@ describe("launch-readiness", () => {
   });
 
   it("READY_FOR_INTERNAL_TEST when freshness or stale-actionable fails", () => {
-    expect(evaluateLaunchReadiness({ ...base, freshnessPass: false }).verdict).toBe("READY_FOR_INTERNAL_TEST");
+    expect(evaluateLaunchReadiness({ ...base, freshnessPass: false }).verdict).toBe(
+      "READY_FOR_INTERNAL_TEST",
+    );
   });
 
   it("READY_FOR_SUBSCRIPTION_PREVIEW when option-chain still pending", () => {
@@ -32,7 +34,9 @@ describe("launch-readiness", () => {
   });
 
   it("PRODUCTION_REVIEW_REQUIRED when everything green including option-chain", () => {
-    expect(evaluateLaunchReadiness({ ...base, optionChainReady: true }).verdict).toBe("PRODUCTION_REVIEW_REQUIRED");
+    expect(evaluateLaunchReadiness({ ...base, optionChainReady: true }).verdict).toBe(
+      "PRODUCTION_REVIEW_REQUIRED",
+    );
   });
 
   it("never auto-launches (verdict is never a bare LAUNCH string)", () => {

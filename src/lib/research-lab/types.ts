@@ -9,11 +9,7 @@ export const OUTCOME_DEFINITION_VERSION = "outcomes@1.0.0";
 export const RESEARCH_LAB_DISCLAIMER =
   "RESEARCH ONLY — HISTORICAL RESULTS DO NOT GUARANTEE FUTURE PERFORMANCE.";
 
-export type DataQualityFlag =
-  | "OK"
-  | "PARTIAL"
-  | "INVALID"
-  | "LEAKAGE_DETECTED";
+export type DataQualityFlag = "OK" | "PARTIAL" | "INVALID" | "LEAKAGE_DETECTED";
 
 export type GapDirection = "GAP_UP" | "GAP_DOWN" | "FLAT";
 
@@ -27,20 +23,10 @@ export type SignalFamily =
   | "INSTITUTIONAL_FLOW"
   | "OPTION_STRATEGY";
 
-export type ReadinessState =
-  | "READY"
-  | "PARTIAL"
-  | "BLOCKED"
-  | "STALE"
-  | "UNAVAILABLE";
+export type ReadinessState = "READY" | "PARTIAL" | "BLOCKED" | "STALE" | "UNAVAILABLE";
 
 export interface DecisionSnapshot {
-  readonly state:
-    | "BULLISH"
-    | "BEARISH"
-    | "NEUTRAL"
-    | "CONFLICT"
-    | "UNAVAILABLE";
+  readonly state: "BULLISH" | "BEARISH" | "NEUTRAL" | "CONFLICT" | "UNAVAILABLE";
   readonly confidence: number | null;
   readonly formulaVersion: string;
 }
@@ -69,11 +55,7 @@ export interface SmartAlertEventSnapshot {
 
 export interface InstitutionalFlowSnapshot {
   readonly summary:
-    | "PUT_WRITERS_ACTIVE"
-    | "CALL_WRITERS_ACTIVE"
-    | "BALANCED"
-    | "CONFLICT"
-    | "UNAVAILABLE";
+    "PUT_WRITERS_ACTIVE" | "CALL_WRITERS_ACTIVE" | "BALANCED" | "CONFLICT" | "UNAVAILABLE";
   readonly maxPainDistancePct: number | null;
   readonly gammaAvailable: boolean;
   readonly sectorFlow: "BULLISH" | "BEARISH" | "MIXED" | "UNAVAILABLE";
@@ -82,7 +64,7 @@ export interface InstitutionalFlowSnapshot {
 export interface HistoricalRow {
   readonly symbol: string;
   readonly sessionDate: string; // YYYY-MM-DD
-  readonly timestamp: string;   // ISO instant of the session close
+  readonly timestamp: string; // ISO instant of the session close
   readonly open: number;
   readonly high: number;
   readonly low: number;
@@ -102,7 +84,7 @@ export interface HistoricalRow {
   readonly formulaVersions: Readonly<Record<string, string>>;
   readonly qualityFlags: readonly DataQualityFlag[];
   readonly weekday: number; // 0..6 (Sun..Sat)
-  readonly month: number;   // 1..12
+  readonly month: number; // 1..12
 }
 
 export interface HistoricalDataset {

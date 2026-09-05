@@ -1,10 +1,6 @@
 // Phase 3E — Redacted admin diagnostics for the research lab.
 
-import type {
-  DataQualityReport,
-  HistoricalDataset,
-  ResearchRunReport,
-} from "./types";
+import type { DataQualityReport, HistoricalDataset, ResearchRunReport } from "./types";
 
 export interface ResearchLabDiagnostics {
   readonly datasetAvailable: boolean;
@@ -41,7 +37,8 @@ export function buildDiagnostics(input: {
 }): ResearchLabDiagnostics {
   const dataset = input.dataset;
   const quality = input.quality;
-  const lastSuccess = input.reports.length > 0 ? input.reports[input.reports.length - 1].generatedAt : null;
+  const lastSuccess =
+    input.reports.length > 0 ? input.reports[input.reports.length - 1].generatedAt : null;
   return {
     datasetAvailable: !!dataset && dataset.rows.length > 0,
     datasetHash: dataset?.hash ?? "",

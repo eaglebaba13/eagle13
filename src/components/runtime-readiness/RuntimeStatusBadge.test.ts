@@ -111,9 +111,7 @@ describe("Phase 2G · RuntimeReadinessSummary", () => {
   };
 
   it("renders overall verdict badge and summary counts", () => {
-    const html = renderToStaticMarkup(
-      createElement(RuntimeReadinessSummary, { report }),
-    );
+    const html = renderToStaticMarkup(createElement(RuntimeReadinessSummary, { report }));
     expect(html).toContain('data-overall="PARTIALLY_READY"');
     expect(html).toContain("PARTIALLY READY");
     expect(html).toContain("Modules");

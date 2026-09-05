@@ -13,14 +13,25 @@ import type { SensitivityMetrics } from "./parameter-sensitivity";
 
 function m(over: Partial<SensitivityMetrics> = {}): SensitivityMetrics {
   return {
-    trades: 60, winRate: 0.55, profitFactor: 1.8, expectancy: 2.5, netPnl: 150,
-    maxDrawdown: 40, recoveryFactor: 4, stabilityScore: 0.7, oosScore: 0.7,
-    monteCarloMedian: 1100, monteCarloP5: 970, ...over,
+    trades: 60,
+    winRate: 0.55,
+    profitFactor: 1.8,
+    expectancy: 2.5,
+    netPnl: 150,
+    maxDrawdown: 40,
+    recoveryFactor: 4,
+    stabilityScore: 0.7,
+    oosScore: 0.7,
+    monteCarloMedian: 1100,
+    monteCarloP5: 970,
+    ...over,
   };
 }
 
 const input: OptimizerRunInput = {
-  strategy: "SMC_V1", formulaVersion: "SMC_V1", baseRunId: "BASE",
+  strategy: "SMC_V1",
+  formulaVersion: "SMC_V1",
+  baseRunId: "BASE",
   researchRunIds: { sens: "S1" },
   parameterSpace: [{ name: "minScore", min: 60, max: 75, step: 5 }],
   sensitivityCells: [
@@ -30,18 +41,34 @@ const input: OptimizerRunInput = {
     { params: { minScore: 75 }, metrics: m({ expectancy: 2.2 }) },
   ],
   aggregate: {
-    walkForwardStability: 0.8, oosConsistency: 0.7, walkForwardWindows: 6,
-    monteCarloP5FinalEquity: 950, monteCarloMedianFinalEquity: 1100, monteCarloSimulations: 500,
-    startingCapital: 1000, robustnessStatus: "ROBUST", robustnessScore: 0.8,
-    sensitivityClassification: "STABLE_PLATEAU", profitFactorConsistency: 0.7,
-    calibrationRating: "GOOD", crossAssetConsistency: 0.7, dataQuality: "GOOD",
+    walkForwardStability: 0.8,
+    oosConsistency: 0.7,
+    walkForwardWindows: 6,
+    monteCarloP5FinalEquity: 950,
+    monteCarloMedianFinalEquity: 1100,
+    monteCarloSimulations: 500,
+    startingCapital: 1000,
+    robustnessStatus: "ROBUST",
+    robustnessScore: 0.8,
+    sensitivityClassification: "STABLE_PLATEAU",
+    profitFactorConsistency: 0.7,
+    calibrationRating: "GOOD",
+    crossAssetConsistency: 0.7,
+    dataQuality: "GOOD",
   },
-  provider: "P", from: "2024-01-01", to: "2024-06-30", dataHash: "H",
+  provider: "P",
+  from: "2024-01-01",
+  to: "2024-06-30",
+  dataHash: "H",
 };
 
 const prov = {
-  researchRunId: "RES_1", generatedAt: "2024-07-01T00:00:00Z",
-  provider: "TEST", instrument: "NIFTY", from: "2024-01-01", to: "2024-06-30",
+  researchRunId: "RES_1",
+  generatedAt: "2024-07-01T00:00:00Z",
+  provider: "TEST",
+  instrument: "NIFTY",
+  from: "2024-01-01",
+  to: "2024-06-30",
 };
 
 describe("Phase 21.9 Stage 1 · optimizer exports", () => {

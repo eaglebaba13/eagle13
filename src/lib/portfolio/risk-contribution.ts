@@ -27,11 +27,10 @@ export function computeRiskContributions(
 ): readonly RiskContribution[] {
   const idx = new Map(allocations.map((a) => [a.assetId, a.weight]));
   const vols = assets.map((a) => stdev(assetDailyPnl(a)));
-  const totalVol = vols.reduce(
-    (acc, v, i) => acc + v * (idx.get(assets[i].id) ?? 0),
-    0,
+  const totalVol = vols.reduce((acc, v, i) => acc + v * (idx.get(assets[i].id) ?? 0), 0);
+  const losses = assets.map((a) =>
+    a.trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0),
   );
-  const losses = assets.map((a) => a.trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0));
   const totalLoss = losses.reduce((a, b) => a + b, 0) || -1;
   const dds = assets.map((a) => a.maxDrawdown);
   const totalDD = dds.reduce((a, b) => a + b, 0) || 1;

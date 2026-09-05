@@ -1,6 +1,10 @@
 // Phase 2G — Canonical status badge.
 
-import type { ModuleStatus, ModuleReadiness, ModuleSource } from "@/lib/runtime-readiness/runtime-evidence";
+import type {
+  ModuleStatus,
+  ModuleReadiness,
+  ModuleSource,
+} from "@/lib/runtime-readiness/runtime-evidence";
 
 const STATUS_TONE: Record<string, string> = {
   // Use both light and dark tone variants so text stays WCAG-legible in both themes.
@@ -33,7 +37,13 @@ export interface RuntimeStatusBadgeProps {
   readonly title?: string;
 }
 
-export function RuntimeStatusBadge({ label, tone, source, ariaLabel, title }: RuntimeStatusBadgeProps) {
+export function RuntimeStatusBadge({
+  label,
+  tone,
+  source,
+  ariaLabel,
+  title,
+}: RuntimeStatusBadgeProps) {
   const cls = STATUS_TONE[tone] ?? STATUS_TONE.UNKNOWN;
   return (
     <span
@@ -47,7 +57,9 @@ export function RuntimeStatusBadge({ label, tone, source, ariaLabel, title }: Ru
     >
       <span className="sr-only">Runtime status:</span>
       <span>{label}</span>
-      {source && <span className="text-[10px] font-normal opacity-80">· {SOURCE_LABEL[source]}</span>}
+      {source && (
+        <span className="text-[10px] font-normal opacity-80">· {SOURCE_LABEL[source]}</span>
+      )}
     </span>
   );
 }

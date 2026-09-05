@@ -1,10 +1,6 @@
 // Phase 23 · Stage 1 — Shadow metrics (deterministic, pure).
 
-import type {
-  ShadowMetrics,
-  ShadowObservation,
-  ShadowPortfolioDecision,
-} from "./shadow-types";
+import type { ShadowMetrics, ShadowObservation, ShadowPortfolioDecision } from "./shadow-types";
 
 function safeDiv(n: number, d: number): number {
   return d === 0 ? 0 : n / d;
@@ -45,11 +41,20 @@ export function computeShadowMetrics(
   }
   brier = safeDiv(brier, entered.length);
   calibErr = safeDiv(calibErr, entered.length);
-  const highAcc = safeDiv(highConf.filter((o) => o.outcome.netAfterCosts > 0).length, highConf.length);
+  const highAcc = safeDiv(
+    highConf.filter((o) => o.outcome.netAfterCosts > 0).length,
+    highConf.length,
+  );
   const lowAcc = safeDiv(lowConf.filter((o) => o.outcome.netAfterCosts > 0).length, lowConf.length);
 
-  const mfeAvg = safeDiv(entered.reduce((a, o) => a + o.outcome.mfe, 0), entered.length);
-  const maeAvg = safeDiv(entered.reduce((a, o) => a + o.outcome.mae, 0), entered.length);
+  const mfeAvg = safeDiv(
+    entered.reduce((a, o) => a + o.outcome.mfe, 0),
+    entered.length,
+  );
+  const maeAvg = safeDiv(
+    entered.reduce((a, o) => a + o.outcome.mae, 0),
+    entered.length,
+  );
   const coverage = safeDiv(entered.length, observations.length);
 
   const capUtil = safeDiv(
@@ -65,7 +70,8 @@ export function computeShadowMetrics(
     wins: wins.length,
     losses: losses.length,
     winRate: safeDiv(wins.length, entered.length),
-    profitFactor: grossLoss === 0 ? (grossWin > 0 ? Number.POSITIVE_INFINITY : 0) : grossWin / grossLoss,
+    profitFactor:
+      grossLoss === 0 ? (grossWin > 0 ? Number.POSITIVE_INFINITY : 0) : grossWin / grossLoss,
     expectancy: safeDiv(totalPnl, entered.length),
     maxDrawdown: maxDd,
     mfeAvg,

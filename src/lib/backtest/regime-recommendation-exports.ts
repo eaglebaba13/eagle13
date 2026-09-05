@@ -1,8 +1,7 @@
 // Phase 21.8 · Stage 1 — Recommendation exports.
 import type { RegimeRecommendation, StrategyRanking } from "./regime-recommendation";
 
-export const RECOMMENDATION_EXPORT_DISCLAIMER =
-  "RESEARCH RECOMMENDATION — NOT A LIVE TRADE SIGNAL";
+export const RECOMMENDATION_EXPORT_DISCLAIMER = "RESEARCH RECOMMENDATION — NOT A LIVE TRADE SIGNAL";
 
 function csvEscape(s: unknown): string {
   const v = s == null ? "" : String(s);
@@ -71,7 +70,9 @@ export function exportRecommendationJson(rec: RegimeRecommendation): string {
 export function exportRegimeRankingCsv(recs: readonly RegimeRecommendation[]): string {
   const rows = [
     `# ${RECOMMENDATION_EXPORT_DISCLAIMER}`,
-    ["regime", "instrument", "timeframe", "best", "score", "confidence", "status", "runId"].join(","),
+    ["regime", "instrument", "timeframe", "best", "score", "confidence", "status", "runId"].join(
+      ",",
+    ),
   ];
   for (const r of recs) {
     rows.push(
@@ -90,12 +91,12 @@ export function exportRegimeRankingCsv(recs: readonly RegimeRecommendation[]): s
   return rows.join("\n");
 }
 
-export function exportInstrumentTimeframeMatrixCsv(
-  recs: readonly RegimeRecommendation[],
-): string {
+export function exportInstrumentTimeframeMatrixCsv(recs: readonly RegimeRecommendation[]): string {
   const rows = [
     `# ${RECOMMENDATION_EXPORT_DISCLAIMER}`,
-    ["instrument", "timeframe", "regime", "best", "score", "confidence", "status", "runId"].join(","),
+    ["instrument", "timeframe", "regime", "best", "score", "confidence", "status", "runId"].join(
+      ",",
+    ),
   ];
   for (const r of recs) {
     rows.push(

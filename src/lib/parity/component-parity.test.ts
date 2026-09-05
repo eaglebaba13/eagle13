@@ -67,13 +67,25 @@ describe("Phase 21.3d-parity-α · resolveOutcome outcome locks", () => {
     expect(r.grossPnl).toBe(100);
   });
   it("BUY stop-only hit → LOSS at stop", () => {
-    const r = resolveOutcome({ ...base, signal: "BUY", high: 22050, low: 21930, policy: "conservative" });
+    const r = resolveOutcome({
+      ...base,
+      signal: "BUY",
+      high: 22050,
+      low: 21930,
+      policy: "conservative",
+    });
     expect(r.result).toBe("LOSS");
     expect(r.exit).toBe(21950);
     expect(r.grossPnl).toBe(-50);
   });
   it("BUY neither hit → FLAT at close", () => {
-    const r = resolveOutcome({ ...base, signal: "BUY", high: 22050, low: 21990, policy: "conservative" });
+    const r = resolveOutcome({
+      ...base,
+      signal: "BUY",
+      high: 22050,
+      low: 21990,
+      policy: "conservative",
+    });
     expect(r.result).toBe("FLAT");
     expect(r.exit).toBe(22050);
   });
@@ -115,8 +127,14 @@ describe("Phase 21.3d-parity-α · resolveOutcome outcome locks", () => {
   });
   it("SELL WIN direction flip (dir=-1) locks P&L sign", () => {
     const r = resolveOutcome({
-      signal: "SELL", entry: 22000, target: 21900, stop: 22050,
-      high: 22040, low: 21890, close: 21950, policy: "conservative",
+      signal: "SELL",
+      entry: 22000,
+      target: 21900,
+      stop: 22050,
+      high: 22040,
+      low: 21890,
+      close: 21950,
+      policy: "conservative",
     });
     expect(r.result).toBe("WIN");
     expect(r.grossPnl).toBe(100);
@@ -131,16 +149,24 @@ describe("Phase 21.3d-parity-α · resolveOutcome outcome locks", () => {
 
 describe("Phase 21.3d-parity-α · validateCandle invariants", () => {
   it("valid OHLC passes", () => {
-    expect(validateCandle({ date: "2026-04-01", open: 100, high: 110, low: 90, close: 105 })).toEqual({ valid: true });
+    expect(
+      validateCandle({ date: "2026-04-01", open: 100, high: 110, low: 90, close: 105 }),
+    ).toEqual({ valid: true });
   });
   it("high < low fails", () => {
-    expect(validateCandle({ date: "d", open: 100, high: 90, low: 110, close: 95 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: 100, high: 90, low: 110, close: 95 }).valid).toBe(
+      false,
+    );
   });
   it("open outside [low, high] fails", () => {
-    expect(validateCandle({ date: "d", open: 200, high: 110, low: 90, close: 100 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: 200, high: 110, low: 90, close: 100 }).valid).toBe(
+      false,
+    );
   });
   it("non-finite fails", () => {
-    expect(validateCandle({ date: "d", open: NaN, high: 110, low: 90, close: 100 }).valid).toBe(false);
+    expect(validateCandle({ date: "d", open: NaN, high: 110, low: 90, close: 100 }).valid).toBe(
+      false,
+    );
   });
 });
 
@@ -184,12 +210,7 @@ describe("Phase 21.3d-parity-α · buildStats sentinels and thresholds", () => {
     expect(s.recoveryFactor).toBe(0);
   });
   it("only wins → payoffRatio 999 sentinel", () => {
-    const s = buildStats(
-      [{ result: "WIN", pnl: 100, pnlPct: 1 }],
-      1,
-      100,
-      0,
-    );
+    const s = buildStats([{ result: "WIN", pnl: 100, pnlPct: 1 }], 1, 100, 0);
     expect(s.payoffRatio).toBe(999);
     expect(s.recoveryFactor).toBe(999);
   });

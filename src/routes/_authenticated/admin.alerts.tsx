@@ -12,7 +12,9 @@ export const Route = createFileRoute("/_authenticated/admin/alerts")({
   errorComponent: ({ error, reset }) => (
     <div className="p-6 text-sm text-red-300">
       <p>Admin diagnostics unavailable: {(error as Error).message}</p>
-      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">Retry</button>
+      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
+        Retry
+      </button>
     </div>
   ),
   notFoundComponent: () => <div className="p-6">Not found</div>,
@@ -39,14 +41,17 @@ function AdminAlertsPage() {
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <ShieldAlert size={18} /> Smart Alerts · Admin diagnostics
           </h1>
-          <p className="text-xs text-muted-foreground">Read-only aggregate view. No PII surfaced.</p>
+          <p className="text-xs text-muted-foreground">
+            Read-only aggregate view. No PII surfaced.
+          </p>
         </div>
         <button
           onClick={() => run.mutate()}
           disabled={run.isPending}
           className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs hover:bg-muted/40 disabled:opacity-50"
         >
-          <RefreshCw size={13} className={run.isPending ? "animate-spin" : ""} /> Run evaluation (own scope)
+          <RefreshCw size={13} className={run.isPending ? "animate-spin" : ""} /> Run evaluation
+          (own scope)
         </button>
       </header>
 
@@ -54,7 +59,9 @@ function AdminAlertsPage() {
       {error && <div className="text-sm text-red-300">Failed to load diagnostics.</div>}
       {data && (
         <>
-          <section className={`rounded-lg border p-3 text-sm ${data.engineStatus === "HEALTHY" ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-200" : data.engineStatus === "DEGRADED" ? "border-amber-500/40 bg-amber-500/5 text-amber-200" : "border-red-500/40 bg-red-500/5 text-red-200"}`}>
+          <section
+            className={`rounded-lg border p-3 text-sm ${data.engineStatus === "HEALTHY" ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-200" : data.engineStatus === "DEGRADED" ? "border-amber-500/40 bg-amber-500/5 text-amber-200" : "border-red-500/40 bg-red-500/5 text-red-200"}`}
+          >
             <div className="flex items-center justify-between">
               <div className="font-medium">Engine status · {data.engineStatus}</div>
               <div className="text-[11px] opacity-80">Rules v{data.rulesVersion}</div>
@@ -62,12 +69,16 @@ function AdminAlertsPage() {
             <p className="mt-1 text-xs">{data.engineReason}</p>
             {data.engineWarnings.length > 0 && (
               <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[11px]">
-                {data.engineWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                {data.engineWarnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
               </ul>
             )}
             {data.engineBlockers.length > 0 && (
               <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[11px]">
-                {data.engineBlockers.map((b, i) => <li key={i}>{b}</li>)}
+                {data.engineBlockers.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
               </ul>
             )}
           </section>
@@ -86,21 +97,36 @@ function AdminAlertsPage() {
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border/60 bg-background p-3 text-xs">
               <div className="text-[11px] uppercase text-muted-foreground">Last evaluation</div>
-              <div className="mt-1 text-foreground">{data.lastEvaluationAt ? new Date(data.lastEvaluationAt).toLocaleString() : "—"}</div>
+              <div className="mt-1 text-foreground">
+                {data.lastEvaluationAt ? new Date(data.lastEvaluationAt).toLocaleString() : "—"}
+              </div>
               <div className="mt-1 text-muted-foreground">Status: {data.lastEvaluationStatus}</div>
-              <div className="mt-1 text-muted-foreground">Last success: {data.lastSuccessfulEvaluationAt ? new Date(data.lastSuccessfulEvaluationAt).toLocaleString() : "—"}</div>
+              <div className="mt-1 text-muted-foreground">
+                Last success:{" "}
+                {data.lastSuccessfulEvaluationAt
+                  ? new Date(data.lastSuccessfulEvaluationAt).toLocaleString()
+                  : "—"}
+              </div>
             </div>
             <div className="rounded-lg border border-border/60 bg-background p-3 text-xs">
               <div className="text-[11px] uppercase text-muted-foreground">External adapters</div>
               <div className="mt-1 text-foreground">
-                {data.externalAdaptersDisabledByConfiguration ? "Disabled by configuration (v1.0)" : "Enabled"}
+                {data.externalAdaptersDisabledByConfiguration
+                  ? "Disabled by configuration (v1.0)"
+                  : "Enabled"}
               </div>
-              <div className="mt-2 text-[11px] uppercase text-muted-foreground">Latest safe errors</div>
+              <div className="mt-2 text-[11px] uppercase text-muted-foreground">
+                Latest safe errors
+              </div>
               {data.latestErrors.length === 0 ? (
                 <div className="mt-1 text-muted-foreground">None</div>
               ) : (
                 <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-muted-foreground">
-                  {data.latestErrors.map((e, i) => <li key={i} className="truncate">{e}</li>)}
+                  {data.latestErrors.map((e, i) => (
+                    <li key={i} className="truncate">
+                      {e}
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
@@ -109,7 +135,9 @@ function AdminAlertsPage() {
           {run.data && (
             <div className="rounded-md border border-border/60 bg-muted/30 p-2 text-[11px] text-muted-foreground">
               Last run: emitted {run.data.emittedCount}, suppressed {run.data.suppressedCount}
-              {run.data.persistenceFailed && <span className="text-red-300"> · persistence failed</span>}
+              {run.data.persistenceFailed && (
+                <span className="text-red-300"> · persistence failed</span>
+              )}
             </div>
           )}
 

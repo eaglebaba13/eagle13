@@ -82,14 +82,11 @@ export function analyzeStructure(candles: Candle[], lookback = 2): StructureStat
 
     // Average true range proxy for displacement.
     const win = candles.slice(Math.max(0, i - 10), i);
-    const avgRange = win.length
-      ? win.reduce((a, x) => a + (x.h - x.l), 0) / win.length
-      : c.h - c.l;
+    const avgRange = win.length ? win.reduce((a, x) => a + (x.h - x.l), 0) / win.length : c.h - c.l;
     const displaced = c.h - c.l >= avgRange * 1.5;
 
     if (lastHigh && c.c > lastHigh.price) {
-      const type: StructureEventType =
-        bias === "bearish" ? (displaced ? "MSS" : "CHoCH") : "BOS";
+      const type: StructureEventType = bias === "bearish" ? (displaced ? "MSS" : "CHoCH") : "BOS";
       events.push({
         type,
         direction: "bull",
@@ -100,8 +97,7 @@ export function analyzeStructure(candles: Candle[], lookback = 2): StructureStat
       });
       bias = "bullish";
     } else if (lastLow && c.c < lastLow.price) {
-      const type: StructureEventType =
-        bias === "bullish" ? (displaced ? "MSS" : "CHoCH") : "BOS";
+      const type: StructureEventType = bias === "bullish" ? (displaced ? "MSS" : "CHoCH") : "BOS";
       events.push({
         type,
         direction: "bear",

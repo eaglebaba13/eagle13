@@ -2,7 +2,12 @@
 // Server-only: never import from a client bundle. Uses the public
 // allowlisted endpoints. NO authentication, NO private keys.
 
-import { COINDCX_ENDPOINTS, COINDCX_INTERVAL_MAP, assertAllowlistedEndpoint, type CoindcxSupportedInterval } from "./endpoints";
+import {
+  COINDCX_ENDPOINTS,
+  COINDCX_INTERVAL_MAP,
+  assertAllowlistedEndpoint,
+  type CoindcxSupportedInterval,
+} from "./endpoints";
 import { parseMarketsDetails } from "./market-discovery";
 import { indexTickers } from "./ticker";
 import { parseCandles } from "./candles";
@@ -31,18 +36,22 @@ const CACHE = {
 
 const CACHE_TTL_MS = {
   markets: 15 * 60_000, // discovery — 15 min
-  tickers: 10_000,      // tickers — 10s
+  tickers: 10_000, // tickers — 10s
 };
 
 let LAST_DISCOVERY: { readonly at: string; readonly latencyMs: number } | null = null;
 let LAST_ERROR: string | null = null;
 
 function safeError(err: unknown): string {
-  if (err instanceof Error) return err.name === "AbortError" ? "TIMEOUT" : err.message.slice(0, 200);
+  if (err instanceof Error)
+    return err.name === "AbortError" ? "TIMEOUT" : err.message.slice(0, 200);
   return "UNKNOWN_ERROR";
 }
 
-async function fetchJson(url: string, init: RequestInit = {}): Promise<{
+async function fetchJson(
+  url: string,
+  init: RequestInit = {},
+): Promise<{
   readonly ok: boolean;
   readonly json: unknown;
   readonly status: number;
@@ -67,12 +76,26 @@ async function fetchJson(url: string, init: RequestInit = {}): Promise<{
     const latency = Date.now() - started;
     const requestId = res.headers.get("x-request-id");
     if (!res.ok) {
-      return { ok: false, json: null, status: res.status, latencyMs: latency, error: `HTTP_${res.status}`, requestId };
+      return {
+        ok: false,
+        json: null,
+        status: res.status,
+        latencyMs: latency,
+        error: `HTTP_${res.status}`,
+        requestId,
+      };
     }
     const json = await res.json();
     return { ok: true, json, status: res.status, latencyMs: latency, error: null, requestId };
   } catch (err) {
-    return { ok: false, json: null, status: 0, latencyMs: Date.now() - started, error: safeError(err), requestId: null };
+    return {
+      ok: false,
+      json: null,
+      status: 0,
+      latencyMs: Date.now() - started,
+      error: safeError(err),
+      requestId: null,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -125,7 +148,15 @@ export async function discoverMarkets(nowIso: string): Promise<{
   const res = await fetchJson(COINDCX_ENDPOINTS.marketsDetails);
   if (!res.ok) {
     LAST_ERROR = res.error;
-    const meta = buildMeta(COINDCX_ENDPOINTS.marketsDetails, res.latencyMs, nowMs, nowMs, "UNAVAILABLE", res.error, res.requestId);
+    const meta = buildMeta(
+      COINDCX_ENDPOINTS.marketsDetails,
+      res.latencyMs,
+      nowMs,
+      nowMs,
+      "UNAVAILABLE",
+      res.error,
+      res.requestId,
+    );
     return { markets: cached?.value ?? [], meta };
   }
   const markets = parseMarketsDetails(res.json);
@@ -135,7 +166,15 @@ export async function discoverMarkets(nowIso: string): Promise<{
   LAST_ERROR = null;
   return {
     markets,
-    meta: buildMeta(COINDCX_ENDPOINTS.marketsDetails, res.latencyMs, at, nowMs, "LIVE", null, res.requestId),
+    meta: buildMeta(
+      COINDCX_ENDPOINTS.marketsDetails,
+      res.latencyMs,
+      at,
+      nowMs,
+      "LIVE",
+      null,
+      res.requestId,
+    ),
   };
 }
 
@@ -163,19 +202,40 @@ export async function fetchAllTickers(nowIso: string): Promise<{
     LAST_ERROR = res.error;
     return {
       tickers: new Map(),
-      meta: buildMeta(COINDCX_ENDPOINTS.ticker, res.latencyMs, nowMs, nowMs, "UNAVAILABLE", res.error, res.requestId),
+      meta: buildMeta(
+        COINDCX_ENDPOINTS.ticker,
+        res.latencyMs,
+        nowMs,
+        nowMs,
+        "UNAVAILABLE",
+        res.error,
+        res.requestId,
+      ),
     };
   }
   const at = Date.now();
   CACHE.tickers = { value: { rows: res.json, nowIso }, fetchedAt: at };
   return {
     tickers: indexTickers(res.json, nowIso),
-    meta: buildMeta(COINDCX_ENDPOINTS.ticker, res.latencyMs, at, nowMs, "LIVE", null, res.requestId),
+    meta: buildMeta(
+      COINDCX_ENDPOINTS.ticker,
+      res.latencyMs,
+      at,
+      nowMs,
+      "LIVE",
+      null,
+      res.requestId,
+    ),
   };
 }
 
-export async function getMarketSnapshots(nowIso: string): Promise<readonly CoindcxMarketSnapshot[]> {
-  const [{ markets }, { tickers }] = await Promise.all([discoverMarkets(nowIso), fetchAllTickers(nowIso)]);
+export async function getMarketSnapshots(
+  nowIso: string,
+): Promise<readonly CoindcxMarketSnapshot[]> {
+  const [{ markets }, { tickers }] = await Promise.all([
+    discoverMarkets(nowIso),
+    fetchAllTickers(nowIso),
+  ]);
   const nowMs = Date.parse(nowIso) || Date.now();
   return markets.map((market) => {
     const t = tickers.get(market.pair) ?? null;
@@ -203,7 +263,15 @@ export async function getCandleSnapshot(input: {
       market,
       interval,
       candles: [],
-      meta: buildMeta(COINDCX_ENDPOINTS.candles, res.latencyMs, nowMs, nowMs, "UNAVAILABLE", res.error, res.requestId),
+      meta: buildMeta(
+        COINDCX_ENDPOINTS.candles,
+        res.latencyMs,
+        nowMs,
+        nowMs,
+        "UNAVAILABLE",
+        res.error,
+        res.requestId,
+      ),
     };
   }
   const at = Date.now();
@@ -211,7 +279,15 @@ export async function getCandleSnapshot(input: {
     market,
     interval,
     candles: parseCandles(res.json),
-    meta: buildMeta(COINDCX_ENDPOINTS.candles, res.latencyMs, at, nowMs, "LIVE", null, res.requestId),
+    meta: buildMeta(
+      COINDCX_ENDPOINTS.candles,
+      res.latencyMs,
+      at,
+      nowMs,
+      "LIVE",
+      null,
+      res.requestId,
+    ),
   };
 }
 

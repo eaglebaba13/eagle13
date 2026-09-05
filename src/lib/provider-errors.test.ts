@@ -16,9 +16,7 @@ describe("provider-errors", () => {
   });
 
   it("categorises fetch failures", () => {
-    expect(categorizeFetchFailure(new Error("The user aborted a request"))).toBe(
-      "NetworkTimeout",
-    );
+    expect(categorizeFetchFailure(new Error("The user aborted a request"))).toBe("NetworkTimeout");
     expect(categorizeFetchFailure(new Error("timed out"))).toBe("NetworkTimeout");
     expect(categorizeFetchFailure(new Error("ENOTFOUND"))).toBe("ProviderUnavailable");
   });

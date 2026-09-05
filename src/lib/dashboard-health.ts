@@ -2,7 +2,10 @@
 //
 // Pure aggregation over per-dependency freshness results. No fetching.
 
-import type { DashboardFreshnessMap, DashboardFreshnessDependency } from "./dashboard-freshness-adapter";
+import type {
+  DashboardFreshnessMap,
+  DashboardFreshnessDependency,
+} from "./dashboard-freshness-adapter";
 import type { FreshnessStatus, ProviderStatus } from "./data-freshness";
 
 export type DashboardHealthSummary = {

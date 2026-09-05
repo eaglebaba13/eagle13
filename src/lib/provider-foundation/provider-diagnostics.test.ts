@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import {
-  UPSTOX_ADAPTER_ID,
-  type TokenPolicyEnv,
-} from "./upstox";
+import { UPSTOX_ADAPTER_ID, type TokenPolicyEnv } from "./upstox";
 import { buildProviderDiagnosticsReport } from "./provider-diagnostics.server";
-import { buildSmokeDiagnosticRows, dispatchSmokeTest, providerHeaderText, type SmokeReportLike } from "./provider-diagnostics-ui";
+import {
+  buildSmokeDiagnosticRows,
+  dispatchSmokeTest,
+  providerHeaderText,
+  type SmokeReportLike,
+} from "./provider-diagnostics-ui";
 
 const LIVE_ENV: TokenPolicyEnv & { NODE_ENV: string } = {
   NODE_ENV: "production",
@@ -32,7 +34,10 @@ const PARTIAL_REPORT: SmokeReportLike = {
   authenticated: true,
   tokenStatus: { tokenSource: "LIVE", reason: "configured" },
   instrumentResolved: [{ resolved: true }, { resolved: true }, { resolved: false }],
-  quoteResults: [{ ok: true, latencyMs: 10 }, { ok: false, latencyMs: 12 }],
+  quoteResults: [
+    { ok: true, latencyMs: 10 },
+    { ok: false, latencyMs: 12 },
+  ],
   historicalResults: [{ ok: true, latencyMs: 20 }],
   intradayResults: [{ ok: false, latencyMs: 30 }],
   summary: { overall: "PARTIAL" },
@@ -50,7 +55,10 @@ describe("provider diagnostics wiring", () => {
     expect(report.realProviderActive).toBe(true);
     expect(report.mockActive).toBe(false);
     expect(report.providerSelected).toBe(UPSTOX_ADAPTER_ID);
-    expect(report.diagnostics.wirings.map((w) => w.primary)).toEqual([UPSTOX_ADAPTER_ID, UPSTOX_ADAPTER_ID]);
+    expect(report.diagnostics.wirings.map((w) => w.primary)).toEqual([
+      UPSTOX_ADAPTER_ID,
+      UPSTOX_ADAPTER_ID,
+    ]);
     expect(JSON.stringify(report)).not.toContain("primary-mock");
   });
 
@@ -63,10 +71,9 @@ describe("provider diagnostics wiring", () => {
     expect(report.realProviderActive).toBe(false);
     expect(report.mockActive).toBe(false);
     expect(report.providerSelected).toBeNull();
-    expect([
-      "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE",
-      "SECRETS_SAVED_REDEPLOY_REQUIRED",
-    ]).toContain(report.configurationStatus);
+    expect(["LIVE_PROVIDER_CONFIGURATION_INCOMPLETE", "SECRETS_SAVED_REDEPLOY_REQUIRED"]).toContain(
+      report.configurationStatus,
+    );
     expect(report.envPresence.UPSTOX_API_KEY).toBe("MISSING");
     expect(report.envPresence.UPSTOX_ACCESS_TOKEN).toBe("MISSING");
   });
@@ -81,7 +88,11 @@ describe("provider diagnostics wiring", () => {
   });
 
   it("removes the mock demo banner when real provider is active", () => {
-    const text = providerHeaderText({ realProviderActive: true, mockActive: false, providerSelected: UPSTOX_ADAPTER_ID });
+    const text = providerHeaderText({
+      realProviderActive: true,
+      mockActive: false,
+      providerSelected: UPSTOX_ADAPTER_ID,
+    });
     expect(text).toContain("real Upstox ProviderAdapter active");
     expect(text).not.toContain("demo diagnostics using mock adapters");
   });

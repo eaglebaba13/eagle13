@@ -1,12 +1,24 @@
 // Phase 23 · Stage 2 — Shadow observation scheduler. Pure orchestration.
 // No network calls inside reducers. Provider I/O is delegated to the adapter.
 
-import { classifyCandleClose, type CandleClosePolicy, type CandleCloseStatus } from "./candle-close-policy";
+import {
+  classifyCandleClose,
+  type CandleClosePolicy,
+  type CandleCloseStatus,
+} from "./candle-close-policy";
 import type { LiveDataProviderAdapter, ProviderFetchResponse } from "./live-data-provider";
 import { ProviderHealthTracker } from "./provider-health";
-import { reduce, type OrchestratorInput, type OrchestratorReduceResult } from "./shadow-orchestrator";
+import {
+  reduce,
+  type OrchestratorInput,
+  type OrchestratorReduceResult,
+} from "./shadow-orchestrator";
 import { trackOutcome } from "./shadow-outcome";
-import { resolveResearchEvidence, type ResearchEvidenceInput, type ResolvedEvidence } from "./shadow-evidence-resolver";
+import {
+  resolveResearchEvidence,
+  type ResearchEvidenceInput,
+  type ResolvedEvidence,
+} from "./shadow-evidence-resolver";
 import { evaluateShadowReadiness, type ShadowReadinessResult } from "./shadow-readiness";
 import { ActiveShadowStore, type ActiveShadowKey } from "./active-shadow-store";
 import { ShadowHistoryStore } from "./shadow-history";
@@ -19,11 +31,7 @@ import {
 import type { ShadowClosedCandle, ShadowOutcome, ShadowPolicy } from "./shadow-types";
 
 export type SchedulerCadence =
-  | "MANUAL"
-  | "CANDLE_CLOSE"
-  | "SESSION_START"
-  | "SESSION_END"
-  | "INTERVAL";
+  "MANUAL" | "CANDLE_CLOSE" | "SESSION_START" | "SESSION_END" | "INTERVAL";
 
 export type SchedulerState =
   | "IDLE"
@@ -137,17 +145,38 @@ export class ShadowScheduler {
     this.schedulerRunId = computeSchedulerRunId(idInp);
   }
 
-  getState(): SchedulerState { return this.state; }
-  getCounters(): Readonly<SchedulerCounters> { return { ...this.counters }; }
-  getTimeline(): readonly SchedulerTimelineEvent[] { return [...this.timeline]; }
-  getHistory(): ShadowHistoryStore { return this.history; }
-  getSchedulerRunId(): string { return this.schedulerRunId; }
-  getActiveStore(): ActiveShadowStore { return this.active; }
+  getState(): SchedulerState {
+    return this.state;
+  }
+  getCounters(): Readonly<SchedulerCounters> {
+    return { ...this.counters };
+  }
+  getTimeline(): readonly SchedulerTimelineEvent[] {
+    return [...this.timeline];
+  }
+  getHistory(): ShadowHistoryStore {
+    return this.history;
+  }
+  getSchedulerRunId(): string {
+    return this.schedulerRunId;
+  }
+  getActiveStore(): ActiveShadowStore {
+    return this.active;
+  }
 
-  start(): void { this.setState("RUNNING", "started"); }
-  pause(): void { this.setState("PAUSED", "paused"); }
-  resume(): void { this.setState("RUNNING", "resumed"); }
-  stop(): void { this.setState("STOPPED", "stopped"); this.lastRunAt = 0; }
+  start(): void {
+    this.setState("RUNNING", "started");
+  }
+  pause(): void {
+    this.setState("PAUSED", "paused");
+  }
+  resume(): void {
+    this.setState("RUNNING", "resumed");
+  }
+  stop(): void {
+    this.setState("STOPPED", "stopped");
+    this.lastRunAt = 0;
+  }
 
   private setState(s: SchedulerState, reason: string): void {
     this.state = s;
@@ -237,10 +266,13 @@ export class ShadowScheduler {
         schedulerConfigured: true,
       });
       const nextState =
-        readiness.status === "PAUSED_BY_PROVIDER" ? "PAUSED_PROVIDER" :
-        readiness.status === "PAUSED_BY_DATA_QUALITY" ? "PAUSED_DATA" :
-        readiness.status === "PAUSED_BY_RESEARCH_GAP" ? "PAUSED_RESEARCH" :
-        this.state;
+        readiness.status === "PAUSED_BY_PROVIDER"
+          ? "PAUSED_PROVIDER"
+          : readiness.status === "PAUSED_BY_DATA_QUALITY"
+            ? "PAUSED_DATA"
+            : readiness.status === "PAUSED_BY_RESEARCH_GAP"
+              ? "PAUSED_RESEARCH"
+              : this.state;
       this.state = nextState === "RUNNING" || nextState === "IDLE" ? "RUNNING" : nextState;
       this.pushEvent("BLOCKED", inp.nowIso, readiness.status);
       return {

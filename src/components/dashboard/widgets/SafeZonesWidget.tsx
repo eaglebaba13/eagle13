@@ -30,15 +30,28 @@ export default function SafeZonesWidget() {
             borderRadius: 5,
             textAlign: "center",
             background: gate.allowed ? "rgba(0,201,122,0.08)" : "rgba(255,255,255,0.02)",
-            border: gate.allowed
-              ? "1px solid rgba(0,201,122,0.22)"
-              : "1px solid var(--eb-border)",
+            border: gate.allowed ? "1px solid rgba(0,201,122,0.22)" : "1px solid var(--eb-border)",
           }}
         >
-          <div style={{ fontSize: 10, color: "var(--eb-muted)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--eb-muted)",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+            }}
+          >
             {buyLabel}
           </div>
-          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, fontWeight: 700, color: gate.allowed ? "var(--eb-bull)" : "var(--eb-muted)", marginTop: 3 }}>
+          <div
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 16,
+              fontWeight: 700,
+              color: gate.allowed ? "var(--eb-bull)" : "var(--eb-muted)",
+              marginTop: 3,
+            }}
+          >
             {fmt(levels.safeBuy)}
           </div>
         </div>
@@ -48,21 +61,42 @@ export default function SafeZonesWidget() {
             borderRadius: 5,
             textAlign: "center",
             background: gate.allowed ? "rgba(255,58,92,0.08)" : "rgba(255,255,255,0.02)",
-            border: gate.allowed
-              ? "1px solid rgba(255,58,92,0.22)"
-              : "1px solid var(--eb-border)",
+            border: gate.allowed ? "1px solid rgba(255,58,92,0.22)" : "1px solid var(--eb-border)",
           }}
         >
-          <div style={{ fontSize: 10, color: "var(--eb-muted)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--eb-muted)",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+            }}
+          >
             {sellLabel}
           </div>
-          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, fontWeight: 700, color: gate.allowed ? "var(--eb-bear)" : "var(--eb-muted)", marginTop: 3 }}>
+          <div
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 16,
+              fontWeight: 700,
+              color: gate.allowed ? "var(--eb-bear)" : "var(--eb-muted)",
+              marginTop: 3,
+            }}
+          >
             {fmt(levels.safeSell)}
           </div>
         </div>
       </div>
       {!gate.allowed ? (
-        <div style={{ marginTop: 8, fontSize: 10, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }} title={gate.blockingReasons.join(" · ")}>
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 10,
+            color: "var(--eb-muted)",
+            fontFamily: "var(--eb-mono)",
+          }}
+          title={gate.blockingReasons.join(" · ")}
+        >
           {blockedLabel(gate.blockingReasons)}
         </div>
       ) : null}

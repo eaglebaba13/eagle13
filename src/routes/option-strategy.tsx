@@ -64,7 +64,8 @@ export const Route = createFileRoute("/option-strategy")({
       { property: "og:title", content: "NIFTY50 Option Buying Strategy | EagleBABA" },
       {
         property: "og:description",
-        content: "Real-time directional bias for NIFTY option buying — BUY CE / BUY PE / WAIT with confidence and reasoning.",
+        content:
+          "Real-time directional bias for NIFTY option buying — BUY CE / BUY PE / WAIT with confidence and reasoning.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -73,13 +74,17 @@ export const Route = createFileRoute("/option-strategy")({
   errorComponent: ({ error }) => (
     <div style={{ background: C.bg, minHeight: "100vh", padding: 40, color: C.red }}>
       <p style={{ fontFamily: "var(--eb-mono)" }}>Strategy data unavailable: {error.message}</p>
-      <Link to="/astro" style={{ color: C.blue }}>← Back to Astro dashboard</Link>
+      <Link to="/astro" style={{ color: C.blue }}>
+        ← Back to Astro dashboard
+      </Link>
     </div>
   ),
   notFoundComponent: () => (
     <div style={{ background: C.bg, minHeight: "100vh", padding: 40, color: C.muted }}>
       <p style={{ fontFamily: "var(--eb-mono)" }}>Not found.</p>
-      <Link to="/" style={{ color: C.blue }}>← Back to dashboard</Link>
+      <Link to="/" style={{ color: C.blue }}>
+        ← Back to dashboard
+      </Link>
     </div>
   ),
 });
@@ -136,23 +141,46 @@ function OptionStrategyTerminal() {
 
   const rec = data.recommendation;
   const recColor = rec.action === "BUY CE" ? C.green : rec.action === "BUY PE" ? C.red : C.gold;
-  const lastUpdated = new Date(dataUpdatedAt).toLocaleTimeString("en-GB", { hour12: false, timeZone: "Asia/Kolkata" });
+  const lastUpdated = new Date(dataUpdatedAt).toLocaleTimeString("en-GB", {
+    hour12: false,
+    timeZone: "Asia/Kolkata",
+  });
 
   const oc = data.optionChain;
 
   if (!mounted) {
     return (
-      <div style={{ background: C.bg, minHeight: "100vh", color: C.muted, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          background: C.bg,
+          minHeight: "100vh",
+          color: C.muted,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: C.text }}>📈 NIFTY50 Option Buying Strategy</div>
-          <div style={{ marginTop: 8, fontSize: 13 }}>Connecting to live breadth, VIX, sector & option-chain feed…</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: C.text }}>
+            📈 NIFTY50 Option Buying Strategy
+          </div>
+          <div style={{ marginTop: 8, fontSize: 13 }}>
+            Connecting to live breadth, VIX, sector & option-chain feed…
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-head, system-ui, sans-serif)" }}>
+    <div
+      style={{
+        background: C.bg,
+        minHeight: "100vh",
+        color: C.text,
+        fontFamily: "var(--eb-head, system-ui, sans-serif)",
+      }}
+    >
       <div className="eb-space-bg" aria-hidden="true" />
       <style>{`
         .os-grid { display:grid; gap:12px; }
@@ -199,15 +227,66 @@ function OptionStrategyTerminal() {
         @media (max-width:820px){ .os-hide-sb{ display:none; } }
       `}</style>
 
-      <div style={{ maxWidth: 1520, margin: "0 auto", padding: "18px 16px 64px", position: "relative", zIndex: 1 }}>
+      <div
+        style={{
+          maxWidth: 1520,
+          margin: "0 auto",
+          padding: "18px 16px 64px",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
         {/* Header */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <img src={logoUrl} alt="EagleBABA logo" width={52} height={52} style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", boxShadow: "0 0 16px rgba(212,175,55,0.35)" }} />
+            <img
+              src={logoUrl}
+              alt="EagleBABA logo"
+              width={52}
+              height={52}
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 12,
+                objectFit: "cover",
+                boxShadow: "0 0 16px rgba(212,175,55,0.35)",
+              }}
+            />
             <div>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: 0.4, display: "flex", alignItems: "center", gap: 10 }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 24,
+                  fontWeight: 800,
+                  letterSpacing: 0.4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
                 NIFTY50 Option Buying Strategy
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: C.green, border: `1px solid ${C.green}`, borderRadius: 20, padding: "2px 10px" }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.green,
+                    border: `1px solid ${C.green}`,
+                    borderRadius: 20,
+                    padding: "2px 10px",
+                  }}
+                >
                   <span className="os-live-dot" /> LIVE
                 </span>
               </h1>
@@ -217,21 +296,50 @@ function OptionStrategyTerminal() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <span className="os-mono" style={{ fontSize: 13, color: C.muted }}>IST {clock}</span>
-            <button onClick={() => setSound((s) => !s)} title={sound ? "Sound on" : "Sound off"} style={{ background: "transparent", border: `1px solid ${sound ? C.gold : C.muted}`, color: sound ? C.gold : C.muted, padding: "6px 9px", borderRadius: 8, cursor: "pointer" }}>
+            <span className="os-mono" style={{ fontSize: 13, color: C.muted }}>
+              IST {clock}
+            </span>
+            <button
+              onClick={() => setSound((s) => !s)}
+              title={sound ? "Sound on" : "Sound off"}
+              style={{
+                background: "transparent",
+                border: `1px solid ${sound ? C.gold : C.muted}`,
+                color: sound ? C.gold : C.muted,
+                padding: "6px 9px",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            >
               {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
-            <Link to="/live-levels" style={{ fontSize: 12, color: C.blue, textDecoration: "none", border: `1px solid ${C.border}`, padding: "5px 10px", borderRadius: 8 }}>Level Terminal</Link>
+            <Link
+              to="/live-levels"
+              style={{
+                fontSize: 12,
+                color: C.blue,
+                textDecoration: "none",
+                border: `1px solid ${C.border}`,
+                padding: "5px 10px",
+                borderRadius: 8,
+              }}
+            >
+              Level Terminal
+            </Link>
             <NewsCenter />
             <ThemeToggle />
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <div className="os-hide-sb"><AppSidebar /></div>
+          <div className="os-hide-sb">
+            <AppSidebar />
+          </div>
           <main style={{ flex: 1, minWidth: 0 }}>
             {isFetching ? (
-              <div className="os-mono" style={{ fontSize: 11, color: C.gold, marginBottom: 8 }}>⟳ Refreshing live market data…</div>
+              <div className="os-mono" style={{ fontSize: 11, color: C.gold, marginBottom: 8 }}>
+                ⟳ Refreshing live market data…
+              </div>
             ) : null}
 
             {/* Special alert banner */}
@@ -243,37 +351,153 @@ function OptionStrategyTerminal() {
                   padding: "18px 22px",
                   marginBottom: 14,
                   textAlign: "center",
-                  background: data.specialAlert.type === "CALL" ? "rgba(16,185,129,0.10)" : "rgba(239,68,68,0.10)",
+                  background:
+                    data.specialAlert.type === "CALL"
+                      ? "rgba(16,185,129,0.10)"
+                      : "rgba(239,68,68,0.10)",
                 }}
               >
-                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 1, color: data.specialAlert.type === "CALL" ? C.green : C.red }}>
-                  {data.specialAlert.type === "CALL" ? "🚀🚀🚀 FOCUS ON CALL" : "🚨🚨🚨 FOCUS ON PUT"}
+                <div
+                  style={{
+                    fontSize: 30,
+                    fontWeight: 900,
+                    letterSpacing: 1,
+                    color: data.specialAlert.type === "CALL" ? C.green : C.red,
+                  }}
+                >
+                  {data.specialAlert.type === "CALL"
+                    ? "🚀🚀🚀 FOCUS ON CALL"
+                    : "🚨🚨🚨 FOCUS ON PUT"}
                 </div>
                 <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
-                  All key drivers aligned {data.specialAlert.type === "CALL" ? "bullish" : "bearish"} — high-conviction {data.specialAlert.type === "CALL" ? "call" : "put"} bias
+                  All key drivers aligned{" "}
+                  {data.specialAlert.type === "CALL" ? "bullish" : "bearish"} — high-conviction{" "}
+                  {data.specialAlert.type === "CALL" ? "call" : "put"} bias
                 </div>
               </div>
             ) : null}
 
             {/* Top summary cards */}
-            <div className="os-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", marginBottom: 14 }}>
-              <Stat label="NIFTY Live" value={<span className="os-mono">{inr(data.nifty.price)}</span>} color={C.blue} sub={<span style={{ color: data.nifty.change >= 0 ? C.green : C.red }}>{data.nifty.change >= 0 ? "▲" : "▼"} {Math.abs(data.nifty.changePct).toFixed(2)}%</span>} />
-              <Stat label="India VIX" value={<span className="os-mono">{data.vix.vix.toFixed(2)}</span>} color={data.vix.tone === "green" ? C.green : data.vix.tone === "yellow" ? C.gold : C.red} sub={data.vix.band + " zone"} />
-              <Stat label="A/D Ratio (NSE)" value={<span className="os-mono">{data.nseBreadth.ratio.toFixed(2)}</span>} color={data.nseBreadth.bias === "Bullish" ? C.green : data.nseBreadth.bias === "Bearish" ? C.red : C.gold} sub={`${data.nseBreadth.advances}▲ / ${data.nseBreadth.declines}▼`} />
-              <Stat label="A/D Ratio (NIFTY50)" value={<span className="os-mono">{data.niftyBreadth.ratio.toFixed(2)}</span>} color={data.niftyBreadth.bias === "Bullish" ? C.green : data.niftyBreadth.bias === "Bearish" ? C.red : C.gold} sub={`${data.niftyBreadth.advances}▲ / ${data.niftyBreadth.declines}▼`} />
-              <Stat label="Top-10 Strength" value={<span className="os-mono">{data.weightedBreadthScore.toFixed(0)}</span>} color={data.top10Bias === "Bullish" ? C.green : data.top10Bias === "Bearish" ? C.red : C.gold} sub={data.top10Bias} />
-              <Stat label="PCR" value={<span className="os-mono">{oc.pcr.toFixed(2)}</span>} color={oc.pcr >= 1 ? C.green : C.red} sub={oc.source === "UPSTOX" ? "live chain" : "derived"} />
-              <Stat label="Market Breadth" value={data.nseBreadth.label} color={data.nseBreadth.bias === "Bullish" ? C.green : data.nseBreadth.bias === "Bearish" ? C.red : C.gold} />
-              <Stat label="Sector Strength" value={<span className="os-mono">{data.sectorStrength.toFixed(0)}</span>} color={data.sectorStrength >= 0 ? C.green : C.red} sub={`${data.sectors.filter((s) => s.changePct >= 0).length}/${data.sectors.length} up`} />
-              <Stat label="Recommendation" value={<span style={{ color: recColor }}>{rec.action}</span>} color={recColor} />
-              <Stat label="Confidence" value={<span className="os-mono">{rec.confidence.toFixed(0)}%</span>} color={recColor} />
+            <div
+              className="os-grid"
+              style={{
+                gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+                marginBottom: 14,
+              }}
+            >
+              <Stat
+                label="NIFTY Live"
+                value={<span className="os-mono">{inr(data.nifty.price)}</span>}
+                color={C.blue}
+                sub={
+                  <span style={{ color: data.nifty.change >= 0 ? C.green : C.red }}>
+                    {data.nifty.change >= 0 ? "▲" : "▼"} {Math.abs(data.nifty.changePct).toFixed(2)}
+                    %
+                  </span>
+                }
+              />
+              <Stat
+                label="India VIX"
+                value={<span className="os-mono">{data.vix.vix.toFixed(2)}</span>}
+                color={
+                  data.vix.tone === "green" ? C.green : data.vix.tone === "yellow" ? C.gold : C.red
+                }
+                sub={data.vix.band + " zone"}
+              />
+              <Stat
+                label="A/D Ratio (NSE)"
+                value={<span className="os-mono">{data.nseBreadth.ratio.toFixed(2)}</span>}
+                color={
+                  data.nseBreadth.bias === "Bullish"
+                    ? C.green
+                    : data.nseBreadth.bias === "Bearish"
+                      ? C.red
+                      : C.gold
+                }
+                sub={`${data.nseBreadth.advances}▲ / ${data.nseBreadth.declines}▼`}
+              />
+              <Stat
+                label="A/D Ratio (NIFTY50)"
+                value={<span className="os-mono">{data.niftyBreadth.ratio.toFixed(2)}</span>}
+                color={
+                  data.niftyBreadth.bias === "Bullish"
+                    ? C.green
+                    : data.niftyBreadth.bias === "Bearish"
+                      ? C.red
+                      : C.gold
+                }
+                sub={`${data.niftyBreadth.advances}▲ / ${data.niftyBreadth.declines}▼`}
+              />
+              <Stat
+                label="Top-10 Strength"
+                value={<span className="os-mono">{data.weightedBreadthScore.toFixed(0)}</span>}
+                color={
+                  data.top10Bias === "Bullish"
+                    ? C.green
+                    : data.top10Bias === "Bearish"
+                      ? C.red
+                      : C.gold
+                }
+                sub={data.top10Bias}
+              />
+              <Stat
+                label="PCR"
+                value={<span className="os-mono">{oc.pcr.toFixed(2)}</span>}
+                color={oc.pcr >= 1 ? C.green : C.red}
+                sub={oc.source === "UPSTOX" ? "live chain" : "derived"}
+              />
+              <Stat
+                label="Market Breadth"
+                value={data.nseBreadth.label}
+                color={
+                  data.nseBreadth.bias === "Bullish"
+                    ? C.green
+                    : data.nseBreadth.bias === "Bearish"
+                      ? C.red
+                      : C.gold
+                }
+              />
+              <Stat
+                label="Sector Strength"
+                value={<span className="os-mono">{data.sectorStrength.toFixed(0)}</span>}
+                color={data.sectorStrength >= 0 ? C.green : C.red}
+                sub={`${data.sectors.filter((s) => s.changePct >= 0).length}/${data.sectors.length} up`}
+              />
+              <Stat
+                label="Recommendation"
+                value={<span style={{ color: recColor }}>{rec.action}</span>}
+                color={recColor}
+              />
+              <Stat
+                label="Confidence"
+                value={<span className="os-mono">{rec.confidence.toFixed(0)}%</span>}
+                color={recColor}
+              />
             </div>
 
             {/* VIX strategy + Recommendation hero */}
             <div className="os-grid" style={{ gridTemplateColumns: "1fr 1.4fr", marginBottom: 14 }}>
-              <Card style={{ border: `1px solid ${data.vix.tone === "green" ? C.green : data.vix.tone === "yellow" ? C.gold : C.red}` }}>
-                <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, display: "flex", alignItems: "center", gap: 6 }}><Gauge size={13} /> India VIX Strategy</div>
-                <div className="os-mono" style={{ fontSize: 40, fontWeight: 900, marginTop: 4 }}>{data.vix.vix.toFixed(2)}</div>
+              <Card
+                style={{
+                  border: `1px solid ${data.vix.tone === "green" ? C.green : data.vix.tone === "yellow" ? C.gold : C.red}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Gauge size={13} /> India VIX Strategy
+                </div>
+                <div className="os-mono" style={{ fontSize: 40, fontWeight: 900, marginTop: 4 }}>
+                  {data.vix.vix.toFixed(2)}
+                </div>
                 <div
                   style={{
                     display: "inline-block",
@@ -283,7 +507,12 @@ function OptionStrategyTerminal() {
                     fontWeight: 900,
                     fontSize: 16,
                     color: "#000",
-                    background: data.vix.tone === "green" ? C.green : data.vix.tone === "yellow" ? C.gold : C.red,
+                    background:
+                      data.vix.tone === "green"
+                        ? C.green
+                        : data.vix.tone === "yellow"
+                          ? C.gold
+                          : C.red,
                   }}
                 >
                   ✅ {data.vix.label}
@@ -293,22 +522,65 @@ function OptionStrategyTerminal() {
                 </div>
               </Card>
 
-              <Card style={{ background: `linear-gradient(135deg, color-mix(in oklab, ${recColor} 16%, transparent), ${C.card})`, border: `1px solid ${recColor}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>Market Decision Engine</div>
-                  <span className="os-mono" style={{ fontSize: 10, color: C.muted }}><Radio size={11} style={{ verticalAlign: -1 }} /> every 30s</span>
+              <Card
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in oklab, ${recColor} 16%, transparent), ${C.card})`,
+                  border: `1px solid ${recColor}`,
+                }}
+              >
+                <div
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: C.muted,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    Market Decision Engine
+                  </div>
+                  <span className="os-mono" style={{ fontSize: 10, color: C.muted }}>
+                    <Radio size={11} style={{ verticalAlign: -1 }} /> every 30s
+                  </span>
                 </div>
-                <div style={{ fontSize: 44, fontWeight: 900, color: recColor, lineHeight: 1.1, marginTop: 4 }}>
-                  {rec.action === "BUY CE" ? "🟢" : rec.action === "BUY PE" ? "🔴" : "🟡"} {rec.action}
+                <div
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 900,
+                    color: recColor,
+                    lineHeight: 1.1,
+                    marginTop: 4,
+                  }}
+                >
+                  {rec.action === "BUY CE" ? "🟢" : rec.action === "BUY PE" ? "🔴" : "🟡"}{" "}
+                  {rec.action}
                 </div>
-                <div style={{ fontSize: 13, marginTop: 2 }}>Confidence <b>{rec.confidence.toFixed(0)}%</b> · Bull {rec.bullScore}% / Bear {rec.bearScore}%</div>
-                <div style={{ height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 4, margin: "8px 0", overflow: "hidden", display: "flex" }}>
-                  <div style={{ height: "100%", width: `${rec.bullScore}%`, background: C.green }} />
+                <div style={{ fontSize: 13, marginTop: 2 }}>
+                  Confidence <b>{rec.confidence.toFixed(0)}%</b> · Bull {rec.bullScore}% / Bear{" "}
+                  {rec.bearScore}%
+                </div>
+                <div
+                  style={{
+                    height: 8,
+                    background: "rgba(255,255,255,0.08)",
+                    borderRadius: 4,
+                    margin: "8px 0",
+                    overflow: "hidden",
+                    display: "flex",
+                  }}
+                >
+                  <div
+                    style={{ height: "100%", width: `${rec.bullScore}%`, background: C.green }}
+                  />
                   <div style={{ height: "100%", width: `${rec.bearScore}%`, background: C.red }} />
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {rec.reasons.map((r, i) => (
-                    <span key={i} className="os-chip">{r}</span>
+                    <span key={i} className="os-chip">
+                      {r}
+                    </span>
                   ))}
                 </div>
               </Card>
@@ -316,25 +588,71 @@ function OptionStrategyTerminal() {
 
             {/* PCR focus cards */}
             <div className="os-grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 14 }}>
-              <Card className={oc.focus === "CALL" ? "os-blink-green" : undefined} style={{ border: `1px solid ${oc.focus === "CALL" ? C.green : C.border}` }}>
-                <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}><Zap size={12} style={{ verticalAlign: -1 }} /> Put OI Build-up</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: oc.focus === "CALL" ? C.green : C.text, marginTop: 4 }}>
+              <Card
+                className={oc.focus === "CALL" ? "os-blink-green" : undefined}
+                style={{ border: `1px solid ${oc.focus === "CALL" ? C.green : C.border}` }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  <Zap size={12} style={{ verticalAlign: -1 }} /> Put OI Build-up
+                </div>
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    color: oc.focus === "CALL" ? C.green : C.text,
+                    marginTop: 4,
+                  }}
+                >
                   {oc.focus === "CALL" ? "⚡ FOCUS ON CALL" : "Balanced"}
                 </div>
-                <div className="os-mono" style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>ΔPut OI {oc.changePutOI.toLocaleString("en-IN")}</div>
+                <div className="os-mono" style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
+                  ΔPut OI {oc.changePutOI.toLocaleString("en-IN")}
+                </div>
               </Card>
-              <Card className={oc.focus === "PUT" ? "os-blink-red" : undefined} style={{ border: `1px solid ${oc.focus === "PUT" ? C.red : C.border}` }}>
-                <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}><Zap size={12} style={{ verticalAlign: -1 }} /> Call OI Build-up</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: oc.focus === "PUT" ? C.red : C.text, marginTop: 4 }}>
+              <Card
+                className={oc.focus === "PUT" ? "os-blink-red" : undefined}
+                style={{ border: `1px solid ${oc.focus === "PUT" ? C.red : C.border}` }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  <Zap size={12} style={{ verticalAlign: -1 }} /> Call OI Build-up
+                </div>
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    color: oc.focus === "PUT" ? C.red : C.text,
+                    marginTop: 4,
+                  }}
+                >
                   {oc.focus === "PUT" ? "⚡ FOCUS ON PUT" : "Balanced"}
                 </div>
-                <div className="os-mono" style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>ΔCall OI {oc.changeCallOI.toLocaleString("en-IN")}</div>
+                <div className="os-mono" style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
+                  ΔCall OI {oc.changeCallOI.toLocaleString("en-IN")}
+                </div>
               </Card>
             </div>
 
             {/* Advance/Decline analysis */}
             <div className="os-grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 14 }}>
-              <BreadthCard title="Overall NSE Market" b={data.nseBreadth} total={data.nseBreadth.advances + data.nseBreadth.declines} />
+              <BreadthCard
+                title="Overall NSE Market"
+                b={data.nseBreadth}
+                total={data.nseBreadth.advances + data.nseBreadth.declines}
+              />
               <BreadthCard title="NIFTY50 Breadth" b={data.niftyBreadth} total={50} />
             </div>
 
@@ -346,16 +664,42 @@ function OptionStrategyTerminal() {
 
             {/* Option chain */}
             <Card style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>OPTION CHAIN ANALYSIS {oc.source === "DERIVED" ? <span style={{ fontSize: 10, color: C.muted, fontWeight: 500 }}>(derived proxy)</span> : null}</div>
-              <div className="os-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}>
-                <MiniStat label="PCR" value={oc.pcr.toFixed(2)} color={oc.pcr >= 1 ? C.green : C.red} />
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
+                OPTION CHAIN ANALYSIS{" "}
+                {oc.source === "DERIVED" ? (
+                  <span style={{ fontSize: 10, color: C.muted, fontWeight: 500 }}>
+                    (derived proxy)
+                  </span>
+                ) : null}
+              </div>
+              <div
+                className="os-grid"
+                style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}
+              >
+                <MiniStat
+                  label="PCR"
+                  value={oc.pcr.toFixed(2)}
+                  color={oc.pcr >= 1 ? C.green : C.red}
+                />
                 <MiniStat label="Total Call OI" value={oc.totalCallOI.toLocaleString("en-IN")} />
                 <MiniStat label="Total Put OI" value={oc.totalPutOI.toLocaleString("en-IN")} />
-                <MiniStat label="Highest Call OI" value={oc.highestCallOI.toLocaleString("en-IN")} color={C.red} />
-                <MiniStat label="Highest Put OI" value={oc.highestPutOI.toLocaleString("en-IN")} color={C.green} />
+                <MiniStat
+                  label="Highest Call OI"
+                  value={oc.highestCallOI.toLocaleString("en-IN")}
+                  color={C.red}
+                />
+                <MiniStat
+                  label="Highest Put OI"
+                  value={oc.highestPutOI.toLocaleString("en-IN")}
+                  color={C.green}
+                />
                 <MiniStat label="Support" value={inr(oc.support)} color={C.green} />
                 <MiniStat label="Resistance" value={inr(oc.resistance)} color={C.red} />
-                <MiniStat label="OI Focus" value={oc.focus} color={oc.focus === "CALL" ? C.green : oc.focus === "PUT" ? C.red : C.gold} />
+                <MiniStat
+                  label="OI Focus"
+                  value={oc.focus}
+                  color={oc.focus === "CALL" ? C.green : oc.focus === "PUT" ? C.red : C.gold}
+                />
               </div>
             </Card>
 
@@ -365,7 +709,9 @@ function OptionStrategyTerminal() {
                 <SectorChart sectors={data.sectors} />
               </Card>
               <Card>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>TOP-10 CHANGE %</div>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>
+                  TOP-10 CHANGE %
+                </div>
                 <TopChart stocks={data.top10} />
               </Card>
             </div>
@@ -374,7 +720,10 @@ function OptionStrategyTerminal() {
             <AiReasoningPanel rec={rec} astro={data.astro} />
 
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 12 }} className="os-mono">
-              Last updated {lastUpdated} IST · auto-refresh 30s · {oc.source === "UPSTOX" ? "canonical Upstox option chain" : "PCR derived from live breadth & VIX when option chain is unreachable"}
+              Last updated {lastUpdated} IST · auto-refresh 30s ·{" "}
+              {oc.source === "UPSTOX"
+                ? "canonical Upstox option chain"
+                : "PCR derived from live breadth & VIX when option chain is unreachable"}
             </div>
 
             <Disclaimer />
@@ -413,7 +762,8 @@ function AiReasoningPanel({
   rec: OptionStrategyData["recommendation"];
   astro: OptionStrategyData["astro"];
 }) {
-  const headColor = rec.action === "BUY CE" ? "#22C55E" : rec.action === "BUY PE" ? "#EF4444" : "#F59E0B";
+  const headColor =
+    rec.action === "BUY CE" ? "#22C55E" : rec.action === "BUY PE" ? "#EF4444" : "#F59E0B";
   const rows: { text: string; kind: ReasonKind }[] = [
     ...rec.reasons.map((r) => ({ text: r, kind: classifyReason(r) })),
     {
@@ -445,7 +795,8 @@ function AiReasoningPanel({
           color: "#FFFFFF",
         }}
       >
-        <Activity size={18} color={headColor} /> AI REASONING · <span style={{ color: headColor }}>{rec.action}</span> · {rec.confidence.toFixed(0)}%
+        <Activity size={18} color={headColor} /> AI REASONING ·{" "}
+        <span style={{ color: headColor }}>{rec.action}</span> · {rec.confidence.toFixed(0)}%
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {rows.map((row, i) => {
@@ -483,7 +834,11 @@ function AiReasoningPanel({
               >
                 {s.icon}
               </span>
-              <span style={{ color: row.kind === "neutral" ? "#CBD5E1" : s.color, fontWeight: 700 }}>{row.text}</span>
+              <span
+                style={{ color: row.kind === "neutral" ? "#CBD5E1" : s.color, fontWeight: 700 }}
+              >
+                {row.text}
+              </span>
             </div>
           );
         })}
@@ -492,44 +847,128 @@ function AiReasoningPanel({
   );
 }
 
-function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
-  return <div className={`eb-card eb-glass${className ? ` ${className}` : ""}`} style={{ borderRadius: 16, padding: 16, ...style }}>{children}</div>;
-}
-
-function Stat({ label, value, color, sub }: { label: string; value: React.ReactNode; color?: string; sub?: React.ReactNode }) {
+function Card({
+  children,
+  style,
+  className,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  className?: string;
+}) {
   return (
-    <Card style={{ padding: 14 }}>
-      <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: color ?? C.text, marginTop: 4 }} suppressHydrationWarning>{value}</div>
-      {sub ? <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }} suppressHydrationWarning>{sub}</div> : null}
-    </Card>
-  );
-}
-
-function MiniStat({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 12px" }}>
-      <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-      <div className="os-mono" style={{ fontSize: 16, fontWeight: 800, color: color ?? C.text, marginTop: 3 }}>{value}</div>
+    <div
+      className={`eb-card eb-glass${className ? ` ${className}` : ""}`}
+      style={{ borderRadius: 16, padding: 16, ...style }}
+    >
+      {children}
     </div>
   );
 }
 
-function BreadthCard({ title, b, total }: { title: string; b: OptionStrategyData["nseBreadth"]; total: number }) {
+function Stat({
+  label,
+  value,
+  color,
+  sub,
+}: {
+  label: string;
+  value: React.ReactNode;
+  color?: string;
+  sub?: React.ReactNode;
+}) {
+  return (
+    <Card style={{ padding: 14 }}>
+      <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+        {label}
+      </div>
+      <div
+        style={{ fontSize: 20, fontWeight: 800, color: color ?? C.text, marginTop: 4 }}
+        suppressHydrationWarning
+      >
+        {value}
+      </div>
+      {sub ? (
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+          {sub}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 12px" }}>
+      <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        {label}
+      </div>
+      <div
+        className="os-mono"
+        style={{ fontSize: 16, fontWeight: 800, color: color ?? C.text, marginTop: 3 }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function BreadthCard({
+  title,
+  b,
+  total,
+}: {
+  title: string;
+  b: OptionStrategyData["nseBreadth"];
+  total: number;
+}) {
   const color = b.bias === "Bullish" ? C.green : b.bias === "Bearish" ? C.red : C.gold;
   const advPct = total ? (b.advances / total) * 100 : 50;
   return (
     <Card style={{ borderLeft: `3px solid ${color}` }}>
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{title}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
-        <span className="os-mono" style={{ fontSize: 26, fontWeight: 900, color: C.green }}>{b.advances}<span style={{ fontSize: 12, color: C.muted }}> ▲</span></span>
-        <span className="os-mono" style={{ fontSize: 26, fontWeight: 900, color: C.red }}>{b.declines}<span style={{ fontSize: 12, color: C.muted }}> ▼</span></span>
+      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+        {title}
       </div>
-      <div style={{ height: 8, background: C.red, borderRadius: 4, margin: "8px 0", overflow: "hidden" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginTop: 8,
+        }}
+      >
+        <span className="os-mono" style={{ fontSize: 26, fontWeight: 900, color: C.green }}>
+          {b.advances}
+          <span style={{ fontSize: 12, color: C.muted }}> ▲</span>
+        </span>
+        <span className="os-mono" style={{ fontSize: 26, fontWeight: 900, color: C.red }}>
+          {b.declines}
+          <span style={{ fontSize: 12, color: C.muted }}> ▼</span>
+        </span>
+      </div>
+      <div
+        style={{
+          height: 8,
+          background: C.red,
+          borderRadius: 4,
+          margin: "8px 0",
+          overflow: "hidden",
+        }}
+      >
         <div style={{ height: "100%", width: `${advPct}%`, background: C.green }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-        <span className="os-mono">Ratio <b style={{ color }}>{b.ratio.toFixed(2)}</b></span>
+        <span className="os-mono">
+          Ratio <b style={{ color }}>{b.ratio.toFixed(2)}</b>
+        </span>
         <span style={{ color, fontWeight: 700 }}>{b.label}</span>
       </div>
     </Card>
@@ -594,8 +1033,10 @@ function sortSectors(rows: SectorRow[], mode: SectorSortMode): SectorRow[] {
 function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
   const [mode, setMode] = useState<SectorSortMode>("change");
   useEffect(() => {
-    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-sort") : null;
-    if (saved && ["change", "smart", "strength", "advdecl", "alpha"].includes(saved)) setMode(saved as SectorSortMode);
+    const saved =
+      typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-sort") : null;
+    if (saved && ["change", "smart", "strength", "advdecl", "alpha"].includes(saved))
+      setMode(saved as SectorSortMode);
   }, []);
   const changeMode = (m: SectorSortMode) => {
     setMode(m);
@@ -607,20 +1048,45 @@ function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
 
   return (
     <Card style={{ padding: 0, marginBottom: 14 }}>
-      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          padding: "12px 16px",
+          borderBottom: `1px solid ${C.border}`,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>SECTOR STRENGTH</span>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}
+        >
           Sort By
-          <select className="os10-select" value={mode} onChange={(e) => changeMode(e.target.value as SectorSortMode)}>
+          <select
+            className="os10-select"
+            value={mode}
+            onChange={(e) => changeMode(e.target.value as SectorSortMode)}
+          >
             {SECTOR_SORT_LABELS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
         </label>
       </div>
 
       <div className="ossec-head">
-        <span>Rank</span><span>Sector</span><span>Live %</span><span>Adv</span><span>Dec</span><span>Strength</span><span>Status</span><span>Contrib</span>
+        <span>Rank</span>
+        <span>Sector</span>
+        <span>Live %</span>
+        <span>Adv</span>
+        <span>Dec</span>
+        <span>Strength</span>
+        <span>Status</span>
+        <span>Contrib</span>
       </div>
       <motion.div layout>
         <AnimatePresence initial={false}>
@@ -632,7 +1098,8 @@ function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
               : isBot
                 ? { border: `1px solid ${C.red}`, boxShadow: "0 0 14px rgba(239,68,68,.35)" }
                 : {};
-            const statusColor = s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.muted;
+            const statusColor =
+              s.bias === "Bullish" ? C.green : s.bias === "Bearish" ? C.red : C.muted;
             return (
               <motion.div
                 key={s.key}
@@ -641,22 +1108,70 @@ function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ layout: { type: "spring", stiffness: 500, damping: 40 }, opacity: { duration: 0.2 } }}
+                transition={{
+                  layout: { type: "spring", stiffness: 500, damping: 40 },
+                  opacity: { duration: 0.2 },
+                }}
                 className="ossec-row"
                 style={glow}
               >
-                <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>#{i + 1}</span>
+                <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>
+                  #{i + 1}
+                </span>
                 <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                   <span style={{ fontWeight: 700 }}>{s.name}</span>
-                  {isTop ? <span className="os10-badge" style={{ color: "#0b1420", background: C.gold, marginTop: 2, width: "fit-content" }}>🏆 TOP SECTOR</span> : null}
-                  {isBot ? <span className="os10-badge" style={{ color: "#fff", background: C.red, marginTop: 2, width: "fit-content" }}>📉 WEAKEST</span> : null}
+                  {isTop ? (
+                    <span
+                      className="os10-badge"
+                      style={{
+                        color: "#0b1420",
+                        background: C.gold,
+                        marginTop: 2,
+                        width: "fit-content",
+                      }}
+                    >
+                      🏆 TOP SECTOR
+                    </span>
+                  ) : null}
+                  {isBot ? (
+                    <span
+                      className="os10-badge"
+                      style={{
+                        color: "#fff",
+                        background: C.red,
+                        marginTop: 2,
+                        width: "fit-content",
+                      }}
+                    >
+                      📉 WEAKEST
+                    </span>
+                  ) : null}
                 </span>
-                <span><AnimatedChange value={s.changePct} /></span>
-                <span className="os-mono ossec-c-adv" style={{ color: C.green }}>{s.advance}</span>
-                <span className="os-mono ossec-c-dec" style={{ color: C.red }}>{s.decline}</span>
-                <span className="os-mono ossec-c-str" style={{ color: s.strength >= 0 ? C.green : C.red }}>{s.strength.toFixed(0)}</span>
-                <span className="ossec-c-status" style={{ color: statusColor, fontWeight: 700 }}>{s.bias}</span>
-                <span className="os-mono ossec-c-contrib" style={{ color: s.contribution >= 0 ? C.green : C.red }}>{s.contribution >= 0 ? "+" : ""}{s.contribution.toFixed(1)}%</span>
+                <span>
+                  <AnimatedChange value={s.changePct} />
+                </span>
+                <span className="os-mono ossec-c-adv" style={{ color: C.green }}>
+                  {s.advance}
+                </span>
+                <span className="os-mono ossec-c-dec" style={{ color: C.red }}>
+                  {s.decline}
+                </span>
+                <span
+                  className="os-mono ossec-c-str"
+                  style={{ color: s.strength >= 0 ? C.green : C.red }}
+                >
+                  {s.strength.toFixed(0)}
+                </span>
+                <span className="ossec-c-status" style={{ color: statusColor, fontWeight: 700 }}>
+                  {s.bias}
+                </span>
+                <span
+                  className="os-mono ossec-c-contrib"
+                  style={{ color: s.contribution >= 0 ? C.green : C.red }}
+                >
+                  {s.contribution >= 0 ? "+" : ""}
+                  {s.contribution.toFixed(1)}%
+                </span>
               </motion.div>
             );
           })}
@@ -719,8 +1234,10 @@ function AnimatedChange({ value }: { value: number }) {
 function Top10Widget({ stocks }: { stocks: TopStock[] }) {
   const [mode, setMode] = useState<SortMode>("change");
   useEffect(() => {
-    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-top10-sort") : null;
-    if (saved && ["change", "weight", "impact", "alpha"].includes(saved)) setMode(saved as SortMode);
+    const saved =
+      typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-top10-sort") : null;
+    if (saved && ["change", "weight", "impact", "alpha"].includes(saved))
+      setMode(saved as SortMode);
   }, []);
   const changeMode = (m: SortMode) => {
     setMode(m);
@@ -743,12 +1260,22 @@ function Top10Widget({ stocks }: { stocks: TopStock[] }) {
           alignItems: "center",
         }}
       >
-        <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>TOP-10 NIFTY WEIGHTAGE (~60% index)</span>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}>
+        <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>
+          TOP-10 NIFTY WEIGHTAGE (~60% index)
+        </span>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.muted }}
+        >
           Sort By
-          <select className="os10-select" value={mode} onChange={(e) => changeMode(e.target.value as SortMode)}>
+          <select
+            className="os10-select"
+            value={mode}
+            onChange={(e) => changeMode(e.target.value as SortMode)}
+          >
             {SORT_LABELS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
         </label>
@@ -756,7 +1283,13 @@ function Top10Widget({ stocks }: { stocks: TopStock[] }) {
 
       <div>
         <div className="os10-head">
-          <span>Rank</span><span>Stock</span><span>Live</span><span>Change %</span><span>Weight %</span><span>Status</span><span>Impact</span>
+          <span>Rank</span>
+          <span>Stock</span>
+          <span>Live</span>
+          <span>Change %</span>
+          <span>Weight %</span>
+          <span>Status</span>
+          <span>Impact</span>
         </div>
         <motion.div layout style={{ position: "relative" }}>
           <AnimatePresence initial={false}>
@@ -776,21 +1309,63 @@ function Top10Widget({ stocks }: { stocks: TopStock[] }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ layout: { type: "spring", stiffness: 500, damping: 40 }, opacity: { duration: 0.2 } }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 500, damping: 40 },
+                    opacity: { duration: 0.2 },
+                  }}
                   className="os10-row"
                   style={glow}
                 >
-                  <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>#{i + 1}</span>
+                  <span className="os-mono" style={{ color: C.muted, fontWeight: 700 }}>
+                    #{i + 1}
+                  </span>
                   <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                     <span style={{ fontWeight: 700 }}>{t.name}</span>
-                    {isTop ? <span className="os10-badge" style={{ color: "#0b1420", background: C.gold, marginTop: 2, width: "fit-content" }}>🏆 TOP GAINER</span> : null}
-                    {isBot ? <span className="os10-badge" style={{ color: "#fff", background: C.red, marginTop: 2, width: "fit-content" }}>📉 TOP LOSER</span> : null}
+                    {isTop ? (
+                      <span
+                        className="os10-badge"
+                        style={{
+                          color: "#0b1420",
+                          background: C.gold,
+                          marginTop: 2,
+                          width: "fit-content",
+                        }}
+                      >
+                        🏆 TOP GAINER
+                      </span>
+                    ) : null}
+                    {isBot ? (
+                      <span
+                        className="os10-badge"
+                        style={{
+                          color: "#fff",
+                          background: C.red,
+                          marginTop: 2,
+                          width: "fit-content",
+                        }}
+                      >
+                        📉 TOP LOSER
+                      </span>
+                    ) : null}
                   </span>
                   <span className="os-mono os10-c-live">{inr(t.price)}</span>
-                  <span><AnimatedChange value={t.changePct} /></span>
+                  <span>
+                    <AnimatedChange value={t.changePct} />
+                  </span>
                   <span className="os-mono os10-c-weight">{t.weight.toFixed(1)}</span>
-                  <span className="os10-c-status" style={{ color: t.advancing ? C.green : C.red, fontWeight: 700 }}>{t.advancing ? "Advance" : "Decline"}</span>
-                  <span className="os-mono os10-c-impact" style={{ color: t.contribution >= 0 ? C.green : C.red }}>{t.contribution >= 0 ? "+" : ""}{t.contribution.toFixed(3)}</span>
+                  <span
+                    className="os10-c-status"
+                    style={{ color: t.advancing ? C.green : C.red, fontWeight: 700 }}
+                  >
+                    {t.advancing ? "Advance" : "Decline"}
+                  </span>
+                  <span
+                    className="os-mono os10-c-impact"
+                    style={{ color: t.contribution >= 0 ? C.green : C.red }}
+                  >
+                    {t.contribution >= 0 ? "+" : ""}
+                    {t.contribution.toFixed(3)}
+                  </span>
                 </motion.div>
               );
             })}
@@ -799,7 +1374,9 @@ function Top10Widget({ stocks }: { stocks: TopStock[] }) {
       </div>
 
       <div style={{ padding: 14 }}>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>LIVE HEATMAP (size ∝ weight · order by Change %)</div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+          LIVE HEATMAP (size ∝ weight · order by Change %)
+        </div>
         <Heatmap stocks={sortStocks(stocks, "change")} />
       </div>
     </Card>
@@ -831,7 +1408,10 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>{s.name}</div>
-            <div className="os-mono" style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{up ? "+" : ""}{s.changePct.toFixed(2)}%</div>
+            <div className="os-mono" style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>
+              {up ? "+" : ""}
+              {s.changePct.toFixed(2)}%
+            </div>
           </motion.div>
         );
       })}
@@ -842,27 +1422,44 @@ function Heatmap({ stocks }: { stocks: TopStock[] }) {
 function SectorChart({ sectors }: { sectors: Sector[] }) {
   const [horizontal, setHorizontal] = useState(true);
   useEffect(() => {
-    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-orient") : null;
+    const saved =
+      typeof localStorage !== "undefined" ? localStorage.getItem("eb-os-sector-orient") : null;
     if (saved === "v") setHorizontal(false);
     else if (saved === "h") setHorizontal(true);
   }, []);
   const setOrient = (h: boolean) => {
     setHorizontal(h);
-    if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-orient", h ? "h" : "v");
+    if (typeof localStorage !== "undefined")
+      localStorage.setItem("eb-os-sector-orient", h ? "h" : "v");
   };
   // Sort by live Change % descending; highest sector shown on top / first.
   const ordered = useMemo(() => {
-    const arr = [...sectors].sort((a, b) => b.changePct - a.changePct || a.name.localeCompare(b.name));
+    const arr = [...sectors].sort(
+      (a, b) => b.changePct - a.changePct || a.name.localeCompare(b.name),
+    );
     // Horizontal bars render bottom-to-top, so reverse to keep highest on top.
     return horizontal ? [...arr].reverse() : arr;
   }, [sectors, horizontal]);
-  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
+  const series = useMemo(
+    () => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }],
+    [ordered],
+  );
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
+      chart: {
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          easing: "easeinout",
+          dynamicAnimation: { enabled: true, speed: 500 },
+        },
+      },
       plotOptions: { bar: { horizontal, distributed: true, borderRadius: 4, columnWidth: "60%" } },
       colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: horizontal ? 0 : -45 } },
+      xaxis: {
+        categories: ordered.map((s) => s.name),
+        labels: { style: { colors: "var(--eb-muted)" }, rotate: horizontal ? 0 : -45 },
+      },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },
@@ -873,20 +1470,45 @@ function SectorChart({ sectors }: { sectors: Sector[] }) {
   );
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>SECTOR STRENGTH CHART</div>
         <div style={{ display: "flex", gap: 6 }}>
           <button
             onClick={() => setOrient(true)}
             className="os-mono"
-            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: horizontal ? C.blue : C.muted, border: `1px solid ${horizontal ? C.blue : C.border}` }}
+            style={{
+              fontSize: 10.5,
+              padding: "4px 9px",
+              borderRadius: 7,
+              cursor: "pointer",
+              background: horizontal ? "rgba(76,157,255,0.16)" : "transparent",
+              color: horizontal ? C.blue : C.muted,
+              border: `1px solid ${horizontal ? C.blue : C.border}`,
+            }}
           >
             Horizontal
           </button>
           <button
             onClick={() => setOrient(false)}
             className="os-mono"
-            style={{ fontSize: 10.5, padding: "4px 9px", borderRadius: 7, cursor: "pointer", background: !horizontal ? "rgba(76,157,255,0.16)" : "transparent", color: !horizontal ? C.blue : C.muted, border: `1px solid ${!horizontal ? C.blue : C.border}` }}
+            style={{
+              fontSize: 10.5,
+              padding: "4px 9px",
+              borderRadius: 7,
+              cursor: "pointer",
+              background: !horizontal ? "rgba(76,157,255,0.16)" : "transparent",
+              color: !horizontal ? C.blue : C.muted,
+              border: `1px solid ${!horizontal ? C.blue : C.border}`,
+            }}
           >
             Vertical
           </button>
@@ -900,13 +1522,26 @@ function SectorChart({ sectors }: { sectors: Sector[] }) {
 function TopChart({ stocks }: { stocks: TopStock[] }) {
   // Sort by live Change % descending: highest gainer first, largest loser last.
   const ordered = useMemo(() => sortStocks(stocks, "change"), [stocks]);
-  const series = useMemo(() => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }], [ordered]);
+  const series = useMemo(
+    () => [{ name: "Change %", data: ordered.map((s) => Number(s.changePct.toFixed(2))) }],
+    [ordered],
+  );
   const options = useMemo(
     () => ({
-      chart: { toolbar: { show: false }, animations: { enabled: true, easing: "easeinout", dynamicAnimation: { enabled: true, speed: 500 } } },
+      chart: {
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          easing: "easeinout",
+          dynamicAnimation: { enabled: true, speed: 500 },
+        },
+      },
       plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: "60%" } },
       colors: ordered.map((s) => (s.changePct >= 0 ? "#10b981" : "#ef4444")),
-      xaxis: { categories: ordered.map((s) => s.name), labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 } },
+      xaxis: {
+        categories: ordered.map((s) => s.name),
+        labels: { style: { colors: "var(--eb-muted)" }, rotate: -45 },
+      },
       yaxis: { labels: { style: { colors: "var(--eb-muted)" } } },
       legend: { show: false },
       grid: { borderColor: "rgba(255,255,255,0.06)" },

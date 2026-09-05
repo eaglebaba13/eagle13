@@ -15,7 +15,11 @@ describe("news", () => {
   it("normalizes and sorts by importance", () => {
     const s = normalizeNews([
       { headline: "Small update", source: "X", publishedAt: null },
-      { headline: "RBI hikes rate cut projections", source: "Reuters", publishedAt: "2025-11-11T09:00:00Z" },
+      {
+        headline: "RBI hikes rate cut projections",
+        source: "Reuters",
+        publishedAt: "2025-11-11T09:00:00Z",
+      },
     ]);
     expect(s.items[0].impact).toBe("HIGH");
     expect(s.highImpact.length).toBe(1);

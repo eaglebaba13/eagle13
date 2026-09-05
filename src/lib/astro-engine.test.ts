@@ -25,7 +25,7 @@ describe("computeAstroPositions — planetary positions", () => {
   it("keeps Ketu exactly opposite Rahu (180° apart)", () => {
     const rahu = pos.planets.find((p) => p.planet === "Rahu")!;
     const ketu = pos.planets.find((p) => p.planet === "Ketu")!;
-    const diff = ((ketu.absDegree - rahu.absDegree + 360) % 360);
+    const diff = (ketu.absDegree - rahu.absDegree + 360) % 360;
     expect(diff).toBeCloseTo(180, 1);
   });
 
@@ -71,8 +71,14 @@ describe("computeAstroPositions — moon cycle", () => {
   });
   it("gives a recognized phase name", () => {
     expect([
-      "New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
-      "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent",
+      "New Moon",
+      "Waxing Crescent",
+      "First Quarter",
+      "Waxing Gibbous",
+      "Full Moon",
+      "Waning Gibbous",
+      "Last Quarter",
+      "Waning Crescent",
     ]).toContain(mp.phaseName);
   });
 });

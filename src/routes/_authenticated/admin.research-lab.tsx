@@ -4,10 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/admin/research-lab")({
   head: () => ({
-    meta: [
-      { title: "Admin · Research Lab" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Admin · Research Lab" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   component: AdminResearchLabPage,
 });
@@ -18,8 +15,8 @@ function AdminResearchLabPage() {
       <header>
         <h1 className="text-lg font-semibold text-foreground">Research Lab · Admin diagnostics</h1>
         <p className="text-xs text-muted-foreground">
-          Read-only. Non-critical module. Leakage detections block research execution only — they never
-          affect live-market readiness.
+          Read-only. Non-critical module. Leakage detections block research execution only — they
+          never affect live-market readiness.
         </p>
       </header>
       <dl className="grid grid-cols-2 gap-2 text-xs md:grid-cols-3">

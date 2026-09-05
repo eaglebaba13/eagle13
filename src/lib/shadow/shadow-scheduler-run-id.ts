@@ -94,12 +94,8 @@ export type ProviderSessionRunIdInput = {
 };
 
 export function computeProviderSessionRunId(inp: ProviderSessionRunIdInput): string {
-  const key = [
-    inp.providerId,
-    inp.instrument,
-    inp.timeframe,
-    inp.sessionDate,
-    inp.timezone,
-  ].join("||");
+  const key = [inp.providerId, inp.instrument, inp.timeframe, inp.sessionDate, inp.timezone].join(
+    "||",
+  );
   return `${SHADOW_PROVIDER_SESSION_PREFIX}:${fnv1a(key)}`;
 }

@@ -33,10 +33,7 @@ export type ExecutionPlan = {
   maxEntryDeviation: number;
 };
 
-export function initExecution(
-  instrument: InstrumentSymbol,
-  level: RankedLevel,
-): ExecutionPlan {
+export function initExecution(instrument: InstrumentSymbol, level: RankedLevel): ExecutionPlan {
   const policy = getInstrumentPolicy(instrument);
   return {
     state: "PENDING_TOUCH",

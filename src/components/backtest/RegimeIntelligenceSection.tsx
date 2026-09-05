@@ -62,9 +62,7 @@ export type RegimeIntelligenceSectionProps = {
 };
 
 export default function RegimeIntelligenceSection(props: RegimeIntelligenceSectionProps) {
-  const [selectedRegime, setSelectedRegime] = useState<MarketRegime>(
-    props.regime ?? "UNKNOWN",
-  );
+  const [selectedRegime, setSelectedRegime] = useState<MarketRegime>(props.regime ?? "UNKNOWN");
   const evidence = props.evidence ?? [];
 
   const rec: RegimeRecommendation | null = useMemo(() => {
@@ -87,11 +85,7 @@ export default function RegimeIntelligenceSection(props: RegimeIntelligenceSecti
     } else if (kind === "json") {
       downloadBlob("recommendation.json", "application/json", exportRecommendationJson(rec));
     } else {
-      downloadBlob(
-        "rejected-strategies.csv",
-        "text/csv",
-        exportRejectedStrategiesCsv(rec),
-      );
+      downloadBlob("rejected-strategies.csv", "text/csv", exportRejectedStrategiesCsv(rec));
     }
   };
 
@@ -149,8 +143,8 @@ export default function RegimeIntelligenceSection(props: RegimeIntelligenceSecti
             fontSize: 12,
           }}
         >
-          Awaiting research evidence. Run walk-forward, Monte Carlo, sensitivity
-          and robustness modules from the Research tabs to populate this panel.
+          Awaiting research evidence. Run walk-forward, Monte Carlo, sensitivity and robustness
+          modules from the Research tabs to populate this panel.
         </div>
       ) : (
         <>
@@ -162,11 +156,7 @@ export default function RegimeIntelligenceSection(props: RegimeIntelligenceSecti
               marginBottom: 10,
             }}
           >
-            <Card
-              label="Recommended"
-              value={rec.recommendedStrategy ?? "—"}
-              accent={C.orange}
-            />
+            <Card label="Recommended" value={rec.recommendedStrategy ?? "—"} accent={C.orange} />
             <Card label="Status" value={rec.recommendationStatus} />
             <Card label="Confidence" value={(rec.confidence * 100).toFixed(1) + "%"} />
             <Card label="Score" value={(rec.score * 100).toFixed(1) + "%"} />
@@ -310,7 +300,10 @@ export default function RegimeIntelligenceSection(props: RegimeIntelligenceSecti
               lineHeight: 1.6,
             }}
           >
-            Weights: {Object.entries(DEFAULT_SCORING_WEIGHTS).map(([k, v]) => `${k}=${v}`).join(", ")}
+            Weights:{" "}
+            {Object.entries(DEFAULT_SCORING_WEIGHTS)
+              .map(([k, v]) => `${k}=${v}`)
+              .join(", ")}
           </div>
         </>
       )}

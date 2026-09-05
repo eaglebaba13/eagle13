@@ -26,10 +26,7 @@ import { z } from "zod";
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
-import type {
-  OptionChainSnapshot,
-  OptionLeg,
-} from "./options-analytics";
+import type { OptionChainSnapshot, OptionLeg } from "./options-analytics";
 import { categorizeExpiries, type ExpiryCategory } from "./options-analytics";
 import {
   FRESHNESS_THRESHOLDS,
@@ -87,7 +84,9 @@ async function fetchSpot(sym: OptionsSymbol): Promise<{ price: number; prevClose
   return { price, prevClose: prev };
 }
 
-async function fetchSpotSafe(sym: OptionsSymbol): Promise<{ price: number | null; prevClose: number | null }> {
+async function fetchSpotSafe(
+  sym: OptionsSymbol,
+): Promise<{ price: number | null; prevClose: number | null }> {
   try {
     return await fetchSpot(sym);
   } catch {
@@ -236,9 +235,7 @@ function computeIntegrity(
     snapshot.spot > 0;
 
   const spotDivergence =
-    opts.yahooSpot != null && snapshot.spot > 0
-      ? Math.abs(snapshot.spot - opts.yahooSpot)
-      : null;
+    opts.yahooSpot != null && snapshot.spot > 0 ? Math.abs(snapshot.spot - opts.yahooSpot) : null;
 
   return {
     sourceStatus,
@@ -358,9 +355,8 @@ export const getOptionsChain = createServerFn({ method: "GET" })
 
         /* ------------------------ LIVE MODE ------------------------ */
         try {
-          const { fetchCanonicalOptionChain } = await import(
-            "./option-chain/canonical-snapshot.server"
-          );
+          const { fetchCanonicalOptionChain } =
+            await import("./option-chain/canonical-snapshot.server");
           const canonical = await fetchCanonicalOptionChain({
             underlying: sym,
             expiry: data.expiry,

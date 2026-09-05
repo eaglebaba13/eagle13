@@ -10,19 +10,19 @@ import type { ActualGapOutcome } from "./outcome-rules";
 
 export interface FrozenPredictionRecord {
   readonly predictionId: string;
-  readonly tradingDate: string;         // session that produced the prediction (IST YYYY-MM-DD)
-  readonly nextTradingDate: string;     // session the prediction is for
+  readonly tradingDate: string; // session that produced the prediction (IST YYYY-MM-DD)
+  readonly nextTradingDate: string; // session the prediction is for
   readonly label: GannGapOutlookLabel;
   readonly reference: number | null;
   readonly formulaVersion: string;
-  readonly frozenAt: string;            // ISO timestamp after 15:26 IST
+  readonly frozenAt: string; // ISO timestamp after 15:26 IST
 }
 
 export interface OutcomeRecord {
   readonly predictionId: string;
   readonly outcome: ActualGapOutcome;
   readonly ruleVersion: string;
-  readonly evaluatedAt: string;         // must be strictly after the prediction's frozenAt
+  readonly evaluatedAt: string; // must be strictly after the prediction's frozenAt
 }
 
 export interface HistoricalAccuracyMetrics {
@@ -34,8 +34,11 @@ export interface HistoricalAccuracyMetrics {
   readonly winRatePct: number | null;
   readonly minSampleSize: number;
   readonly meetsMinSample: boolean;
-  readonly perLabel: ReadonlyMap<GannGapOutlookLabel, { readonly n: number; readonly correct: number }>;
-  readonly leakageDetected: number;     // count of records rejected for leakage
+  readonly perLabel: ReadonlyMap<
+    GannGapOutlookLabel,
+    { readonly n: number; readonly correct: number }
+  >;
+  readonly leakageDetected: number; // count of records rejected for leakage
 }
 
 export const DEFAULT_MIN_HISTORICAL_SAMPLE = 20;
@@ -57,7 +60,10 @@ export function evaluateHistoricalAccuracy(
   const outcomeById = new Map<string, OutcomeRecord>();
   for (const o of outcomes) outcomeById.set(o.predictionId, o);
 
-  let correct = 0, incorrect = 0, evaluated = 0, leakage = 0;
+  let correct = 0,
+    incorrect = 0,
+    evaluated = 0,
+    leakage = 0;
   const perLabel = new Map<GannGapOutlookLabel, { n: number; correct: number }>();
 
   for (const p of predictions) {

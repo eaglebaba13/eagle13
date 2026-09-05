@@ -197,10 +197,7 @@ describe("Stage 4 · session simulator", () => {
   });
 
   it("determinism: same input → same output", () => {
-    const raw = [
-      mk(0, 18428, 18435, 18420, 18425),
-      mk(1, 18425, 18440, 18420, 18432),
-    ];
+    const raw = [mk(0, 18428, 18435, 18420, 18425), mk(1, 18425, 18440, 18420, 18432)];
     const a = simulateSession({
       instrument: "NIFTY50",
       ranked: [buyLvl()],

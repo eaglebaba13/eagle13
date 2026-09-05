@@ -125,7 +125,14 @@ export function Seasonality() {
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--eb-border)" }}>
-                <th style={{ ...yearCellStyle, color: "var(--eb-accent)", fontSize: 10, letterSpacing: 0.6 }}>
+                <th
+                  style={{
+                    ...yearCellStyle,
+                    color: "var(--eb-accent)",
+                    fontSize: 10,
+                    letterSpacing: 0.6,
+                  }}
+                >
                   YEAR
                 </th>
                 {MONTHS.map((m) => (

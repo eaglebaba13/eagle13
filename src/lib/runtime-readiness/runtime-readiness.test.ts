@@ -169,10 +169,7 @@ describe("contradiction detector", () => {
   });
 
   it("flags PCR HEALTHY while options blocked", () => {
-    const nifty = evidenceFromOptionChain(
-      "OPTION_CHAIN_NIFTY",
-      ocCap({ status: "AUTH_REQUIRED" }),
-    );
+    const nifty = evidenceFromOptionChain("OPTION_CHAIN_NIFTY", ocCap({ status: "AUTH_REQUIRED" }));
     const bnk = evidenceFromOptionChain(
       "OPTION_CHAIN_BANKNIFTY",
       ocCap({ status: "AUTH_REQUIRED", underlying: "BANKNIFTY" }),
@@ -239,12 +236,27 @@ describe("aggregateRuntimeReadiness", () => {
   it("all healthy critical modules → READY", () => {
     const reading = { combinedScore: 1 } as CombinedPcrReading;
     const evs: RuntimeEvidence[] = [
-      evidenceFromSimple({ module: "MARKET_DATA", available: true, reason: "live", observedAt: NOW }),
+      evidenceFromSimple({
+        module: "MARKET_DATA",
+        available: true,
+        reason: "live",
+        observedAt: NOW,
+      }),
       evidenceFromSimple({ module: "INDIA_VIX", available: true, reason: "live", observedAt: NOW }),
       evidenceFromOptionChain("OPTION_CHAIN_NIFTY", ocCap()),
       evidenceFromOptionChain("OPTION_CHAIN_BANKNIFTY", ocCap({ underlying: "BANKNIFTY" })),
-      evidenceFromCombinedPcr({ reading, niftyCap: ocCap(), banknifyCap: ocCap({ underlying: "BANKNIFTY" }), observedAt: NOW }),
-      evidenceFromSimple({ module: "DECISION_ENGINE", available: true, reason: "computed", observedAt: NOW }),
+      evidenceFromCombinedPcr({
+        reading,
+        niftyCap: ocCap(),
+        banknifyCap: ocCap({ underlying: "BANKNIFTY" }),
+        observedAt: NOW,
+      }),
+      evidenceFromSimple({
+        module: "DECISION_ENGINE",
+        available: true,
+        reason: "computed",
+        observedAt: NOW,
+      }),
     ];
     const r = aggregateRuntimeReadiness(evs, { generatedAt: NOW });
     expect(r.overall).toBe("READY");
@@ -253,12 +265,27 @@ describe("aggregateRuntimeReadiness", () => {
   it("demo breadth alone → PARTIALLY_READY (non-critical demo)", () => {
     const reading = { combinedScore: 1 } as CombinedPcrReading;
     const evs: RuntimeEvidence[] = [
-      evidenceFromSimple({ module: "MARKET_DATA", available: true, reason: "live", observedAt: NOW }),
+      evidenceFromSimple({
+        module: "MARKET_DATA",
+        available: true,
+        reason: "live",
+        observedAt: NOW,
+      }),
       evidenceFromSimple({ module: "INDIA_VIX", available: true, reason: "live", observedAt: NOW }),
       evidenceFromOptionChain("OPTION_CHAIN_NIFTY", ocCap()),
       evidenceFromOptionChain("OPTION_CHAIN_BANKNIFTY", ocCap({ underlying: "BANKNIFTY" })),
-      evidenceFromCombinedPcr({ reading, niftyCap: ocCap(), banknifyCap: ocCap({ underlying: "BANKNIFTY" }), observedAt: NOW }),
-      evidenceFromSimple({ module: "DECISION_ENGINE", available: true, reason: "computed", observedAt: NOW }),
+      evidenceFromCombinedPcr({
+        reading,
+        niftyCap: ocCap(),
+        banknifyCap: ocCap({ underlying: "BANKNIFTY" }),
+        observedAt: NOW,
+      }),
+      evidenceFromSimple({
+        module: "DECISION_ENGINE",
+        available: true,
+        reason: "computed",
+        observedAt: NOW,
+      }),
       evidenceFromMarketBreadth(mbCap()),
     ];
     const r = aggregateRuntimeReadiness(evs, { generatedAt: NOW });
@@ -267,7 +294,10 @@ describe("aggregateRuntimeReadiness", () => {
 
   it("critical contradiction forces NOT_READY", () => {
     const nifty = evidenceFromOptionChain("OPTION_CHAIN_NIFTY", ocCap({ status: "AUTH_REQUIRED" }));
-    const bnk = evidenceFromOptionChain("OPTION_CHAIN_BANKNIFTY", ocCap({ underlying: "BANKNIFTY", status: "AUTH_REQUIRED" }));
+    const bnk = evidenceFromOptionChain(
+      "OPTION_CHAIN_BANKNIFTY",
+      ocCap({ underlying: "BANKNIFTY", status: "AUTH_REQUIRED" }),
+    );
     const fakePcr = evidenceFromCombinedPcr({
       reading: { combinedScore: 1 } as CombinedPcrReading,
       niftyCap: ocCap(),

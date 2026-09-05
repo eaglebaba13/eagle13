@@ -20,20 +20,22 @@ const NULL_STRATEGY: StrategyContextView = {
   invalidation: "n/a",
 };
 
-function baseInputs(overrides: {
-  decision?: CanonicalBias;
-  pcr?: CanonicalBias;
-  gti?: CanonicalBias;
-  breadth?: CanonicalBias;
-  astro?: CanonicalBias;
-  gap?: CanonicalBias;
-  source?: "LIVE" | "MIXED" | "RESEARCH_DEMO";
-  strategy?: StrategyContextView;
-  vixValue?: number | null;
-  vixRegime?: string;
-  runtime?: "READY" | "PARTIALLY_READY" | "NOT_READY" | "UNKNOWN";
-  unavailable?: boolean;
-} = {}) {
+function baseInputs(
+  overrides: {
+    decision?: CanonicalBias;
+    pcr?: CanonicalBias;
+    gti?: CanonicalBias;
+    breadth?: CanonicalBias;
+    astro?: CanonicalBias;
+    gap?: CanonicalBias;
+    source?: "LIVE" | "MIXED" | "RESEARCH_DEMO";
+    strategy?: StrategyContextView;
+    vixValue?: number | null;
+    vixRegime?: string;
+    runtime?: "READY" | "PARTIALLY_READY" | "NOT_READY" | "UNKNOWN";
+    unavailable?: boolean;
+  } = {},
+) {
   const src = overrides.source ?? "LIVE";
   const unavail = overrides.unavailable === true;
   const mk = (bias: CanonicalBias | undefined) => ({
@@ -190,9 +192,7 @@ describe("AI Market Assistant — deterministic engine", () => {
   });
 
   it("Diagnostics never expose secrets or URLs", () => {
-    const ctx = buildCanonicalContext(
-      baseInputs({ decision: "BULLISH", pcr: "BULLISH" }),
-    );
+    const ctx = buildCanonicalContext(baseInputs({ decision: "BULLISH", pcr: "BULLISH" }));
     const res = runAssistant(ctx);
     const diag = buildDiagnostics(ctx, res, 12);
     const json = JSON.stringify(diag);

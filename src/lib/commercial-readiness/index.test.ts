@@ -1,20 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { evaluateCommercialReadiness, COMMERCIAL_READINESS_VERSION, type CommercialReadinessInputs } from "./index";
+import {
+  evaluateCommercialReadiness,
+  COMMERCIAL_READINESS_VERSION,
+  type CommercialReadinessInputs,
+} from "./index";
 
 const baseLaunch = {
-  authentication: true, authorization: true,
-  dashboard: true, mobile: true, desktop: true,
-  performanceOk: true, caching: true, diagnostics: true,
-  featureFlags: true, providerHealth: true,
-  noMockData: true, noBrokerExecution: true,
-  a11yPass: true, testsPassing: true,
+  authentication: true,
+  authorization: true,
+  dashboard: true,
+  mobile: true,
+  desktop: true,
+  performanceOk: true,
+  caching: true,
+  diagnostics: true,
+  featureFlags: true,
+  providerHealth: true,
+  noMockData: true,
+  noBrokerExecution: true,
+  a11yPass: true,
+  testsPassing: true,
   manualPublicSignoff: false,
 };
 
 const baseCommercial: CommercialReadinessInputs = {
   ...baseLaunch,
-  billingWired: true, licenseEngineLive: true, adminPanelReady: true,
-  transactionalEmailsReady: true, couponsReady: true, permissionMatrixVerified: true,
+  billingWired: true,
+  licenseEngineLive: true,
+  adminPanelReady: true,
+  transactionalEmailsReady: true,
+  couponsReady: true,
+  permissionMatrixVerified: true,
 };
 
 describe("commercial-readiness", () => {

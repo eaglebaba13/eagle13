@@ -21,9 +21,8 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
     const t0 = Date.now();
 
     // Canonical option chain — sole source of leg/OI/greeks.
-    const { fetchCanonicalOptionChain } = await import(
-      "@/lib/option-chain/canonical-snapshot.server"
-    );
+    const { fetchCanonicalOptionChain } =
+      await import("@/lib/option-chain/canonical-snapshot.server");
     const chainRes = await fetchCanonicalOptionChain({ underlying });
     const snapshot: OptionChainSnapshot | null =
       chainRes.ok && chainRes.snapshot ? chainRes.snapshot : null;
@@ -35,9 +34,10 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       const { computeCombinedPcr } = await import("../combined-pcr/combined-pcr");
       const { DEFAULT_COMBINED_PCR_WEIGHTS } = await import("../combined-pcr/types");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
-      const other = underlying === "NIFTY"
-        ? await fetchCanonicalOptionChain({ underlying: "BANKNIFTY" })
-        : await fetchCanonicalOptionChain({ underlying: "NIFTY" });
+      const other =
+        underlying === "NIFTY"
+          ? await fetchCanonicalOptionChain({ underlying: "BANKNIFTY" })
+          : await fetchCanonicalOptionChain({ underlying: "NIFTY" });
       const snaps: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {
         [underlying]: snapshot,
         [underlying === "NIFTY" ? "BANKNIFTY" : "NIFTY"]:
@@ -54,7 +54,9 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
         pcrScore = pcr.combinedScore;
         pcrState = pcr.confirmedState;
       }
-    } catch { /* pcr optional */ }
+    } catch {
+      /* pcr optional */
+    }
 
     // Breadth bundle — canonical research bundle (Phase 2 policy).
     const { buildMockBreadthBundle } = await import("../market-breadth/mock-provider");
@@ -70,7 +72,9 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       const q = underlying === "NIFTY" ? md?.nifty : md?.banknifty;
       if (q && Number.isFinite(q.change)) underlyingPriceChange = q.change;
       vix = md?.vix?.livePrice ?? null;
-    } catch { /* market data optional */ }
+    } catch {
+      /* market data optional */
+    }
 
     // Decision + GTI — consume canonical snapshots, do not re-classify here.
     let decisionAction: string | null = null;
@@ -82,7 +86,9 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       const dec = await getDecisionSnapshot();
       decisionAction = dec?.summary?.decision ?? null;
       decisionConfidence = dec?.summary?.confidence ?? null;
-    } catch { /* decision optional */ }
+    } catch {
+      /* decision optional */
+    }
     try {
       const { classifyGti } = await import("../market-breadth/gti-classifier");
       const { evaluateVixRegime } = await import("../market-breadth/vix-regime");
@@ -108,7 +114,9 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       });
       gtiState = gti.state;
       gtiConfidence = gti.confidence;
-    } catch { /* gti optional */ }
+    } catch {
+      /* gti optional */
+    }
 
     if (!snapshot) {
       // Return an UNAVAILABLE-shaped report with empty snapshot placeholder.
@@ -156,7 +164,8 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       decisionConfidence,
       gtiState,
       gtiConfidence,
-      source: pcrScore != null && (vix != null || underlyingPriceChange != null) ? "MIXED" : "MIXED",
+      source:
+        pcrScore != null && (vix != null || underlyingPriceChange != null) ? "MIXED" : "MIXED",
       nowMs: t0,
     });
   });

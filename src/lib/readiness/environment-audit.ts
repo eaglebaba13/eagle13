@@ -84,9 +84,7 @@ export function auditEnvironment(input: EnvironmentAuditInput): ReadinessResult[
         title: `Env: ${v.name}`,
         status: "PASS",
         severity: "info",
-        evidence: v.lastFour
-          ? [{ key: "lastFour", value: `…${v.lastFour}` }]
-          : undefined,
+        evidence: v.lastFour ? [{ key: "lastFour", value: `…${v.lastFour}` }] : undefined,
       });
       continue;
     }
@@ -124,9 +122,7 @@ export function auditEnvironment(input: EnvironmentAuditInput): ReadinessResult[
       severity: v.required ? "blocker" : "warning",
       hardBlocker: v.required && input.environment === "production",
       detail: `${v.name} is not configured.`,
-      remediation: v.required
-        ? `Add ${v.name} before promoting to production.`
-        : undefined,
+      remediation: v.required ? `Add ${v.name} before promoting to production.` : undefined,
     });
   }
 
@@ -152,15 +148,9 @@ export function auditEnvironment(input: EnvironmentAuditInput): ReadinessResult[
   return out;
 }
 
-export const CORE_REQUIRED_ENV = [
-  "SUPABASE_URL",
-  "SUPABASE_PUBLISHABLE_KEY",
-] as const;
+export const CORE_REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY"] as const;
 
-export const PAYMENT_REQUIRED_ENV = [
-  "MANUAL_UPI_ID",
-  "MANUAL_UPI_PAYEE",
-] as const;
+export const PAYMENT_REQUIRED_ENV = ["MANUAL_UPI_ID", "MANUAL_UPI_PAYEE"] as const;
 
 export const PAYMENT_OPTIONAL_ENV = [
   "MANUAL_UPI_BANK",

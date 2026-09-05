@@ -57,8 +57,7 @@ export function computePerfReport(inp: PerfInputs): PerfReport {
   const breadth = latencyGrade(inp.breadth, { yellow: 1200, red: 2500 });
   const cache: PerfGrade =
     inp.cacheHitRatio >= 0.7 ? "GREEN" : inp.cacheHitRatio >= 0.5 ? "YELLOW" : "RED";
-  const bundle: PerfGrade =
-    inp.bundleKb <= 750 ? "GREEN" : inp.bundleKb <= 1200 ? "YELLOW" : "RED";
+  const bundle: PerfGrade = inp.bundleKb <= 750 ? "GREEN" : inp.bundleKb <= 1200 ? "YELLOW" : "RED";
   const duplicateFetches: PerfGrade =
     inp.duplicateFetches === 0 ? "GREEN" : inp.duplicateFetches <= 2 ? "YELLOW" : "RED";
   const hydration: PerfGrade = inp.hydrationErrors === 0 ? "GREEN" : "RED";
@@ -66,8 +65,25 @@ export function computePerfReport(inp: PerfInputs): PerfReport {
   if (cache !== "GREEN") warnings.push("cache_hit_ratio_below_target");
   if (hydration === "RED") warnings.push("hydration_errors_present");
   return {
-    grade: worst(quotes, optionChain, combinedPcr, breadth, cache, bundle, duplicateFetches, hydration),
-    quotes, optionChain, combinedPcr, breadth, cache, bundle, duplicateFetches, hydration,
-    warnings, formulaVersion: PERF_REPORT_VERSION,
+    grade: worst(
+      quotes,
+      optionChain,
+      combinedPcr,
+      breadth,
+      cache,
+      bundle,
+      duplicateFetches,
+      hydration,
+    ),
+    quotes,
+    optionChain,
+    combinedPcr,
+    breadth,
+    cache,
+    bundle,
+    duplicateFetches,
+    hydration,
+    warnings,
+    formulaVersion: PERF_REPORT_VERSION,
   };
 }

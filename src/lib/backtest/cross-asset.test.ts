@@ -23,11 +23,20 @@ function trade(pnl: number, i: number): HistoricalTrade {
     id: `t${i}`,
     date: `2024-01-${String((i % 28) + 1).padStart(2, "0")}`,
     side: pnl >= 0 ? "BUY" : "SELL",
-    entry: 100, stop: 98, target: 102, exit: 100 + pnl,
+    entry: 100,
+    stop: 98,
+    target: 102,
+    exit: 100 + pnl,
     outcome: pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "FLAT",
-    pnl, mfe: null, mae: null, holdingTime: null,
+    pnl,
+    mfe: null,
+    mae: null,
+    holdingTime: null,
     formulaVersion: "GANN_SIGN_DEGREE_TABLE_V1_1",
-    source: "test", ambiguous: false, reasons: [], metadata: {},
+    source: "test",
+    ambiguous: false,
+    reasons: [],
+    metadata: {},
   };
 }
 
@@ -36,14 +45,30 @@ function result(pnls: number[], instrument = "NIFTY50"): HistoricalBacktestResul
   const net = pnls.reduce((a, b) => a + b, 0);
   return {
     formulaVersion: "GANN_SIGN_DEGREE_TABLE_V1_1",
-    engineVersion: "eng", executionVersion: "exec", cubeVersion: "cube", policyVersion: "pol",
+    engineVersion: "eng",
+    executionVersion: "exec",
+    cubeVersion: "cube",
+    policyVersion: "pol",
     runId: `run-${instrument}-${trades.length}-${net}`,
     generatedAt: "2024-01-01T00:00:00.000Z",
-    instrument, from: "2024-01-01", to: "2024-01-31",
-    dataGranularity: "1d", source: "test", dataQuality: null,
-    trades, stats: {}, monthly: [], equityCurve: [],
-    drawdown: { max: Math.max(0, ...pnls.map((_, i) => -pnls.slice(0, i + 1).reduce((a, b) => a + b, 0))), maxPct: 0 },
-    benchmark: null, methodology: "", disclaimers: [], formulaMeta: {},
+    instrument,
+    from: "2024-01-01",
+    to: "2024-01-31",
+    dataGranularity: "1d",
+    source: "test",
+    dataQuality: null,
+    trades,
+    stats: {},
+    monthly: [],
+    equityCurve: [],
+    drawdown: {
+      max: Math.max(0, ...pnls.map((_, i) => -pnls.slice(0, i + 1).reduce((a, b) => a + b, 0))),
+      maxPct: 0,
+    },
+    benchmark: null,
+    methodology: "",
+    disclaimers: [],
+    formulaMeta: {},
   };
 }
 
@@ -56,7 +81,10 @@ function bulkInput(
   extras: Partial<CrossAssetInput> = {},
 ): CrossAssetInput {
   return {
-    instrument, strategy, timeframe, regime,
+    instrument,
+    strategy,
+    timeframe,
+    regime,
     formula: `${strategy}_V1`,
     result: result(pnls, instrument),
     ...extras,
@@ -114,7 +142,12 @@ describe("Phase 21.7 · cross-asset engine", () => {
     const big = Array.from({ length: 40 }, (_, i) => (i % 3 === 0 ? 3 : -1));
     const small = [1, -1];
     const rows = [
-      buildCrossAssetRow(bulkInput("NIFTY50", "ASTRO", "1d", "TRENDING_UP", big, { stabilityScore: 80, robustnessScore: 75 })),
+      buildCrossAssetRow(
+        bulkInput("NIFTY50", "ASTRO", "1d", "TRENDING_UP", big, {
+          stabilityScore: 80,
+          robustnessScore: 75,
+        }),
+      ),
       buildCrossAssetRow(bulkInput("BTC", "SMC", "1d", "RANGE", small)),
     ];
     const board = buildLeaderboard(rows);
@@ -177,7 +210,11 @@ describe("Phase 21.7 · cross-asset engine", () => {
   it("exports are deterministic and embed run id + engine version", () => {
     const pnls = Array.from({ length: 40 }, () => 1);
     const rows = [buildCrossAssetRow(bulkInput("NIFTY50", "ASTRO", "1d", "TRENDING_UP", pnls))];
-    const prov = { researchRunId: "R1", generatedAt: "2024-01-01T00:00:00.000Z", engineVersion: CROSS_ASSET_ENGINE_VERSION };
+    const prov = {
+      researchRunId: "R1",
+      generatedAt: "2024-01-01T00:00:00.000Z",
+      engineVersion: CROSS_ASSET_ENGINE_VERSION,
+    };
     const csv1 = buildCrossAssetCsv(rows, prov);
     const csv2 = buildCrossAssetCsv(rows, prov);
     expect(csv1).toBe(csv2);

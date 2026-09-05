@@ -59,13 +59,20 @@ export function computeMetrics(
   let peak = startingCapital;
   let peakIdx = 0;
   equityCurve.forEach((p, i) => {
-    if (p.equity > peak) { peak = p.equity; peakIdx = i; }
+    if (p.equity > peak) {
+      peak = p.equity;
+      peakIdx = i;
+    }
     const dd = peak - p.equity;
-    if (dd > maxDrawdown) { maxDrawdown = dd; maxDDBars = i - peakIdx; }
+    if (dd > maxDrawdown) {
+      maxDrawdown = dd;
+      maxDDBars = i - peakIdx;
+    }
   });
   const maxDDPct = peak > 0 ? maxDrawdown / peak : 0;
 
-  const profitFactor = grossLoss < 0 ? grossProfit / Math.abs(grossLoss) : (grossProfit > 0 ? Infinity : null);
+  const profitFactor =
+    grossLoss < 0 ? grossProfit / Math.abs(grossLoss) : grossProfit > 0 ? Infinity : null;
   const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
   const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
   const payoff = losses.length > 0 && avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : null;
@@ -76,14 +83,26 @@ export function computeMetrics(
   const negatives = rets.filter((r) => r < 0);
   const downsideDev = stddev(negatives);
   const sortino = downsideDev > 0 ? mu / downsideDev : null;
-  const calmar = maxDDPct > 0 ? (netProfit / startingCapital) / maxDDPct : null;
+  const calmar = maxDDPct > 0 ? netProfit / startingCapital / maxDDPct : null;
   const recoveryFactor = maxDrawdown > 0 ? netProfit / maxDrawdown : null;
 
-  let longestWinStreak = 0, longestLossStreak = 0, curW = 0, curL = 0;
+  let longestWinStreak = 0,
+    longestLossStreak = 0,
+    curW = 0,
+    curL = 0;
   for (const t of trades) {
-    if (t.netPnl > 0) { curW++; curL = 0; longestWinStreak = Math.max(longestWinStreak, curW); }
-    else if (t.netPnl < 0) { curL++; curW = 0; longestLossStreak = Math.max(longestLossStreak, curL); }
-    else { curW = 0; curL = 0; }
+    if (t.netPnl > 0) {
+      curW++;
+      curL = 0;
+      longestWinStreak = Math.max(longestWinStreak, curW);
+    } else if (t.netPnl < 0) {
+      curL++;
+      curW = 0;
+      longestLossStreak = Math.max(longestLossStreak, curL);
+    } else {
+      curW = 0;
+      curL = 0;
+    }
   }
   const avgHolding = n > 0 ? trades.reduce((a, b) => a + b.holdingBars, 0) / n : 0;
   const totalBars = trades.reduce((a, b) => a + b.holdingBars, 0);
@@ -91,7 +110,7 @@ export function computeMetrics(
   let cagr: number | null = null;
   if (fromIso && toIso) {
     const y = (Date.parse(toIso) - Date.parse(fromIso)) / (365.25 * 86400_000);
-    if (y > 0 && startingCapital > 0 && (startingCapital + netProfit) > 0) {
+    if (y > 0 && startingCapital > 0 && startingCapital + netProfit > 0) {
       cagr = Math.pow((startingCapital + netProfit) / startingCapital, 1 / y) - 1;
     }
   }
@@ -140,7 +159,7 @@ export function computeMetrics(
     maxDrawdown,
     maxDrawdownPct: maxDDPct,
     drawdownDurationBars: maxDDBars,
-    exposurePct: totalBars,        // caller normalises when bar total known
+    exposurePct: totalBars, // caller normalises when bar total known
     avgHoldingBars: avgHolding,
     longestWinStreak,
     longestLossStreak,

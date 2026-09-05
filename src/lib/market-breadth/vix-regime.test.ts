@@ -12,7 +12,12 @@ describe("VIX regime classifier", () => {
     expect(classifyVix(25)).toBe("ABOVE_25");
   });
   it("evaluate flags regime change and rising", () => {
-    const r = evaluateVixRegime({ currentVix: 21, previousVix: 18, provider: "UPSTOX", timestamp: "2026-07-16T00:00:00Z" });
+    const r = evaluateVixRegime({
+      currentVix: 21,
+      previousVix: 18,
+      provider: "UPSTOX",
+      timestamp: "2026-07-16T00:00:00Z",
+    });
     expect(r.regime).toBe("ABOVE_20");
     expect(r.previousRegime).toBe("BETWEEN_15_AND_20");
     expect(r.regimeChanged).toBe(true);

@@ -60,11 +60,7 @@ function round6(n: number): number {
 }
 
 function trueRange(prev: Ohlc, cur: Ohlc): number {
-  return Math.max(
-    cur.h - cur.l,
-    Math.abs(cur.h - prev.c),
-    Math.abs(cur.l - prev.c),
-  );
+  return Math.max(cur.h - cur.l, Math.abs(cur.h - prev.c), Math.abs(cur.l - prev.c));
 }
 
 function ema(values: readonly number[], period: number): number[] {
@@ -101,8 +97,14 @@ function adxLike(candles: readonly Ohlc[], window: number): number {
   return round6((Math.abs(plusDI - minusDI) / sum) * 100);
 }
 
-function computeSwings(candles: readonly Ohlc[], k: number): {
-  hh: number; hl: number; lh: number; ll: number;
+function computeSwings(
+  candles: readonly Ohlc[],
+  k: number,
+): {
+  hh: number;
+  hl: number;
+  lh: number;
+  ll: number;
 } {
   if (candles.length < 2 * k + 3) return { hh: 0, hl: 0, lh: 0, ll: 0 };
   const highs: number[] = [];
@@ -118,7 +120,10 @@ function computeSwings(candles: readonly Ohlc[], k: number): {
     if (isHigh) highs.push(candles[i].h);
     if (isLow) lows.push(candles[i].l);
   }
-  let hh = 0, lh = 0, hl = 0, ll = 0;
+  let hh = 0,
+    lh = 0,
+    hl = 0,
+    ll = 0;
   for (let i = 1; i < highs.length; i++) {
     if (highs[i] > highs[i - 1]) hh++;
     else if (highs[i] < highs[i - 1]) lh++;
@@ -140,9 +145,17 @@ export function computeRegimeFeatures(
   if (n < window + 2) {
     return {
       sampleSize: n,
-      atr: 0, atrPct: 0, adxLike: 0, emaSlopePct: 0,
-      hh: 0, hl: 0, lh: 0, ll: 0,
-      rangeCompression: 0, rangeExpansion: 0, volatilityPercentile: 0,
+      atr: 0,
+      atrPct: 0,
+      adxLike: 0,
+      emaSlopePct: 0,
+      hh: 0,
+      hl: 0,
+      lh: 0,
+      ll: 0,
+      rangeCompression: 0,
+      rangeExpansion: 0,
+      volatilityPercentile: 0,
     };
   }
   // ATR over last `window` candles.
@@ -165,7 +178,8 @@ export function computeRegimeFeatures(
   let sumPrev = 0;
   const priorStart = n - 2 * window;
   if (priorStart >= 1) {
-    for (let i = priorStart; i < priorStart + window; i++) sumPrev += trueRange(candles[i - 1], candles[i]);
+    for (let i = priorStart; i < priorStart + window; i++)
+      sumPrev += trueRange(candles[i - 1], candles[i]);
   }
   const atrPrev = priorStart >= 1 ? sumPrev / window : atr;
   const compression = atrPrev > 0 ? atr / atrPrev : 1;
@@ -185,7 +199,10 @@ export function computeRegimeFeatures(
     atrPct: round6(atrPct),
     adxLike: adxLike(candles, window),
     emaSlopePct: round6(emaSlopePct),
-    hh: swings.hh, hl: swings.hl, lh: swings.lh, ll: swings.ll,
+    hh: swings.hh,
+    hl: swings.hl,
+    lh: swings.lh,
+    ll: swings.ll,
     rangeCompression: round6(compression),
     rangeExpansion: round6(expansion),
     volatilityPercentile: round6(vp),
@@ -258,7 +275,11 @@ export function classifyRegime(
     reasons.push(`RANGE_COMPRESSION=${features.rangeCompression}`);
     return { regime: "RANGE", features, reasons };
   }
-  if (features.adxLike < 20 && Math.abs(features.hh - features.ll) <= 1 && Math.abs(features.hl - features.lh) <= 1) {
+  if (
+    features.adxLike < 20 &&
+    Math.abs(features.hh - features.ll) <= 1 &&
+    Math.abs(features.hl - features.lh) <= 1
+  ) {
     reasons.push("WEAK_TREND_BALANCED_SWINGS");
     return { regime: "MEAN_REVERSION", features, reasons };
   }

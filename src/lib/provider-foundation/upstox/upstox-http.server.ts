@@ -41,7 +41,9 @@ export interface UpstoxSuccess<T> {
   };
 }
 
-export type UpstoxHttpResult<T> = UpstoxSuccess<T> | { readonly ok: false; readonly error: UpstoxError; readonly latencyMs: number };
+export type UpstoxHttpResult<T> =
+  | UpstoxSuccess<T>
+  | { readonly ok: false; readonly error: UpstoxError; readonly latencyMs: number };
 
 const DEFAULT_BASE_URL = "https://api.upstox.com";
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -53,12 +55,14 @@ const SENSITIVE_KEYS = new Set(["authorization", "access_token", "api_key", "api
 
 function redact(msg: string): string {
   // Strip bearer tokens / long alphanumeric secrets from messages.
-  return msg
-    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
-    .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
-    .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
-    // Never leak the raw HTTP response body — keep only the status prefix.
-    .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1");
+  return (
+    msg
+      .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
+      .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
+      .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
+      // Never leak the raw HTTP response body — keep only the status prefix.
+      .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1")
+  );
 }
 
 /**
@@ -69,7 +73,11 @@ function redact(msg: string): string {
 export function parseUpstoxErrorCode(bodyText: string | undefined | null): string | undefined {
   if (!bodyText) return undefined;
   try {
-    const parsed = JSON.parse(bodyText) as { errors?: Array<{ errorCode?: string; error_code?: string }>; error_code?: string; errorCode?: string };
+    const parsed = JSON.parse(bodyText) as {
+      errors?: Array<{ errorCode?: string; error_code?: string }>;
+      error_code?: string;
+      errorCode?: string;
+    };
     const list = Array.isArray(parsed?.errors) ? parsed.errors : [];
     const first = list[0]?.errorCode ?? list[0]?.error_code;
     const top = parsed?.errorCode ?? parsed?.error_code;
@@ -85,7 +93,8 @@ function classifyStatus(status: number): { code: UpstoxErrorCode; retryable: boo
   if (status === 401) return { code: "UPSTOX_AUTH_REQUIRED", retryable: false };
   if (status === 403) return { code: "UPSTOX_FORBIDDEN", retryable: false };
   if (status === 429) return { code: "UPSTOX_RATE_LIMITED", retryable: true };
-  if (status === 400 || status === 404) return { code: "UPSTOX_DATA_UNAVAILABLE", retryable: false };
+  if (status === 400 || status === 404)
+    return { code: "UPSTOX_DATA_UNAVAILABLE", retryable: false };
   if (status === 422) return { code: "UPSTOX_UNSUPPORTED_RANGE", retryable: false };
   if (status >= 500) return { code: "UPSTOX_UNKNOWN", retryable: true };
   return { code: "UPSTOX_UNKNOWN", retryable: false };
@@ -114,7 +123,10 @@ function parseRetryAfter(h: Headers): number | undefined {
 
 function envOf(cfg: UpstoxHttpConfig): TokenPolicyEnv {
   if (cfg.env) return cfg.env;
-  const p = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const p = (typeof process !== "undefined" ? process.env : {}) as Record<
+    string,
+    string | undefined
+  >;
   return {
     UPSTOX_MARKET_DATA_MODE: p.UPSTOX_MARKET_DATA_MODE,
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
@@ -125,7 +137,11 @@ function envOf(cfg: UpstoxHttpConfig): TokenPolicyEnv {
   };
 }
 
-function buildUrl(base: string, path: string, query?: Record<string, string | number | undefined>): string {
+function buildUrl(
+  base: string,
+  path: string,
+  query?: Record<string, string | number | undefined>,
+): string {
   const url = new URL(path, base.endsWith("/") ? base : base + "/");
   if (query) {
     for (const [k, v] of Object.entries(query)) {
@@ -187,27 +203,27 @@ export class UpstoxHttpClient {
       };
     }
     const analyticsToken = this.env.UPSTOX_ANALYTICS_TOKEN?.trim();
-const accessToken = this.env.UPSTOX_ACCESS_TOKEN?.trim();
+    const accessToken = this.env.UPSTOX_ACCESS_TOKEN?.trim();
 
-const token =
-  opts.tokenKind === "access"
-    ? accessToken
-    : opts.tokenKind === "analytics"
-      ? analyticsToken
-      : analyticsToken || accessToken;
+    const token =
+      opts.tokenKind === "access"
+        ? accessToken
+        : opts.tokenKind === "analytics"
+          ? analyticsToken
+          : analyticsToken || accessToken;
 
-if (!token) {
-  return {
-    ok: false,
-    latencyMs: 0,
-    error: {
-      code: "UPSTOX_AUTH_REQUIRED",
-      message: "No usable Upstox market-data token configured",
-      requestId: opts.requestId,
-      path: opts.path,
-    },
-  };
-}
+    if (!token) {
+      return {
+        ok: false,
+        latencyMs: 0,
+        error: {
+          code: "UPSTOX_AUTH_REQUIRED",
+          message: "No usable Upstox market-data token configured",
+          requestId: opts.requestId,
+          path: opts.path,
+        },
+      };
+    }
     const url = buildUrl(this.baseUrl, opts.path, opts.query);
     const requestId = opts.requestId ?? nextRequestId();
 

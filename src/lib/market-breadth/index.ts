@@ -14,4 +14,8 @@ export * from "./persistent-history";
 export * from "./shadow-validation";
 export * from "./nifty50-registry";
 export * from "./sector-registry";
-export { registerMarketBreadthProvider, getMarketBreadthProvider, listMarketBreadthProviders } from "./provider";
+export {
+  registerMarketBreadthProvider,
+  getMarketBreadthProvider,
+  listMarketBreadthProviders,
+} from "./provider";

@@ -1,11 +1,6 @@
 // Phase 3E — Deterministic study metrics.
 
-import type {
-  ConfusionMatrix,
-  GapDirection,
-  OutcomeThresholds,
-  StudyMetrics,
-} from "./types";
+import type { ConfusionMatrix, GapDirection, OutcomeThresholds, StudyMetrics } from "./types";
 import { DEFAULT_OUTCOME_THRESHOLDS } from "./types";
 
 export function emptyConfusion(): ConfusionMatrix {
@@ -35,8 +30,14 @@ export function buildConfusion(pairs: readonly Pair[]): ConfusionMatrix {
   const m = { ...emptyConfusion() };
   for (const p of pairs) {
     m.total++;
-    if (p.predicted === "NO_TRADE") { m.noTradeCount++; continue; }
-    if (p.predicted === "CONFLICT") { m.conflictCount++; continue; }
+    if (p.predicted === "NO_TRADE") {
+      m.noTradeCount++;
+      continue;
+    }
+    if (p.predicted === "CONFLICT") {
+      m.conflictCount++;
+      continue;
+    }
     if (p.actual === "FLAT") m.flatCount++;
     if (p.predicted === "GAP_UP") {
       if (p.actual === "GAP_UP") m.gapUpTruePositive++;
@@ -79,12 +80,18 @@ export function computeMetrics(
 ): StudyMetrics {
   const samples = pairs.length;
   const eligible = pairs.filter(
-    (p) => p.predicted !== null && p.actual !== null && p.predicted !== "NO_TRADE" && p.predicted !== "CONFLICT",
+    (p) =>
+      p.predicted !== null &&
+      p.actual !== null &&
+      p.predicted !== "NO_TRADE" &&
+      p.predicted !== "CONFLICT",
   );
   const conf = buildConfusion(pairs);
   const totalDir = eligible.length;
-  const correct = conf.gapUpTruePositive + conf.gapDownTruePositive
-    + eligible.filter((p) => p.predicted === "FLAT" && p.actual === "FLAT").length;
+  const correct =
+    conf.gapUpTruePositive +
+    conf.gapDownTruePositive +
+    eligible.filter((p) => p.predicted === "FLAT" && p.actual === "FLAT").length;
   const accuracy = safeDiv(correct, totalDir);
   const precisionUp = safeDiv(
     conf.gapUpTruePositive,
@@ -102,10 +109,7 @@ export function computeMetrics(
     conf.gapDownTruePositive,
     conf.gapDownTruePositive + conf.gapDownFalseNegative,
   );
-  const balanced =
-    recallUp != null && recallDown != null
-      ? (recallUp + recallDown) / 2
-      : null;
+  const balanced = recallUp != null && recallDown != null ? (recallUp + recallDown) / 2 : null;
   const f1Up =
     precisionUp != null && recallUp != null && precisionUp + recallUp > 0
       ? (2 * precisionUp * recallUp) / (precisionUp + recallUp)
@@ -124,20 +128,29 @@ export function computeMetrics(
   const gapValues = pairs
     .map((p) => p.gapPoints)
     .filter((x): x is number => x != null && Number.isFinite(x));
-  const avg =
-    gapValues.length > 0 ? gapValues.reduce((a, b) => a + b, 0) / gapValues.length : null;
+  const avg = gapValues.length > 0 ? gapValues.reduce((a, b) => a + b, 0) / gapValues.length : null;
   const mfeVals = pairs.map((p) => p.mfe);
   const maeVals = pairs.map((p) => p.mae);
   const mfeAvg = mfeVals.length ? mfeVals.reduce((a, b) => a + b, 0) / mfeVals.length : 0;
   const maeAvg = maeVals.length ? maeVals.reduce((a, b) => a + b, 0) / maeVals.length : 0;
   // Streaks
-  let curCorrect = 0, curWrong = 0, maxCorrect = 0, maxWrong = 0;
+  let curCorrect = 0,
+    curWrong = 0,
+    maxCorrect = 0,
+    maxWrong = 0;
   for (const p of eligible) {
     const correctPair =
       (p.predicted === "GAP_UP" && p.actual === "GAP_UP") ||
       (p.predicted === "GAP_DOWN" && p.actual === "GAP_DOWN");
-    if (correctPair) { curCorrect++; curWrong = 0; maxCorrect = Math.max(maxCorrect, curCorrect); }
-    else { curWrong++; curCorrect = 0; maxWrong = Math.max(maxWrong, curWrong); }
+    if (correctPair) {
+      curCorrect++;
+      curWrong = 0;
+      maxCorrect = Math.max(maxCorrect, curCorrect);
+    } else {
+      curWrong++;
+      curCorrect = 0;
+      maxWrong = Math.max(maxWrong, curWrong);
+    }
   }
   const insufficient = totalDir < thresholds.minSampleSize;
   return {

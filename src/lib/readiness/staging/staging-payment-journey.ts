@@ -46,7 +46,8 @@ export function auditManualPaymentJourney(o: ManualPaymentJourneyObservation): S
   ];
   const missing = requirements.filter(([k]) => !o[k]).map(([, id]) => id);
   const failed = missing.length > 0;
-  const isBlocker = missing.includes("activation_not_atomic") || missing.includes("non_admin_can_approve");
+  const isBlocker =
+    missing.includes("activation_not_atomic") || missing.includes("non_admin_can_approve");
   return [
     {
       id: failed ? "payment.activation_failed" : "payment.journey_ok",

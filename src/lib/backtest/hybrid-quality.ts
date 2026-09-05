@@ -35,14 +35,10 @@ export const HYBRID_QUALITY_FORMULAS = Object.freeze({
   dataIncompleteRate: "DATA_INCOMPLETE / totalDecisions",
   formulaMismatchRate: "FORMULA_MISMATCH / totalDecisions",
   hybridConversionRate: "hybridTradeCount / (BUY + SELL)",
-  winnerRetentionRate:
-    "keptWinners / (keptWinners + missedWinners)",
-  loserFilteringRate:
-    "filteredLosers / (filteredLosers + keptLosers)",
-  missedWinnerRate:
-    "missedWinners / (keptWinners + missedWinners)",
-  falseAgreementRate:
-    "keptLosers / (keptWinners + keptLosers)",
+  winnerRetentionRate: "keptWinners / (keptWinners + missedWinners)",
+  loserFilteringRate: "filteredLosers / (filteredLosers + keptLosers)",
+  missedWinnerRate: "missedWinners / (keptWinners + missedWinners)",
+  falseAgreementRate: "keptLosers / (keptWinners + keptLosers)",
 });
 
 function pct(n: number, d: number): number {
@@ -65,17 +61,13 @@ export function computeHybridQuality(
   const agreements = counters.BUY + counters.SELL;
 
   const keptWinners =
-    attribution.HYBRID_KEPT_ASTRO_WINNER.count +
-    attribution.HYBRID_KEPT_SMC_WINNER.count;
+    attribution.HYBRID_KEPT_ASTRO_WINNER.count + attribution.HYBRID_KEPT_SMC_WINNER.count;
   const keptLosers =
-    attribution.HYBRID_KEPT_ASTRO_LOSER.count +
-    attribution.HYBRID_KEPT_SMC_LOSER.count;
+    attribution.HYBRID_KEPT_ASTRO_LOSER.count + attribution.HYBRID_KEPT_SMC_LOSER.count;
   const filteredLosers =
-    attribution.HYBRID_FILTERED_ASTRO_LOSER.count +
-    attribution.HYBRID_FILTERED_SMC_LOSER.count;
+    attribution.HYBRID_FILTERED_ASTRO_LOSER.count + attribution.HYBRID_FILTERED_SMC_LOSER.count;
   const missedWinners =
-    attribution.HYBRID_MISSED_ASTRO_WINNER.count +
-    attribution.HYBRID_MISSED_SMC_WINNER.count;
+    attribution.HYBRID_MISSED_ASTRO_WINNER.count + attribution.HYBRID_MISSED_SMC_WINNER.count;
 
   return {
     totalDecisions: total,

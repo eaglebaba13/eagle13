@@ -111,10 +111,9 @@ export function journeyToCheck(journey: StagingJourney): StagingCheck {
     title: journey.title,
     status: journey.status,
     severity: journey.status === "FAIL" ? (isBlocker ? "blocker" : "critical") : "info",
-    detail:
-      journey.failure
-        ? `step=${journey.failure.stepId} category=${journey.failure.category} ${journey.failure.message}`
-        : `${journey.steps.length} steps · ${journey.durationMs}ms`,
+    detail: journey.failure
+      ? `step=${journey.failure.stepId} category=${journey.failure.category} ${journey.failure.message}`
+      : `${journey.steps.length} steps · ${journey.durationMs}ms`,
     hardBlocker: journey.status === "FAIL" && journey.role === "admin",
     groupId: journey.id,
   };
@@ -131,7 +130,12 @@ export const STAGING_JOURNEY_PLANS: readonly JourneyPlan[] = [
       { id: "public_widgets", title: "Public widgets render", route: "/" },
       { id: "gold_silver", title: "Gold-Silver Ratio widget state" },
       { id: "pricing", title: "Pricing route", route: "/pricing", expectedHttpStatus: 200 },
-      { id: "protected_redirect", title: "Protected route redirects to /auth", route: "/_authenticated/profile", expectedHttpStatus: 302 },
+      {
+        id: "protected_redirect",
+        title: "Protected route redirects to /auth",
+        route: "/_authenticated/profile",
+        expectedHttpStatus: 302,
+      },
     ],
   },
   {
@@ -178,7 +182,11 @@ export const STAGING_JOURNEY_PLANS: readonly JourneyPlan[] = [
     title: "Admin user",
     role: "admin",
     steps: [
-      { id: "admin_payments", title: "Admin payment review", route: "/_authenticated/admin/payments" },
+      {
+        id: "admin_payments",
+        title: "Admin payment review",
+        route: "/_authenticated/admin/payments",
+      },
       { id: "diagnostics", title: "Diagnostics", route: "/dev/diagnostics" },
       { id: "readiness", title: "Production Readiness", route: "/_authenticated/admin/readiness" },
       { id: "staging_validation", title: "Staging Validation" },

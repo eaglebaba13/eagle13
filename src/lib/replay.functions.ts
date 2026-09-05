@@ -217,10 +217,7 @@ async function fetchPrevDailyClose(
   return null;
 }
 
-function levelsFor(
-  cycles: { base: number; upper: number; lower: number },
-  degree: number,
-) {
+function levelsFor(cycles: { base: number; upper: number; lower: number }, degree: number) {
   const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degree);
   // EagleBaba Extended (legacy ±720 cascade) — display-only, not authoritative Gann.
   return { r1, r2, s1, s2, r3: r1 + 720, s3: s1 - 720 };
@@ -232,106 +229,105 @@ function round2(n: number): number {
 
 export const loadReplaySession = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
-  .handler(
-    async ({ data }: { data: ReplayInput }): Promise<ReplaySession> =>
-      cached<ReplaySession>(
-        astroCacheKey(`replay:${data.symbol}:${data.date}:${data.timeframe}`),
-        async () => {
-          const map = REPLAY_SYMBOLS[data.symbol];
-          const win = sessionWindow(data.symbol, data.date);
-          const interval = providerInterval(data.timeframe);
+  .handler(async ({ data }: { data: ReplayInput }): Promise<ReplaySession> =>
+    cached<ReplaySession>(
+      astroCacheKey(`replay:${data.symbol}:${data.date}:${data.timeframe}`),
+      async () => {
+        const map = REPLAY_SYMBOLS[data.symbol];
+        const win = sessionWindow(data.symbol, data.date);
+        const interval = providerInterval(data.timeframe);
 
-          const rawCandles = await fetchIntraday(map.yahoo, win.start, win.end, interval);
-          const filtered = rawCandles.filter(
-            (c) => c.ts >= win.start * 1000 && c.ts <= win.end * 1000,
-          );
-          const candles = data.timeframe === "3m" ? aggregateTo3m(filtered) : filtered;
+        const rawCandles = await fetchIntraday(map.yahoo, win.start, win.end, interval);
+        const filtered = rawCandles.filter(
+          (c) => c.ts >= win.start * 1000 && c.ts <= win.end * 1000,
+        );
+        const candles = data.timeframe === "3m" ? aggregateTo3m(filtered) : filtered;
 
-          const prev = await fetchPrevDailyClose(map.yahoo, data.date);
-          const prevClose = prev?.close ?? candles[0]?.open ?? 0;
-          const prevDate = prev?.date ?? "unknown";
+        const prev = await fetchPrevDailyClose(map.yahoo, data.date);
+        const prevClose = prev?.close ?? candles[0]?.open ?? 0;
+        const prevDate = prev?.date ?? "unknown";
 
-          const cycles = computeCycles(prevClose);
+        const cycles = computeCycles(prevClose);
 
-          // Astro anchor: 09:00 IST for equities/commodities, 00:00 UTC for BTC.
-          // Same anchor policy as the backtest engine.
-          const [yy, mm, dd] = data.date.split("-").map(Number);
-          const anchorMs =
-            data.symbol === "BTC"
-              ? Date.UTC(yy, mm - 1, dd, 0, 0, 0)
-              : Date.UTC(yy, mm - 1, dd, 3, 30, 0); // 09:00 IST
-          const { computeAstroPositions } = await import("./astro-engine.server");
-          const positions = computeAstroPositions(new Date(anchorMs));
+        // Astro anchor: 09:00 IST for equities/commodities, 00:00 UTC for BTC.
+        // Same anchor policy as the backtest engine.
+        const [yy, mm, dd] = data.date.split("-").map(Number);
+        const anchorMs =
+          data.symbol === "BTC"
+            ? Date.UTC(yy, mm - 1, dd, 0, 0, 0)
+            : Date.UTC(yy, mm - 1, dd, 3, 30, 0); // 09:00 IST
+        const { computeAstroPositions } = await import("./astro-engine.server");
+        const positions = computeAstroPositions(new Date(anchorMs));
 
-          const planets: ReplayPlanet[] = positions.planets.map((p) => ({
-            ...p,
-            ...levelsFor(cycles, p.degree),
-          }));
+        const planets: ReplayPlanet[] = positions.planets.map((p) => ({
+          ...p,
+          ...levelsFor(cycles, p.degree),
+        }));
 
-          const expected = Math.floor((win.end - win.start) / tfSeconds(data.timeframe));
-          const loaded = candles.length;
-          const missing = Math.max(0, expected - loaded);
-          const coveragePct = expected > 0 ? round2((loaded / expected) * 100) : 0;
+        const expected = Math.floor((win.end - win.start) / tfSeconds(data.timeframe));
+        const loaded = candles.length;
+        const missing = Math.max(0, expected - loaded);
+        const coveragePct = expected > 0 ? round2((loaded / expected) * 100) : 0;
 
-          const provider = "yahoo";
-          const runId = computeReplayRunId({
-            symbol: data.symbol,
-            date: data.date,
-            timeframe: data.timeframe,
-            provider,
-            entryMode: "next_open",
-            policy: "conservative",
-            costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0 },
-            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
-          });
+        const provider = "yahoo";
+        const runId = computeReplayRunId({
+          symbol: data.symbol,
+          date: data.date,
+          timeframe: data.timeframe,
+          provider,
+          entryMode: "next_open",
+          policy: "conservative",
+          costs: { slippagePct: 0, brokerageFlat: 0, brokeragePct: 0 },
+          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+        });
 
-          const limitationNote =
-            data.timeframe === "1m"
-              ? "Yahoo 1m intraday is limited to the last ~7 days. Older dates return no data."
-              : data.timeframe === "3m"
-                ? "3m candles are aggregated from Yahoo 1m — same 7-day limit."
-                : data.timeframe === "5m"
-                  ? "Yahoo 5m intraday is limited to the last ~60 days."
-                  : "Yahoo 15m / 30m / 60m intraday is limited to the last ~730 days.";
+        const limitationNote =
+          data.timeframe === "1m"
+            ? "Yahoo 1m intraday is limited to the last ~7 days. Older dates return no data."
+            : data.timeframe === "3m"
+              ? "3m candles are aggregated from Yahoo 1m — same 7-day limit."
+              : data.timeframe === "5m"
+                ? "Yahoo 5m intraday is limited to the last ~60 days."
+                : "Yahoo 15m / 30m / 60m intraday is limited to the last ~730 days.";
 
-          return {
-            symbol: data.symbol,
-            yahooSymbol: map.yahoo,
-            label: map.label,
-            currency: map.currency,
-            sessionType: map.session,
-            date: data.date,
-            timezone: win.tz,
-            timeframe: data.timeframe,
-            provider,
-            interval,
-            candles,
-            prevClose: round2(prevClose),
-            prevDate,
-            sessionStartTs: win.start * 1000,
-            sessionEndTs: win.end * 1000,
-            cycles,
-            planets,
-            moonSign: positions.moonSign,
-            moonNakshatra: positions.moonNakshatra,
-            moonDegree: positions.moonDegree,
-            retroCount: positions.retroCount,
-            bullRetroCount: positions.bullRetroCount,
-            bearRetroCount: positions.bearRetroCount,
-            moonPhase: positions.moonPhase,
-            ayanamsa: positions.ayanamsa,
-            runId,
-            engineVersion: REPLAY_ENGINE_VERSION,
-            formulaVersion: REPLAY_FORMULA_VERSION,
-            astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
-            dataQuality: { expected, loaded, missing, coveragePct, limitationNote },
-            disclaimers: [
-              "Replay results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
-              "Astro state is anchored at session open — identical to the live signal engine and historical backtest.",
-              "Provider: Yahoo Finance (public chart endpoint). Some sessions or minute-precision windows may be unavailable.",
-            ],
-          };
-        },
-        { ttlMs: 6 * 3600_000, swrMs: 18 * 3600_000 },
-      ),
+        return {
+          symbol: data.symbol,
+          yahooSymbol: map.yahoo,
+          label: map.label,
+          currency: map.currency,
+          sessionType: map.session,
+          date: data.date,
+          timezone: win.tz,
+          timeframe: data.timeframe,
+          provider,
+          interval,
+          candles,
+          prevClose: round2(prevClose),
+          prevDate,
+          sessionStartTs: win.start * 1000,
+          sessionEndTs: win.end * 1000,
+          cycles,
+          planets,
+          moonSign: positions.moonSign,
+          moonNakshatra: positions.moonNakshatra,
+          moonDegree: positions.moonDegree,
+          retroCount: positions.retroCount,
+          bullRetroCount: positions.bullRetroCount,
+          bearRetroCount: positions.bearRetroCount,
+          moonPhase: positions.moonPhase,
+          ayanamsa: positions.ayanamsa,
+          runId,
+          engineVersion: REPLAY_ENGINE_VERSION,
+          formulaVersion: REPLAY_FORMULA_VERSION,
+          astroFormulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+          dataQuality: { expected, loaded, missing, coveragePct, limitationNote },
+          disclaimers: [
+            "Replay results are simulated and depend on candle resolution, execution assumptions, data quality, slippage, and costs.",
+            "Astro state is anchored at session open — identical to the live signal engine and historical backtest.",
+            "Provider: Yahoo Finance (public chart endpoint). Some sessions or minute-precision windows may be unavailable.",
+          ],
+        };
+      },
+      { ttlMs: 6 * 3600_000, swrMs: 18 * 3600_000 },
+    ),
   );

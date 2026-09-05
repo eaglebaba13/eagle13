@@ -67,8 +67,8 @@ function AdminWidgetTogglesPage() {
         <div>
           <h1 className="text-2xl font-semibold">Widget Toggles</h1>
           <p className="text-sm text-muted-foreground">
-            Turn individual dashboard cards on or off. Changes apply immediately across
-            the dashboard for this browser.
+            Turn individual dashboard cards on or off. Changes apply immediately across the
+            dashboard for this browser.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -130,9 +130,7 @@ function AdminWidgetTogglesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {isOff ? "Off" : "On"}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{isOff ? "Off" : "On"}</span>
                       <Switch
                         checked={!isOff}
                         onCheckedChange={(checked) => setWidgetDisabled(w.id, !checked)}
@@ -149,8 +147,7 @@ function AdminWidgetTogglesPage() {
 
       <p className="text-xs text-muted-foreground">
         Preferences are stored locally in this browser ({getDisabledWidgetIds().size} disabled).
-        This override affects presentation only — no formulas, APIs, or decision logic are
-        modified.
+        This override affects presentation only — no formulas, APIs, or decision logic are modified.
       </p>
     </div>
   );

@@ -18,19 +18,19 @@ import {
 
 export type Bucket = {
   key: string;
-  trades: number;   // decided trades (WIN + LOSS + FLAT); WAIT rows excluded
+  trades: number; // decided trades (WIN + LOSS + FLAT); WAIT rows excluded
   wins: number;
   losses: number;
   flats: number;
-  accuracy: number;   // wins / trades  ×100 (1dp)
-  winRate: number;    // wins / (wins+losses) ×100 (1dp)
-  avgReturn: number;  // mean pnl over decided trades
+  accuracy: number; // wins / trades  ×100 (1dp)
+  winRate: number; // wins / (wins+losses) ×100 (1dp)
+  avgReturn: number; // mean pnl over decided trades
   avgWin: number;
-  avgLoss: number;    // positive number
+  avgLoss: number; // positive number
   profitFactor: number; // sumProfit / sumLoss (capped at 999)
-  expectancy: number;   // winRate·avgWin − lossRate·avgLoss
+  expectancy: number; // winRate·avgWin − lossRate·avgLoss
   netPnl: number;
-  rank: number;         // filled in after sorting
+  rank: number; // filled in after sorting
 };
 
 export type ConfusionRow = {
@@ -46,7 +46,7 @@ export type DrawdownStats = {
   maxDrawdown: number;
   avgDrawdown: number;
   worstDrawdown: number;
-  recoveryDays: number | null;    // trading days to recover from worst DD; null if never recovered
+  recoveryDays: number | null; // trading days to recover from worst DD; null if never recovered
   peaks: number;
 };
 
@@ -79,7 +79,7 @@ export type Analytics = {
   retrograde: Bucket[];
   planet: Bucket[];
   dayOfWeek: Bucket[];
-  month: Bucket[];          // 01..12 across all years
+  month: Bucket[]; // 01..12 across all years
   year: Bucket[];
   confusion: ConfusionRow[];
   drawdown: DrawdownStats;
@@ -91,8 +91,12 @@ export type Analytics = {
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function round2(n: number): number { return Math.round(n * 100) / 100; }
-function round1(n: number): number { return Math.round(n * 10) / 10; }
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
 
 /** Decided = trades whose outcome resolved to WIN | LOSS | FLAT. */
 function isDecided(t: BacktestTrade): boolean {
@@ -154,7 +158,20 @@ function groupBy(trades: BacktestTrade[], keyOf: (t: BacktestTrade) => string | 
 /* ------------------------------------------------------------------ */
 
 const WEEKDAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function retroKey(count: number): string {
   if (count <= 0) return "0 Retro";
@@ -171,7 +188,7 @@ function planetOf(nearest: string | null): string | null {
 
 function monthOfDate(dateIso: string): string {
   const idx = parseInt(dateIso.slice(5, 7), 10);
-  return Number.isFinite(idx) ? MONTH_NAMES[idx - 1] ?? dateIso.slice(5, 7) : dateIso.slice(5, 7);
+  return Number.isFinite(idx) ? (MONTH_NAMES[idx - 1] ?? dateIso.slice(5, 7)) : dateIso.slice(5, 7);
 }
 
 function yearOfDate(dateIso: string): string {
@@ -185,7 +202,9 @@ function yearOfDate(dateIso: string): string {
 function confusionMatrix(trades: BacktestTrade[]): ConfusionRow[] {
   const bySig = (sig: "BUY" | "SELL" | "WAIT"): ConfusionRow => {
     const rows = trades.filter((t) => t.signal === sig);
-    let correct = 0, failed = 0, flat = 0;
+    let correct = 0,
+      failed = 0,
+      flat = 0;
     for (const t of rows) {
       if (sig === "WAIT") {
         // WAIT is "correct" whenever the engine decided to skip.
@@ -200,7 +219,9 @@ function confusionMatrix(trades: BacktestTrade[]): ConfusionRow[] {
     const total = rows.length;
     return {
       signal: sig,
-      correct, failed, flat,
+      correct,
+      failed,
+      flat,
       total,
       accuracy: total > 0 ? round1((correct / total) * 100) : 0,
     };
@@ -224,7 +245,10 @@ function drawdownStats(equityCurve: { date: string; cumulative: number }[]): Dra
   let worstBottomIndex = 0;
   for (let i = 0; i < equityCurve.length; i++) {
     const c = equityCurve[i].cumulative;
-    if (c > peak) { peak = c; peaks++; }
+    if (c > peak) {
+      peak = c;
+      peaks++;
+    }
     const dd = peak - c;
     if (dd > maxDD) {
       maxDD = dd;
@@ -262,9 +286,8 @@ function topSummary(r: BacktestResult): TopSummary {
   const s = r.summary;
   const stats = r.stats;
   const decided = s.wins + s.losses;
-  const avgTrade = s.taken > 0
-    ? round2(r.trades.filter(isDecided).reduce((a, t) => a + t.pnl, 0) / s.taken)
-    : 0;
+  const avgTrade =
+    s.taken > 0 ? round2(r.trades.filter(isDecided).reduce((a, t) => a + t.pnl, 0) / s.taken) : 0;
   return {
     totalTrades: s.totalSignals,
     wins: s.wins,
@@ -314,9 +337,7 @@ export function computeAnalytics(r: BacktestResult): Analytics {
   return {
     top: topSummary(r),
     astroFormulaVersion: r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION,
-    astroFormulaLabel: astroFormulaLabel(
-      r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION,
-    ),
+    astroFormulaLabel: astroFormulaLabel(r.astroFormulaVersion ?? DEFAULT_ASTRO_FORMULA_VERSION),
     signalBreakdown,
     nakshatra,
     moonSign,
@@ -360,9 +381,14 @@ export function assertSingleFormulaVersion(
 function orderBuckets(buckets: Bucket[], order: string[]): Bucket[] {
   const m = new Map(buckets.map((b) => [b.key, b]));
   const out: Bucket[] = [];
-  order.forEach((k) => { const b = m.get(k); if (b) out.push(b); });
+  order.forEach((k) => {
+    const b = m.get(k);
+    if (b) out.push(b);
+  });
   // Preserve any keys not in the ordering list (e.g. locale variants) at the end.
-  buckets.forEach((b) => { if (!order.includes(b.key)) out.push(b); });
+  buckets.forEach((b) => {
+    if (!order.includes(b.key)) out.push(b);
+  });
   return out;
 }
 
@@ -370,7 +396,12 @@ function orderBuckets(buckets: Bucket[], order: string[]): Bucket[] {
 /* AI-style insight generator (pure text from analytics)              */
 /* ------------------------------------------------------------------ */
 
-export type Insight = { icon: string; label: string; detail: string; tone: "bull" | "bear" | "neutral" };
+export type Insight = {
+  icon: string;
+  label: string;
+  detail: string;
+  tone: "bull" | "bear" | "neutral";
+};
 
 export function buildInsights(a: Analytics): Insight[] {
   const out: Insight[] = [];
@@ -389,12 +420,46 @@ export function buildInsights(a: Analytics): Insight[] {
   push("🌑", "Worst Moon Sign", a.moonSign[a.moonSign.length - 1], "bear");
   push("♻️", "Best Retrograde Combo", a.retrograde[0], "bull");
   push("⚠️", "Worst Retrograde Combo", a.retrograde[a.retrograde.length - 1], "bear");
-  push("📅", "Best Weekday", a.dayOfWeek.filter((b) => b.trades > 0).sort((x, y) => y.accuracy - x.accuracy || y.netPnl - x.netPnl)[0], "bull");
-  push("🗓️", "Worst Weekday", a.dayOfWeek.filter((b) => b.trades > 0).sort((x, y) => x.accuracy - y.accuracy || x.netPnl - y.netPnl)[0], "bear");
-  push("📈", "Best Month", a.month.filter((b) => b.trades > 0).sort((x, y) => y.accuracy - x.accuracy || y.netPnl - x.netPnl)[0], "bull");
-  push("📉", "Worst Month", a.month.filter((b) => b.trades > 0).sort((x, y) => x.accuracy - y.accuracy || x.netPnl - y.netPnl)[0], "bear");
+  push(
+    "📅",
+    "Best Weekday",
+    a.dayOfWeek
+      .filter((b) => b.trades > 0)
+      .sort((x, y) => y.accuracy - x.accuracy || y.netPnl - x.netPnl)[0],
+    "bull",
+  );
+  push(
+    "🗓️",
+    "Worst Weekday",
+    a.dayOfWeek
+      .filter((b) => b.trades > 0)
+      .sort((x, y) => x.accuracy - y.accuracy || x.netPnl - y.netPnl)[0],
+    "bear",
+  );
+  push(
+    "📈",
+    "Best Month",
+    a.month
+      .filter((b) => b.trades > 0)
+      .sort((x, y) => y.accuracy - x.accuracy || y.netPnl - x.netPnl)[0],
+    "bull",
+  );
+  push(
+    "📉",
+    "Worst Month",
+    a.month
+      .filter((b) => b.trades > 0)
+      .sort((x, y) => x.accuracy - y.accuracy || x.netPnl - y.netPnl)[0],
+    "bear",
+  );
   const goodSig = a.signalBreakdown.find((b) => b.key !== "WAIT");
-  if (goodSig) push("🟢", "Most Reliable Signal", a.signalBreakdown.filter((b) => b.key !== "WAIT")[0], "bull");
+  if (goodSig)
+    push(
+      "🟢",
+      "Most Reliable Signal",
+      a.signalBreakdown.filter((b) => b.key !== "WAIT")[0],
+      "bull",
+    );
   const worstSig = a.signalBreakdown.filter((b) => b.key !== "WAIT").at(-1);
   if (worstSig) push("🔴", "Least Reliable Signal", worstSig, "bear");
   return out;

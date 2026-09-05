@@ -46,8 +46,12 @@ export function inMemoryStorage(): StorageAdapter {
   const map = new Map<string, string>();
   return {
     getItem: (k) => (map.has(k) ? (map.get(k) as string) : null),
-    setItem: (k, v) => { map.set(k, v); },
-    removeItem: (k) => { map.delete(k); },
+    setItem: (k, v) => {
+      map.set(k, v);
+    },
+    removeItem: (k) => {
+      map.delete(k);
+    },
   };
 }
 
@@ -59,7 +63,9 @@ export function browserStorage(): StorageAdapter | null {
       setItem: (k, v) => window.localStorage.setItem(k, v),
       removeItem: (k) => window.localStorage.removeItem(k),
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function pickNet(s: MarketBreadthSnapshot | null): number | null {
@@ -99,13 +105,17 @@ function safeParse(raw: string | null): PersistedGtiEnvelope | null {
     const env = parsed as Partial<PersistedGtiEnvelope>;
     if (env.schema !== MARKET_BREADTH_HISTORY_SCHEMA_VERSION) return null;
     if (!Array.isArray(env.points)) return null;
-    const clean = env.points.filter((p): p is PersistedGtiPoint =>
-      !!p && typeof p === "object" &&
-      typeof (p as PersistedGtiPoint).runId === "string" &&
-      typeof (p as PersistedGtiPoint).timestamp === "string",
+    const clean = env.points.filter(
+      (p): p is PersistedGtiPoint =>
+        !!p &&
+        typeof p === "object" &&
+        typeof (p as PersistedGtiPoint).runId === "string" &&
+        typeof (p as PersistedGtiPoint).timestamp === "string",
     );
     return { schema: MARKET_BREADTH_HISTORY_SCHEMA_VERSION, points: clean };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export interface PersistentHistoryOptions {
@@ -128,7 +138,11 @@ export class PersistentMarketBreadthHistory {
   load(): readonly PersistedGtiPoint[] {
     const env = safeParse(this.storage.getItem(this.key));
     if (!env) {
-      try { this.storage.removeItem(this.key); } catch { /* ignore */ }
+      try {
+        this.storage.removeItem(this.key);
+      } catch {
+        /* ignore */
+      }
       return [];
     }
     return env.points;
@@ -141,14 +155,27 @@ export class PersistentMarketBreadthHistory {
     }
     const next = [...existing, point];
     while (next.length > this.max) next.shift();
-    const env: PersistedGtiEnvelope = { schema: MARKET_BREADTH_HISTORY_SCHEMA_VERSION, points: next };
-    try { this.storage.setItem(this.key, JSON.stringify(env)); } catch { /* quota */ }
+    const env: PersistedGtiEnvelope = {
+      schema: MARKET_BREADTH_HISTORY_SCHEMA_VERSION,
+      points: next,
+    };
+    try {
+      this.storage.setItem(this.key, JSON.stringify(env));
+    } catch {
+      /* quota */
+    }
     return next;
   }
 
   clear(): void {
-    try { this.storage.removeItem(this.key); } catch { /* ignore */ }
+    try {
+      this.storage.removeItem(this.key);
+    } catch {
+      /* ignore */
+    }
   }
 
-  get capacity(): number { return this.max; }
+  get capacity(): number {
+    return this.max;
+  }
 }

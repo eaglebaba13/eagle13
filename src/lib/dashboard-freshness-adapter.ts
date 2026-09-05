@@ -63,10 +63,7 @@ function oldest(...quotes: Array<{ updatedAt?: string } | null | undefined>): st
   return iso;
 }
 
-function derive(
-  dep: DashboardFreshnessDependency,
-  src: DashboardFreshnessSource,
-): FreshnessResult {
+function derive(dep: DashboardFreshnessDependency, src: DashboardFreshnessSource): FreshnessResult {
   const expectedUpdateMs = EXPECTED_MS[dep];
   const now = src.now ?? Date.now();
   const providerStatus = src.providerStatus ?? "UNKNOWN";
@@ -97,9 +94,8 @@ function derive(
 
   const input: FreshnessInput = {
     providerTimestamp,
-    receivedTimestamp: providerTimestamp == null && src.queryReceivedAt != null
-      ? src.queryReceivedAt
-      : null,
+    receivedTimestamp:
+      providerTimestamp == null && src.queryReceivedAt != null ? src.queryReceivedAt : null,
     expectedUpdateMs,
     marketSession,
     providerStatus,
@@ -116,9 +112,7 @@ function derive(
   return result;
 }
 
-export function deriveDashboardFreshness(
-  src: DashboardFreshnessSource,
-): DashboardFreshnessMap {
+export function deriveDashboardFreshness(src: DashboardFreshnessSource): DashboardFreshnessMap {
   const deps: DashboardFreshnessDependency[] = [
     "MARKET_DATA",
     "GOLD_SILVER_RATIO",

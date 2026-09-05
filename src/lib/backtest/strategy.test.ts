@@ -38,9 +38,7 @@ describe("HistoricalStrategyAdapter registry", () => {
       INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
     );
     expect(a?.id).toBe(INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1);
-    expect(
-      astroStrategyAdapter.resolveFormulaAdapter("NOT_A_FORMULA" as never),
-    ).toBeNull();
+    expect(astroStrategyAdapter.resolveFormulaAdapter("NOT_A_FORMULA" as never)).toBeNull();
   });
 
   it("getStrategyAdapter returns registry entries", () => {
@@ -59,9 +57,7 @@ describe("validateUnifiedConfig — typed errors", () => {
       throw new Error("should have thrown");
     } catch (e) {
       expect(e).toBeInstanceOf(UnifiedBacktestConfigError);
-      expect((e as UnifiedBacktestConfigError).code).toBe(
-        "STRATEGY_ADAPTER_NOT_AVAILABLE",
-      );
+      expect((e as UnifiedBacktestConfigError).code).toBe("STRATEGY_ADAPTER_NOT_AVAILABLE");
     }
   });
 
@@ -95,9 +91,7 @@ describe("validateUnifiedConfig — typed errors", () => {
       });
       throw new Error("should have thrown");
     } catch (e) {
-      expect((e as UnifiedBacktestConfigError).code).toBe(
-        "UNSUPPORTED_INSTRUMENT",
-      );
+      expect((e as UnifiedBacktestConfigError).code).toBe("UNSUPPORTED_INSTRUMENT");
     }
   });
 
@@ -111,9 +105,7 @@ describe("validateUnifiedConfig — typed errors", () => {
       });
       throw new Error("should have thrown");
     } catch (e) {
-      expect((e as UnifiedBacktestConfigError).code).toBe(
-        "UNSUPPORTED_TIMEFRAME",
-      );
+      expect((e as UnifiedBacktestConfigError).code).toBe("UNSUPPORTED_TIMEFRAME");
     }
   });
 
@@ -168,12 +160,8 @@ describe("runUnifiedBacktest dispatch", () => {
       // fetching.
       extras: { candles: [], positions: {} },
     });
-    expect(res.formulaVersion).toBe(
-      INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
-    );
+    expect(res.formulaVersion).toBe(INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1);
     expect(res.trades).toEqual([]);
-    expect(res.runId).toContain(
-      INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1,
-    );
+    expect(res.runId).toContain(INTRADAY_FORMULA_VERSIONS.GANN_SIGN_DEGREE_TABLE_V1_1);
   });
 });

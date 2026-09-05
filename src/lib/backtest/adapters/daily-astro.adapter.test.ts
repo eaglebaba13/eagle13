@@ -21,12 +21,7 @@ import {
 } from "./daily-astro.adapter";
 import { runHistoricalCore } from "../runner";
 
-const p = (
-  planet: string,
-  degree: number,
-  nakshatra: string,
-  retro = false,
-): PlanetRow => ({
+const p = (planet: string, degree: number, nakshatra: string, retro = false): PlanetRow => ({
   planet,
   degree,
   absDegree: degree,
@@ -68,7 +63,11 @@ const POS_BEAR = {
   retroCount: 3,
   bullRetroCount: 0,
   bearRetroCount: 2,
-  planets: [p("Sun", 5, "Jyeshtha", true), p("Moon", 10, "Jyeshtha"), p("Mars", 15, "Jyeshtha", true)],
+  planets: [
+    p("Sun", 5, "Jyeshtha", true),
+    p("Moon", 10, "Jyeshtha"),
+    p("Mars", 15, "Jyeshtha", true),
+  ],
 };
 
 const extras: DailyExtras = {
@@ -136,11 +135,7 @@ describe("Phase 21.3b · daily-astro adapter — sign-degree parity", () => {
     expect(r.trades.length).toBe(3);
     for (const t of r.trades) {
       const idx = CANDLES.findIndex((c) => c.date === t.date);
-      const oracle = replayOracle(
-        CANDLES[idx],
-        CANDLES[idx - 1],
-        extras.positions[t.date]!,
-      );
+      const oracle = replayOracle(CANDLES[idx], CANDLES[idx - 1], extras.positions[t.date]!);
       expect(t.side).toBe(oracle.sig.signal);
       if (oracle.sig.signal === "WAIT") {
         expect(t.outcome).toBe("SKIP");

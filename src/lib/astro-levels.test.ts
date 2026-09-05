@@ -73,15 +73,15 @@ describe("GANN_NIFTY_ASTRO_V1_1 — 9-planet reference regression (prevClose 241
   });
 
   const REF: Array<[string, number, { r1: number; r2: number; s1: number; s2: number }]> = [
-    ["Sun",     27.02, { r1: 24147, r2: 24093, s1: 23787, s2: 23733 }],
-    ["Moon",    15.50, { r1: 24136, r2: 24105, s1: 23776, s2: 23745 }],
+    ["Sun", 27.02, { r1: 24147, r2: 24093, s1: 23787, s2: 23733 }],
+    ["Moon", 15.5, { r1: 24136, r2: 24105, s1: 23776, s2: 23745 }],
     ["Mercury", 21.12, { r1: 24141, r2: 24099, s1: 23781, s2: 23739 }],
-    ["Venus",    4.30, { r1: 24124, r2: 24116, s1: 23764, s2: 23756 }],
-    ["Mars",    23.77, { r1: 24144, r2: 24096, s1: 23784, s2: 23736 }],
-    ["Jupiter",  2.02, { r1: 24122, r2: 24118, s1: 23762, s2: 23758 }],
-    ["Saturn",  18.88, { r1: 24139, r2: 24101, s1: 23779, s2: 23741 }],
-    ["Rahu",     9.35, { r1: 24129, r2: 24111, s1: 23769, s2: 23751 }],
-    ["Ketu",     9.35, { r1: 24129, r2: 24111, s1: 23769, s2: 23751 }],
+    ["Venus", 4.3, { r1: 24124, r2: 24116, s1: 23764, s2: 23756 }],
+    ["Mars", 23.77, { r1: 24144, r2: 24096, s1: 23784, s2: 23736 }],
+    ["Jupiter", 2.02, { r1: 24122, r2: 24118, s1: 23762, s2: 23758 }],
+    ["Saturn", 18.88, { r1: 24139, r2: 24101, s1: 23779, s2: 23741 }],
+    ["Rahu", 9.35, { r1: 24129, r2: 24111, s1: 23769, s2: 23751 }],
+    ["Ketu", 9.35, { r1: 24129, r2: 24111, s1: 23769, s2: 23751 }],
   ];
   for (const [planet, deg, expected] of REF) {
     it(`${planet} @ ${deg}° matches reference exactly`, () => {
@@ -109,7 +109,9 @@ describe("legacy cascade vs corrected v1.1 — dispatcher", () => {
 
 /* ------------------------------ level board ------------------------------ */
 
-function planet(partial: Partial<PlanetRow> & Pick<PlanetRow, "planet" | "r1" | "s1" | "r2" | "s2">): PlanetRow {
+function planet(
+  partial: Partial<PlanetRow> & Pick<PlanetRow, "planet" | "r1" | "s1" | "r2" | "s2">,
+): PlanetRow {
   return {
     degree: 0,
     absDegree: 0,

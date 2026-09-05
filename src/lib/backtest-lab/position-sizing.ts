@@ -22,10 +22,7 @@ export interface SizingContext {
   readonly atr?: number | null;
 }
 
-export function computeQuantity(
-  sizing: PositionSizing,
-  ctx: SizingContext,
-): number {
+export function computeQuantity(sizing: PositionSizing, ctx: SizingContext): number {
   if (!Number.isFinite(ctx.capital) || ctx.capital <= 0) {
     throw new PositionSizingError("BAD_CAPITAL", "capital must be > 0");
   }

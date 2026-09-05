@@ -53,7 +53,10 @@ export interface ProviderDiagnosticsReport {
 const SUPPORTED_INTERVALS = ["1m", "3m", "5m", "15m", "1h", "1d"] as const;
 
 function readEnv(): ProviderDiagnosticsEnv {
-  const p = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const p = (typeof process !== "undefined" ? process.env : {}) as Record<
+    string,
+    string | undefined
+  >;
   return {
     UPSTOX_MARKET_DATA_MODE: p.UPSTOX_MARKET_DATA_MODE,
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
@@ -67,7 +70,8 @@ function readEnv(): ProviderDiagnosticsEnv {
 }
 
 function redactProviderError(error: unknown): string {
-  const raw = error instanceof Error ? error.message : String(error ?? "provider diagnostics failed");
+  const raw =
+    error instanceof Error ? error.message : String(error ?? "provider diagnostics failed");
   return raw
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
@@ -144,7 +148,10 @@ export function buildMockProviderManager(startedAt: string): ProviderManager {
   return manager;
 }
 
-export function buildLiveUpstoxProviderManager(startedAt: string, env: TokenPolicyEnv): ProviderManager {
+export function buildLiveUpstoxProviderManager(
+  startedAt: string,
+  env: TokenPolicyEnv,
+): ProviderManager {
   const adapter = buildUpstoxProviderAdapter({ env });
   const manager = new ProviderManager({ startedAt, primary: adapter.id });
   manager.register(adapter);
@@ -163,10 +170,12 @@ export function buildLiveUpstoxProviderManager(startedAt: string, env: TokenPoli
   return manager;
 }
 
-export async function buildProviderDiagnosticsReport(opts: {
-  readonly env?: ProviderDiagnosticsEnv;
-  readonly nowIso?: string;
-} = {}): Promise<ProviderDiagnosticsReport> {
+export async function buildProviderDiagnosticsReport(
+  opts: {
+    readonly env?: ProviderDiagnosticsEnv;
+    readonly nowIso?: string;
+  } = {},
+): Promise<ProviderDiagnosticsReport> {
   const at = opts.nowIso ?? new Date().toISOString();
   const env = opts.env ?? readEnv();
   const tokenStatus = evaluateUpstoxTokenPolicy(env);

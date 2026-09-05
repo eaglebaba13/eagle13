@@ -57,8 +57,16 @@ describe("alignReplay", () => {
     const r = alignReplay(
       [
         obs({ snapshotId: "a", formulaVersion: "decision@0.9.0" }),
-        obs({ snapshotId: "b", formulaVersion: "decision@0.9.0", timestamp: "2026-07-17T09:16:00Z" }),
-        obs({ snapshotId: "c", formulaVersion: "decision@0.9.0", timestamp: "2026-07-17T09:17:00Z" }),
+        obs({
+          snapshotId: "b",
+          formulaVersion: "decision@0.9.0",
+          timestamp: "2026-07-17T09:16:00Z",
+        }),
+        obs({
+          snapshotId: "c",
+          formulaVersion: "decision@0.9.0",
+          timestamp: "2026-07-17T09:17:00Z",
+        }),
       ],
       ctx,
     );
@@ -90,10 +98,34 @@ describe("alignReplay", () => {
   it("computes durations, transitions, MFE/MAE, forward move", () => {
     const r = alignReplay(
       [
-        obs({ snapshotId: "1", timestamp: "2026-07-17T09:15:00Z", state: "CE", confidence: 80, price: 100 }),
-        obs({ snapshotId: "2", timestamp: "2026-07-17T09:16:00Z", state: "CE", confidence: 78, price: 102 }),
-        obs({ snapshotId: "3", timestamp: "2026-07-17T09:17:00Z", state: "PE", confidence: 60, price: 98 }),
-        obs({ snapshotId: "4", timestamp: "2026-07-17T09:18:00Z", state: "PE", confidence: 62, price: 99 }),
+        obs({
+          snapshotId: "1",
+          timestamp: "2026-07-17T09:15:00Z",
+          state: "CE",
+          confidence: 80,
+          price: 100,
+        }),
+        obs({
+          snapshotId: "2",
+          timestamp: "2026-07-17T09:16:00Z",
+          state: "CE",
+          confidence: 78,
+          price: 102,
+        }),
+        obs({
+          snapshotId: "3",
+          timestamp: "2026-07-17T09:17:00Z",
+          state: "PE",
+          confidence: 60,
+          price: 98,
+        }),
+        obs({
+          snapshotId: "4",
+          timestamp: "2026-07-17T09:18:00Z",
+          state: "PE",
+          confidence: 62,
+          price: 99,
+        }),
       ],
       ctx,
     );

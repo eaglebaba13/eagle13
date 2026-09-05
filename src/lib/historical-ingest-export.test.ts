@@ -34,14 +34,23 @@ describe("Phase 21.2 Stage 5.1 · ingest exports", () => {
     const b: BuildResult = {
       ingestVersion: "GANN_ABSOLUTE_INTRADAY_INGEST_V1",
       formulaVersion: "GANN_ASTRO_INTRADAY_ABSOLUTE_V1",
-      provider: "Zerodha", instrument: "NIFTY50",
-      from: "2026-06-29", to: "2026-06-30",
-      sessions: [{
-        tradingDate: "2026-06-29", previousCloseDate: null, previousClose: null,
-        candles: [], candlesCount: 75, hasPreviousClose: false,
-        rejectionReason: "No previous-session close available",
-      }],
-      usable: [], rejected: [],
+      provider: "Zerodha",
+      instrument: "NIFTY50",
+      from: "2026-06-29",
+      to: "2026-06-30",
+      sessions: [
+        {
+          tradingDate: "2026-06-29",
+          previousCloseDate: null,
+          previousClose: null,
+          candles: [],
+          candlesCount: 75,
+          hasPreviousClose: false,
+          rejectionReason: "No previous-session close available",
+        },
+      ],
+      usable: [],
+      rejected: [],
       generatedAt: "2026-07-15T00:00:00.000Z",
     };
     const csv = sessionSummaryToCsv(b, P);
@@ -49,8 +58,18 @@ describe("Phase 21.2 Stage 5.1 · ingest exports", () => {
   });
   it("json report embeds ingest version", () => {
     const j = dqReportToJson(
-      { totalRows: 0, validRows: 0, duplicateCount: 0, outOfOrderCount: 0, outOfWindowCount: 0,
-        expectedCandlesPerSession: 75, sessionsDetected: 0, gaps: [], coveragePct: 0, causalityFailures: 0 },
+      {
+        totalRows: 0,
+        validRows: 0,
+        duplicateCount: 0,
+        outOfOrderCount: 0,
+        outOfWindowCount: 0,
+        expectedCandlesPerSession: 75,
+        sessionsDetected: 0,
+        gaps: [],
+        coveragePct: 0,
+        causalityFailures: 0,
+      },
       P,
     );
     expect(j).toContain("GANN_ABSOLUTE_INTRADAY_INGEST_V1");

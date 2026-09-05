@@ -37,13 +37,9 @@ function synthBuyWin(): { candles: Candle[]; signals: SmcSignalDebug[]; date: st
 
 describe("hybridHistoricalAdapter — shape", () => {
   it("exposes ASTRO_SMC_HYBRID_V1 id and 5m granularity", () => {
-    expect(hybridHistoricalAdapter.id).toBe(
-      INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
-    );
+    expect(hybridHistoricalAdapter.id).toBe(INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1);
     expect(hybridHistoricalAdapter.dataGranularity).toBe("5m");
-    expect(hybridHistoricalAdapter.versions.engineVersion).toBe(
-      "ASTRO_SMC_HYBRID_ENGINE_V1",
-    );
+    expect(hybridHistoricalAdapter.versions.engineVersion).toBe("ASTRO_SMC_HYBRID_ENGINE_V1");
   });
 });
 
@@ -72,17 +68,11 @@ describe("hybridHistoricalAdapter — decision integration", () => {
         },
       },
     });
-    expect(res.formulaVersion).toBe(
-      INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
-    );
+    expect(res.formulaVersion).toBe(INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1);
     expect(res.trades.length).toBeGreaterThan(0);
     for (const t of res.trades) {
-      expect(t.formulaVersion).toBe(
-        INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1,
-      );
-      expect((t.metadata as { strategy: string }).strategy).toBe(
-        "ASTRO_SMC_HYBRID",
-      );
+      expect(t.formulaVersion).toBe(INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1);
+      expect((t.metadata as { strategy: string }).strategy).toBe("ASTRO_SMC_HYBRID");
       expect((t.metadata as { hybridScore: number }).hybridScore).toBeGreaterThan(0);
     }
   });

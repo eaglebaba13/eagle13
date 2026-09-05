@@ -64,16 +64,15 @@ export function buildDiagnostics(input: {
   const volumeCoverage = pct(
     rows.filter((s) => s.call.volume != null || s.put.volume != null).length,
   );
-  const ivCoverage = pct(
-    rows.filter((s) => s.call.iv != null || s.put.iv != null).length,
-  );
+  const ivCoverage = pct(rows.filter((s) => s.call.iv != null || s.put.iv != null).length);
   const greeksCoverage = pct(
     rows.filter((s) => s.call.greeks != null || s.put.greeks != null).length,
   );
   const sectorRows = sectorFlow.rows;
-  const sectorCoverage = sectorRows.length === 0
-    ? 0
-    : sectorRows.filter((r) => r.bias !== "UNAVAILABLE").length / sectorRows.length;
+  const sectorCoverage =
+    sectorRows.length === 0
+      ? 0
+      : sectorRows.filter((r) => r.bias !== "UNAVAILABLE").length / sectorRows.length;
 
   return {
     underlying: input.underlying,

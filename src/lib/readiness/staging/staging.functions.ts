@@ -13,7 +13,11 @@ import {
   runJourney,
   skipResolver,
 } from "./staging-journey-runner.server";
-import { DEFAULT_RECOVERY_DRILLS, recoveryDrillsToChecks, incidentDrillsToChecks } from "./staging-recovery";
+import {
+  DEFAULT_RECOVERY_DRILLS,
+  recoveryDrillsToChecks,
+  incidentDrillsToChecks,
+} from "./staging-recovery";
 import { auditPerformance, DEFAULT_PERFORMANCE_BUDGETS } from "../performance-audit";
 import { stagingReleaseChecklist } from "./staging-release-checklist";
 
@@ -30,10 +34,13 @@ export const getStagingValidationReport = createServerFn({ method: "GET" })
     const baseUrl = process.env?.STAGING_BASE_URL ?? null;
     const envRaw = (process.env?.NODE_ENV ?? "").toLowerCase();
     const environment: "development" | "staging" | "production" | "unknown" =
-      envRaw === "production" ? "production"
-      : envRaw === "staging" ? "staging"
-      : envRaw === "development" ? "development"
-      : "unknown";
+      envRaw === "production"
+        ? "production"
+        : envRaw === "staging"
+          ? "staging"
+          : envRaw === "development"
+            ? "development"
+            : "unknown";
 
     const cfg = validateStagingConfig({
       baseUrl,

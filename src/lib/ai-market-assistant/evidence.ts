@@ -1,22 +1,34 @@
 // Phase 3B — Evidence model helpers. Pure. Deterministic.
 
-import type {
-  AssistantBias,
-  AssistantConfidence,
-  DataQualityView,
-  EvidenceItem,
-} from "./types";
+import type { AssistantBias, AssistantConfidence, DataQualityView, EvidenceItem } from "./types";
 
 export function countByBias(evidence: readonly EvidenceItem[]) {
-  let bull = 0, bear = 0, neutral = 0, conflict = 0, unavailable = 0;
+  let bull = 0,
+    bear = 0,
+    neutral = 0,
+    conflict = 0,
+    unavailable = 0;
   for (const e of evidence) {
-    if (!e.available) { unavailable++; continue; }
+    if (!e.available) {
+      unavailable++;
+      continue;
+    }
     switch (e.bias) {
-      case "BULLISH": bull++; break;
-      case "BEARISH": bear++; break;
-      case "NEUTRAL": neutral++; break;
-      case "CONFLICT": conflict++; break;
-      default: unavailable++; break;
+      case "BULLISH":
+        bull++;
+        break;
+      case "BEARISH":
+        bear++;
+        break;
+      case "NEUTRAL":
+        neutral++;
+        break;
+      case "CONFLICT":
+        conflict++;
+        break;
+      default:
+        unavailable++;
+        break;
     }
   }
   return { bull, bear, neutral, conflict, unavailable, total: evidence.length };
@@ -41,11 +53,18 @@ export function deriveMarketBias(evidence: readonly EvidenceItem[]): AssistantBi
 }
 
 export function summariseDataQuality(evidence: readonly EvidenceItem[]): DataQualityView {
-  let live = 0, demo = 0, stale = 0, unavailable = 0;
+  let live = 0,
+    demo = 0,
+    stale = 0,
+    unavailable = 0;
   for (const e of evidence) {
-    if (!e.available) { unavailable++; continue; }
+    if (!e.available) {
+      unavailable++;
+      continue;
+    }
     if (e.freshness === "LIVE") live++;
-    else if (e.freshness === "MIXED") live++; // treat mixed as live-ish
+    else if (e.freshness === "MIXED")
+      live++; // treat mixed as live-ish
     else if (e.freshness === "STALE") stale++;
     else if (e.freshness === "RESEARCH_DEMO") demo++;
     else unavailable++;

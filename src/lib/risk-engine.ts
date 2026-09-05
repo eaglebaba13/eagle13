@@ -316,8 +316,7 @@ export type QualityInput = {
 export function positionQuality(q: QualityInput): { grade: QualityGrade; score: number } {
   let score = 0;
   score += Math.max(0, Math.min(40, q.decisionConfidence * 0.4));
-  if (q.historicalAccuracy != null)
-    score += Math.max(0, Math.min(20, q.historicalAccuracy * 0.2));
+  if (q.historicalAccuracy != null) score += Math.max(0, Math.min(20, q.historicalAccuracy * 0.2));
   if (q.optionsAgreement) score += 15;
   if (q.riskReward != null) score += Math.max(0, Math.min(20, (q.riskReward - 1) * 10));
   // Risk hygiene: reward small per-trade risk.

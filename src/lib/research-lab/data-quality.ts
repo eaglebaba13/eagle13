@@ -42,12 +42,18 @@ export function assessDataQuality(input: {
     if (Number.isFinite(rowTs) && Number.isFinite(nowTs) && rowTs > nowTs) leakage++;
     seenVersions.add(`${s.family}:${s.formulaVersion}`);
   }
-  formulaMismatches = Math.max(0, seenVersions.size - new Set([...seenVersions].map((v) => v.split(":")[0])).size);
+  formulaMismatches = Math.max(
+    0,
+    seenVersions.size - new Set([...seenVersions].map((v) => v.split(":")[0])).size,
+  );
   const overall: DataQualityFlag =
-    leakage > 0 ? "LEAKAGE_DETECTED"
-    : invalid > 0 || negative > 0 || future > 0 ? "INVALID"
-    : dups > 0 || nonMono > 0 || missing > 0 || partial > 0 ? "PARTIAL"
-    : "OK";
+    leakage > 0
+      ? "LEAKAGE_DETECTED"
+      : invalid > 0 || negative > 0 || future > 0
+        ? "INVALID"
+        : dups > 0 || nonMono > 0 || missing > 0 || partial > 0
+          ? "PARTIAL"
+          : "OK";
   const warnings: string[] = [];
   if (dups > 0) warnings.push(`DUPLICATE_ROWS:${dups}`);
   if (nonMono > 0) warnings.push(`NON_MONOTONIC:${nonMono}`);

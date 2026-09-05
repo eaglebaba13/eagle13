@@ -11,8 +11,19 @@ function uptrendThenReversal(): Candle[] {
   const out: Candle[] = [];
   const prices = [
     // Rising sequence with pivots at indices 2,4,6 (highs) and 1,3,5 (lows)
-    100, 98, 105, 102, 110, 107, 115, // uptrend HH/HL
-    112, 108, 104, 100, 96, 92,       // reversal, breaks lows
+    100,
+    98,
+    105,
+    102,
+    110,
+    107,
+    115, // uptrend HH/HL
+    112,
+    108,
+    104,
+    100,
+    96,
+    92, // reversal, breaks lows
   ];
   let t = 1_700_000_000_000;
   for (const p of prices) {

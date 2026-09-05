@@ -72,12 +72,14 @@ function renderInstrument(b: InstrumentBlock): string {
   if (!b.bundle) return `${b.displayName}: UNAVAILABLE (${b.status})`;
   const p = b.bundle.pivot;
   const g = b.bundle.gann;
-  const astro = b.bundle.astro.status === "UNAVAILABLE"
-    ? "Astro: UNAVAILABLE"
-    : `Astro: ${b.bundle.astro.levels.length} levels`;
-  const gann = g.status === "UNAVAILABLE"
-    ? "Gann: UNAVAILABLE"
-    : `Gann Up ${fmt(g.up)} · Gann Down ${fmt(g.down)}`;
+  const astro =
+    b.bundle.astro.status === "UNAVAILABLE"
+      ? "Astro: UNAVAILABLE"
+      : `Astro: ${b.bundle.astro.levels.length} levels`;
+  const gann =
+    g.status === "UNAVAILABLE"
+      ? "Gann: UNAVAILABLE"
+      : `Gann Up ${fmt(g.up)} · Gann Down ${fmt(g.down)}`;
   const bias = b.bias ? `Bias ${b.bias.bias} (${b.bias.confidence}%)` : "Bias UNAVAILABLE";
   const pcr: string[] = [];
   if (b.pcrIndex != null) pcr.push(`Index PCR ${fmt(b.pcrIndex)}`);
@@ -137,17 +139,44 @@ export function composeMorningReport(input: ComposeInput): readonly BriefSection
   return [
     { id: "A_HEADER", title: "", body: header, protectFromTruncation: true },
     { id: "B_PANCHANG", title: "Panchang Now", body: panchangBody },
-    { id: "C_NIFTY", title: "NIFTY", body: renderInstrument(input.nifty), protectFromTruncation: true },
-    { id: "D_BANKNIFTY", title: "BANKNIFTY", body: renderInstrument(input.banknifty), protectFromTruncation: true },
-    { id: "E_METALS", title: "Gold & Silver", body:
-        [ratioBody, "", renderInstrument(input.xauusd), "", renderInstrument(input.xagusd)].join("\n"),
-      protectFromTruncation: true },
-    { id: "F_CRYPTO", title: "Crypto (24x7)", body:
-        [renderInstrument(input.btc), "", renderInstrument(input.eth)].join("\n"),
-      protectFromTruncation: true },
+    {
+      id: "C_NIFTY",
+      title: "NIFTY",
+      body: renderInstrument(input.nifty),
+      protectFromTruncation: true,
+    },
+    {
+      id: "D_BANKNIFTY",
+      title: "BANKNIFTY",
+      body: renderInstrument(input.banknifty),
+      protectFromTruncation: true,
+    },
+    {
+      id: "E_METALS",
+      title: "Gold & Silver",
+      body: [
+        ratioBody,
+        "",
+        renderInstrument(input.xauusd),
+        "",
+        renderInstrument(input.xagusd),
+      ].join("\n"),
+      protectFromTruncation: true,
+    },
+    {
+      id: "F_CRYPTO",
+      title: "Crypto (24x7)",
+      body: [renderInstrument(input.btc), "", renderInstrument(input.eth)].join("\n"),
+      protectFromTruncation: true,
+    },
     { id: "G_CONTEXT", title: "Market Context", body: contextBody },
     { id: "H_FIIDII", title: "FII / DII", body: fiiBody },
-    { id: "Z_DISCLAIMER", title: "Disclaimer", body: composeDisclaimerBlock(), protectFromTruncation: true },
+    {
+      id: "Z_DISCLAIMER",
+      title: "Disclaimer",
+      body: composeDisclaimerBlock(),
+      protectFromTruncation: true,
+    },
   ];
 }
 

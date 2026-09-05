@@ -61,9 +61,7 @@ export function computeDataQuality(rows: ParsedCandle[]): DataQualityReport {
   let totalPresent = 0;
   let totalExpected = 0;
   for (const [date, arr] of bySession) {
-    const seenMinutes = new Set(
-      arr.map((r) => istDateAndMinute(r.openTimeMs).minute),
-    );
+    const seenMinutes = new Set(arr.map((r) => istDateAndMinute(r.openTimeMs).minute));
     let missingCount = 0;
     let firstMissing = -1;
     let lastMissing = -1;
@@ -107,9 +105,7 @@ export function computeDataQuality(rows: ParsedCandle[]): DataQualityReport {
   };
 }
 
-export function groupBySessionDate(
-  rows: ParsedCandle[],
-): Map<string, ParsedCandle[]> {
+export function groupBySessionDate(rows: ParsedCandle[]): Map<string, ParsedCandle[]> {
   const out = new Map<string, ParsedCandle[]>();
   for (const r of rows) {
     const { date, minute } = istDateAndMinute(r.openTimeMs);

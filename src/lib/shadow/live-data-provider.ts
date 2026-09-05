@@ -3,20 +3,10 @@
 // Adapters MUST return only genuinely-supported data; they must never
 // fabricate candles or up-sample daily bars into intraday bars.
 
-import type {
-  DataQualityState,
-  ShadowClosedCandle,
-  ShadowDataSnapshot,
-} from "./shadow-types";
+import type { DataQualityState, ShadowClosedCandle, ShadowDataSnapshot } from "./shadow-types";
 
 export type ProviderHealthStatus =
-  | "HEALTHY"
-  | "DELAYED"
-  | "STALE"
-  | "DEGRADED"
-  | "UNAVAILABLE"
-  | "RATE_LIMITED"
-  | "AUTH_REQUIRED";
+  "HEALTHY" | "DELAYED" | "STALE" | "DEGRADED" | "UNAVAILABLE" | "RATE_LIMITED" | "AUTH_REQUIRED";
 
 export type ProviderHealth = {
   readonly status: ProviderHealthStatus;
@@ -75,10 +65,7 @@ export interface LiveDataProviderAdapter {
 }
 
 // FNV-1a over the concatenated candle key stream + provider id.
-export function buildDataHash(
-  candles: readonly ShadowClosedCandle[],
-  providerId: string,
-): string {
+export function buildDataHash(candles: readonly ShadowClosedCandle[], providerId: string): string {
   let h = 0x811c9dc5;
   const write = (s: string) => {
     for (let i = 0; i < s.length; i++) {
@@ -149,16 +136,14 @@ export function createMockAdapter(cfg: MockAdapterConfig): LiveDataProviderAdapt
     timezone: cfg.timezone,
     marketHours: cfg.marketHours,
     getProviderHealth: () => health,
-    classifyFreshness: (age) =>
-      classifyFreshnessDefault(age, { liveMax: 30, delayedMax: 900 }),
+    classifyFreshness: (age) => classifyFreshnessDefault(age, { liveMax: 30, delayedMax: 900 }),
     buildDataHash: (candles, providerId) => buildDataHash(candles, providerId),
     async fetchLatestClosedCandles(req) {
       if (!cfg.instruments.includes(req.instrument))
         return { ok: false, reason: "UNSUPPORTED_INSTRUMENT" };
       if (!cfg.timeframes.includes(req.timeframe))
         return { ok: false, reason: "UNSUPPORTED_TIMEFRAME" };
-      if (cfg.candles.length === 0)
-        return { ok: false, reason: "LIVE_DATA_UNAVAILABLE" };
+      if (cfg.candles.length === 0) return { ok: false, reason: "LIVE_DATA_UNAVAILABLE" };
       const snapshot: ShadowDataSnapshot = {
         instrument: req.instrument,
         timeframe: req.timeframe,
@@ -182,7 +167,11 @@ export function createMockAdapter(cfg: MockAdapterConfig): LiveDataProviderAdapt
 // ---- CSV-replay adapter ---------------------------------------------------
 
 export function createCsvReplayAdapter(cfg: MockAdapterConfig): LiveDataProviderAdapter {
-  return createMockAdapter({ ...cfg, id: cfg.id ?? "csv-replay", label: cfg.label ?? "CSV Replay" });
+  return createMockAdapter({
+    ...cfg,
+    id: cfg.id ?? "csv-replay",
+    label: cfg.label ?? "CSV Replay",
+  });
 }
 
 // ---- Unavailable adapter (Yahoo/broker placeholder) ----------------------

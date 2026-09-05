@@ -3,12 +3,7 @@
 
 import type { DataQualityReport } from "../candle-data-quality";
 
-export type DataQualityState =
-  | "LIVE"
-  | "DELAYED"
-  | "STALE"
-  | "PARTIAL"
-  | "UNAVAILABLE";
+export type DataQualityState = "LIVE" | "DELAYED" | "STALE" | "PARTIAL" | "UNAVAILABLE";
 
 export type DataQualityInput = {
   report: DataQualityReport;

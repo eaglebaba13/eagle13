@@ -55,7 +55,11 @@ function AdminInstitutionalFlowPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div role="tablist" aria-label="Underlying" className="inline-flex rounded-md border border-border/60 text-xs">
+          <div
+            role="tablist"
+            aria-label="Underlying"
+            className="inline-flex rounded-md border border-border/60 text-xs"
+          >
             {(["NIFTY", "BANKNIFTY"] as const).map((u) => (
               <button
                 key={u}
@@ -97,8 +101,8 @@ function AdminInstitutionalFlowPage() {
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Snapshot · {data.diagnostics.snapshotProvider} · {data.diagnostics.snapshotFreshness} ·{" "}
-                {data.diagnostics.snapshotTimestamp ?? "—"}
+                Snapshot · {data.diagnostics.snapshotProvider} ·{" "}
+                {data.diagnostics.snapshotFreshness} · {data.diagnostics.snapshotTimestamp ?? "—"}
               </div>
             </div>
           </section>
@@ -121,7 +125,12 @@ function AdminInstitutionalFlowPage() {
               <li>OI · {data.oi.availability}</li>
               <li>Build-up · {data.buildUp.availability}</li>
               <li>Max Pain · {data.diagnostics.maxPainAvailability}</li>
-              <li>Gamma · {data.diagnostics.gammaAvailability}{data.diagnostics.missingGreeksReason ? ` · ${data.diagnostics.missingGreeksReason}` : ""}</li>
+              <li>
+                Gamma · {data.diagnostics.gammaAvailability}
+                {data.diagnostics.missingGreeksReason
+                  ? ` · ${data.diagnostics.missingGreeksReason}`
+                  : ""}
+              </li>
               <li>Sector Flow · {data.sectorFlow.availability}</li>
               <li>Internals · {data.internals.availability}</li>
             </ul>
@@ -130,10 +139,12 @@ function AdminInstitutionalFlowPage() {
           <section className="rounded-lg border border-border/60 p-3">
             <h2 className="mb-2 text-sm font-semibold text-foreground">Methodology</h2>
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Max Pain:</span> {data.diagnostics.maxPainMethodology}
+              <span className="font-medium text-foreground">Max Pain:</span>{" "}
+              {data.diagnostics.maxPainMethodology}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Build-up:</span> {data.diagnostics.buildUpMethodology}
+              <span className="font-medium text-foreground">Build-up:</span>{" "}
+              {data.diagnostics.buildUpMethodology}
             </p>
           </section>
 

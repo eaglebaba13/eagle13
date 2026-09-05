@@ -8,20 +8,12 @@ export const INSTITUTIONAL_FLOW_DISCLAIMER =
   "RESEARCH ONLY — NOT INVESTMENT ADVICE. Institutional Flow reads canonical snapshots and never places orders.";
 
 export type BuildUpClass =
-  | "LONG_BUILDUP"
-  | "SHORT_BUILDUP"
-  | "LONG_UNWINDING"
-  | "SHORT_COVERING"
-  | "UNAVAILABLE";
+  "LONG_BUILDUP" | "SHORT_BUILDUP" | "LONG_UNWINDING" | "SHORT_COVERING" | "UNAVAILABLE";
 
 export type CalcAvailability = "OK" | "PARTIAL" | "UNAVAILABLE";
 
 export type FlowBias =
-  | "PUT_WRITERS_ACTIVE"
-  | "CALL_WRITERS_ACTIVE"
-  | "BALANCED"
-  | "CONFLICT"
-  | "UNAVAILABLE";
+  "PUT_WRITERS_ACTIVE" | "CALL_WRITERS_ACTIVE" | "BALANCED" | "CONFLICT" | "UNAVAILABLE";
 
 export interface OiRow {
   readonly strike: number;

@@ -41,20 +41,36 @@ import type { ReliabilityRating } from "./recommendation-validator";
 
 function m(over: Partial<SensitivityMetrics> = {}): SensitivityMetrics {
   return {
-    trades: 60, winRate: 0.55, profitFactor: 1.8, expectancy: 2.5, netPnl: 150,
-    maxDrawdown: 40, recoveryFactor: 4, stabilityScore: 0.7, oosScore: 0.7,
-    monteCarloMedian: 1100, monteCarloP5: 970,
+    trades: 60,
+    winRate: 0.55,
+    profitFactor: 1.8,
+    expectancy: 2.5,
+    netPnl: 150,
+    maxDrawdown: 40,
+    recoveryFactor: 4,
+    stabilityScore: 0.7,
+    oosScore: 0.7,
+    monteCarloMedian: 1100,
+    monteCarloP5: 970,
     ...over,
   };
 }
 function agg(over: Partial<OptimizerAggregateInputs> = {}): OptimizerAggregateInputs {
   return {
-    walkForwardStability: 0.8, oosConsistency: 0.75, walkForwardWindows: 6,
-    monteCarloP5FinalEquity: 950, monteCarloMedianFinalEquity: 1100, monteCarloSimulations: 500,
-    startingCapital: 1000, robustnessStatus: "ROBUST" as RobustnessStatus, robustnessScore: 0.8,
+    walkForwardStability: 0.8,
+    oosConsistency: 0.75,
+    walkForwardWindows: 6,
+    monteCarloP5FinalEquity: 950,
+    monteCarloMedianFinalEquity: 1100,
+    monteCarloSimulations: 500,
+    startingCapital: 1000,
+    robustnessStatus: "ROBUST" as RobustnessStatus,
+    robustnessScore: 0.8,
     sensitivityClassification: "STABLE_PLATEAU" as SensitivityClassification,
-    profitFactorConsistency: 0.7, calibrationRating: "GOOD" as ReliabilityRating,
-    crossAssetConsistency: 0.7, dataQuality: "GOOD",
+    profitFactorConsistency: 0.7,
+    calibrationRating: "GOOD" as ReliabilityRating,
+    crossAssetConsistency: 0.7,
+    dataQuality: "GOOD",
     ...over,
   };
 }
@@ -131,7 +147,11 @@ describe("Phase 21.9 Stage 2 · history", () => {
     const r = runOptimizerPipeline(ctx(), undefined, () => "t");
     let h = emptyOptimizerHistory();
     for (let i = 0; i < 30; i++) {
-      h = recordOptimizerHistory(h, { context: r.context, result: r.result, recordedAt: `t${i}` }, 5);
+      h = recordOptimizerHistory(
+        h,
+        { context: r.context, result: r.result, recordedAt: `t${i}` },
+        5,
+      );
     }
     expect(h.entries.length).toBe(1); // same id → dedup
   });
@@ -140,7 +160,11 @@ describe("Phase 21.9 Stage 2 · history", () => {
     const b = runOptimizerPipeline(ctx({ from: "2024-02-01" }), undefined, () => "tb").result;
     let h = emptyOptimizerHistory();
     h = recordOptimizerHistory(h, { context: ctx(), result: a, recordedAt: "1" });
-    h = recordOptimizerHistory(h, { context: ctx({ from: "2024-02-01" }), result: b, recordedAt: "2" });
+    h = recordOptimizerHistory(h, {
+      context: ctx({ from: "2024-02-01" }),
+      result: b,
+      recordedAt: "2",
+    });
     const cmp = compareOptimizerHistoryEntries(h.entries[1], h.entries[0]);
     expect(typeof cmp.scoreDelta).toBe("number");
     expect(typeof cmp.summary).toBe("string");
@@ -150,7 +174,14 @@ describe("Phase 21.9 Stage 2 · history", () => {
 describe("Phase 21.9 Stage 2 · presets", () => {
   it("save / rename / duplicate / delete preserve immutability", () => {
     let lib = emptyPresetLibrary();
-    lib = savePreset(lib, { id: "p1", name: "Balanced 60", strategy: "SMC_V1", parameters: { minScore: 60 }, runId: "R", createdAt: "t" });
+    lib = savePreset(lib, {
+      id: "p1",
+      name: "Balanced 60",
+      strategy: "SMC_V1",
+      parameters: { minScore: 60 },
+      runId: "R",
+      createdAt: "t",
+    });
     expect(lib.presets[0].readOnly).toBe(true);
     expect(lib.presets[0].disclaimer).toContain("RESEARCH PRESET ONLY");
     lib = renamePreset(lib, "p1", "Balanced 60 v2", "t2");
@@ -163,42 +194,56 @@ describe("Phase 21.9 Stage 2 · presets", () => {
   });
   it("rejects duplicate names", () => {
     let lib = emptyPresetLibrary();
-    lib = savePreset(lib, { id: "a", name: "X", strategy: "SMC_V1", parameters: { minScore: 60 }, runId: "R", createdAt: "t" });
-    expect(() => savePreset(lib, { id: "b", name: "X", strategy: "SMC_V1", parameters: { minScore: 65 }, runId: "R", createdAt: "t" })).toThrow(/PRESET_NAME_TAKEN/);
+    lib = savePreset(lib, {
+      id: "a",
+      name: "X",
+      strategy: "SMC_V1",
+      parameters: { minScore: 60 },
+      runId: "R",
+      createdAt: "t",
+    });
+    expect(() =>
+      savePreset(lib, {
+        id: "b",
+        name: "X",
+        strategy: "SMC_V1",
+        parameters: { minScore: 65 },
+        runId: "R",
+        createdAt: "t",
+      }),
+    ).toThrow(/PRESET_NAME_TAKEN/);
   });
   it("serializes deterministically", () => {
     let lib = emptyPresetLibrary();
-    lib = savePreset(lib, { id: "p1", name: "N", strategy: "SMC_V1", parameters: { minScore: 65 }, runId: "R", createdAt: "t" });
+    lib = savePreset(lib, {
+      id: "p1",
+      name: "N",
+      strategy: "SMC_V1",
+      parameters: { minScore: 65 },
+      runId: "R",
+      createdAt: "t",
+    });
     expect(serializePreset(lib.presets[0])).toBe(serializePreset(lib.presets[0]));
   });
 });
 
 describe("Phase 21.9 Stage 2 · drift", () => {
   it("STABLE when current sits inside the safe range and step delta < 0.5", () => {
-    const rep = computeParameterDrift(
-      { minScore: 65 },
-      { minScore: 65 },
-      space,
-      { minScore: { min: 60, max: 70 } },
-    );
+    const rep = computeParameterDrift({ minScore: 65 }, { minScore: 65 }, space, {
+      minScore: { min: 60, max: 70 },
+    });
     expect(rep.overall).toBe("STABLE");
   });
   it("SMALL_DRIFT for ≤ 1 step deviation inside the range", () => {
-    const rep = computeParameterDrift(
-      { minScore: 60 },
-      { minScore: 65 },
-      space,
-      { minScore: { min: 60, max: 70 } },
-    );
+    const rep = computeParameterDrift({ minScore: 60 }, { minScore: 65 }, space, {
+      minScore: { min: 60, max: 70 },
+    });
     expect(rep.overall).toBe("SMALL_DRIFT");
   });
   it("UNSAFE_DRIFT when current falls outside the safe range", () => {
-    const rep = computeParameterDrift(
-      { minScore: 90 },
-      { minScore: 65 },
-      space,
-      { minScore: { min: 60, max: 70 } },
-    );
+    const rep = computeParameterDrift({ minScore: 90 }, { minScore: 65 }, space, {
+      minScore: { min: 60, max: 70 },
+    });
     expect(rep.overall).toBe("UNSAFE_DRIFT");
   });
 });
@@ -257,29 +302,55 @@ describe("Phase 21.9 Stage 2 · exports", () => {
     expect(csv1).toBe(csv2);
     expect(csv1).toContain("RESEARCH OPTIMIZATION ONLY");
 
-    const lib = savePreset(emptyPresetLibrary(), { id: "p1", name: "N", strategy: "SMC_V1", parameters: { minScore: 65 }, runId: "R", createdAt: "t" });
+    const lib = savePreset(emptyPresetLibrary(), {
+      id: "p1",
+      name: "N",
+      strategy: "SMC_V1",
+      parameters: { minScore: 65 },
+      runId: "R",
+      createdAt: "t",
+    });
     const json = buildPresetLibraryJson(lib);
     expect(json).toContain("RESEARCH OPTIMIZATION ONLY");
 
     const before = buildBeforeAfterReport({
-      currentParameters: { minScore: 60 }, cells, optimizer: r, aggregate: agg(),
+      currentParameters: { minScore: 60 },
+      cells,
+      optimizer: r,
+      aggregate: agg(),
     });
     const csv = buildOptimizerBeforeAfterCsv(before);
     expect(csv).toContain("profitFactor");
 
     const bundle = buildOptimizerBundleJson({
-      result: r, history: h, presets: lib, comparison: before, drift: null, generatedAt: "t",
+      result: r,
+      history: h,
+      presets: lib,
+      comparison: before,
+      drift: null,
+      generatedAt: "t",
     });
-    expect(bundle).toBe(buildOptimizerBundleJson({
-      result: r, history: h, presets: lib, comparison: before, drift: null, generatedAt: "t",
-    }));
+    expect(bundle).toBe(
+      buildOptimizerBundleJson({
+        result: r,
+        history: h,
+        presets: lib,
+        comparison: before,
+        drift: null,
+        generatedAt: "t",
+      }),
+    );
   });
   it("comparison CSV embeds run IDs for both sides", () => {
     const a = runOptimizerPipeline(ctx(), undefined, () => "t1").result;
     const b = runOptimizerPipeline(ctx({ from: "2024-02-01" }), undefined, () => "t2").result;
     let h = emptyOptimizerHistory();
     h = recordOptimizerHistory(h, { context: ctx(), result: a, recordedAt: "1" });
-    h = recordOptimizerHistory(h, { context: ctx({ from: "2024-02-01" }), result: b, recordedAt: "2" });
+    h = recordOptimizerHistory(h, {
+      context: ctx({ from: "2024-02-01" }),
+      result: b,
+      recordedAt: "2",
+    });
     const cmp = compareOptimizerHistoryEntries(h.entries[1], h.entries[0]);
     const csv = buildOptimizerComparisonCsv({ a: h.entries[1], b: h.entries[0], comparison: cmp });
     expect(csv).toContain(a.runId);

@@ -7,10 +7,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const backtestRoute = readFileSync("src/routes/backtest.tsx", "utf8");
-const panel = readFileSync(
-  "src/components/backtest/AbsoluteValidationPanel.tsx",
-  "utf8",
-);
+const panel = readFileSync("src/components/backtest/AbsoluteValidationPanel.tsx", "utf8");
 
 describe("Phase 21.3d-β2b · Absolute panel dispatch on /backtest", () => {
   it("mounts the shared Absolute panel via React.lazy (no eager import)", () => {

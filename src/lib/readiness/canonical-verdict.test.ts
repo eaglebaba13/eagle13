@@ -4,9 +4,7 @@ import { describe, it, expect } from "vitest";
 import { deriveCanonicalVerdict } from "./canonical-verdict";
 import type { RuntimeReadinessReport } from "@/lib/runtime-readiness/runtime-readiness";
 
-function make(
-  overrides: Partial<RuntimeReadinessReport> = {},
-): RuntimeReadinessReport {
+function make(overrides: Partial<RuntimeReadinessReport> = {}): RuntimeReadinessReport {
   return {
     schemaVersion: 1,
     generatedAt: "2026-07-21T00:00:00Z",
@@ -47,9 +45,7 @@ describe("deriveCanonicalVerdict", () => {
     const v = deriveCanonicalVerdict(
       make({
         overall: "PARTIALLY_READY",
-        contradictions: [
-          { code: "X", severity: "critical", modules: [], message: "m" },
-        ],
+        contradictions: [{ code: "X", severity: "critical", modules: [], message: "m" }],
       }),
     );
     expect(v.subscription).toBe("BLOCKED");

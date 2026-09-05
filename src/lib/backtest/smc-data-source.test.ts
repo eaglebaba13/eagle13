@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  hashCandleSeries,
-  loadSmcCandles,
-  SmcDataRangeUnavailableError,
-} from "./smc-data-source";
+import { hashCandleSeries, loadSmcCandles, SmcDataRangeUnavailableError } from "./smc-data-source";
 
 function makeCsv(rows: Array<[string, number, number, number, number, number?]>): string {
   const header = "datetime,open,high,low,close,volume";
@@ -12,15 +8,22 @@ function makeCsv(rows: Array<[string, number, number, number, number, number?]>)
 }
 
 // Build a synthetic 2024-06-04 IST session, 5m candles.
-function genSession(date: string, opens: number[]): Array<[string, number, number, number, number, number]> {
+function genSession(
+  date: string,
+  opens: number[],
+): Array<[string, number, number, number, number, number]> {
   const rows: Array<[string, number, number, number, number, number]> = [];
-  let h = 9, m = 15;
+  let h = 9,
+    m = 15;
   for (const o of opens) {
     const hh = String(h).padStart(2, "0");
     const mm = String(m).padStart(2, "0");
     rows.push([`${date} ${hh}:${mm}:00`, o, o + 5, o - 5, o + 1, 100]);
     m += 5;
-    if (m >= 60) { m -= 60; h += 1; }
+    if (m >= 60) {
+      m -= 60;
+      h += 1;
+    }
   }
   return rows;
 }
@@ -48,7 +51,10 @@ describe("Phase 21.4 Stage 4A · smc-data-source", () => {
   });
 
   it("loads a CSV inside the requested window and reports data quality", async () => {
-    const rows = genSession("2024-06-04", Array.from({ length: 75 }, (_, i) => 22000 + i));
+    const rows = genSession(
+      "2024-06-04",
+      Array.from({ length: 75 }, (_, i) => 22000 + i),
+    );
     const csv = makeCsv(rows);
     const r = await loadSmcCandles({
       instrument: "NIFTY50",
@@ -66,7 +72,10 @@ describe("Phase 21.4 Stage 4A · smc-data-source", () => {
   });
 
   it("15m rebucket collapses 3× 5m rows into one candle (never fabricates intraday)", async () => {
-    const rows = genSession("2024-06-04", Array.from({ length: 75 }, (_, i) => 22000 + i));
+    const rows = genSession(
+      "2024-06-04",
+      Array.from({ length: 75 }, (_, i) => 22000 + i),
+    );
     const csv = makeCsv(rows);
     const r = await loadSmcCandles({
       instrument: "NIFTY50",

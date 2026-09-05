@@ -42,16 +42,13 @@ export async function fetchUpstoxIndexQuote(
   try {
     const [quoteRes, histRes] = await Promise.all([
       adapter.fetchQuote(symbol, nowIso),
-      adapter
-        .fetchHistorical(symbol, "1d", 5, nowIso)
-        .catch(() => null),
+      adapter.fetchHistorical(symbol, "1d", 5, nowIso).catch(() => null),
     ]);
     if (!quoteRes.ok) {
       return { ok: false, reason: quoteRes.reason, detail: quoteRes.detail };
     }
     const meta = NAME_BY_SYMBOL[symbol];
-    const candles =
-      histRes && histRes.ok ? histRes.data.candles : [];
+    const candles = histRes && histRes.ok ? histRes.data.candles : [];
     const quote = mapUpstoxToIndexQuote({
       symbol: meta.label,
       name: meta.name,

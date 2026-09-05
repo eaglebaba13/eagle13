@@ -2,10 +2,7 @@
 // contribution vs actual, per candidate and per group (strategy /
 // instrument / timeframe / regime). Research-only.
 
-import type {
-  PortfolioAsset,
-  RiskContribution,
-} from "./portfolio-types";
+import type { PortfolioAsset, RiskContribution } from "./portfolio-types";
 
 export type BudgetScope = "ASSET" | "STRATEGY" | "INSTRUMENT" | "TIMEFRAME" | "REGIME";
 
@@ -41,11 +38,16 @@ export type RiskBudgetResult = {
 
 function groupKey(asset: PortfolioAsset, scope: BudgetScope): string {
   switch (scope) {
-    case "STRATEGY": return asset.strategy;
-    case "INSTRUMENT": return asset.instrument;
-    case "TIMEFRAME": return asset.timeframe;
-    case "REGIME": return asset.regime ?? "UNSPECIFIED";
-    default: return asset.id;
+    case "STRATEGY":
+      return asset.strategy;
+    case "INSTRUMENT":
+      return asset.instrument;
+    case "TIMEFRAME":
+      return asset.timeframe;
+    case "REGIME":
+      return asset.regime ?? "UNSPECIFIED";
+    default:
+      return asset.id;
   }
 }
 
@@ -90,7 +92,6 @@ export function computeRiskBudget(input: RiskBudgetInput): RiskBudgetResult {
     compliance,
     worstBreach,
     totalTarget,
-    disclaimer:
-      "PORTFOLIO RESEARCH ONLY — risk-budget analytics do not modify live sizing.",
+    disclaimer: "PORTFOLIO RESEARCH ONLY — risk-budget analytics do not modify live sizing.",
   };
 }

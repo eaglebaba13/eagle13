@@ -13,14 +13,23 @@ export interface BackupAuditInput {
   environment: "development" | "staging" | "production" | "unknown";
 }
 
-const STATUS_MAP: Record<BackupStatus, { s: "PASS" | "WARNING" | "FAIL" | "UNKNOWN"; sev: "info" | "warning" | "critical" | "blocker" }> = {
+const STATUS_MAP: Record<
+  BackupStatus,
+  { s: "PASS" | "WARNING" | "FAIL" | "UNKNOWN"; sev: "info" | "warning" | "critical" | "blocker" }
+> = {
   VERIFIED: { s: "PASS", sev: "info" },
   DOCUMENTED_ONLY: { s: "WARNING", sev: "warning" },
   NOT_CONFIGURED: { s: "FAIL", sev: "critical" },
   UNKNOWN: { s: "UNKNOWN", sev: "warning" },
 };
 
-function line(id: string, title: string, s: BackupStatus, envIsProd: boolean, critical = false): ReadinessResult {
+function line(
+  id: string,
+  title: string,
+  s: BackupStatus,
+  envIsProd: boolean,
+  critical = false,
+): ReadinessResult {
   const m = STATUS_MAP[s];
   const hardBlocker = envIsProd && critical && (s === "UNKNOWN" || s === "NOT_CONFIGURED");
   return {
@@ -46,7 +55,11 @@ export function auditBackups(i: BackupAuditInput): ReadinessResult[] {
       category: "RECOVERY",
       title: "Audit-log retention",
       status:
-        i.auditLogRetentionDays == null ? "UNKNOWN" : i.auditLogRetentionDays >= 90 ? "PASS" : "WARNING",
+        i.auditLogRetentionDays == null
+          ? "UNKNOWN"
+          : i.auditLogRetentionDays >= 90
+            ? "PASS"
+            : "WARNING",
       severity: "info",
       evidence: [{ key: "days", value: i.auditLogRetentionDays ?? "unknown" }],
     },

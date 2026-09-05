@@ -36,7 +36,10 @@ export function evaluateShadowReadiness(inp: ShadowReadinessInput): ShadowReadin
     return { status: "PAUSED_BY_DATA_QUALITY", reasons };
   }
   if (!inp.evidence.ok) {
-    return { status: "PAUSED_BY_RESEARCH_GAP", reasons: inp.evidence.missing.map((m) => `MISSING_${m}`) };
+    return {
+      status: "PAUSED_BY_RESEARCH_GAP",
+      reasons: inp.evidence.missing.map((m) => `MISSING_${m}`),
+    };
   }
   if (inp.candleStatus !== "CLOSED_VALID") {
     reasons.push(`CANDLE_${inp.candleStatus}`);

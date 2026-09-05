@@ -39,6 +39,8 @@ describe("fetchCanonicalOptionChain", () => {
       expiry: "not-a-date",
     });
     // Provider still fetches; capability layer rejects the expiry format.
-    expect(r.capability.status === "INVALID_EXPIRY" || r.capability.status === "SUPPORTED").toBe(true);
+    expect(r.capability.status === "INVALID_EXPIRY" || r.capability.status === "SUPPORTED").toBe(
+      true,
+    );
   });
 });

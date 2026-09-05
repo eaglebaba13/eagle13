@@ -48,14 +48,19 @@ export function aggregateRuntimeReadiness(
 
   const blockers: string[] = [];
   const warnings: string[] = [];
-  let healthy = 0, degraded = 0, blocked = 0, demo = 0;
+  let healthy = 0,
+    degraded = 0,
+    blocked = 0,
+    demo = 0;
   let criticalNotReady = false;
   let anyDegraded = false;
 
   for (const e of evidence) {
     if (e.status === "HEALTHY") healthy++;
-    else if (e.status === "DEGRADED") { degraded++; anyDegraded = true; }
-    else if (e.status === "DEMO") demo++;
+    else if (e.status === "DEGRADED") {
+      degraded++;
+      anyDegraded = true;
+    } else if (e.status === "DEMO") demo++;
     else if (e.status === "BLOCKED" || e.status === "UNAVAILABLE") blocked++;
 
     for (const b of e.blockers) blockers.push(`${e.module}: ${b}`);

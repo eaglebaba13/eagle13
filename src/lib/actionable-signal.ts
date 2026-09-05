@@ -24,7 +24,11 @@ export type ActionableSignalResult = {
 export function canDisplayActionableSignal(input: ActionableSignalInput): ActionableSignalResult {
   const reasons: string[] = [];
 
-  if (input.freshness === "STALE" || input.freshness === "UNAVAILABLE" || input.freshness === "ERROR") {
+  if (
+    input.freshness === "STALE" ||
+    input.freshness === "UNAVAILABLE" ||
+    input.freshness === "ERROR"
+  ) {
     reasons.push(`Data ${input.freshness}`);
   }
   if (input.freshness === "DELAYED") {
@@ -50,6 +54,7 @@ export function blockedLabel(reasons: string[]): string {
   if (reasons.length === 0) return "OK";
   if (reasons.some((r) => r.includes("Validation"))) return "VALIDATION BLOCKED";
   if (reasons.some((r) => r.includes("STALE"))) return "STALE";
-  if (reasons.some((r) => r.includes("UNAVAILABLE") || r.includes("DOWN"))) return "DATA UNAVAILABLE";
+  if (reasons.some((r) => r.includes("UNAVAILABLE") || r.includes("DOWN")))
+    return "DATA UNAVAILABLE";
   return "BLOCKED";
 }

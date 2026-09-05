@@ -49,7 +49,8 @@ export function persistenceStats(): {
   lastFailureAt: string | null;
   avgDurationMs: number | null;
 } {
-  const avg = durationsMs.length > 0 ? durationsMs.reduce((a, b) => a + b, 0) / durationsMs.length : null;
+  const avg =
+    durationsMs.length > 0 ? durationsMs.reduce((a, b) => a + b, 0) / durationsMs.length : null;
   return {
     strategies: STRATEGIES.size,
     runs: RUNS.length,

@@ -14,14 +14,37 @@ function csvEscape(v: unknown): string {
 export function snapshotToCsv(snap: OptionChainSnapshot): string {
   const header = [
     "strike",
-    "call_oi", "call_change_oi", "call_volume", "call_iv", "call_ltp",
-    "put_oi", "put_change_oi", "put_volume", "put_iv", "put_ltp",
+    "call_oi",
+    "call_change_oi",
+    "call_volume",
+    "call_iv",
+    "call_ltp",
+    "put_oi",
+    "put_change_oi",
+    "put_volume",
+    "put_iv",
+    "put_ltp",
   ];
-  const rows = snap.strikes.slice().sort((a, b) => a.strike - b.strike).map((s) => [
-    s.strike,
-    s.call.oi, s.call.changeOi, s.call.volume, s.call.iv, s.call.ltp,
-    s.put.oi, s.put.changeOi, s.put.volume, s.put.iv, s.put.ltp,
-  ].map(csvEscape).join(","));
+  const rows = snap.strikes
+    .slice()
+    .sort((a, b) => a.strike - b.strike)
+    .map((s) =>
+      [
+        s.strike,
+        s.call.oi,
+        s.call.changeOi,
+        s.call.volume,
+        s.call.iv,
+        s.call.ltp,
+        s.put.oi,
+        s.put.changeOi,
+        s.put.volume,
+        s.put.iv,
+        s.put.ltp,
+      ]
+        .map(csvEscape)
+        .join(","),
+    );
   const meta = `# instrument=${snap.instrument},expiry=${snap.expiry},spot=${snap.spotPrice ?? ""},provider=${snap.provider},timestamp=${snap.timestamp}`;
   return [meta, header.join(","), ...rows].join("\n");
 }

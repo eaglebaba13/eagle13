@@ -18,16 +18,24 @@ export type AtmMode = "ATM" | "ATM_5" | "ATM_10" | "ATM_20" | "CUSTOM";
 
 function radiusFor(mode: AtmMode, custom?: number): number {
   switch (mode) {
-    case "ATM": return 0;
-    case "ATM_5": return 5;
-    case "ATM_10": return 10;
-    case "ATM_20": return 20;
-    case "CUSTOM": return Math.max(0, Math.floor(custom ?? 0));
+    case "ATM":
+      return 0;
+    case "ATM_5":
+      return 5;
+    case "ATM_10":
+      return 10;
+    case "ATM_20":
+      return 20;
+    case "CUSTOM":
+      return Math.max(0, Math.floor(custom ?? 0));
   }
 }
 
 function sortedStrikes(strikes: readonly OptionChainStrike[]): number[] {
-  return strikes.map((s) => s.strike).slice().sort((a, b) => a - b);
+  return strikes
+    .map((s) => s.strike)
+    .slice()
+    .sort((a, b) => a - b);
 }
 
 export function findAtmIndex(strikes: readonly number[], spot: number | null): number {
@@ -36,7 +44,10 @@ export function findAtmIndex(strikes: readonly number[], spot: number | null): n
   let bestDist = Math.abs(strikes[0] - spot);
   for (let i = 1; i < strikes.length; i += 1) {
     const d = Math.abs(strikes[i] - spot);
-    if (d < bestDist) { best = i; bestDist = d; }
+    if (d < bestDist) {
+      best = i;
+      bestDist = d;
+    }
   }
   return best;
 }

@@ -39,12 +39,6 @@ export function redactRuntimeReadinessReport(
   };
 }
 
-export function exportRuntimeReadinessJson(
-  report: RuntimeReadinessReport,
-): string {
-  return JSON.stringify(
-    report,
-    (key, value) => (SECRET_KEYS.test(key) ? "[redacted]" : value),
-    2,
-  );
+export function exportRuntimeReadinessJson(report: RuntimeReadinessReport): string {
+  return JSON.stringify(report, (key, value) => (SECRET_KEYS.test(key) ? "[redacted]" : value), 2);
 }

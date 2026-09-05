@@ -37,7 +37,10 @@ export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
     let unversioned = 0;
     for (const k of cache.keys) {
       if (k.key.includes(`${CACHE_NAMESPACE_VERSION}:`)) {
-        if (isLegacyAstroFormula(DEFAULT_ASTRO_FORMULA_VERSION) === false && k.key.includes(DEFAULT_ASTRO_FORMULA_VERSION)) {
+        if (
+          isLegacyAstroFormula(DEFAULT_ASTRO_FORMULA_VERSION) === false &&
+          k.key.includes(DEFAULT_ASTRO_FORMULA_VERSION)
+        ) {
           corrected += 1;
         } else if (k.key.includes("LEGACY_EAGLEBABA_CASCADE_V1")) {
           legacy += 1;

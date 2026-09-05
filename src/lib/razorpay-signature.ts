@@ -37,8 +37,10 @@ export function verifyRazorpayWebhookSignature(input: {
   previousSecret?: string | null;
 }): VerifyResult {
   const { rawBody, signatureHeader, currentSecret, previousSecret } = input;
-  if (!signatureHeader) return { verified: false, usedSecretVersion: null, reason: "missing_signature" };
-  if (!currentSecret) return { verified: false, usedSecretVersion: null, reason: "webhook_secret_not_configured" };
+  if (!signatureHeader)
+    return { verified: false, usedSecretVersion: null, reason: "missing_signature" };
+  if (!currentSecret)
+    return { verified: false, usedSecretVersion: null, reason: "webhook_secret_not_configured" };
 
   if (safeEqualHex(hmacHex(currentSecret, rawBody), signatureHeader)) {
     return { verified: true, usedSecretVersion: "current" };

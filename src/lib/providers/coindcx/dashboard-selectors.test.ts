@@ -7,7 +7,11 @@ import {
 } from "./dashboard-selectors";
 import type { CoindcxMarketSnapshot } from "./types";
 
-function snap(over: Partial<CoindcxMarketSnapshot> = {}, market: Partial<CoindcxMarketSnapshot["market"]> = {}, ticker: Partial<NonNullable<CoindcxMarketSnapshot["ticker"]>> | null = {}): CoindcxMarketSnapshot {
+function snap(
+  over: Partial<CoindcxMarketSnapshot> = {},
+  market: Partial<CoindcxMarketSnapshot["market"]> = {},
+  ticker: Partial<NonNullable<CoindcxMarketSnapshot["ticker"]>> | null = {},
+): CoindcxMarketSnapshot {
   const base: CoindcxMarketSnapshot = {
     market: {
       pair: "BTCUSDT",
@@ -60,7 +64,9 @@ function snap(over: Partial<CoindcxMarketSnapshot> = {}, market: Partial<Coindcx
 
 describe("crypto dashboard selectors", () => {
   it("builds default watchlist and marks missing bases UNAVAILABLE", () => {
-    const rows = buildWatchlist([snap({}, { base: "BTC", pair: "BTCUSDT" }, { last: 50000, change24hPct: 2 })]);
+    const rows = buildWatchlist([
+      snap({}, { base: "BTC", pair: "BTCUSDT" }, { last: 50000, change24hPct: 2 }),
+    ]);
     expect(rows.length).toBe(DEFAULT_CRYPTO_WATCHLIST.length);
     const btc = rows.find((r) => r.base === "BTC")!;
     expect(btc.status).toBe("LIVE");
@@ -72,7 +78,11 @@ describe("crypto dashboard selectors", () => {
 
   it("classifies DELAYED status from provider meta", () => {
     const rows = buildWatchlist([
-      snap({ meta: { ...snap().meta, status: "DELAYED" } }, { base: "BTC" }, { last: 1, change24hPct: 0 }),
+      snap(
+        { meta: { ...snap().meta, status: "DELAYED" } },
+        { base: "BTC" },
+        { last: 1, change24hPct: 0 },
+      ),
     ]);
     expect(rows.find((r) => r.base === "BTC")!.status).toBe("DELAYED");
   });
@@ -126,9 +136,7 @@ describe("crypto dashboard selectors", () => {
   });
 
   it("summary worstStatus escalates to worst row status", () => {
-    const rows = buildWatchlist([
-      snap({}, { base: "BTC" }, { last: 1, change24hPct: 0 }),
-    ]);
+    const rows = buildWatchlist([snap({}, { base: "BTC" }, { last: 1, change24hPct: 0 })]);
     // No SOL/ETH/XRP → UNAVAILABLE rows escalate worstStatus
     const s = summarizeCrypto(rows);
     expect(s.worstStatus).toBe("UNAVAILABLE");

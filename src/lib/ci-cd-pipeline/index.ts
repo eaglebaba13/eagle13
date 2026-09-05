@@ -25,15 +25,69 @@ export type PipelineStage = {
 
 export const PRODUCTION_PIPELINE: PipelineStage[] = [
   { id: "lint", label: "Lint", dependsOn: [], blocking: true, description: "ESLint across src/**" },
-  { id: "typescript", label: "TypeScript", dependsOn: ["lint"], blocking: true, description: "tsgo strict typecheck" },
-  { id: "unit-tests", label: "Unit tests", dependsOn: ["typescript"], blocking: true, description: "Vitest suite" },
-  { id: "build", label: "Build", dependsOn: ["unit-tests"], blocking: true, description: "Production Vite build" },
-  { id: "security-scan", label: "Security scan", dependsOn: ["build"], blocking: true, description: "Backend + code security" },
-  { id: "dependency-audit", label: "Dependency audit", dependsOn: ["build"], blocking: true, description: "npm audit for high/critical" },
-  { id: "bundle-analysis", label: "Bundle analysis", dependsOn: ["build"], blocking: false, description: "Bundle size budgets" },
-  { id: "deploy", label: "Deploy", dependsOn: ["security-scan", "dependency-audit"], blocking: true, description: "Blue/Green candidate deploy" },
-  { id: "post-deploy-health", label: "Post-deploy health", dependsOn: ["deploy"], blocking: true, description: "Health endpoints must be green" },
-  { id: "rollback", label: "Rollback", dependsOn: ["post-deploy-health"], blocking: false, description: "Automatic rollback trigger on failure" },
+  {
+    id: "typescript",
+    label: "TypeScript",
+    dependsOn: ["lint"],
+    blocking: true,
+    description: "tsgo strict typecheck",
+  },
+  {
+    id: "unit-tests",
+    label: "Unit tests",
+    dependsOn: ["typescript"],
+    blocking: true,
+    description: "Vitest suite",
+  },
+  {
+    id: "build",
+    label: "Build",
+    dependsOn: ["unit-tests"],
+    blocking: true,
+    description: "Production Vite build",
+  },
+  {
+    id: "security-scan",
+    label: "Security scan",
+    dependsOn: ["build"],
+    blocking: true,
+    description: "Backend + code security",
+  },
+  {
+    id: "dependency-audit",
+    label: "Dependency audit",
+    dependsOn: ["build"],
+    blocking: true,
+    description: "npm audit for high/critical",
+  },
+  {
+    id: "bundle-analysis",
+    label: "Bundle analysis",
+    dependsOn: ["build"],
+    blocking: false,
+    description: "Bundle size budgets",
+  },
+  {
+    id: "deploy",
+    label: "Deploy",
+    dependsOn: ["security-scan", "dependency-audit"],
+    blocking: true,
+    description: "Blue/Green candidate deploy",
+  },
+  {
+    id: "post-deploy-health",
+    label: "Post-deploy health",
+    dependsOn: ["deploy"],
+    blocking: true,
+    description: "Health endpoints must be green",
+  },
+  {
+    id: "rollback",
+    label: "Rollback",
+    dependsOn: ["post-deploy-health"],
+    blocking: false,
+    description: "Automatic rollback trigger on failure",
+  },
 ];
 
 export function validatePipeline(stages: PipelineStage[] = PRODUCTION_PIPELINE): {

@@ -9,12 +9,7 @@
 import type { OptionChainSnapshot } from "../option-chain/types";
 
 export type SensexCapabilityStatus =
-  | "SUPPORTED"
-  | "PARTIAL"
-  | "UNSUPPORTED"
-  | "AUTH_REQUIRED"
-  | "STALE"
-  | "DATA_QUALITY_FAILURE";
+  "SUPPORTED" | "PARTIAL" | "UNSUPPORTED" | "AUTH_REQUIRED" | "STALE" | "DATA_QUALITY_FAILURE";
 
 export interface SensexCapabilityField {
   readonly field: string;
@@ -55,25 +50,33 @@ export function assessSensexCapability(input: AssessSensexInput): SensexCapabili
 
   if (input.upstreamCode === "AUTH_REQUIRED" || input.safeError === "AUTH_REQUIRED") {
     return {
-      status: "AUTH_REQUIRED", provider,
-      fields: [], missing: ["auth"],
+      status: "AUTH_REQUIRED",
+      provider,
+      fields: [],
+      missing: ["auth"],
       safeError: input.safeError ?? "auth required",
-      activate: false, evaluatedAt,
+      activate: false,
+      evaluatedAt,
     };
   }
 
   if (!input.snapshot) {
     return {
-      status: "UNSUPPORTED", provider,
+      status: "UNSUPPORTED",
+      provider,
       fields: [field("snapshot", false, "no data")],
       missing: ["snapshot"],
       safeError: input.safeError ?? "no snapshot",
-      activate: false, evaluatedAt,
+      activate: false,
+      evaluatedAt,
     };
   }
 
   const s = input.snapshot;
-  let callOi = 0, putOi = 0, callCh = 0, putCh = 0;
+  let callOi = 0,
+    putOi = 0,
+    callCh = 0,
+    putCh = 0;
   for (const st of s.strikes) {
     if (st.call.oi != null) callOi += 1;
     if (st.put.oi != null) putOi += 1;
@@ -107,7 +110,10 @@ export function assessSensexCapability(input: AssessSensexInput): SensexCapabili
   else status = "PARTIAL";
 
   return {
-    status, provider, fields, missing,
+    status,
+    provider,
+    fields,
+    missing,
     safeError: input.safeError ?? null,
     activate: false, // gate stays closed by contract
     evaluatedAt,

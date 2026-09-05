@@ -61,11 +61,14 @@ describe("Phase 21.2 · execution state machine", () => {
     expect(p.entry).toBe(18442);
   });
   it("SELL: red candle within deviation ⇒ ENTRY_READY", () => {
-    let p = initExecution("NIFTY50", level({
-      side: "RESISTANCE",
-      tradeBias: "SELL",
-      value: 18790,
-    }));
+    let p = initExecution(
+      "NIFTY50",
+      level({
+        side: "RESISTANCE",
+        tradeBias: "SELL",
+        value: 18790,
+      }),
+    );
     p = onTouch(p);
     p = onCandleClose("NIFTY50", p, { open: 18795, high: 18800, low: 18775, close: 18780 });
     expect(p.state).toBe("ENTRY_READY");
@@ -73,10 +76,7 @@ describe("Phase 21.2 · execution state machine", () => {
     expect(p.target).toBe(18780 - 51);
   });
   it("BANKNIFTY uses 101 pt stop and 30 pt max deviation", () => {
-    let p = initExecution(
-      "BANKNIFTY",
-      level({ value: 43560, previousClose: 43677 }),
-    );
+    let p = initExecution("BANKNIFTY", level({ value: 43560, previousClose: 43677 }));
     p = onTouch(p);
     p = onCandleClose("BANKNIFTY", p, { open: 43555, high: 43580, low: 43550, close: 43575 });
     expect(p.state).toBe("ENTRY_READY");

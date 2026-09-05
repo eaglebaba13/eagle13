@@ -45,10 +45,7 @@ describe("Phase 21.4 Stage 4C · hybrid quality metrics", () => {
       t("2024-06-06", "BUY", "WIN", 8),
       t("2024-06-07", "BUY", "LOSS", -7),
     ];
-    const hybrid = [
-      t("2024-06-04", "BUY", "WIN", 10),
-      t("2024-06-07", "BUY", "LOSS", -7),
-    ];
+    const hybrid = [t("2024-06-04", "BUY", "WIN", 10), t("2024-06-07", "BUY", "LOSS", -7)];
     const attribution = computeThreeWayAttribution(astro, [], hybrid);
     const q = computeHybridQuality(
       {

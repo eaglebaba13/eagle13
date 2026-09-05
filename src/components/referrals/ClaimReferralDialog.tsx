@@ -46,9 +46,7 @@ export function ClaimReferralDialog({ onClose }: Props) {
           throw new Error("Screenshot must be under 4 MB");
         }
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
-        const path = `${user.id}/referrals/${Date.now()}-${crypto
-          .randomUUID()
-          .slice(0, 8)}.${ext}`;
+        const path = `${user.id}/referrals/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from(BUCKET)
           .upload(path, file, { contentType: file.type, upsert: false });
@@ -91,16 +89,13 @@ export function ClaimReferralDialog({ onClose }: Props) {
       >
         <h3 className="text-lg font-semibold">Claim referral bonus</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Submit proof that you opened an INDmoney account with our referral
-          code and completed the required trade. Approved claims add{" "}
-          {REFERRAL_REWARD_DAYS} days of Pro.
+          Submit proof that you opened an INDmoney account with our referral code and completed the
+          required trade. Approved claims add {REFERRAL_REWARD_DAYS} days of Pro.
         </p>
 
         <div className="mt-4 space-y-3">
           <label className="block">
-            <span className="text-xs text-muted-foreground">
-              INDmoney client ID
-            </span>
+            <span className="text-xs text-muted-foreground">INDmoney client ID</span>
             <input
               type="text"
               value={clientId}
@@ -145,10 +140,9 @@ export function ClaimReferralDialog({ onClose }: Props) {
               className="mt-0.5"
             />
             <span>
-              I declare that I opened an INDmoney account using the referral
-              code <strong>{INDMONEY_REFERRAL_CODE}</strong> and completed the
-              required trade. I understand submitting false information may
-              result in denial of the bonus.
+              I declare that I opened an INDmoney account using the referral code{" "}
+              <strong>{INDMONEY_REFERRAL_CODE}</strong> and completed the required trade. I
+              understand submitting false information may result in denial of the bonus.
             </span>
           </label>
         </div>

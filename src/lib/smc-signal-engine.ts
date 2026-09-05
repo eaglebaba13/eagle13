@@ -195,16 +195,11 @@ function evaluateDirection(
   // ── Mandatory: FVG OR Order Block matching direction, still valid.
   const fvgDir = dir === "bull" ? "bullish" : "bearish";
   const fvg = engine.fvgs.find(
-    (g) =>
-      g.direction === fvgDir &&
-      g.index <= i &&
-      i - g.index <= cfg.fvgValidityBars,
+    (g) => g.direction === fvgDir && g.index <= i && i - g.index <= cfg.fvgValidityBars,
   );
   const ob = engine.orderBlocks.find(
     (b) =>
-      b.direction === fvgDir &&
-      b.impulseIndex <= i &&
-      i - b.impulseIndex <= cfg.obValidityBars,
+      b.direction === fvgDir && b.impulseIndex <= i && i - b.impulseIndex <= cfg.obValidityBars,
   );
   if (fvg) {
     triggered.push("FVG");
@@ -273,9 +268,7 @@ function assertNoLeakage(engine: SmcEngineResult, i: number): void {
   // This runtime guard catches accidental mutation upstream.
   for (const e of engine.structureEvents) {
     if (e.index > i && i >= engine.meta.candleCount - 1) {
-      throw new DataLeakageError(
-        `structure event at ${e.index} referenced for signal at ${i}`,
-      );
+      throw new DataLeakageError(`structure event at ${e.index} referenced for signal at ${i}`);
     }
   }
 }
@@ -304,9 +297,7 @@ export function analyzeSmcSignals(
   for (let i = 0; i < candles.length; i++) {
     const candle = candles[i];
     assertNoLeakage(engine, i);
-    const volAvg = config.volumeEnabled
-      ? rollingVolumeAvg(candles, i, config.volumeWindow)
-      : 0;
+    const volAvg = config.volumeEnabled ? rollingVolumeAvg(candles, i, config.volumeWindow) : 0;
 
     const bull = evaluateDirection("bull", i, engine, candle, config, volAvg);
     const bear = evaluateDirection("bear", i, engine, candle, config, volAvg);

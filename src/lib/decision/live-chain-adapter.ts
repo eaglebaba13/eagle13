@@ -44,7 +44,10 @@ const STEPS: Record<OptionUnderlying, number> = { NIFTY: 50, BANKNIFTY: 100 };
 const MIN_ATM_COVERAGE = 5;
 
 /** Map upstream provider status → capability when the fetch failed. */
-function failureCapability(status: OptionChainProviderStatus, safeError: string | null): ModuleCapability {
+function failureCapability(
+  status: OptionChainProviderStatus,
+  safeError: string | null,
+): ModuleCapability {
   if (status === "AUTH_REQUIRED") return "AUTH_REQUIRED";
   if (status === "STALE") return "STALE";
   if (status === "DELAYED") return "PARTIAL";
@@ -203,17 +206,15 @@ export function adaptUpstoxToLegacyChain(
   // Compute an OptionsIntegrityMeta so the Decision engine's existing gate
   // (`chain.integrity.sourceStatus !== "UNAVAILABLE"`) keeps working
   // unchanged. We only classify — we do not change the formula.
-  const missingFields = legs.filter(
-    (l) => l.oi == null || !Number.isFinite(l.oi),
-  ).length;
+  const missingFields = legs.filter((l) => l.oi == null || !Number.isFinite(l.oi)).length;
   const sourceStatus =
     capability === "SUPPORTED"
       ? "LIVE"
       : capability === "PARTIAL" || capability === "PARTIAL_CHAIN"
-      ? "PARTIAL"
-      : capability === "STALE"
-      ? "STALE"
-      : "UNAVAILABLE";
+        ? "PARTIAL"
+        : capability === "STALE"
+          ? "STALE"
+          : "UNAVAILABLE";
   const integrity: OptionsIntegrityMeta = {
     sourceStatus,
     provider,

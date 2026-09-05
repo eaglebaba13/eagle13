@@ -108,10 +108,7 @@ async function fetchIndex(symbol: string, name: string): Promise<LiveIndex> {
 // EAGLEBABA EXTENDED levels (not part of the original Gann spec) and use
 // the legacy ±720 cascade from R1/S1 purely so the existing terminal
 // columns keep rendering; they are excluded from core Gann signal math.
-function levelsFor(
-  cycles: { base: number; upper: number; lower: number },
-  degree: number,
-) {
+function levelsFor(cycles: { base: number; upper: number; lower: number }, degree: number) {
   const degreeInSign = degree === 30 ? 0 : degree;
   const { r1, r2, s1, s2 } = computeGannAstroLevels(cycles, degreeInSign);
   return {
@@ -130,50 +127,50 @@ export const getLiveAstro = createServerFn({ method: "GET" }).handler(
     cached<LiveAstroData>(
       astroCacheKey("live-astro"),
       async () => {
-    const { computeAstroPositions } = await import("./astro-engine.server");
-    // LIVE: positions for the current minute (unchanged formula, live moment).
-    const now = new Date();
-    const positions = computeAstroPositions(now);
+        const { computeAstroPositions } = await import("./astro-engine.server");
+        // LIVE: positions for the current minute (unchanged formula, live moment).
+        const now = new Date();
+        const positions = computeAstroPositions(now);
 
-    // Core index required (NIFTY drives the cycles); others degrade gracefully.
-    const [nifty, banknifty, finnifty, sensex] = await Promise.all([
-      fetchIndex("^NSEI", "NIFTY 50"),
-      fetchIndex("^NSEBANK", "BANK NIFTY").catch(() => null),
-      fetchIndex("NIFTY_FIN_SERVICE.NS", "FIN NIFTY").catch(() => null),
-      fetchIndex("^BSESN", "SENSEX").catch(() => null),
-    ]);
+        // Core index required (NIFTY drives the cycles); others degrade gracefully.
+        const [nifty, banknifty, finnifty, sensex] = await Promise.all([
+          fetchIndex("^NSEI", "NIFTY 50"),
+          fetchIndex("^NSEBANK", "BANK NIFTY").catch(() => null),
+          fetchIndex("NIFTY_FIN_SERVICE.NS", "FIN NIFTY").catch(() => null),
+          fetchIndex("^BSESN", "SENSEX").catch(() => null),
+        ]);
 
-    const cycles = computeCycles(nifty.prevClose);
-    const planets: LivePlanet[] = positions.planets.map((p) => ({
-      ...p,
-      ...levelsFor(cycles, p.degree),
-    }));
+        const cycles = computeCycles(nifty.prevClose);
+        const planets: LivePlanet[] = positions.planets.map((p) => ({
+          ...p,
+          ...levelsFor(cycles, p.degree),
+        }));
 
-    const indices: LiveIndex[] = [nifty, banknifty, finnifty, sensex].filter(
-      (i): i is LiveIndex => i != null,
-    );
+        const indices: LiveIndex[] = [nifty, banknifty, finnifty, sensex].filter(
+          (i): i is LiveIndex => i != null,
+        );
 
-    return {
-      asOf: now.toISOString(),
-      ayanamsa: positions.ayanamsa,
-      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
-      cycles,
-      prevClose: nifty.prevClose,
-      prevDate: todayIst(),
-      livePrice: nifty.livePrice,
-      marketState: nifty.marketState,
-      moonSign: positions.moonSign,
-      moonNakshatra: positions.moonNakshatra,
-      moonDegree: positions.moonDegree,
-      retroCount: positions.retroCount,
-      bullCount: positions.bullCount,
-      bearCount: positions.bearCount,
-      bullRetroCount: positions.bullRetroCount,
-      bearRetroCount: positions.bearRetroCount,
-      planets,
-      moonPhase: positions.moonPhase,
-      indices,
-    };
+        return {
+          asOf: now.toISOString(),
+          ayanamsa: positions.ayanamsa,
+          formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+          cycles,
+          prevClose: nifty.prevClose,
+          prevDate: todayIst(),
+          livePrice: nifty.livePrice,
+          marketState: nifty.marketState,
+          moonSign: positions.moonSign,
+          moonNakshatra: positions.moonNakshatra,
+          moonDegree: positions.moonDegree,
+          retroCount: positions.retroCount,
+          bullCount: positions.bullCount,
+          bearCount: positions.bearCount,
+          bullRetroCount: positions.bullRetroCount,
+          bearRetroCount: positions.bearRetroCount,
+          planets,
+          moonPhase: positions.moonPhase,
+          indices,
+        };
       },
       { ttlMs: 30_000 },
     ),

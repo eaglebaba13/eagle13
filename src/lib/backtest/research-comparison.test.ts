@@ -35,14 +35,24 @@ function wfr(training: WindowMetrics, validation: WindowMetrics): WalkForwardRes
     config: { from: "2024-01-01", to: "2024-01-30", mode: "70_30" },
     windows: [
       {
-        window: { index: 0, training: { from: "2024-01-01", to: "2024-01-20" }, validation: { from: "2024-01-21", to: "2024-01-30" } },
+        window: {
+          index: 0,
+          training: { from: "2024-01-01", to: "2024-01-20" },
+          validation: { from: "2024-01-21", to: "2024-01-30" },
+        },
         training: stubResult,
         validation: stubResult,
         trainingMetrics: training,
         validationMetrics: validation,
         degradation: {
-          winRate: 0, profitFactor: 0, expectancy: 0, netPnl: 0,
-          drawdown: 0, recovery: 0, avgTrade: 0, tradeCount: 0,
+          winRate: 0,
+          profitFactor: 0,
+          expectancy: 0,
+          netPnl: 0,
+          drawdown: 0,
+          recovery: 0,
+          avgTrade: 0,
+          tradeCount: 0,
         },
       },
     ],

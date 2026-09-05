@@ -65,7 +65,10 @@ export function computePerformance(results: readonly ReplayResult[]): Performanc
   const totalReturn = trades.reduce((a, b) => a + b.returnPct, 0);
   const recoveryFactor = maxDD > 0 ? totalReturn / maxDD : null;
   const sd = stdev(trades.map((t) => t.returnPct));
-  const sharpe = trades.length >= 2 && sd > 0 ? (avg(trades.map((t) => t.returnPct)) / sd) * Math.sqrt(trades.length) : null;
+  const sharpe =
+    trades.length >= 2 && sd > 0
+      ? (avg(trades.map((t) => t.returnPct)) / sd) * Math.sqrt(trades.length)
+      : null;
 
   return {
     totalTrades: trades.length,
@@ -75,7 +78,12 @@ export function computePerformance(results: readonly ReplayResult[]): Performanc
     winRate: r(winRate),
     avgWinner: r(avgWinner, 3),
     avgLoser: r(avgLoser, 3),
-    profitFactor: profitFactor == null ? null : Number.isFinite(profitFactor) ? r(profitFactor, 2) : profitFactor,
+    profitFactor:
+      profitFactor == null
+        ? null
+        : Number.isFinite(profitFactor)
+          ? r(profitFactor, 2)
+          : profitFactor,
     expectancy: r(expectancy, 3),
     maxDrawdown: r(maxDD, 3),
     recoveryFactor: recoveryFactor == null ? null : r(recoveryFactor, 2),
@@ -95,7 +103,7 @@ export function decisionBreakdown(results: readonly ReplayResult[]): DecisionBre
     return {
       action: a,
       trades: rows.length,
-      winRate: trades.length ? r(( wins / trades.length) * 100) : 0,
+      winRate: trades.length ? r((wins / trades.length) * 100) : 0,
       avgReturn: r(avg(rets), 3),
       maxGain: rets.length ? r(Math.max(...rets), 3) : 0,
       maxLoss: rets.length ? r(Math.min(...rets), 3) : 0,

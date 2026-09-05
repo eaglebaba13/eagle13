@@ -217,12 +217,22 @@ describe("outcome tracking", () => {
   });
 
   it("resolves INVALIDATED", () => {
-    const out = trackOutcome({ position: pos, candles: [], policy: defaultPolicy(), invalidated: true });
+    const out = trackOutcome({
+      position: pos,
+      candles: [],
+      policy: defaultPolicy(),
+      invalidated: true,
+    });
     expect(out.exit).toBe("INVALIDATED");
   });
 
   it("resolves DATA_QUALITY", () => {
-    const out = trackOutcome({ position: pos, candles: [], policy: defaultPolicy(), dataQualityFailed: true });
+    const out = trackOutcome({
+      position: pos,
+      candles: [],
+      policy: defaultPolicy(),
+      dataQualityFailed: true,
+    });
     expect(out.exit).toBe("DATA_QUALITY");
   });
 
@@ -237,7 +247,12 @@ describe("outcome tracking", () => {
   });
 });
 
-function fakeObs(id: string, direction: "BUY" | "SELL", conf: number, net: number): ShadowObservation {
+function fakeObs(
+  id: string,
+  direction: "BUY" | "SELL",
+  conf: number,
+  net: number,
+): ShadowObservation {
   return {
     id,
     sessionId: "s-" + id,
@@ -260,7 +275,18 @@ function fakeObs(id: string, direction: "BUY" | "SELL", conf: number, net: numbe
       target: 102,
       entryDate: "t0",
     },
-    outcome: { ...emptyOutcome(), resolved: true, exit: "TARGET", exitPrice: 100, exitDate: "t1", mfe: 2, mae: -0.5, holdingBars: 3, netPoints: net, netAfterCosts: net },
+    outcome: {
+      ...emptyOutcome(),
+      resolved: true,
+      exit: "TARGET",
+      exitPrice: 100,
+      exitDate: "t1",
+      mfe: 2,
+      mae: -0.5,
+      holdingBars: 3,
+      netPoints: net,
+      netAfterCosts: net,
+    },
     evidence: {
       recommendationRunId: "REC:" + id,
       portfolioRunId: null,
@@ -302,7 +328,14 @@ describe("metrics + calibration", () => {
 describe("drift classification", () => {
   it("returns INSUFFICIENT_DATA when sample too small", () => {
     const r = classifyShadowDrift({
-      baseline: { winRate: 0.55, profitFactor: 1.5, expectedConfidence: 0.6, capitalUtilization: 0.5, dataQualityScore: 1, correlation: 0.3 },
+      baseline: {
+        winRate: 0.55,
+        profitFactor: 1.5,
+        expectedConfidence: 0.6,
+        capitalUtilization: 0.5,
+        dataQualityScore: 1,
+        correlation: 0.3,
+      },
       current: { ...zeroMetrics(), dataQualityScore: 1 },
       sampleSize: 5,
     });
@@ -311,8 +344,21 @@ describe("drift classification", () => {
 
   it("returns CRITICAL_DRIFT on large delta", () => {
     const r = classifyShadowDrift({
-      baseline: { winRate: 0.55, profitFactor: 1.5, expectedConfidence: 0.6, capitalUtilization: 0.5, dataQualityScore: 1, correlation: 0.3 },
-      current: { ...zeroMetrics(), winRate: 0.05, highConfidenceAccuracy: 0.05, capitalUtilization: 0.05, dataQualityScore: 0.05 },
+      baseline: {
+        winRate: 0.55,
+        profitFactor: 1.5,
+        expectedConfidence: 0.6,
+        capitalUtilization: 0.5,
+        dataQualityScore: 1,
+        correlation: 0.3,
+      },
+      current: {
+        ...zeroMetrics(),
+        winRate: 0.05,
+        highConfidenceAccuracy: 0.05,
+        capitalUtilization: 0.05,
+        dataQualityScore: 0.05,
+      },
       sampleSize: 100,
     });
     expect(["CRITICAL_DRIFT", "MATERIAL_DRIFT"]).toContain(r.overall);
@@ -334,7 +380,12 @@ describe("history store", () => {
 
   it("dedupes events and caps size", () => {
     const store = new ShadowHistoryStore({ maxEvents: 2 });
-    const ev = { id: "e1", kind: "DATA_RECEIVED" as const, at: "t", evidence: fakeObs("a", "BUY", 0.5, 0).evidence };
+    const ev = {
+      id: "e1",
+      kind: "DATA_RECEIVED" as const,
+      at: "t",
+      evidence: fakeObs("a", "BUY", 0.5, 0).evidence,
+    };
     store.addEvents([ev, ev, { ...ev, id: "e2" }, { ...ev, id: "e3" }]);
     expect(store.snapshot("t").events.length).toBe(2);
   });
@@ -413,12 +464,30 @@ describe("exports carry disclaimer + provenance", () => {
     ).toContain("PERFORMANCE");
     expect(
       buildPortfolioShadowCsv([
-        { runId: "P", assetId: "a", included: true, allocationWeight: 0.3, sizingUnits: 1, riskBudgetPct: 0.01, correlationExposure: 0.2, capitalUtilizationPct: 0.5, confidence: 0.6, hardGatePassed: true, blockingReasons: [] },
+        {
+          runId: "P",
+          assetId: "a",
+          included: true,
+          allocationWeight: 0.3,
+          sizingUnits: 1,
+          riskBudgetPct: 0.01,
+          correlationExposure: 0.2,
+          capitalUtilizationPct: 0.5,
+          confidence: 0.6,
+          hardGatePassed: true,
+          blockingReasons: [],
+        },
       ]),
     ).toContain("portfolioRunId");
   });
   it("bundle json includes disclaimer and snapshot", () => {
-    const json = buildShadowBundleJson({ version: "SHADOW_BUNDLE_V1", disclaimer: "override", snapshot: snap, metrics, drift: null });
+    const json = buildShadowBundleJson({
+      version: "SHADOW_BUNDLE_V1",
+      disclaimer: "override",
+      snapshot: snap,
+      metrics,
+      drift: null,
+    });
     expect(json).toContain("SHADOW RESEARCH ONLY");
     expect(json).toContain("SHADOW_BUNDLE_V1");
   });

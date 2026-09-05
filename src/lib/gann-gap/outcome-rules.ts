@@ -8,10 +8,7 @@ export const OUTCOME_RULE_VERSION = "gann-gap-outcome@1.0.0";
 export const FLAT_GAP_TOLERANCE_PCT = 0.001; // 0.1%
 
 export type ActualGapOutcome =
-  | "ACTUAL_GAP_UP"
-  | "ACTUAL_GAP_DOWN"
-  | "ACTUAL_FLAT"
-  | "OUTCOME_UNAVAILABLE";
+  "ACTUAL_GAP_UP" | "ACTUAL_GAP_DOWN" | "ACTUAL_FLAT" | "OUTCOME_UNAVAILABLE";
 
 export interface ClassifyOutcomeInput {
   readonly previousClose: number | null;
@@ -29,10 +26,20 @@ export function classifyActualOutcome(i: ClassifyOutcomeInput): ClassifyOutcomeR
   const p = i.previousClose;
   const n = i.nextOpen;
   if (p == null || !Number.isFinite(p) || p <= 0) {
-    return { outcome: "OUTCOME_UNAVAILABLE", gapPoints: null, gapPercent: null, reason: "Previous close unavailable" };
+    return {
+      outcome: "OUTCOME_UNAVAILABLE",
+      gapPoints: null,
+      gapPercent: null,
+      reason: "Previous close unavailable",
+    };
   }
   if (n == null || !Number.isFinite(n) || n <= 0) {
-    return { outcome: "OUTCOME_UNAVAILABLE", gapPoints: null, gapPercent: null, reason: "Next-session open unavailable" };
+    return {
+      outcome: "OUTCOME_UNAVAILABLE",
+      gapPoints: null,
+      gapPercent: null,
+      reason: "Next-session open unavailable",
+    };
   }
   const gapPoints = n - p;
   const gapPercent = gapPoints / p;
@@ -44,6 +51,9 @@ export function classifyActualOutcome(i: ClassifyOutcomeInput): ClassifyOutcomeR
     outcome: gapPoints > 0 ? "ACTUAL_GAP_UP" : "ACTUAL_GAP_DOWN",
     gapPoints,
     gapPercent,
-    reason: gapPoints > 0 ? "Next open above previous close beyond tolerance" : "Next open below previous close beyond tolerance",
+    reason:
+      gapPoints > 0
+        ? "Next open above previous close beyond tolerance"
+        : "Next open below previous close beyond tolerance",
   };
 }

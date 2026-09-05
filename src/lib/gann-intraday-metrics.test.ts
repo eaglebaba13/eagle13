@@ -80,7 +80,8 @@ const sim = (perLevel: LevelSimulation[]): SessionSimulation => ({
     confirmed: perLevel.filter((p) => p.confirmIndex != null).length,
     retest: perLevel.filter((p) => p.retestIndex != null).length,
     missedChase: perLevel.filter((p) => p.outcome === "MISSED_CHASE").length,
-    cubeApproved: perLevel.filter((p) => p.cube.action === "BUY" || p.cube.action === "SELL").length,
+    cubeApproved: perLevel.filter((p) => p.cube.action === "BUY" || p.cube.action === "SELL")
+      .length,
     cubeConflict: perLevel.filter((p) => p.cube.action === "NO_TRADE_CONFLICT").length,
     ambiguous: 0,
     invalidated: 0,
@@ -98,9 +99,7 @@ const sessionOf = (perLevel: LevelSimulation[]): SessionResult => ({
 
 describe("Phase 21.2 Stage 5 · core metrics", () => {
   it("computes win rate, PF, expectancy, netPnL", () => {
-    const m = computeCoreMetrics([
-      sessionOf([perLvl("TARGET"), perLvl("TARGET"), perLvl("STOP")]),
-    ]);
+    const m = computeCoreMetrics([sessionOf([perLvl("TARGET"), perLvl("TARGET"), perLvl("STOP")])]);
     expect(m.totalTrades).toBe(3);
     expect(m.wins).toBe(2);
     expect(m.losses).toBe(1);

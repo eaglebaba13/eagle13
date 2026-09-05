@@ -3,11 +3,7 @@
 // Pure. Given the 36 raw levels + optional pivot values, produce clusters,
 // ranked safe buy/sell lists, and nearest / next-safe selections. Spec §§10–14.
 
-import type {
-  RawAstroLevel,
-  LevelSide,
-  SafetyBadge,
-} from "./gann-intraday.types";
+import type { RawAstroLevel, LevelSide, SafetyBadge } from "./gann-intraday.types";
 import { getInstrumentPolicy, type InstrumentSymbol } from "./gann-intraday-policy";
 
 export type PivotInputs = {
@@ -97,9 +93,7 @@ export function clusterLevels(
       const exact360Confluence = cur.some(
         (l) => Math.abs(l.value - Math.round(l.value / 360) * 360) <= exact360Tolerance,
       );
-      const safety: SafetyBadge = cur.every((l) => l.safety === "SAFE")
-        ? "SAFE"
-        : "RISKY";
+      const safety: SafetyBadge = cur.every((l) => l.safety === "SAFE") ? "SAFE" : "RISKY";
       clusters.push({
         representativeLevel: representative,
         minLevel: min,
@@ -167,10 +161,7 @@ export function rankLevels(
   // Map each raw level to its cluster (by side + value proximity).
   const clusterOf = (l: RawAstroLevel): LevelCluster | undefined =>
     clusters.find(
-      (c) =>
-        c.side === l.side &&
-        l.value >= c.minLevel - 0.5 &&
-        l.value <= c.maxLevel + 0.5,
+      (c) => c.side === l.side && l.value >= c.minLevel - 0.5 && l.value <= c.maxLevel + 0.5,
     );
 
   const ranked: RankedLevel[] = levels.map((l) => {
@@ -181,8 +172,7 @@ export function rankLevels(
       ...l,
       hasSun: planetsInCluster.includes("Sun"),
       hasMoon: planetsInCluster.includes("Moon"),
-      sunMoonPriority:
-        planetsInCluster.includes("Sun") || planetsInCluster.includes("Moon"),
+      sunMoonPriority: planetsInCluster.includes("Sun") || planetsInCluster.includes("Moon"),
       clusterCount: c?.levelCount ?? 1,
       clusterPlanets: planetsInCluster,
       exact360Distance: nearest360,
@@ -196,9 +186,10 @@ export function rankLevels(
     c === "STRONG" ? 2 : c === "WEAK" ? 1 : 0;
 
   const planetOrder = new Map(
-    ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Rahu", "Ketu"].map(
-      (p, i) => [p, i],
-    ),
+    ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Rahu", "Ketu"].map((p, i) => [
+      p,
+      i,
+    ]),
   );
   const sourceOrder: Record<string, number> = { L1: 0, L2: 1, L3: 2, L4: 3 };
 
@@ -216,20 +207,15 @@ export function rankLevels(
     // 5. Sun/Moon presence
     if (a.sunMoonPriority !== b.sunMoonPriority) return a.sunMoonPriority ? -1 : 1;
     // 6. Exact-360 proximity
-    if (a.exact360Distance !== b.exact360Distance)
-      return a.exact360Distance - b.exact360Distance;
+    if (a.exact360Distance !== b.exact360Distance) return a.exact360Distance - b.exact360Distance;
     // 7. Stable planet/source order
     const p = (planetOrder.get(a.planet) ?? 99) - (planetOrder.get(b.planet) ?? 99);
     if (p !== 0) return p;
     return (sourceOrder[a.sourceLevel] ?? 9) - (sourceOrder[b.sourceLevel] ?? 9);
   };
 
-  const safeBuys = ranked
-    .filter((r) => r.side === "SUPPORT" && r.safety === "SAFE")
-    .sort(cmp);
-  const safeSells = ranked
-    .filter((r) => r.side === "RESISTANCE" && r.safety === "SAFE")
-    .sort(cmp);
+  const safeBuys = ranked.filter((r) => r.side === "SUPPORT" && r.safety === "SAFE").sort(cmp);
+  const safeSells = ranked.filter((r) => r.side === "RESISTANCE" && r.safety === "SAFE").sort(cmp);
 
   return {
     ranked,

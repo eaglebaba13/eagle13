@@ -70,10 +70,8 @@ export function evaluateProviderEnvPresence(env: ProviderEnvPresenceInput): Prov
   // Show the hint when the mode is configured for live but any credential is
   // MISSING or PLACEHOLDER — the user likely saved secrets that have not yet
   // been injected into the current running deployment.
-  const modeIsLive =
-    (env.UPSTOX_MARKET_DATA_MODE ?? "").trim().toLowerCase() === "live";
-  const anyMissing =
-    apiKey !== "PRESENT" || apiSecret !== "PRESENT" || accessToken !== "PRESENT";
+  const modeIsLive = (env.UPSTOX_MARKET_DATA_MODE ?? "").trim().toLowerCase() === "live";
+  const anyMissing = apiKey !== "PRESENT" || apiSecret !== "PRESENT" || accessToken !== "PRESENT";
   const deploymentRestartRequired = modeIsLive && anyMissing;
 
   return {

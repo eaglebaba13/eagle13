@@ -32,8 +32,8 @@ export interface InstrumentPcr {
   readonly normalizedOiPcr: number | null;
   readonly normalizedChangeOiPcr: number | null;
   readonly instrumentScore: number | null;
-  readonly weight: number;              // effective weight (renormalized)
-  readonly configuredWeight: number;    // requested weight before renorm
+  readonly weight: number; // effective weight (renormalized)
+  readonly configuredWeight: number; // requested weight before renorm
   readonly strikeCount: number;
   readonly atm: number | null;
   readonly expiry: string | null;

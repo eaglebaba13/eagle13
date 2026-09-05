@@ -58,10 +58,7 @@ export type ConflictClass =
   | "PROD_WAIT_ABS_SELL"
   | "DATA_INCOMPLETE";
 
-export function classifyConflict(
-  production: Direction,
-  absolute: Direction,
-): ConflictClass {
+export function classifyConflict(production: Direction, absolute: Direction): ConflictClass {
   if (production === "UNKNOWN" || absolute === "UNKNOWN") return "DATA_INCOMPLETE";
   if (production === absolute) return "BOTH_AGREE";
   if (production === "BUY" && absolute === "SELL") return "PROD_BUY_ABS_SELL";

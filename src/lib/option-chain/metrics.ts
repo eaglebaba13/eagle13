@@ -13,7 +13,7 @@ export interface StrikeMetrics {
   readonly putChangeOi: number | null;
   readonly callVolume: number | null;
   readonly putVolume: number | null;
-  readonly oiDifference: number | null;   // callOi - putOi
+  readonly oiDifference: number | null; // callOi - putOi
   readonly volumeDifference: number | null;
   readonly callIv: number | null;
   readonly putIv: number | null;

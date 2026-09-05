@@ -17,15 +17,7 @@ export interface RejectedRow {
 
 // Upstox V3 historical response: `data.candles` is an array of tuples
 // ordered as [timestamp, open, high, low, close, volume, openInterest?].
-export type UpstoxCandleTuple = readonly [
-  string,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number?,
-];
+export type UpstoxCandleTuple = readonly [string, number, number, number, number, number, number?];
 
 function isFiniteNumber(x: unknown): x is number {
   return typeof x === "number" && Number.isFinite(x);
@@ -60,17 +52,18 @@ function isFutureIso(iso: string, nowMs: number, toleranceMs = 60_000): boolean 
   return t > nowMs + toleranceMs;
 }
 
-export function normalizeCandles(
-  rows: readonly UpstoxCandleRaw[],
-  nowMs: number,
-): NormalizeResult {
+export function normalizeCandles(rows: readonly UpstoxCandleRaw[], nowMs: number): NormalizeResult {
   const rejected: RejectedRow[] = [];
   const accepted: HistoricalCandle[] = [];
   const seen = new Set<string>();
 
   rows.forEach((row, index) => {
-    if (!isFiniteNumber(row.open) || !isFiniteNumber(row.high) ||
-        !isFiniteNumber(row.low) || !isFiniteNumber(row.close)) {
+    if (
+      !isFiniteNumber(row.open) ||
+      !isFiniteNumber(row.high) ||
+      !isFiniteNumber(row.low) ||
+      !isFiniteNumber(row.close)
+    ) {
       rejected.push({ index, reason: "non-finite OHLC", row });
       return;
     }
@@ -142,7 +135,9 @@ export function computeDataQuality(
   const first = candles[0]?.time ?? null;
   const last = candles[candles.length - 1]?.time ?? null;
   const duplicates = rejected.filter((r) => r.reason === "duplicate timestamp").length;
-  const invalidOhlc = rejected.filter((r) => r.reason.includes("OHLC") || r.reason.startsWith("high") || r.reason.startsWith("low")).length;
+  const invalidOhlc = rejected.filter(
+    (r) => r.reason.includes("OHLC") || r.reason.startsWith("high") || r.reason.startsWith("low"),
+  ).length;
   const futureRows = rejected.filter((r) => r.reason === "future candle").length;
   const outOfOrder = 0; // ascending enforced during normalization
   const coveragePct = expectedMin <= 0 ? 100 : Math.min(100, (candles.length / expectedMin) * 100);

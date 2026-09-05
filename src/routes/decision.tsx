@@ -115,13 +115,11 @@ function Header({ snap }: { snap: DecisionSnapshot }) {
       }}
     >
       <div>
-        <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>
-          Decision Intelligence Engine
-        </div>
+        <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>Decision Intelligence Engine</div>
         <div style={{ fontSize: "0.85rem", color: C.muted }}>
-          {snap.context.symbol} · {snap.context.marketOpen ? "Market Open" : "Market Closed"} ·
-          {" "}Provider {snap.context.provider} · Options {snap.context.optionsSource} ·
-          {" "}Generated {hydrated ? new Date(snap.generatedAt).toLocaleTimeString() : "—"}
+          {snap.context.symbol} · {snap.context.marketOpen ? "Market Open" : "Market Closed"} ·{" "}
+          Provider {snap.context.provider} · Options {snap.context.optionsSource} · Generated{" "}
+          {hydrated ? new Date(snap.generatedAt).toLocaleTimeString() : "—"}
         </div>
         <div style={{ marginTop: 6 }}>
           <FormulaBadge version={snap.methodology?.astroFormulaVersion} compact />
@@ -192,7 +190,9 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
         <div style={{ fontSize: "1.4rem", fontWeight: 900, color: actionColor(d.action) }}>
           {humanAction(d.action)}
         </div>
-        <div style={{ fontSize: "0.75rem", color: C.muted }}>Net score {(d.netScore * 100).toFixed(0)}</div>
+        <div style={{ fontSize: "0.75rem", color: C.muted }}>
+          Net score {(d.netScore * 100).toFixed(0)}
+        </div>
       </Card>
       <Card label="Confidence">
         <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>
@@ -202,8 +202,8 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
           {confUnavailable ? (
             "Insufficient signals — engine waiting"
           ) : (
-            <>Grade{" "}
-              <span style={{ color: gradeColor(d.grade), fontWeight: 700 }}>{d.grade}</span>
+            <>
+              Grade <span style={{ color: gradeColor(d.grade), fontWeight: 700 }}>{d.grade}</span>
             </>
           )}
         </div>
@@ -242,7 +242,14 @@ function Card({ label, children }: { label: string; children: React.ReactNode })
         padding: "0.75rem 1rem",
       }}
     >
-      <div style={{ fontSize: "0.7rem", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>
+      <div
+        style={{
+          fontSize: "0.7rem",
+          letterSpacing: 0.6,
+          color: C.muted,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </div>
       <div style={{ marginTop: 4 }}>{children}</div>
@@ -270,11 +277,18 @@ function CapabilitySummary({ snap }: { snap: DecisionSnapshot }) {
           minWidth: 180,
         }}
       >
-        <div style={{ fontSize: "0.7rem", color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+        <div
+          style={{
+            fontSize: "0.7rem",
+            color: C.muted,
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+          }}
+        >
+          {label}
+        </div>
         <div style={{ fontSize: "0.85rem", fontWeight: 700, color: tone }}>{status}</div>
-        {extra ? (
-          <div style={{ fontSize: "0.72rem", color: C.muted }}>{extra}</div>
-        ) : null}
+        {extra ? <div style={{ fontSize: "0.72rem", color: C.muted }}>{extra}</div> : null}
       </div>
     );
   };
@@ -330,7 +344,8 @@ function DecisionMatrix({
   // for options and pcr. Other absent modules keep the legacy label.
   const capFor = (key: string): { label: string; hint: string } | null => {
     if (!capabilities) return null;
-    if (key === "options") return { label: capabilities.options.capability, hint: capabilities.options.reason };
+    if (key === "options")
+      return { label: capabilities.options.capability, hint: capabilities.options.reason };
     if (key === "pcr") return { label: capabilities.pcr.capability, hint: capabilities.pcr.reason };
     const cap = capabilities as unknown as {
       historical?: { capability: string; reason: string };
@@ -367,25 +382,35 @@ function DecisionMatrix({
           {decision.contributions.map((c) => {
             const cap = c.present ? null : capFor(c.key);
             return (
-            <tr key={c.key} style={{ borderTop: `1px solid ${C.border}` }}>
-              <td style={td}><strong>{c.label}</strong></td>
-              <td style={{ ...td, color: c.present ? biasColor(c.bias) : C.muted, fontWeight: 700 }}>
-                {c.present ? c.bias : cap?.label ?? "MISSING"}
-              </td>
-              <td style={{ ...td, textAlign: "right" }}>
-                {c.present ? c.signedScore.toFixed(2) : "—"}
-              </td>
-              <td style={{ ...td, textAlign: "right" }}>
-                {(c.effectiveWeight * 100).toFixed(0)}%
-              </td>
-              <td style={{ ...td, textAlign: "right", color: c.contribution >= 0 ? C.green : C.red }}>
-                {c.contribution >= 0 ? "+" : ""}
-                {(c.contribution * 100).toFixed(1)}
-              </td>
-              <td style={{ ...td, color: C.muted }}>
-                {c.present ? c.note : cap?.hint ?? c.note}
-              </td>
-            </tr>
+              <tr key={c.key} style={{ borderTop: `1px solid ${C.border}` }}>
+                <td style={td}>
+                  <strong>{c.label}</strong>
+                </td>
+                <td
+                  style={{ ...td, color: c.present ? biasColor(c.bias) : C.muted, fontWeight: 700 }}
+                >
+                  {c.present ? c.bias : (cap?.label ?? "MISSING")}
+                </td>
+                <td style={{ ...td, textAlign: "right" }}>
+                  {c.present ? c.signedScore.toFixed(2) : "—"}
+                </td>
+                <td style={{ ...td, textAlign: "right" }}>
+                  {(c.effectiveWeight * 100).toFixed(0)}%
+                </td>
+                <td
+                  style={{
+                    ...td,
+                    textAlign: "right",
+                    color: c.contribution >= 0 ? C.green : C.red,
+                  }}
+                >
+                  {c.contribution >= 0 ? "+" : ""}
+                  {(c.contribution * 100).toFixed(1)}
+                </td>
+                <td style={{ ...td, color: C.muted }}>
+                  {c.present ? c.note : (cap?.hint ?? c.note)}
+                </td>
+              </tr>
             );
           })}
         </tbody>
@@ -573,13 +598,14 @@ function Explanation({ decision }: { decision: Decision }) {
 function Footer({ snap }: { snap: DecisionSnapshot }) {
   return (
     <div style={{ marginTop: "1rem", fontSize: "0.7rem", color: C.muted, lineHeight: 1.6 }}>
-      Reuses only existing EagleBABA engines — Astro, Support/Resistance, Signal, Options,
-      Backtest and Replay outputs. This module recomputes nothing and never overrides the
-      validated production formulas. Weights redistribute transparently when a module is
-      unavailable. Not financial advice.
+      Reuses only existing EagleBABA engines — Astro, Support/Resistance, Signal, Options, Backtest
+      and Replay outputs. This module recomputes nothing and never overrides the validated
+      production formulas. Weights redistribute transparently when a module is unavailable. Not
+      financial advice.
       {snap.context.optionsSource !== "LIVE" && (
         <>
-          {" "}Options source status:{" "}
+          {" "}
+          Options source status:{" "}
           <strong style={{ color: C.gold }}>{snap.context.optionsSource}</strong>.
         </>
       )}
@@ -603,5 +629,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-const th: React.CSSProperties = { padding: "0.4rem 0.35rem", fontWeight: 500, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 0.5 };
+const th: React.CSSProperties = {
+  padding: "0.4rem 0.35rem",
+  fontWeight: 500,
+  fontSize: "0.72rem",
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+};
 const td: React.CSSProperties = { padding: "0.45rem 0.35rem", verticalAlign: "top" };

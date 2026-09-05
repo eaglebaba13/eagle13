@@ -71,22 +71,39 @@ export function buildLevelBundle(
   now: number = Date.now(),
 ): LevelBundle {
   const lv = computeLevels(
-    { open: candle.open, high: candle.high, low: candle.low, close: candle.close, date: candle.candleOpenTime.slice(0, 10) },
+    {
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+      date: candle.candleOpenTime.slice(0, 10),
+    },
     0,
   );
   const pivot: PivotLevels = {
-    r3: lv.r3, r2: lv.r2, r1: lv.r1, pp: lv.pivot,
-    s1: lv.s1, s2: lv.s2, s3: lv.s3,
+    r3: lv.r3,
+    r2: lv.r2,
+    r1: lv.r1,
+    pp: lv.pivot,
+    s1: lv.s1,
+    s2: lv.s2,
+    s3: lv.s3,
   };
 
   const gann: GannLevels = isIndex(instrument.id)
     ? {
-        up: lv.gannUp, down: lv.gannDown, sourcePrice: candle.close,
-        formulaVersion: GANN_ABSOLUTE_FORMULA, status: candle.freshness,
+        up: lv.gannUp,
+        down: lv.gannDown,
+        sourcePrice: candle.close,
+        formulaVersion: GANN_ABSOLUTE_FORMULA,
+        status: candle.freshness,
       }
     : {
-        up: null, down: null, sourcePrice: null,
-        formulaVersion: GANN_ABSOLUTE_FORMULA, status: "UNAVAILABLE",
+        up: null,
+        down: null,
+        sourcePrice: null,
+        formulaVersion: GANN_ABSOLUTE_FORMULA,
+        status: "UNAVAILABLE",
         reason: "Gann formula validated only for NSE indices in this release.",
       };
 

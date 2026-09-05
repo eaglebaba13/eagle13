@@ -28,7 +28,11 @@ export interface SerializableHistoricalMetrics {
   readonly winRatePct: number | null;
   readonly minSampleSize: number;
   readonly meetsMinSample: boolean;
-  readonly perLabel: ReadonlyArray<{ readonly label: GannGapOutlookLabel; readonly n: number; readonly correct: number }>;
+  readonly perLabel: ReadonlyArray<{
+    readonly label: GannGapOutlookLabel;
+    readonly n: number;
+    readonly correct: number;
+  }>;
   readonly leakageDetected: number;
 }
 
@@ -36,10 +40,15 @@ function toSerializableMetrics(m: HistoricalAccuracyMetrics): SerializableHistor
   const perLabel: Array<{ label: GannGapOutlookLabel; n: number; correct: number }> = [];
   m.perLabel.forEach((v, k) => perLabel.push({ label: k, n: v.n, correct: v.correct }));
   return {
-    total: m.total, evaluated: m.evaluated, pending: m.pending,
-    correct: m.correct, incorrect: m.incorrect,
-    winRatePct: m.winRatePct, minSampleSize: m.minSampleSize,
-    meetsMinSample: m.meetsMinSample, perLabel,
+    total: m.total,
+    evaluated: m.evaluated,
+    pending: m.pending,
+    correct: m.correct,
+    incorrect: m.incorrect,
+    winRatePct: m.winRatePct,
+    minSampleSize: m.minSampleSize,
+    meetsMinSample: m.meetsMinSample,
+    perLabel,
     leakageDetected: m.leakageDetected,
   };
 }
@@ -178,18 +187,25 @@ async function assertAdmin(ctx: { supabase: any; userId: string }): Promise<void
 
 export const freezeGannGapPrediction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ ok: boolean; row: PersistedPredictionRow | null; reason?: string }> => {
-    await assertAdmin(context);
-    const outlook = await getGannGapOutlook();
-    if (!outlook.featureEnabled) return { ok: false, row: null, reason: "feature-disabled" };
-    if (outlook.lifecycle === "PENDING") return { ok: false, row: null, reason: "before-cutoff" };
-    if (outlook.reference == null) return { ok: false, row: null, reason: "reference-unavailable" };
+  .handler(
+    async ({
+      context,
+    }): Promise<{ ok: boolean; row: PersistedPredictionRow | null; reason?: string }> => {
+      await assertAdmin(context);
+      const outlook = await getGannGapOutlook();
+      if (!outlook.featureEnabled) return { ok: false, row: null, reason: "feature-disabled" };
+      if (outlook.lifecycle === "PENDING") return { ok: false, row: null, reason: "before-cutoff" };
+      if (outlook.reference == null)
+        return { ok: false, row: null, reason: "reference-unavailable" };
 
-    const row = buildRowFromOutlook({ ...outlook, lifecycle: "FROZEN" });
-    const { data, error } = await context.supabase.rpc("gann_gap_upsert_prediction", { _row: row as any });
-    if (error) throw new Error(error.message);
-    return { ok: true, row: mapPredictionRow(data as Record<string, unknown>) };
-  });
+      const row = buildRowFromOutlook({ ...outlook, lifecycle: "FROZEN" });
+      const { data, error } = await context.supabase.rpc("gann_gap_upsert_prediction", {
+        _row: row as any,
+      });
+      if (error) throw new Error(error.message);
+      return { ok: true, row: mapPredictionRow(data as Record<string, unknown>) };
+    },
+  );
 
 // ─────────────────────────────────────────────────────────────
 // Reads
@@ -210,7 +226,9 @@ export const getLatestGannGapPrediction = createServerFn({ method: "GET" })
 
 export const getGannGapPredictionHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number } | undefined) => ({ limit: Math.max(1, Math.min(200, d?.limit ?? 60)) }))
+  .inputValidator((d: { limit?: number } | undefined) => ({
+    limit: Math.max(1, Math.min(200, d?.limit ?? 60)),
+  }))
   .handler(async ({ context, data }): Promise<PersistedPredictionRow[]> => {
     const { data: rows, error } = await context.supabase
       .from("gann_gap_predictions")
@@ -218,12 +236,14 @@ export const getGannGapPredictionHistory = createServerFn({ method: "GET" })
       .order("trading_date", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
-    return (rows as Record<string, unknown>[] | null ?? []).map(mapPredictionRow);
+    return ((rows as Record<string, unknown>[] | null) ?? []).map(mapPredictionRow);
   });
 
 export const getGannGapOutcomeHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number } | undefined) => ({ limit: Math.max(1, Math.min(200, d?.limit ?? 60)) }))
+  .inputValidator((d: { limit?: number } | undefined) => ({
+    limit: Math.max(1, Math.min(200, d?.limit ?? 60)),
+  }))
   .handler(async ({ context, data }): Promise<PersistedOutcomeRow[]> => {
     const { data: rows, error } = await context.supabase
       .from("gann_gap_outcomes")
@@ -231,7 +251,7 @@ export const getGannGapOutcomeHistory = createServerFn({ method: "GET" })
       .order("outcome_trading_date", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
-    return (rows as Record<string, unknown>[] | null ?? []).map(mapOutcomeRow);
+    return ((rows as Record<string, unknown>[] | null) ?? []).map(mapOutcomeRow);
   });
 
 // ─────────────────────────────────────────────────────────────
@@ -240,72 +260,96 @@ export const getGannGapOutcomeHistory = createServerFn({ method: "GET" })
 
 export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ evaluated: number; skipped: number; details: readonly string[] }> => {
-    await assertAdmin(context);
-    const { data: preds, error: pe } = await context.supabase
-      .from("gann_gap_predictions")
-      .select("prediction_id, trading_date, next_trading_date, previous_close, reference_price, frozen_at, lifecycle")
-      .eq("lifecycle", "FROZEN")
-      .order("trading_date", { ascending: false })
-      .limit(50);
-    if (pe) throw new Error(pe.message);
-    const rows = (preds ?? []) as Record<string, unknown>[];
+  .handler(
+    async ({
+      context,
+    }): Promise<{ evaluated: number; skipped: number; details: readonly string[] }> => {
+      await assertAdmin(context);
+      const { data: preds, error: pe } = await context.supabase
+        .from("gann_gap_predictions")
+        .select(
+          "prediction_id, trading_date, next_trading_date, previous_close, reference_price, frozen_at, lifecycle",
+        )
+        .eq("lifecycle", "FROZEN")
+        .order("trading_date", { ascending: false })
+        .limit(50);
+      if (pe) throw new Error(pe.message);
+      const rows = (preds ?? []) as Record<string, unknown>[];
 
-    // Pull existing outcomes to avoid re-work.
-    const ids = rows.map((r) => String(r.prediction_id));
-    let existingIds = new Set<string>();
-    if (ids.length) {
-      const { data: outs } = await context.supabase
-        .from("gann_gap_outcomes")
-        .select("prediction_id, outcome_rule_version")
-        .in("prediction_id", ids)
-        .eq("outcome_rule_version", OUTCOME_RULE_VERSION);
-      existingIds = new Set((outs ?? []).map((o: any) => String(o.prediction_id)));
-    }
+      // Pull existing outcomes to avoid re-work.
+      const ids = rows.map((r) => String(r.prediction_id));
+      let existingIds = new Set<string>();
+      if (ids.length) {
+        const { data: outs } = await context.supabase
+          .from("gann_gap_outcomes")
+          .select("prediction_id, outcome_rule_version")
+          .in("prediction_id", ids)
+          .eq("outcome_rule_version", OUTCOME_RULE_VERSION);
+        existingIds = new Set((outs ?? []).map((o: any) => String(o.prediction_id)));
+      }
 
-    // Consume canonical market data once for the current session's open.
-    const { getMarketData } = await import("@/lib/market.functions");
-    let liveOpen: number | null = null;
-    try {
-      const md = await getMarketData();
-      liveOpen = md?.nifty?.livePrice ?? null;
-    } catch {
-      liveOpen = null;
-    }
+      // Consume canonical market data once for the current session's open.
+      const { getMarketData } = await import("@/lib/market.functions");
+      let liveOpen: number | null = null;
+      try {
+        const md = await getMarketData();
+        liveOpen = md?.nifty?.livePrice ?? null;
+      } catch {
+        liveOpen = null;
+      }
 
-    const details: string[] = [];
-    let evaluated = 0, skipped = 0;
-    for (const p of rows) {
-      const pid = String(p.prediction_id);
-      if (existingIds.has(pid)) { skipped++; continue; }
-      const nextDate = p.next_trading_date == null ? null : String(p.next_trading_date);
-      const previousClose = p.previous_close == null ? null : Number(p.previous_close);
-      if (!nextDate || previousClose == null) { skipped++; details.push(`${pid}: missing next-date or previous close`); continue; }
-      // Only evaluate when we're at or after the next session; use liveOpen.
-      const cls = classifyActualOutcome({ previousClose, nextOpen: liveOpen });
-      if (cls.outcome === "OUTCOME_UNAVAILABLE") { skipped++; details.push(`${pid}: ${cls.reason}`); continue; }
+      const details: string[] = [];
+      let evaluated = 0,
+        skipped = 0;
+      for (const p of rows) {
+        const pid = String(p.prediction_id);
+        if (existingIds.has(pid)) {
+          skipped++;
+          continue;
+        }
+        const nextDate = p.next_trading_date == null ? null : String(p.next_trading_date);
+        const previousClose = p.previous_close == null ? null : Number(p.previous_close);
+        if (!nextDate || previousClose == null) {
+          skipped++;
+          details.push(`${pid}: missing next-date or previous close`);
+          continue;
+        }
+        // Only evaluate when we're at or after the next session; use liveOpen.
+        const cls = classifyActualOutcome({ previousClose, nextOpen: liveOpen });
+        if (cls.outcome === "OUTCOME_UNAVAILABLE") {
+          skipped++;
+          details.push(`${pid}: ${cls.reason}`);
+          continue;
+        }
 
-      const outcomeRow: Record<string, unknown> = {
-        prediction_id: pid,
-        prediction_trading_date: String(p.trading_date),
-        outcome_trading_date: nextDate,
-        previous_close: previousClose,
-        next_open: liveOpen,
-        gap_points: cls.gapPoints,
-        gap_percent: cls.gapPercent,
-        actual_outcome: cls.outcome,
-        source: "LIVE",
-        provider_alias: null,
-        capability: { reason: cls.reason },
-        outcome_rule_version: OUTCOME_RULE_VERSION,
-      };
-      const { error } = await context.supabase.rpc("gann_gap_upsert_outcome", { _row: outcomeRow as any });
-      if (error) { skipped++; details.push(`${pid}: ${error.message}`); continue; }
-      evaluated++;
-      details.push(`${pid}: ${cls.outcome}`);
-    }
-    return { evaluated, skipped, details };
-  });
+        const outcomeRow: Record<string, unknown> = {
+          prediction_id: pid,
+          prediction_trading_date: String(p.trading_date),
+          outcome_trading_date: nextDate,
+          previous_close: previousClose,
+          next_open: liveOpen,
+          gap_points: cls.gapPoints,
+          gap_percent: cls.gapPercent,
+          actual_outcome: cls.outcome,
+          source: "LIVE",
+          provider_alias: null,
+          capability: { reason: cls.reason },
+          outcome_rule_version: OUTCOME_RULE_VERSION,
+        };
+        const { error } = await context.supabase.rpc("gann_gap_upsert_outcome", {
+          _row: outcomeRow as any,
+        });
+        if (error) {
+          skipped++;
+          details.push(`${pid}: ${error.message}`);
+          continue;
+        }
+        evaluated++;
+        details.push(`${pid}: ${cls.outcome}`);
+      }
+      return { evaluated, skipped, details };
+    },
+  );
 
 // ─────────────────────────────────────────────────────────────
 // Historical validation
@@ -329,7 +373,9 @@ export const getGannGapHistoricalValidation = createServerFn({ method: "GET" })
     // Only compare like-for-like: current formula + config + outcome rule versions.
     const { data: preds, error: pe } = await context.supabase
       .from("gann_gap_predictions")
-      .select("prediction_id, trading_date, next_trading_date, base_outlook, reference_price, formula_version, config_version, frozen_at")
+      .select(
+        "prediction_id, trading_date, next_trading_date, base_outlook, reference_price, formula_version, config_version, frozen_at",
+      )
       .eq("lifecycle", "FROZEN")
       .eq("formula_version", GANN_GAP_FORMULA_VERSION)
       .eq("config_version", GANN_GAP_CONFIG_VERSION)
@@ -432,43 +478,65 @@ export const getGannGapDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<GannGapDiagnostics> => {
     await assertAdmin(context);
-    const [outlookRes, predRes, outRes, predCountRes, outCountRes, histRes, schedRes] = await Promise.allSettled([
-      getGannGapOutlook(),
-      getLatestGannGapPrediction(),
-      context.supabase
-        .from("gann_gap_outcomes")
-        .select("*")
-        .order("evaluated_at", { ascending: false })
-        .limit(1),
-      context.supabase.from("gann_gap_predictions").select("*", { count: "exact", head: true }),
-      context.supabase.from("gann_gap_outcomes").select("*", { count: "exact", head: true }),
-      getGannGapHistoricalValidation(),
-      getGannGapSchedulerState(),
-    ]);
+    const [outlookRes, predRes, outRes, predCountRes, outCountRes, histRes, schedRes] =
+      await Promise.allSettled([
+        getGannGapOutlook(),
+        getLatestGannGapPrediction(),
+        context.supabase
+          .from("gann_gap_outcomes")
+          .select("*")
+          .order("evaluated_at", { ascending: false })
+          .limit(1),
+        context.supabase.from("gann_gap_predictions").select("*", { count: "exact", head: true }),
+        context.supabase.from("gann_gap_outcomes").select("*", { count: "exact", head: true }),
+        getGannGapHistoricalValidation(),
+        getGannGapSchedulerState(),
+      ]);
 
     const outlook = outlookRes.status === "fulfilled" ? outlookRes.value : null;
     const latestPrediction = predRes.status === "fulfilled" ? predRes.value : null;
-    const latestOutcomeRow = outRes.status === "fulfilled"
-      ? ((outRes.value as any)?.data as Record<string, unknown>[] | null)?.[0] ?? null
-      : null;
-    const predictionCount = predCountRes.status === "fulfilled" ? Number((predCountRes.value as any)?.count ?? 0) : 0;
-    const outcomeCount = outCountRes.status === "fulfilled" ? Number((outCountRes.value as any)?.count ?? 0) : 0;
-    const historical: GannGapHistoricalValidation = histRes.status === "fulfilled" ? histRes.value : {
-      metrics: toSerializableMetrics(evaluateHistoricalAccuracy([], [])),
-      minSampleForRate: 30, minSampleForConfidence: 100,
-      showRate: false, showConfidence: false,
-      formulaVersion: GANN_GAP_FORMULA_VERSION,
-      configVersion: GANN_GAP_CONFIG_VERSION,
-      outcomeRuleVersion: OUTCOME_RULE_VERSION,
-      generatedAt: new Date().toISOString(),
-    };
-    const scheduler: GannGapSchedulerState = schedRes.status === "fulfilled" ? schedRes.value : {
-      enabled: false, lastRunAt: null, lastRunKind: null, lastError: null, updatedAt: null, productionSchedule: "DISABLED",
-    };
+    const latestOutcomeRow =
+      outRes.status === "fulfilled"
+        ? (((outRes.value as any)?.data as Record<string, unknown>[] | null)?.[0] ?? null)
+        : null;
+    const predictionCount =
+      predCountRes.status === "fulfilled" ? Number((predCountRes.value as any)?.count ?? 0) : 0;
+    const outcomeCount =
+      outCountRes.status === "fulfilled" ? Number((outCountRes.value as any)?.count ?? 0) : 0;
+    const historical: GannGapHistoricalValidation =
+      histRes.status === "fulfilled"
+        ? histRes.value
+        : {
+            metrics: toSerializableMetrics(evaluateHistoricalAccuracy([], [])),
+            minSampleForRate: 30,
+            minSampleForConfidence: 100,
+            showRate: false,
+            showConfidence: false,
+            formulaVersion: GANN_GAP_FORMULA_VERSION,
+            configVersion: GANN_GAP_CONFIG_VERSION,
+            outcomeRuleVersion: OUTCOME_RULE_VERSION,
+            generatedAt: new Date().toISOString(),
+          };
+    const scheduler: GannGapSchedulerState =
+      schedRes.status === "fulfilled"
+        ? schedRes.value
+        : {
+            enabled: false,
+            lastRunAt: null,
+            lastRunKind: null,
+            lastError: null,
+            updatedAt: null,
+            productionSchedule: "DISABLED",
+          };
 
     const bundle = {
-      outlook, latestPrediction, latestOutcome: latestOutcomeRow ? mapOutcomeRow(latestOutcomeRow) : null,
-      predictionCount, outcomeCount, historical, scheduler,
+      outlook,
+      latestPrediction,
+      latestOutcome: latestOutcomeRow ? mapOutcomeRow(latestOutcomeRow) : null,
+      predictionCount,
+      outcomeCount,
+      historical,
+      scheduler,
       formulaVersion: GANN_GAP_FORMULA_VERSION,
       configVersion: GANN_GAP_CONFIG_VERSION,
       outcomeRuleVersion: OUTCOME_RULE_VERSION,

@@ -64,7 +64,10 @@ describe("PersistentPcrHistory", () => {
 
   it("rejects wrong schema version", () => {
     const storage = inMemoryStorage();
-    storage.setItem(DEFAULT_PERSISTENT_HISTORY_KEY, JSON.stringify({ schema: 99, points: [makePoint(1)] }));
+    storage.setItem(
+      DEFAULT_PERSISTENT_HISTORY_KEY,
+      JSON.stringify({ schema: 99, points: [makePoint(1)] }),
+    );
     expect(new PersistentPcrHistory({ storage }).load()).toEqual([]);
   });
 
@@ -81,23 +84,51 @@ describe("readingToPersisted", () => {
     const reading: CombinedPcrReading = {
       combinedScore: 12,
       direction: "PE",
-      emaFast: 10, emaSlow: 5, slope: 5,
-      previousSlope: 0, slopeChange: 5, zeroCross: false,
-      signalState: "PE_FOCUS", confirmedState: "NO_TRADE", pendingState: "PE_FOCUS",
+      emaFast: 10,
+      emaSlow: 5,
+      slope: 5,
+      previousSlope: 0,
+      slopeChange: 5,
+      zeroCross: false,
+      signalState: "PE_FOCUS",
+      confirmedState: "NO_TRADE",
+      pendingState: "PE_FOCUS",
       confirmationCount: 1,
       instruments: [
-        { underlying: "NIFTY", rawOiPcr: 1.1, rawChangeOiPcr: 1.2,
-          normalizedOiPcr: 10, normalizedChangeOiPcr: 20,
-          instrumentScore: 14, weight: 0.6, configuredWeight: 0.6,
-          strikeCount: 20, atm: 24000, expiry: "2025-01-16",
-          provider: "UPSTOX", timestamp: "2025-01-01T00:00:00Z",
-          snapshotId: "NIFTY:2025-01-16:t1", missing: [] },
-        { underlying: "BANKNIFTY", rawOiPcr: 1.0, rawChangeOiPcr: 1.0,
-          normalizedOiPcr: 0, normalizedChangeOiPcr: 0,
-          instrumentScore: 0, weight: 0.4, configuredWeight: 0.4,
-          strikeCount: 20, atm: 51000, expiry: "2025-01-16",
-          provider: "UPSTOX", timestamp: "2025-01-01T00:00:00Z",
-          snapshotId: "BANKNIFTY:2025-01-16:t1", missing: ["call.oi:1"] },
+        {
+          underlying: "NIFTY",
+          rawOiPcr: 1.1,
+          rawChangeOiPcr: 1.2,
+          normalizedOiPcr: 10,
+          normalizedChangeOiPcr: 20,
+          instrumentScore: 14,
+          weight: 0.6,
+          configuredWeight: 0.6,
+          strikeCount: 20,
+          atm: 24000,
+          expiry: "2025-01-16",
+          provider: "UPSTOX",
+          timestamp: "2025-01-01T00:00:00Z",
+          snapshotId: "NIFTY:2025-01-16:t1",
+          missing: [],
+        },
+        {
+          underlying: "BANKNIFTY",
+          rawOiPcr: 1.0,
+          rawChangeOiPcr: 1.0,
+          normalizedOiPcr: 0,
+          normalizedChangeOiPcr: 0,
+          instrumentScore: 0,
+          weight: 0.4,
+          configuredWeight: 0.4,
+          strikeCount: 20,
+          atm: 51000,
+          expiry: "2025-01-16",
+          provider: "UPSTOX",
+          timestamp: "2025-01-01T00:00:00Z",
+          snapshotId: "BANKNIFTY:2025-01-16:t1",
+          missing: ["call.oi:1"],
+        },
       ],
       timestamp: "2025-01-01T00:00:00Z",
       warnings: [],

@@ -27,10 +27,7 @@ import type {
   BacktestSymbol,
   BacktestTrade,
 } from "../backtest.functions";
-import type {
-  HistoryPerSession,
-  HistoryResult,
-} from "../gann-intraday-history.functions";
+import type { HistoryPerSession, HistoryResult } from "../gann-intraday-history.functions";
 import type { computeCoreMetrics } from "../gann-intraday-metrics";
 import type { AmbiguousPolicy } from "../gann-intraday-simulator";
 import type { InstrumentSymbol } from "../gann-intraday-anchor";
@@ -54,9 +51,7 @@ export class LegacyTranslationMetadataMissingError extends Error {
   readonly field: string;
   constructor(field: string, tradeId: string | null = null) {
     super(
-      `LEGACY_TRANSLATION_METADATA_MISSING: field=${field}${
-        tradeId ? ` tradeId=${tradeId}` : ""
-      }`,
+      `LEGACY_TRANSLATION_METADATA_MISSING: field=${field}${tradeId ? ` tradeId=${tradeId}` : ""}`,
     );
     this.tradeId = tradeId;
     this.field = field;
@@ -155,9 +150,7 @@ function translateTrade(
       ? (trade.metadata["grossPnl"] as number)
       : trade.pnl;
   const costs =
-    typeof trade.metadata["costs"] === "number"
-      ? (trade.metadata["costs"] as number)
-      : 0;
+    typeof trade.metadata["costs"] === "number" ? (trade.metadata["costs"] as number) : 0;
   return {
     date: trade.date,
     time: x.time,
@@ -256,9 +249,11 @@ function buildSummary(
   };
 }
 
-function buildEquityCurve(
-  trades: readonly BacktestTrade[],
-): { curve: BacktestResult["equityCurve"]; netProfit: number; maxDrawdown: number } {
+function buildEquityCurve(trades: readonly BacktestTrade[]): {
+  curve: BacktestResult["equityCurve"];
+  netProfit: number;
+  maxDrawdown: number;
+} {
   const curve: BacktestResult["equityCurve"] = [];
   let cum = 0;
   let peak = 0;
@@ -282,9 +277,7 @@ export type ToLegacyBacktestArgs = {
  * Pure translator: HistoricalBacktestResult → BacktestResult.
  * Throws LegacyTranslationMetadataMissingError if any trade lacks legacy extras.
  */
-export function toLegacyBacktestResult(
-  args: ToLegacyBacktestArgs,
-): BacktestResult {
+export function toLegacyBacktestResult(args: ToLegacyBacktestArgs): BacktestResult {
   const { unifiedResult, legacyContext } = args;
   const legacyTrades: BacktestTrade[] = unifiedResult.trades.map((t) =>
     translateTrade(t, legacyContext),
@@ -357,15 +350,11 @@ export type ToLegacyHistoryArgs = {
  * Session rows and core metrics are consumed as-is (no re-derivation) to
  * preserve `computeCoreMetrics` semantics and the VALIDATION_ONLY label.
  */
-export function toLegacyHistoryResult(
-  args: ToLegacyHistoryArgs,
-): HistoryResult {
+export function toLegacyHistoryResult(args: ToLegacyHistoryArgs): HistoryResult {
   const { unifiedResult, sessions, legacyContext } = args;
   // Cross-check attempted vs. sessions length; refuse silent mismatch.
   if (legacyContext.attempted !== sessions.length) {
-    throw new LegacyTranslationMetadataMissingError(
-      "attempted!=sessionsSummary.length",
-    );
+    throw new LegacyTranslationMetadataMissingError("attempted!=sessionsSummary.length");
   }
   return {
     version: legacyContext.version,
@@ -407,18 +396,14 @@ export type UnifiedErrorCode = (typeof UNIFIED_ERROR_CODES)[number];
 const LEGACY_MESSAGES: Record<UnifiedErrorCode, string> = {
   INVALID_DATE_RANGE: "Invalid date range: 'from' must be <= 'to'.",
   UNSUPPORTED_SYMBOL: "Unsupported symbol for this backtest formula.",
-  PROVIDER_UNAVAILABLE:
-    "Historical data provider is temporarily unavailable. Please retry.",
+  PROVIDER_UNAVAILABLE: "Historical data provider is temporarily unavailable. Please retry.",
   NO_DATA: "No historical data available for the selected range.",
   INVALID_OHLC: "Historical OHLC failed validation and cannot be replayed.",
-  MISSING_PREVIOUS_CLOSE:
-    "Missing previous-session close required to anchor the session.",
-  INSUFFICIENT_INTRADAY_HISTORY:
-    "Insufficient intraday history to validate this session.",
+  MISSING_PREVIOUS_CLOSE: "Missing previous-session close required to anchor the session.",
+  INSUFFICIENT_INTRADAY_HISTORY: "Insufficient intraday history to validate this session.",
   CAUSALITY_VIOLATION:
     "Causality violation detected — a trade was resolved before its own signal timestamp.",
-  MIXED_FORMULA_VERSIONS:
-    "Requested run mixes incompatible formula versions.",
+  MIXED_FORMULA_VERSIONS: "Requested run mixes incompatible formula versions.",
 };
 
 export function mapUnifiedErrorToLegacy(code: string): Error {
@@ -439,9 +424,7 @@ export type BacktestUnifiedDryRunArgs = ToLegacyBacktestArgs;
  * result. β1 uses this against golden fixtures. β2 will replace it with a
  * call into the unified runner.
  */
-export function runBacktestUnifiedDryRun(
-  args: BacktestUnifiedDryRunArgs,
-): BacktestResult {
+export function runBacktestUnifiedDryRun(args: BacktestUnifiedDryRunArgs): BacktestResult {
   return toLegacyBacktestResult(args);
 }
 
@@ -457,8 +440,4 @@ export function runHistoricalValidationUnifiedDryRun(
 // Re-exports for legacy public types the parity suite references.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type {
-  CostModel,
-  ExecutionPolicy,
-  InvalidSetupPolicy,
-};
+export type { CostModel, ExecutionPolicy, InvalidSetupPolicy };

@@ -50,9 +50,15 @@ export interface SaasSummary {
 
 export function summariseSaas(events: readonly SaasEvent[] = snapshotSaasEvents()): SaasSummary {
   const byKind = {
-    "dau.ping": 0, "subscription.started": 0, "subscription.renewed": 0,
-    "subscription.canceled": 0, "subscription.expired": 0, "feature.used": 0,
-    "dashboard.opened": 0, "export.performed": 0, "error.reported": 0,
+    "dau.ping": 0,
+    "subscription.started": 0,
+    "subscription.renewed": 0,
+    "subscription.canceled": 0,
+    "subscription.expired": 0,
+    "feature.used": 0,
+    "dashboard.opened": 0,
+    "export.performed": 0,
+    "error.reported": 0,
   } as Record<SaasEventKind, number>;
   const users = new Set<string>();
   let errors = 0;

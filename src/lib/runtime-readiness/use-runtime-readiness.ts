@@ -12,10 +12,7 @@ import type { RuntimeReadinessReport } from "./runtime-readiness";
 
 export const RUNTIME_READINESS_QUERY_KEY = ["runtime-readiness-report"] as const;
 
-export function useRuntimeReadinessQuery(): UseQueryResult<
-  RuntimeReadinessReport,
-  Error
-> {
+export function useRuntimeReadinessQuery(): UseQueryResult<RuntimeReadinessReport, Error> {
   const fetchReport = useServerFn(getRuntimeReadinessReport);
   return useQuery<RuntimeReadinessReport, Error>({
     queryKey: RUNTIME_READINESS_QUERY_KEY,

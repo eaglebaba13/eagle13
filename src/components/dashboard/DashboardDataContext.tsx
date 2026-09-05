@@ -51,9 +51,7 @@ export function DashboardDataProvider({
   value: DashboardContextValue;
   children: ReactNode;
 }) {
-  return (
-    <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>
-  );
+  return <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>;
 }
 
 export function useDashboardData(): DashboardContextValue {

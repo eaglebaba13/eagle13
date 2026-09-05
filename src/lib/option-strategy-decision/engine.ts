@@ -137,10 +137,19 @@ function scoreOi(inp: DecisionEngineInput): {
       );
     }
   }
-  if (build === "LONG_BUILDUP") { base = clamp(base + 0.3, -1, 1); notes.push("Long build-up"); }
-  else if (build === "SHORT_COVERING") { base = clamp(base + 0.2, -1, 1); notes.push("Short covering"); }
-  else if (build === "SHORT_BUILDUP") { base = clamp(base - 0.3, -1, 1); notes.push("Short build-up"); }
-  else if (build === "LONG_UNWINDING") { base = clamp(base - 0.2, -1, 1); notes.push("Long unwinding"); }
+  if (build === "LONG_BUILDUP") {
+    base = clamp(base + 0.3, -1, 1);
+    notes.push("Long build-up");
+  } else if (build === "SHORT_COVERING") {
+    base = clamp(base + 0.2, -1, 1);
+    notes.push("Short covering");
+  } else if (build === "SHORT_BUILDUP") {
+    base = clamp(base - 0.3, -1, 1);
+    notes.push("Short build-up");
+  } else if (build === "LONG_UNWINDING") {
+    base = clamp(base - 0.2, -1, 1);
+    notes.push("Long unwinding");
+  }
   if (notes.length === 0) return { score: null, note: "OI insufficient" };
   return { score: base, note: notes.join(" · ") };
 }
@@ -256,10 +265,19 @@ function buildStrike(
   }
   let offsetSteps = 0;
   let moneyness: StrikeRecommendation["moneyness"] = "ATM";
-  if (vixRegime === "LOW") { offsetSteps = 0; moneyness = "ATM"; }
-  else if (vixRegime === "MEDIUM") { offsetSteps = 1; moneyness = "OTM"; }
-  else if (vixRegime === "ELEVATED") { offsetSteps = 2; moneyness = "OTM"; }
-  else if (vixRegime === "HIGH") { offsetSteps = 0; moneyness = "ATM"; }
+  if (vixRegime === "LOW") {
+    offsetSteps = 0;
+    moneyness = "ATM";
+  } else if (vixRegime === "MEDIUM") {
+    offsetSteps = 1;
+    moneyness = "OTM";
+  } else if (vixRegime === "ELEVATED") {
+    offsetSteps = 2;
+    moneyness = "OTM";
+  } else if (vixRegime === "HIGH") {
+    offsetSteps = 0;
+    moneyness = "ATM";
+  }
   const dir = action === "BUY_CALL" ? 1 : -1;
   const strike = anchor + dir * offsetSteps * step;
   return {
@@ -280,17 +298,25 @@ function buildSizing(
     return { risk: "UNKNOWN", suggestedSizePct: 0, note: "Hold cash — no trade recommended." };
   }
   const risk: RiskLevel =
-    vixRegime === "LOW" ? "LOW"
-    : vixRegime === "MEDIUM" ? "MEDIUM"
-    : vixRegime === "ELEVATED" ? "HIGH"
-    : vixRegime === "HIGH" ? "VERY_HIGH"
-    : "UNKNOWN";
+    vixRegime === "LOW"
+      ? "LOW"
+      : vixRegime === "MEDIUM"
+        ? "MEDIUM"
+        : vixRegime === "ELEVATED"
+          ? "HIGH"
+          : vixRegime === "HIGH"
+            ? "VERY_HIGH"
+            : "UNKNOWN";
   const size =
-    vixRegime === "LOW" ? 100
-    : vixRegime === "MEDIUM" ? 75
-    : vixRegime === "ELEVATED" ? 50
-    : vixRegime === "HIGH" ? 25
-    : 25;
+    vixRegime === "LOW"
+      ? 100
+      : vixRegime === "MEDIUM"
+        ? 75
+        : vixRegime === "ELEVATED"
+          ? 50
+          : vixRegime === "HIGH"
+            ? 25
+            : 25;
   return {
     risk,
     suggestedSizePct: size,
@@ -310,19 +336,27 @@ export function computeOptionDecision(inp: DecisionEngineInput): DecisionEngineO
 
   const indicators: IndicatorScore[] = [
     buildIndicator("pcr", "Combined PCR", DECISION_ENGINE_WEIGHTS.pcr, pcr.score, pcr.note),
-    buildIndicator("sector", "Sector Heat", DECISION_ENGINE_WEIGHTS.sector, sector.score, sector.note),
-    buildIndicator("breadth", "Market Breadth", DECISION_ENGINE_WEIGHTS.breadth, breadth.score, breadth.note),
+    buildIndicator(
+      "sector",
+      "Sector Heat",
+      DECISION_ENGINE_WEIGHTS.sector,
+      sector.score,
+      sector.note,
+    ),
+    buildIndicator(
+      "breadth",
+      "Market Breadth",
+      DECISION_ENGINE_WEIGHTS.breadth,
+      breadth.score,
+      breadth.note,
+    ),
     buildIndicator("oi", "OI Structure", DECISION_ENGINE_WEIGHTS.oi, oi.score, oi.note),
     buildIndicator("vix", "India VIX", DECISION_ENGINE_WEIGHTS.vix, vix.score, vix.note),
     buildIndicator("maxPain", "Max Pain", DECISION_ENGINE_WEIGHTS.maxPain, mp.score, mp.note),
   ];
 
-  const bullScore = round(
-    indicators.reduce((acc, i) => acc + i.bullContribution, 0),
-  );
-  const bearScore = round(
-    indicators.reduce((acc, i) => acc + i.bearContribution, 0),
-  );
+  const bullScore = round(indicators.reduce((acc, i) => acc + i.bullContribution, 0));
+  const bearScore = round(indicators.reduce((acc, i) => acc + i.bearContribution, 0));
 
   const warnings: string[] = [];
   const conflicts: string[] = [];
@@ -335,7 +369,7 @@ export function computeOptionDecision(inp: DecisionEngineInput): DecisionEngineO
   if (bulls.length > 0 && bears.length > 0) {
     for (const b of bulls) {
       for (const r of bears) {
-        if (Math.abs(b.weight - r.weight) < 0.01 || b.weight >= 0.15 && r.weight >= 0.15) {
+        if (Math.abs(b.weight - r.weight) < 0.01 || (b.weight >= 0.15 && r.weight >= 0.15)) {
           conflicts.push(`${b.label} bullish vs ${r.label} bearish`);
         }
       }
@@ -380,7 +414,8 @@ export function computeOptionDecision(inp: DecisionEngineInput): DecisionEngineO
       : clamp(round(confidenceRaw), 0, 100);
 
   const reasoning: string[] = [];
-  const contributingBias = action === "BUY_CALL" ? "BULLISH" : action === "BUY_PUT" ? "BEARISH" : null;
+  const contributingBias =
+    action === "BUY_CALL" ? "BULLISH" : action === "BUY_PUT" ? "BEARISH" : null;
   if (contributingBias) {
     for (const i of indicators) {
       if (i.bias === contributingBias) reasoning.push(`✓ ${i.label}: ${i.note}`);

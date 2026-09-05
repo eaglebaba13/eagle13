@@ -7,9 +7,7 @@ import type { GammaResult, CalcAvailability } from "./types";
 
 export function computeGamma(snapshot: OptionChainSnapshot): GammaResult {
   const strikes = snapshot.strikes;
-  const anyGamma = strikes.some(
-    (s) => s.call.greeks?.gamma != null || s.put.greeks?.gamma != null,
-  );
+  const anyGamma = strikes.some((s) => s.call.greeks?.gamma != null || s.put.greeks?.gamma != null);
   if (!anyGamma) {
     return {
       gammaExposure: null,
@@ -45,7 +43,8 @@ export function computeGamma(snapshot: OptionChainSnapshot): GammaResult {
     const put = pg != null ? pg * poi : 0;
     const gex = (call - put) * Math.max(1, spot) * Math.max(1, spot) * 0.01;
     perStrike.push({ strike: s.strike, gex });
-    if (gex >= 0) posGex += gex; else negGex += gex;
+    if (gex >= 0) posGex += gex;
+    else negGex += gex;
   }
 
   // Gamma wall: strike with max |gex|.
@@ -54,7 +53,10 @@ export function computeGamma(snapshot: OptionChainSnapshot): GammaResult {
   for (const p of perStrike) {
     if (p.gex == null) continue;
     const m = Math.abs(p.gex);
-    if (m > wallMag) { wallMag = m; wall = p.strike; }
+    if (m > wallMag) {
+      wallMag = m;
+      wall = p.strike;
+    }
   }
 
   // Gamma flip: strike where cumulative gex crosses zero (ascending strikes).
@@ -81,6 +83,9 @@ export function computeGamma(snapshot: OptionChainSnapshot): GammaResult {
     gammaFlipStrike: flip,
     perStrike,
     availability,
-    reason: availability === "OK" ? "Gamma computed from provider greeks" : "Gamma computed on partial greeks coverage",
+    reason:
+      availability === "OK"
+        ? "Gamma computed from provider greeks"
+        : "Gamma computed on partial greeks coverage",
   };
 }

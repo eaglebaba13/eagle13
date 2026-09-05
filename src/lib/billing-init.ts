@@ -14,7 +14,6 @@ let installed = false;
 export function installBillingAdapter(): void {
   if (installed) return;
   installed = true;
-  const publishableKeyId =
-    (import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined) ?? null;
+  const publishableKeyId = (import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined) ?? null;
   setBillingAdapter(new RazorpayBillingAdapter({ publishableKeyId }));
 }

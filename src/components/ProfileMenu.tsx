@@ -65,9 +65,15 @@ export function ProfileMenu() {
             <div className="text-sm font-medium truncate">{profile?.email}</div>
             <div className="text-xs text-muted-foreground">{ROLE_LABELS[role]} plan</div>
           </div>
-          <MenuItem to="/profile" onClick={() => setOpen(false)}>Profile</MenuItem>
-          <MenuItem to="/settings" onClick={() => setOpen(false)}>Settings</MenuItem>
-          <MenuItem to="/license" onClick={() => setOpen(false)}>License</MenuItem>
+          <MenuItem to="/profile" onClick={() => setOpen(false)}>
+            Profile
+          </MenuItem>
+          <MenuItem to="/settings" onClick={() => setOpen(false)}>
+            Settings
+          </MenuItem>
+          <MenuItem to="/license" onClick={() => setOpen(false)}>
+            License
+          </MenuItem>
           <button
             type="button"
             onClick={async () => {
@@ -95,11 +101,7 @@ function MenuItem({
   children: React.ReactNode;
 }) {
   return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className="block px-4 py-2 text-sm hover:bg-muted"
-    >
+    <Link to={to} onClick={onClick} className="block px-4 py-2 text-sm hover:bg-muted">
       {children}
     </Link>
   );

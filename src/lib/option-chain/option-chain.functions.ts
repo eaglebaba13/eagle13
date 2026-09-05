@@ -88,17 +88,40 @@ export const getOptionChainDiagnostics = createServerFn({ method: "GET" })
     try {
       let isAdmin = false;
       try {
-        const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+        const { data } = await context.supabase.rpc("has_role", {
+          _user_id: context.userId,
+          _role: "admin",
+        });
         isAdmin = data === true;
-      } catch { isAdmin = false; }
+      } catch {
+        isAdmin = false;
+      }
       if (!isAdmin) {
-        return { ok: false as const, report: null, safeError: "admin required", startedAt, completedAt: new Date().toISOString() };
+        return {
+          ok: false as const,
+          report: null,
+          safeError: "admin required",
+          startedAt,
+          completedAt: new Date().toISOString(),
+        };
       }
       const { buildOptionChainDiagnostics } = await import("./option-chain-diagnostics.server");
       const report = await buildOptionChainDiagnostics();
-      return { ok: true as const, report, safeError: null, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: true as const,
+        report,
+        safeError: null,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     } catch (e) {
       const safe = e instanceof Error ? e.message.slice(0, 200) : "diagnostics failed";
-      return { ok: false as const, report: null, safeError: safe, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: false as const,
+        report: null,
+        safeError: safe,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     }
   });

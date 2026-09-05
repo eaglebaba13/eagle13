@@ -26,13 +26,45 @@ export interface ContextInputs {
     readonly confidence?: number | null;
     readonly source?: string;
   };
-  readonly pcr: { readonly available: boolean; readonly bias: CanonicalBias; readonly direction?: string; readonly source?: string };
-  readonly gti: { readonly available: boolean; readonly bias: CanonicalBias; readonly state?: string; readonly source?: string };
-  readonly breadth: { readonly available: boolean; readonly bias: CanonicalBias; readonly state?: string; readonly source?: string };
-  readonly astro: { readonly available: boolean; readonly bias: CanonicalBias; readonly source?: string };
-  readonly gann: { readonly available: boolean; readonly bias: CanonicalBias; readonly source?: string };
-  readonly gannGap: { readonly available: boolean; readonly bias: CanonicalBias; readonly label?: string; readonly source?: string };
-  readonly vix: { readonly available: boolean; readonly value: number | null; readonly regime: string };
+  readonly pcr: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly direction?: string;
+    readonly source?: string;
+  };
+  readonly gti: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly state?: string;
+    readonly source?: string;
+  };
+  readonly breadth: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly state?: string;
+    readonly source?: string;
+  };
+  readonly astro: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly source?: string;
+  };
+  readonly gann: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly source?: string;
+  };
+  readonly gannGap: {
+    readonly available: boolean;
+    readonly bias: CanonicalBias;
+    readonly label?: string;
+    readonly source?: string;
+  };
+  readonly vix: {
+    readonly available: boolean;
+    readonly value: number | null;
+    readonly regime: string;
+  };
   readonly strategy: StrategyContextView;
   readonly runtime: {
     readonly overall: "READY" | "PARTIALLY_READY" | "NOT_READY" | "UNKNOWN";

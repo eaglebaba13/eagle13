@@ -22,14 +22,8 @@ export function RuntimeReadinessDiagnostics({
   onRefresh,
 }: RuntimeReadinessDiagnosticsProps) {
   const [copied, setCopied] = useState(false);
-  const redacted = useMemo(
-    () => (report ? redactRuntimeReadinessReport(report) : null),
-    [report],
-  );
-  const json = useMemo(
-    () => (redacted ? exportRuntimeReadinessJson(redacted) : ""),
-    [redacted],
-  );
+  const redacted = useMemo(() => (report ? redactRuntimeReadinessReport(report) : null), [report]);
+  const json = useMemo(() => (redacted ? exportRuntimeReadinessJson(redacted) : ""), [redacted]);
 
   const copy = async () => {
     if (!json) return;
@@ -101,7 +95,10 @@ export function RuntimeReadinessDiagnostics({
         </div>
       </header>
       {error && (
-        <div role="alert" className="mb-2 rounded border border-red-500/30 bg-red-500/10 p-2 text-red-300">
+        <div
+          role="alert"
+          className="mb-2 rounded border border-red-500/30 bg-red-500/10 p-2 text-red-300"
+        >
           {error}
         </div>
       )}

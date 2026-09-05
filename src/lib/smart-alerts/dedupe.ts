@@ -35,10 +35,7 @@ export function isInCooldown(
   return nowMs - lastMs < cooldownSec * 1000;
 }
 
-export function isInQuietHours(
-  sub: AlertSubscription | null,
-  nowIso: string,
-): boolean {
+export function isInQuietHours(sub: AlertSubscription | null, nowIso: string): boolean {
   if (!sub?.quietHours) return false;
   const { start, end } = sub.quietHours;
   if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) return false;

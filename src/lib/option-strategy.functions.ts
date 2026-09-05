@@ -15,10 +15,7 @@ import {
   pcrFocusFromRatio,
 } from "./strategy-math";
 import { cached } from "./server-cache";
-import {
-  YahooChartSchema,
-  parseProvider,
-} from "./providers";
+import { YahooChartSchema, parseProvider } from "./providers";
 import { fetchCanonicalOptionChain } from "./option-chain/canonical-snapshot.server";
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
@@ -52,10 +49,7 @@ async function fetchQuote(symbol: string, name: string): Promise<Quote> {
   const closes: number[] = (q.close ?? []).filter((c): c is number => c != null);
   const price = round2(meta.regularMarketPrice ?? closes[closes.length - 1] ?? 0);
   const prevClose = round2(
-    meta.chartPreviousClose ??
-      meta.previousClose ??
-      closes[closes.length - 2] ??
-      price,
+    meta.chartPreviousClose ?? meta.previousClose ?? closes[closes.length - 2] ?? price,
   );
   const change = round2(price - prevClose);
   const changePct = prevClose ? round2((change / prevClose) * 100) : 0;
@@ -169,7 +163,13 @@ export type OptionStrategyData = {
   nseBreadth: Breadth;
   niftyBreadth: Breadth;
   optionChain: OptionChain;
-  astro: { bias: "Bullish" | "Bearish" | "Neutral"; bullCount: number; bearCount: number; retroCount: number; moonNakshatra: string };
+  astro: {
+    bias: "Bullish" | "Bearish" | "Neutral";
+    bullCount: number;
+    bearCount: number;
+    retroCount: number;
+    moonNakshatra: string;
+  };
   recommendation: Recommendation;
   specialAlert: { type: "CALL" | "PUT" | "NONE"; active: boolean };
 };
@@ -179,10 +179,7 @@ export type OptionStrategyData = {
 // Attempt live NSE option chain; fall back to a transparent PCR proxy derived
 // from live breadth + VIX when the NSE endpoint is unavailable (common from
 // datacenter IPs, as it requires browser cookies).
-async function fetchOptionChain(
-  spot: number,
-  bullFrac: number,
-): Promise<OptionChain> {
+async function fetchOptionChain(spot: number, bullFrac: number): Promise<OptionChain> {
   try {
     const canon = await fetchCanonicalOptionChain({ underlying: "NIFTY" });
     if (!canon.ok || !canon.snapshot || canon.snapshot.strikes.length === 0) {
@@ -253,203 +250,271 @@ export const getOptionStrategy = createServerFn({ method: "GET" }).handler(
     cached<OptionStrategyData>(
       "option-strategy",
       async () => {
-    const now = new Date();
+        const now = new Date();
 
-    // Astro bias from the EXISTING engine (read-only, unchanged formula).
-    const { computeAstroPositions } = await import("./astro-engine.server");
-    let astroBias: OptionStrategyData["astro"] = {
-      bias: "Neutral",
-      bullCount: 0,
-      bearCount: 0,
-      retroCount: 0,
-      moonNakshatra: "—",
-    };
-    try {
-      const pos = computeAstroPositions(now);
-      const b: "Bullish" | "Bearish" | "Neutral" =
-        pos.bullCount > pos.bearCount ? "Bullish" : pos.bearCount > pos.bullCount ? "Bearish" : "Neutral";
-      astroBias = {
-        bias: b,
-        bullCount: pos.bullCount,
-        bearCount: pos.bearCount,
-        retroCount: pos.retroCount,
-        moonNakshatra: pos.moonNakshatra,
-      };
-    } catch {
-      /* astro optional */
-    }
-
-    // Live market data.
-    const [niftyR, vixR, topRaw, sectorRaw] = await Promise.all([
-      fetchQuote("^NSEI", "NIFTY 50"),
-      safeQuote("^INDIAVIX", "India VIX"),
-      Promise.all(TOP10.map((t) => safeQuote(t.symbol, t.name).then((q) => ({ meta: t, q })))),
-      Promise.all(SECTORS.map((s) => safeQuote(s.symbol, s.name).then((q) => ({ meta: s, q })))),
-    ]);
-
-    const nifty = niftyR;
-
-    // Top-10 weighted breadth.
-    const top10: TopStock[] = topRaw
-      .filter((x): x is { meta: (typeof TOP10)[number]; q: Quote } => x.q != null)
-      .map(({ meta, q }) => ({
-        symbol: meta.symbol,
-        name: meta.name,
-        price: q.price,
-        changePct: q.changePct,
-        weight: meta.weight,
-        advancing: q.changePct >= 0,
-        contribution: round2((q.changePct * meta.weight) / 100),
-      }));
-    const weightedBreadthScore = round2(
-      clamp(top10.reduce((s, t) => s + t.contribution, 0) * 12, -100, 100),
-    );
-    const top10Bias = biasFromPct(weightedBreadthScore / 12);
-
-    // Sectors.
-    const sectors: Sector[] = sectorRaw
-      .filter((x): x is { meta: (typeof SECTORS)[number]; q: Quote } => x.q != null)
-      .map(({ meta, q }) => {
-        const { advance, decline } = sectorBreadth(q.changePct);
-        return {
-          key: meta.key,
-          name: meta.name,
-          changePct: q.changePct,
-          advance,
-          decline,
-          strength: round2(clamp(q.changePct * 20, -100, 100)),
-          bias: biasFromPct(q.changePct),
+        // Astro bias from the EXISTING engine (read-only, unchanged formula).
+        const { computeAstroPositions } = await import("./astro-engine.server");
+        let astroBias: OptionStrategyData["astro"] = {
+          bias: "Neutral",
+          bullCount: 0,
+          bearCount: 0,
+          retroCount: 0,
+          moonNakshatra: "—",
         };
-      });
-    const sectorMap = new Map(sectors.map((s) => [s.key, s]));
-    const sectorStrength = sectors.length
-      ? round2(sectors.reduce((s, x) => s + x.strength, 0) / sectors.length)
-      : 0;
+        try {
+          const pos = computeAstroPositions(now);
+          const b: "Bullish" | "Bearish" | "Neutral" =
+            pos.bullCount > pos.bearCount
+              ? "Bullish"
+              : pos.bearCount > pos.bullCount
+                ? "Bearish"
+                : "Neutral";
+          astroBias = {
+            bias: b,
+            bullCount: pos.bullCount,
+            bearCount: pos.bearCount,
+            retroCount: pos.retroCount,
+            moonNakshatra: pos.moonNakshatra,
+          };
+        } catch {
+          /* astro optional */
+        }
 
-    // Bullish fraction (0..1) blends sector strength + top-10 weighted score.
-    const bullFrac = clamp(
-      0.5 + (sectorStrength / 100) * 0.3 + (weightedBreadthScore / 100) * 0.2,
-      0.05,
-      0.95,
-    );
+        // Live market data.
+        const [niftyR, vixR, topRaw, sectorRaw] = await Promise.all([
+          fetchQuote("^NSEI", "NIFTY 50"),
+          safeQuote("^INDIAVIX", "India VIX"),
+          Promise.all(TOP10.map((t) => safeQuote(t.symbol, t.name).then((q) => ({ meta: t, q })))),
+          Promise.all(
+            SECTORS.map((s) => safeQuote(s.symbol, s.name).then((q) => ({ meta: s, q }))),
+          ),
+        ]);
 
-    // NIFTY50 breadth modelled from top-10 + sectors.
-    const advSectors = sectors.filter((s) => s.changePct >= 0).length;
-    const niftyFrac = clamp(
-      (top10.filter((t) => t.advancing).length / Math.max(1, top10.length)) * 0.6 +
-        (advSectors / Math.max(1, sectors.length)) * 0.4,
-      0.02,
-      0.98,
-    );
-    const nAdv = Math.round(50 * niftyFrac);
-    const niftyBreadth: Breadth = {
-      advances: nAdv,
-      declines: 50 - nAdv,
-      ratio: round2(nAdv / Math.max(1, 50 - nAdv)),
-      bias: niftyFrac > 0.55 ? "Bullish" : niftyFrac < 0.45 ? "Bearish" : "Neutral",
-      label: niftyFrac > 0.6 ? "Strong Bullish" : niftyFrac > 0.5 ? "Bullish" : niftyFrac < 0.4 ? "Strong Bearish" : niftyFrac < 0.5 ? "Bearish" : "Neutral",
-    };
+        const nifty = niftyR;
 
-    // Overall NSE breadth modelled from bullish fraction over ~3300 listed.
-    const total = 3300;
-    const nseAdv = Math.round(total * bullFrac);
-    const nseBreadth: Breadth = {
-      advances: nseAdv,
-      declines: total - nseAdv,
-      ratio: round2(nseAdv / Math.max(1, total - nseAdv)),
-      bias: bullFrac > 0.55 ? "Bullish" : bullFrac < 0.45 ? "Bearish" : "Neutral",
-      label: bullFrac > 0.62 ? "Strong Bullish" : bullFrac > 0.5 ? "Bullish" : bullFrac < 0.38 ? "Strong Bearish" : bullFrac < 0.5 ? "Bearish" : "Neutral",
-    };
+        // Top-10 weighted breadth.
+        const top10: TopStock[] = topRaw
+          .filter((x): x is { meta: (typeof TOP10)[number]; q: Quote } => x.q != null)
+          .map(({ meta, q }) => ({
+            symbol: meta.symbol,
+            name: meta.name,
+            price: q.price,
+            changePct: q.changePct,
+            weight: meta.weight,
+            advancing: q.changePct >= 0,
+            contribution: round2((q.changePct * meta.weight) / 100),
+          }));
+        const weightedBreadthScore = round2(
+          clamp(top10.reduce((s, t) => s + t.contribution, 0) * 12, -100, 100),
+        );
+        const top10Bias = biasFromPct(weightedBreadthScore / 12);
 
-    // India VIX strategy.
-    const vixVal = vixR?.price ?? 14;
-    const vix: VixStrategy = vixStrategy(vixVal, vixR?.changePct ?? 0);
+        // Sectors.
+        const sectors: Sector[] = sectorRaw
+          .filter((x): x is { meta: (typeof SECTORS)[number]; q: Quote } => x.q != null)
+          .map(({ meta, q }) => {
+            const { advance, decline } = sectorBreadth(q.changePct);
+            return {
+              key: meta.key,
+              name: meta.name,
+              changePct: q.changePct,
+              advance,
+              decline,
+              strength: round2(clamp(q.changePct * 20, -100, 100)),
+              bias: biasFromPct(q.changePct),
+            };
+          });
+        const sectorMap = new Map(sectors.map((s) => [s.key, s]));
+        const sectorStrength = sectors.length
+          ? round2(sectors.reduce((s, x) => s + x.strength, 0) / sectors.length)
+          : 0;
 
-    // Option chain.
-    const optionChain = await fetchOptionChain(nifty.price, bullFrac);
+        // Bullish fraction (0..1) blends sector strength + top-10 weighted score.
+        const bullFrac = clamp(
+          0.5 + (sectorStrength / 100) * 0.3 + (weightedBreadthScore / 100) * 0.2,
+          0.05,
+          0.95,
+        );
 
-    /* ------------------------- decision engine ------------------------- */
-    const reasonsBull: string[] = [];
-    const reasonsBear: string[] = [];
-    let bull = 0;
-    let bear = 0;
-    const bankingUp = (sectorMap.get("banking")?.changePct ?? 0) >= 0;
-    const itUp = (sectorMap.get("it")?.changePct ?? 0) >= 0;
-    const oilUp = (sectorMap.get("oilgas")?.changePct ?? 0) >= 0;
-    const autoUp = (sectorMap.get("auto")?.changePct ?? 0) >= 0;
-    const reliance = top10.find((t) => t.symbol === "RELIANCE.NS");
+        // NIFTY50 breadth modelled from top-10 + sectors.
+        const advSectors = sectors.filter((s) => s.changePct >= 0).length;
+        const niftyFrac = clamp(
+          (top10.filter((t) => t.advancing).length / Math.max(1, top10.length)) * 0.6 +
+            (advSectors / Math.max(1, sectors.length)) * 0.4,
+          0.02,
+          0.98,
+        );
+        const nAdv = Math.round(50 * niftyFrac);
+        const niftyBreadth: Breadth = {
+          advances: nAdv,
+          declines: 50 - nAdv,
+          ratio: round2(nAdv / Math.max(1, 50 - nAdv)),
+          bias: niftyFrac > 0.55 ? "Bullish" : niftyFrac < 0.45 ? "Bearish" : "Neutral",
+          label:
+            niftyFrac > 0.6
+              ? "Strong Bullish"
+              : niftyFrac > 0.5
+                ? "Bullish"
+                : niftyFrac < 0.4
+                  ? "Strong Bearish"
+                  : niftyFrac < 0.5
+                    ? "Bearish"
+                    : "Neutral",
+        };
 
-    const vote = (cond: boolean, w: number, up: string, down: string) => {
-      if (cond) {
-        bull += w;
-        reasonsBull.push(up);
-      } else {
-        bear += w;
-        reasonsBear.push(down);
-      }
-    };
+        // Overall NSE breadth modelled from bullish fraction over ~3300 listed.
+        const total = 3300;
+        const nseAdv = Math.round(total * bullFrac);
+        const nseBreadth: Breadth = {
+          advances: nseAdv,
+          declines: total - nseAdv,
+          ratio: round2(nseAdv / Math.max(1, total - nseAdv)),
+          bias: bullFrac > 0.55 ? "Bullish" : bullFrac < 0.45 ? "Bearish" : "Neutral",
+          label:
+            bullFrac > 0.62
+              ? "Strong Bullish"
+              : bullFrac > 0.5
+                ? "Bullish"
+                : bullFrac < 0.38
+                  ? "Strong Bearish"
+                  : bullFrac < 0.5
+                    ? "Bearish"
+                    : "Neutral",
+        };
 
-    vote(nseBreadth.bias !== "Bearish" && nseBreadth.advances > nseBreadth.declines, 2, `NSE breadth strong (${nseBreadth.advances}▲/${nseBreadth.declines}▼)`, `NSE breadth weak (${nseBreadth.advances}▲/${nseBreadth.declines}▼)`);
-    vote(niftyBreadth.advances >= niftyBreadth.declines, 2, `NIFTY50 breadth positive (${niftyBreadth.advances}/${niftyBreadth.declines})`, `NIFTY50 breadth negative (${niftyBreadth.advances}/${niftyBreadth.declines})`);
-    vote(weightedBreadthScore >= 0, 2, "Top-10 weightage bullish", "Top-10 weightage bearish");
-    vote(bankingUp, 1.5, "Banking leading", "Banking weak");
-    vote(itUp, 1.5, "IT positive", "IT weak");
-    vote(oilUp, 1, "Oil & Gas positive", "Oil & Gas weak");
-    vote(autoUp, 1, "Auto positive", "Auto weak");
-    if (reliance) vote(reliance.changePct >= 0, 1, "Reliance positive", "Reliance weak");
-    vote(optionChain.pcr >= 1, 1.5, `PCR bullish (${optionChain.pcr})`, `PCR bearish (${optionChain.pcr})`);
-    if (astroBias.bias === "Bullish") { bull += 1; reasonsBull.push("Astro bias bullish"); }
-    else if (astroBias.bias === "Bearish") { bear += 1; reasonsBear.push("Astro bias bearish"); }
+        // India VIX strategy.
+        const vixVal = vixR?.price ?? 14;
+        const vix: VixStrategy = vixStrategy(vixVal, vixR?.changePct ?? 0);
 
-    const totalW = bull + bear || 1;
-    const bullScore = Math.round((bull / totalW) * 100);
-    const bearScore = 100 - bullScore;
+        // Option chain.
+        const optionChain = await fetchOptionChain(nifty.price, bullFrac);
 
-    let action: Recommendation["action"] = "WAIT";
-    let confidence = 50;
-    let reasons: string[] = [];
-    const diff = Math.abs(bullScore - bearScore);
-    if (diff < 20) {
-      action = "WAIT";
-      confidence = round2(60 - diff);
-      reasons = ["Mixed signals — no clear edge", `Bull ${bullScore}% vs Bear ${bearScore}%`, `VIX ${vixVal.toFixed(2)} → ${vix.label}`];
-    } else if (bullScore > bearScore) {
-      action = "BUY CE";
-      confidence = clamp(bullScore, 0, 99);
-      reasons = [`India VIX = ${vixVal.toFixed(2)} → ${vix.label}`, ...reasonsBull.slice(0, 7)];
-    } else {
-      action = "BUY PE";
-      confidence = clamp(bearScore, 0, 99);
-      reasons = [`India VIX = ${vixVal.toFixed(2)} → ${vix.label}`, ...reasonsBear.slice(0, 7)];
-    }
+        /* ------------------------- decision engine ------------------------- */
+        const reasonsBull: string[] = [];
+        const reasonsBear: string[] = [];
+        let bull = 0;
+        let bear = 0;
+        const bankingUp = (sectorMap.get("banking")?.changePct ?? 0) >= 0;
+        const itUp = (sectorMap.get("it")?.changePct ?? 0) >= 0;
+        const oilUp = (sectorMap.get("oilgas")?.changePct ?? 0) >= 0;
+        const autoUp = (sectorMap.get("auto")?.changePct ?? 0) >= 0;
+        const reliance = top10.find((t) => t.symbol === "RELIANCE.NS");
 
-    const recommendation: Recommendation = { action, confidence, bullScore, bearScore, reasons };
+        const vote = (cond: boolean, w: number, up: string, down: string) => {
+          if (cond) {
+            bull += w;
+            reasonsBull.push(up);
+          } else {
+            bear += w;
+            reasonsBear.push(down);
+          }
+        };
 
-    // Special alerts.
-    const allDown = !bankingUp && !itUp && !oilUp && !autoUp && nseBreadth.bias === "Bearish" && niftyBreadth.bias === "Bearish" && optionChain.pcr < 1;
-    const allUp = bankingUp && itUp && oilUp && autoUp && nseBreadth.bias === "Bullish" && niftyBreadth.bias === "Bullish" && optionChain.pcr >= 1;
-    const specialAlert = allUp
-      ? { type: "CALL" as const, active: true }
-      : allDown
-        ? { type: "PUT" as const, active: true }
-        : { type: "NONE" as const, active: false };
+        vote(
+          nseBreadth.bias !== "Bearish" && nseBreadth.advances > nseBreadth.declines,
+          2,
+          `NSE breadth strong (${nseBreadth.advances}▲/${nseBreadth.declines}▼)`,
+          `NSE breadth weak (${nseBreadth.advances}▲/${nseBreadth.declines}▼)`,
+        );
+        vote(
+          niftyBreadth.advances >= niftyBreadth.declines,
+          2,
+          `NIFTY50 breadth positive (${niftyBreadth.advances}/${niftyBreadth.declines})`,
+          `NIFTY50 breadth negative (${niftyBreadth.advances}/${niftyBreadth.declines})`,
+        );
+        vote(weightedBreadthScore >= 0, 2, "Top-10 weightage bullish", "Top-10 weightage bearish");
+        vote(bankingUp, 1.5, "Banking leading", "Banking weak");
+        vote(itUp, 1.5, "IT positive", "IT weak");
+        vote(oilUp, 1, "Oil & Gas positive", "Oil & Gas weak");
+        vote(autoUp, 1, "Auto positive", "Auto weak");
+        if (reliance) vote(reliance.changePct >= 0, 1, "Reliance positive", "Reliance weak");
+        vote(
+          optionChain.pcr >= 1,
+          1.5,
+          `PCR bullish (${optionChain.pcr})`,
+          `PCR bearish (${optionChain.pcr})`,
+        );
+        if (astroBias.bias === "Bullish") {
+          bull += 1;
+          reasonsBull.push("Astro bias bullish");
+        } else if (astroBias.bias === "Bearish") {
+          bear += 1;
+          reasonsBear.push("Astro bias bearish");
+        }
 
-    return {
-      asOf: now.toISOString(),
-      nifty,
-      vix,
-      top10,
-      weightedBreadthScore,
-      top10Bias,
-      sectors,
-      sectorStrength,
-      nseBreadth,
-      niftyBreadth,
-      optionChain,
-      astro: astroBias,
-      recommendation,
-      specialAlert,
-    };
+        const totalW = bull + bear || 1;
+        const bullScore = Math.round((bull / totalW) * 100);
+        const bearScore = 100 - bullScore;
+
+        let action: Recommendation["action"] = "WAIT";
+        let confidence = 50;
+        let reasons: string[] = [];
+        const diff = Math.abs(bullScore - bearScore);
+        if (diff < 20) {
+          action = "WAIT";
+          confidence = round2(60 - diff);
+          reasons = [
+            "Mixed signals — no clear edge",
+            `Bull ${bullScore}% vs Bear ${bearScore}%`,
+            `VIX ${vixVal.toFixed(2)} → ${vix.label}`,
+          ];
+        } else if (bullScore > bearScore) {
+          action = "BUY CE";
+          confidence = clamp(bullScore, 0, 99);
+          reasons = [`India VIX = ${vixVal.toFixed(2)} → ${vix.label}`, ...reasonsBull.slice(0, 7)];
+        } else {
+          action = "BUY PE";
+          confidence = clamp(bearScore, 0, 99);
+          reasons = [`India VIX = ${vixVal.toFixed(2)} → ${vix.label}`, ...reasonsBear.slice(0, 7)];
+        }
+
+        const recommendation: Recommendation = {
+          action,
+          confidence,
+          bullScore,
+          bearScore,
+          reasons,
+        };
+
+        // Special alerts.
+        const allDown =
+          !bankingUp &&
+          !itUp &&
+          !oilUp &&
+          !autoUp &&
+          nseBreadth.bias === "Bearish" &&
+          niftyBreadth.bias === "Bearish" &&
+          optionChain.pcr < 1;
+        const allUp =
+          bankingUp &&
+          itUp &&
+          oilUp &&
+          autoUp &&
+          nseBreadth.bias === "Bullish" &&
+          niftyBreadth.bias === "Bullish" &&
+          optionChain.pcr >= 1;
+        const specialAlert = allUp
+          ? { type: "CALL" as const, active: true }
+          : allDown
+            ? { type: "PUT" as const, active: true }
+            : { type: "NONE" as const, active: false };
+
+        return {
+          asOf: now.toISOString(),
+          nifty,
+          vix,
+          top10,
+          weightedBreadthScore,
+          top10Bias,
+          sectors,
+          sectorStrength,
+          nseBreadth,
+          niftyBreadth,
+          optionChain,
+          astro: astroBias,
+          recommendation,
+          specialAlert,
+        };
       },
       { ttlMs: 30_000 },
     ),

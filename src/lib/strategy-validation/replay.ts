@@ -3,12 +3,7 @@
 // scores outcome, and classifies failures. Does NOT mutate any input.
 
 import { computeOptionDecision } from "@/lib/option-strategy-decision/engine";
-import type {
-  FailureCategory,
-  HistoricalSnapshot,
-  ReplayResult,
-  TradeOutcome,
-} from "./types";
+import type { FailureCategory, HistoricalSnapshot, ReplayResult, TradeOutcome } from "./types";
 
 const WIN_THRESHOLD_PCT = 0.15; // ≥0.15% forward move counts as a win
 
@@ -46,10 +41,13 @@ function classifyFailure(snap: HistoricalSnapshot, r: ReplayResult): FailureCate
   if (r.confidence < 60) return "LOW_CONFIDENCE";
   if (r.decision.conflicts.length >= 2) return "CONFLICTING_SIGNALS";
   const netB = snap.input.breadth.netBreadth;
-  if (snap.input.breadth.available && netB != null && Math.abs(netB) < 0.1)
-    return "WEAK_BREADTH";
+  if (snap.input.breadth.available && netB != null && Math.abs(netB) < 0.1) return "WEAK_BREADTH";
   const oi = snap.input.oi;
-  if (oi.available && oi.buildUp && (oi.buildUp === "SHORT_COVERING" || oi.buildUp === "LONG_UNWINDING"))
+  if (
+    oi.available &&
+    oi.buildUp &&
+    (oi.buildUp === "SHORT_COVERING" || oi.buildUp === "LONG_UNWINDING")
+  )
     return "POOR_OI";
   // Direction flipped hard vs signal
   if (snap.forwardPrice != null && snap.spotPrice > 0) {

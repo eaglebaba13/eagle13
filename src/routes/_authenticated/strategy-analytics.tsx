@@ -27,13 +27,7 @@ export const Route = createFileRoute("/_authenticated/strategy-analytics")({
 
 function StrategyAnalyticsPage() {
   const [tab, setTab] = useState<
-    | "overview"
-    | "performance"
-    | "regime"
-    | "calibration"
-    | "contribution"
-    | "journal"
-    | "failure"
+    "overview" | "performance" | "regime" | "calibration" | "contribution" | "journal" | "failure"
   >("overview");
 
   // Analytics is fed via a cached historical snapshot list. Until an ingest
@@ -49,8 +43,8 @@ function StrategyAnalyticsPage() {
         </div>
         <h1 className="text-xl font-semibold text-foreground">Strategy Analytics</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Replays historical snapshots through the existing Decision Engine. No trading logic
-          is modified.
+          Replays historical snapshots through the existing Decision Engine. No trading logic is
+          modified.
         </p>
       </header>
 
@@ -108,13 +102,7 @@ function ReportView({
   report,
 }: {
   tab:
-    | "overview"
-    | "performance"
-    | "regime"
-    | "calibration"
-    | "contribution"
-    | "journal"
-    | "failure";
+    "overview" | "performance" | "regime" | "calibration" | "contribution" | "journal" | "failure";
   report: AnalyticsReport;
 }) {
   if (tab === "overview" || tab === "performance") {
@@ -128,7 +116,9 @@ function ReportView({
               Winning / Losing / Skipped: {o.winning} / {o.losing} / {o.skipped}
             </li>
             <li>Win rate: {o.winRate}%</li>
-            <li>Avg winner / loser: {o.avgWinner}% / {o.avgLoser}%</li>
+            <li>
+              Avg winner / loser: {o.avgWinner}% / {o.avgLoser}%
+            </li>
             <li>
               Profit factor:{" "}
               {o.profitFactor == null
@@ -283,8 +273,7 @@ function Table({
   head: readonly string[];
   rows: readonly (readonly (string | number)[])[];
 }) {
-  if (rows.length === 0)
-    return <p className="text-xs text-muted-foreground">No rows.</p>;
+  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No rows.</p>;
   return (
     <table className="w-full border-collapse text-xs">
       <thead>

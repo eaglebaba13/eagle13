@@ -19,11 +19,7 @@ const CheckoutInput = z.object({
   returnUrl: z.string().url().max(2048).optional(),
 });
 
-export type CheckoutStatus =
-  | "not_configured"
-  | "plan_not_billable"
-  | "not_authenticated"
-  | "ready";
+export type CheckoutStatus = "not_configured" | "plan_not_billable" | "not_authenticated" | "ready";
 
 export interface CreateCheckoutResult {
   status: CheckoutStatus;

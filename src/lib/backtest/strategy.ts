@@ -15,11 +15,7 @@ import {
 } from "./adapters/daily-astro.adapter";
 import { smcHistoricalAdapter } from "./adapters/smc-historical.adapter";
 import { hybridHistoricalAdapter } from "./adapters/astro-smc-hybrid.adapter";
-import {
-  SMC_STRATEGY_NOT_IMPLEMENTED,
-  analyzeSmc,
-  type SmcEngineResult,
-} from "../smc-engine";
+import { SMC_STRATEGY_NOT_IMPLEMENTED, analyzeSmc, type SmcEngineResult } from "../smc-engine";
 import {
   SMC_SIGNAL_ENGINE_READY,
   analyzeSmcSignals,
@@ -87,9 +83,7 @@ function comingNextAdapter(
   };
 }
 
-const SMC_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [
-  smcHistoricalAdapter,
-];
+const SMC_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [smcHistoricalAdapter];
 
 const smcBaseAdapter: HistoricalStrategyAdapter = {
   strategyId: "SMC",
@@ -118,9 +112,7 @@ const smcBaseAdapter: HistoricalStrategyAdapter = {
  */
 export const smcStrategyAdapter: HistoricalStrategyAdapter & {
   engineStatus: typeof SMC_STRATEGY_NOT_IMPLEMENTED;
-  analyzeStructure: (
-    ...args: Parameters<typeof analyzeSmc>
-  ) => SmcEngineResult;
+  analyzeStructure: (...args: Parameters<typeof analyzeSmc>) => SmcEngineResult;
   /**
    * Phase 21.4 Stage 2 · Deterministic signal-derivation entry point.
    * The strategy is still NOT executable through runUnifiedBacktest
@@ -129,9 +121,7 @@ export const smcStrategyAdapter: HistoricalStrategyAdapter & {
    * pure engine directly.
    */
   signalEngineStatus: SmcSignalEngineReady;
-  analyzeSignals: (
-    ...args: Parameters<typeof analyzeSmcSignals>
-  ) => SmcSignalResult;
+  analyzeSignals: (...args: Parameters<typeof analyzeSmcSignals>) => SmcSignalResult;
 } = {
   ...smcBaseAdapter,
   engineStatus: SMC_STRATEGY_NOT_IMPLEMENTED,
@@ -140,9 +130,7 @@ export const smcStrategyAdapter: HistoricalStrategyAdapter & {
   analyzeSignals: analyzeSmcSignals,
 };
 
-const HYBRID_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [
-  hybridHistoricalAdapter,
-];
+const HYBRID_FORMULA_ADAPTERS: ReadonlyArray<HistoricalFormulaAdapter> = [hybridHistoricalAdapter];
 
 export const astroSmcHybridAdapter: HistoricalStrategyAdapter = {
   strategyId: "ASTRO_SMC_HYBRID",
@@ -169,14 +157,13 @@ export const baselineStrategyAdapter = comingNextAdapter(
   "Baseline strategy — engine adapter not yet wired. EMA13/EMA50/VWAP + confirmed structure break.",
 );
 
-export const STRATEGY_REGISTRY: Readonly<
-  Record<StrategyId, HistoricalStrategyAdapter>
-> = Object.freeze({
-  ASTRO: astroStrategyAdapter,
-  SMC: smcStrategyAdapter,
-  ASTRO_SMC_HYBRID: astroSmcHybridAdapter,
-  BASELINE: baselineStrategyAdapter,
-});
+export const STRATEGY_REGISTRY: Readonly<Record<StrategyId, HistoricalStrategyAdapter>> =
+  Object.freeze({
+    ASTRO: astroStrategyAdapter,
+    SMC: smcStrategyAdapter,
+    ASTRO_SMC_HYBRID: astroSmcHybridAdapter,
+    BASELINE: baselineStrategyAdapter,
+  });
 
 export function listStrategies(): readonly HistoricalStrategyAdapter[] {
   return Object.values(STRATEGY_REGISTRY);

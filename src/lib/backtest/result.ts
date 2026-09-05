@@ -13,13 +13,7 @@ export type CausalityMode = "daily" | "intraday-5m";
 
 export type TradeSide = "BUY" | "SELL";
 
-export type TradeOutcome =
-  | "WIN"
-  | "LOSS"
-  | "FLAT"
-  | "SKIP"
-  | "AMBIGUOUS"
-  | "INVALID_SETUP";
+export type TradeOutcome = "WIN" | "LOSS" | "FLAT" | "SKIP" | "AMBIGUOUS" | "INVALID_SETUP";
 
 export type HistoricalTrade = {
   id: string;

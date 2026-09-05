@@ -21,11 +21,11 @@ const inflight = new Map<string, Promise<unknown>>();
 
 // Passive counters (dev diagnostics). No behavioural impact.
 type CacheKeyStats = {
-  hits: number;      // fresh hits
+  hits: number; // fresh hits
   staleHits: number; // served-stale-while-revalidating
-  misses: number;    // cold or expired -> awaited upstream
+  misses: number; // cold or expired -> awaited upstream
   refreshes: number; // background revalidations completed
-  errors: number;    // upstream failures during revalidate
+  errors: number; // upstream failures during revalidate
   lastRefreshMs: number | null;
 };
 const stats = new Map<string, CacheKeyStats>();
@@ -45,7 +45,12 @@ export type CacheOptions = {
   swrMs?: number;
 };
 
-function revalidate<T>(key: string, ttlMs: number, swrMs: number, loader: () => Promise<T>): Promise<T> {
+function revalidate<T>(
+  key: string,
+  ttlMs: number,
+  swrMs: number,
+  loader: () => Promise<T>,
+): Promise<T> {
   const existing = inflight.get(key) as Promise<T> | undefined;
   if (existing) return existing;
 
@@ -151,7 +156,17 @@ export function getCacheMetrics(): {
 } {
   const now = Date.now();
   const keys: CacheKeySnapshot[] = [];
-  const totals = { keys: 0, entries: 0, inFlight: 0, hits: 0, staleHits: 0, misses: 0, refreshes: 0, errors: 0, hitRate: 0 };
+  const totals = {
+    keys: 0,
+    entries: 0,
+    inFlight: 0,
+    hits: 0,
+    staleHits: 0,
+    misses: 0,
+    refreshes: 0,
+    errors: 0,
+    hitRate: 0,
+  };
   // Union of stat keys and store keys.
   const allKeys = new Set<string>([...stats.keys(), ...store.keys()]);
   for (const key of allKeys) {
@@ -182,8 +197,9 @@ export function getCacheMetrics(): {
   totals.entries = store.size;
   totals.inFlight = inflight.size;
   const totalLookups = totals.hits + totals.staleHits + totals.misses;
-  totals.hitRate = totalLookups > 0
-    ? Math.round(((totals.hits + totals.staleHits) / totalLookups) * 1000) / 10
-    : 0;
+  totals.hitRate =
+    totalLookups > 0
+      ? Math.round(((totals.hits + totals.staleHits) / totalLookups) * 1000) / 10
+      : 0;
   return { keys: keys.sort((a, b) => a.key.localeCompare(b.key)), totals };
 }

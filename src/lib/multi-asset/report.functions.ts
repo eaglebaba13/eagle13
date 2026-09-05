@@ -27,16 +27,30 @@ function todayIst(now: number = Date.now()): string {
 }
 
 function unavailableInstrument(id: string, name: string): InstrumentBlock {
-  return { instrumentId: id, displayName: name, bundle: null, bias: null, livePrice: null, status: "UNAVAILABLE" };
+  return {
+    instrumentId: id,
+    displayName: name,
+    bundle: null,
+    bias: null,
+    livePrice: null,
+    status: "UNAVAILABLE",
+  };
 }
 
 function unavailableRatio(): MacroRatioResult {
   return {
-    ratio: null, macroBias: "UNAVAILABLE",
-    goldBias: "UNAVAILABLE", silverBias: "UNAVAILABLE",
-    action: "WAIT", lowerThreshold: 55, upperThreshold: 80,
-    normalizedGold: null, normalizedSilver: null, quoteCurrency: null,
-    normalizationMethod: "UNAVAILABLE", freshness: "UNAVAILABLE",
+    ratio: null,
+    macroBias: "UNAVAILABLE",
+    goldBias: "UNAVAILABLE",
+    silverBias: "UNAVAILABLE",
+    action: "WAIT",
+    lowerThreshold: 55,
+    upperThreshold: 80,
+    normalizedGold: null,
+    normalizedSilver: null,
+    quoteCurrency: null,
+    normalizationMethod: "UNAVAILABLE",
+    freshness: "UNAVAILABLE",
     calculatedAt: new Date().toISOString(),
     goldSource: { price: null, timestamp: null, provider: null },
     silverSource: { price: null, timestamp: null, provider: null },
@@ -53,14 +67,26 @@ function unavailableRatio(): MacroRatioResult {
  */
 function buildEmptyPayload(reportDate: string, generatedAt: string): ComposeInput {
   const india: IndiaContextBlock = {
-    indiaVix: null, top5Bullish: [], top5Bearish: [],
-    strongestSectors: [], weakestSectors: [],
+    indiaVix: null,
+    top5Bullish: [],
+    top5Bearish: [],
+    strongestSectors: [],
+    weakestSectors: [],
     institutionalFlowProbability: null,
-    marketStatus: "UNAVAILABLE", latestTradeDate: null, status: "UNAVAILABLE",
+    marketStatus: "UNAVAILABLE",
+    latestTradeDate: null,
+    status: "UNAVAILABLE",
   };
-  const fii: FiiDiiBlock = { tradeDate: null, fiiNet: null, diiNet: null, publicationStatus: "UNAVAILABLE", status: "UNAVAILABLE" };
+  const fii: FiiDiiBlock = {
+    tradeDate: null,
+    fiiNet: null,
+    diiNet: null,
+    publicationStatus: "UNAVAILABLE",
+    status: "UNAVAILABLE",
+  };
   return {
-    reportDate, generatedAt,
+    reportDate,
+    generatedAt,
     reportId: buildReportId(reportDate),
     panchang: null,
     nifty: unavailableInstrument("NIFTY", "NIFTY 50"),
@@ -70,7 +96,9 @@ function buildEmptyPayload(reportDate: string, generatedAt: string): ComposeInpu
     btc: unavailableInstrument("BTC", "Bitcoin"),
     eth: unavailableInstrument("ETH", "Ethereum"),
     ratio: unavailableRatio(),
-    indiaContext: india, fiiDii: fii, overallStatus: "PARTIAL",
+    indiaContext: india,
+    fiiDii: fii,
+    overallStatus: "PARTIAL",
   };
 }
 
@@ -116,7 +144,9 @@ function mapRow(row: Record<string, unknown>): MorningReportRecord {
  * previous attempt succeeded. Public route hook and admin retry both call
  * this — the delivery step is skipped when `deliveryStatus === "SENT"`.
  */
-export async function runMorningBrief(opts?: { readonly forceRedeliver?: boolean }): Promise<MorningReportRecord> {
+export async function runMorningBrief(opts?: {
+  readonly forceRedeliver?: boolean;
+}): Promise<MorningReportRecord> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = Date.now();
   const reportDate = todayIst(now);
@@ -168,11 +198,16 @@ export async function runMorningBrief(opts?: { readonly forceRedeliver?: boolean
 
   const sections = composeMorningReport(payload);
   const outcome = await deliverMorningBrief({
-    reportId: payload.reportId, generatedAt: payload.generatedAt, sections,
+    reportId: payload.reportId,
+    generatedAt: payload.generatedAt,
+    sections,
   });
 
-  const nextStatus: "SENT" | "FAILED" | "PENDING" =
-    outcome.delivered ? "SENT" : outcome.attempted === 0 ? "PENDING" : "FAILED";
+  const nextStatus: "SENT" | "FAILED" | "PENDING" = outcome.delivered
+    ? "SENT"
+    : outcome.attempted === 0
+      ? "PENDING"
+      : "FAILED";
 
   const updated = await supabaseAdmin
     .from("morning_reports")
@@ -180,7 +215,9 @@ export async function runMorningBrief(opts?: { readonly forceRedeliver?: boolean
       delivery_status: nextStatus,
       delivery_error: outcome.error ?? null,
       delivery_attempts: record.deliveryAttempts + 1,
-      telegram_message_ids: [...outcome.messageIds] as unknown as import("@/integrations/supabase/types").Json,
+      telegram_message_ids: [
+        ...outcome.messageIds,
+      ] as unknown as import("@/integrations/supabase/types").Json,
       last_attempted_at: new Date().toISOString(),
     })
     .eq("id", record.id)
@@ -209,8 +246,10 @@ export const getLatestMorningReport = createServerFn({ method: "GET" })
 export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase
-      .rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (!isAdmin) throw new Error("Forbidden");
     return runMorningBrief({ forceRedeliver: true });
   });

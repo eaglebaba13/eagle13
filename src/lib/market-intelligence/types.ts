@@ -3,12 +3,7 @@
 
 export type DataQuality = "LIVE" | "FRESH" | "STALE" | "PARTIAL" | "UNAVAILABLE";
 
-export type InstitutionalBias =
-  | "STRONG_BUY"
-  | "BUY"
-  | "NEUTRAL"
-  | "SELL"
-  | "STRONG_SELL";
+export type InstitutionalBias = "STRONG_BUY" | "BUY" | "NEUTRAL" | "SELL" | "STRONG_SELL";
 
 export type MacroRisk = "LOW" | "MEDIUM" | "HIGH";
 
@@ -152,7 +147,11 @@ export interface FreshnessThresholds {
 }
 
 export const DEFAULT_FRESHNESS: Record<string, FreshnessThresholds> = {
-  fiiDii: { liveMs: 6 * 60 * 60 * 1000, freshMs: 24 * 60 * 60 * 1000, staleMs: 72 * 60 * 60 * 1000 },
+  fiiDii: {
+    liveMs: 6 * 60 * 60 * 1000,
+    freshMs: 24 * 60 * 60 * 1000,
+    staleMs: 72 * 60 * 60 * 1000,
+  },
   global: { liveMs: 5 * 60 * 1000, freshMs: 30 * 60 * 1000, staleMs: 6 * 60 * 60 * 1000 },
   macro: { liveMs: 15 * 60 * 1000, freshMs: 60 * 60 * 1000, staleMs: 12 * 60 * 60 * 1000 },
   sectors: { liveMs: 5 * 60 * 1000, freshMs: 30 * 60 * 1000, staleMs: 6 * 60 * 60 * 1000 },

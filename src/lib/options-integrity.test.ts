@@ -50,13 +50,19 @@ describe("evaluateOptionsTradability", () => {
     expect(r.isTradable).toBe(false);
   });
   it("blocks on STALE", () => {
-    expect(evaluateOptionsTradability(liveInputs({ sourceStatus: "STALE" })).isTradable).toBe(false);
+    expect(evaluateOptionsTradability(liveInputs({ sourceStatus: "STALE" })).isTradable).toBe(
+      false,
+    );
   });
   it("blocks on PARTIAL", () => {
-    expect(evaluateOptionsTradability(liveInputs({ sourceStatus: "PARTIAL" })).isTradable).toBe(false);
+    expect(evaluateOptionsTradability(liveInputs({ sourceStatus: "PARTIAL" })).isTradable).toBe(
+      false,
+    );
   });
   it("blocks on DEMO", () => {
-    expect(evaluateOptionsTradability(liveInputs({ demo: true, sourceStatus: "DEMO" })).isTradable).toBe(false);
+    expect(
+      evaluateOptionsTradability(liveInputs({ demo: true, sourceStatus: "DEMO" })).isTradable,
+    ).toBe(false);
   });
   it("warns but stays tradable on DELAYED", () => {
     const r = evaluateOptionsTradability(liveInputs({ sourceStatus: "DELAYED" }));
@@ -110,7 +116,9 @@ describe("exportFilename", () => {
     expect(exportFilename("OPTIONS", "NIFTY", "2026-07-17", "LIVE", "csv", now)).toBe(
       "NIFTY_OPTIONS_LIVE_2026-07-17_2026-07-14.csv",
     );
-    expect(exportFilename("OPTIONS", "NIFTY", "2026-07-17", "DEMO", "json", now)).toContain("_DEMO_");
+    expect(exportFilename("OPTIONS", "NIFTY", "2026-07-17", "DEMO", "json", now)).toContain(
+      "_DEMO_",
+    );
   });
 });
 
@@ -144,14 +152,16 @@ describe("shouldAcceptAlert", () => {
     expect(shouldAcceptAlert(base, { ...base, snapshotTs: 500 })).toBe(false);
   });
   it("resets on provider or expiry change", () => {
-    expect(
-      shouldAcceptAlert(base, { ...base, snapshotTs: 2000, provider: "OTHER" }),
-    ).toBe(false);
-    expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, expiry: "2026-07-24" })).toBe(false);
+    expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, provider: "OTHER" })).toBe(false);
+    expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, expiry: "2026-07-24" })).toBe(
+      false,
+    );
   });
   it("rejects when market closed or not LIVE", () => {
     expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, marketOpen: false })).toBe(false);
-    expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, sourceStatus: "STALE" })).toBe(false);
+    expect(shouldAcceptAlert(base, { ...base, snapshotTs: 2000, sourceStatus: "STALE" })).toBe(
+      false,
+    );
   });
   it("returns false when no previous context", () => {
     expect(shouldAcceptAlert(null, base)).toBe(false);
@@ -159,7 +169,12 @@ describe("shouldAcceptAlert", () => {
 });
 
 describe("safeRecommendationAction", () => {
-  const tradable = { isTradable: true, sourceStatus: "LIVE" as const, blockingReasons: [], warnings: [] };
+  const tradable = {
+    isTradable: true,
+    sourceStatus: "LIVE" as const,
+    blockingReasons: [],
+    warnings: [],
+  };
   const untradable = {
     isTradable: false,
     sourceStatus: "UNAVAILABLE" as const,
@@ -176,12 +191,12 @@ describe("safeRecommendationAction", () => {
   });
   it("returns DATA_INCOMPLETE when data is unavailable/stale/partial/demo", () => {
     expect(safeRecommendationAction("BUY_CE", untradable, true)).toBe("DATA_INCOMPLETE");
-    expect(
-      safeRecommendationAction("BUY_CE", { ...untradable, sourceStatus: "STALE" }, true),
-    ).toBe("DATA_INCOMPLETE");
-    expect(
-      safeRecommendationAction("BUY_CE", { ...untradable, sourceStatus: "DEMO" }, true),
-    ).toBe("DATA_INCOMPLETE");
+    expect(safeRecommendationAction("BUY_CE", { ...untradable, sourceStatus: "STALE" }, true)).toBe(
+      "DATA_INCOMPLETE",
+    );
+    expect(safeRecommendationAction("BUY_CE", { ...untradable, sourceStatus: "DEMO" }, true)).toBe(
+      "DATA_INCOMPLETE",
+    );
   });
   it("returns WAIT for other untradable reasons", () => {
     expect(

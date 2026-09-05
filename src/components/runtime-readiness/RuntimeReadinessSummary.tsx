@@ -47,7 +47,10 @@ export function RuntimeReadinessSummary({
       {(blockers.length > 0 || warnings.length > 0) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {blockers.length > 0 && (
-            <div aria-label="Blockers" className="rounded border border-red-500/30 bg-red-500/[0.05] p-2 text-xs text-red-300">
+            <div
+              aria-label="Blockers"
+              className="rounded border border-red-500/30 bg-red-500/[0.05] p-2 text-xs text-red-300"
+            >
               <div className="mb-1 font-semibold">Blockers ({blockers.length})</div>
               <ul className="space-y-0.5">
                 {blockers.slice(0, 8).map((b, i) => (
@@ -57,7 +60,10 @@ export function RuntimeReadinessSummary({
             </div>
           )}
           {warnings.length > 0 && (
-            <div aria-label="Warnings" className="rounded border border-amber-500/30 bg-amber-500/[0.05] p-2 text-xs text-amber-300">
+            <div
+              aria-label="Warnings"
+              className="rounded border border-amber-500/30 bg-amber-500/[0.05] p-2 text-xs text-amber-300"
+            >
               <div className="mb-1 font-semibold">Warnings ({warnings.length})</div>
               <ul className="space-y-0.5">
                 {warnings.slice(0, 8).map((w, i) => (
@@ -80,7 +86,15 @@ export function RuntimeReadinessSummary({
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" | "err" | "info" }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "ok" | "warn" | "err" | "info";
+}) {
   const cls =
     tone === "ok"
       ? "text-emerald-300"

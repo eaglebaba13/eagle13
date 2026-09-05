@@ -32,7 +32,10 @@ export function applyConstraints(
   // trade count filter
   for (let i = 0; i < assets.length; i++) {
     if (constraints.minTradeCount != null && assets[i].trades.length < constraints.minTradeCount) {
-      rejected.push({ assetId: assets[i].id, reason: `MIN_TRADE_COUNT<${constraints.minTradeCount}` });
+      rejected.push({
+        assetId: assets[i].id,
+        reason: `MIN_TRADE_COUNT<${constraints.minTradeCount}`,
+      });
       out[i] = 0;
     }
   }

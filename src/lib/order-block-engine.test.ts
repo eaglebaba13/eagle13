@@ -12,13 +12,13 @@ function c(t: number, o: number, h: number, l: number, cl: number, v = 1000): Ca
 function bullishOBSeries(): Candle[] {
   return [
     c(1, 100, 101, 99, 100),
-    c(2, 100, 110, 100, 105),   // pivot high
+    c(2, 100, 110, 100, 105), // pivot high
     c(3, 105, 106, 100, 101),
-    c(4, 101, 102, 96, 97),     // bearish anchor (last down candle before impulse)
-    c(5, 97, 115, 97, 114),     // impulsive bullish BOS (closes above 110)
+    c(4, 101, 102, 96, 97), // bearish anchor (last down candle before impulse)
+    c(5, 97, 115, 97, 114), // impulsive bullish BOS (closes above 110)
     c(6, 114, 116, 112, 115),
-    c(7, 115, 117, 98, 99),     // wick returns into anchor range → mitigation
-    c(8, 99, 100, 95, 96),      // close below anchor low → invalidation
+    c(7, 115, 117, 98, 99), // wick returns into anchor range → mitigation
+    c(8, 99, 100, 95, 96), // close below anchor low → invalidation
   ];
 }
 

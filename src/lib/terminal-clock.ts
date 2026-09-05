@@ -2,12 +2,7 @@
 // IMPORTANT: This file contains ONLY time/session/countdown presentation math
 // and derivations from already-computed astro data. It does NOT modify any
 // existing astro calculation, level formula, signal engine, API or database.
-import {
-  NAKSHATRAS,
-  SIGNS,
-  isBullNakshatra,
-  isBearNakshatra,
-} from "./astro-constants";
+import { NAKSHATRAS, SIGNS, isBullNakshatra, isBearNakshatra } from "./astro-constants";
 
 export const NAK_SIZE = 360 / 27; // 13.3333°
 export const PADA_SIZE = NAK_SIZE / 4; // 3.3333°
@@ -66,9 +61,21 @@ export function fmtDur(ms: number): string {
 // Presentation-only static list (NSE trading holidays). Used purely to label
 // "Closed / Holiday" and compute the next trading day in the UI.
 export const NSE_HOLIDAYS_2026 = new Set<string>([
-  "2026-01-26", "2026-02-16", "2026-03-04", "2026-03-25", "2026-04-01",
-  "2026-04-03", "2026-04-14", "2026-05-01", "2026-08-15", "2026-08-28",
-  "2026-10-02", "2026-10-21", "2026-11-09", "2026-11-24", "2026-12-25",
+  "2026-01-26",
+  "2026-02-16",
+  "2026-03-04",
+  "2026-03-25",
+  "2026-04-01",
+  "2026-04-03",
+  "2026-04-14",
+  "2026-05-01",
+  "2026-08-15",
+  "2026-08-28",
+  "2026-10-02",
+  "2026-10-21",
+  "2026-11-09",
+  "2026-11-24",
+  "2026-12-25",
 ]);
 
 function ymd(d: Date): string {
@@ -151,8 +158,7 @@ export function nseSession(now = Date.now()): SessionState {
       status: p.dow === 0 || p.dow === 6 ? "WEEKEND" : "HOLIDAY",
       note: `Next trading day: ${nt.label}`,
       next: `Pre-Open ${nt.label} 09:00`,
-      countdownMs:
-        nt.date.getTime() - (p.wall.getTime() - p.secOfDay * 1000) + 9 * 3600 * 1000,
+      countdownMs: nt.date.getTime() - (p.wall.getTime() - p.secOfDay * 1000) + 9 * 3600 * 1000,
     };
   }
 
@@ -197,8 +203,7 @@ export function nseSession(now = Date.now()): SessionState {
     status: "CLOSED",
     note: `Next trading day: ${nt.label}`,
     next: `Pre-Open ${nt.label} 09:00`,
-    countdownMs:
-      nt.date.getTime() - (p.wall.getTime() - p.secOfDay * 1000) + 9 * 3600 * 1000,
+    countdownMs: nt.date.getTime() - (p.wall.getTime() - p.secOfDay * 1000) + 9 * 3600 * 1000,
   };
 }
 
@@ -306,9 +311,25 @@ export function moonEvents(abs: number, speed: number, pada: number): MoonEvents
     nakshatra: NAKSHATRAS[nakIdx],
     pada,
     degree: a % NAK_SIZE,
-    nextPada: { target: "Next Pada", msRemaining: padaB.ms, degRemaining: padaB.deg, padaNum: (pada % 4) + 1 },
-    nextNakshatra: { target: "Next Nakshatra", msRemaining: nak.ms, degRemaining: nak.deg, name: nextNakName, bias },
-    nextSign: { target: "Next Sign", msRemaining: signB.ms, degRemaining: signB.deg, name: SIGNS[(signIdx + 1) % 12] },
+    nextPada: {
+      target: "Next Pada",
+      msRemaining: padaB.ms,
+      degRemaining: padaB.deg,
+      padaNum: (pada % 4) + 1,
+    },
+    nextNakshatra: {
+      target: "Next Nakshatra",
+      msRemaining: nak.ms,
+      degRemaining: nak.deg,
+      name: nextNakName,
+      bias,
+    },
+    nextSign: {
+      target: "Next Sign",
+      msRemaining: signB.ms,
+      degRemaining: signB.deg,
+      name: SIGNS[(signIdx + 1) % 12],
+    },
   };
 }
 
@@ -323,7 +344,14 @@ export type PlanetEvent = {
 
 // Soonest upcoming sign / nakshatra ingress across a set of bodies.
 export function planetEvents(
-  bodies: { planet: string; absDegree: number; speed: number; sign: string; nakshatra: string; retro: boolean }[],
+  bodies: {
+    planet: string;
+    absDegree: number;
+    speed: number;
+    sign: string;
+    nakshatra: string;
+    retro: boolean;
+  }[],
 ): { signChanges: PlanetEvent[]; nakChanges: PlanetEvent[] } {
   const signChanges: PlanetEvent[] = [];
   const nakChanges: PlanetEvent[] = [];

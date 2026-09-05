@@ -13,7 +13,12 @@ import type {
 import { DEFAULT_OUTCOME_THRESHOLDS } from "./types";
 import { eventsForRow } from "./signal-events";
 
-function bucketMetrics(pairs: readonly Pair[], thresholds: OutcomeThresholds, label: string, key: string): RegimeBucket {
+function bucketMetrics(
+  pairs: readonly Pair[],
+  thresholds: OutcomeThresholds,
+  label: string,
+  key: string,
+): RegimeBucket {
   return { key, label, metrics: computeMetrics(pairs, thresholds) };
 }
 
@@ -63,14 +68,22 @@ export function runGannGapStudy(
     const event = evs[0] as SignalEvent | undefined;
     if (!event) continue;
     const leakage = checkSignalLeakage(event, r);
-    if (!leakage.ok) { warnings.push(`LEAKAGE:${r.sessionDate}`); continue; }
+    if (!leakage.ok) {
+      warnings.push(`LEAKAGE:${r.sessionDate}`);
+      continue;
+    }
     const outcome = computeOutcome(i, rows, thresholds);
     const outlook = r.gannGap.outlook;
     const predicted =
-      outlook === "GAP_UP" ? "GAP_UP" :
-      outlook === "GAP_DOWN" ? "GAP_DOWN" :
-      outlook === "NO_TRADE" ? "NO_TRADE" :
-      outlook === "CONFLICT" ? "CONFLICT" : null;
+      outlook === "GAP_UP"
+        ? "GAP_UP"
+        : outlook === "GAP_DOWN"
+          ? "GAP_DOWN"
+          : outlook === "NO_TRADE"
+            ? "NO_TRADE"
+            : outlook === "CONFLICT"
+              ? "CONFLICT"
+              : null;
     if (predicted === "NO_TRADE") noTrade++;
     if (predicted === "CONFLICT") conflict++;
     const pair: Pair = {
@@ -96,7 +109,8 @@ export function runGannGapStudy(
   const metrics = computeMetrics(pairs, thresholds);
   const conf = buildConfusion(pairs);
   const toBuckets = (m: Map<string, Pair[]>): RegimeBucket[] =>
-    [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
+    [...m.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, ps]) => bucketMetrics(ps, thresholds, k, k));
   return {
     metrics,

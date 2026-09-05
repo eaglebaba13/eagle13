@@ -6,14 +6,50 @@ const base = { formulaVersion: "v1", reference: 100 };
 describe("evaluateHistoricalAccuracy", () => {
   it("computes win-rate and counts", () => {
     const preds = [
-      { predictionId: "p1", tradingDate: "2025-01-01", nextTradingDate: "2025-01-02", label: "GAP_UP_RESEARCH" as const, frozenAt: "2025-01-01T09:56:00Z", ...base },
-      { predictionId: "p2", tradingDate: "2025-01-02", nextTradingDate: "2025-01-03", label: "GAP_DOWN_RESEARCH" as const, frozenAt: "2025-01-02T09:56:00Z", ...base },
-      { predictionId: "p3", tradingDate: "2025-01-03", nextTradingDate: "2025-01-06", label: "INDECISION" as const, frozenAt: "2025-01-03T09:56:00Z", ...base },
+      {
+        predictionId: "p1",
+        tradingDate: "2025-01-01",
+        nextTradingDate: "2025-01-02",
+        label: "GAP_UP_RESEARCH" as const,
+        frozenAt: "2025-01-01T09:56:00Z",
+        ...base,
+      },
+      {
+        predictionId: "p2",
+        tradingDate: "2025-01-02",
+        nextTradingDate: "2025-01-03",
+        label: "GAP_DOWN_RESEARCH" as const,
+        frozenAt: "2025-01-02T09:56:00Z",
+        ...base,
+      },
+      {
+        predictionId: "p3",
+        tradingDate: "2025-01-03",
+        nextTradingDate: "2025-01-06",
+        label: "INDECISION" as const,
+        frozenAt: "2025-01-03T09:56:00Z",
+        ...base,
+      },
     ];
     const outs = [
-      { predictionId: "p1", outcome: "ACTUAL_GAP_UP" as const, ruleVersion: "v1", evaluatedAt: "2025-01-02T04:00:00Z" },
-      { predictionId: "p2", outcome: "ACTUAL_GAP_UP" as const, ruleVersion: "v1", evaluatedAt: "2025-01-03T04:00:00Z" },
-      { predictionId: "p3", outcome: "ACTUAL_FLAT" as const, ruleVersion: "v1", evaluatedAt: "2025-01-06T04:00:00Z" },
+      {
+        predictionId: "p1",
+        outcome: "ACTUAL_GAP_UP" as const,
+        ruleVersion: "v1",
+        evaluatedAt: "2025-01-02T04:00:00Z",
+      },
+      {
+        predictionId: "p2",
+        outcome: "ACTUAL_GAP_UP" as const,
+        ruleVersion: "v1",
+        evaluatedAt: "2025-01-03T04:00:00Z",
+      },
+      {
+        predictionId: "p3",
+        outcome: "ACTUAL_FLAT" as const,
+        ruleVersion: "v1",
+        evaluatedAt: "2025-01-06T04:00:00Z",
+      },
     ];
     const m = evaluateHistoricalAccuracy(preds, outs, { minSampleSize: 2 });
     expect(m.evaluated).toBe(3);
@@ -23,8 +59,24 @@ describe("evaluateHistoricalAccuracy", () => {
     expect(m.meetsMinSample).toBe(true);
   });
   it("rejects leakage when outcome ≤ frozenAt", () => {
-    const preds = [{ predictionId: "p1", tradingDate: "2025-01-01", nextTradingDate: "2025-01-02", label: "GAP_UP_RESEARCH" as const, frozenAt: "2025-01-01T09:56:00Z", ...base }];
-    const outs = [{ predictionId: "p1", outcome: "ACTUAL_GAP_UP" as const, ruleVersion: "v1", evaluatedAt: "2025-01-01T09:56:00Z" }];
+    const preds = [
+      {
+        predictionId: "p1",
+        tradingDate: "2025-01-01",
+        nextTradingDate: "2025-01-02",
+        label: "GAP_UP_RESEARCH" as const,
+        frozenAt: "2025-01-01T09:56:00Z",
+        ...base,
+      },
+    ];
+    const outs = [
+      {
+        predictionId: "p1",
+        outcome: "ACTUAL_GAP_UP" as const,
+        ruleVersion: "v1",
+        evaluatedAt: "2025-01-01T09:56:00Z",
+      },
+    ];
     const m = evaluateHistoricalAccuracy(preds, outs);
     expect(m.leakageDetected).toBe(1);
     expect(m.evaluated).toBe(0);

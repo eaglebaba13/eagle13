@@ -70,23 +70,35 @@ export function GoldSilverRatioCard({ gold, silver }: Props) {
       aria-labelledby="eb-gsr-title"
       style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}
     >
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+      <header
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <span
             aria-hidden
             style={{
-              width: 10, height: 10, borderRadius: 999, background: accent,
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: accent,
               boxShadow: `0 0 0 3px color-mix(in oklab, ${accent} 25%, transparent)`,
             }}
           />
-          <h3 id="eb-gsr-title" className="eb-card-title" style={{ margin: 0, fontSize: 14, letterSpacing: 0.4 }}>
+          <h3
+            id="eb-gsr-title"
+            className="eb-card-title"
+            style={{ margin: 0, fontSize: 14, letterSpacing: 0.4 }}
+          >
             GOLD–SILVER RATIO
           </h3>
         </div>
         <span
           title="Gold–Silver Ratio = Gold price / Silver price (both COMEX USD/oz). Signal boundaries: <55 BUY GOLD, 55–75 WAIT, >75 BUY SILVER."
           style={{
-            fontFamily: "var(--eb-mono)", fontSize: 11, color: "var(--eb-muted)", cursor: "help",
+            fontFamily: "var(--eb-mono)",
+            fontSize: 11,
+            color: "var(--eb-muted)",
+            cursor: "help",
           }}
         >
           ?
@@ -94,7 +106,15 @@ export function GoldSilverRatioCard({ gold, silver }: Props) {
       </header>
 
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 34, fontWeight: 700, color: accent, lineHeight: 1 }}>
+        <div
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 34,
+            fontWeight: 700,
+            color: accent,
+            lineHeight: 1,
+          }}
+        >
           {snap.ratio != null ? snap.ratio.toFixed(2) : "—"}
         </div>
         <div
@@ -120,8 +140,11 @@ export function GoldSilverRatioCard({ gold, silver }: Props) {
       <div style={{ marginTop: 4 }}>
         <div
           style={{
-            position: "relative", height: 8, borderRadius: 999,
-            background: "linear-gradient(90deg, var(--eb-accent, #f5b642), var(--eb-neutral, #6b7280) 30% 70%, var(--eb-muted, #9aa7b8))",
+            position: "relative",
+            height: 8,
+            borderRadius: 999,
+            background:
+              "linear-gradient(90deg, var(--eb-accent, #f5b642), var(--eb-neutral, #6b7280) 30% 70%, var(--eb-muted, #9aa7b8))",
             opacity: 0.85,
           }}
           aria-hidden
@@ -131,31 +154,56 @@ export function GoldSilverRatioCard({ gold, silver }: Props) {
               style={{
                 position: "absolute",
                 left: `${Math.min(100, Math.max(0, ((snap.ratio - 40) / (90 - 40)) * 100))}%`,
-                top: -3, width: 3, height: 14, background: "var(--eb-text, #fff)", transform: "translateX(-50%)",
+                top: -3,
+                width: 3,
+                height: 14,
+                background: "var(--eb-text, #fff)",
+                transform: "translateX(-50%)",
                 borderRadius: 2,
               }}
             />
           ) : null}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 10, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 4,
+            fontSize: 10,
+            color: "var(--eb-muted)",
+            fontFamily: "var(--eb-mono)",
+          }}
+        >
           <span>40</span>
-          <span>{GOLD_SILVER_LOWER_THRESHOLD} · Neutral · {GOLD_SILVER_UPPER_THRESHOLD}</span>
+          <span>
+            {GOLD_SILVER_LOWER_THRESHOLD} · Neutral · {GOLD_SILVER_UPPER_THRESHOLD}
+          </span>
           <span>90</span>
         </div>
       </div>
 
       <dl
         style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px",
-          margin: 0, fontFamily: "var(--eb-mono)", fontSize: 11,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "4px 12px",
+          margin: 0,
+          fontFamily: "var(--eb-mono)",
+          fontSize: 11,
         }}
       >
         <dt style={{ color: "var(--eb-muted)" }}>Gold</dt>
-        <dd style={{ margin: 0, textAlign: "right" }}>{gold ? `$${gold.livePrice.toFixed(2)}` : "—"}</dd>
+        <dd style={{ margin: 0, textAlign: "right" }}>
+          {gold ? `$${gold.livePrice.toFixed(2)}` : "—"}
+        </dd>
         <dt style={{ color: "var(--eb-muted)" }}>Silver</dt>
-        <dd style={{ margin: 0, textAlign: "right" }}>{silver ? `$${silver.livePrice.toFixed(2)}` : "—"}</dd>
+        <dd style={{ margin: 0, textAlign: "right" }}>
+          {silver ? `$${silver.livePrice.toFixed(2)}` : "—"}
+        </dd>
         <dt style={{ color: "var(--eb-muted)" }}>Distance</dt>
-        <dd style={{ margin: 0, textAlign: "right" }}>{distance != null ? distance.toFixed(2) : "—"}</dd>
+        <dd style={{ margin: 0, textAlign: "right" }}>
+          {distance != null ? distance.toFixed(2) : "—"}
+        </dd>
         <dt style={{ color: "var(--eb-muted)" }}>Provider</dt>
         <dd style={{ margin: 0, textAlign: "right" }}>{snap.provider}</dd>
         <dt style={{ color: "var(--eb-muted)" }}>Freshness</dt>

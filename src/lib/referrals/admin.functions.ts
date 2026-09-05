@@ -12,10 +12,10 @@ export const adminReferralScreenshotUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { path: string }) => data)
   .handler(async ({ data, context }): Promise<{ url: string; expiresIn: number }> => {
-    const { data: isAdmin, error: roleErr } = await context.supabase.rpc(
-      "has_role",
-      { _user_id: context.userId, _role: "admin" },
-    );
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (roleErr) throw new Error(roleErr.message);
     if (!isAdmin) throw new Error("forbidden");
     const path = data.path?.trim();

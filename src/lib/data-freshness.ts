@@ -5,13 +5,7 @@
 
 export const DATA_FRESHNESS_VERSION = "DATA_FRESHNESS_V1";
 
-export type FreshnessStatus =
-  | "LIVE"
-  | "FRESH"
-  | "DELAYED"
-  | "STALE"
-  | "UNAVAILABLE"
-  | "ERROR";
+export type FreshnessStatus = "LIVE" | "FRESH" | "DELAYED" | "STALE" | "UNAVAILABLE" | "ERROR";
 
 export type MarketSessionStatus = "OPEN" | "CLOSED" | "PREOPEN" | "POSTCLOSE" | "UNKNOWN";
 export type ProviderStatus = "OK" | "DEGRADED" | "DOWN" | "UNKNOWN";

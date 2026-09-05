@@ -12,9 +12,12 @@ import { trafficLightLabel } from "@/lib/provider-health/traffic-light";
 export const GTI_SUMMARY_QUERY_KEY = ["gti-summary"] as const;
 
 function Chip({ light, label }: { light: TrafficLight; label: string }) {
-  const bg = light === "GREEN" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-    : light === "YELLOW" ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-    : "bg-red-500/15 text-red-300 border-red-500/30";
+  const bg =
+    light === "GREEN"
+      ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+      : light === "YELLOW"
+        ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+        : "bg-red-500/15 text-red-300 border-red-500/30";
   return (
     <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs ${bg}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
@@ -45,17 +48,16 @@ export function GtiSummaryCard() {
   });
 
   return (
-    <section
-      aria-label="GTI Summary"
-      className="rounded-xl border border-border bg-card/60 p-4"
-    >
+    <section aria-label="GTI Summary" className="rounded-xl border border-border bg-card/60 p-4">
       <header className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold tracking-tight">GTI Summary</h2>
           <p className="text-xs text-muted-foreground">Research-only market snapshot</p>
         </div>
         <div className="flex items-center gap-2">
-          {data && <Chip light={data.health.overall} label={trafficLightLabel(data.health.overall)} />}
+          {data && (
+            <Chip light={data.health.overall} label={trafficLightLabel(data.health.overall)} />
+          )}
           <button
             type="button"
             onClick={() => refetch()}
@@ -69,7 +71,10 @@ export function GtiSummaryCard() {
 
       {isLoading && <div className="py-6 text-center text-xs text-muted-foreground">Loading…</div>}
       {error && (
-        <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
+        <div
+          role="alert"
+          className="rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300"
+        >
           {(error as Error).message}
         </div>
       )}
@@ -103,9 +108,18 @@ export function GtiSummaryCard() {
             sub={`${Math.round(data.gti.confidence)}% conf`}
           />
           <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
-            <Chip light={data.health.quotes} label={`Quotes ${trafficLightLabel(data.health.quotes)}`} />
-            <Chip light={data.health.options} label={`Options ${trafficLightLabel(data.health.options)}`} />
-            <Chip light={data.health.breadth} label={`Breadth ${trafficLightLabel(data.health.breadth)}`} />
+            <Chip
+              light={data.health.quotes}
+              label={`Quotes ${trafficLightLabel(data.health.quotes)}`}
+            />
+            <Chip
+              light={data.health.options}
+              label={`Options ${trafficLightLabel(data.health.options)}`}
+            />
+            <Chip
+              light={data.health.breadth}
+              label={`Breadth ${trafficLightLabel(data.health.breadth)}`}
+            />
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">{data.disclaimer}</p>
         </div>

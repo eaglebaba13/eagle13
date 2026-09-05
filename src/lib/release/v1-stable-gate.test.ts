@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  V1_STABLE_GATES,
-  evaluateV1StableReadiness,
-  type V1GateStatus,
-} from "./v1-stable-gate";
+import { V1_STABLE_GATES, evaluateV1StableReadiness, type V1GateStatus } from "./v1-stable-gate";
 import {
   V1_MANIFEST,
   V1_VERSION,

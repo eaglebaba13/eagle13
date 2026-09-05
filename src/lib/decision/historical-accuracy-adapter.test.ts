@@ -55,37 +55,25 @@ describe("selectHistoricalAccuracy", () => {
   });
 
   it("rejects incompatible formula/strategy versions", () => {
-    const r = selectHistoricalAccuracy(
-      [run({ formulaVersion: "decision@0.9.0" })],
-      ctx,
-    );
+    const r = selectHistoricalAccuracy([run({ formulaVersion: "decision@0.9.0" })], ctx);
     expect(r.capability).toBe("NO_COMPATIBLE_RUN");
     expect(r.rejectedReasons[0]).toMatch(/formula version mismatch/);
   });
 
   it("rejects stale runs (>30 days)", () => {
-    const r = selectHistoricalAccuracy(
-      [run({ evaluatedAt: "2026-05-01T10:00:00Z" })],
-      ctx,
-    );
+    const r = selectHistoricalAccuracy([run({ evaluatedAt: "2026-05-01T10:00:00Z" })], ctx);
     expect(r.capability).toBe("NO_COMPATIBLE_RUN");
     expect(r.rejectedReasons[0]).toMatch(/stale/);
   });
 
   it("rejects insufficient sample size", () => {
-    const r = selectHistoricalAccuracy(
-      [run({ wins: 2, losses: 3, neutral: 0 })],
-      ctx,
-    );
+    const r = selectHistoricalAccuracy([run({ wins: 2, losses: 3, neutral: 0 })], ctx);
     expect(r.capability).toBe("NO_COMPATIBLE_RUN");
     expect(r.rejectedReasons[0]).toMatch(/insufficient sample/);
   });
 
   it("computes win rate and Wilson CI", () => {
-    const r = selectHistoricalAccuracy(
-      [run({ wins: 60, losses: 40, neutral: 10 })],
-      ctx,
-    );
+    const r = selectHistoricalAccuracy([run({ wins: 60, losses: 40, neutral: 10 })], ctx);
     expect(r.winRatePct).toBeCloseTo(60, 5);
     expect(r.sampleSize).toBe(110);
     expect(r.confidenceIntervalPct?.[0]).toBeLessThan(60);
@@ -94,10 +82,7 @@ describe("selectHistoricalAccuracy", () => {
 
   it("never merges incompatible runs silently", () => {
     const r = selectHistoricalAccuracy(
-      [
-        run({ id: "a", instrument: "BANKNIFTY" }),
-        run({ id: "b", source: "BACKTEST_APPROVED" }),
-      ],
+      [run({ id: "a", instrument: "BANKNIFTY" }), run({ id: "b", source: "BACKTEST_APPROVED" })],
       ctx,
     );
     expect(r.runId).toBe("b");
@@ -105,10 +90,7 @@ describe("selectHistoricalAccuracy", () => {
   });
 
   it("marks freshness stale for runs older than 7 days", () => {
-    const r = selectHistoricalAccuracy(
-      [run({ evaluatedAt: "2026-07-05T10:00:00Z" })],
-      ctx,
-    );
+    const r = selectHistoricalAccuracy([run({ evaluatedAt: "2026-07-05T10:00:00Z" })], ctx);
     expect(r.freshness).toBe("STALE");
   });
 });

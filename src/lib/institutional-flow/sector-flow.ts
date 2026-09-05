@@ -10,14 +10,14 @@ export const SECTOR_DISPLAY_ORDER: readonly {
   readonly name: string;
   readonly universeSuffix: string;
 }[] = [
-  { id: "BANKING",    name: "Banking",     universeSuffix: "BANKING" },
-  { id: "IT",         name: "IT",          universeSuffix: "IT" },
-  { id: "AUTO",       name: "Auto",        universeSuffix: "AUTO" },
-  { id: "OIL_GAS",    name: "Oil & Gas",   universeSuffix: "OIL_GAS" },
-  { id: "FMCG",       name: "FMCG",        universeSuffix: "FMCG" },
-  { id: "PHARMA",     name: "Pharma",      universeSuffix: "PHARMA" },
-  { id: "FINANCIALS", name: "Financials",  universeSuffix: "FINANCIALS" },
-  { id: "METALS",     name: "Metals",      universeSuffix: "METALS" },
+  { id: "BANKING", name: "Banking", universeSuffix: "BANKING" },
+  { id: "IT", name: "IT", universeSuffix: "IT" },
+  { id: "AUTO", name: "Auto", universeSuffix: "AUTO" },
+  { id: "OIL_GAS", name: "Oil & Gas", universeSuffix: "OIL_GAS" },
+  { id: "FMCG", name: "FMCG", universeSuffix: "FMCG" },
+  { id: "PHARMA", name: "Pharma", universeSuffix: "PHARMA" },
+  { id: "FINANCIALS", name: "Financials", universeSuffix: "FINANCIALS" },
+  { id: "METALS", name: "Metals", universeSuffix: "METALS" },
 ];
 
 function biasFrom(net: number | null, weighted: number | null): SectorFlowRow["bias"] {
@@ -36,7 +36,9 @@ export interface SectorFlowInput {
 export function buildSectorFlow(input: SectorFlowInput): SectorFlow {
   const bySuffix = new Map<string, MarketBreadthSnapshot>();
   for (const s of input.sectors) {
-    const suffix = s.universe.startsWith("SECTOR_") ? s.universe.slice("SECTOR_".length) : s.universe;
+    const suffix = s.universe.startsWith("SECTOR_")
+      ? s.universe.slice("SECTOR_".length)
+      : s.universe;
     bySuffix.set(suffix, s);
   }
 

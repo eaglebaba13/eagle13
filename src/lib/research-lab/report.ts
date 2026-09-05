@@ -47,7 +47,8 @@ function metricsForFamily(
   const grouped = eventsByFamily(dataset.rows)[family] ?? [];
   const rows = dataset.rows;
   const bySession = new Map<string, HistoricalRowIndex>();
-  for (let i = 0; i < rows.length; i++) bySession.set(rows[i].sessionDate, { row: rows[i], index: i });
+  for (let i = 0; i < rows.length; i++)
+    bySession.set(rows[i].sessionDate, { row: rows[i], index: i });
   const pairs: Pair[] = [];
   for (const ev of grouped) {
     const hit = bySession.get(ev.sessionDate);
@@ -70,8 +71,14 @@ export function buildResearchRunReport(input: BuildReportInput): ResearchRunRepo
   const thresholds = input.thresholds ?? DEFAULT_OUTCOME_THRESHOLDS;
   const ds = input.dataset;
   const allFamilies: SignalFamily[] = [
-    "DECISION", "GTI", "COMBINED_PCR", "BREADTH",
-    "GANN_GAP", "SMART_ALERT", "INSTITUTIONAL_FLOW", "OPTION_STRATEGY",
+    "DECISION",
+    "GTI",
+    "COMBINED_PCR",
+    "BREADTH",
+    "GANN_GAP",
+    "SMART_ALERT",
+    "INSTITUTIONAL_FLOW",
+    "OPTION_STRATEGY",
   ];
   const included = input.includedFamilies ?? allFamilies;
   const signals: Partial<Record<SignalFamily, StudyMetrics>> = {};
@@ -121,16 +128,23 @@ export function exportJson(report: ResearchRunReport): string {
 
 export function exportCsv(report: ResearchRunReport): string {
   const lines: string[] = [];
-  lines.push("study,key,samples,eligible,accuracy,balancedAccuracy,precisionGapUp,precisionGapDown,avgGapPoints");
+  lines.push(
+    "study,key,samples,eligible,accuracy,balancedAccuracy,precisionGapUp,precisionGapDown,avgGapPoints",
+  );
   const m = (label: string, key: string, x: StudyMetrics) => {
-    lines.push([
-      label, key, x.samples, x.eligible,
-      x.accuracy?.toFixed(4) ?? "",
-      x.balancedAccuracy?.toFixed(4) ?? "",
-      x.precisionGapUp?.toFixed(4) ?? "",
-      x.precisionGapDown?.toFixed(4) ?? "",
-      x.avgGapPoints?.toFixed(4) ?? "",
-    ].join(","));
+    lines.push(
+      [
+        label,
+        key,
+        x.samples,
+        x.eligible,
+        x.accuracy?.toFixed(4) ?? "",
+        x.balancedAccuracy?.toFixed(4) ?? "",
+        x.precisionGapUp?.toFixed(4) ?? "",
+        x.precisionGapDown?.toFixed(4) ?? "",
+        x.avgGapPoints?.toFixed(4) ?? "",
+      ].join(","),
+    );
   };
   for (const [k, v] of Object.entries(report.signals)) if (v) m("signal", k, v);
   if (report.gannGap) {
@@ -157,9 +171,15 @@ function delta(a: number | null | undefined, b: number | null | undefined): numb
 export function compareRuns(a: ResearchRunReport, b: ResearchRunReport): RunComparison {
   const deltas: Record<string, number | null> = {
     accuracy: delta(a.gannGap?.metrics.accuracy, b.gannGap?.metrics.accuracy),
-    balancedAccuracy: delta(a.gannGap?.metrics.balancedAccuracy, b.gannGap?.metrics.balancedAccuracy),
+    balancedAccuracy: delta(
+      a.gannGap?.metrics.balancedAccuracy,
+      b.gannGap?.metrics.balancedAccuracy,
+    ),
     precisionGapUp: delta(a.gannGap?.metrics.precisionGapUp, b.gannGap?.metrics.precisionGapUp),
-    precisionGapDown: delta(a.gannGap?.metrics.precisionGapDown, b.gannGap?.metrics.precisionGapDown),
+    precisionGapDown: delta(
+      a.gannGap?.metrics.precisionGapDown,
+      b.gannGap?.metrics.precisionGapDown,
+    ),
     recallGapUp: delta(a.gannGap?.metrics.recallGapUp, b.gannGap?.metrics.recallGapUp),
     recallGapDown: delta(a.gannGap?.metrics.recallGapDown, b.gannGap?.metrics.recallGapDown),
     mfeAvg: delta(a.gannGap?.metrics.mfeAvg, b.gannGap?.metrics.mfeAvg),
@@ -167,7 +187,8 @@ export function compareRuns(a: ResearchRunReport, b: ResearchRunReport): RunComp
     sampleSize: delta(a.gannGap?.metrics.samples, b.gannGap?.metrics.samples),
   };
   return {
-    a, b,
+    a,
+    b,
     sameDataset: a.manifest.datasetHash === b.manifest.datasetHash,
     sameFormulas:
       JSON.stringify(a.manifest.formulaVersions) === JSON.stringify(b.manifest.formulaVersions),

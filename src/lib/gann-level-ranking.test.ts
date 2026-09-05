@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { buildAbsoluteIntradayLevels } from "./gann-absolute-levels";
 import { rankLevels } from "./gann-level-ranking";
-import { assertAbsoluteDegree, GANN_PLANETS, type PlanetAbsoluteInput } from "./gann-intraday.types";
+import {
+  assertAbsoluteDegree,
+  GANN_PLANETS,
+  type PlanetAbsoluteInput,
+} from "./gann-intraday.types";
 
 const nine = (d: number[]): PlanetAbsoluteInput[] =>
   GANN_PLANETS.map((p, i) => ({

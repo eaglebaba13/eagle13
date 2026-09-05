@@ -46,10 +46,8 @@ export class ProviderHealthTracker {
     const errorRate = errors / n;
     const lastSuccess = [...this.samples].reverse().find((s) => s.ok) ?? null;
     const lastFailure = [...this.samples].reverse().find((s) => !s.ok) ?? null;
-    const latencyMs =
-      this.samples.reduce((a, s) => a + s.latencyMs, 0) / n;
-    const freshness =
-      lastSuccess?.freshnessSeconds ?? Number.POSITIVE_INFINITY;
+    const latencyMs = this.samples.reduce((a, s) => a + s.latencyMs, 0) / n;
+    const freshness = lastSuccess?.freshnessSeconds ?? Number.POSITIVE_INFINITY;
     const status = classify(errorRate, freshness, lastFailure);
     return {
       status,

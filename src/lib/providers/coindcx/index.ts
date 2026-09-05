@@ -8,4 +8,8 @@ export * from "./candles";
 export * from "./freshness";
 export * from "./diagnostics";
 export * from "./execution-guard";
-export { COINDCX_ENDPOINTS, COINDCX_INTERVAL_MAP, type CoindcxSupportedInterval } from "./endpoints";
+export {
+  COINDCX_ENDPOINTS,
+  COINDCX_INTERVAL_MAP,
+  type CoindcxSupportedInterval,
+} from "./endpoints";

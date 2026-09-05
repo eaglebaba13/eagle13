@@ -120,7 +120,8 @@ export type ShadowHypotheticalPosition = {
 
 export type ShadowOutcome = {
   readonly resolved: boolean;
-  readonly exit: "TARGET" | "STOP" | "SESSION_CLOSE" | "MAX_HOLD" | "INVALIDATED" | "DATA_QUALITY" | null;
+  readonly exit:
+    "TARGET" | "STOP" | "SESSION_CLOSE" | "MAX_HOLD" | "INVALIDATED" | "DATA_QUALITY" | null;
   readonly exitPrice: number | null;
   readonly exitDate: string | null;
   readonly mfe: number;

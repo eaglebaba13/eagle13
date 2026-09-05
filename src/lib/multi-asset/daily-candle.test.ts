@@ -6,8 +6,12 @@ const NOW = Date.parse("2026-07-22T04:00:00Z"); // Wed 09:30 IST
 function c(over: Partial<Parameters<typeof selectPreviousCompletedDaily>[0]["candles"][number]>) {
   return {
     openTime: "2026-07-21T00:00:00Z",
-    open: 100, high: 110, low: 95, close: 105,
-    volume: 1000, complete: true,
+    open: 100,
+    high: 110,
+    low: 95,
+    close: 105,
+    volume: 1000,
+    complete: true,
     ...over,
   };
 }

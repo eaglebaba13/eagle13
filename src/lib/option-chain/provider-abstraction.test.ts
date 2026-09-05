@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { _resetOptionChainProviders, getOptionChainProvider, listOptionChainProviders, registerOptionChainProvider } from "./provider";
+import {
+  _resetOptionChainProviders,
+  getOptionChainProvider,
+  listOptionChainProviders,
+  registerOptionChainProvider,
+} from "./provider";
 import { MockOptionChainProvider } from "./mock-provider";
 
 describe("provider registry", () => {

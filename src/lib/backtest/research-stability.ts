@@ -12,31 +12,27 @@ export type StabilityFactorId =
   | "outOfSampleConsistency"
   | "recoveryConsistency";
 
-export const STABILITY_WEIGHTS: Readonly<Record<StabilityFactorId, number>> =
-  Object.freeze({
-    profitFactorStability: 0.2,
-    drawdownStability: 0.15,
-    expectancyStability: 0.15,
-    longShortBalance: 0.1,
-    tradeCountAdequacy: 0.1,
-    outOfSampleConsistency: 0.2,
-    recoveryConsistency: 0.1,
-  });
+export const STABILITY_WEIGHTS: Readonly<Record<StabilityFactorId, number>> = Object.freeze({
+  profitFactorStability: 0.2,
+  drawdownStability: 0.15,
+  expectancyStability: 0.15,
+  longShortBalance: 0.1,
+  tradeCountAdequacy: 0.1,
+  outOfSampleConsistency: 0.2,
+  recoveryConsistency: 0.1,
+});
 
-export const STABILITY_FORMULAS: Readonly<Record<StabilityFactorId, string>> =
-  Object.freeze({
-    profitFactorStability:
-      "100 - min(100, |Δ profit factor%|)",
-    drawdownStability: "100 - min(100, |Δ drawdown%|)",
-    expectancyStability: "100 - min(100, |Δ expectancy%|)",
-    longShortBalance:
-      "100 - min(100, |longCount - shortCount| / max(1, longCount + shortCount) * 100)",
-    tradeCountAdequacy:
-      "min(100, validationTradeCount / minSample * 100), minSample=20",
-    outOfSampleConsistency:
-      "100 if training and validation same sign, else max(0, 100 - |Δ netPnl%|)",
-    recoveryConsistency: "100 - min(100, |Δ recovery%|)",
-  });
+export const STABILITY_FORMULAS: Readonly<Record<StabilityFactorId, string>> = Object.freeze({
+  profitFactorStability: "100 - min(100, |Δ profit factor%|)",
+  drawdownStability: "100 - min(100, |Δ drawdown%|)",
+  expectancyStability: "100 - min(100, |Δ expectancy%|)",
+  longShortBalance:
+    "100 - min(100, |longCount - shortCount| / max(1, longCount + shortCount) * 100)",
+  tradeCountAdequacy: "min(100, validationTradeCount / minSample * 100), minSample=20",
+  outOfSampleConsistency:
+    "100 if training and validation same sign, else max(0, 100 - |Δ netPnl%|)",
+  recoveryConsistency: "100 - min(100, |Δ recovery%|)",
+});
 
 export type StabilityFactor = {
   id: StabilityFactorId;
@@ -52,12 +48,7 @@ export type StabilityReport = {
 };
 
 export type ResearchStatus =
-  | "EXCELLENT"
-  | "GOOD"
-  | "AVERAGE"
-  | "WEAK"
-  | "UNSTABLE"
-  | "INSUFFICIENT_DATA";
+  "EXCELLENT" | "GOOD" | "AVERAGE" | "WEAK" | "UNSTABLE" | "INSUFFICIENT_DATA";
 
 function clampAbs(pct: number): number {
   if (!Number.isFinite(pct)) return 100;
@@ -172,9 +163,7 @@ export function aggregateStability(result: WalkForwardResult): StabilityReport {
       formula: STABILITY_FORMULAS[id],
     };
   });
-  const score = Math.round(
-    (perWindow.reduce((a, r) => a + r.score, 0) / n) * 100,
-  ) / 100;
+  const score = Math.round((perWindow.reduce((a, r) => a + r.score, 0) / n) * 100) / 100;
   const totalValidationTrades = result.windows.reduce(
     (a, w) => a + w.validationMetrics.tradeCount,
     0,

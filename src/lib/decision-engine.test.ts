@@ -15,14 +15,14 @@ import {
   type ModuleSignal,
 } from "./decision-engine";
 
-const CTX_OPEN = { vix: 14, historicalAccuracy: 70, marketOpen: true, generatedAt: "2026-07-14T05:00:00Z" };
+const CTX_OPEN = {
+  vix: 14,
+  historicalAccuracy: 70,
+  marketOpen: true,
+  generatedAt: "2026-07-14T05:00:00Z",
+};
 
-function s(
-  key: ModuleSignal["key"],
-  score: number,
-  weight: number,
-  present = true,
-): ModuleSignal {
+function s(key: ModuleSignal["key"], score: number, weight: number, present = true): ModuleSignal {
   return {
     key,
     label: key,
@@ -82,31 +82,19 @@ describe("computeDecision — direction & determinism", () => {
 
 describe("computeDecision — conflict & missing", () => {
   it("detects conflicts between bullish and bearish present modules", () => {
-    const d = computeDecision(
-      [s("astro", 0.6, 0.5), s("options", -0.6, 0.5)],
-      CTX_OPEN,
-    );
+    const d = computeDecision([s("astro", 0.6, 0.5), s("options", -0.6, 0.5)], CTX_OPEN);
     expect(d.conflicts.length).toBeGreaterThan(0);
     expect(d.penalties.some((p) => p.reason.includes("conflict"))).toBe(true);
   });
 
   it("degrades to WAIT when everything is missing", () => {
-    const d = computeDecision(
-      [s("astro", 0, 0.5, false), s("options", 0, 0.5, false)],
-      CTX_OPEN,
-    );
+    const d = computeDecision([s("astro", 0, 0.5, false), s("options", 0, 0.5, false)], CTX_OPEN);
     expect(d.action).toBe("WAIT");
     expect(d.missing.length).toBe(2);
   });
 
   it("redistributes weight when a module is missing", () => {
-    const d = computeDecision(
-      [
-        s("astro", 1, 0.5),
-        s("options", 0, 0.5, false),
-      ],
-      CTX_OPEN,
-    );
+    const d = computeDecision([s("astro", 1, 0.5), s("options", 0, 0.5, false)], CTX_OPEN);
     const astro = d.contributions.find((c) => c.key === "astro")!;
     // astro absorbs all effective weight → contribution ≈ total prior.
     expect(astro.effectiveWeight).toBeCloseTo(1, 5);
@@ -175,12 +163,15 @@ describe("adapters mark modules correctly", () => {
   });
   it("optionsSignal / pcrSignal handle missing data", () => {
     expect(
-      optionsSignal({ pcrOi: null, writingBiasBull: false, writingBiasBear: false, present: false }).present,
+      optionsSignal({ pcrOi: null, writingBiasBull: false, writingBiasBear: false, present: false })
+        .present,
     ).toBe(false);
     expect(pcrSignal({ pcrOi: null }).present).toBe(false);
     expect(breadthSignal({ advancers: 0, decliners: 0, present: false }).present).toBe(false);
     expect(vixSignal({ vix: null, changePct: null }).present).toBe(false);
-    expect(historicalSignal({ winRatePct: null, direction: "BULL", sampleSize: 0 }).present).toBe(false);
+    expect(historicalSignal({ winRatePct: null, direction: "BULL", sampleSize: 0 }).present).toBe(
+      false,
+    );
     expect(replaySignal({ agreesWithDirection: null, direction: "BULL" }).present).toBe(false);
   });
 });
@@ -201,10 +192,7 @@ describe("checklist & explanation transparency", () => {
   });
 
   it("explanation lists positive and negative contributors", () => {
-    const d = computeDecision(
-      [s("astro", 0.8, 0.5), s("options", -0.4, 0.5)],
-      CTX_OPEN,
-    );
+    const d = computeDecision([s("astro", 0.8, 0.5), s("options", -0.4, 0.5)], CTX_OPEN);
     expect(d.explanation).toMatch(/Supporting/i);
     expect(d.explanation).toMatch(/Against/i);
   });

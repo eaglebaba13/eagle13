@@ -140,9 +140,7 @@ export const getAiMarketAssistant = createServerFn({ method: "GET" })
     return { response, diagnostics };
   });
 
-function buildStrategyView(
-  terminal: Awaited<ReturnType<typeof getOptionStrategyTerminal>> | null,
-) {
+function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategyTerminal>> | null) {
   if (!terminal || terminal.engine.recommended.length === 0) {
     return {
       available: false,

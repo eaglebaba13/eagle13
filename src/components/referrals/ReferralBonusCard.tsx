@@ -22,10 +22,10 @@ function StatusPill({ row }: { row: ReferralRequestRow }) {
     row.status === "APPROVED"
       ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
       : row.status === "REJECTED"
-      ? "bg-red-500/15 text-red-500 border-red-500/30"
-      : row.status === "PENDING" || row.status === "UNDER_REVIEW"
-      ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-      : "bg-muted text-muted-foreground border-border";
+        ? "bg-red-500/15 text-red-500 border-red-500/30"
+        : row.status === "PENDING" || row.status === "UNDER_REVIEW"
+          ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+          : "bg-muted text-muted-foreground border-border";
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${tone}`}
@@ -69,9 +69,9 @@ export function ReferralBonusCard() {
             Earn {REFERRAL_REWARD_DAYS} days of Pro — free
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Open a free INDmoney account with our referral, complete the
-            required trade, then submit the claim below. Approved claims add{" "}
-            {REFERRAL_REWARD_DAYS} days of Pro to your subscription.
+            Open a free INDmoney account with our referral, complete the required trade, then submit
+            the claim below. Approved claims add {REFERRAL_REWARD_DAYS} days of Pro to your
+            subscription.
           </p>
         </div>
         {latest ? <StatusPill row={latest} /> : null}
@@ -99,18 +99,14 @@ export function ReferralBonusCard() {
 
       <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
         <p>
-          <strong className="text-foreground">Steps:</strong> (1) open the
-          account using this referral code, (2) complete the required trade,
-          (3) submit your claim with a screenshot of the confirmed trade.
-          Reviews are manual and usually complete within 24 hours.
+          <strong className="text-foreground">Steps:</strong> (1) open the account using this
+          referral code, (2) complete the required trade, (3) submit your claim with a screenshot of
+          the confirmed trade. Reviews are manual and usually complete within 24 hours.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link
-          to="/referrals"
-          className="text-xs font-medium text-primary hover:underline"
-        >
+        <Link to="/referrals" className="text-xs font-medium text-primary hover:underline">
           View referral history →
         </Link>
         <Link

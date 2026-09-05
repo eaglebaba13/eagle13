@@ -1,13 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
-import { fetchFallback, FALLBACK_MARKET_FEEDS, FALLBACK_CRYPTO_FEEDS, type RawRssItem } from "./rss";
+import {
+  fetchFallback,
+  FALLBACK_MARKET_FEEDS,
+  FALLBACK_CRYPTO_FEEDS,
+  type RawRssItem,
+} from "./rss";
 
-export type NewsImpact =
-  | "Bullish"
-  | "Bearish"
-  | "High Volatility"
-  | "Important"
-  | "General";
+export type NewsImpact = "Bullish" | "Bearish" | "High Volatility" | "Important" | "General";
 
 export type NewsCategory =
   | "Equity"
@@ -92,9 +92,12 @@ function pick(tag: string, block: string): string {
   return m ? decodeEntities(m[1]) : "";
 }
 
-const BULL = /\b(surge|surges|rally|rallies|gain|gains|jump|jumps|rise|rises|soar|soars|record high|all-time high|profit|profits|beat|beats|upgrade|upgrades|bullish|boost|outperform|hits high|rebound|recover|inflow|inflows)\b/i;
-const BEAR = /\b(fall|falls|drop|drops|crash|crashes|plunge|plunges|slump|slumps|loss|losses|decline|declines|miss|misses|downgrade|downgrades|bearish|tumble|slide|slides|sell-off|selloff|weak|cut|cuts|outflow|outflows|sink|sinks)\b/i;
-const VOL = /\b(volatile|volatility|swing|swings|whipsaw|uncertain|spike|choppy|turbulent|roller|jitters)\b/i;
+const BULL =
+  /\b(surge|surges|rally|rallies|gain|gains|jump|jumps|rise|rises|soar|soars|record high|all-time high|profit|profits|beat|beats|upgrade|upgrades|bullish|boost|outperform|hits high|rebound|recover|inflow|inflows)\b/i;
+const BEAR =
+  /\b(fall|falls|drop|drops|crash|crashes|plunge|plunges|slump|slumps|loss|losses|decline|declines|miss|misses|downgrade|downgrades|bearish|tumble|slide|slides|sell-off|selloff|weak|cut|cuts|outflow|outflows|sink|sinks)\b/i;
+const VOL =
+  /\b(volatile|volatility|swing|swings|whipsaw|uncertain|spike|choppy|turbulent|roller|jitters)\b/i;
 
 function classify(title: string, category: NewsCategory): NewsImpact {
   const t = title.toLowerCase();
@@ -235,7 +238,8 @@ function inferCategory(title: string): NewsCategory {
   if (/\brbi|repo|monetary policy\b/.test(t)) return "RBI";
   if (/\bsebi\b/.test(t)) return "SEBI";
   if (/\bipo|listing|gmp\b/.test(t)) return "IPO";
-  if (/\bgold|silver|crude|oil|commodity|commodities|bitcoin|btc|crypto\b/.test(t)) return "Commodities";
+  if (/\bgold|silver|crude|oil|commodity|commodities|bitcoin|btc|crypto\b/.test(t))
+    return "Commodities";
   if (/\bdow|nasdaq|s&p|global|us market|asian market\b/.test(t)) return "Global Markets";
   if (/\bgdp|inflation|economy|cpi|wpi\b/.test(t)) return "Economy";
   if (/\bresult|earnings|profit|revenue|q1|q2|q3|q4\b/.test(t)) return "Corporate Results";
@@ -296,7 +300,12 @@ export const getMarketNewsFeed = createServerFn({ method: "GET" }).handler(
         payload = {
           items,
           fetchedAt,
-          diagnostics: { provider: "Google News", count: items.length, degraded: false, error: null },
+          diagnostics: {
+            provider: "Google News",
+            count: items.length,
+            degraded: false,
+            error: null,
+          },
         };
         cache = { at: Date.now(), payload };
         return payload;

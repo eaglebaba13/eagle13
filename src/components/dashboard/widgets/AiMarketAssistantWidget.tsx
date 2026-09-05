@@ -64,10 +64,16 @@ export function AiMarketAssistantWidget() {
       </div>
       <p className="mt-2 line-clamp-2 text-sm text-foreground">{r.headline}</p>
       <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <div>Confidence: <span className={CONF_TONE[r.confidence]}>{r.confidence}</span></div>
+        <div>
+          Confidence: <span className={CONF_TONE[r.confidence]}>{r.confidence}</span>
+        </div>
         <div>Data: {r.dataQuality.label}</div>
-        <div>Support: <span className="text-foreground">{topSupport}</span></div>
-        <div>Conflict: <span className="text-foreground">{topConflict}</span></div>
+        <div>
+          Support: <span className="text-foreground">{topSupport}</span>
+        </div>
+        <div>
+          Conflict: <span className="text-foreground">{topConflict}</span>
+        </div>
       </div>
       <div className="mt-2 flex justify-end">
         <Link

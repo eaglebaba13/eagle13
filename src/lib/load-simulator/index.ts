@@ -25,17 +25,20 @@ export const LOAD_SIM_VERSION = "load-sim@1.0.0";
 export function simulateLoad(inp: LoadInputs): LoadReport {
   const rps = (inp.users * inp.requestsPerUserPerMinute) / 60;
   const providerRps = rps * (1 - Math.max(0, Math.min(1, inp.cacheHitRatio)));
-  const headroomRatio = providerRps === 0 ? Number.POSITIVE_INFINITY : inp.providerCapacityRps / providerRps;
+  const headroomRatio =
+    providerRps === 0 ? Number.POSITIVE_INFINITY : inp.providerCapacityRps / providerRps;
   const utilisation = providerRps / Math.max(1, inp.providerCapacityRps);
-  const projectedP95Ms = utilisation < 1
-    ? inp.providerP95LatencyMs / (1 - utilisation)
-    : inp.providerP95LatencyMs * 10;
+  const projectedP95Ms =
+    utilisation < 1 ? inp.providerP95LatencyMs / (1 - utilisation) : inp.providerP95LatencyMs * 10;
   const verdict: LoadVerdict =
     utilisation >= 0.9 ? "OVERLOAD" : utilisation >= 0.7 ? "WATCH" : "SAFE";
   return {
     users: inp.users,
     requestsPerSecond: rps,
-    providerRps, headroomRatio, projectedP95Ms, verdict,
+    providerRps,
+    headroomRatio,
+    projectedP95Ms,
+    verdict,
     formulaVersion: LOAD_SIM_VERSION,
   };
 }

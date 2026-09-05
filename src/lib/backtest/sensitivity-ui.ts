@@ -22,7 +22,8 @@ export type SensitivityUiErrorCode =
 
 /** Deterministic value count for a single axis. Excludes empty / invalid axes. */
 export function axisValueCount(spec: ParameterSpec): number {
-  if (!Number.isFinite(spec.min) || !Number.isFinite(spec.max) || !Number.isFinite(spec.step)) return 0;
+  if (!Number.isFinite(spec.min) || !Number.isFinite(spec.max) || !Number.isFinite(spec.step))
+    return 0;
   if (spec.step <= 0 || spec.max < spec.min) return 0;
   return Math.floor((spec.max - spec.min) / spec.step + 1e-9) + 1;
 }
@@ -44,21 +45,26 @@ export type GridValidation =
   | { readonly ok: false; readonly code: SensitivityUiErrorCode; readonly message: string };
 
 /** Validate a sensitivity grid before dispatching to the executor. */
-export function validateSensitivityGrid(
-  specs: readonly ParameterSpec[],
-): GridValidation {
+export function validateSensitivityGrid(specs: readonly ParameterSpec[]): GridValidation {
   if (specs.length === 0) {
     return { ok: false, code: "INVALID_PARAMETER_GRID", message: "select at least one parameter" };
   }
   for (const s of specs) {
     if (!s.name) return { ok: false, code: "INVALID_PARAMETER_GRID", message: "unnamed parameter" };
     if (!Number.isFinite(s.min) || !Number.isFinite(s.max) || !Number.isFinite(s.step)) {
-      return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: non-finite min/max/step` };
+      return {
+        ok: false,
+        code: "INVALID_PARAMETER_GRID",
+        message: `${s.name}: non-finite min/max/step`,
+      };
     }
-    if (s.step <= 0) return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: step must be > 0` };
-    if (s.max < s.min) return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: max < min` };
+    if (s.step <= 0)
+      return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: step must be > 0` };
+    if (s.max < s.min)
+      return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: max < min` };
     const n = axisValueCount(s);
-    if (n <= 0) return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: empty axis` };
+    if (n <= 0)
+      return { ok: false, code: "INVALID_PARAMETER_GRID", message: `${s.name}: empty axis` };
     if (n > RESEARCH_UI_MAX_VALUES_PER_AXIS) {
       return {
         ok: false,
@@ -69,7 +75,11 @@ export function validateSensitivityGrid(
   }
   const cells = estimateGridCells(specs);
   if (cells > RESEARCH_UI_MAX_CELLS) {
-    return { ok: false, code: "GRID_TOO_LARGE", message: `grid has ${cells} cells (max ${RESEARCH_UI_MAX_CELLS})` };
+    return {
+      ok: false,
+      code: "GRID_TOO_LARGE",
+      message: `grid has ${cells} cells (max ${RESEARCH_UI_MAX_CELLS})`,
+    };
   }
   return { ok: true, cells };
 }

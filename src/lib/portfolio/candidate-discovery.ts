@@ -62,7 +62,9 @@ export function candidateFromResult(
   const id = `${result.formulaVersion}:${result.instrument}:${result.from}:${result.to}`;
   return {
     id,
-    label: meta.label ?? `${inferStrategy(result.formulaVersion)} · ${result.instrument} · ${result.dataGranularity}`,
+    label:
+      meta.label ??
+      `${inferStrategy(result.formulaVersion)} · ${result.instrument} · ${result.dataGranularity}`,
     strategy: meta.strategy ?? inferStrategy(result.formulaVersion),
     formulaVersion: result.formulaVersion,
     instrument: result.instrument,

@@ -95,20 +95,13 @@ export default function RecommendationValidationSection(
   props: RecommendationValidationSectionProps,
 ) {
   const observations = props.observations ?? [];
-  const rep = useMemo(
-    () => validateRecommendations({ observations }),
-    [observations],
-  );
+  const rep = useMemo(() => validateRecommendations({ observations }), [observations]);
 
   const doExport = (kind: "csv" | "json") => {
     if (kind === "csv") {
       downloadBlob(exportValidationCsv(rep), `recommendation-validation.csv`, "text/csv");
     } else {
-      downloadBlob(
-        exportValidationJson(rep),
-        `recommendation-validation.json`,
-        "application/json",
-      );
+      downloadBlob(exportValidationJson(rep), `recommendation-validation.json`, "application/json");
     }
   };
 
@@ -148,9 +141,8 @@ export default function RecommendationValidationSection(
             fontSize: 12,
           }}
         >
-          Awaiting recommendation history. Once walk-forward and batch
-          recommendations produce paired outcomes, this panel will report
-          historical accuracy, calibration and drift.
+          Awaiting recommendation history. Once walk-forward and batch recommendations produce
+          paired outcomes, this panel will report historical accuracy, calibration and drift.
         </div>
       ) : (
         <>
@@ -359,12 +351,7 @@ function DriftTable({
               <td
                 style={{
                   ...td,
-                  color:
-                    d.deltaVsOverall > 0
-                      ? C.green
-                      : d.deltaVsOverall < 0
-                        ? C.red
-                        : C.text,
+                  color: d.deltaVsOverall > 0 ? C.green : d.deltaVsOverall < 0 ? C.red : C.text,
                 }}
               >
                 {(d.deltaVsOverall * 100).toFixed(1)}%
@@ -373,11 +360,7 @@ function DriftTable({
                 style={{
                   ...td,
                   color:
-                    d.drift === "SIGNIFICANT"
-                      ? C.red
-                      : d.drift === "MODERATE"
-                        ? C.orange
-                        : C.muted,
+                    d.drift === "SIGNIFICANT" ? C.red : d.drift === "MODERATE" ? C.orange : C.muted,
                 }}
               >
                 {d.drift}

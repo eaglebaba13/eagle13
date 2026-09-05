@@ -5,7 +5,11 @@
 // email flows configured, coupons available, permission matrix built.
 // Pure. Deterministic.
 
-import { evaluateLaunchChecklist, type LaunchChecklistInputs, type LaunchVerdict } from "@/lib/launch-checklist";
+import {
+  evaluateLaunchChecklist,
+  type LaunchChecklistInputs,
+  type LaunchVerdict,
+} from "@/lib/launch-checklist";
 
 export interface CommercialReadinessInputs extends LaunchChecklistInputs {
   readonly billingWired: boolean;
@@ -17,10 +21,7 @@ export interface CommercialReadinessInputs extends LaunchChecklistInputs {
 }
 
 export type CommercialVerdict =
-  | "NOT_READY"
-  | "READY_FOR_BETA"
-  | "READY_FOR_SUBSCRIPTION"
-  | "READY_FOR_PUBLIC";
+  "NOT_READY" | "READY_FOR_BETA" | "READY_FOR_SUBSCRIPTION" | "READY_FOR_PUBLIC";
 
 export interface CommercialReadinessReport {
   readonly verdict: CommercialVerdict;
@@ -32,11 +33,17 @@ export interface CommercialReadinessReport {
 export const COMMERCIAL_READINESS_VERSION = "commercial-readiness@1.0.0";
 
 const COMMERCIAL_GATES: readonly (keyof CommercialReadinessInputs)[] = [
-  "billingWired", "licenseEngineLive", "adminPanelReady",
-  "transactionalEmailsReady", "couponsReady", "permissionMatrixVerified",
+  "billingWired",
+  "licenseEngineLive",
+  "adminPanelReady",
+  "transactionalEmailsReady",
+  "couponsReady",
+  "permissionMatrixVerified",
 ];
 
-export function evaluateCommercialReadiness(inp: CommercialReadinessInputs): CommercialReadinessReport {
+export function evaluateCommercialReadiness(
+  inp: CommercialReadinessInputs,
+): CommercialReadinessReport {
   const launch = evaluateLaunchChecklist(inp);
   const missingCommercial = COMMERCIAL_GATES.filter((k) => !inp[k]);
   if (launch.verdict === "NOT_READY") {

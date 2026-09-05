@@ -28,7 +28,9 @@ export function Disclaimer() {
             "linear-gradient(90deg, color-mix(in srgb, var(--eb-bear) 14%, transparent), transparent 60%)",
         }}
       >
-        <span aria-hidden style={{ fontSize: 14 }}>⚠️</span>
+        <span aria-hidden style={{ fontSize: 14 }}>
+          ⚠️
+        </span>
         <span
           style={{
             fontFamily: "var(--eb-head)",

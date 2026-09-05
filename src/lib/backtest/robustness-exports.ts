@@ -2,10 +2,7 @@
 // Structured CSV + JSON with full provenance. Pure functions; no I/O.
 
 import type { MonteCarloResult } from "./monte-carlo";
-import type {
-  SensitivityCell,
-  SensitivitySurface,
-} from "./parameter-sensitivity";
+import type { SensitivityCell, SensitivitySurface } from "./parameter-sensitivity";
 import type { RobustnessResult } from "./robustness";
 
 export type ExportProvenance = {
@@ -43,20 +40,51 @@ export function buildMonteCarloJson(mc: MonteCarloResult, prov: ExportProvenance
   return JSON.stringify({ version: "MONTE_CARLO_V1", provenance: prov, result: mc }, null, 2);
 }
 
-export function buildSensitivityCsv(cells: readonly SensitivityCell[], surface: SensitivitySurface, prov: ExportProvenance): string {
+export function buildSensitivityCsv(
+  cells: readonly SensitivityCell[],
+  surface: SensitivitySurface,
+  prov: ExportProvenance,
+): string {
   const paramKeys = cells[0] ? Object.keys(cells[0].params) : [];
   const lines: string[] = [
     HEADER,
     `# researchRunId=${prov.researchRunId} sensitivityRunId=${prov.sensitivityRunId ?? ""}`,
     `# classification=${surface.classification} primaryMetric=${String(surface.primaryMetric)} mean=${surface.meanValue} stddev=${surface.stdDev}`,
     `# reason=${surface.reason}`,
-    [...paramKeys, "trades", "winRate", "profitFactor", "expectancy", "netPnl", "maxDrawdown", "recoveryFactor", "stabilityScore", "oosScore", "mcMedian", "mcP5", "reason"].join(","),
+    [
+      ...paramKeys,
+      "trades",
+      "winRate",
+      "profitFactor",
+      "expectancy",
+      "netPnl",
+      "maxDrawdown",
+      "recoveryFactor",
+      "stabilityScore",
+      "oosScore",
+      "mcMedian",
+      "mcP5",
+      "reason",
+    ].join(","),
   ];
   for (const c of cells) {
     const row: (string | number)[] = paramKeys.map((k) => c.params[k]);
     if (c.metrics) {
       const mtx = c.metrics;
-      row.push(mtx.trades, mtx.winRate, Number.isFinite(mtx.profitFactor) ? mtx.profitFactor : "Infinity", mtx.expectancy, mtx.netPnl, mtx.maxDrawdown, mtx.recoveryFactor, mtx.stabilityScore, mtx.oosScore, mtx.monteCarloMedian, mtx.monteCarloP5, "");
+      row.push(
+        mtx.trades,
+        mtx.winRate,
+        Number.isFinite(mtx.profitFactor) ? mtx.profitFactor : "Infinity",
+        mtx.expectancy,
+        mtx.netPnl,
+        mtx.maxDrawdown,
+        mtx.recoveryFactor,
+        mtx.stabilityScore,
+        mtx.oosScore,
+        mtx.monteCarloMedian,
+        mtx.monteCarloP5,
+        "",
+      );
     } else {
       row.push("", "", "", "", "", "", "", "", "", "", "", c.reason ?? "INSUFFICIENT_DATA");
     }
@@ -65,7 +93,11 @@ export function buildSensitivityCsv(cells: readonly SensitivityCell[], surface: 
   return lines.join("\n");
 }
 
-export function buildSensitivityJson(cells: readonly SensitivityCell[], surface: SensitivitySurface, prov: ExportProvenance): string {
+export function buildSensitivityJson(
+  cells: readonly SensitivityCell[],
+  surface: SensitivitySurface,
+  prov: ExportProvenance,
+): string {
   return JSON.stringify({ version: "SENSITIVITY_V1", provenance: prov, surface, cells }, null, 2);
 }
 
@@ -75,7 +107,9 @@ export function buildRobustnessCsv(r: RobustnessResult, prov: ExportProvenance):
     `# researchRunId=${prov.researchRunId} robustnessRunId=${prov.robustnessRunId ?? ""}`,
     `# status=${r.status} total=${r.total} reason=${r.reason}`,
     "factor,weight,value,score,formula",
-    ...r.factors.map((f) => [f.key, f.weight, f.value, f.score, `"${f.formula.replace(/"/g, "'")}"`].join(",")),
+    ...r.factors.map((f) =>
+      [f.key, f.weight, f.value, f.score, `"${f.formula.replace(/"/g, "'")}"`].join(","),
+    ),
   ];
   return lines.join("\n");
 }

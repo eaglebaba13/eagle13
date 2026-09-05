@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_authenticated/admin/launch-readiness")({
   head: () => ({
     meta: [
       { title: "Launch Readiness — EagleBABA" },
-      { name: "description", content: "Admin-only launch readiness console for the subscription preview." },
+      {
+        name: "description",
+        content: "Admin-only launch readiness console for the subscription preview.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -50,10 +53,7 @@ const LIGHT_COLOR: Record<TrafficLight, string> = {
 };
 
 type PreviewVerdict =
-  | "NOT_READY"
-  | "READY_FOR_INTERNAL"
-  | "READY_FOR_SUBSCRIPTION"
-  | "READY_FOR_PUBLIC";
+  "NOT_READY" | "READY_FOR_INTERNAL" | "READY_FOR_SUBSCRIPTION" | "READY_FOR_PUBLIC";
 
 function deriveVerdict(core: LaunchReadinessReport, summary: GtiSummary | null): PreviewVerdict {
   if (core.verdict === "NOT_READY") return "NOT_READY";
@@ -145,17 +145,16 @@ function LaunchReadinessPage() {
         </header>
 
         {error && (
-          <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+          <div
+            role="alert"
+            className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+          >
             {error}
           </div>
         )}
 
         {runtime && (
-          <RuntimeReadinessSummary
-            report={runtime}
-            title="Canonical Runtime Readiness"
-            compact
-          />
+          <RuntimeReadinessSummary report={runtime} title="Canonical Runtime Readiness" compact />
         )}
 
         <section
@@ -164,41 +163,42 @@ function LaunchReadinessPage() {
         >
           <h2 className="text-sm font-semibold">Canonical Readiness Verdict</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Single source of truth. Subscription and closed-beta gates are
-            derived from the runtime aggregator — they cannot contradict it.
+            Single source of truth. Subscription and closed-beta gates are derived from the runtime
+            aggregator — they cannot contradict it.
           </p>
           <dl className="mt-3 grid gap-2 sm:grid-cols-3">
             <div className="rounded-md border border-border/60 p-2">
               <dt className="text-xs uppercase text-muted-foreground">Runtime</dt>
-              <dd className="text-base font-semibold">
-                {canonical.runtime.replace(/_/g, " ")}
-              </dd>
+              <dd className="text-base font-semibold">{canonical.runtime.replace(/_/g, " ")}</dd>
             </div>
             <div className="rounded-md border border-border/60 p-2">
               <dt className="text-xs uppercase text-muted-foreground">Subscription</dt>
-              <dd className={`text-base font-semibold ${toneCls[verdictTone(canonical.subscription)]}`}>
+              <dd
+                className={`text-base font-semibold ${toneCls[verdictTone(canonical.subscription)]}`}
+              >
                 {verdictLabel(canonical.subscription)}
               </dd>
             </div>
             <div className="rounded-md border border-border/60 p-2">
               <dt className="text-xs uppercase text-muted-foreground">Closed Beta</dt>
-              <dd className={`text-base font-semibold ${toneCls[verdictTone(canonical.closedBeta)]}`}>
+              <dd
+                className={`text-base font-semibold ${toneCls[verdictTone(canonical.closedBeta)]}`}
+              >
                 {verdictLabel(canonical.closedBeta)}
               </dd>
             </div>
           </dl>
           {canonical.caveats.length > 0 && (
             <ul className="mt-3 list-disc pl-5 text-xs text-amber-300/90">
-              {canonical.caveats.map((c, i) => (<li key={i}>{c}</li>))}
+              {canonical.caveats.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
             </ul>
           )}
           <p className="mt-2 text-xs text-muted-foreground">{canonical.rationale}</p>
         </section>
 
-        <section
-          aria-label="Verdict"
-          className="rounded-xl border border-border bg-card/60 p-4"
-        >
+        <section aria-label="Verdict" className="rounded-xl border border-border bg-card/60 p-4">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Verdict</div>
           <div className="mt-1 text-2xl font-bold">{verdict.replace(/_/g, " ")}</div>
           <p className="mt-2 text-xs text-muted-foreground">
@@ -207,11 +207,17 @@ function LaunchReadinessPage() {
           </p>
         </section>
 
-        <section aria-label="Core checks" className="rounded-xl border border-border bg-card/60 p-4">
+        <section
+          aria-label="Core checks"
+          className="rounded-xl border border-border bg-card/60 p-4"
+        >
           <h2 className="text-sm font-semibold">Core Checks</h2>
           <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
             {core.checks.map((c) => (
-              <li key={c.id} className="flex items-center justify-between rounded-md border border-border/60 px-2 py-1">
+              <li
+                key={c.id}
+                className="flex items-center justify-between rounded-md border border-border/60 px-2 py-1"
+              >
                 <span>{c.label}</span>
                 <span className={STATUS_COLOR[c.status]}>{c.status}</span>
               </li>
@@ -226,7 +232,9 @@ function LaunchReadinessPage() {
               return (
                 <div key={k} className="rounded-xl border border-border bg-card/60 p-3 text-sm">
                   <div className="text-xs uppercase text-muted-foreground">{k}</div>
-                  <div className={`text-lg font-semibold ${LIGHT_COLOR[light]}`}>{trafficLightLabel(light)}</div>
+                  <div className={`text-lg font-semibold ${LIGHT_COLOR[light]}`}>
+                    {trafficLightLabel(light)}
+                  </div>
                 </div>
               );
             })}
@@ -234,28 +242,74 @@ function LaunchReadinessPage() {
         )}
 
         {summary && (
-          <section aria-label="GTI reading" className="rounded-xl border border-border bg-card/60 p-4 text-sm">
+          <section
+            aria-label="GTI reading"
+            className="rounded-xl border border-border bg-card/60 p-4 text-sm"
+          >
             <h2 className="mb-2 text-sm font-semibold">GTI Research</h2>
             <dl className="grid gap-1 sm:grid-cols-2">
-              <div><dt className="inline text-muted-foreground">State: </dt><dd className="inline font-medium">{summary.gti.state}</dd></div>
-              <div><dt className="inline text-muted-foreground">Confidence: </dt><dd className="inline font-medium">{Math.round(summary.gti.confidence)}%</dd></div>
-              <div><dt className="inline text-muted-foreground">Conflicts: </dt><dd className="inline font-medium">{summary.gti.conflicts}</dd></div>
-              <div><dt className="inline text-muted-foreground">Combined PCR: </dt><dd className="inline font-medium">{summary.combinedPcr.state}</dd></div>
-              <div><dt className="inline text-muted-foreground">Freshness: </dt><dd className="inline font-medium">{summary.freshness}</dd></div>
-              <div><dt className="inline text-muted-foreground">Warnings: </dt><dd className="inline font-medium">{summary.warnings.length}</dd></div>
+              <div>
+                <dt className="inline text-muted-foreground">State: </dt>
+                <dd className="inline font-medium">{summary.gti.state}</dd>
+              </div>
+              <div>
+                <dt className="inline text-muted-foreground">Confidence: </dt>
+                <dd className="inline font-medium">{Math.round(summary.gti.confidence)}%</dd>
+              </div>
+              <div>
+                <dt className="inline text-muted-foreground">Conflicts: </dt>
+                <dd className="inline font-medium">{summary.gti.conflicts}</dd>
+              </div>
+              <div>
+                <dt className="inline text-muted-foreground">Combined PCR: </dt>
+                <dd className="inline font-medium">{summary.combinedPcr.state}</dd>
+              </div>
+              <div>
+                <dt className="inline text-muted-foreground">Freshness: </dt>
+                <dd className="inline font-medium">{summary.freshness}</dd>
+              </div>
+              <div>
+                <dt className="inline text-muted-foreground">Warnings: </dt>
+                <dd className="inline font-medium">{summary.warnings.length}</dd>
+              </div>
             </dl>
           </section>
         )}
 
-        <section aria-label="Observability" className="rounded-xl border border-border bg-card/60 p-4 text-sm">
+        <section
+          aria-label="Observability"
+          className="rounded-xl border border-border bg-card/60 p-4 text-sm"
+        >
           <h2 className="mb-2 text-sm font-semibold">Observability (in-memory)</h2>
           <dl className="grid gap-1 sm:grid-cols-3">
-            <div><dt className="inline text-muted-foreground">Events: </dt><dd className="inline font-medium">{obs.total}</dd></div>
-            <div><dt className="inline text-muted-foreground">Provider failures: </dt><dd className="inline font-medium">{obs.providerFailures}</dd></div>
-            <div><dt className="inline text-muted-foreground">Hydration errors: </dt><dd className="inline font-medium">{obs.hydrationErrors}</dd></div>
-            <div><dt className="inline text-muted-foreground">React errors: </dt><dd className="inline font-medium">{obs.reactErrors}</dd></div>
-            <div><dt className="inline text-muted-foreground">Cache hit ratio: </dt><dd className="inline font-medium">{obs.cacheHitRatio != null ? `${Math.round(obs.cacheHitRatio * 100)}%` : "—"}</dd></div>
-            <div><dt className="inline text-muted-foreground">Avg latency: </dt><dd className="inline font-medium">{obs.avgLatencyMs != null ? `${Math.round(obs.avgLatencyMs)}ms` : "—"}</dd></div>
+            <div>
+              <dt className="inline text-muted-foreground">Events: </dt>
+              <dd className="inline font-medium">{obs.total}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Provider failures: </dt>
+              <dd className="inline font-medium">{obs.providerFailures}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Hydration errors: </dt>
+              <dd className="inline font-medium">{obs.hydrationErrors}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">React errors: </dt>
+              <dd className="inline font-medium">{obs.reactErrors}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Cache hit ratio: </dt>
+              <dd className="inline font-medium">
+                {obs.cacheHitRatio != null ? `${Math.round(obs.cacheHitRatio * 100)}%` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Avg latency: </dt>
+              <dd className="inline font-medium">
+                {obs.avgLatencyMs != null ? `${Math.round(obs.avgLatencyMs)}ms` : "—"}
+              </dd>
+            </div>
           </dl>
         </section>
       </div>

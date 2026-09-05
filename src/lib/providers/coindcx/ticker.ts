@@ -19,11 +19,12 @@ export function normalizeTickerRow(raw: unknown, nowIso: string): CoindcxTicker 
   const pair = typeof r.market === "string" ? r.market : "";
   const last = asNum(r.last_price);
   if (!pair || last == null) return null;
-  const timestamp = typeof r.timestamp === "number"
-    ? new Date(r.timestamp).toISOString()
-    : typeof r.timestamp === "string"
-      ? r.timestamp
-      : nowIso;
+  const timestamp =
+    typeof r.timestamp === "number"
+      ? new Date(r.timestamp).toISOString()
+      : typeof r.timestamp === "string"
+        ? r.timestamp
+        : nowIso;
   return {
     pair,
     last,

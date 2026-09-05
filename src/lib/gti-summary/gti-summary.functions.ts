@@ -18,9 +18,21 @@ import type { OptionUnderlying, OptionChainSnapshot } from "../option-chain/type
 import type { OptionChainCapability } from "../option-chain/capability";
 
 export interface GtiSummaryResponse {
-  readonly nifty: { readonly price: number; readonly change: number; readonly changePercent: number } | null;
-  readonly banknifty: { readonly price: number; readonly change: number; readonly changePercent: number } | null;
-  readonly vix: { readonly value: number | null; readonly regime: string; readonly rising: boolean };
+  readonly nifty: {
+    readonly price: number;
+    readonly change: number;
+    readonly changePercent: number;
+  } | null;
+  readonly banknifty: {
+    readonly price: number;
+    readonly change: number;
+    readonly changePercent: number;
+  } | null;
+  readonly vix: {
+    readonly value: number | null;
+    readonly regime: string;
+    readonly rising: boolean;
+  };
   readonly combinedPcr: {
     readonly score: number | null;
     readonly state: string;
@@ -55,8 +67,8 @@ function newRunId(): string {
   return `gti-sum-${Date.now().toString(36)}-${rand}`;
 }
 
-export const getGtiSummary = createServerFn({ method: "POST" })
-  .handler(async (): Promise<GtiSummaryResponse> => {
+export const getGtiSummary = createServerFn({ method: "POST" }).handler(
+  async (): Promise<GtiSummaryResponse> => {
     const generatedAt = new Date().toISOString();
     const warnings: string[] = [];
 
@@ -68,10 +80,18 @@ export const getGtiSummary = createServerFn({ method: "POST" })
       warnings.push(`quotes:${e instanceof Error ? e.message.slice(0, 80) : "error"}`);
     }
     const nifty = quotes?.nifty
-      ? { price: quotes.nifty.livePrice, change: quotes.nifty.change, changePercent: quotes.nifty.changePct }
+      ? {
+          price: quotes.nifty.livePrice,
+          change: quotes.nifty.change,
+          changePercent: quotes.nifty.changePct,
+        }
       : null;
     const banknifty = quotes?.banknifty
-      ? { price: quotes.banknifty.livePrice, change: quotes.banknifty.change, changePercent: quotes.banknifty.changePct }
+      ? {
+          price: quotes.banknifty.livePrice,
+          change: quotes.banknifty.change,
+          changePercent: quotes.banknifty.changePct,
+        }
       : null;
     const vixValue = quotes?.vix?.livePrice ?? null;
 
@@ -84,7 +104,8 @@ export const getGtiSummary = createServerFn({ method: "POST" })
     try {
       // Canonical option-chain path (Phase 2F): reuse the shared snapshot
       // helper so GTI Summary never issues an independent provider fetch.
-      const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
+      const { fetchCanonicalOptionChain } =
+        await import("../option-chain/canonical-snapshot.server");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
       const snapshots: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {};
       let anyUsable = false;
@@ -193,6 +214,7 @@ export const getGtiSummary = createServerFn({ method: "POST" })
         banknifty: optionCapabilities.BANKNIFTY,
       },
     };
-  });
+  },
+);
 
 export type GtiSummary = Awaited<ReturnType<typeof getGtiSummary>>;

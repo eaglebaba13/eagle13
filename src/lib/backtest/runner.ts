@@ -4,10 +4,7 @@
 
 import { computeUnifiedRunId } from "./run-id";
 import { buildUnifiedStats } from "./stats";
-import type {
-  AdapterConfig,
-  HistoricalFormulaAdapter,
-} from "./adapter";
+import type { AdapterConfig, HistoricalFormulaAdapter } from "./adapter";
 import type {
   DataQualitySummary,
   EquityPoint,
@@ -73,9 +70,7 @@ export async function runHistoricalCore(
   const { formula, dataQuality, ingestVersion, ...cfg } = args;
   formula.validateConfig(cfg);
   if (!formula.supportedInstruments.includes(cfg.instrument)) {
-    throw new Error(
-      `Formula ${formula.id} does not support instrument ${cfg.instrument}`,
-    );
+    throw new Error(`Formula ${formula.id} does not support instrument ${cfg.instrument}`);
   }
 
   const plan = await formula.planSessions(cfg);

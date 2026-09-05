@@ -48,8 +48,12 @@ export function inMemoryStorage(): StorageAdapter {
   const map = new Map<string, string>();
   return {
     getItem: (k) => (map.has(k) ? (map.get(k) as string) : null),
-    setItem: (k, v) => { map.set(k, v); },
-    removeItem: (k) => { map.delete(k); },
+    setItem: (k, v) => {
+      map.set(k, v);
+    },
+    removeItem: (k) => {
+      map.delete(k);
+    },
   };
 }
 
@@ -106,11 +110,13 @@ function safeParse(raw: string | null): PersistedPcrEnvelope | null {
     if (env.schema !== PERSISTENT_HISTORY_SCHEMA_VERSION) return null;
     if (!Array.isArray(env.points)) return null;
     // Basic shape validation — reject entries missing required fields.
-    const clean = env.points.filter((p): p is PersistedPcrPoint =>
-      !!p && typeof p === "object" &&
-      typeof (p as PersistedPcrPoint).runId === "string" &&
-      typeof (p as PersistedPcrPoint).timestamp === "string" &&
-      typeof (p as PersistedPcrPoint).atmMode === "string",
+    const clean = env.points.filter(
+      (p): p is PersistedPcrPoint =>
+        !!p &&
+        typeof p === "object" &&
+        typeof (p as PersistedPcrPoint).runId === "string" &&
+        typeof (p as PersistedPcrPoint).timestamp === "string" &&
+        typeof (p as PersistedPcrPoint).atmMode === "string",
     );
     return { schema: PERSISTENT_HISTORY_SCHEMA_VERSION, points: clean };
   } catch {
@@ -139,7 +145,11 @@ export class PersistentPcrHistory {
     const env = safeParse(this.storage.getItem(this.key));
     if (!env) {
       // corrupted or missing — clear the slot deterministically
-      try { this.storage.removeItem(this.key); } catch { /* ignore */ }
+      try {
+        this.storage.removeItem(this.key);
+      } catch {
+        /* ignore */
+      }
       return [];
     }
     return env.points;
@@ -163,8 +173,14 @@ export class PersistentPcrHistory {
   }
 
   clear(): void {
-    try { this.storage.removeItem(this.key); } catch { /* ignore */ }
+    try {
+      this.storage.removeItem(this.key);
+    } catch {
+      /* ignore */
+    }
   }
 
-  get capacity(): number { return this.max; }
+  get capacity(): number {
+    return this.max;
+  }
 }

@@ -3,7 +3,11 @@ import { canDisplayActionableSignal, blockedLabel } from "./actionable-signal";
 
 describe("Phase 24B · actionable-signal safety", () => {
   it("LIVE + OK + formula → allowed", () => {
-    const r = canDisplayActionableSignal({ freshness: "LIVE", dataQuality: "OK", formulaVersion: "GANN_NIFTY_ASTRO_V1_1" });
+    const r = canDisplayActionableSignal({
+      freshness: "LIVE",
+      dataQuality: "OK",
+      formulaVersion: "GANN_NIFTY_ASTRO_V1_1",
+    });
     expect(r.allowed).toBe(true);
   });
   it("STALE blocks", () => {
@@ -21,7 +25,11 @@ describe("Phase 24B · actionable-signal safety", () => {
     expect(r.allowed).toBe(false);
   });
   it("Causality FAILED blocks with validation label", () => {
-    const r = canDisplayActionableSignal({ freshness: "LIVE", formulaVersion: "V1", causalityStatus: "FAILED" });
+    const r = canDisplayActionableSignal({
+      freshness: "LIVE",
+      formulaVersion: "V1",
+      causalityStatus: "FAILED",
+    });
     expect(r.allowed).toBe(false);
     expect(blockedLabel(r.blockingReasons)).toBe("VALIDATION BLOCKED");
   });
@@ -30,7 +38,11 @@ describe("Phase 24B · actionable-signal safety", () => {
     expect(r.allowed).toBe(false);
   });
   it("provider DOWN blocks", () => {
-    const r = canDisplayActionableSignal({ freshness: "LIVE", formulaVersion: "V1", providerStatus: "DOWN" });
+    const r = canDisplayActionableSignal({
+      freshness: "LIVE",
+      formulaVersion: "V1",
+      providerStatus: "DOWN",
+    });
     expect(r.allowed).toBe(false);
   });
 });

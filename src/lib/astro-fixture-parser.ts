@@ -25,21 +25,44 @@ export type ParseResult = {
   source: ParseSource;
   rows: ParsedRow[];
   planets: ReferencePlanet[]; // only unambiguous rows are promoted
-  confidence: number;         // 0..1
+  confidence: number; // 0..1
   warnings: string[];
   rawText: string;
 };
 
 const PLANET_ALIASES: Record<string, string> = {
-  su: "Sun", sun: "Sun", surya: "Sun",
-  mo: "Moon", moon: "Moon", chandra: "Moon",
-  me: "Mercury", mer: "Mercury", mercury: "Mercury", budha: "Mercury",
-  ve: "Venus", ven: "Venus", venus: "Venus", shukra: "Venus",
-  ma: "Mars", mar: "Mars", mars: "Mars", mangala: "Mars", kuja: "Mars",
-  ju: "Jupiter", jup: "Jupiter", jupiter: "Jupiter", guru: "Jupiter", brihaspati: "Jupiter",
-  sa: "Saturn", sat: "Saturn", saturn: "Saturn", shani: "Saturn",
-  ra: "Rahu", rahu: "Rahu",
-  ke: "Ketu", ketu: "Ketu",
+  su: "Sun",
+  sun: "Sun",
+  surya: "Sun",
+  mo: "Moon",
+  moon: "Moon",
+  chandra: "Moon",
+  me: "Mercury",
+  mer: "Mercury",
+  mercury: "Mercury",
+  budha: "Mercury",
+  ve: "Venus",
+  ven: "Venus",
+  venus: "Venus",
+  shukra: "Venus",
+  ma: "Mars",
+  mar: "Mars",
+  mars: "Mars",
+  mangala: "Mars",
+  kuja: "Mars",
+  ju: "Jupiter",
+  jup: "Jupiter",
+  jupiter: "Jupiter",
+  guru: "Jupiter",
+  brihaspati: "Jupiter",
+  sa: "Saturn",
+  sat: "Saturn",
+  saturn: "Saturn",
+  shani: "Saturn",
+  ra: "Rahu",
+  rahu: "Rahu",
+  ke: "Ketu",
+  ketu: "Ketu",
 };
 
 function normPlanet(s: string): string | undefined {
@@ -87,12 +110,18 @@ export function detectSource(text: string): ParseSource {
 export function parsePlanetTable(text: string, source: ParseSource = "AUTO"): ParseResult {
   const rows: ParsedRow[] = [];
   const warnings: string[] = [];
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   for (const line of lines) {
     const raw = line;
     // Split on tabs, pipes, or runs of 2+ spaces to preserve "Purva Ashadha" etc.
-    const cells = line.split(/\t|\s*\|\s*|\s{2,}/).map((c) => c.trim()).filter(Boolean);
+    const cells = line
+      .split(/\t|\s*\|\s*|\s{2,}/)
+      .map((c) => c.trim())
+      .filter(Boolean);
     if (cells.length < 3) continue;
 
     const planet = normPlanet(cells[0]);
@@ -114,15 +143,24 @@ export function parsePlanetTable(text: string, source: ParseSource = "AUTO"): Pa
 
       if (pada === undefined) {
         const pm = cell.match(/^(?:pada[\s:]*)?([1-4])$/i);
-        if (pm) { pada = Number(pm[1]); continue; }
+        if (pm) {
+          pada = Number(pm[1]);
+          continue;
+        }
       }
       if (!sign) {
         const s = normSign(cell);
-        if (s) { sign = s; continue; }
+        if (s) {
+          sign = s;
+          continue;
+        }
       }
       if (!nakshatra) {
         const n = normNakshatra(cell);
-        if (n && !/^\d/.test(cell)) { nakshatra = n; continue; }
+        if (n && !/^\d/.test(cell)) {
+          nakshatra = n;
+          continue;
+        }
       }
       // Try to parse as degrees
       const deg = parseDegrees(cell);
@@ -148,8 +186,16 @@ export function parsePlanetTable(text: string, source: ParseSource = "AUTO"): Pa
     if (missing.length) reason = `missing: ${missing.join(", ")}`;
 
     rows.push({
-      raw, planet, siderealLongitude, sign, degreeInSign, nakshatra, pada, retrograde,
-      ambiguous: missing.length > 0, reason,
+      raw,
+      planet,
+      siderealLongitude,
+      sign,
+      degreeInSign,
+      nakshatra,
+      pada,
+      retrograde,
+      ambiguous: missing.length > 0,
+      reason,
     });
   }
 
@@ -168,9 +214,12 @@ export function parsePlanetTable(text: string, source: ParseSource = "AUTO"): Pa
 
   const total = rows.length || 1;
   const confidence = planets.length / total;
-  if (planets.length === 0) warnings.push("No unambiguous planet rows extracted — verify separators and columns.");
+  if (planets.length === 0)
+    warnings.push("No unambiguous planet rows extracted — verify separators and columns.");
   if (rows.length && rows.length !== planets.length) {
-    warnings.push(`${rows.length - planets.length} row(s) flagged as ambiguous — manual confirmation required.`);
+    warnings.push(
+      `${rows.length - planets.length} row(s) flagged as ambiguous — manual confirmation required.`,
+    );
   }
   return { source, rows, planets, confidence, warnings, rawText: text };
 }

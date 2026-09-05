@@ -35,7 +35,10 @@ export function gannGapDisabled(nowIso: string): GannGapCapability {
   };
 }
 
-export function gannGapNoData(nowIso: string, reason = "Reference price unavailable"): GannGapCapability {
+export function gannGapNoData(
+  nowIso: string,
+  reason = "Reference price unavailable",
+): GannGapCapability {
   return {
     status: "NO_DATA",
     reason,

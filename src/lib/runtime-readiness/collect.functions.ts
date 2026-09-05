@@ -17,23 +17,19 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<RuntimeReadinessReport> => {
     const now = new Date().toISOString();
-    const { fetchCanonicalOptionChain } = await import(
-      "@/lib/option-chain/canonical-snapshot.server"
-    );
+    const { fetchCanonicalOptionChain } =
+      await import("@/lib/option-chain/canonical-snapshot.server");
     const { getMarketData } = await import("@/lib/market.functions");
     const { computeCombinedPcr } = await import("@/lib/combined-pcr/combined-pcr");
     const { DEFAULT_COMBINED_PCR_WEIGHTS } = await import("@/lib/combined-pcr/types");
     const { getSnapshotHistory } = await import("@/lib/option-chain/snapshot-history");
-    const { evaluateMarketBreadthCapability } = await import(
-      "@/lib/market-breadth/capability"
-    );
+    const { evaluateMarketBreadthCapability } = await import("@/lib/market-breadth/capability");
     const { buildMockBreadthBundle } = await import("@/lib/market-breadth/mock-provider");
     const { evaluateVixRegime } = await import("@/lib/market-breadth/vix-regime");
     const { adaptPcrConfirmation } = await import("@/lib/market-breadth/pcr-confirmation");
     const { classifyGti } = await import("@/lib/market-breadth/gti-classifier");
-    const { classifySmartAlertReadiness, unknownEngineHealth } = await import(
-      "@/lib/smart-alerts/readiness"
-    );
+    const { classifySmartAlertReadiness, unknownEngineHealth } =
+      await import("@/lib/smart-alerts/readiness");
 
     // ── Quotes / VIX ────────────────────────────────────────────
     let quotes: Awaited<ReturnType<typeof getMarketData>> | null = null;
@@ -46,12 +42,8 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     const vixValue = quotes?.vix?.livePrice ?? null;
 
     // ── Option chains ───────────────────────────────────────────
-    const niftyRes = await fetchCanonicalOptionChain({ underlying: "NIFTY" }).catch(
-      () => null,
-    );
-    const bnkRes = await fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }).catch(
-      () => null,
-    );
+    const niftyRes = await fetchCanonicalOptionChain({ underlying: "NIFTY" }).catch(() => null);
+    const bnkRes = await fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }).catch(() => null);
 
     // ── Combined PCR (canonical, reused snapshots) ──────────────
     let pcrReading: ReturnType<typeof computeCombinedPcr> | null = null;
@@ -148,7 +140,7 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
         const anyUsable = [nifty, bnk].some((s) => s === "SUPPORTED" || s === "PARTIAL");
         return {
           available: anyUsable,
-          demo: !anyUsable ? false : (nifty !== "SUPPORTED" && bnk !== "SUPPORTED"),
+          demo: !anyUsable ? false : nifty !== "SUPPORTED" && bnk !== "SUPPORTED",
           reason: anyUsable
             ? "Institutional Flow consuming canonical option-chain snapshot"
             : "Institutional Flow blocked — option chain unavailable",

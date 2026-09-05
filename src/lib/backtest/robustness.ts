@@ -26,11 +26,7 @@ export type RobustnessFactor = {
 };
 
 export type RobustnessStatus =
-  | "ROBUST"
-  | "ACCEPTABLE"
-  | "FRAGILE"
-  | "OVERFIT"
-  | "INSUFFICIENT_DATA";
+  "ROBUST" | "ACCEPTABLE" | "FRAGILE" | "OVERFIT" | "INSUFFICIENT_DATA";
 
 export type RobustnessResult = {
   readonly version: "ROBUSTNESS_V1";
@@ -57,11 +53,16 @@ function clamp01(x: number): number {
 
 function sensitivityToScore(c: SensitivityClassification): { score: number; formula: string } {
   switch (c) {
-    case "STABLE_PLATEAU": return { score: 1, formula: "surface=STABLE_PLATEAU ⇒ 1.0" };
-    case "MONOTONIC": return { score: 0.7, formula: "surface=MONOTONIC ⇒ 0.7" };
-    case "NARROW_OPTIMUM": return { score: 0.3, formula: "surface=NARROW_OPTIMUM ⇒ 0.3" };
-    case "ERRATIC": return { score: 0.1, formula: "surface=ERRATIC ⇒ 0.1" };
-    default: return { score: 0, formula: "surface=INSUFFICIENT_DATA ⇒ 0" };
+    case "STABLE_PLATEAU":
+      return { score: 1, formula: "surface=STABLE_PLATEAU ⇒ 1.0" };
+    case "MONOTONIC":
+      return { score: 0.7, formula: "surface=MONOTONIC ⇒ 0.7" };
+    case "NARROW_OPTIMUM":
+      return { score: 0.3, formula: "surface=NARROW_OPTIMUM ⇒ 0.3" };
+    case "ERRATIC":
+      return { score: 0.1, formula: "surface=ERRATIC ⇒ 0.1" };
+    default:
+      return { score: 0, formula: "surface=INSUFFICIENT_DATA ⇒ 0" };
   }
 }
 
@@ -83,25 +84,71 @@ export function computeRobustnessScore(inp: RobustnessInputs): RobustnessResult 
   const sens = sensitivityToScore(inp.sensitivityClassification);
 
   const factors: RobustnessFactor[] = [
-    { key: "walkForwardStability", weight: w.walkForwardStability, value: inp.walkForwardStability, score: clamp01(inp.walkForwardStability), formula: "clamp(walkForwardStability, 0, 1)" },
-    { key: "oosConsistency", weight: w.oosConsistency, value: inp.oosConsistency, score: clamp01(inp.oosConsistency), formula: "clamp(oosConsistency, 0, 1)" },
-    { key: "monteCarloP5", weight: w.monteCarloP5, value: mcRatio, score: mcScore, formula: "clamp((mcP5Final / capital − 0.8) / 0.4, 0, 1)" },
-    { key: "drawdownResilience", weight: w.drawdownResilience, value: inp.maxDrawdownPct, score: ddScore, formula: "clamp(1 − maxDrawdownPct / 0.5, 0, 1)" },
-    { key: "sensitivitySmoothness", weight: w.sensitivitySmoothness, value: 0, score: sens.score, formula: sens.formula },
-    { key: "tradeCountAdequacy", weight: w.tradeCountAdequacy, value: inp.tradeCount, score: tradesScore, formula: "clamp((tradeCount − 20) / 80, 0, 1)" },
-    { key: "profitFactorConsistency", weight: w.profitFactorConsistency, value: inp.profitFactorConsistency, score: clamp01(inp.profitFactorConsistency), formula: "clamp(profitFactorConsistency, 0, 1)" },
+    {
+      key: "walkForwardStability",
+      weight: w.walkForwardStability,
+      value: inp.walkForwardStability,
+      score: clamp01(inp.walkForwardStability),
+      formula: "clamp(walkForwardStability, 0, 1)",
+    },
+    {
+      key: "oosConsistency",
+      weight: w.oosConsistency,
+      value: inp.oosConsistency,
+      score: clamp01(inp.oosConsistency),
+      formula: "clamp(oosConsistency, 0, 1)",
+    },
+    {
+      key: "monteCarloP5",
+      weight: w.monteCarloP5,
+      value: mcRatio,
+      score: mcScore,
+      formula: "clamp((mcP5Final / capital − 0.8) / 0.4, 0, 1)",
+    },
+    {
+      key: "drawdownResilience",
+      weight: w.drawdownResilience,
+      value: inp.maxDrawdownPct,
+      score: ddScore,
+      formula: "clamp(1 − maxDrawdownPct / 0.5, 0, 1)",
+    },
+    {
+      key: "sensitivitySmoothness",
+      weight: w.sensitivitySmoothness,
+      value: 0,
+      score: sens.score,
+      formula: sens.formula,
+    },
+    {
+      key: "tradeCountAdequacy",
+      weight: w.tradeCountAdequacy,
+      value: inp.tradeCount,
+      score: tradesScore,
+      formula: "clamp((tradeCount − 20) / 80, 0, 1)",
+    },
+    {
+      key: "profitFactorConsistency",
+      weight: w.profitFactorConsistency,
+      value: inp.profitFactorConsistency,
+      score: clamp01(inp.profitFactorConsistency),
+      formula: "clamp(profitFactorConsistency, 0, 1)",
+    },
   ];
   const total = factors.reduce((a, f) => a + f.weight * f.score, 0);
 
   // Overfit detection: strong walk-forward stability but weak OOS + narrow optimum.
-  const overfit = inp.walkForwardStability >= 0.7 && inp.oosConsistency <= 0.4 &&
-    (inp.sensitivityClassification === "NARROW_OPTIMUM" || inp.sensitivityClassification === "ERRATIC");
+  const overfit =
+    inp.walkForwardStability >= 0.7 &&
+    inp.oosConsistency <= 0.4 &&
+    (inp.sensitivityClassification === "NARROW_OPTIMUM" ||
+      inp.sensitivityClassification === "ERRATIC");
 
   let status: RobustnessStatus;
   let reason: string;
   if (overfit) {
     status = "OVERFIT";
-    reason = "Strong in-sample stability but weak out-of-sample consistency with unstable parameter surface — likely overfit.";
+    reason =
+      "Strong in-sample stability but weak out-of-sample consistency with unstable parameter surface — likely overfit.";
   } else if (total >= 0.75) {
     status = "ROBUST";
     reason = `Composite score ${total.toFixed(2)} across all seven factors.`;
@@ -130,7 +177,9 @@ export function computeRobustnessRunId(input: {
   monteCarloRunId?: string;
   sensitivityRunId?: string;
 }): string {
-  const key = [input.researchRunId, input.monteCarloRunId ?? "", input.sensitivityRunId ?? ""].join("|");
+  const key = [input.researchRunId, input.monteCarloRunId ?? "", input.sensitivityRunId ?? ""].join(
+    "|",
+  );
   return `ROBUSTNESS_V1:${fnv1a(key)}`;
 }
 

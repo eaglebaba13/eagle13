@@ -5,7 +5,12 @@
 // only hides developer / diagnostics / experimental entries when the
 // subscription preview flag is on.
 
-import { NAV_REGISTRY, type NavItem, type NavContext, resolveNavigationForContext } from "./navigation";
+import {
+  NAV_REGISTRY,
+  type NavItem,
+  type NavContext,
+  resolveNavigationForContext,
+} from "./navigation";
 
 export type PreviewCategory = "core" | "dev" | "experimental" | "admin";
 
@@ -44,7 +49,8 @@ const CORE_PREVIEW_IDS = new Set<string>([
 export function categoriseNavItem(id: string): PreviewCategory {
   if (id.startsWith("admin")) return "admin";
   if (DEV_NAV_IDS.has(id)) return "dev";
-  if (id.startsWith("dev-") || id.includes("audit") || id.includes("staging")) return "experimental";
+  if (id.startsWith("dev-") || id.includes("audit") || id.includes("staging"))
+    return "experimental";
   return "core";
 }
 

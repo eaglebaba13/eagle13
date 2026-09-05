@@ -65,7 +65,10 @@ export function isValidExpiryFormat(expiry: string | null | undefined): boolean 
   return Number.isFinite(Date.parse(`${expiry}T00:00:00Z`));
 }
 
-type BaseFields = Omit<OptionChainCapability, "status" | "retryable" | "reason" | "failingStage" | "suggestedAction">;
+type BaseFields = Omit<
+  OptionChainCapability,
+  "status" | "retryable" | "reason" | "failingStage" | "suggestedAction"
+>;
 
 function base(input: EvaluateCapabilityInput, now: string): BaseFields {
   return {
@@ -78,7 +81,9 @@ function base(input: EvaluateCapabilityInput, now: string): BaseFields {
   };
 }
 
-export function evaluateOptionChainCapability(input: EvaluateCapabilityInput): OptionChainCapability {
+export function evaluateOptionChainCapability(
+  input: EvaluateCapabilityInput,
+): OptionChainCapability {
   const now = input.nowIso ?? new Date().toISOString();
   const b = base(input, now);
 
@@ -167,7 +172,8 @@ export function evaluateOptionChainCapability(input: EvaluateCapabilityInput): O
         ...b,
         status: "PARTIAL_CHAIN",
         retryable: true,
-        reason: fails.find((f) => f.code === "INSUFFICIENT_STRIKES")?.detail ?? "Insufficient strikes.",
+        reason:
+          fails.find((f) => f.code === "INSUFFICIENT_STRIKES")?.detail ?? "Insufficient strikes.",
         failingStage: "quality-assessment",
         suggestedAction: "Widen ATM filter or pick another expiry.",
       };
@@ -200,8 +206,7 @@ export function evaluateOptionChainCapability(input: EvaluateCapabilityInput): O
         status: "PARTIAL",
         retryable: true,
         reason:
-          `${q.issues.length} data-quality warning(s): ${codes}` +
-          (first ? ` — ${first}` : ""),
+          `${q.issues.length} data-quality warning(s): ${codes}` + (first ? ` — ${first}` : ""),
         failingStage: "quality-assessment",
         suggestedAction: "Snapshot is usable; check warnings in Research Panel.",
       };

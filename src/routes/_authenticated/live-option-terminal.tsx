@@ -34,10 +34,22 @@ const BIAS_COLOR: Record<CanonicalBias, string> = {
 };
 
 const ACTION_TONE: Record<DecisionEngineOutput["action"], { bg: string; label: string }> = {
-  BUY_CALL: { bg: "bg-[var(--eb-bull)]/15 text-[var(--eb-bull)] border-[var(--eb-bull)]/40", label: "BUY CALL" },
-  BUY_PUT: { bg: "bg-[var(--eb-bear)]/15 text-[var(--eb-bear)] border-[var(--eb-bear)]/40", label: "BUY PUT" },
-  WAIT: { bg: "bg-[var(--eb-warn,#eab308)]/15 text-[var(--eb-warn,#eab308)] border-[var(--eb-warn,#eab308)]/40", label: "WAIT" },
-  NO_TRADE: { bg: "bg-[var(--eb-muted)]/15 text-[var(--eb-muted)] border-[var(--eb-muted)]/40", label: "NO TRADE" },
+  BUY_CALL: {
+    bg: "bg-[var(--eb-bull)]/15 text-[var(--eb-bull)] border-[var(--eb-bull)]/40",
+    label: "BUY CALL",
+  },
+  BUY_PUT: {
+    bg: "bg-[var(--eb-bear)]/15 text-[var(--eb-bear)] border-[var(--eb-bear)]/40",
+    label: "BUY PUT",
+  },
+  WAIT: {
+    bg: "bg-[var(--eb-warn,#eab308)]/15 text-[var(--eb-warn,#eab308)] border-[var(--eb-warn,#eab308)]/40",
+    label: "WAIT",
+  },
+  NO_TRADE: {
+    bg: "bg-[var(--eb-muted)]/15 text-[var(--eb-muted)] border-[var(--eb-muted)]/40",
+    label: "NO TRADE",
+  },
 };
 
 function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
@@ -49,7 +61,9 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
           <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
             Market Decision Engine
           </div>
-          <div className={`mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-lg font-bold ${tone.bg}`}>
+          <div
+            className={`mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-lg font-bold ${tone.bg}`}
+          >
             {tone.label}
           </div>
           <div className="mt-2 text-sm text-[var(--eb-muted)]">
@@ -74,10 +88,13 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
           <ul className="mt-2 space-y-1 text-xs">
             {d.indicators.map((i) => {
               const color =
-                i.bias === "BULLISH" ? "text-[var(--eb-bull)]"
-                : i.bias === "BEARISH" ? "text-[var(--eb-bear)]"
-                : i.bias === "NEUTRAL" ? "text-[var(--eb-muted)]"
-                : "text-[var(--eb-muted)] opacity-70";
+                i.bias === "BULLISH"
+                  ? "text-[var(--eb-bull)]"
+                  : i.bias === "BEARISH"
+                    ? "text-[var(--eb-bear)]"
+                    : i.bias === "NEUTRAL"
+                      ? "text-[var(--eb-muted)]"
+                      : "text-[var(--eb-muted)] opacity-70";
               return (
                 <li key={i.key} className="flex items-center justify-between gap-2">
                   <span className="text-[var(--eb-text)]">
@@ -85,7 +102,9 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
                     <span className="text-[var(--eb-muted)]">({Math.round(i.weight * 100)}%)</span>
                   </span>
                   <span className={`font-mono ${color}`}>
-                    {i.available ? `+${i.bullContribution} / -${i.bearContribution}` : "UNAVAILABLE"}
+                    {i.available
+                      ? `+${i.bullContribution} / -${i.bearContribution}`
+                      : "UNAVAILABLE"}
                   </span>
                 </li>
               );
@@ -101,7 +120,9 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
               Reasoning
             </div>
             <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-text)]">
-              {d.reasoning.map((r, i) => <li key={i}>{r}</li>)}
+              {d.reasoning.map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
             </ul>
           </div>
           {(d.warnings.length > 0 || d.conflicts.length > 0) && (
@@ -110,8 +131,12 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
                 Warnings & Conflicts
               </div>
               <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-warn,#eab308)]">
-                {d.warnings.map((w, i) => <li key={`w${i}`}>⚠ {w}</li>)}
-                {d.conflicts.map((c, i) => <li key={`c${i}`}>⚑ {c}</li>)}
+                {d.warnings.map((w, i) => (
+                  <li key={`w${i}`}>⚠ {w}</li>
+                ))}
+                {d.conflicts.map((c, i) => (
+                  <li key={`c${i}`}>⚑ {c}</li>
+                ))}
               </ul>
             </div>
           )}
@@ -120,8 +145,16 @@ function DecisionEnginePanel({ d }: { d: DecisionEngineOutput }) {
 
       {(d.leadingSector || d.weakestSector) && (
         <div className="mt-3 text-xs text-[var(--eb-muted)]">
-          {d.leadingSector && <>Leading sector: <span className="text-[var(--eb-bull)]">{d.leadingSector}</span>. </>}
-          {d.weakestSector && <>Weakest: <span className="text-[var(--eb-bear)]">{d.weakestSector}</span>.</>}
+          {d.leadingSector && (
+            <>
+              Leading sector: <span className="text-[var(--eb-bull)]">{d.leadingSector}</span>.{" "}
+            </>
+          )}
+          {d.weakestSector && (
+            <>
+              Weakest: <span className="text-[var(--eb-bear)]">{d.weakestSector}</span>.
+            </>
+          )}
         </div>
       )}
       <div className="mt-3 text-[10px] text-[var(--eb-muted)]">{d.disclaimer}</div>
@@ -158,16 +191,25 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
             Institutional Flow & Probability Engine
           </div>
           <div className="mt-1 text-sm text-[var(--eb-text)]">
-            Regime <span className="font-semibold text-[var(--eb-accent)]">{ife.regime.replaceAll("_", " ")}</span>
+            Regime{" "}
+            <span className="font-semibold text-[var(--eb-accent)]">
+              {ife.regime.replaceAll("_", " ")}
+            </span>
             {" · "}Confidence <span className="font-semibold">{ife.confidence.value}%</span>
-            {" · "}Agreement <span className={biasClass(ife.signalAgreement.level === "STRONG" || ife.signalAgreement.level === "VERY_STRONG" ? "BULLISH" : "NEUTRAL")}>
+            {" · "}Agreement{" "}
+            <span
+              className={biasClass(
+                ife.signalAgreement.level === "STRONG" ||
+                  ife.signalAgreement.level === "VERY_STRONG"
+                  ? "BULLISH"
+                  : "NEUTRAL",
+              )}
+            >
               {ife.signalAgreement.level.replaceAll("_", " ")}
             </span>
           </div>
         </div>
-        <div className="text-xs text-[var(--eb-muted)]">
-          Data quality {ife.dataQuality.overall}
-        </div>
+        <div className="text-xs text-[var(--eb-muted)]">Data quality {ife.dataQuality.overall}</div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -178,13 +220,19 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
             <span className="text-lg font-semibold text-[var(--eb-text)]">
               {ife.combinedPcr.value != null ? ife.combinedPcr.value.toFixed(2) : "—"}
             </span>
-            <span className={`text-xs ${biasClass(ife.combinedPcr.bias)}`}>{ife.combinedPcr.bias}</span>
+            <span className={`text-xs ${biasClass(ife.combinedPcr.bias)}`}>
+              {ife.combinedPcr.bias}
+            </span>
           </div>
           <ul className="mt-2 space-y-0.5 text-xs">
             {ife.combinedPcr.contributions.map((c) => (
               <li key={c.index} className="flex justify-between">
                 <span className="text-[var(--eb-muted)]">{c.index}</span>
-                <span className={c.available ? "text-[var(--eb-text)]" : "text-[var(--eb-muted)] opacity-60"}>
+                <span
+                  className={
+                    c.available ? "text-[var(--eb-text)]" : "text-[var(--eb-muted)] opacity-60"
+                  }
+                >
                   {c.available ? `${c.contributionPct}%` : "Unavailable"}
                 </span>
               </li>
@@ -198,7 +246,9 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
           <div className="mt-1 text-sm font-semibold text-[var(--eb-text)]">
             {ife.oiClassifier.classification.replaceAll("_", " ")}
           </div>
-          <div className={`mt-1 text-xs ${biasClass(ife.oiClassifier.bias)}`}>{ife.oiClassifier.bias}</div>
+          <div className={`mt-1 text-xs ${biasClass(ife.oiClassifier.bias)}`}>
+            {ife.oiClassifier.bias}
+          </div>
           <div className="mt-1 text-xs text-[var(--eb-muted)]">{ife.oiClassifier.note}</div>
         </div>
 
@@ -231,11 +281,15 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
           <div className="mt-1 text-xs">
             <div className="flex justify-between">
               <span className="text-[var(--eb-muted)]">Buying</span>
-              <span className="text-[var(--eb-bull)]">{ife.institutionalFlow.buyingPressurePct}%</span>
+              <span className="text-[var(--eb-bull)]">
+                {ife.institutionalFlow.buyingPressurePct}%
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--eb-muted)]">Selling</span>
-              <span className="text-[var(--eb-bear)]">{ife.institutionalFlow.sellingPressurePct}%</span>
+              <span className="text-[var(--eb-bear)]">
+                {ife.institutionalFlow.sellingPressurePct}%
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--eb-muted)]">Neutral</span>
@@ -254,7 +308,9 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
             <>
               <div className="mt-1 text-sm font-semibold text-[var(--eb-accent)]">
                 {ife.strikeAdvice.strike} {ife.strikeAdvice.optionType}{" "}
-                <span className="text-xs text-[var(--eb-muted)]">({ife.strikeAdvice.moneyness})</span>
+                <span className="text-xs text-[var(--eb-muted)]">
+                  ({ife.strikeAdvice.moneyness})
+                </span>
               </div>
               <div className="mt-1 text-xs text-[var(--eb-muted)]">{ife.strikeAdvice.reason}</div>
               <div className="mt-1 text-[11px] text-[var(--eb-muted)]">
@@ -262,7 +318,9 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
               </div>
             </>
           ) : (
-            <div className="mt-1 text-xs text-[var(--eb-muted)]">No strike — {ife.strikeAdvice.reason}</div>
+            <div className="mt-1 text-xs text-[var(--eb-muted)]">
+              No strike — {ife.strikeAdvice.reason}
+            </div>
           )}
         </div>
       </div>
@@ -272,20 +330,24 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
         <div className="flex items-baseline justify-between">
           <div className="text-[10px] uppercase text-[var(--eb-muted)]">Trade Readiness</div>
           <div className="text-xs text-[var(--eb-text)]">
-            Passed <span className="font-semibold">{ife.tradeReadiness.passed}</span> / {ife.tradeReadiness.total}
+            Passed <span className="font-semibold">{ife.tradeReadiness.passed}</span> /{" "}
+            {ife.tradeReadiness.total}
           </div>
         </div>
         <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2 md:grid-cols-3">
           {ife.tradeReadiness.items.map((it) => (
-            <li key={it.key} className="flex items-center justify-between gap-2 rounded border border-[var(--eb-border)] px-2 py-1">
+            <li
+              key={it.key}
+              className="flex items-center justify-between gap-2 rounded border border-[var(--eb-border)] px-2 py-1"
+            >
               <span className="text-[var(--eb-text)]">{it.label}</span>
               <span
                 className={
                   it.status === "PASS"
                     ? "text-[var(--eb-bull)]"
                     : it.status === "FAIL"
-                    ? "text-[var(--eb-bear)]"
-                    : "text-[var(--eb-muted)] opacity-70"
+                      ? "text-[var(--eb-bear)]"
+                      : "text-[var(--eb-muted)] opacity-70"
                 }
               >
                 {statusIcon(it.status)} <span className="text-[var(--eb-muted)]">{it.detail}</span>
@@ -320,7 +382,9 @@ function InstitutionalFlowPanel({ ife }: { ife: InstitutionalFlowEngineOutput })
           <div className="text-[10px] uppercase text-[var(--eb-muted)]">Explainable Reasoning</div>
           <div className="mt-1 text-sm text-[var(--eb-text)]">
             {ife.explanation.action.replaceAll("_", " ")}{" "}
-            <span className="text-xs text-[var(--eb-muted)]">— {ife.explanation.confidence}% confidence</span>
+            <span className="text-xs text-[var(--eb-muted)]">
+              — {ife.explanation.confidence}% confidence
+            </span>
           </div>
           <ul className="mt-1 space-y-0.5 text-xs text-[var(--eb-text)]">
             {ife.explanation.bullets.slice(0, 8).map((b, i) => (
@@ -340,17 +404,14 @@ function StrategyCard({ s }: { s: ScoredStrategy }) {
     <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-[var(--eb-text)]">
-            {s.profile.label}
-          </div>
+          <div className="text-sm font-semibold text-[var(--eb-text)]">{s.profile.label}</div>
           <div className="text-xs text-[var(--eb-muted)]">
-            {s.profile.legs}-leg · {s.profile.complexity} · Risk {s.profile.risk} · Reward {s.profile.reward}
+            {s.profile.legs}-leg · {s.profile.complexity} · Risk {s.profile.risk} · Reward{" "}
+            {s.profile.reward}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-[var(--eb-accent)]">
-            {s.overallPct}%
-          </div>
+          <div className="text-lg font-bold text-[var(--eb-accent)]">{s.overallPct}%</div>
           <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
             alignment {s.alignmentPct}%
           </div>
@@ -387,9 +448,7 @@ function LiveOptionTerminalPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-[var(--eb-text)]">
-          Live Option Strategy Terminal
-        </h1>
+        <h1 className="text-2xl font-bold text-[var(--eb-text)]">Live Option Strategy Terminal</h1>
         <p className="text-sm text-[var(--eb-muted)]">
           Research-only workstation. Never places orders. Consumes canonical modules only.
         </p>
@@ -430,11 +489,9 @@ function LiveOptionTerminalPage() {
                 </span>
               </div>
               <div className="mt-1 text-xs text-[var(--eb-muted)]">
-                {data.engine.direction.bullCount} bull ·{" "}
-                {data.engine.direction.bearCount} bear ·{" "}
-                {data.engine.direction.neutralCount} neutral ·{" "}
-                {data.engine.direction.conflictCount} conflict ·{" "}
-                {data.engine.direction.unavailableCount} n/a
+                {data.engine.direction.bullCount} bull · {data.engine.direction.bearCount} bear ·{" "}
+                {data.engine.direction.neutralCount} neutral · {data.engine.direction.conflictCount}{" "}
+                conflict · {data.engine.direction.unavailableCount} n/a
               </div>
             </div>
             <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
@@ -444,9 +501,7 @@ function LiveOptionTerminalPage() {
               <div className="mt-1 text-lg font-semibold text-[var(--eb-text)]">
                 {data.engine.vix != null ? data.engine.vix.toFixed(2) : "—"}
               </div>
-              <div className="text-xs text-[var(--eb-muted)]">
-                Regime {data.engine.vixRegime}
-              </div>
+              <div className="text-xs text-[var(--eb-muted)]">Regime {data.engine.vixRegime}</div>
             </div>
             <div className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
               <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
@@ -463,9 +518,7 @@ function LiveOptionTerminalPage() {
               <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
                 Data Source
               </div>
-              <div className="mt-1 text-lg font-semibold text-[var(--eb-text)]">
-                {data.source}
-              </div>
+              <div className="mt-1 text-lg font-semibold text-[var(--eb-text)]">{data.source}</div>
               <button
                 className="mt-2 rounded border border-[var(--eb-border)] px-2 py-0.5 text-xs text-[var(--eb-muted)]"
                 onClick={() => refetch()}
@@ -477,9 +530,7 @@ function LiveOptionTerminalPage() {
           </section>
 
           <section className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
-            <h2 className="text-sm font-semibold text-[var(--eb-text)]">
-              Canonical Signals
-            </h2>
+            <h2 className="text-sm font-semibold text-[var(--eb-text)]">Canonical Signals</h2>
             <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 md:grid-cols-4">
               {[
                 ["Decision", data.signals.decision, data.evidence.decision.action],
@@ -490,7 +541,10 @@ function LiveOptionTerminalPage() {
                 ["Gann", data.signals.gann, "—"],
                 ["Gap Outlook", data.signals.gannGap, data.evidence.gannGap.label],
               ].map(([label, bias, detail]) => (
-                <div key={String(label)} className="flex items-center justify-between gap-2 rounded border border-[var(--eb-border)] px-2 py-1.5">
+                <div
+                  key={String(label)}
+                  className="flex items-center justify-between gap-2 rounded border border-[var(--eb-border)] px-2 py-1.5"
+                >
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-[var(--eb-muted)]">
                       {label as string}
@@ -501,9 +555,7 @@ function LiveOptionTerminalPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-[var(--eb-muted)]">
-              {data.engine.explanation}
-            </p>
+            <p className="mt-3 text-xs text-[var(--eb-muted)]">{data.engine.explanation}</p>
           </section>
 
           <section>
@@ -552,9 +604,15 @@ function LiveOptionTerminalPage() {
                       <td className="px-2 py-1.5 text-[var(--eb-text)]">{s.profile.label}</td>
                       <td className="px-2 py-1.5 text-[var(--eb-muted)]">{s.profile.legs}</td>
                       <td className="px-2 py-1.5 text-[var(--eb-muted)]">{s.profile.bias}</td>
-                      <td className="px-2 py-1.5 text-[var(--eb-muted)]">{s.profile.volatilityStance}</td>
-                      <td className="px-2 py-1.5 text-right text-[var(--eb-muted)]">{s.alignmentPct}%</td>
-                      <td className="px-2 py-1.5 text-right text-[var(--eb-accent)]">{s.overallPct}%</td>
+                      <td className="px-2 py-1.5 text-[var(--eb-muted)]">
+                        {s.profile.volatilityStance}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-[var(--eb-muted)]">
+                        {s.alignmentPct}%
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-[var(--eb-accent)]">
+                        {s.overallPct}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  DEFAULT_ENV_REQUIREMENTS,
-  assertRequiredEnv,
-  validateEnv,
-} from "./index";
+import { DEFAULT_ENV_REQUIREMENTS, assertRequiredEnv, validateEnv } from "./index";
 
 function fullEnv(overrides: Record<string, string | undefined> = {}) {
   const base: Record<string, string> = {};

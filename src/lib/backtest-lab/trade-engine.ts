@@ -53,7 +53,8 @@ function computeStopTarget(
   }
   let target: number | null = null;
   if (x.targetType === "FIXED" && Number.isFinite(x.targetValue)) {
-    target = direction === "LONG" ? entryPrice + (x.targetValue ?? 0) : entryPrice - (x.targetValue ?? 0);
+    target =
+      direction === "LONG" ? entryPrice + (x.targetValue ?? 0) : entryPrice - (x.targetValue ?? 0);
   } else if (x.targetType === "PCT" && Number.isFinite(x.targetValue)) {
     const d = entryPrice * (x.targetValue ?? 0);
     target = direction === "LONG" ? entryPrice + d : entryPrice - d;
@@ -78,15 +79,12 @@ function closePosition(
   const side: "BUY" | "SELL" = pos.direction === "LONG" ? "SELL" : "BUY";
   const exitPrice = applySlippage(def.slippage, exitPriceRaw, side);
   const exitFee = computeFee(def.costs, exitPrice, pos.quantity, side);
-  const grossPerUnit = pos.direction === "LONG"
-    ? exitPrice - pos.entryPrice
-    : pos.entryPrice - exitPrice;
+  const grossPerUnit =
+    pos.direction === "LONG" ? exitPrice - pos.entryPrice : pos.entryPrice - exitPrice;
   const grossPnl = grossPerUnit * pos.quantity;
   const totalFees = pos.fees + exitFee;
   const netPnl = grossPnl - totalFees;
-  const returnPct = pos.entryPrice > 0
-    ? (grossPerUnit / pos.entryPrice) * 100
-    : 0;
+  const returnPct = pos.entryPrice > 0 ? (grossPerUnit / pos.entryPrice) * 100 : 0;
   return {
     tradeId: `${def.strategyId}#${tradeSeq}`,
     strategyId: def.strategyId,
@@ -128,22 +126,28 @@ export function simulate(
 
   for (let i = 0; i < candles.length; i++) {
     const bar = candles[i];
-    if (bar.valid === false) { droppedBars++; continue; }
+    if (bar.valid === false) {
+      droppedBars++;
+      continue;
+    }
 
     // 1. Update open position: check stop/target using the current bar.
     if (pos) {
       pos.bars++;
-      pos.mfe = Math.max(pos.mfe,
-        pos.direction === "LONG" ? bar.high - pos.entryPrice : pos.entryPrice - bar.low);
-      pos.mae = Math.max(pos.mae,
-        pos.direction === "LONG" ? pos.entryPrice - bar.low : bar.high - pos.entryPrice);
+      pos.mfe = Math.max(
+        pos.mfe,
+        pos.direction === "LONG" ? bar.high - pos.entryPrice : pos.entryPrice - bar.low,
+      );
+      pos.mae = Math.max(
+        pos.mae,
+        pos.direction === "LONG" ? pos.entryPrice - bar.low : bar.high - pos.entryPrice,
+      );
 
-      const stopHit = pos.stop != null && (
-        pos.direction === "LONG" ? bar.low <= pos.stop : bar.high >= pos.stop
-      );
-      const targetHit = pos.target != null && (
-        pos.direction === "LONG" ? bar.high >= pos.target : bar.low <= pos.target
-      );
+      const stopHit =
+        pos.stop != null && (pos.direction === "LONG" ? bar.low <= pos.stop : bar.high >= pos.stop);
+      const targetHit =
+        pos.target != null &&
+        (pos.direction === "LONG" ? bar.high >= pos.target : bar.low <= pos.target);
 
       if (stopHit && targetHit) {
         // Same-bar ambiguity — apply configured policy.
@@ -151,16 +155,32 @@ export function simulate(
         const usedPrice = policy === "TARGET_FIRST" ? (pos.target as number) : (pos.stop as number);
         const reason: TradeExitReason = policy === "TARGET_FIRST" ? "TARGET" : "STOP";
         pos.warnings.push("SAME_BAR_STOP_AND_TARGET");
-        trades.push(closePosition(def, pos, bar.ts, usedPrice, policy === "AMBIGUOUS" ? "AMBIGUOUS_BAR" : reason, true, seq++));
+        trades.push(
+          closePosition(
+            def,
+            pos,
+            bar.ts,
+            usedPrice,
+            policy === "AMBIGUOUS" ? "AMBIGUOUS_BAR" : reason,
+            true,
+            seq++,
+          ),
+        );
         pos = null;
       } else if (stopHit) {
-        const gapThrough = pos.direction === "LONG" ? bar.open < (pos.stop as number) : bar.open > (pos.stop as number);
+        const gapThrough =
+          pos.direction === "LONG"
+            ? bar.open < (pos.stop as number)
+            : bar.open > (pos.stop as number);
         const fill = gapThrough ? bar.open : (pos.stop as number);
         if (gapThrough) pos.warnings.push("GAP_THROUGH_STOP");
         trades.push(closePosition(def, pos, bar.ts, fill, "STOP", false, seq++));
         pos = null;
       } else if (targetHit) {
-        const gapThrough = pos.direction === "LONG" ? bar.open > (pos.target as number) : bar.open < (pos.target as number);
+        const gapThrough =
+          pos.direction === "LONG"
+            ? bar.open > (pos.target as number)
+            : bar.open < (pos.target as number);
         const fill = gapThrough ? bar.open : (pos.target as number);
         if (gapThrough) pos.warnings.push("GAP_THROUGH_TARGET");
         trades.push(closePosition(def, pos, bar.ts, fill, "TARGET", false, seq++));
@@ -176,7 +196,12 @@ export function simulate(
       const side: "BUY" | "SELL" = pendingSignal.direction === "LONG" ? "BUY" : "SELL";
       const rawEntry = bar.open;
       const entryPrice = applySlippage(def.slippage, rawEntry, side);
-      const { stop, target, stopDistance } = computeStopTarget(entryPrice, pendingSignal.direction, def, bar.atr ?? null);
+      const { stop, target, stopDistance } = computeStopTarget(
+        entryPrice,
+        pendingSignal.direction,
+        def,
+        bar.atr ?? null,
+      );
       try {
         const qty = options.disableSizing
           ? 1

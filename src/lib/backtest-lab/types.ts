@@ -109,22 +109,16 @@ export interface PositionSizing {
   readonly method: PositionSizingMethod;
   readonly fixedQty?: number;
   readonly fixedCapital?: number;
-  readonly riskPerTrade?: number;      // rupees / base ccy
-  readonly pctCapital?: number;         // 0..1
-  readonly kellyFraction?: number;      // 0..1, capped
+  readonly riskPerTrade?: number; // rupees / base ccy
+  readonly pctCapital?: number; // 0..1
+  readonly kellyFraction?: number; // 0..1, capped
   readonly lotSize?: number;
   readonly minQty?: number;
   readonly contractMultiplier?: number;
 }
 
 export interface CostModel {
-  readonly kind:
-    | "ZERO"
-    | "FIXED_PER_TRADE"
-    | "PCT"
-    | "MAKER_TAKER"
-    | "BROKERAGE_TAXES"
-    | "CUSTOM";
+  readonly kind: "ZERO" | "FIXED_PER_TRADE" | "PCT" | "MAKER_TAKER" | "BROKERAGE_TAXES" | "CUSTOM";
   readonly perTrade?: number;
   readonly pct?: number;
   readonly makerBps?: number;
@@ -188,7 +182,7 @@ export interface StrategyDefinition {
 
 // ─── Simulation inputs / outputs ────────────────────────────────────
 export interface HistoricalCandle {
-  readonly ts: string;            // ISO timestamp of the bar close
+  readonly ts: string; // ISO timestamp of the bar close
   readonly open: number;
   readonly high: number;
   readonly low: number;
@@ -196,7 +190,7 @@ export interface HistoricalCandle {
   readonly volume?: number | null;
   readonly atr?: number | null;
   readonly signalSnapshot?: Readonly<Record<string, SignalValue>> | null;
-  readonly valid?: boolean;       // false → drop for execution
+  readonly valid?: boolean; // false → drop for execution
 }
 
 export type TradeExitReason =

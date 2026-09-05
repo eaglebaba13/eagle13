@@ -91,9 +91,7 @@ export default function SmcBacktestPanel() {
   }, []);
 
   const canRun =
-    !loading &&
-    !runningRef.current &&
-    (mode === "provider" || csvText.trim().length > 0);
+    !loading && !runningRef.current && (mode === "provider" || csvText.trim().length > 0);
 
   const runNow = useCallback(async () => {
     if (runningRef.current) return; // overlapping-run guard
@@ -182,18 +180,7 @@ export default function SmcBacktestPanel() {
       setLoading(false);
       runningRef.current = false;
     }
-  }, [
-    instrument,
-    timeframe,
-    from,
-    to,
-    mode,
-    providerName,
-    csvText,
-    signalCfg,
-    exec,
-    costs,
-  ]);
+  }, [instrument, timeframe, from, to, mode, providerName, csvText, signalCfg, exec, costs]);
 
   const stats = useMemo(() => summarize(result), [result]);
 
@@ -303,14 +290,12 @@ export default function SmcBacktestPanel() {
                 color: C.muted,
               }}
             >
-              Provider fetch returns DATA_RANGE_UNAVAILABLE — no client-safe
-              intraday feed is wired in this stage. Import a CSV instead.
+              Provider fetch returns DATA_RANGE_UNAVAILABLE — no client-safe intraday feed is wired
+              in this stage. Import a CSV instead.
             </span>
           ) : null}
         </div>
-        {error ? (
-          <div style={{ marginTop: 10, color: C.red, fontSize: 12 }}>{error}</div>
-        ) : null}
+        {error ? <div style={{ marginTop: 10, color: C.red, fontSize: 12 }}>{error}</div> : null}
       </div>
 
       {/* Signal settings */}
@@ -355,9 +340,7 @@ export default function SmcBacktestPanel() {
           <BoolField
             label="Premium/Discount"
             value={signalCfg.premiumDiscountEnabled}
-            onChange={(v) =>
-              setSignalCfg({ ...signalCfg, premiumDiscountEnabled: v })
-            }
+            onChange={(v) => setSignalCfg({ ...signalCfg, premiumDiscountEnabled: v })}
           />
           <BoolField
             label="Volume Filter"
@@ -414,8 +397,7 @@ export default function SmcBacktestPanel() {
               onChange={(e) =>
                 setExec({
                   ...exec,
-                  targetMode: e.target
-                    .value as SmcExecutionConfig["targetMode"],
+                  targetMode: e.target.value as SmcExecutionConfig["targetMode"],
                 })
               }
               style={inputStyle}
@@ -444,8 +426,7 @@ export default function SmcBacktestPanel() {
               onChange={(e) =>
                 setExec({
                   ...exec,
-                  positionMode: e.target
-                    .value as SmcExecutionConfig["positionMode"],
+                  positionMode: e.target.value as SmcExecutionConfig["positionMode"],
                 })
               }
               style={inputStyle}
@@ -458,9 +439,7 @@ export default function SmcBacktestPanel() {
           <NumField
             label="Max Hold Bars"
             value={exec.maxHoldBars ?? 0}
-            onChange={(v) =>
-              setExec({ ...exec, maxHoldBars: v > 0 ? v : null })
-            }
+            onChange={(v) => setExec({ ...exec, maxHoldBars: v > 0 ? v : null })}
           />
           <NumField
             label="Quantity"
@@ -508,20 +487,11 @@ export default function SmcBacktestPanel() {
           <div style={sectionHead}>5 · Data Quality</div>
           <div style={grid}>
             <KV label="Provider" value={data.provider} />
-            <KV
-              label="Range"
-              value={`${data.actualFrom ?? "—"} → ${data.actualTo ?? "—"}`}
-            />
+            <KV label="Range" value={`${data.actualFrom ?? "—"} → ${data.actualTo ?? "—"}`} />
             <KV label="Candles" value={String(data.candles.length)} />
             <KV label="Coverage" value={`${data.dataQuality.coveragePct}%`} />
-            <KV
-              label="Missing"
-              value={String(data.dataQuality.missingSessions)}
-            />
-            <KV
-              label="Invalid"
-              value={String(data.dataQuality.invalidCandles)}
-            />
+            <KV label="Missing" value={String(data.dataQuality.missingSessions)} />
+            <KV label="Invalid" value={String(data.dataQuality.invalidCandles)} />
             <KV label="Data Hash" value={data.dataHash} />
             <KV label="Timezone" value="Asia/Kolkata" />
           </div>
@@ -550,14 +520,8 @@ export default function SmcBacktestPanel() {
             />
             <KV label="Avg MFE" value={stats.avgMfe.toFixed(2)} />
             <KV label="Avg MAE" value={stats.avgMae.toFixed(2)} />
-            <KV
-              label="Long Win %"
-              value={`${stats.longWinRate}% (${stats.longs})`}
-            />
-            <KV
-              label="Short Win %"
-              value={`${stats.shortWinRate}% (${stats.shorts})`}
-            />
+            <KV label="Long Win %" value={`${stats.longWinRate}% (${stats.longs})`} />
+            <KV label="Short Win %" value={`${stats.shortWinRate}% (${stats.shorts})`} />
             <KV label="Avg Hold Bars" value={stats.avgHoldBars.toFixed(1)} />
             <KV label="Run ID" value={result.runId} />
           </div>
@@ -588,9 +552,7 @@ export default function SmcBacktestPanel() {
             </button>
           </div>
           <TradeLog result={result} />
-          <div style={{ marginTop: 10, fontSize: 11, color: C.muted }}>
-            {result.methodology}
-          </div>
+          <div style={{ marginTop: 10, fontSize: 11, color: C.muted }}>{result.methodology}</div>
         </div>
       ) : null}
     </div>
@@ -615,20 +577,51 @@ function summarize(r: HistoricalBacktestResult | null) {
       avgHoldBars: 0,
     };
   }
-  let wins = 0, losses = 0, gross = 0, lossAbs = 0, netPnl = 0;
-  let mfeSum = 0, mfeN = 0, maeSum = 0, maeN = 0;
-  let longs = 0, longWins = 0, shorts = 0, shortWins = 0;
-  let bars = 0, barsN = 0;
+  let wins = 0,
+    losses = 0,
+    gross = 0,
+    lossAbs = 0,
+    netPnl = 0;
+  let mfeSum = 0,
+    mfeN = 0,
+    maeSum = 0,
+    maeN = 0;
+  let longs = 0,
+    longWins = 0,
+    shorts = 0,
+    shortWins = 0;
+  let bars = 0,
+    barsN = 0;
   for (const t of r.trades) {
     netPnl += t.pnl;
-    if (t.outcome === "WIN") { wins++; gross += t.pnl; }
-    else if (t.outcome === "LOSS") { losses++; lossAbs += Math.abs(t.pnl); }
-    if (t.mfe != null) { mfeSum += t.mfe; mfeN++; }
-    if (t.mae != null) { maeSum += t.mae; maeN++; }
-    if (t.side === "BUY") { longs++; if (t.outcome === "WIN") longWins++; }
-    if (t.side === "SELL") { shorts++; if (t.outcome === "WIN") shortWins++; }
+    if (t.outcome === "WIN") {
+      wins++;
+      gross += t.pnl;
+    } else if (t.outcome === "LOSS") {
+      losses++;
+      lossAbs += Math.abs(t.pnl);
+    }
+    if (t.mfe != null) {
+      mfeSum += t.mfe;
+      mfeN++;
+    }
+    if (t.mae != null) {
+      maeSum += t.mae;
+      maeN++;
+    }
+    if (t.side === "BUY") {
+      longs++;
+      if (t.outcome === "WIN") longWins++;
+    }
+    if (t.side === "SELL") {
+      shorts++;
+      if (t.outcome === "WIN") shortWins++;
+    }
     const b = (t.metadata as { holdingBars?: number }).holdingBars;
-    if (typeof b === "number") { bars += b; barsN++; }
+    if (typeof b === "number") {
+      bars += b;
+      barsN++;
+    }
   }
   const decided = wins + losses;
   return {
@@ -643,8 +636,7 @@ function summarize(r: HistoricalBacktestResult | null) {
     longs,
     shorts,
     longWinRate: longs > 0 ? Math.round((longWins / longs) * 1000) / 10 : 0,
-    shortWinRate:
-      shorts > 0 ? Math.round((shortWins / shorts) * 1000) / 10 : 0,
+    shortWinRate: shorts > 0 ? Math.round((shortWins / shorts) * 1000) / 10 : 0,
     avgHoldBars: barsN > 0 ? bars / barsN : 0,
   };
 }
@@ -659,13 +651,36 @@ function toCsv(r: HistoricalBacktestResult): string {
     `source=${r.source}`,
   ].join("\n");
   const cols = [
-    "date","side","entry","stop","target","exit","outcome","pnl","mfe","mae","holdingTime","reasons",
+    "date",
+    "side",
+    "entry",
+    "stop",
+    "target",
+    "exit",
+    "outcome",
+    "pnl",
+    "mfe",
+    "mae",
+    "holdingTime",
+    "reasons",
   ];
   const rows = r.trades.map((t) =>
     [
-      t.date, t.side, t.entry, t.stop, t.target, t.exit, t.outcome,
-      t.pnl, t.mfe, t.mae, t.holdingTime, JSON.stringify(t.reasons),
-    ].map(csvCell).join(","),
+      t.date,
+      t.side,
+      t.entry,
+      t.stop,
+      t.target,
+      t.exit,
+      t.outcome,
+      t.pnl,
+      t.mfe,
+      t.mae,
+      t.holdingTime,
+      JSON.stringify(t.reasons),
+    ]
+      .map(csvCell)
+      .join(","),
   );
   return `${head}\n${cols.join(",")}\n${rows.join("\n")}`;
 }
@@ -682,19 +697,20 @@ function TradeLog({ result }: { result: HistoricalBacktestResult }) {
   const total = result.trades.length;
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const start = page * PAGE;
-  const rows = useMemo(
-    () => result.trades.slice(start, start + PAGE),
-    [result, start],
-  );
+  const rows = useMemo(() => result.trades.slice(start, start + PAGE), [result, start]);
   if (total === 0) return null;
   return (
     <div style={{ marginTop: 12, overflowX: "auto" }}>
       <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ color: C.muted, textAlign: "left" }}>
-            {["Date","Side","Entry","Stop","Target","Exit","Outcome","PnL","Score"].map((h) => (
-              <th key={h} style={{ borderBottom: `1px solid ${C.border}`, padding: "4px 6px" }}>{h}</th>
-            ))}
+            {["Date", "Side", "Entry", "Stop", "Target", "Exit", "Outcome", "PnL", "Score"].map(
+              (h) => (
+                <th key={h} style={{ borderBottom: `1px solid ${C.border}`, padding: "4px 6px" }}>
+                  {h}
+                </th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>
@@ -716,12 +732,36 @@ function TradeLog({ result }: { result: HistoricalBacktestResult }) {
           })}
         </tbody>
       </table>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}>
-        <span>{total} trades · showing {start + 1}–{Math.min(start + PAGE, total)}</span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 6,
+          fontSize: 11,
+          color: C.muted,
+        }}
+      >
+        <span>
+          {total} trades · showing {start + 1}–{Math.min(start + PAGE, total)}
+        </span>
         <span style={{ display: "flex", gap: 6 }}>
-          <button style={btnGhost} onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>‹</button>
-          <span>{page + 1}/{pages}</span>
-          <button style={btnGhost} onClick={() => setPage(Math.min(pages - 1, page + 1))} disabled={page + 1 >= pages}>›</button>
+          <button
+            style={btnGhost}
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+          >
+            ‹
+          </button>
+          <span>
+            {page + 1}/{pages}
+          </span>
+          <button
+            style={btnGhost}
+            onClick={() => setPage(Math.min(pages - 1, page + 1))}
+            disabled={page + 1 >= pages}
+          >
+            ›
+          </button>
         </span>
       </div>
     </div>
@@ -736,7 +776,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+function NumField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+}) {
   return (
     <Field label={label}>
       <input
@@ -748,7 +796,15 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
     </Field>
   );
 }
-function BoolField({ label, value, onChange }: { label: string; value: boolean; onChange: (b: boolean) => void }) {
+function BoolField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (b: boolean) => void;
+}) {
   return (
     <Field label={label}>
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
@@ -760,8 +816,17 @@ function BoolField({ label, value, onChange }: { label: string; value: boolean; 
 }
 function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px" }}>
-      <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+    <div
+      style={{
+        background: C.bg,
+        border: `1px solid ${C.border}`,
+        borderRadius: 6,
+        padding: "8px 10px",
+      }}
+    >
+      <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        {label}
+      </div>
       <div style={{ fontSize: 13, marginTop: 3, wordBreak: "break-all" }}>{value}</div>
     </div>
   );

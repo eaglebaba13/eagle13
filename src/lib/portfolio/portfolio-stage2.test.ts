@@ -24,55 +24,94 @@ import {
   type PortfolioAsset,
   type PortfolioConfig,
 } from "./portfolio-types";
-import type {
-  HistoricalBacktestResult,
-  HistoricalTrade,
-} from "@/lib/backtest/result";
+import type { HistoricalBacktestResult, HistoricalTrade } from "@/lib/backtest/result";
 
 function tr(date: string, pnl: number, id = "t"): HistoricalTrade {
   return {
     id: `${id}-${date}`,
     date,
     side: pnl >= 0 ? "BUY" : "SELL",
-    entry: 100, stop: 99, target: 101, exit: 100,
+    entry: 100,
+    stop: 99,
+    target: 101,
+    exit: 100,
     outcome: pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "FLAT",
     pnl,
-    mfe: null, mae: null, holdingTime: null,
+    mfe: null,
+    mae: null,
+    holdingTime: null,
     formulaVersion: "SMC_V1" as HistoricalTrade["formulaVersion"],
-    source: "test", ambiguous: false, reasons: [], metadata: {},
+    source: "test",
+    ambiguous: false,
+    reasons: [],
+    metadata: {},
   };
 }
 
-function makeResult(id: string, pnls: readonly [string, number][], formula = "SMC_V1"): HistoricalBacktestResult {
+function makeResult(
+  id: string,
+  pnls: readonly [string, number][],
+  formula = "SMC_V1",
+): HistoricalBacktestResult {
   const trades = pnls.map(([d, p]) => tr(d, p, id));
-  let eq = 0, peak = 0, mx = 0;
+  let eq = 0,
+    peak = 0,
+    mx = 0;
   const curve = trades.map((t) => {
-    eq += t.pnl; peak = Math.max(peak, eq); mx = Math.max(mx, peak - eq);
+    eq += t.pnl;
+    peak = Math.max(peak, eq);
+    mx = Math.max(mx, peak - eq);
     return { date: t.date, equity: eq };
   });
   return {
     formulaVersion: formula as HistoricalBacktestResult["formulaVersion"],
-    engineVersion: "e", executionVersion: "x", cubeVersion: "n/a", policyVersion: "p",
+    engineVersion: "e",
+    executionVersion: "x",
+    cubeVersion: "n/a",
+    policyVersion: "p",
     runId: `RUN_${id}`,
     generatedAt: "2024-06-04T00:00:00Z",
     instrument: "NIFTY50",
-    from: pnls[0][0], to: pnls[pnls.length - 1][0],
+    from: pnls[0][0],
+    to: pnls[pnls.length - 1][0],
     dataGranularity: "5m",
-    source: "test", dataQuality: null,
-    trades, stats: {}, monthly: [], equityCurve: curve,
+    source: "test",
+    dataQuality: null,
+    trades,
+    stats: {},
+    monthly: [],
+    equityCurve: curve,
     drawdown: { max: mx, maxPct: 0 },
-    benchmark: null, methodology: "", disclaimers: [],
+    benchmark: null,
+    methodology: "",
+    disclaimers: [],
     formulaMeta: {},
   };
 }
 
-function mkAsset(id: string, pnls: readonly [string, number][], extra: Partial<PortfolioAsset> = {}): PortfolioAsset {
+function mkAsset(
+  id: string,
+  pnls: readonly [string, number][],
+  extra: Partial<PortfolioAsset> = {},
+): PortfolioAsset {
   const r = makeResult(id, pnls);
   return { ...candidateFromResult(r), ...extra, id };
 }
 
-const A = mkAsset("A", [["2024-01-01", 10], ["2024-01-02", -5], ["2024-01-03", 8], ["2024-01-04", -3], ["2024-01-05", 6]]);
-const B = mkAsset("B", [["2024-01-01", -2], ["2024-01-02", 4], ["2024-01-03", -1], ["2024-01-04", 3], ["2024-01-05", -1]]);
+const A = mkAsset("A", [
+  ["2024-01-01", 10],
+  ["2024-01-02", -5],
+  ["2024-01-03", 8],
+  ["2024-01-04", -3],
+  ["2024-01-05", 6],
+]);
+const B = mkAsset("B", [
+  ["2024-01-01", -2],
+  ["2024-01-02", 4],
+  ["2024-01-03", -1],
+  ["2024-01-04", 3],
+  ["2024-01-05", -1],
+]);
 
 const cfg: PortfolioConfig = {
   method: "EQUAL_WEIGHT",
@@ -91,7 +130,10 @@ describe("Phase 22 Stage 2 · candidate discovery", () => {
     expect(a.runId).toBe("RUN_X");
   });
   it("does not mutate source trades", () => {
-    const r = makeResult("Y", [["2024-01-01", 5], ["2024-01-02", 6]]);
+    const r = makeResult("Y", [
+      ["2024-01-01", 5],
+      ["2024-01-02", 6],
+    ]);
     const before = JSON.stringify(r.trades);
     candidateFromResult(r);
     expect(JSON.stringify(r.trades)).toBe(before);
@@ -115,7 +157,8 @@ describe("Phase 22 Stage 2 · candidate discovery", () => {
 describe("Phase 22 Stage 2 · candidate registry", () => {
   it("register / unregister / filter is deterministic", () => {
     const reg = new CandidateRegistry();
-    reg.register(A); reg.register(B);
+    reg.register(A);
+    reg.register(B);
     expect(reg.size()).toBe(2);
     expect(reg.list().map((x) => x.id)).toEqual(["A", "B"]);
     expect(reg.filter({ instrument: "NIFTY50" }).length).toBe(2);
@@ -189,9 +232,7 @@ describe("Phase 22 Stage 2 · bundle exports carry provenance", () => {
     for (const r of rows) expect(csv).toContain(r.runId);
   });
   it("Bundle JSON is parseable and includes portfolio + candidates", () => {
-    const j = JSON.parse(
-      buildResearchBundleJson({ portfolio: result, candidates: rows }),
-    );
+    const j = JSON.parse(buildResearchBundleJson({ portfolio: result, candidates: rows }));
     expect(j.disclaimer).toContain("PORTFOLIO RESEARCH ONLY");
     expect(j.bundle.portfolio.runId).toBe(result.runId);
     expect(j.bundle.candidates.length).toBe(2);

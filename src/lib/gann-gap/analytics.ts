@@ -6,10 +6,7 @@ import type { FrozenPredictionRecord, OutcomeRecord } from "./historical";
 import type { GannGapOutlookLabel } from "./types";
 import type { ActualGapOutcome } from "./outcome-rules";
 
-export type GannGapSampleStatus =
-  | "INSUFFICIENT_SAMPLE"
-  | "PRELIMINARY"
-  | "RESEARCH_VALIDATED";
+export type GannGapSampleStatus = "INSUFFICIENT_SAMPLE" | "PRELIMINARY" | "RESEARCH_VALIDATED";
 
 export function classifySampleStatus(evaluated: number): GannGapSampleStatus {
   if (evaluated < 30) return "INSUFFICIENT_SAMPLE";
@@ -73,9 +70,9 @@ export function computeGannGapAnalytics(
   for (const o of outcomes) outcomeById.set(o.predictionId, o);
 
   const counts: Record<PredictedClass, Record<ActualClass, number>> = {
-    GAP_UP:   { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 },
+    GAP_UP: { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 },
     GAP_DOWN: { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 },
-    FLAT:     { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 },
+    FLAT: { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 },
   };
   const rowTotals: Record<PredictedClass, number> = { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 };
   const colTotals: Record<ActualClass, number> = { GAP_UP: 0, GAP_DOWN: 0, FLAT: 0 };
@@ -115,7 +112,8 @@ export function computeGannGapAnalytics(
     GAP_DOWN: {
       n: rowTotals.GAP_DOWN,
       correct: counts.GAP_DOWN.GAP_DOWN,
-      precisionPct: rowTotals.GAP_DOWN === 0 ? null : (counts.GAP_DOWN.GAP_DOWN / rowTotals.GAP_DOWN) * 100,
+      precisionPct:
+        rowTotals.GAP_DOWN === 0 ? null : (counts.GAP_DOWN.GAP_DOWN / rowTotals.GAP_DOWN) * 100,
     },
     FLAT: {
       n: rowTotals.FLAT,

@@ -6,7 +6,11 @@ function reading(over: Partial<CombinedPcrReading> = {}): CombinedPcrReading {
   return {
     combinedScore: 12,
     direction: "CE",
-    emaFast: 5, emaSlow: 3, slope: 0.5, previousSlope: 0.4, slopeChange: 0.1,
+    emaFast: 5,
+    emaSlow: 3,
+    slope: 0.5,
+    previousSlope: 0.4,
+    slopeChange: 0.1,
     zeroCross: false,
     signalState: "CE_FOCUS",
     confirmedState: "CE_FOCUS",

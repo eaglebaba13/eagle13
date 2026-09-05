@@ -67,13 +67,11 @@ export function buildSecurityAudit(checks: SecurityCheck[]): SecurityAuditReport
     ...c,
     severity: (c.present ? "PASS" : CRITICAL.includes(c.id) ? "FAIL" : "WARN") as SecuritySeverity,
   }));
-  const missingCritical = withSeverity
-    .filter((c) => c.severity === "FAIL")
-    .map((c) => c.id);
+  const missingCritical = withSeverity.filter((c) => c.severity === "FAIL").map((c) => c.id);
   const severity: SecuritySeverity = missingCritical.length
     ? "FAIL"
     : withSeverity.some((c) => c.severity === "WARN")
-    ? "WARN"
-    : "PASS";
+      ? "WARN"
+      : "PASS";
   return { severity, checks: withSeverity, missingCritical };
 }

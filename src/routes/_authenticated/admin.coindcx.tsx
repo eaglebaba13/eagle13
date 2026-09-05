@@ -11,15 +11,14 @@ import { buildGoldSilverInput, computeGoldSilverRatio, formatRatio } from "@/lib
 export const Route = createFileRoute("/_authenticated/admin/coindcx")({
   component: AdminCoindcxPage,
   head: () => ({
-    meta: [
-      { title: "Admin · CoinDCX" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Admin · CoinDCX" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   errorComponent: ({ error, reset }) => (
     <div className="p-6 text-sm text-red-300">
       <p>Admin diagnostics unavailable: {(error as Error).message}</p>
-      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">Retry</button>
+      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
+        Retry
+      </button>
     </div>
   ),
   notFoundComponent: () => <div className="p-6">Not found</div>,
@@ -40,15 +39,15 @@ function AdminCoindcxPage() {
     staleTime: 10_000,
     retry: false,
   });
-  const ratio = computeGoldSilverRatio(
-    buildGoldSilverInput(marketsQuery.data?.snapshots ?? []),
-  );
+  const ratio = computeGoldSilverRatio(buildGoldSilverInput(marketsQuery.data?.snapshots ?? []));
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">ADMIN · COINDCX PROVIDER</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            ADMIN · COINDCX PROVIDER
+          </div>
           <h1 className="text-xl font-semibold text-foreground">CoinDCX Diagnostics</h1>
         </div>
         <button
@@ -62,7 +61,11 @@ function AdminCoindcxPage() {
       </header>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading diagnostics…</p>}
-      {error && <p className="rounded border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-300">{(error as Error).message}</p>}
+      {error && (
+        <p className="rounded border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-300">
+          {(error as Error).message}
+        </p>
+      )}
 
       {data && (
         <>
@@ -72,7 +75,8 @@ function AdminCoindcxPage() {
               <span className="font-semibold">EXECUTION GUARD ACTIVE</span>
             </div>
             <p className="mt-1 text-emerald-200/80">
-              Trading is disabled at compile time (COINDCX_TRADING_ENABLED = false). Only public market-data endpoints are wired.
+              Trading is disabled at compile time (COINDCX_TRADING_ENABLED = false). Only public
+              market-data endpoints are wired.
             </p>
           </section>
 
@@ -95,30 +99,59 @@ function AdminCoindcxPage() {
 
           <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
             <div>Last discovery: {data.lastDiscoveryAt ?? "—"}</div>
-            <div>Last latency: {data.lastDiscoveryLatencyMs != null ? `${data.lastDiscoveryLatencyMs} ms` : "—"}</div>
+            <div>
+              Last latency:{" "}
+              {data.lastDiscoveryLatencyMs != null ? `${data.lastDiscoveryLatencyMs} ms` : "—"}
+            </div>
             <div>Last error: {data.lastError ?? "none"}</div>
           </section>
 
           <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
             <div className="mb-1 text-foreground/80 font-medium">Realtime & Widget Consumers</div>
             <div>WebSocket: not enabled (REST polling authoritative)</div>
-            <div>Shared query key: <span className="font-mono">["coindcx-markets"]</span></div>
+            <div>
+              Shared query key: <span className="font-mono">["coindcx-markets"]</span>
+            </div>
             <div>Reconnect count: 0</div>
             <div>Dropped messages: 0</div>
             <div>Average freshness target: 15 s</div>
-            <div>Widget consumers: CryptoMarketWidget, CryptoHeatmapWidget, CryptoWatchlistWidget, CryptoSummaryWidget</div>
+            <div>
+              Widget consumers: CryptoMarketWidget, CryptoHeatmapWidget, CryptoWatchlistWidget,
+              CryptoSummaryWidget
+            </div>
           </section>
 
           <section className="rounded-lg border border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
-            <div className="mb-1 text-foreground/80 font-medium">Gold / Silver Ratio Diagnostics</div>
-            <div>Gold instrument: <span className="font-mono">{ratio.goldInstrument ?? "—"}</span> ({ratio.goldClassification ?? "—"})</div>
-            <div>Silver instrument: <span className="font-mono">{ratio.silverInstrument ?? "—"}</span> ({ratio.silverClassification ?? "—"})</div>
-            <div>Raw gold price: {ratio.goldPrice ?? "—"} · Raw silver price: {ratio.silverPrice ?? "—"}</div>
-            <div>Normalized gold: {ratio.normalizedGoldPrice ?? "—"} · Normalized silver: {ratio.normalizedSilverPrice ?? "—"} / {ratio.normalizedUnit ?? "—"}</div>
-            <div>Quote compatible: {String(ratio.isQuoteCompatible)} · Unit compatible: {String(ratio.isUnitCompatible)}</div>
+            <div className="mb-1 text-foreground/80 font-medium">
+              Gold / Silver Ratio Diagnostics
+            </div>
+            <div>
+              Gold instrument: <span className="font-mono">{ratio.goldInstrument ?? "—"}</span> (
+              {ratio.goldClassification ?? "—"})
+            </div>
+            <div>
+              Silver instrument: <span className="font-mono">{ratio.silverInstrument ?? "—"}</span>{" "}
+              ({ratio.silverClassification ?? "—"})
+            </div>
+            <div>
+              Raw gold price: {ratio.goldPrice ?? "—"} · Raw silver price:{" "}
+              {ratio.silverPrice ?? "—"}
+            </div>
+            <div>
+              Normalized gold: {ratio.normalizedGoldPrice ?? "—"} · Normalized silver:{" "}
+              {ratio.normalizedSilverPrice ?? "—"} / {ratio.normalizedUnit ?? "—"}
+            </div>
+            <div>
+              Quote compatible: {String(ratio.isQuoteCompatible)} · Unit compatible:{" "}
+              {String(ratio.isUnitCompatible)}
+            </div>
             <div>Conversion method: {ratio.conversionMethod ?? "—"}</div>
-            <div>Current ratio: <span className="font-mono">{formatRatio(ratio.ratio)}</span></div>
-            <div>Current signal: <span className="font-mono">{ratio.signal}</span></div>
+            <div>
+              Current ratio: <span className="font-mono">{formatRatio(ratio.ratio)}</span>
+            </div>
+            <div>
+              Current signal: <span className="font-mono">{ratio.signal}</span>
+            </div>
             <div>Freshness: {ratio.freshness}</div>
             <div>Last successful calculation: {ratio.calculatedAt ?? "—"}</div>
             <div>Last unavailable reason: {ratio.reason ?? "none"}</div>

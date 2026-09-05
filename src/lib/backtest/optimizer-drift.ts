@@ -33,10 +33,7 @@ const RANK: Record<DriftLevel, number> = {
   UNSAFE_DRIFT: 3,
 };
 
-function classifyEntry(
-  deltaSteps: number,
-  withinSafeRange: boolean,
-): DriftLevel {
+function classifyEntry(deltaSteps: number, withinSafeRange: boolean): DriftLevel {
   if (!withinSafeRange) return "UNSAFE_DRIFT";
   const d = Math.abs(deltaSteps);
   if (d < 0.5) return "STABLE";
@@ -72,9 +69,12 @@ export function computeParameterDrift(
   let overall: DriftLevel = "STABLE";
   for (const e of entries) if (RANK[e.level] > RANK[overall]) overall = e.level;
   const summary =
-    overall === "STABLE" ? "All current parameters sit inside the recommended safe range."
-    : overall === "SMALL_DRIFT" ? "Current parameters are close to the recommendation (≤ 1 step)."
-    : overall === "LARGE_DRIFT" ? "Current parameters differ from the recommendation by more than 1 step."
-    : "One or more current parameters fall outside the recommended safe range.";
+    overall === "STABLE"
+      ? "All current parameters sit inside the recommended safe range."
+      : overall === "SMALL_DRIFT"
+        ? "Current parameters are close to the recommendation (≤ 1 step)."
+        : overall === "LARGE_DRIFT"
+          ? "Current parameters differ from the recommendation by more than 1 step."
+          : "One or more current parameters fall outside the recommended safe range.";
   return { overall, entries, summary };
 }

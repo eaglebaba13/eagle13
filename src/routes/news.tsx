@@ -37,7 +37,10 @@ export const Route = createFileRoute("/news")({
           "Live NIFTY, BankNifty, RBI, SEBI and global market news with AI market view, impact tags and category filters.",
       },
       { property: "og:title", content: "Market News | EagleBABA" },
-      { property: "og:description", content: "Live financial news with AI market view and impact tags." },
+      {
+        property: "og:description",
+        content: "Live financial news with AI market view and impact tags.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -85,26 +88,68 @@ function NewsPage() {
   const breaking = allItems.filter((n) => n.breaking);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--eb-bg)", color: "var(--eb-text)", position: "relative" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--eb-bg)",
+        color: "var(--eb-text)",
+        position: "relative",
+      }}
+    >
       <div className="eb-space-bg" aria-hidden />
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "20px 16px 48px", position: "relative", zIndex: 1 }}>
+      <div
+        style={{
+          maxWidth: 1080,
+          margin: "0 auto",
+          padding: "20px 16px 48px",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 16,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src={logoUrl} alt="EagleBABA" width={40} height={40} style={{ borderRadius: 10 }} />
+            <img
+              src={logoUrl}
+              alt="EagleBABA"
+              width={40}
+              height={40}
+              style={{ borderRadius: 10 }}
+            />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span className="eb-live-dot" aria-hidden />
                 <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Market News</h1>
               </div>
               <div className="eb-news-sub">
-                {q.isFetching ? "Updating…" : q.data ? `Last updated ${relTime(q.data.fetchedAt)}` : "Live financial headlines"}
+                {q.isFetching
+                  ? "Updating…"
+                  : q.data
+                    ? `Last updated ${relTime(q.data.fetchedAt)}`
+                    : "Live financial headlines"}
               </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Link to="/" className="eb-foot-btn"><ArrowLeft size={14} /> Dashboard</Link>
-            <button className="eb-icon-btn" onClick={() => setShowSettings(true)} aria-label="Settings"><SettingsIcon size={16} /></button>
+            <Link to="/" className="eb-foot-btn">
+              <ArrowLeft size={14} /> Dashboard
+            </Link>
+            <button
+              className="eb-icon-btn"
+              onClick={() => setShowSettings(true)}
+              aria-label="Settings"
+            >
+              <SettingsIcon size={16} />
+            </button>
             <button className="eb-icon-btn" onClick={() => q.refetch()} aria-label="Refresh">
               <RefreshCw size={16} className={q.isFetching ? "eb-spin" : undefined} />
             </button>
@@ -125,7 +170,10 @@ function NewsPage() {
             <span>API: {q.isError ? "Failed" : q.data ? "Connected" : "…"}</span>
             <span>HTTP: {q.isError ? "error" : q.data ? "200" : "-"}</span>
             <span>Items: {allItems.length}</span>
-            <span>Source: {diag?.provider ?? "-"}{diag?.degraded ? " (fallback)" : ""}</span>
+            <span>
+              Source: {diag?.provider ?? "-"}
+              {diag?.degraded ? " (fallback)" : ""}
+            </span>
             <span>Last fetch: {q.data ? relTime(q.data.fetchedAt) : "-"}</span>
             <span>Refresh: {q.isFetching ? "fetching…" : "every 60s"}</span>
             {diag?.error ? <span>Last error: {diag.error}</span> : null}
@@ -145,7 +193,11 @@ function NewsPage() {
           </div>
           <div className="eb-news-cats">
             {CATEGORIES.map((c) => (
-              <button key={c} className={`eb-cat-chip${cat === c ? " is-active" : ""}`} onClick={() => setCat(c)}>
+              <button
+                key={c}
+                className={`eb-cat-chip${cat === c ? " is-active" : ""}`}
+                onClick={() => setCat(c)}
+              >
                 {c}
               </button>
             ))}
@@ -200,7 +252,12 @@ function NewsPage() {
 
             {/* Pagination */}
             <div className="eb-pagination">
-              <button className="eb-icon-btn" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Previous page">
+              <button
+                className="eb-icon-btn"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Previous page"
+              >
                 <ChevronLeft size={16} />
               </button>
               {Array.from({ length: pageCount }).map((_, i) => (
@@ -212,7 +269,12 @@ function NewsPage() {
                   {i + 1}
                 </button>
               ))}
-              <button className="eb-icon-btn" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} aria-label="Next page">
+              <button
+                className="eb-icon-btn"
+                disabled={page >= pageCount}
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                aria-label="Next page"
+              >
                 <ChevronRight size={16} />
               </button>
             </div>

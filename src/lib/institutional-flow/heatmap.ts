@@ -3,7 +3,10 @@
 import type { OiAnalysis } from "./types";
 import type { HeatmapResult, HeatmapCell, CalcAvailability } from "./types";
 
-export function buildHeatmap(oi: OiAnalysis, opts: { atm: number | null; maxPain: number | null }): HeatmapResult {
+export function buildHeatmap(
+  oi: OiAnalysis,
+  opts: { atm: number | null; maxPain: number | null },
+): HeatmapResult {
   const rows = oi.rows;
   if (rows.length === 0) {
     return { cells: [], maxPain: opts.maxPain, atm: opts.atm, availability: "UNAVAILABLE" };

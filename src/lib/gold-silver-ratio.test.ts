@@ -36,8 +36,12 @@ describe("Phase 24A · Gold–Silver Ratio boundary rules", () => {
 describe("Phase 24A · snapshot semantics", () => {
   it("computes ratio and BUY_GOLD signal below 55", () => {
     const s = computeGoldSilverSnapshot({
-      goldPrice: 2160, silverPrice: 41, provider: "Yahoo",
-      goldTimestamp: fresh, silverTimestamp: fresh, now: NOW,
+      goldPrice: 2160,
+      silverPrice: 41,
+      provider: "Yahoo",
+      goldTimestamp: fresh,
+      silverTimestamp: fresh,
+      now: NOW,
     });
     expect(s.ratio).toBeLessThan(55);
     expect(s.signal).toBe("BUY_GOLD");
@@ -46,32 +50,43 @@ describe("Phase 24A · snapshot semantics", () => {
   });
   it("computes BUY_SILVER signal above 75", () => {
     const s = computeGoldSilverSnapshot({
-      goldPrice: 2400, silverPrice: 30, provider: "Yahoo",
-      goldTimestamp: fresh, silverTimestamp: fresh, now: NOW,
+      goldPrice: 2400,
+      silverPrice: 30,
+      provider: "Yahoo",
+      goldTimestamp: fresh,
+      silverTimestamp: fresh,
+      now: NOW,
     });
     expect(s.signal).toBe("BUY_SILVER");
   });
   it("missing gold or silver price → DATA_UNAVAILABLE", () => {
-    expect(
-      computeGoldSilverSnapshot({ goldPrice: null, silverPrice: 25, now: NOW }).signal,
-    ).toBe("DATA_UNAVAILABLE");
-    expect(
-      computeGoldSilverSnapshot({ goldPrice: 2000, silverPrice: null, now: NOW }).signal,
-    ).toBe("DATA_UNAVAILABLE");
+    expect(computeGoldSilverSnapshot({ goldPrice: null, silverPrice: 25, now: NOW }).signal).toBe(
+      "DATA_UNAVAILABLE",
+    );
+    expect(computeGoldSilverSnapshot({ goldPrice: 2000, silverPrice: null, now: NOW }).signal).toBe(
+      "DATA_UNAVAILABLE",
+    );
   });
   it("incompatible units → DATA_UNAVAILABLE", () => {
     const s = computeGoldSilverSnapshot({
-      goldPrice: 2000, silverPrice: 25,
-      goldUnit: "USD/oz", silverUnit: "INR/kg",
-      goldTimestamp: fresh, silverTimestamp: fresh, now: NOW,
+      goldPrice: 2000,
+      silverPrice: 25,
+      goldUnit: "USD/oz",
+      silverUnit: "INR/kg",
+      goldTimestamp: fresh,
+      silverTimestamp: fresh,
+      now: NOW,
     });
     expect(s.signal).toBe("DATA_UNAVAILABLE");
     expect(s.dataQuality).toBe("INCOMPATIBLE_UNITS");
   });
   it("stale data → no trade signal", () => {
     const s = computeGoldSilverSnapshot({
-      goldPrice: 2000, silverPrice: 25,
-      goldTimestamp: stale, silverTimestamp: stale, now: NOW,
+      goldPrice: 2000,
+      silverPrice: 25,
+      goldTimestamp: stale,
+      silverTimestamp: stale,
+      now: NOW,
     });
     expect(s.signal).toBe("DATA_UNAVAILABLE");
     expect(s.freshness).toBe("STALE");

@@ -56,7 +56,9 @@ export function buildRollingSeries(
   return { dates, equity: equityVals, drawdown, rollingReturn, rollingVol, rollingSharpe };
 }
 
-export function buildMonthlyHeatmap(trades: readonly PortfolioTrade[]): readonly MonthlyHeatmapCell[] {
+export function buildMonthlyHeatmap(
+  trades: readonly PortfolioTrade[],
+): readonly MonthlyHeatmapCell[] {
   const byMonth = new Map<string, number>();
   for (const t of trades) {
     const key = t.date.slice(0, 7);
@@ -67,5 +69,5 @@ export function buildMonthlyHeatmap(trades: readonly PortfolioTrade[]): readonly
     const [y, m] = k.split("-").map((n) => Number(n));
     out.push({ year: y, month: m, pnl });
   }
-  return out.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+  return out.sort((a, b) => a.year - b.year || a.month - b.month);
 }

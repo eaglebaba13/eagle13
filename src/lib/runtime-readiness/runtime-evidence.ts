@@ -14,27 +14,12 @@ import type { CombinedPcrReading } from "@/lib/combined-pcr/types";
 
 export const RUNTIME_EVIDENCE_SCHEMA_VERSION = 1;
 
-export type ModuleStatus =
-  | "HEALTHY"
-  | "DEGRADED"
-  | "BLOCKED"
-  | "UNAVAILABLE"
-  | "DEMO"
-  | "UNKNOWN";
+export type ModuleStatus = "HEALTHY" | "DEGRADED" | "BLOCKED" | "UNAVAILABLE" | "DEMO" | "UNKNOWN";
 
-export type ModuleReadiness =
-  | "READY"
-  | "PARTIALLY_READY"
-  | "NOT_READY"
-  | "NOT_APPLICABLE";
+export type ModuleReadiness = "READY" | "PARTIALLY_READY" | "NOT_READY" | "NOT_APPLICABLE";
 
 export type ModuleSource =
-  | "LIVE"
-  | "MIXED"
-  | "RESEARCH_DEMO"
-  | "CONFIGURATION"
-  | "STATIC"
-  | "UNKNOWN";
+  "LIVE" | "MIXED" | "RESEARCH_DEMO" | "CONFIGURATION" | "STATIC" | "UNKNOWN";
 
 export type ModuleId =
   | "MARKET_DATA"
@@ -94,11 +79,7 @@ export function evidenceFromOptionChain(
             ? "UNAVAILABLE"
             : "BLOCKED";
   const readiness: ModuleReadiness =
-    status === "HEALTHY"
-      ? "READY"
-      : status === "DEGRADED"
-        ? "PARTIALLY_READY"
-        : "NOT_READY";
+    status === "HEALTHY" ? "READY" : status === "DEGRADED" ? "PARTIALLY_READY" : "NOT_READY";
   const blockers = status === "BLOCKED" ? [cap.reason] : [];
   const warnings = status === "DEGRADED" ? [cap.reason] : [];
   return {
@@ -159,11 +140,7 @@ export function evidenceFromCombinedPcr(input: CombinedPcrEvidenceInput): Runtim
     source: computed ? (usableCount >= 1 ? "LIVE" : "UNKNOWN") : "UNKNOWN",
     capability: computed ? "COMPUTED" : "UNAVAILABLE",
     freshness: computed ? "FRESH" : "UNKNOWN",
-    quality: computed
-      ? usableCount === 2
-        ? "OK"
-        : "PARTIAL"
-      : "MISSING",
+    quality: computed ? (usableCount === 2 ? "OK" : "PARTIAL") : "MISSING",
     observedAt: input.observedAt,
     latencyMs: null,
     reason: computed ? `PCR computed from ${usableCount}/2 instruments` : "PCR not computed",
@@ -263,11 +240,7 @@ export function evidenceFromGti(
           ? "DEGRADED"
           : breadth.status;
   const readiness: ModuleReadiness =
-    status === "HEALTHY"
-      ? "READY"
-      : status === "DEGRADED"
-        ? "PARTIALLY_READY"
-        : "NOT_READY";
+    status === "HEALTHY" ? "READY" : status === "DEGRADED" ? "PARTIALLY_READY" : "NOT_READY";
   return {
     module: "GTI",
     status,

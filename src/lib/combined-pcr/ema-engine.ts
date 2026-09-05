@@ -17,14 +17,24 @@ function alpha(period: number): number {
   return 2 / (period + 1);
 }
 
-export function computeEma(values: readonly (number | null)[], period: number): readonly (number | null)[] {
+export function computeEma(
+  values: readonly (number | null)[],
+  period: number,
+): readonly (number | null)[] {
   const a = alpha(period);
   const out: (number | null)[] = new Array(values.length).fill(null);
   let prev: number | null = null;
   for (let i = 0; i < values.length; i += 1) {
     const v = values[i];
-    if (v == null) { out[i] = prev; continue; }
-    if (prev == null) { prev = v; out[i] = v; continue; }
+    if (v == null) {
+      out[i] = prev;
+      continue;
+    }
+    if (prev == null) {
+      prev = v;
+      out[i] = v;
+      continue;
+    }
     prev = a * v + (1 - a) * prev;
     out[i] = prev;
   }
@@ -34,7 +44,9 @@ export function computeEma(values: readonly (number | null)[], period: number): 
 export function computeEmaSeries(scores: readonly (number | null)[]): EmaSeries {
   const fast = computeEma(scores, EMA_FAST);
   const slow = computeEma(scores, EMA_SLOW);
-  const slope = fast.map((f, i) => (f == null || slow[i] == null ? null : (f as number) - (slow[i] as number)));
+  const slope = fast.map((f, i) =>
+    f == null || slow[i] == null ? null : (f as number) - (slow[i] as number),
+  );
   return { fast, slow, slope };
 }
 

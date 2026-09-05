@@ -6,8 +6,18 @@ const strikes = [23_900, 24_000, 24_100, 24_200, 24_300, 24_400, 24_500].map((s)
 
 describe("atm-engine", () => {
   it("finds nearest strike", () => {
-    expect(findAtmIndex(strikes.map((s) => s.strike), 24_150)).toBe(2);
-    expect(findAtmIndex(strikes.map((s) => s.strike), 24_170)).toBe(3);
+    expect(
+      findAtmIndex(
+        strikes.map((s) => s.strike),
+        24_150,
+      ),
+    ).toBe(2);
+    expect(
+      findAtmIndex(
+        strikes.map((s) => s.strike),
+        24_170,
+      ),
+    ).toBe(3);
   });
   it("returns empty when spot missing", () => {
     const r = computeAtm(strikes, null, "ATM_5");

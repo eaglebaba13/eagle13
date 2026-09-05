@@ -15,10 +15,7 @@ import {
   evidenceFromSimple,
   type RuntimeEvidence,
 } from "./runtime-evidence";
-import {
-  aggregateRuntimeReadiness,
-  type RuntimeReadinessReport,
-} from "./runtime-readiness";
+import { aggregateRuntimeReadiness, type RuntimeReadinessReport } from "./runtime-readiness";
 
 export interface BuildRuntimeReportInput {
   readonly nowIso: string;

@@ -59,7 +59,9 @@ export async function buildCombinedPcrDiagnostics(): Promise<CombinedPcrDiagnost
   };
   const effective: Record<string, number> = { NIFTY: 0, BANKNIFTY: 0 };
   let sensex: SensexCapabilityReport = assessSensexCapability({
-    snapshot: null, providerId: "N/A", safeError: "not wired",
+    snapshot: null,
+    providerId: "N/A",
+    safeError: "not wired",
   });
 
   try {
@@ -129,47 +131,87 @@ export async function buildCombinedPcrDiagnostics(): Promise<CombinedPcrDiagnost
     }
     // SENSEX capability probe — currently no provider path; stays UNSUPPORTED.
     sensex = assessSensexCapability({
-      snapshot: null, providerId: "UPSTOX",
+      snapshot: null,
+      providerId: "UPSTOX",
       safeError: "no SENSEX option-chain provider wired",
     });
   } catch (e) {
     const safe = e instanceof Error ? e.message.slice(0, 200) : "diagnostics failed";
     for (const u of ["NIFTY", "BANKNIFTY"] as const) {
       rows.push({
-        underlying: u, status: "FAILED", expiry: null, atm: null, strikeCount: 0,
-        totalCallOi: null, totalPutOi: null, totalCallChangeOi: null, totalPutChangeOi: null,
-        rawOiPcr: null, rawChangeOiPcr: null,
-        normalizedOiPcr: null, normalizedChangeOiPcr: null,
-        instrumentScore: null, configuredWeight: configured[u] ?? null, effectiveWeight: null,
-        emaFast: null, emaSlow: null, slope: null,
-        freshnessMs: null, provider: "UPSTOX", capability: "MISSING", safeError: safe,
+        underlying: u,
+        status: "FAILED",
+        expiry: null,
+        atm: null,
+        strikeCount: 0,
+        totalCallOi: null,
+        totalPutOi: null,
+        totalCallChangeOi: null,
+        totalPutChangeOi: null,
+        rawOiPcr: null,
+        rawChangeOiPcr: null,
+        normalizedOiPcr: null,
+        normalizedChangeOiPcr: null,
+        instrumentScore: null,
+        configuredWeight: configured[u] ?? null,
+        effectiveWeight: null,
+        emaFast: null,
+        emaSlow: null,
+        slope: null,
+        freshnessMs: null,
+        provider: "UPSTOX",
+        capability: "MISSING",
+        safeError: safe,
       });
     }
     sensex = assessSensexCapability({
-      snapshot: null, providerId: "UPSTOX", safeError: safe,
+      snapshot: null,
+      providerId: "UPSTOX",
+      safeError: safe,
     });
   }
 
   rows.push({
-    underlying: "SENSEX", status: "COMING_SOON", expiry: null, atm: null, strikeCount: 0,
-    totalCallOi: null, totalPutOi: null, totalCallChangeOi: null, totalPutChangeOi: null,
-    rawOiPcr: null, rawChangeOiPcr: null,
-    normalizedOiPcr: null, normalizedChangeOiPcr: null,
-    instrumentScore: null, configuredWeight: null, effectiveWeight: null,
-    emaFast: null, emaSlow: null, slope: null,
-    freshnessMs: null, provider: "N/A", capability: "MISSING", safeError: null,
+    underlying: "SENSEX",
+    status: "COMING_SOON",
+    expiry: null,
+    atm: null,
+    strikeCount: 0,
+    totalCallOi: null,
+    totalPutOi: null,
+    totalCallChangeOi: null,
+    totalPutChangeOi: null,
+    rawOiPcr: null,
+    rawChangeOiPcr: null,
+    normalizedOiPcr: null,
+    normalizedChangeOiPcr: null,
+    instrumentScore: null,
+    configuredWeight: null,
+    effectiveWeight: null,
+    emaFast: null,
+    emaSlow: null,
+    slope: null,
+    freshnessMs: null,
+    provider: "N/A",
+    capability: "MISSING",
+    safeError: null,
   });
 
   const active = rows.filter((r) => r.status === "ACTIVE").length;
-  const overall: "READY" | "PARTIAL" | "OFFLINE" = active === 2 ? "READY" : active === 1 ? "PARTIAL" : "OFFLINE";
+  const overall: "READY" | "PARTIAL" | "OFFLINE" =
+    active === 2 ? "READY" : active === 1 ? "PARTIAL" : "OFFLINE";
   const cfgSum = configured.NIFTY + configured.BANKNIFTY;
   const effSum = effective.NIFTY + effective.BANKNIFTY;
-  const renormalized = Math.abs(cfgSum - effSum) > 1e-6
-    || Math.abs((configured.NIFTY || 0) - (effective.NIFTY || 0)) > 1e-6
-    || Math.abs((configured.BANKNIFTY || 0) - (effective.BANKNIFTY || 0)) > 1e-6;
+  const renormalized =
+    Math.abs(cfgSum - effSum) > 1e-6 ||
+    Math.abs((configured.NIFTY || 0) - (effective.NIFTY || 0)) > 1e-6 ||
+    Math.abs((configured.BANKNIFTY || 0) - (effective.BANKNIFTY || 0)) > 1e-6;
   return {
-    generatedAt: now, rows, overall,
-    combinedScore, signalState,
+    generatedAt: now,
+    rows,
+    overall,
+    combinedScore,
+    signalState,
     weightRenormalization: { configured, effective, renormalized },
     sensex,
   };

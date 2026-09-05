@@ -55,7 +55,9 @@ export function decisionConfirmation(
     capability: input.available ? "COMPUTED" : "UNAVAILABLE",
     observedAt: input.observedAt,
     freshnessSec: input.freshnessSec ?? null,
-    reason: input.reason ?? (input.available ? "Decision snapshot healthy" : "Decision snapshot unavailable"),
+    reason:
+      input.reason ??
+      (input.available ? "Decision snapshot healthy" : "Decision snapshot unavailable"),
     detail: input.available
       ? `Decision bias ${input.bias}${input.confidence != null ? ` @ ${Math.round(input.confidence)}` : ""}`
       : "Decision unavailable — confirmation skipped",
@@ -237,13 +239,14 @@ export function astroConfirmation(
   input: AstroConfirmationInput,
   bias: ConfirmationBias,
 ): GannGapConfirmation {
-  const dir: CanonicalDirection = !input.available || input.bias == null
-    ? "UNKNOWN"
-    : input.bias === "BULL"
-      ? "BULLISH"
-      : input.bias === "BEAR"
-        ? "BEARISH"
-        : "NEUTRAL";
+  const dir: CanonicalDirection =
+    !input.available || input.bias == null
+      ? "UNKNOWN"
+      : input.bias === "BULL"
+        ? "BULLISH"
+        : input.bias === "BEAR"
+          ? "BEARISH"
+          : "NEUTRAL";
   return {
     id: "astro",
     label: "Astro Signal",

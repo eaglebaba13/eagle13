@@ -5,9 +5,14 @@ import type { GtiResearchState } from "./types";
 function s(t: number, state: GtiResearchState, fwd: number | null, conf = 60): GtiShadowSample {
   return {
     timestamp: new Date(1_800_000_000_000 + t * 1000).toISOString(),
-    state, confidence: conf,
-    niftyForwardMove: fwd, bankNiftyForwardMove: null,
-    conflictCount: 0, breadthWeighted: null, vixRegime: "BELOW_15", pcrScore: null,
+    state,
+    confidence: conf,
+    niftyForwardMove: fwd,
+    bankNiftyForwardMove: null,
+    conflictCount: 0,
+    breadthWeighted: null,
+    vixRegime: "BELOW_15",
+    pcrScore: null,
   };
 }
 
@@ -37,10 +42,7 @@ describe("GTI shadow validation", () => {
   });
 
   it("ignores neutral runs entirely", () => {
-    const obs = summarizeGtiShadow([
-      s(0, "NEUTRAL_RESEARCH", 0),
-      s(1, "DATA_INSUFFICIENT", 0),
-    ]);
+    const obs = summarizeGtiShadow([s(0, "NEUTRAL_RESEARCH", 0), s(1, "DATA_INSUFFICIENT", 0)]);
     expect(obs).toEqual([]);
   });
 });

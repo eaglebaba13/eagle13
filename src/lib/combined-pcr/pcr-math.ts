@@ -5,10 +5,7 @@
 // PCR = 1 → 0. Clamped to [-100, +100].
 
 import type { OptionChainStrike } from "../option-chain/types";
-import type {
-  CombinedPcrWeights,
-  InstrumentPcr,
-} from "./types";
+import type { CombinedPcrWeights, InstrumentPcr } from "./types";
 
 export interface PcrAggregates {
   readonly callOi: number;
@@ -48,7 +45,8 @@ export function aggregateStrikes(strikes: readonly OptionChainStrike[]): PcrAggr
   if (missingCallCh > 0) missing.push(`call.changeOi:${missingCallCh}`);
   if (missingPutCh > 0) missing.push(`put.changeOi:${missingPutCh}`);
   return {
-    callOi, putOi,
+    callOi,
+    putOi,
     callChangeOiPositive: callChangePos,
     putChangeOiPositive: putChangePos,
     strikeCount: strikes.length,

@@ -5,14 +5,7 @@
 // re-implementing the mapping.
 
 export type StatusKind =
-  | "buy"
-  | "sell"
-  | "wait"
-  | "info"
-  | "astro"
-  | "success"
-  | "warning"
-  | "error";
+  "buy" | "sell" | "wait" | "info" | "astro" | "success" | "warning" | "error";
 
 export type ConfidenceBand = "deep" | "high" | "mid" | "low" | "weak";
 
@@ -29,11 +22,16 @@ export function confidenceBand(pct: number): ConfidenceBand {
 /** Human label for a confidence band. */
 export function confidenceLabel(band: ConfidenceBand): string {
   switch (band) {
-    case "deep": return "Very High";
-    case "high": return "High";
-    case "mid":  return "Moderate";
-    case "low":  return "Low";
-    case "weak": return "Very Low";
+    case "deep":
+      return "Very High";
+    case "high":
+      return "High";
+    case "mid":
+      return "Moderate";
+    case "low":
+      return "Low";
+    case "weak":
+      return "Very Low";
   }
 }
 
@@ -45,10 +43,15 @@ export function statusVar(kind: StatusKind): string {
 /** CSS custom-property name for a confidence band. */
 export function confidenceVar(band: ConfidenceBand): string {
   switch (band) {
-    case "deep": return "var(--eb-conf-90)";
-    case "high": return "var(--eb-conf-75)";
-    case "mid":  return "var(--eb-conf-60)";
-    case "low":  return "var(--eb-conf-40)";
-    case "weak": return "var(--eb-conf-low)";
+    case "deep":
+      return "var(--eb-conf-90)";
+    case "high":
+      return "var(--eb-conf-75)";
+    case "mid":
+      return "var(--eb-conf-60)";
+    case "low":
+      return "var(--eb-conf-40)";
+    case "weak":
+      return "var(--eb-conf-low)";
   }
 }

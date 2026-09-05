@@ -62,7 +62,11 @@ export type ChecklistItem = { id: string; label: string; required: boolean };
 
 export const MIGRATION_CHECKLIST: ChecklistItem[] = [
   { id: "db-migrated", label: "Database migrations applied and verified", required: true },
-  { id: "schema-compat", label: "Schema backward-compatible with previous release", required: true },
+  {
+    id: "schema-compat",
+    label: "Schema backward-compatible with previous release",
+    required: true,
+  },
   { id: "grants-verified", label: "Grants/RLS verified on new public tables", required: true },
   { id: "seed-data", label: "Seed / demo data present where required", required: false },
 ];
@@ -70,6 +74,10 @@ export const MIGRATION_CHECKLIST: ChecklistItem[] = [
 export const ROLLBACK_CHECKLIST: ChecklistItem[] = [
   { id: "previous-build", label: "Previous build artifact available", required: true },
   { id: "db-snapshot", label: "Database snapshot captured pre-deploy", required: true },
-  { id: "health-gate", label: "Post-deploy health check integrated with auto-rollback", required: true },
+  {
+    id: "health-gate",
+    label: "Post-deploy health check integrated with auto-rollback",
+    required: true,
+  },
   { id: "runbook-linked", label: "Runbook link surfaced in deployment record", required: true },
 ];

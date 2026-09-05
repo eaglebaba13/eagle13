@@ -76,7 +76,8 @@ export function validateStagingConfig(input: StagingConfigInput): StagingConfigR
   }
 
   const allowed = input.allowedHosts.map((h) => h.toLowerCase());
-  const hostAllowed = allowed.length === 0 ? true : allowed.some((h) => host === h || host.endsWith(`.${h}`));
+  const hostAllowed =
+    allowed.length === 0 ? true : allowed.some((h) => host === h || host.endsWith(`.${h}`));
   if (!hostAllowed) {
     checks.push({
       id: "config.host_not_allowlisted",
@@ -130,7 +131,11 @@ export function validateStagingConfig(input: StagingConfigInput): StagingConfigR
     });
   }
 
-  if (input.expectedEnvironment && input.environment && input.expectedEnvironment !== input.environment) {
+  if (
+    input.expectedEnvironment &&
+    input.environment &&
+    input.expectedEnvironment !== input.environment
+  ) {
     checks.push({
       id: "config.env_mismatch",
       category: "GOVERNANCE",
@@ -156,7 +161,4 @@ export function validateStagingConfig(input: StagingConfigInput): StagingConfigR
   return { ok, host, checks };
 }
 
-export const DEFAULT_ALLOWED_HOSTS: readonly string[] = [
-  "lovable.app",
-  "lovable.dev",
-];
+export const DEFAULT_ALLOWED_HOSTS: readonly string[] = ["lovable.app", "lovable.dev"];

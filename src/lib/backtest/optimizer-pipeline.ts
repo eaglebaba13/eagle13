@@ -8,10 +8,7 @@ import {
   type OptimizerConfig,
   type OptimizerResult,
 } from "./explainable-optimizer";
-import {
-  assertResearchContext,
-  type ResolvedResearchContext,
-} from "./research-context";
+import { assertResearchContext, type ResolvedResearchContext } from "./research-context";
 
 export type OptimizerPipelineResult = {
   readonly context: ResolvedResearchContext;

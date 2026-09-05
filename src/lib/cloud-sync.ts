@@ -39,9 +39,7 @@ export async function readUserSettings<T = unknown>(userId: string): Promise<T |
 
 export async function writeUserSettings(userId: string, settings: unknown): Promise<void> {
   const payload = { user_id: userId, settings: settings as never };
-  const { error } = await supabase
-    .from("user_settings")
-    .upsert(payload, { onConflict: "user_id" });
+  const { error } = await supabase.from("user_settings").upsert(payload, { onConflict: "user_id" });
   if (error) throw error;
 }
 
@@ -121,11 +119,7 @@ export async function markMigrationApplied(userId: string, key: string): Promise
 
 // ---- Usage counters -------------------------------------------------------
 
-export async function readUsage(
-  userId: string,
-  resource: string,
-  period: string,
-): Promise<number> {
+export async function readUsage(userId: string, resource: string, period: string): Promise<number> {
   const { data } = await supabase
     .from("usage_counters")
     .select("count")

@@ -4,10 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 
-import {
-  INTRADAY_FORMULA_VERSIONS,
-  CACHE_NAMESPACE_VERSION,
-} from "./engine-version";
+import { INTRADAY_FORMULA_VERSIONS, CACHE_NAMESPACE_VERSION } from "./engine-version";
 import {
   computeSnapshotStatus,
   getTradingSessionAnchor,
@@ -22,19 +19,9 @@ import {
   GANN_PLANETS,
   type PlanetAbsoluteInput,
 } from "./gann-intraday.types";
-import {
-  buildAbsoluteIntradayLevels,
-  type AbsoluteLevelBundle,
-} from "./gann-absolute-levels";
-import {
-  rankLevels,
-  type LevelCluster,
-  type RankedLevel,
-} from "./gann-level-ranking";
-import {
-  getInstrumentPolicy,
-  PROVISIONAL_POLICIES,
-} from "./gann-intraday-policy";
+import { buildAbsoluteIntradayLevels, type AbsoluteLevelBundle } from "./gann-absolute-levels";
+import { rankLevels, type LevelCluster, type RankedLevel } from "./gann-level-ranking";
+import { getInstrumentPolicy, PROVISIONAL_POLICIES } from "./gann-intraday-policy";
 import { cached } from "./server-cache";
 import { fetchJson } from "./http";
 import { YahooChartSchema, parseProvider } from "./providers";
@@ -256,13 +243,11 @@ export const getGannIntradaySnapshot = createServerFn({ method: "GET" })
     const tradingDate = data.tradingDate ?? todayIst();
     const status = computeSnapshotStatus(tradingDate);
     // Immutable cache for LOCKED/HISTORICAL — long TTL. Preview refreshes every minute.
-    const ttl =
-      status === "LOCKED" || status === "HISTORICAL_LOCKED" ? 12 * 60 * 60_000 : 60_000;
-    return cached<IntradaySnapshot>(
-      cacheKeyFor(data, tradingDate),
-      () => computeSnapshot(data),
-      { ttlMs: ttl, swrMs: ttl },
-    );
+    const ttl = status === "LOCKED" || status === "HISTORICAL_LOCKED" ? 12 * 60 * 60_000 : 60_000;
+    return cached<IntradaySnapshot>(cacheKeyFor(data, tradingDate), () => computeSnapshot(data), {
+      ttlMs: ttl,
+      swrMs: ttl,
+    });
   });
 
 // Test hook — exposes the pure computation without going through the server-fn RPC.

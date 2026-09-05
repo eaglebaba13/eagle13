@@ -58,7 +58,8 @@ export function classifyUpstoxTokenFormat(raw: string | undefined | null): {
   if (isPlaceholder(raw)) return { format: "NONE", guess: "UNKNOWN", length: 0 };
   const v = String(raw).trim();
   const segs = v.split(".");
-  const isJwt = segs.length === 3 && segs.every((s) => /^[A-Za-z0-9_-]+$/.test(s)) && v.startsWith("eyJ");
+  const isJwt =
+    segs.length === 3 && segs.every((s) => /^[A-Za-z0-9_-]+$/.test(s)) && v.startsWith("eyJ");
   if (isJwt) return { format: "JWT", guess: "STANDARD", length: v.length };
   return { format: "OPAQUE", guess: "ANALYTICS", length: v.length };
 }

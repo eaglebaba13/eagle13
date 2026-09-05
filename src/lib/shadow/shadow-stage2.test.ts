@@ -76,7 +76,11 @@ function baseConfig(overrides: Partial<SchedulerConfig> = {}): SchedulerConfig {
   };
 }
 
-function mkAdapter(candles: readonly ShadowClosedCandle[], age = 10, tsIso = "2026-01-01T00:05:10Z") {
+function mkAdapter(
+  candles: readonly ShadowClosedCandle[],
+  age = 10,
+  tsIso = "2026-01-01T00:05:10Z",
+) {
   return createMockAdapter({
     id: "mock",
     instruments: ["BTC"],
@@ -209,7 +213,13 @@ describe("provider health tracker", () => {
     expect(t.compute(["BTC"], ["5m"]).status).toBe("HEALTHY");
     t.record({ at: "t2", ok: true, latencyMs: 20, freshnessSeconds: 200 });
     expect(t.compute(["BTC"], ["5m"]).status).toBe("DELAYED");
-    t.record({ at: "t3", ok: false, latencyMs: 30, freshnessSeconds: 5000, reason: "RATE_LIMITED" });
+    t.record({
+      at: "t3",
+      ok: false,
+      latencyMs: 30,
+      freshnessSeconds: 5000,
+      reason: "RATE_LIMITED",
+    });
     expect(t.compute(["BTC"], ["5m"]).status).toBe("RATE_LIMITED");
   });
 });

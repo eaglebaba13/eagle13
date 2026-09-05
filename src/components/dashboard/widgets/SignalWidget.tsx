@@ -15,11 +15,7 @@ export default function SignalWidget() {
     formulaVersion: "LEGACY_EAGLEBABA_CASCADE_V1",
   });
   const tone =
-    bias.tone === "neutral"
-      ? "var(--eb-neutral)"
-      : isBull
-        ? "var(--eb-bull)"
-        : "var(--eb-bear)";
+    bias.tone === "neutral" ? "var(--eb-neutral)" : isBull ? "var(--eb-bull)" : "var(--eb-bear)";
   return (
     <Card title="MARKET SIGNAL" sub="AUTO" accent="var(--eb-neutral)">
       {freshness ? (
@@ -40,7 +36,9 @@ export default function SignalWidget() {
       >
         {gate.allowed ? (
           <>
-            <div style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 2, color: tone }}>
+            <div
+              style={{ fontFamily: "var(--eb-head)", fontSize: 21, letterSpacing: 2, color: tone }}
+            >
               {bias.headline}
             </div>
             <div style={{ fontSize: 11, color: "var(--eb-muted)", marginTop: 2 }}>{bias.label}</div>
@@ -48,7 +46,12 @@ export default function SignalWidget() {
         ) : (
           <div
             title={gate.blockingReasons.join(" · ")}
-            style={{ fontFamily: "var(--eb-head)", fontSize: 18, letterSpacing: 2, color: "var(--eb-muted)" }}
+            style={{
+              fontFamily: "var(--eb-head)",
+              fontSize: 18,
+              letterSpacing: 2,
+              color: "var(--eb-muted)",
+            }}
           >
             {blockedLabel(gate.blockingReasons)}
           </div>
@@ -65,8 +68,8 @@ export default function SignalWidget() {
           lineHeight: 1.5,
         }}
       >
-        Levels auto-computed from the previous working day OHLC. CPR width drives the
-        trending vs range read. Not financial advice.
+        Levels auto-computed from the previous working day OHLC. CPR width drives the trending vs
+        range read. Not financial advice.
       </div>
     </Card>
   );

@@ -20,7 +20,9 @@ describe("computeCombinedPcr", () => {
       BANKNIFTY: await snap("BULLISH", "BANKNIFTY"),
     };
     const r = computeCombinedPcr({
-      snapshots, weights: DEFAULT_COMBINED_PCR_WEIGHTS, runId: "test-1",
+      snapshots,
+      weights: DEFAULT_COMBINED_PCR_WEIGHTS,
+      runId: "test-1",
     });
     expect(r.combinedScore).not.toBeNull();
     expect(r.combinedScore! > 0).toBe(true);
@@ -59,7 +61,8 @@ describe("computeCombinedPcr", () => {
 
   it("returns null combinedScore when both instruments missing", () => {
     const r = computeCombinedPcr({
-      snapshots: { NIFTY: null, BANKNIFTY: null }, runId: "test-4",
+      snapshots: { NIFTY: null, BANKNIFTY: null },
+      runId: "test-4",
     });
     expect(r.combinedScore).toBeNull();
     expect(r.direction).toBe("NEUTRAL");
@@ -74,8 +77,13 @@ describe("computeCombinedPcr", () => {
     expect(r.signalState).not.toContain("BUY");
     expect(r.signalState).not.toContain("SELL");
     expect([
-      "STRONG_CE_FOCUS", "CE_FOCUS", "BULLISH_WEAKENING",
-      "NO_TRADE", "BEARISH_WEAKENING", "PE_FOCUS", "STRONG_PE_FOCUS",
+      "STRONG_CE_FOCUS",
+      "CE_FOCUS",
+      "BULLISH_WEAKENING",
+      "NO_TRADE",
+      "BEARISH_WEAKENING",
+      "PE_FOCUS",
+      "STRONG_PE_FOCUS",
     ]).toContain(r.signalState);
   });
 });

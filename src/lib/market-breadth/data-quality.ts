@@ -22,7 +22,8 @@ export function checkTicks(
   const seen = new Set<string>();
   const expectedSet = new Set(expected);
   for (const t of ticks) {
-    if (seen.has(t.symbol)) issues.push({ code: "DUPLICATE_SYMBOL", message: `duplicate: ${t.symbol}` });
+    if (seen.has(t.symbol))
+      issues.push({ code: "DUPLICATE_SYMBOL", message: `duplicate: ${t.symbol}` });
     seen.add(t.symbol);
     if (!expectedSet.has(t.symbol)) {
       issues.push({ code: "UNKNOWN_SYMBOL", message: `unknown: ${t.symbol}` });
@@ -30,15 +31,17 @@ export function checkTicks(
   }
   const missing = expected.filter((s) => !seen.has(s));
   if (missing.length > 0) {
-    issues.push({ code: "MISSING_CONSTITUENTS", message: `missing ${missing.length}/${expected.length}` });
+    issues.push({
+      code: "MISSING_CONSTITUENTS",
+      message: `missing ${missing.length}/${expected.length}`,
+    });
   }
   if (timestamp) {
     const ts = Date.parse(timestamp);
     if (!Number.isFinite(ts)) issues.push({ code: "BAD_TIMESTAMP", message: timestamp });
     else if (ts - now > 60_000) issues.push({ code: "FUTURE_TIMESTAMP", message: timestamp });
   }
-  const hardFail =
-    expected.length === 0 || missing.length === expected.length;
+  const hardFail = expected.length === 0 || missing.length === expected.length;
   return { issues, hardFail };
 }
 

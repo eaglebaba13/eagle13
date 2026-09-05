@@ -55,18 +55,22 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();
     try {
-      const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
+      const { fetchCanonicalOptionChain } =
+        await import("../option-chain/canonical-snapshot.server");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");
 
       const snapshots: Partial<Record<OptionUnderlying, OptionChainSnapshot | null>> = {};
-      const providerMeta: Record<string, {
-        providerId: string;
-        status: string;
-        latencyMs: number;
-        fetchedAt: string;
-        safeError: string | null;
-        upstreamCode: string | null;
-      }> = {};
+      const providerMeta: Record<
+        string,
+        {
+          providerId: string;
+          status: string;
+          latencyMs: number;
+          fetchedAt: string;
+          safeError: string | null;
+          upstreamCode: string | null;
+        }
+      > = {};
       const capabilities: Partial<Record<OptionUnderlying, OptionChainCapability>> = {};
       const history = getSnapshotHistory();
 
@@ -95,13 +99,15 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
         }
       }
 
-      const previousConfirmation = data.previousConfirmed || data.previousPending
-        ? {
-            confirmed: (data.previousConfirmed as never) ?? "NO_TRADE",
-            pending: (data.previousPending as never) ?? (data.previousConfirmed as never) ?? "NO_TRADE",
-            count: Math.max(1, data.previousCount ?? 1),
-          }
-        : undefined;
+      const previousConfirmation =
+        data.previousConfirmed || data.previousPending
+          ? {
+              confirmed: (data.previousConfirmed as never) ?? "NO_TRADE",
+              pending:
+                (data.previousPending as never) ?? (data.previousConfirmed as never) ?? "NO_TRADE",
+              count: Math.max(1, data.previousCount ?? 1),
+            }
+          : undefined;
 
       const weights = data.weights ?? DEFAULT_COMBINED_PCR_WEIGHTS;
       const hasAnyUsable = Object.values(snapshots).some((s) => s != null);
@@ -162,17 +168,40 @@ export const getCombinedPcrDiagnostics = createServerFn({ method: "GET" })
     try {
       let isAdmin = false;
       try {
-        const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+        const { data } = await context.supabase.rpc("has_role", {
+          _user_id: context.userId,
+          _role: "admin",
+        });
         isAdmin = data === true;
-      } catch { isAdmin = false; }
+      } catch {
+        isAdmin = false;
+      }
       if (!isAdmin) {
-        return { ok: false as const, report: null, safeError: "admin required", startedAt, completedAt: new Date().toISOString() };
+        return {
+          ok: false as const,
+          report: null,
+          safeError: "admin required",
+          startedAt,
+          completedAt: new Date().toISOString(),
+        };
       }
       const { buildCombinedPcrDiagnostics } = await import("./combined-pcr-diagnostics.server");
       const report = await buildCombinedPcrDiagnostics();
-      return { ok: true as const, report, safeError: null, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: true as const,
+        report,
+        safeError: null,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     } catch (e) {
       const safe = e instanceof Error ? e.message.slice(0, 200) : "diagnostics failed";
-      return { ok: false as const, report: null, safeError: safe, startedAt, completedAt: new Date().toISOString() };
+      return {
+        ok: false as const,
+        report: null,
+        safeError: safe,
+        startedAt,
+        completedAt: new Date().toISOString(),
+      };
     }
   });

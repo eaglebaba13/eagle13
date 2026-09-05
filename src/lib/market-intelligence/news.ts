@@ -1,9 +1,58 @@
 // Phase 44C — News normalization + sentiment/impact classification.
 import type { NewsImpact, NewsItem, NewsItemRaw, NewsSection, NewsSentiment } from "./types";
 
-const POSITIVE = ["surge","rally","beat","record","upgrade","strong","growth","boost","gain","expand","approves","approval","wins","profit","exceeds"];
-const NEGATIVE = ["plunge","crash","miss","weak","downgrade","loss","fraud","probe","ban","cut","default","slump","concern","warning","recall","fires"];
-const HIGH_IMPACT_KEYS = ["rbi","fomc","fed ","gdp","inflation","cpi","rate hike","rate cut","budget","war","sanction","default","terror","earthquake","tariff"];
+const POSITIVE = [
+  "surge",
+  "rally",
+  "beat",
+  "record",
+  "upgrade",
+  "strong",
+  "growth",
+  "boost",
+  "gain",
+  "expand",
+  "approves",
+  "approval",
+  "wins",
+  "profit",
+  "exceeds",
+];
+const NEGATIVE = [
+  "plunge",
+  "crash",
+  "miss",
+  "weak",
+  "downgrade",
+  "loss",
+  "fraud",
+  "probe",
+  "ban",
+  "cut",
+  "default",
+  "slump",
+  "concern",
+  "warning",
+  "recall",
+  "fires",
+];
+const HIGH_IMPACT_KEYS = [
+  "rbi",
+  "fomc",
+  "fed ",
+  "gdp",
+  "inflation",
+  "cpi",
+  "rate hike",
+  "rate cut",
+  "budget",
+  "war",
+  "sanction",
+  "default",
+  "terror",
+  "earthquake",
+  "tariff",
+];
 
 export function classifySentiment(headline: string): NewsSentiment {
   const h = headline.toLowerCase();

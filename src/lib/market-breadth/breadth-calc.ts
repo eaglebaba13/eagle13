@@ -3,12 +3,7 @@
 // Consumes symbol ticks and a versioned weight map. Never fabricates
 // missing constituents; symbols without a tick count as UNAVAILABLE.
 
-import type {
-  BreadthUniverse,
-  MarketBreadthSnapshot,
-  BreadthQuality,
-  SymbolTick,
-} from "./types";
+import type { BreadthUniverse, MarketBreadthSnapshot, BreadthQuality, SymbolTick } from "./types";
 import { MARKET_BREADTH_FORMULA_VERSION } from "./types";
 
 export interface BuildBreadthOptions {
@@ -19,12 +14,15 @@ export interface BuildBreadthOptions {
   readonly weights?: ReadonlyMap<string, number>;
   readonly ticks: readonly SymbolTick[];
   readonly registryVersion?: string | null;
-  readonly freshnessMs?: number;      // measured freshness of source data
+  readonly freshnessMs?: number; // measured freshness of source data
   readonly staleThresholdMs?: number; // over this → STALE
   readonly snapshotId: string;
 }
 
-function classifyFreshness(freshnessMs: number | undefined, staleAfter: number): "FRESH" | "STALE" | "UNKNOWN" {
+function classifyFreshness(
+  freshnessMs: number | undefined,
+  staleAfter: number,
+): "FRESH" | "STALE" | "UNKNOWN" {
   if (freshnessMs == null) return "UNKNOWN";
   if (!Number.isFinite(freshnessMs)) return "UNKNOWN";
   return freshnessMs <= staleAfter ? "FRESH" : "STALE";
@@ -73,7 +71,8 @@ export function computeBreadth(opts: BuildBreadthOptions): MarketBreadthSnapshot
   const coverage = total > 0 ? covered / total : 0;
   const netBreadth = advances - declines;
   const denominator = advances + declines;
-  const advanceDeclineRatio = declines > 0 ? advances / declines : advances > 0 ? Number.POSITIVE_INFINITY : null;
+  const advanceDeclineRatio =
+    declines > 0 ? advances / declines : advances > 0 ? Number.POSITIVE_INFINITY : null;
   const advancePercentage = total > 0 ? (advances / total) * 100 : null;
   const declinePercentage = total > 0 ? (declines / total) * 100 : null;
   const weightedNet = opts.weights ? weightedAdvance - weightedDecline : null;
@@ -94,7 +93,11 @@ export function computeBreadth(opts: BuildBreadthOptions): MarketBreadthSnapshot
 
   // Guard: A/D ratio Infinity → represent as null for JSON safety.
   const adRatioSafe =
-    advanceDeclineRatio == null ? null : Number.isFinite(advanceDeclineRatio) ? advanceDeclineRatio : null;
+    advanceDeclineRatio == null
+      ? null
+      : Number.isFinite(advanceDeclineRatio)
+        ? advanceDeclineRatio
+        : null;
 
   return {
     timestamp: opts.timestamp,

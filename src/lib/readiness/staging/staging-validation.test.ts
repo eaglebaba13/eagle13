@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { validateStagingConfig, DEFAULT_ALLOWED_HOSTS } from "./staging-config.server";
-import { runJourney, journeyToCheck, STAGING_JOURNEY_PLANS, skipResolver } from "./staging-journey-runner.server";
+import {
+  runJourney,
+  journeyToCheck,
+  STAGING_JOURNEY_PLANS,
+  skipResolver,
+} from "./staging-journey-runner.server";
 import { auditProviderDrills, auditFailoverDrill } from "./staging-provider-drills";
 import { auditAuthorization, auditRlsCrossUser } from "./staging-authorization";
 import { auditManualPaymentJourney } from "./staging-payment-journey";
@@ -11,7 +16,11 @@ import { auditExportSamples } from "./staging-export-validation";
 import { auditPerformance } from "../performance-audit";
 import { auditBundle } from "./staging-bundle-audit";
 import { auditLoad } from "./staging-load";
-import { recoveryDrillsToChecks, incidentDrillsToChecks, DEFAULT_RECOVERY_DRILLS } from "./staging-recovery";
+import {
+  recoveryDrillsToChecks,
+  incidentDrillsToChecks,
+  DEFAULT_RECOVERY_DRILLS,
+} from "./staging-recovery";
 import { auditAccessibility } from "./staging-accessibility";
 import { computeStagingVerdict } from "./staging-verdict";
 import { computeStagingRunId } from "./staging-run-id";
@@ -86,14 +95,24 @@ describe("journey runner", () => {
   });
   it("planned journeys cover all required roles", () => {
     const roles = new Set(STAGING_JOURNEY_PLANS.map((p) => p.role));
-    for (const r of ["anon", "free", "pro", "professional", "admin"]) expect(roles.has(r as any)).toBe(true);
+    for (const r of ["anon", "free", "pro", "professional", "admin"])
+      expect(roles.has(r as any)).toBe(true);
   });
   it("failure isolates the journey (stops on first FAIL)", () => {
     const j = runJourney(
-      { id: "t", title: "t", role: "pro", steps: [{ id: "s1", title: "s1" }, { id: "s2", title: "s2" }] },
-      (plan) => plan.id === "s1"
-        ? { status: "FAIL", durationMs: 1, error: "boom", failureCategory: "assertion" }
-        : { status: "PASS", durationMs: 1 },
+      {
+        id: "t",
+        title: "t",
+        role: "pro",
+        steps: [
+          { id: "s1", title: "s1" },
+          { id: "s2", title: "s2" },
+        ],
+      },
+      (plan) =>
+        plan.id === "s1"
+          ? { status: "FAIL", durationMs: 1, error: "boom", failureCategory: "assertion" }
+          : { status: "PASS", durationMs: 1 },
       { now, toIso },
     );
     expect(j.steps).toHaveLength(1);
@@ -102,7 +121,10 @@ describe("journey runner", () => {
   });
   it("admin journey failure is a hard blocker", () => {
     const plan = STAGING_JOURNEY_PLANS.find((p) => p.role === "admin")!;
-    const j = runJourney(plan, () => ({ status: "FAIL", durationMs: 0, error: "x" }), { now, toIso });
+    const j = runJourney(plan, () => ({ status: "FAIL", durationMs: 0, error: "x" }), {
+      now,
+      toIso,
+    });
     expect(journeyToCheck(j).hardBlocker).toBe(true);
   });
 });
@@ -131,25 +153,29 @@ describe("provider drills", () => {
     expect(auditProviderDrills([{ ...base, requestStorm: true }])[0].hardBlocker).toBe(true);
   });
   it("no-fallback with silent switch is blocker", () => {
-    const r = auditFailoverDrill([{
-      dependencyId: "options",
-      fallbackAllowed: false,
-      primaryForcedFail: true,
-      secondaryEligible: true,
-      schemaCompatible: true,
-      timestampDivergenceSeconds: 0,
-      unitNormalized: true,
-      providerLabelChanged: false,
-      statusDegraded: false,
-      actionableSignalPolicyRespected: true,
-    }]);
+    const r = auditFailoverDrill([
+      {
+        dependencyId: "options",
+        fallbackAllowed: false,
+        primaryForcedFail: true,
+        secondaryEligible: true,
+        schemaCompatible: true,
+        timestampDivergenceSeconds: 0,
+        unitNormalized: true,
+        providerLabelChanged: false,
+        statusDegraded: false,
+        actionableSignalPolicyRespected: true,
+      },
+    ]);
     expect(r[0].hardBlocker).toBe(true);
   });
 });
 
 describe("authorization + RLS", () => {
   it("privilege escalation raises hard blocker", () => {
-    const r = auditAuthorization([{ id: "userA_reads_userB.profile", denied: false, expectDeny: true }]);
+    const r = auditAuthorization([
+      { id: "userA_reads_userB.profile", denied: false, expectDeny: true },
+    ]);
     expect(r.some((c) => c.id === "authz.privilege_escalation" && c.hardBlocker)).toBe(true);
   });
   it("rls cross-user read is a blocker", () => {
@@ -161,50 +187,91 @@ describe("authorization + RLS", () => {
 
 describe("manual payment", () => {
   const okObs = {
-    requestCreated: true, serverSidePriceValidated: true, planCycleValidated: true,
-    screenshotMetadataValidated: true, utrFormatValidated: true, duplicateUtrRejected: true,
-    duplicatePendingRejected: true, adminOnlyApproval: true, rejectionReasonRequired: true,
-    subscriptionActivatedAtomically: true, auditLogEntryPresent: true, labeledAsStaging: true,
+    requestCreated: true,
+    serverSidePriceValidated: true,
+    planCycleValidated: true,
+    screenshotMetadataValidated: true,
+    utrFormatValidated: true,
+    duplicateUtrRejected: true,
+    duplicatePendingRejected: true,
+    adminOnlyApproval: true,
+    rejectionReasonRequired: true,
+    subscriptionActivatedAtomically: true,
+    auditLogEntryPresent: true,
+    labeledAsStaging: true,
     realPaymentTriggered: false,
   };
   it("passes when everything is set", () => {
     expect(auditManualPaymentJourney(okObs)[0].status).toBe("PASS");
   });
   it("real payment triggers hard blocker", () => {
-    expect(auditManualPaymentJourney({ ...okObs, realPaymentTriggered: true })[0].hardBlocker).toBe(true);
+    expect(auditManualPaymentJourney({ ...okObs, realPaymentTriggered: true })[0].hardBlocker).toBe(
+      true,
+    );
   });
   it("non-atomic activation is a hard blocker", () => {
-    expect(auditManualPaymentJourney({ ...okObs, subscriptionActivatedAtomically: false })[0].hardBlocker).toBe(true);
+    expect(
+      auditManualPaymentJourney({ ...okObs, subscriptionActivatedAtomically: false })[0]
+        .hardBlocker,
+    ).toBe(true);
   });
   it("duplicate UTR must be rejected", () => {
-    expect(auditManualPaymentJourney({ ...okObs, duplicateUtrRejected: false })[0].status).toBe("FAIL");
+    expect(auditManualPaymentJourney({ ...okObs, duplicateUtrRejected: false })[0].status).toBe(
+      "FAIL",
+    );
   });
 });
 
 describe("cache/scheduler/shadow drills", () => {
   it("cache formula isolation failure fails", () => {
-    const r = auditCacheStress([{
-      namespace: "astro", hits: 10, misses: 1, staleHits: 0, refreshCount: 1,
-      errors: 0, dedupedRequests: 5, durationMs: 10, memoryDeltaBytes: 0,
-      formulaVersionIsolated: false, runIdIsolated: true, ttlExpiryObserved: true,
-      refreshDuringProviderFailure: "graceful",
-    }]);
+    const r = auditCacheStress([
+      {
+        namespace: "astro",
+        hits: 10,
+        misses: 1,
+        staleHits: 0,
+        refreshCount: 1,
+        errors: 0,
+        dedupedRequests: 5,
+        durationMs: 10,
+        memoryDeltaBytes: 0,
+        formulaVersionIsolated: false,
+        runIdIsolated: true,
+        ttlExpiryObserved: true,
+        refreshDuringProviderFailure: "graceful",
+      },
+    ]);
     expect(r[0].status).toBe("FAIL");
   });
   it("scheduler duplicate is a hard blocker", () => {
     const r = auditSchedulerStress({
-      schedulerInstances: 2, duplicatedTasks: [], overlappingBeyondPolicy: [],
-      tightLoopDetected: false, fasterThanTimeframeRule: false, errorIsolated: true,
-      pauseResumeOk: true, memoryStable: true, eventLoopStalledMs: 0,
+      schedulerInstances: 2,
+      duplicatedTasks: [],
+      overlappingBeyondPolicy: [],
+      tightLoopDetected: false,
+      fasterThanTimeframeRule: false,
+      errorIsolated: true,
+      pauseResumeOk: true,
+      memoryStable: true,
+      eventLoopStalledMs: 0,
     });
     expect(r.find((c) => c.id === "scheduler.duplicate")?.hardBlocker).toBe(true);
   });
   it("shadow open candle is a hard blocker; broker object is a hard blocker", () => {
     const r = auditShadowDrill({
-      closedCandleOnly: false, duplicateRejected: true, staleRejected: true,
-      readinessGateEnforced: true, recommendationEvidencePresent: true, hypotheticalEntryOnly: true,
-      outcomeUpdated: true, calibrationUpdated: true, driftUpdated: true, persisted: true, exported: true,
-      brokerOrderObjectPresent: true, liveNotificationTriggered: false,
+      closedCandleOnly: false,
+      duplicateRejected: true,
+      staleRejected: true,
+      readinessGateEnforced: true,
+      recommendationEvidencePresent: true,
+      hypotheticalEntryOnly: true,
+      outcomeUpdated: true,
+      calibrationUpdated: true,
+      driftUpdated: true,
+      persisted: true,
+      exported: true,
+      brokerOrderObjectPresent: true,
+      liveNotificationTriggered: false,
     });
     expect(r.some((c) => c.id === "shadow.open_candle_entry" && c.hardBlocker)).toBe(true);
     expect(r.some((c) => c.id === "broker.execution_object_present" && c.hardBlocker)).toBe(true);
@@ -213,29 +280,52 @@ describe("cache/scheduler/shadow drills", () => {
 
 describe("exports and bundle", () => {
   it("detects secret leak in export samples", () => {
-    const r = auditExportSamples([{
-      id: "x", family: "backtest", filename: "b.csv", mimeType: "text/csv",
-      contentSample: "sk_live_abcdef1234567890abcdef1234567890",
-      contentBytes: 10, runId: "r1", formulaVersions: ["v1"],
-      providerMetadataPresent: true, disclaimerPresent: true, parseable: true,
-    }]);
+    const r = auditExportSamples([
+      {
+        id: "x",
+        family: "backtest",
+        filename: "b.csv",
+        mimeType: "text/csv",
+        contentSample: "sk_live_abcdef1234567890abcdef1234567890",
+        contentBytes: 10,
+        runId: "r1",
+        formulaVersions: ["v1"],
+        providerMetadataPresent: true,
+        disclaimerPresent: true,
+        parseable: true,
+      },
+    ]);
     expect(r[0].hardBlocker).toBe(true);
     expect(r[0].id).toBe("export.secret_leak");
   });
   it("bundle secret pattern is a hard blocker", () => {
     const r = auditBundle({
-      mainBundleKb: 500, routeChunksKb: {}, largestModulesKb: {}, duplicateDeps: [],
-      chartLibCount: 1, fixtureInclusion: [], sourceMapPolicy: "off_in_prod",
-      mediaAssets: [], nativeBinaries: [], serverOnlyModulesInClient: [],
+      mainBundleKb: 500,
+      routeChunksKb: {},
+      largestModulesKb: {},
+      duplicateDeps: [],
+      chartLibCount: 1,
+      fixtureInclusion: [],
+      sourceMapPolicy: "off_in_prod",
+      mediaAssets: [],
+      nativeBinaries: [],
+      serverOnlyModulesInClient: [],
       clientBundleSample: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9abcdefghijk",
     });
     expect(r.some((c) => c.hardBlocker)).toBe(true);
   });
   it("server-only module leak is a hard blocker", () => {
     const r = auditBundle({
-      mainBundleKb: 500, routeChunksKb: {}, largestModulesKb: {}, duplicateDeps: [],
-      chartLibCount: 1, fixtureInclusion: [], sourceMapPolicy: "off_in_prod",
-      mediaAssets: [], nativeBinaries: [], serverOnlyModulesInClient: ["client.server.ts"],
+      mainBundleKb: 500,
+      routeChunksKb: {},
+      largestModulesKb: {},
+      duplicateDeps: [],
+      chartLibCount: 1,
+      fixtureInclusion: [],
+      sourceMapPolicy: "off_in_prod",
+      mediaAssets: [],
+      nativeBinaries: [],
+      serverOnlyModulesInClient: ["client.server.ts"],
       clientBundleSample: "safe content",
     });
     expect(r[0].hardBlocker).toBe(true);
@@ -254,11 +344,20 @@ describe("performance and load", () => {
     expect(checks[2].status).toBe("FAIL");
   });
   it("load unsafe concurrency is BLOCKED", () => {
-    const r = auditLoad([{
-      id: "s", label: "s", errorRate: 0, p50Ms: 10, p95Ms: 20,
-      duplicateRequestRatio: 0, cacheHitRate: 1, timeoutRate: 0,
-      memoryDeltaBytes: 0, concurrency: 100,
-    }]);
+    const r = auditLoad([
+      {
+        id: "s",
+        label: "s",
+        errorRate: 0,
+        p50Ms: 10,
+        p95Ms: 20,
+        duplicateRequestRatio: 0,
+        cacheHitRate: 1,
+        timeoutRate: 0,
+        memoryDeltaBytes: 0,
+        concurrency: 100,
+      },
+    ]);
     expect(r[0].status).toBe("BLOCKED");
   });
 });
@@ -269,20 +368,34 @@ describe("recovery / a11y / verdict / run id", () => {
     expect(r.some((c) => c.id === "release.no_rollback" && c.hardBlocker)).toBe(true);
   });
   it("incident drills round-trip", () => {
-    const r = incidentDrillsToChecks([{
-      id: "stale_market", scenario: "Stale market data displayed",
-      detectionMs: 30, acknowledgmentMs: 60,
-      mitigation: "block", recovery: "provider back", owner: "ops",
-      outcome: "DOCUMENTED_ONLY",
-    }]);
+    const r = incidentDrillsToChecks([
+      {
+        id: "stale_market",
+        scenario: "Stale market data displayed",
+        detectionMs: 30,
+        acknowledgmentMs: 60,
+        mitigation: "block",
+        recovery: "provider back",
+        owner: "ops",
+        outcome: "DOCUMENTED_ONLY",
+      },
+    ]);
     expect(r[0].status).toBe("WARNING");
   });
   it("a11y mobile overflow fails", () => {
     const r = auditAccessibility({
-      keyboardNav: true, visibleFocus: true, focusTrap: true, accessibleLabels: true,
-      tableScrolling: true, contrast: true, statusNotColorOnly: true,
-      desktopOverflow: false, tabletOverflow: false, mobileOverflow: true,
-      clippedControls: false, hydrationMismatch: false,
+      keyboardNav: true,
+      visibleFocus: true,
+      focusTrap: true,
+      accessibleLabels: true,
+      tableScrolling: true,
+      contrast: true,
+      statusNotColorOnly: true,
+      desktopOverflow: false,
+      tabletOverflow: false,
+      mobileOverflow: true,
+      clippedControls: false,
+      hydrationMismatch: false,
     });
     expect(r.find((c) => c.id === "a11y.mobile_overflow")?.status).toBe("FAIL");
   });
@@ -291,7 +404,16 @@ describe("recovery / a11y / verdict / run id", () => {
     expect(v0.verdict).toBe("STAGING_NOT_CONFIGURED");
     const vB = computeStagingVerdict({
       configured: true,
-      checks: [{ id: "x", category: "SECURITY", title: "x", status: "FAIL", severity: "blocker", hardBlocker: true }],
+      checks: [
+        {
+          id: "x",
+          category: "SECURITY",
+          title: "x",
+          status: "FAIL",
+          severity: "blocker",
+          hardBlocker: true,
+        },
+      ],
     });
     expect(vB.verdict).toBe("STAGING_BLOCKED");
     const vF = computeStagingVerdict({
@@ -318,20 +440,43 @@ describe("recovery / a11y / verdict / run id", () => {
       configured: true,
       checks: [
         { id: "a", category: "SECURITY", title: "a", status: "PASS", severity: "info" },
-        { id: "b", category: "SECURITY", title: "b", status: "FAIL", severity: "blocker", hardBlocker: true },
+        {
+          id: "b",
+          category: "SECURITY",
+          title: "b",
+          status: "FAIL",
+          severity: "blocker",
+          hardBlocker: true,
+        },
       ],
     });
     expect(v.verdict).toBe("STAGING_BLOCKED");
   });
   it("run id is deterministic and changes with inputs", () => {
     const base = {
-      stagingHost: "h", buildVersion: "b", commitVersion: "c", environment: "staging",
-      journeyIds: ["a"], checkVersions: ["v1"], providerModes: [],
-      databaseMigrationVersion: null, performanceBudgetHash: "h",
-      checks: [{ id: "x", category: "SECURITY" as const, title: "x", status: "PASS" as const, severity: "info" as const }],
+      stagingHost: "h",
+      buildVersion: "b",
+      commitVersion: "c",
+      environment: "staging",
+      journeyIds: ["a"],
+      checkVersions: ["v1"],
+      providerModes: [],
+      databaseMigrationVersion: null,
+      performanceBudgetHash: "h",
+      checks: [
+        {
+          id: "x",
+          category: "SECURITY" as const,
+          title: "x",
+          status: "PASS" as const,
+          severity: "info" as const,
+        },
+      ],
     };
     expect(computeStagingRunId(base)).toBe(computeStagingRunId(base));
-    expect(computeStagingRunId(base)).not.toBe(computeStagingRunId({ ...base, buildVersion: "b2" }));
+    expect(computeStagingRunId(base)).not.toBe(
+      computeStagingRunId({ ...base, buildVersion: "b2" }),
+    );
   });
 });
 
@@ -382,14 +527,26 @@ describe("compose + exports + evidence store", () => {
   });
   it("release checklist marks missing items as FAIL", () => {
     const items = stagingReleaseChecklist({
-      stagingUrlVerified: true, correctBuildDeployed: true, databaseMigrationVerified: true,
-      rlsTested: true, authJourneysPassed: true, paidEntitlementPassed: true,
-      manualPaymentStagingPassed: true, providersPassedOrDegraded: true,
-      dashboardSmokePassed: true, backtestPassed: true, researchPassed: true,
-      portfolioPassed: true, shadowPassed: true, exportsPassed: true,
-      performanceBudgetsAcceptable: true, bundleScanClean: true,
-      recoveryDrillEvidence: true, incidentDrillEvidence: true,
-      humanReviewerAssigned: false, rollbackOwnerAssigned: false,
+      stagingUrlVerified: true,
+      correctBuildDeployed: true,
+      databaseMigrationVerified: true,
+      rlsTested: true,
+      authJourneysPassed: true,
+      paidEntitlementPassed: true,
+      manualPaymentStagingPassed: true,
+      providersPassedOrDegraded: true,
+      dashboardSmokePassed: true,
+      backtestPassed: true,
+      researchPassed: true,
+      portfolioPassed: true,
+      shadowPassed: true,
+      exportsPassed: true,
+      performanceBudgetsAcceptable: true,
+      bundleScanClean: true,
+      recoveryDrillEvidence: true,
+      incidentDrillEvidence: true,
+      humanReviewerAssigned: false,
+      rollbackOwnerAssigned: false,
     });
     const rollback = items.find((c) => c.id === "release.rollbackOwnerAssigned");
     expect(rollback?.status).toBe("FAIL");

@@ -18,16 +18,9 @@ export const MACRO_LOWER_THRESHOLD = 55;
 export const MACRO_UPPER_THRESHOLD = 80;
 
 export type MacroBias = "BUY_GOLD" | "BUY_SILVER" | "NEUTRAL" | "UNAVAILABLE";
-export type AssetRelativeBias =
-  | "BULLISH_RELATIVE"
-  | "BEARISH_RELATIVE"
-  | "NEUTRAL"
-  | "UNAVAILABLE";
+export type AssetRelativeBias = "BULLISH_RELATIVE" | "BEARISH_RELATIVE" | "NEUTRAL" | "UNAVAILABLE";
 export type MacroFreshness = "LIVE" | "DELAYED" | "STALE" | "UNAVAILABLE";
-export type NormalizationMethod =
-  | "PRICE_PER_TROY_OUNCE"
-  | "NATIVE"
-  | "UNAVAILABLE";
+export type NormalizationMethod = "PRICE_PER_TROY_OUNCE" | "NATIVE" | "UNAVAILABLE";
 
 export interface MacroPriceInput {
   /** Price per unit in the quoted currency. */
@@ -61,7 +54,11 @@ export interface MacroRatioResult {
   readonly freshness: MacroFreshness;
   readonly calculatedAt: string;
   readonly goldSource: { price: number | null; timestamp: string | null; provider: string | null };
-  readonly silverSource: { price: number | null; timestamp: string | null; provider: string | null };
+  readonly silverSource: {
+    price: number | null;
+    timestamp: string | null;
+    provider: string | null;
+  };
   readonly reason: string | null;
   readonly version: string;
 }

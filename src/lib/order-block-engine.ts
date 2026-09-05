@@ -17,11 +17,7 @@ import { analyzeStructure } from "./market-structure";
 
 export type OrderBlockDirection = "bullish" | "bearish";
 
-export type OrderBlockStatus =
-  | "active"
-  | "mitigated"
-  | "breaker"
-  | "invalidated";
+export type OrderBlockStatus = "active" | "mitigated" | "breaker" | "invalidated";
 
 export type OrderBlock = {
   direction: OrderBlockDirection;
@@ -54,10 +50,7 @@ function isBear(c: Candle): boolean {
   return c.c < c.o;
 }
 
-export function detectOrderBlocks(
-  candles: Candle[],
-  opts: OrderBlockOptions = {},
-): OrderBlock[] {
+export function detectOrderBlocks(candles: Candle[], opts: OrderBlockOptions = {}): OrderBlock[] {
   const lookback = opts.lookback ?? 2;
   const anchorWindow = opts.anchorWindow ?? 20;
   const { events } = analyzeStructure(candles, lookback);
@@ -67,11 +60,7 @@ export function detectOrderBlocks(
   for (const ev of events) {
     const isBull_ = ev.direction === "bull";
     let anchor = -1;
-    for (
-      let k = ev.index - 1;
-      k >= Math.max(0, ev.index - anchorWindow);
-      k--
-    ) {
+    for (let k = ev.index - 1; k >= Math.max(0, ev.index - anchorWindow); k--) {
       const cc = candles[k];
       if (isBull_ ? isBear(cc) : isBull(cc)) {
         anchor = k;

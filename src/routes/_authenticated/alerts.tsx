@@ -23,13 +23,18 @@ export const Route = createFileRoute("/_authenticated/alerts")({
   head: () => ({
     meta: [
       { title: "Alert Center · Research Signals" },
-      { name: "description", content: "Deterministic canonical-signal alerts. Research only — no trade execution." },
+      {
+        name: "description",
+        content: "Deterministic canonical-signal alerts. Research only — no trade execution.",
+      },
     ],
   }),
   errorComponent: ({ error, reset }) => (
     <div className="p-6 text-sm text-red-300">
       <p>Alert Center unavailable: {(error as Error).message}</p>
-      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">Retry</button>
+      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
+        Retry
+      </button>
     </div>
   ),
   notFoundComponent: () => <div className="p-6">Not found</div>,
@@ -148,7 +153,11 @@ function AlertCenterPage() {
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background p-2 text-xs">
-            <div role="tablist" aria-label="Alert filter" className="flex overflow-hidden rounded-md border border-border/60">
+            <div
+              role="tablist"
+              aria-label="Alert filter"
+              className="flex overflow-hidden rounded-md border border-border/60"
+            >
               {(["unread", "all", "dismissed"] as const).map((k) => (
                 <button
                   key={k}
@@ -171,7 +180,9 @@ function AlertCenterPage() {
               >
                 <option value="ALL">All</option>
                 {(["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as AlertPriority[]).map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </label>
@@ -185,7 +196,9 @@ function AlertCenterPage() {
               >
                 <option value="ALL">All</option>
                 {allAlertTypes().map((t) => (
-                  <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+                  <option key={t} value={t}>
+                    {t.replace(/_/g, " ")}
+                  </option>
                 ))}
               </select>
             </label>
@@ -199,7 +212,9 @@ function AlertCenterPage() {
               >
                 <option value="ALL">All</option>
                 {instrumentOptions.map((i) => (
-                  <option key={i} value={i}>{i}</option>
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
                 ))}
               </select>
             </label>
@@ -220,7 +235,8 @@ function AlertCenterPage() {
           {events.error && <div className="text-sm text-red-300">Failed to load alerts.</div>}
           {events.data && filtered.length === 0 && (
             <div className="rounded-md border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
-              No alerts match the current filters. Press <em>Evaluate now</em> to check current canonical state.
+              No alerts match the current filters. Press <em>Evaluate now</em> to check current
+              canonical state.
             </div>
           )}
           {filtered.map((e) => (
@@ -235,12 +251,17 @@ function AlertCenterPage() {
 
         <aside className="space-y-2 rounded-lg border border-border/60 p-3">
           <h2 className="text-sm font-semibold">Alert types</h2>
-          <p className="text-[11px] text-muted-foreground">Toggle categories you want to receive.</p>
+          <p className="text-[11px] text-muted-foreground">
+            Toggle categories you want to receive.
+          </p>
           <div className="max-h-[65vh] space-y-1 overflow-y-auto pr-1 text-xs">
             {allAlertTypes().map((t) => {
               const on = subscription.data?.types[t] ?? true;
               return (
-                <label key={t} className="flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 hover:bg-muted/40">
+                <label
+                  key={t}
+                  className="flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 hover:bg-muted/40"
+                >
                   <span className="truncate">{t.replace(/_/g, " ")}</span>
                   <input
                     type="checkbox"
@@ -271,12 +292,20 @@ function AlertRow({
   return (
     <article
       className={`rounded-lg border p-3 transition-colors ${
-        row.dismissedAt ? "border-border/40 opacity-60" : unread ? "border-primary/40 bg-primary/5" : "border-border/60"
+        row.dismissedAt
+          ? "border-border/40 opacity-60"
+          : unread
+            ? "border-primary/40 bg-primary/5"
+            : "border-border/60"
       }`}
-      onMouseEnter={() => { if (unread) onRead(); }}
+      onMouseEnter={() => {
+        if (unread) onRead();
+      }}
     >
       <header className="flex items-start gap-2">
-        <span className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium ${PRIORITY_TONE[row.priority]}`}>
+        <span
+          className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium ${PRIORITY_TONE[row.priority]}`}
+        >
           {row.priority}
         </span>
         <div className="min-w-0 flex-1">
@@ -298,7 +327,9 @@ function AlertRow({
       {row.sourceModules.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-muted-foreground">
           {row.sourceModules.map((m) => (
-            <span key={m} className="rounded border border-border/50 px-1.5 py-0.5">{m}</span>
+            <span key={m} className="rounded border border-border/50 px-1.5 py-0.5">
+              {m}
+            </span>
           ))}
         </div>
       )}

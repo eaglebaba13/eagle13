@@ -74,8 +74,7 @@ export function resolveLifecycle(input: LifecycleInput): LifecycleResult {
   const cal = input.calendar ?? WEEKEND_ONLY_CALENDAR;
   const { date, hour, minute } = toIstParts(input.now);
   const cutoff = input.config.signalCutoffIst;
-  const beforeCutoff =
-    hour < cutoff.hour || (hour === cutoff.hour && minute < cutoff.minute);
+  const beforeCutoff = hour < cutoff.hour || (hour === cutoff.hour && minute < cutoff.minute);
   const isTradingDay = cal.isTradingDay(date);
   const nextTradingDate = cal.nextTradingDay(date);
 

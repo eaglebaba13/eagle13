@@ -56,7 +56,11 @@ export function evaluateLaunchReadiness(input: LaunchReadinessInput): LaunchRead
     { id: "dashboard-query", label: "Dashboard query", status: pass(input.dashboardQueryPass) },
     { id: "mobile-parity", label: "Mobile parity", status: pass(input.mobileParityPass) },
     { id: "no-mock", label: "No mock data", status: pass(input.noMockData) },
-    { id: "no-stale-actionable", label: "No stale actionable signal", status: pass(input.noStaleActionable) },
+    {
+      id: "no-stale-actionable",
+      label: "No stale actionable signal",
+      status: pass(input.noStaleActionable),
+    },
     {
       id: "option-chain",
       label: "Option-chain readiness",
@@ -83,7 +87,8 @@ export function evaluateLaunchReadiness(input: LaunchReadinessInput): LaunchRead
   let verdict: LaunchVerdict;
   if (requiredFail) verdict = "NOT_READY";
   else if (!input.freshnessPass || !input.noStaleActionable) verdict = "READY_FOR_INTERNAL_TEST";
-  else if (!input.mobileParityPass || !input.optionChainReady) verdict = "READY_FOR_SUBSCRIPTION_PREVIEW";
+  else if (!input.mobileParityPass || !input.optionChainReady)
+    verdict = "READY_FOR_SUBSCRIPTION_PREVIEW";
   else verdict = "PRODUCTION_REVIEW_REQUIRED";
 
   return {

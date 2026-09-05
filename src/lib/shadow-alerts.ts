@@ -57,11 +57,7 @@ export type ShadowEvent = {
   cubeGrade: string | null;
 };
 
-function baseEvent(
-  i: ShadowInputs,
-  stage: ShadowStage,
-  reasons: string[],
-): ShadowEvent {
+function baseEvent(i: ShadowInputs, stage: ShadowStage, reasons: string[]): ShadowEvent {
   return {
     version: SHADOW_ALERT_VERSION,
     labeledAs: "VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION",
@@ -96,10 +92,7 @@ export function computeShadowEvent(i: ShadowInputs): ShadowEvent {
 
   if (!i.providerHealthy) reasons.push("Provider unhealthy");
   if (i.tradingDate !== i.todayIst) reasons.push("Trading date mismatch");
-  if (
-    i.snapshotStatus !== "LOCKED" &&
-    i.snapshotStatus !== "HISTORICAL_LOCKED"
-  )
+  if (i.snapshotStatus !== "LOCKED" && i.snapshotStatus !== "HISTORICAL_LOCKED")
     reasons.push("Snapshot not locked");
   if (i.formulaVersion !== INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1)
     reasons.push("Formula version mismatch");
@@ -116,7 +109,8 @@ export function computeShadowEvent(i: ShadowInputs): ShadowEvent {
   // Cube gating.
   const approved = s.cube.mandatoryPassed && (s.cube.action === "BUY" || s.cube.action === "SELL");
   const pivotOk = i.level.safety === "SAFE" || i.level.pivotConfluence !== "NONE";
-  if (!approved) return baseEvent(i, "WAIT", s.cube.reasons.length ? s.cube.reasons : ["Cube not approved"]);
+  if (!approved)
+    return baseEvent(i, "WAIT", s.cube.reasons.length ? s.cube.reasons : ["Cube not approved"]);
   if (!pivotOk) return baseEvent(i, "WAIT", ["Risky level without pivot confirmation"]);
 
   if (s.retestIndex != null && s.entry != null && i.lastCandleClosed)
@@ -134,10 +128,7 @@ export function computeShadowEvent(i: ShadowInputs): ShadowEvent {
 
 export const SHADOW_HISTORY_LIMIT = 100;
 
-export function appendShadowHistory(
-  history: ShadowEvent[],
-  event: ShadowEvent,
-): ShadowEvent[] {
+export function appendShadowHistory(history: ShadowEvent[], event: ShadowEvent): ShadowEvent[] {
   const next = [...history, event];
   return next.slice(-SHADOW_HISTORY_LIMIT);
 }

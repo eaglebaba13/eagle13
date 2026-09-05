@@ -1,8 +1,7 @@
 // Phase 43 — INDmoney referral constants.
 // Public information; safe to ship in client bundle.
 
-export const INDMONEY_REFERRAL_URL =
-  "https://indmoney.onelink.me/RmHC/0mewvsqe";
+export const INDMONEY_REFERRAL_URL = "https://indmoney.onelink.me/RmHC/0mewvsqe";
 export const INDMONEY_REFERRAL_CODE = "QUJLFDEOIND";
 export const REFERRAL_REWARD_DAYS = 7;
 export const REFERRAL_REQUEST_TTL_DAYS = 30;

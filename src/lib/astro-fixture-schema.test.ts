@@ -17,10 +17,18 @@ const mk = (over: Partial<ExtendedReferenceFixture> = {}): ExtendedReferenceFixt
   ayanamsha: 24.15,
   nodeMode: "mean",
   moonConvention: "geocentric",
-  planets: [{
-    planet: "Sun", siderealLongitude: 256.32, sign: "Sagittarius", degreeInSign: 16.32,
-    nakshatra: "Purva Ashadha", pada: 3, retrograde: false, source: "swiss",
-  }],
+  planets: [
+    {
+      planet: "Sun",
+      siderealLongitude: 256.32,
+      sign: "Sagittarius",
+      degreeInSign: 16.32,
+      nakshatra: "Purva Ashadha",
+      pada: 3,
+      retrograde: false,
+      source: "swiss",
+    },
+  ],
   ...over,
 });
 
@@ -36,24 +44,70 @@ describe("Phase 21.0C · fixture schema validation", () => {
     expect(v.errors.some((e) => e.path === "nodeMode")).toBe(true);
   });
   it("rejects out-of-range longitude", () => {
-    const v = validateFixture(mk({
-      planets: [{ planet: "Sun", siderealLongitude: 400, sign: "Sagittarius", degreeInSign: 10, nakshatra: "Purva Ashadha", pada: 3, retrograde: false, source: "s" }],
-    }));
+    const v = validateFixture(
+      mk({
+        planets: [
+          {
+            planet: "Sun",
+            siderealLongitude: 400,
+            sign: "Sagittarius",
+            degreeInSign: 10,
+            nakshatra: "Purva Ashadha",
+            pada: 3,
+            retrograde: false,
+            source: "s",
+          },
+        ],
+      }),
+    );
     expect(v.ok).toBe(false);
   });
   it("rejects unknown nakshatra", () => {
-    const v = validateFixture(mk({
-      planets: [{ planet: "Sun", siderealLongitude: 256, sign: "Sagittarius", degreeInSign: 16, nakshatra: "Bogus", pada: 3, retrograde: false, source: "s" }],
-    }));
+    const v = validateFixture(
+      mk({
+        planets: [
+          {
+            planet: "Sun",
+            siderealLongitude: 256,
+            sign: "Sagittarius",
+            degreeInSign: 16,
+            nakshatra: "Bogus",
+            pada: 3,
+            retrograde: false,
+            source: "s",
+          },
+        ],
+      }),
+    );
     expect(v.ok).toBe(false);
   });
   it("warns when Rahu/Ketu not opposite", () => {
-    const v = validateFixture(mk({
-      planets: [
-        { planet: "Rahu", siderealLongitude: 100, sign: "Cancer", degreeInSign: 10, nakshatra: "Pushya", pada: 1, retrograde: true, source: "s" },
-        { planet: "Ketu", siderealLongitude: 250, sign: "Sagittarius", degreeInSign: 10, nakshatra: "Purva Ashadha", pada: 1, retrograde: true, source: "s" },
-      ],
-    }));
+    const v = validateFixture(
+      mk({
+        planets: [
+          {
+            planet: "Rahu",
+            siderealLongitude: 100,
+            sign: "Cancer",
+            degreeInSign: 10,
+            nakshatra: "Pushya",
+            pada: 1,
+            retrograde: true,
+            source: "s",
+          },
+          {
+            planet: "Ketu",
+            siderealLongitude: 250,
+            sign: "Sagittarius",
+            degreeInSign: 10,
+            nakshatra: "Purva Ashadha",
+            pada: 1,
+            retrograde: true,
+            source: "s",
+          },
+        ],
+      }),
+    );
     expect(v.warnings.some((w) => w.path === "planets.rahu_ketu")).toBe(true);
   });
   it("detects duplicate fixture IDs and source|timestamp|mode combos", () => {

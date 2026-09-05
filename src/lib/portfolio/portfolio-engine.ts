@@ -138,11 +138,17 @@ function checkSafetyGates(
   // formula-version consistency is informational (mixed portfolios OK)
   const formulas = new Set(assets.map((a) => a.formulaVersion));
   if (formulas.size > 1) {
-    warnings.push({ code: "MULTIPLE_FORMULAS", message: `${formulas.size} formula versions mixed`, severity: "info" });
+    warnings.push({
+      code: "MULTIPLE_FORMULAS",
+      message: `${formulas.size} formula versions mixed`,
+      severity: "info",
+    });
   }
 
-  if (config.constraints.minDiversificationCount != null &&
-      assets.length < config.constraints.minDiversificationCount) {
+  if (
+    config.constraints.minDiversificationCount != null &&
+    assets.length < config.constraints.minDiversificationCount
+  ) {
     blocking.push(`MIN_DIVERSIFICATION_COUNT<${config.constraints.minDiversificationCount}`);
   }
 
@@ -189,7 +195,13 @@ export function runPortfolioResearch(input: PortfolioRunInput): PortfolioResearc
 
   const correlations = computeCorrelations(candidates);
   const riskContributions = computeRiskContributions(candidates, alloc.allocations, correlations);
-  const metrics = computePortfolioMetrics(candidates, alloc.allocations, config.startingCapital, equityCurve, trades);
+  const metrics = computePortfolioMetrics(
+    candidates,
+    alloc.allocations,
+    config.startingCapital,
+    equityCurve,
+    trades,
+  );
 
   // Correlation constraint check
   if (config.constraints.maxCorrelatedExposure != null && correlations.assetIds.length >= 2) {
@@ -210,8 +222,10 @@ export function runPortfolioResearch(input: PortfolioRunInput): PortfolioResearc
     }
   }
 
-  if (config.constraints.maxPortfolioDrawdown != null &&
-      metrics.maxDrawdownPct > config.constraints.maxPortfolioDrawdown) {
+  if (
+    config.constraints.maxPortfolioDrawdown != null &&
+    metrics.maxDrawdownPct > config.constraints.maxPortfolioDrawdown
+  ) {
     gates.warnings.push({
       code: "PORTFOLIO_DRAWDOWN_EXCEEDED",
       message: `${(metrics.maxDrawdownPct * 100).toFixed(1)}% > ${(config.constraints.maxPortfolioDrawdown * 100).toFixed(1)}%`,
@@ -219,7 +233,11 @@ export function runPortfolioResearch(input: PortfolioRunInput): PortfolioResearc
     });
   }
 
-  const runId = computePortfolioRunId(candidates, config, candidates.map((a) => a.dataHash ?? ""));
+  const runId = computePortfolioRunId(
+    candidates,
+    config,
+    candidates.map((a) => a.dataHash ?? ""),
+  );
 
   const effectiveN = alloc.allocations.filter((a) => a.weight > 0).length;
   const instrumentWeights = new Map<string, number>();
@@ -227,7 +245,10 @@ export function runPortfolioResearch(input: PortfolioRunInput): PortfolioResearc
   for (const a of alloc.allocations) {
     const asset = candidates.find((c) => c.id === a.assetId);
     if (!asset) continue;
-    instrumentWeights.set(asset.instrument, (instrumentWeights.get(asset.instrument) ?? 0) + a.weight);
+    instrumentWeights.set(
+      asset.instrument,
+      (instrumentWeights.get(asset.instrument) ?? 0) + a.weight,
+    );
     tfWeights.set(asset.timeframe, (tfWeights.get(asset.timeframe) ?? 0) + a.weight);
   }
   const hhi = (arr: number[]) => {

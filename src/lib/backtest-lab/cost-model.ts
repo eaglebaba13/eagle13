@@ -44,11 +44,7 @@ export function computeFee(
   }
 }
 
-export function applySlippage(
-  model: SlippageModel,
-  price: number,
-  side: "BUY" | "SELL",
-): number {
+export function applySlippage(model: SlippageModel, price: number, side: "BUY" | "SELL"): number {
   const dir = side === "BUY" ? 1 : -1;
   switch (model.kind) {
     case "ZERO":

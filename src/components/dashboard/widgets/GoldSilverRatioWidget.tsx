@@ -7,10 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Scale } from "lucide-react";
 import { getCollectorGoldSilverRatio } from "@/lib/tradingview/tradingview.functions";
 import { safeProviderLabel } from "@/lib/provider-labels";
-import type {
-  CollectorSnapshot,
-  CollectorSignal,
-} from "@/lib/tradingview/snapshot-contract";
+import type { CollectorSnapshot, CollectorSignal } from "@/lib/tradingview/snapshot-contract";
 
 const BUY_GOLD_THRESHOLD = 50;
 const BUY_SILVER_THRESHOLD = 80;
@@ -37,8 +34,7 @@ const SIGNAL_TONE: Record<CollectorSignal, string> = {
 function RatioScale({ ratio }: { ratio: number | null }) {
   const min = 30;
   const max = 100;
-  const clamped =
-    ratio == null ? null : Math.max(min, Math.min(max, ratio));
+  const clamped = ratio == null ? null : Math.max(min, Math.min(max, ratio));
   const pos = (v: number) => ((v - min) / (max - min)) * 100;
   return (
     <div className="mt-3" aria-hidden>
@@ -60,7 +56,9 @@ function RatioScale({ ratio }: { ratio: number | null }) {
       </div>
       <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
         <span>BUY GOLD · &lt; {BUY_GOLD_THRESHOLD}</span>
-        <span>NEUTRAL {BUY_GOLD_THRESHOLD}–{BUY_SILVER_THRESHOLD}</span>
+        <span>
+          NEUTRAL {BUY_GOLD_THRESHOLD}–{BUY_SILVER_THRESHOLD}
+        </span>
         <span>BUY SILVER · &gt; {BUY_SILVER_THRESHOLD}</span>
       </div>
     </div>
@@ -72,8 +70,8 @@ function Methodology() {
     <details className="mt-3 rounded border border-border/40 bg-card/30 p-2 text-[11px] text-muted-foreground">
       <summary className="cursor-pointer font-medium text-foreground">Methodology</summary>
       <p className="mt-1">
-        Sourced from TradingView symbol <code>TVC:GOLDSILVER</code> via a dedicated Node
-        collector service (server-to-server, bearer authenticated).
+        Sourced from TradingView symbol <code>TVC:GOLDSILVER</code> via a dedicated Node collector
+        service (server-to-server, bearer authenticated).
       </p>
       <ul className="mt-1 list-disc pl-4">
         <li>Above 80 — Silver is relatively cheaper (BUY SILVER).</li>
@@ -102,9 +100,7 @@ export function GoldSilverRatioWidget() {
   const srSignal = SIGNAL_LABEL[signal];
   const srRatio = data?.ratio == null ? "unavailable" : formatRatio(data.ratio);
   const freshness = data?.freshness ?? "UNAVAILABLE";
-  const reason =
-    data?.reason ??
-    (isUnavail ? "Gold/Silver Ratio provider unavailable" : null);
+  const reason = data?.reason ?? (isUnavail ? "Gold/Silver Ratio provider unavailable" : null);
 
   return (
     <div
@@ -160,9 +156,7 @@ export function GoldSilverRatioWidget() {
         <Row
           label="Market timestamp"
           value={
-            data?.marketTimestamp
-              ? new Date(data.marketTimestamp * 1000).toLocaleTimeString()
-              : "—"
+            data?.marketTimestamp ? new Date(data.marketTimestamp * 1000).toLocaleTimeString() : "—"
           }
         />
         <Row
@@ -172,10 +166,7 @@ export function GoldSilverRatioWidget() {
         <Row label="Freshness" value={freshness} />
         <Row label="Connection" value={data?.connectionStatus ?? "—"} />
         <Row label="Formula" value={data?.formulaVersion ?? "GS_RATIO_50_80_V1"} />
-        <Row
-          label="Age"
-          value={data?.ageMs != null ? `${Math.round(data.ageMs / 1000)}s` : "—"}
-        />
+        <Row label="Age" value={data?.ageMs != null ? `${Math.round(data.ageMs / 1000)}s` : "—"} />
       </dl>
 
       <RatioScale ratio={data?.ratio ?? null} />
@@ -187,9 +178,7 @@ export function GoldSilverRatioWidget() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border border-border/40 bg-card/30 px-2 py-1">
-      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 truncate font-medium text-foreground">{value}</dd>
     </div>
   );

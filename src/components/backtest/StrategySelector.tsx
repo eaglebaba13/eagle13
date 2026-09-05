@@ -30,9 +30,7 @@ export function StrategySelector({ value, onChange, className }: StrategySelecto
             aria-disabled={disabled}
             disabled={disabled}
             onClick={() => !disabled && onChange(s.strategyId)}
-            title={
-              disabled ? "COMING NEXT — engine adapter not yet wired" : s.methodology
-            }
+            title={disabled ? "COMING NEXT — engine adapter not yet wired" : s.methodology}
             className={[
               "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
               active

@@ -83,7 +83,8 @@ class BaseSimulatedAdapter implements BrokerAdapter {
   async connect(credentials?: Record<string, string>): Promise<BrokerProfile> {
     this.status = "CONNECTING";
     await new Promise((r) => setTimeout(r, 250));
-    const clientId = credentials?.clientId?.trim() || `SIM${Math.floor(Math.random() * 90000 + 10000)}`;
+    const clientId =
+      credentials?.clientId?.trim() || `SIM${Math.floor(Math.random() * 90000 + 10000)}`;
     this.profile = {
       brokerId: this.brokerId,
       brokerName: this.brokerName,
@@ -106,7 +107,8 @@ class BaseSimulatedAdapter implements BrokerAdapter {
   }
 
   private assertConnected() {
-    if (!this.isConnected() || !this.profile) throw new Error(`${this.brokerName} is not connected`);
+    if (!this.isConnected() || !this.profile)
+      throw new Error(`${this.brokerName} is not connected`);
   }
 
   async getProfile() {
@@ -155,7 +157,12 @@ class BaseSimulatedAdapter implements BrokerAdapter {
     this.assertConnected();
     const idx = this.orders.findIndex((o) => o.orderId === orderId);
     if (idx < 0) throw new Error("Order not found");
-    const updated: Order = { ...this.orders[idx], ...patch, status: "MODIFIED", updatedAt: nowIso() };
+    const updated: Order = {
+      ...this.orders[idx],
+      ...patch,
+      status: "MODIFIED",
+      updatedAt: nowIso(),
+    };
     this.orders[idx] = updated;
     return updated;
   }
@@ -177,7 +184,13 @@ class BaseSimulatedAdapter implements BrokerAdapter {
     const taxes = estimateTaxes(req, notional);
     const totalCost = brokerage + taxes;
     const breakEven = req.quantity > 0 ? totalCost / req.quantity : 0;
-    return { requiredMargin, brokerage, taxes, totalCost, breakEven: Math.round(breakEven * 100) / 100 };
+    return {
+      requiredMargin,
+      brokerage,
+      taxes,
+      totalCost,
+      breakEven: Math.round(breakEven * 100) / 100,
+    };
   }
 
   async healthCheck(): Promise<BrokerHealth> {

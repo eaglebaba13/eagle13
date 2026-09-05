@@ -16,7 +16,11 @@ export const Route = createFileRoute("/_authenticated/multi-asset-intelligence")
   head: () => ({
     meta: [
       { title: "Multi-Asset Intelligence · EagleBABA" },
-      { name: "description", content: "Daily multi-asset intelligence brief with pivot levels, Gann, Astro, macro ratio and morning Telegram delivery status." },
+      {
+        name: "description",
+        content:
+          "Daily multi-asset intelligence brief with pivot levels, Gann, Astro, macro ratio and morning Telegram delivery status.",
+      },
     ],
   }),
   component: MultiAssetIntelligencePage,
@@ -84,18 +88,28 @@ function MultiAssetIntelligencePage() {
             <p className="text-destructive flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Unable to load latest report.
-              <button className="underline" onClick={() => router.invalidate()}>Retry</button>
+              <button className="underline" onClick={() => router.invalidate()}>
+                Retry
+              </button>
             </p>
           )}
           {record && payload && (
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-muted-foreground text-xs uppercase tracking-wide">Report</p>
-                <p><code>{payload.reportId}</code></p>
+                <p>
+                  <code>{payload.reportId}</code>
+                </p>
                 <p className="text-muted-foreground text-xs mt-2">Data quality</p>
-                <p><Badge variant="outline">{record.dataQuality}</Badge></p>
+                <p>
+                  <Badge variant="outline">{record.dataQuality}</Badge>
+                </p>
                 <p className="text-muted-foreground text-xs mt-2">Generated</p>
-                <p>{new Date(payload.generatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p>
+                  {new Date(payload.generatedAt).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                  })}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-xs uppercase tracking-wide">Macro ratio</p>
@@ -104,7 +118,8 @@ function MultiAssetIntelligencePage() {
                   {" · "}Bias: <Badge>{payload.ratio.macroBias}</Badge>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Configured thresholds: {payload.ratio.lowerThreshold} / {payload.ratio.upperThreshold}
+                  Configured thresholds: {payload.ratio.lowerThreshold} /{" "}
+                  {payload.ratio.upperThreshold}
                 </p>
                 <p className="text-muted-foreground text-xs mt-2">Telegram delivery</p>
                 <p>
@@ -118,19 +133,35 @@ function MultiAssetIntelligencePage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Coverage matrix</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Coverage matrix</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p><strong>NIFTY / BANKNIFTY</strong>: Pivot · Gann · Astro (validated).</p>
-          <p><strong>XAUUSD / XAGUSD</strong>: Pivot · macro ratio. Gann & Astro coverage: UNAVAILABLE in this release.</p>
-          <p><strong>BTC / ETH (24×7)</strong>: Pivot only. Gann & Astro coverage: UNAVAILABLE.</p>
-          <p><strong>GOLD / SILVER (spot)</strong>: Reserved for future physical-metal provider wiring.</p>
+          <p>
+            <strong>NIFTY / BANKNIFTY</strong>: Pivot · Gann · Astro (validated).
+          </p>
+          <p>
+            <strong>XAUUSD / XAGUSD</strong>: Pivot · macro ratio. Gann & Astro coverage:
+            UNAVAILABLE in this release.
+          </p>
+          <p>
+            <strong>BTC / ETH (24×7)</strong>: Pivot only. Gann & Astro coverage: UNAVAILABLE.
+          </p>
+          <p>
+            <strong>GOLD / SILVER (spot)</strong>: Reserved for future physical-metal provider
+            wiring.
+          </p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Disclaimer</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Disclaimer</CardTitle>
+        </CardHeader>
         <CardContent>
-          <pre className="whitespace-pre-wrap text-xs text-muted-foreground">{morningBriefDisclaimer()}</pre>
+          <pre className="whitespace-pre-wrap text-xs text-muted-foreground">
+            {morningBriefDisclaimer()}
+          </pre>
         </CardContent>
       </Card>
     </div>

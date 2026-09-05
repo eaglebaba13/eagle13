@@ -153,7 +153,16 @@ export function CustomizeDashboardDrawer({
             >
               {section}
             </h3>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
               {items.map((w) => {
                 const required = REQUIRED_WIDGET_IDS.includes(w.id) || w.required;
                 const hidden = isHidden(prefs, w.id);
@@ -174,7 +183,10 @@ export function CustomizeDashboardDrawer({
                     <span style={{ flex: 1, fontSize: 13 }}>
                       {w.title}
                       {required ? (
-                        <span style={{ fontSize: 9, marginLeft: 6, color: "var(--eb-neutral)" }} aria-label="Required widget">
+                        <span
+                          style={{ fontSize: 9, marginLeft: 6, color: "var(--eb-neutral)" }}
+                          aria-label="Required widget"
+                        >
                           REQUIRED
                         </span>
                       ) : null}

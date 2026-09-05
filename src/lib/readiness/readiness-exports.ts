@@ -40,11 +40,7 @@ export function categoryCsv(r: ProductionReadinessReport, cat: string): string {
 
 export function fullReadinessJson(r: ProductionReadinessReport): string {
   // JSON.stringify with a reviver that redacts any string leaves.
-  return JSON.stringify(
-    r,
-    (_k, v) => (typeof v === "string" ? redactSecretLike(v) : v),
-    2,
-  );
+  return JSON.stringify(r, (_k, v) => (typeof v === "string" ? redactSecretLike(v) : v), 2);
 }
 
 export function deploymentEvidenceBundle(r: ProductionReadinessReport): string {

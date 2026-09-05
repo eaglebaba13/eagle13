@@ -92,7 +92,8 @@ export function resolveEffectivePlan(ctx: UserEntitlementContext): EffectivePlan
     };
   }
 
-  const isTrial = sub.status === "trialing" && !!sub.trialEnd && sub.trialEnd.getTime() > now.getTime();
+  const isTrial =
+    sub.status === "trialing" && !!sub.trialEnd && sub.trialEnd.getTime() > now.getTime();
   const trialExpired = sub.status === "trialing" && !isTrial;
   const periodExpired =
     !!sub.currentPeriodEnd &&
@@ -115,10 +116,7 @@ export function resolveEffectivePlan(ctx: UserEntitlementContext): EffectivePlan
     : sub.status;
 
   const canAccessPremium =
-    !blocked &&
-    (sub.status === "active" ||
-      sub.status === "trialing" ||
-      sub.status === "past_due");
+    !blocked && (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
 
   return {
     plan: PLANS[effectiveId],
@@ -137,10 +135,7 @@ export function resolveEffectivePlan(ctx: UserEntitlementContext): EffectivePlan
 /**
  * The one entitlement check every feature MUST use.
  */
-export function hasEntitlement(
-  ctx: UserEntitlementContext,
-  capability: Capability,
-): boolean {
+export function hasEntitlement(ctx: UserEntitlementContext, capability: Capability): boolean {
   if (ctx.grantedCapabilities?.includes(capability)) return true;
   const effective = resolveEffectivePlan(ctx);
   return effective.plan.capabilities.includes(capability);

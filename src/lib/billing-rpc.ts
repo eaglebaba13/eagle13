@@ -56,11 +56,7 @@ export async function selfSetCancelAtPeriodEnd(flag: boolean): Promise<void> {
  * user is at the plan cap. Callers MUST await this BEFORE performing the
  * gated action.
  */
-export async function consumeUsage(
-  resource: string,
-  period: string,
-  max: number,
-): Promise<number> {
+export async function consumeUsage(resource: string, period: string, max: number): Promise<number> {
   const { data, error } = await supabase.rpc("consume_usage", {
     _resource: resource,
     _period: period,

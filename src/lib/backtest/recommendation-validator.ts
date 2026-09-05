@@ -9,25 +9,15 @@
 // recommendation engine itself.
 
 import type { MarketRegime } from "./market-regime";
-import type {
-  RecommendationStatus,
-  RecommendationStrategyId,
-} from "./regime-recommendation";
+import type { RecommendationStatus, RecommendationStrategyId } from "./regime-recommendation";
 
-export const RECOMMENDATION_VALIDATOR_VERSION =
-  "RECOMMENDATION_VALIDATOR_V1" as const;
+export const RECOMMENDATION_VALIDATOR_VERSION = "RECOMMENDATION_VALIDATOR_V1" as const;
 
-export const RECOMMENDATION_VALIDATOR_DISCLAIMER =
-  "RESEARCH VALIDATION — NOT A LIVE TRADE SIGNAL";
+export const RECOMMENDATION_VALIDATOR_DISCLAIMER = "RESEARCH VALIDATION — NOT A LIVE TRADE SIGNAL";
 
 export type RecommendationOutcome = "WIN" | "LOSS" | "FLAT" | "NO_TRADE";
 
-export type ReliabilityRating =
-  | "EXCELLENT"
-  | "GOOD"
-  | "FAIR"
-  | "POOR"
-  | "UNRELIABLE";
+export type ReliabilityRating = "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "UNRELIABLE";
 
 /**
  * A single historical recommendation observation. The recommendation was
@@ -141,9 +131,7 @@ export type ConfusionMatrix = {
   readonly falseNegativeRate: number;
 };
 
-function buildConfusionMatrix(
-  obs: readonly RecommendationObservation[],
-): ConfusionMatrix {
+function buildConfusionMatrix(obs: readonly RecommendationObservation[]): ConfusionMatrix {
   let tp = 0;
   let fp = 0;
   let tn = 0;
@@ -178,9 +166,7 @@ function buildConfusionMatrix(
 // ---------------------------------------------------------------------------
 // Confidence histogram + calibration buckets.
 
-function buildBuckets(
-  obs: readonly RecommendationObservation[],
-): readonly CalibrationBucket[] {
+function buildBuckets(obs: readonly RecommendationObservation[]): readonly CalibrationBucket[] {
   const acc = BUCKET_EDGES.map(([lo, hi, key]) => ({
     key,
     lower: lo,
@@ -235,9 +221,7 @@ function buildBuckets(
  * Expected Calibration Error weighted by sample size across decided
  * observations in the positive-signal buckets.
  */
-function expectedCalibrationError(
-  buckets: readonly CalibrationBucket[],
-): number {
+function expectedCalibrationError(buckets: readonly CalibrationBucket[]): number {
   let totalDecided = 0;
   for (const b of buckets) totalDecided += b.decidedCount;
   if (totalDecided === 0) return 0;
@@ -290,10 +274,7 @@ function driftBy(
   keyOf: (o: RecommendationObservation) => string | null | undefined,
   overall: number,
 ): readonly DriftBucketReport[] {
-  const map = new Map<
-    string,
-    { count: number; decided: number; wins: number }
-  >();
+  const map = new Map<string, { count: number; decided: number; wins: number }>();
   for (const o of obs) {
     const k = keyOf(o);
     if (k == null || k === "") continue;
@@ -330,11 +311,7 @@ function driftBy(
 // ---------------------------------------------------------------------------
 // Reliability rating (transparent thresholds).
 
-function rateReliability(
-  accuracy: number,
-  ece: number,
-  coverage: number,
-): ReliabilityRating {
+function rateReliability(accuracy: number, ece: number, coverage: number): ReliabilityRating {
   if (accuracy >= 0.7 && ece <= 0.05 && coverage >= 0.8) return "EXCELLENT";
   if (accuracy >= 0.6 && ece <= 0.1 && coverage >= 0.6) return "GOOD";
   if (accuracy >= 0.5 && ece <= 0.15 && coverage >= 0.4) return "FAIR";
@@ -466,11 +443,7 @@ export function validateRecommendations(
     byInstrument: driftBy(obs, (o) => o.instrument, accuracy),
     byTimeframe: driftBy(obs, (o) => o.timeframe, accuracy),
     byRegime: driftBy(obs, (o) => o.regime, accuracy),
-    byWindow: driftBy(
-      obs,
-      (o) => (o.window == null ? null : String(o.window)),
-      accuracy,
-    ),
+    byWindow: driftBy(obs, (o) => (o.window == null ? null : String(o.window)), accuracy),
   };
 
   const reliability = rateReliability(accuracy, ece, coverage);
@@ -565,14 +538,7 @@ export function exportValidationCsv(rep: RecommendationValidationReport): string
   rows.push("key,count,decided,accuracy,deltaVsOverall,drift");
   for (const d of rep.drift.byRegime) {
     rows.push(
-      [
-        csvEscape(d.key),
-        d.count,
-        d.decidedCount,
-        d.accuracy,
-        d.deltaVsOverall,
-        d.drift,
-      ].join(","),
+      [csvEscape(d.key), d.count, d.decidedCount, d.accuracy, d.deltaVsOverall, d.drift].join(","),
     );
   }
   return rows.join("\n");

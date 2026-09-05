@@ -6,10 +6,7 @@ import { INTRADAY_FORMULA_VERSIONS } from "../../engine-version";
 import { analyzeSmc } from "../../smc-engine";
 import { analyzeSmcSignals, type SmcSignalDebug } from "../../smc-signal-engine";
 import type { Candle } from "../../smc-types";
-import {
-  smcHistoricalAdapter,
-  DEFAULT_SMC_EXECUTION,
-} from "./smc-historical.adapter";
+import { smcHistoricalAdapter, DEFAULT_SMC_EXECUTION } from "./smc-historical.adapter";
 
 function synthCandles(prices: number[], t0 = Date.UTC(2024, 0, 1, 3, 45)): Candle[] {
   // 5-minute bars starting near NSE open. Each price is used as OHLC=price
@@ -96,12 +93,23 @@ describe("smcHistoricalAdapter — entry / exit", () => {
     const t0 = Date.UTC(2024, 0, 1, 3, 45);
     const step = 5 * 60_000;
     const cs: Candle[] = Array.from({ length: 10 }, (_, i) => ({
-      t: t0 + i * step, o: 100, h: 101, l: 99, c: 100, v: 1000,
+      t: t0 + i * step,
+      o: 100,
+      h: 101,
+      l: 99,
+      c: 100,
+      v: 1000,
     }));
     const signals: SmcSignalDebug[] = cs.map((c, i) => ({
-      index: i, t: c.t, signal: i === 3 ? "SELL" : "WAIT",
-      bias: "bearish", structureDirection: i === 3 ? "bear" : "neutral",
-      score: i === 3 ? 80 : 0, triggeredRules: [], missingRules: [], reasons: [],
+      index: i,
+      t: c.t,
+      signal: i === 3 ? "SELL" : "WAIT",
+      bias: "bearish",
+      structureDirection: i === 3 ? "bear" : "neutral",
+      score: i === 3 ? 80 : 0,
+      triggeredRules: [],
+      missingRules: [],
+      reasons: [],
     }));
     const res = await runUnifiedBacktest({
       strategy: "SMC",
@@ -122,15 +130,24 @@ describe("smcHistoricalAdapter — entry / exit", () => {
     const t0 = Date.UTC(2024, 0, 1, 3, 45);
     const step = 5 * 60_000;
     const cs: Candle[] = Array.from({ length: 30 }, (_, i) => ({
-      t: t0 + i * step, o: 100, h: 100.5, l: 99.5, c: 100, v: 1000,
+      t: t0 + i * step,
+      o: 100,
+      h: 100.5,
+      l: 99.5,
+      c: 100,
+      v: 1000,
     }));
     // Multiple BUYs — only the first must open a trade until it closes.
     const signals: SmcSignalDebug[] = cs.map((c, i) => ({
-      index: i, t: c.t,
-      signal: (i === 2 || i === 3 || i === 4) ? "BUY" : "WAIT",
+      index: i,
+      t: c.t,
+      signal: i === 2 || i === 3 || i === 4 ? "BUY" : "WAIT",
       bias: "bullish",
       structureDirection: i <= 4 ? "bull" : "neutral",
-      score: 80, triggeredRules: [], missingRules: [], reasons: [],
+      score: 80,
+      triggeredRules: [],
+      missingRules: [],
+      reasons: [],
     }));
     const res = await runUnifiedBacktest({
       strategy: "SMC",
@@ -139,7 +156,8 @@ describe("smcHistoricalAdapter — entry / exit", () => {
       from: "2024-01-01",
       to: "2024-01-02",
       extras: {
-        candles: cs, signals,
+        candles: cs,
+        signals,
         execution: { ...DEFAULT_SMC_EXECUTION, rr: 1, stopMode: "swing" },
       },
     });
@@ -154,13 +172,19 @@ describe("smcHistoricalAdapter — Run ID", () => {
   it("produces deterministic SMC_V1-prefixed Run IDs", async () => {
     const empty = { candles: [], signals: [] };
     const a = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-31",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-31",
       extras: empty,
     });
     const b = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-31",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-31",
       extras: empty,
     });
     expect(a.runId).toBe(b.runId);
@@ -198,13 +222,19 @@ describe("smcHistoricalAdapter — cost model", () => {
   it("applies slippage/brokerage/taxes via shared cost model", async () => {
     const { candles, signals } = buyThenWinCandles();
     const zero = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-02",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-02",
       extras: { candles, signals, execution: { ...DEFAULT_SMC_EXECUTION, rr: 1 } },
     });
     const costed = await runUnifiedBacktest({
-      strategy: "SMC", formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
-      instrument: "NIFTY50", from: "2024-01-01", to: "2024-01-02",
+      strategy: "SMC",
+      formula: INTRADAY_FORMULA_VERSIONS.SMC_V1,
+      instrument: "NIFTY50",
+      from: "2024-01-01",
+      to: "2024-01-02",
       costs: { slippagePct: 0.05, brokerageFlat: 20, brokeragePct: 0.03, taxesPct: 0.01 },
       extras: { candles, signals, execution: { ...DEFAULT_SMC_EXECUTION, rr: 1 } },
     });

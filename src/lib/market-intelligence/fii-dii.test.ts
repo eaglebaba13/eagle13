@@ -12,8 +12,24 @@ describe("fii-dii", () => {
   });
   it("aggregates latest and prior day change", () => {
     const r = aggregateFiiDii([
-      { tradeDate: "2025-11-10", fiiBuy: 1, fiiSell: 1, fiiNet: 200, diiBuy: 1, diiSell: 1, diiNet: 300 },
-      { tradeDate: "2025-11-11", fiiBuy: 1, fiiSell: 1, fiiNet: 800, diiBuy: 1, diiSell: 1, diiNet: 900 },
+      {
+        tradeDate: "2025-11-10",
+        fiiBuy: 1,
+        fiiSell: 1,
+        fiiNet: 200,
+        diiBuy: 1,
+        diiSell: 1,
+        diiNet: 300,
+      },
+      {
+        tradeDate: "2025-11-11",
+        fiiBuy: 1,
+        fiiSell: 1,
+        fiiNet: 800,
+        diiBuy: 1,
+        diiSell: 1,
+        diiNet: 900,
+      },
     ]);
     expect(r.latest?.tradeDate).toBe("2025-11-11");
     expect(r.dailyChange).toBe(1200);

@@ -43,13 +43,18 @@ function computeWeights(input: PortfolioInput): Record<string, number> {
     const vols = runs.map((r) => stdev(r.trades.map((t) => t.netPnl)) || 1e-9);
     const invs = vols.map((v) => 1 / v);
     const total = invs.reduce((a, b) => a + b, 0);
-    runs.forEach((r, i) => { weights[r.runId] = total > 0 ? invs[i] / total : 1 / runs.length; });
+    runs.forEach((r, i) => {
+      weights[r.runId] = total > 0 ? invs[i] / total : 1 / runs.length;
+    });
   }
   const cap = input.maxSymbolWeight;
   if (cap && cap > 0 && cap < 1) {
     let capped = false;
     for (const k of Object.keys(weights)) {
-      if (weights[k] > cap) { weights[k] = cap; capped = true; }
+      if (weights[k] > cap) {
+        weights[k] = cap;
+        capped = true;
+      }
     }
     if (capped) {
       const s = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -71,10 +76,15 @@ function correlation(a: readonly number[], b: readonly number[]): number {
   if (n < 2) return 0;
   const ma = a.slice(0, n).reduce((x, y) => x + y, 0) / n;
   const mb = b.slice(0, n).reduce((x, y) => x + y, 0) / n;
-  let num = 0, da = 0, db = 0;
+  let num = 0,
+    da = 0,
+    db = 0;
   for (let i = 0; i < n; i++) {
-    const xa = a[i] - ma, xb = b[i] - mb;
-    num += xa * xb; da += xa * xa; db += xb * xb;
+    const xa = a[i] - ma,
+      xb = b[i] - mb;
+    num += xa * xb;
+    da += xa * xa;
+    db += xb * xb;
   }
   const den = Math.sqrt(da * db);
   return den > 0 ? num / den : 0;

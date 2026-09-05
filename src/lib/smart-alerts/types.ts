@@ -230,8 +230,7 @@ export interface AlertSubscription {
   readonly timezone: string;
 }
 
-export const ALERT_DISCLAIMER =
-  "Research Only — Not Investment Advice — No Execution.";
+export const ALERT_DISCLAIMER = "Research Only — Not Investment Advice — No Execution.";
 
 export interface RuleEvaluationOutput {
   readonly emitted: readonly AlertEvent[];

@@ -105,11 +105,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "EagleBABA | Astro Levels" },
-      { name: "description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
-      { property: "og:description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
-      { name: "twitter:description", content: "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp" },
+      {
+        name: "description",
+        content:
+          "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",
+      },
+      {
+        property: "og:description",
+        content:
+          "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/ov6XDzOo9wOdqnM6be7Xm0tP4mU2/social-images/social-1782990713478-bg_wallpaper.webp",
+      },
     ],
     links: [
       {
@@ -194,11 +214,7 @@ function RootComponent() {
     const isNonCriticalProviderError = (reason: unknown): boolean => {
       if (isProviderError(reason)) return true;
       const msg =
-        reason instanceof Error
-          ? reason.message
-          : typeof reason === "string"
-            ? reason
-            : "";
+        reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "";
       if (!msg) return false;
       return PROVIDER_HINTS.some((h) => msg.includes(h));
     };
@@ -206,10 +222,9 @@ function RootComponent() {
       if (!isNonCriticalProviderError(ev.reason)) return;
       // Report diagnostics but swallow the overlay.
       try {
-        reportLovableError(
-          ev.reason instanceof Error ? ev.reason : new Error(String(ev.reason)),
-          { boundary: "background_provider_rejection" },
-        );
+        reportLovableError(ev.reason instanceof Error ? ev.reason : new Error(String(ev.reason)), {
+          boundary: "background_provider_rejection",
+        });
       } catch {
         /* best-effort */
       }

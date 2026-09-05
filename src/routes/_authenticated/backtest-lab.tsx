@@ -15,7 +15,11 @@ export const Route = createFileRoute("/_authenticated/backtest-lab")({
   head: () => ({
     meta: [
       { title: "Backtest Lab — Strategy Research · EagleBABA" },
-      { name: "description", content: "Deterministic strategy backtesting lab. Research only — historical results do not guarantee future performance." },
+      {
+        name: "description",
+        content:
+          "Deterministic strategy backtesting lab. Research only — historical results do not guarantee future performance.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -27,21 +31,31 @@ function BacktestLabPage() {
   const fetchRuns = useServerFn(listBacktestRuns);
   const fetchDiag = useServerFn(getBacktestLabDiagnostics);
 
-  const strategies = useQuery({ queryKey: ["backtest-lab", "strategies"], queryFn: () => fetchStrategies() });
+  const strategies = useQuery({
+    queryKey: ["backtest-lab", "strategies"],
+    queryFn: () => fetchStrategies(),
+  });
   const runs = useQuery({ queryKey: ["backtest-lab", "runs"], queryFn: () => fetchRuns() });
   const diag = useQuery({ queryKey: ["backtest-lab", "diagnostics"], queryFn: () => fetchDiag() });
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
       <header>
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">BACKTEST LAB · STRATEGY RESEARCH</div>
-        <h1 className="text-xl font-semibold text-foreground">Professional Backtesting &amp; Strategy Lab</h1>
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+          BACKTEST LAB · STRATEGY RESEARCH
+        </div>
+        <h1 className="text-xl font-semibold text-foreground">
+          Professional Backtesting &amp; Strategy Lab
+        </h1>
         <p className="mt-1 text-xs text-muted-foreground">
           Deterministic. Consumer of canonical signals. No formulas modified. No live orders.
         </p>
       </header>
 
-      <div role="note" className="rounded-md border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+      <div
+        role="note"
+        className="rounded-md border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+      >
         {BACKTEST_LAB_DISCLAIMER}
       </div>
 
@@ -51,7 +65,8 @@ function BacktestLabPage() {
             {strategies.data?.length ?? 0} strategy definition(s) in this session.
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Author strategies via the API (createStrategy). The UI builder ships in a follow-up release.
+            Author strategies via the API (createStrategy). The UI builder ships in a follow-up
+            release.
           </p>
         </Card>
         <Card title="Runs">
@@ -62,7 +77,10 @@ function BacktestLabPage() {
         <Card title="Diagnostics">
           {diag.data ? (
             <ul className="text-xs text-muted-foreground space-y-1">
-              <li>Persistence: {diag.data.persistenceAvailable ? "available (in-memory fallback)" : "unavailable"}</li>
+              <li>
+                Persistence:{" "}
+                {diag.data.persistenceAvailable ? "available (in-memory fallback)" : "unavailable"}
+              </li>
               <li>Datasets in use: {diag.data.datasetsInUse.length}</li>
               <li>Timeframes: {diag.data.timeframes.join(", ") || "—"}</li>
               <li>Leakage detections: {diag.data.leakageDetections}</li>

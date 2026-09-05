@@ -34,12 +34,7 @@ const SELF_SHELLED_ROUTES: readonly string[] = [
 ];
 
 // Routes that should NEVER show the shell (pre-auth, embed).
-const NO_SHELL_PREFIXES: readonly string[] = [
-  "/auth",
-  "/api",
-  "/.mcp",
-  "/.well-known",
-];
+const NO_SHELL_PREFIXES: readonly string[] = ["/auth", "/api", "/.mcp", "/.well-known"];
 
 export function shouldSuppressShell(pathname: string): boolean {
   if (!pathname) return true;
@@ -109,7 +104,11 @@ function AppShellHeader() {
             return (
               <li key={`${c.to ?? c.label}-${i}`} className="flex min-w-0 items-center gap-1">
                 {i > 0 ? (
-                  <ChevronRight size={12} className="shrink-0 text-muted-foreground/50" aria-hidden />
+                  <ChevronRight
+                    size={12}
+                    className="shrink-0 text-muted-foreground/50"
+                    aria-hidden
+                  />
                 ) : (
                   <Home size={13} className="shrink-0 text-muted-foreground" aria-hidden />
                 )}

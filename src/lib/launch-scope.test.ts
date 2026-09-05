@@ -15,7 +15,16 @@ describe("launch-scope", () => {
   });
 
   it("hides commodities and crypto", () => {
-    for (const s of ["GOLD", "SILVER", "CRUDEOIL", "NATURAL_GAS", "XAUUSD", "XAGUSD", "BTC", "ETH"]) {
+    for (const s of [
+      "GOLD",
+      "SILVER",
+      "CRUDEOIL",
+      "NATURAL_GAS",
+      "XAUUSD",
+      "XAGUSD",
+      "BTC",
+      "ETH",
+    ]) {
       expect(isHiddenMarket(s)).toBe(true);
       expect(isActiveMarket(s)).toBe(false);
       expect(marketVisibility(s)).toBe("HIDDEN");

@@ -5,9 +5,7 @@ import { READINESS_GATE_VERSION } from "./engine-version";
 import type { CoreMetrics, CubeGrade } from "./gann-intraday-metrics";
 
 export type ReadinessVerdict =
-  | "NOT_READY"
-  | "READY_FOR_LIMITED_BETA"
-  | "READY_FOR_PRODUCTION_REVIEW";
+  "NOT_READY" | "READY_FOR_LIMITED_BETA" | "READY_FOR_PRODUCTION_REVIEW";
 
 export type ReadinessCheck = {
   id: string;

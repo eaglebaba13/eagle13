@@ -125,14 +125,7 @@ const FALLBACK_MASTER: Readonly<Record<string, UpstoxInstrument>> = {
 };
 
 export type UpstoxSupportedSymbol =
-  | "NIFTY50"
-  | "BANKNIFTY"
-  | "INDIA_VIX"
-  | "GOLD"
-  | "SILVER"
-  | "CRUDEOIL"
-  | "NATURAL_GAS"
-  | "USDINR";
+  "NIFTY50" | "BANKNIFTY" | "INDIA_VIX" | "GOLD" | "SILVER" | "CRUDEOIL" | "NATURAL_GAS" | "USDINR";
 
 export const UPSTOX_SUPPORTED_SYMBOLS: readonly UpstoxSupportedSymbol[] = [
   "NIFTY50",
@@ -149,9 +142,7 @@ export function isUpstoxSupported(sym: string): sym is UpstoxSupportedSymbol {
   return (UPSTOX_SUPPORTED_SYMBOLS as readonly string[]).includes(sym);
 }
 
-export function resolveInstrument(
-  sym: QuoteSymbol | string,
-): UpstoxInstrument | null {
+export function resolveInstrument(sym: QuoteSymbol | string): UpstoxInstrument | null {
   if (typeof sym !== "string") return null;
   return FALLBACK_MASTER[sym] ?? null;
 }

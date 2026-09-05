@@ -35,8 +35,12 @@ export function summariseBugs(bugs: readonly BugReport[]): BugSummary {
     byPriority[b.priority] += 1;
     byStatus[b.status] += 1;
   }
-  const openCritical = bugs.filter((b) => b.priority === "CRITICAL" && (b.status === "OPEN" || b.status === "IN_PROGRESS")).length;
-  const openHigh = bugs.filter((b) => b.priority === "HIGH" && (b.status === "OPEN" || b.status === "IN_PROGRESS")).length;
+  const openCritical = bugs.filter(
+    (b) => b.priority === "CRITICAL" && (b.status === "OPEN" || b.status === "IN_PROGRESS"),
+  ).length;
+  const openHigh = bugs.filter(
+    (b) => b.priority === "HIGH" && (b.status === "OPEN" || b.status === "IN_PROGRESS"),
+  ).length;
   return {
     total: bugs.length,
     byPriority,
@@ -48,12 +52,7 @@ export function summariseBugs(bugs: readonly BugReport[]): BugSummary {
 }
 
 export type FeedbackCategory =
-  | "UI"
-  | "USABILITY"
-  | "PERFORMANCE"
-  | "UNDERSTANDING"
-  | "FEATURE_REQUEST"
-  | "PAIN_POINT";
+  "UI" | "USABILITY" | "PERFORMANCE" | "UNDERSTANDING" | "FEATURE_REQUEST" | "PAIN_POINT";
 
 export interface FeedbackEntry {
   readonly id: string;
@@ -98,10 +97,7 @@ export function summariseFeedback(entries: readonly FeedbackEntry[]): FeedbackSu
 }
 
 export type CrashKind =
-  | "UNHANDLED_EXCEPTION"
-  | "PROVIDER_FAILURE"
-  | "RENDER_FAILURE"
-  | "API_FAILURE";
+  "UNHANDLED_EXCEPTION" | "PROVIDER_FAILURE" | "RENDER_FAILURE" | "API_FAILURE";
 
 export interface CrashEvent {
   readonly id: string;
@@ -126,7 +122,10 @@ const CK: readonly CrashKind[] = [
   "API_FAILURE",
 ];
 
-export function summariseCrashes(events: readonly CrashEvent[], now: Date = new Date()): CrashSummary {
+export function summariseCrashes(
+  events: readonly CrashEvent[],
+  now: Date = new Date(),
+): CrashSummary {
   const byKind = Object.fromEntries(CK.map((k) => [k, 0])) as Record<CrashKind, number>;
   const routeCount = new Map<string, number>();
   const cutoff = now.getTime() - 24 * 60 * 60 * 1000;
@@ -138,7 +137,11 @@ export function summariseCrashes(events: readonly CrashEvent[], now: Date = new 
   }
   let topRoute: string | null = null;
   let topN = 0;
-  for (const [r, n] of routeCount) if (n > topN) { topRoute = r; topN = n; }
+  for (const [r, n] of routeCount)
+    if (n > topN) {
+      topRoute = r;
+      topN = n;
+    }
   return { total: events.length, byKind, last24h, topRoute };
 }
 
@@ -155,7 +158,9 @@ export interface ProviderStabilityRow extends ProviderStabilitySample {
   readonly rating: "HEALTHY" | "DEGRADED" | "UNSTABLE";
 }
 
-export function rateProviderStability(samples: readonly ProviderStabilitySample[]): readonly ProviderStabilityRow[] {
+export function rateProviderStability(
+  samples: readonly ProviderStabilitySample[],
+): readonly ProviderStabilityRow[] {
   return samples.map((s) => {
     const total = s.successes + s.failures;
     const errorRate = total === 0 ? 0 : s.failures / total;
@@ -201,19 +206,79 @@ export interface RoadmapItem {
 }
 
 export const V1_0_1_SCOPE: readonly RoadmapItem[] = [
-  { id: "hydration-warnings", title: "Eliminate remaining hydration warnings", targetVersion: "1.0.1", type: "BUG_FIX", status: "PLANNED" },
-  { id: "provider-retry-backoff", title: "Tighten provider retry/backoff windows", targetVersion: "1.0.1", type: "PERFORMANCE", status: "PLANNED" },
-  { id: "dashboard-empty-copy", title: "Polish empty-state copy across dashboard", targetVersion: "1.0.1", type: "BUG_FIX", status: "PLANNED" },
-  { id: "security-headers", title: "Verify security headers on all edge routes", targetVersion: "1.0.1", type: "SECURITY", status: "PLANNED" },
+  {
+    id: "hydration-warnings",
+    title: "Eliminate remaining hydration warnings",
+    targetVersion: "1.0.1",
+    type: "BUG_FIX",
+    status: "PLANNED",
+  },
+  {
+    id: "provider-retry-backoff",
+    title: "Tighten provider retry/backoff windows",
+    targetVersion: "1.0.1",
+    type: "PERFORMANCE",
+    status: "PLANNED",
+  },
+  {
+    id: "dashboard-empty-copy",
+    title: "Polish empty-state copy across dashboard",
+    targetVersion: "1.0.1",
+    type: "BUG_FIX",
+    status: "PLANNED",
+  },
+  {
+    id: "security-headers",
+    title: "Verify security headers on all edge routes",
+    targetVersion: "1.0.1",
+    type: "SECURITY",
+    status: "PLANNED",
+  },
 ];
 
 export const V1_1_ROADMAP: readonly RoadmapItem[] = [
-  { id: "max-pain", title: "Max Pain module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
-  { id: "oi-buildup", title: "OI Build-up module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
-  { id: "long-buildup", title: "Long Build-up module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
-  { id: "short-buildup", title: "Short Build-up module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
-  { id: "gamma-exposure", title: "Gamma Exposure module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
-  { id: "dealer-positioning", title: "Dealer Positioning module", targetVersion: "1.1", type: "FEATURE", status: "PLANNED" },
+  {
+    id: "max-pain",
+    title: "Max Pain module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
+  {
+    id: "oi-buildup",
+    title: "OI Build-up module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
+  {
+    id: "long-buildup",
+    title: "Long Build-up module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
+  {
+    id: "short-buildup",
+    title: "Short Build-up module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
+  {
+    id: "gamma-exposure",
+    title: "Gamma Exposure module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
+  {
+    id: "dealer-positioning",
+    title: "Dealer Positioning module",
+    targetVersion: "1.1",
+    type: "FEATURE",
+    status: "PLANNED",
+  },
 ];
 
 export interface BetaReport {

@@ -20,19 +20,9 @@ import {
 import type { GannGapConfidenceBand } from "./types";
 
 export type ConfirmationAlignment =
-  | "SUPPORTS_UP"
-  | "SUPPORTS_DOWN"
-  | "NEUTRAL"
-  | "CONFLICT"
-  | "UNAVAILABLE";
+  "SUPPORTS_UP" | "SUPPORTS_DOWN" | "NEUTRAL" | "CONFLICT" | "UNAVAILABLE";
 
-export type ConfirmationKind =
-  | "decision"
-  | "pcr"
-  | "gti"
-  | "breadth"
-  | "vix"
-  | "astro";
+export type ConfirmationKind = "decision" | "pcr" | "gti" | "breadth" | "vix" | "astro";
 
 export type VixRegime = "LOW" | "MID" | "HIGH" | "UNKNOWN";
 
@@ -89,9 +79,18 @@ export interface GannGapResearchReport {
     ConfirmationKind,
     Record<"ALIGNED" | "CONFLICT" | "UNAVAILABLE" | "NEUTRAL", SliceMetrics>
   >;
-  readonly byFormulaVersion: ReadonlyArray<{ readonly version: string; readonly slice: SliceMetrics }>;
-  readonly byConfigVersion: ReadonlyArray<{ readonly version: string; readonly slice: SliceMetrics }>;
-  readonly byOutcomeVersion: ReadonlyArray<{ readonly version: string; readonly slice: SliceMetrics }>;
+  readonly byFormulaVersion: ReadonlyArray<{
+    readonly version: string;
+    readonly slice: SliceMetrics;
+  }>;
+  readonly byConfigVersion: ReadonlyArray<{
+    readonly version: string;
+    readonly slice: SliceMetrics;
+  }>;
+  readonly byOutcomeVersion: ReadonlyArray<{
+    readonly version: string;
+    readonly slice: SliceMetrics;
+  }>;
   readonly strongSignals: readonly string[];
   readonly weakSignals: readonly string[];
   readonly failurePatterns: readonly string[];
@@ -102,11 +101,18 @@ export interface GannGapResearchReport {
 }
 
 const CONFIRMATION_KINDS: readonly ConfirmationKind[] = [
-  "decision", "pcr", "gti", "breadth", "vix", "astro",
+  "decision",
+  "pcr",
+  "gti",
+  "breadth",
+  "vix",
+  "astro",
 ];
 
-function alignedBucket(a: ConfirmationAlignment, predicted: "GAP_UP" | "GAP_DOWN" | "FLAT"):
-  "ALIGNED" | "CONFLICT" | "UNAVAILABLE" | "NEUTRAL" {
+function alignedBucket(
+  a: ConfirmationAlignment,
+  predicted: "GAP_UP" | "GAP_DOWN" | "FLAT",
+): "ALIGNED" | "CONFLICT" | "UNAVAILABLE" | "NEUTRAL" {
   if (a === "UNAVAILABLE") return "UNAVAILABLE";
   if (a === "NEUTRAL") return "NEUTRAL";
   if (a === "CONFLICT") return "CONFLICT";
@@ -146,12 +152,15 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
     ConfirmationKind,
     Record<"ALIGNED" | "CONFLICT" | "UNAVAILABLE" | "NEUTRAL", { n: number; correct: number }>
   > = Object.fromEntries(
-    CONFIRMATION_KINDS.map((k) => [k, {
-      ALIGNED: { n: 0, correct: 0 },
-      CONFLICT: { n: 0, correct: 0 },
-      UNAVAILABLE: { n: 0, correct: 0 },
-      NEUTRAL: { n: 0, correct: 0 },
-    }]),
+    CONFIRMATION_KINDS.map((k) => [
+      k,
+      {
+        ALIGNED: { n: 0, correct: 0 },
+        CONFLICT: { n: 0, correct: 0 },
+        UNAVAILABLE: { n: 0, correct: 0 },
+        NEUTRAL: { n: 0, correct: 0 },
+      },
+    ]),
   ) as never;
   const versionAgg = {
     formula: new Map<string, { n: number; correct: number }>(),
@@ -184,10 +193,14 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
       byConfirmation[kind][bucket].correct += correct;
     }
 
-    const bump = (map: Map<string, { n: number; correct: number }>, v: string | null | undefined) => {
+    const bump = (
+      map: Map<string, { n: number; correct: number }>,
+      v: string | null | undefined,
+    ) => {
       const key = v ?? p.formulaVersion ?? "unknown";
       const cur = map.get(key) ?? { n: 0, correct: 0 };
-      cur.n++; cur.correct += correct;
+      cur.n++;
+      cur.correct += correct;
       map.set(key, cur);
     };
     bump(versionAgg.formula, meta?.formulaVersion ?? p.formulaVersion);
@@ -195,7 +208,9 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
     bump(versionAgg.outcome, meta?.outcomeVersion ?? null);
   }
 
-  const finalize = <K extends string>(rec: Record<K, { n: number; correct: number }>): Record<K, SliceMetrics> => {
+  const finalize = <K extends string>(
+    rec: Record<K, { n: number; correct: number }>,
+  ): Record<K, SliceMetrics> => {
     const out = {} as Record<K, SliceMetrics>;
     for (const k of Object.keys(rec) as K[]) out[k] = finalizeSlice(rec[k]);
     return out;
@@ -224,13 +239,19 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
   const hi = confidenceFinal.EXPERIMENTAL_HIGH;
   const lo = confidenceFinal.EXPERIMENTAL_LOW;
   if (hi.n >= 10 && (hi.accuracyPct ?? 0) - baseline >= 5) {
-    strong.push(`HIGH-confidence predictions beat baseline (${(hi.accuracyPct ?? 0).toFixed(1)}% vs ${baseline.toFixed(1)}%).`);
+    strong.push(
+      `HIGH-confidence predictions beat baseline (${(hi.accuracyPct ?? 0).toFixed(1)}% vs ${baseline.toFixed(1)}%).`,
+    );
   }
   if (lo.n >= 10 && baseline - (lo.accuracyPct ?? 0) >= 5) {
-    strong.push(`LOW-confidence predictions underperform baseline as expected (${(lo.accuracyPct ?? 0).toFixed(1)}%).`);
+    strong.push(
+      `LOW-confidence predictions underperform baseline as expected (${(lo.accuracyPct ?? 0).toFixed(1)}%).`,
+    );
   }
   if (hi.n >= 10 && (hi.accuracyPct ?? 0) <= baseline) {
-    weak.push("HIGH-confidence band does not outperform baseline — confidence signal may be miscalibrated.");
+    weak.push(
+      "HIGH-confidence band does not outperform baseline — confidence signal may be miscalibrated.",
+    );
     recs.push({
       area: "confidence-bands",
       action: "RESEARCH_FURTHER",
@@ -244,11 +265,15 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
     const upP = perClass.GAP_UP.precisionPct ?? 0;
     const dnP = perClass.GAP_DOWN.precisionPct ?? 0;
     if (Math.abs(upP - dnP) >= 10) {
-      biases.push(`Directional bias: GAP_UP precision ${upP.toFixed(1)}% vs GAP_DOWN ${dnP.toFixed(1)}%.`);
+      biases.push(
+        `Directional bias: GAP_UP precision ${upP.toFixed(1)}% vs GAP_DOWN ${dnP.toFixed(1)}%.`,
+      );
     }
   }
   if (perClass.FLAT.n >= 5 && (perClass.FLAT.precisionPct ?? 0) < 40) {
-    failures.push(`FLAT predictions rarely realise (precision ${(perClass.FLAT.precisionPct ?? 0).toFixed(1)}%).`);
+    failures.push(
+      `FLAT predictions rarely realise (precision ${(perClass.FLAT.precisionPct ?? 0).toFixed(1)}%).`,
+    );
   }
 
   for (const kind of CONFIRMATION_KINDS) {
@@ -257,7 +282,9 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
     if (aligned.n >= 10 && conflict.n >= 5) {
       const delta = (aligned.accuracyPct ?? 0) - (conflict.accuracyPct ?? 0);
       if (delta >= 10) {
-        strong.push(`${kind} confirmation is informative (aligned=${(aligned.accuracyPct ?? 0).toFixed(1)}% vs conflict=${(conflict.accuracyPct ?? 0).toFixed(1)}%).`);
+        strong.push(
+          `${kind} confirmation is informative (aligned=${(aligned.accuracyPct ?? 0).toFixed(1)}% vs conflict=${(conflict.accuracyPct ?? 0).toFixed(1)}%).`,
+        );
         recs.push({
           area: `confirmation:${kind}`,
           action: "KEEP",
@@ -281,7 +308,9 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
   if (vixHigh.n >= 5 && vixLow.n >= 5) {
     const delta = (vixLow.accuracyPct ?? 0) - (vixHigh.accuracyPct ?? 0);
     if (delta >= 10) {
-      failures.push(`High-VIX regime underperforms (LOW=${(vixLow.accuracyPct ?? 0).toFixed(1)}% vs HIGH=${(vixHigh.accuracyPct ?? 0).toFixed(1)}%).`);
+      failures.push(
+        `High-VIX regime underperforms (LOW=${(vixLow.accuracyPct ?? 0).toFixed(1)}% vs HIGH=${(vixHigh.accuracyPct ?? 0).toFixed(1)}%).`,
+      );
       recs.push({
         area: "vix-regime",
         action: "TUNE",
@@ -292,16 +321,26 @@ export function buildGannGapResearchReport(input: BuildReportInput): GannGapRese
   }
 
   const limitations: string[] = [];
-  if (summary.evaluated < 30) limitations.push(`Evaluated sample (${summary.evaluated}) below INSUFFICIENT_SAMPLE threshold (30).`);
-  else if (summary.evaluated < 100) limitations.push(`Evaluated sample (${summary.evaluated}) is PRELIMINARY (<100).`);
-  if (summary.leakageDetected > 0) limitations.push(`${summary.leakageDetected} record(s) rejected for evaluation leakage.`);
-  if (summary.pending > 0) limitations.push(`${summary.pending} prediction(s) awaiting outcome evaluation.`);
-  if ((input.meta?.length ?? 0) === 0) limitations.push("No per-record metadata supplied — slice metrics default to UNKNOWN.");
+  if (summary.evaluated < 30)
+    limitations.push(
+      `Evaluated sample (${summary.evaluated}) below INSUFFICIENT_SAMPLE threshold (30).`,
+    );
+  else if (summary.evaluated < 100)
+    limitations.push(`Evaluated sample (${summary.evaluated}) is PRELIMINARY (<100).`);
+  if (summary.leakageDetected > 0)
+    limitations.push(`${summary.leakageDetected} record(s) rejected for evaluation leakage.`);
+  if (summary.pending > 0)
+    limitations.push(`${summary.pending} prediction(s) awaiting outcome evaluation.`);
+  if ((input.meta?.length ?? 0) === 0)
+    limitations.push("No per-record metadata supplied — slice metrics default to UNKNOWN.");
 
   const blockers: string[] = [];
-  if (summary.evaluated < 30) blockers.push("Insufficient evaluated sample for Release Candidate certification.");
-  if (summary.leakageDetected > 0) blockers.push("Leakage detected — investigate outcome timestamps before RC.");
-  if ((summary.accuracyPct ?? 0) < 40 && summary.evaluated >= 30) blockers.push("Overall accuracy below 40% on ≥30 samples.");
+  if (summary.evaluated < 30)
+    blockers.push("Insufficient evaluated sample for Release Candidate certification.");
+  if (summary.leakageDetected > 0)
+    blockers.push("Leakage detected — investigate outcome timestamps before RC.");
+  if ((summary.accuracyPct ?? 0) < 40 && summary.evaluated >= 30)
+    blockers.push("Overall accuracy below 40% on ≥30 samples.");
 
   // Baseline KEEP if everything looks OK.
   if (recs.length === 0 && summary.evaluated >= 30 && (summary.accuracyPct ?? 0) >= 50) {

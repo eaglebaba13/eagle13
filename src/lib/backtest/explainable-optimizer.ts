@@ -184,7 +184,11 @@ function mergeGates(g?: Partial<SafetyGateConfig>): SafetyGateConfig {
   return { ...DEFAULT_SAFETY_GATES, ...(g ?? {}) };
 }
 const RATING_RANK: Record<ReliabilityRating, number> = {
-  UNRELIABLE: 0, POOR: 1, FAIR: 2, GOOD: 3, EXCELLENT: 4,
+  UNRELIABLE: 0,
+  POOR: 1,
+  FAIR: 2,
+  GOOD: 3,
+  EXCELLENT: 4,
 };
 function ratingMeets(actual: ReliabilityRating, min: ReliabilityRating): boolean {
   return RATING_RANK[actual] >= RATING_RANK[min];
@@ -199,11 +203,16 @@ function fnv1a(input: string): string {
 }
 function sensitivityPlateauQuality(c: SensitivityClassification): number {
   switch (c) {
-    case "STABLE_PLATEAU": return 1;
-    case "MONOTONIC": return 0.7;
-    case "NARROW_OPTIMUM": return 0.2;
-    case "ERRATIC": return 0.05;
-    default: return 0;
+    case "STABLE_PLATEAU":
+      return 1;
+    case "MONOTONIC":
+      return 0.7;
+    case "NARROW_OPTIMUM":
+      return 0.2;
+    case "ERRATIC":
+      return 0.05;
+    default:
+      return 0;
   }
 }
 function calibrationScore(r: ReliabilityRating): number {
@@ -228,7 +237,10 @@ function neighborsOf(
       const b = other[spec.name] ?? 0;
       const step = Math.max(1e-9, spec.step);
       const d = Math.abs(a - b) / step;
-      if (d > 1.0001) { ok = false; break; }
+      if (d > 1.0001) {
+        ok = false;
+        break;
+      }
       dist += d;
     }
     if (ok && dist > 0 && dist <= 1.0001) out.push(i);
@@ -273,14 +285,70 @@ function cellObjective(
   const calibScore = calibrationScore(agg.calibrationRating);
 
   const contributions: ObjectiveContribution[] = [
-    { key: "oosExpectancy", weight: weights.oosExpectancy, rawValue: m.expectancy, normalisedScore: expScore, contribution: weights.oosExpectancy * expScore, formula: "clamp(expectancy / 5, 0, 1)" },
-    { key: "walkForwardStability", weight: weights.walkForwardStability, rawValue: agg.walkForwardStability, normalisedScore: wfScore, contribution: weights.walkForwardStability * wfScore, formula: "clamp(walkForwardStability, 0, 1)" },
-    { key: "monteCarloP5", weight: weights.monteCarloP5, rawValue: mcRatio, normalisedScore: mcScore, contribution: weights.monteCarloP5 * mcScore, formula: "clamp((mcP5/capital-0.8)/0.4, 0, 1)" },
-    { key: "robustness", weight: weights.robustness, rawValue: agg.robustnessScore, normalisedScore: robScore, contribution: weights.robustness * robScore, formula: "clamp(robustnessScore, 0, 1)" },
-    { key: "profitFactorConsistency", weight: weights.profitFactorConsistency, rawValue: m.profitFactor, normalisedScore: pfScore, contribution: weights.profitFactorConsistency * pfScore, formula: "clamp((pf-1)/1.5, 0, 1)" },
-    { key: "drawdownResilience", weight: weights.drawdownResilience, rawValue: m.maxDrawdown, normalisedScore: ddScore, contribution: weights.drawdownResilience * ddScore, formula: "clamp(1 - maxDD/(capital*0.5), 0, 1)" },
-    { key: "sensitivityPlateauQuality", weight: weights.sensitivityPlateauQuality, rawValue: 0, normalisedScore: sensScore, contribution: weights.sensitivityPlateauQuality * sensScore, formula: `surface=${agg.sensitivityClassification}` },
-    { key: "recommendationCalibration", weight: weights.recommendationCalibration, rawValue: 0, normalisedScore: calibScore, contribution: weights.recommendationCalibration * calibScore, formula: `calibration=${agg.calibrationRating}` },
+    {
+      key: "oosExpectancy",
+      weight: weights.oosExpectancy,
+      rawValue: m.expectancy,
+      normalisedScore: expScore,
+      contribution: weights.oosExpectancy * expScore,
+      formula: "clamp(expectancy / 5, 0, 1)",
+    },
+    {
+      key: "walkForwardStability",
+      weight: weights.walkForwardStability,
+      rawValue: agg.walkForwardStability,
+      normalisedScore: wfScore,
+      contribution: weights.walkForwardStability * wfScore,
+      formula: "clamp(walkForwardStability, 0, 1)",
+    },
+    {
+      key: "monteCarloP5",
+      weight: weights.monteCarloP5,
+      rawValue: mcRatio,
+      normalisedScore: mcScore,
+      contribution: weights.monteCarloP5 * mcScore,
+      formula: "clamp((mcP5/capital-0.8)/0.4, 0, 1)",
+    },
+    {
+      key: "robustness",
+      weight: weights.robustness,
+      rawValue: agg.robustnessScore,
+      normalisedScore: robScore,
+      contribution: weights.robustness * robScore,
+      formula: "clamp(robustnessScore, 0, 1)",
+    },
+    {
+      key: "profitFactorConsistency",
+      weight: weights.profitFactorConsistency,
+      rawValue: m.profitFactor,
+      normalisedScore: pfScore,
+      contribution: weights.profitFactorConsistency * pfScore,
+      formula: "clamp((pf-1)/1.5, 0, 1)",
+    },
+    {
+      key: "drawdownResilience",
+      weight: weights.drawdownResilience,
+      rawValue: m.maxDrawdown,
+      normalisedScore: ddScore,
+      contribution: weights.drawdownResilience * ddScore,
+      formula: "clamp(1 - maxDD/(capital*0.5), 0, 1)",
+    },
+    {
+      key: "sensitivityPlateauQuality",
+      weight: weights.sensitivityPlateauQuality,
+      rawValue: 0,
+      normalisedScore: sensScore,
+      contribution: weights.sensitivityPlateauQuality * sensScore,
+      formula: `surface=${agg.sensitivityClassification}`,
+    },
+    {
+      key: "recommendationCalibration",
+      weight: weights.recommendationCalibration,
+      rawValue: 0,
+      normalisedScore: calibScore,
+      contribution: weights.recommendationCalibration * calibScore,
+      formula: `calibration=${agg.calibrationRating}`,
+    },
   ];
   const totalWeight = contributions.reduce((a, c) => a + c.weight, 0) || 1;
   const score = contributions.reduce((a, c) => a + c.contribution, 0) / totalWeight;
@@ -295,19 +363,26 @@ function evaluateGates(
 ): readonly string[] {
   const reasons: string[] = [];
   const m = cell.metrics;
-  if (!m) { reasons.push("NO_METRICS"); return reasons; }
+  if (!m) {
+    reasons.push("NO_METRICS");
+    return reasons;
+  }
   if (m.trades < gates.minTrades) reasons.push(`MIN_TRADES: ${m.trades} < ${gates.minTrades}`);
   if (m.expectancy <= 0) reasons.push(`NON_POSITIVE_OOS_EXPECTANCY: ${m.expectancy.toFixed(2)}`);
   if (agg.startingCapital > 0) {
     const ratio = m.monteCarloP5 / agg.startingCapital;
-    if (ratio < gates.ruinThresholdRatio) reasons.push(`MONTE_CARLO_RUIN_RISK: p5/capital=${ratio.toFixed(2)} < ${gates.ruinThresholdRatio}`);
+    if (ratio < gates.ruinThresholdRatio)
+      reasons.push(
+        `MONTE_CARLO_RUIN_RISK: p5/capital=${ratio.toFixed(2)} < ${gates.ruinThresholdRatio}`,
+      );
   }
-  if (neighborCount < gates.minNeighbors) reasons.push(`INSUFFICIENT_NEIGHBORS: ${neighborCount} < ${gates.minNeighbors}`);
+  if (neighborCount < gates.minNeighbors)
+    reasons.push(`INSUFFICIENT_NEIGHBORS: ${neighborCount} < ${gates.minNeighbors}`);
   return reasons;
 }
 
 function meanBy(cells: SensitivityCell[], f: (m: SensitivityMetrics) => number): number {
-  const vals = cells.map((c) => c.metrics ? f(c.metrics) : NaN).filter((v) => Number.isFinite(v));
+  const vals = cells.map((c) => (c.metrics ? f(c.metrics) : NaN)).filter((v) => Number.isFinite(v));
   if (vals.length === 0) return 0;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
@@ -343,7 +418,11 @@ function buildRegion(
 
 function overfitRiskOf(agg: OptimizerAggregateInputs, region: CandidateRegion): OverfitRisk {
   if (agg.robustnessStatus === "OVERFIT") return "REJECTED";
-  if (agg.sensitivityClassification === "NARROW_OPTIMUM" || agg.sensitivityClassification === "ERRATIC") return "HIGH";
+  if (
+    agg.sensitivityClassification === "NARROW_OPTIMUM" ||
+    agg.sensitivityClassification === "ERRATIC"
+  )
+    return "HIGH";
   if (region.neighborCount <= 1) return "HIGH";
   if (agg.sensitivityClassification === "MONOTONIC") return "MODERATE";
   if (region.neighborCount >= 3 && agg.sensitivityClassification === "STABLE_PLATEAU") return "LOW";
@@ -391,13 +470,34 @@ export function computeOptimizerRunId(input: {
   dataHash: string;
   costs?: string;
 }): string {
-  const spaceKey = input.parameterSpace.map((s) => `${s.name}:${s.min}:${s.max}:${s.step}`).join(",");
-  const rrids = Object.keys(input.researchRunIds).sort().map((k) => `${k}=${input.researchRunIds[k]}`).join(",");
-  const wKey = Object.entries(input.weights).sort().map(([k, v]) => `${k}=${v}`).join(",");
-  const gKey = Object.entries(input.gates).sort().map(([k, v]) => `${k}=${v}`).join(",");
+  const spaceKey = input.parameterSpace
+    .map((s) => `${s.name}:${s.min}:${s.max}:${s.step}`)
+    .join(",");
+  const rrids = Object.keys(input.researchRunIds)
+    .sort()
+    .map((k) => `${k}=${input.researchRunIds[k]}`)
+    .join(",");
+  const wKey = Object.entries(input.weights)
+    .sort()
+    .map(([k, v]) => `${k}=${v}`)
+    .join(",");
+  const gKey = Object.entries(input.gates)
+    .sort()
+    .map(([k, v]) => `${k}=${v}`)
+    .join(",");
   const key = [
-    input.strategy, input.formulaVersion, input.baseRunId, rrids, spaceKey,
-    wKey, gKey, input.provider, input.from, input.to, input.dataHash, input.costs ?? "",
+    input.strategy,
+    input.formulaVersion,
+    input.baseRunId,
+    rrids,
+    spaceKey,
+    wKey,
+    gKey,
+    input.provider,
+    input.from,
+    input.to,
+    input.dataHash,
+    input.costs ?? "",
   ].join("|");
   return `EXPLAINABLE_OPTIMIZER_V1:${fnv1a(key)}`;
 }
@@ -442,49 +542,83 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
     baseRunId: input.baseRunId,
     researchRunIds: input.researchRunIds,
     parameterSpace: input.parameterSpace,
-    weights, gates,
-    provider: input.provider, from: input.from, to: input.to,
-    dataHash: input.dataHash, costs: input.costs,
+    weights,
+    gates,
+    provider: input.provider,
+    from: input.from,
+    to: input.to,
+    dataHash: input.dataHash,
+    costs: input.costs,
   });
 
   const aggregateBlockers: string[] = [];
   if (input.aggregate.robustnessStatus === "OVERFIT") aggregateBlockers.push("ROBUSTNESS_OVERFIT");
-  if (input.aggregate.sensitivityClassification === "NARROW_OPTIMUM") aggregateBlockers.push("SENSITIVITY_NARROW_OPTIMUM");
-  if (input.aggregate.sensitivityClassification === "ERRATIC") aggregateBlockers.push("SENSITIVITY_ERRATIC");
-  if (input.aggregate.sensitivityClassification === "INSUFFICIENT_DATA") aggregateBlockers.push("SENSITIVITY_INSUFFICIENT_DATA");
-  if (input.aggregate.dataQuality === "UNAVAILABLE") aggregateBlockers.push("DATA_QUALITY_UNAVAILABLE");
-  if (input.aggregate.walkForwardWindows < gates.minWalkForwardWindows) aggregateBlockers.push(`INSUFFICIENT_WF_WINDOWS: ${input.aggregate.walkForwardWindows} < ${gates.minWalkForwardWindows}`);
-  if (!ratingMeets(input.aggregate.calibrationRating, gates.minCalibrationRating)) aggregateBlockers.push(`CALIBRATION_BELOW_${gates.minCalibrationRating}: ${input.aggregate.calibrationRating}`);
+  if (input.aggregate.sensitivityClassification === "NARROW_OPTIMUM")
+    aggregateBlockers.push("SENSITIVITY_NARROW_OPTIMUM");
+  if (input.aggregate.sensitivityClassification === "ERRATIC")
+    aggregateBlockers.push("SENSITIVITY_ERRATIC");
+  if (input.aggregate.sensitivityClassification === "INSUFFICIENT_DATA")
+    aggregateBlockers.push("SENSITIVITY_INSUFFICIENT_DATA");
+  if (input.aggregate.dataQuality === "UNAVAILABLE")
+    aggregateBlockers.push("DATA_QUALITY_UNAVAILABLE");
+  if (input.aggregate.walkForwardWindows < gates.minWalkForwardWindows)
+    aggregateBlockers.push(
+      `INSUFFICIENT_WF_WINDOWS: ${input.aggregate.walkForwardWindows} < ${gates.minWalkForwardWindows}`,
+    );
+  if (!ratingMeets(input.aggregate.calibrationRating, gates.minCalibrationRating))
+    aggregateBlockers.push(
+      `CALIBRATION_BELOW_${gates.minCalibrationRating}: ${input.aggregate.calibrationRating}`,
+    );
 
   const validCells = input.sensitivityCells
     .map((c, i) => ({ c, i }))
     .filter((x) => x.c.metrics !== null);
 
-  const candidates: Array<{ region: CandidateRegion; index: number; gateReasons: readonly string[] }> = [];
+  const candidates: Array<{
+    region: CandidateRegion;
+    index: number;
+    gateReasons: readonly string[];
+  }> = [];
   for (const { c, i } of validCells) {
     const neighborIdx = neighborsOf(i, input.sensitivityCells, input.parameterSpace);
     const gateReasons = evaluateGates(c, input.aggregate, neighborIdx.length, gates);
-    const region = buildRegion(i, neighborIdx, input.sensitivityCells, input.parameterSpace, input.aggregate, weights);
+    const region = buildRegion(
+      i,
+      neighborIdx,
+      input.sensitivityCells,
+      input.parameterSpace,
+      input.aggregate,
+      weights,
+    );
     candidates.push({ region, index: i, gateReasons });
   }
 
   candidates.sort((a, b) => b.region.objectiveScore - a.region.objectiveScore);
 
-  const accepted = candidates.filter((c) => c.gateReasons.length === 0 && aggregateBlockers.length === 0);
-  const rejected = candidates.filter((c) => c.gateReasons.length > 0 || aggregateBlockers.length > 0);
+  const accepted = candidates.filter(
+    (c) => c.gateReasons.length === 0 && aggregateBlockers.length === 0,
+  );
+  const rejected = candidates.filter(
+    (c) => c.gateReasons.length > 0 || aggregateBlockers.length > 0,
+  );
   for (const r of rejected) {
     const reasons = [...aggregateBlockers, ...r.gateReasons];
     rejections.push({ center: r.region.center, objectiveScore: r.region.objectiveScore, reasons });
   }
 
-  const objectiveContributions = validCells.length > 0
-    ? cellObjective(validCells[0].c, input.aggregate, weights).contributions
-    : [];
+  const objectiveContributions =
+    validCells.length > 0
+      ? cellObjective(validCells[0].c, input.aggregate, weights).contributions
+      : [];
 
   if (aggregateBlockers.length > 0) {
     rejectionReasons.push(...aggregateBlockers);
     for (const b of aggregateBlockers) {
-      explanations.push({ kind: "REJECT", message: `Aggregate gate: ${b}`, evidence: { blocker: b } });
+      explanations.push({
+        kind: "REJECT",
+        message: `Aggregate gate: ${b}`,
+        evidence: { blocker: b },
+      });
     }
   }
 
@@ -504,7 +638,8 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
       overfitRisk: aggregateBlockers.length > 0 ? "REJECTED" : "HIGH",
       confidence: "INSUFFICIENT",
       explanations,
-      weights, gates,
+      weights,
+      gates,
       evidence: {
         acceptedCells: 0,
         totalCells: input.sensitivityCells.length,
@@ -520,7 +655,9 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
   const confidence = confidenceOf(input.aggregate, winner, runnerUp);
 
   const byDd = [...accepted].sort((a, b) => a.region.meanDrawdown - b.region.meanDrawdown);
-  const byExpectancy = [...accepted].sort((a, b) => b.region.meanExpectancy - a.region.meanExpectancy);
+  const byExpectancy = [...accepted].sort(
+    (a, b) => b.region.meanExpectancy - a.region.meanExpectancy,
+  );
 
   const conservative = byDd[0].region;
   const balanced = winner;
@@ -529,7 +666,12 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
   const alternatives = dedupeRegions([
     labelAlt(conservative, "CONSERVATIVE", "Prioritises drawdown resilience.", input.aggregate),
     labelAlt(balanced, "BALANCED", "Best composite objective score.", input.aggregate),
-    labelAlt(aggressive, "AGGRESSIVE", "Prioritises expectancy — accepts wider drawdown.", input.aggregate),
+    labelAlt(
+      aggressive,
+      "AGGRESSIVE",
+      "Prioritises expectancy — accepts wider drawdown.",
+      input.aggregate,
+    ),
   ]);
 
   explanations.push({
@@ -576,7 +718,8 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
     overfitRisk,
     confidence,
     explanations,
-    weights, gates,
+    weights,
+    gates,
     evidence: {
       acceptedCells: accepted.length,
       totalCells: input.sensitivityCells.length,
@@ -592,13 +735,25 @@ export function runExplainableOptimization(input: OptimizerRunInput): OptimizerR
 }
 
 export const SMC_OPTIMIZER_PARAMETERS = [
-  "minScore", "structureWindow", "fvgValidityBars", "obValidityBars",
-  "cooldownBars", "atrStopMultiplier", "rr", "maxHoldBars",
+  "minScore",
+  "structureWindow",
+  "fvgValidityBars",
+  "obValidityBars",
+  "cooldownBars",
+  "atrStopMultiplier",
+  "rr",
+  "maxHoldBars",
 ] as const;
 export type SmcOptimizerParameter = (typeof SMC_OPTIMIZER_PARAMETERS)[number];
 
 export const HYBRID_OPTIMIZER_PARAMETERS = [
-  "astroWeight", "smcWeight", "agreementBonus", "dataQualityWeight",
-  "hybridThreshold", "smcMinScore", "atrStopMultiplier", "rr",
+  "astroWeight",
+  "smcWeight",
+  "agreementBonus",
+  "dataQualityWeight",
+  "hybridThreshold",
+  "smcMinScore",
+  "atrStopMultiplier",
+  "rr",
 ] as const;
 export type HybridOptimizerParameter = (typeof HYBRID_OPTIMIZER_PARAMETERS)[number];

@@ -28,8 +28,8 @@ export type DecisionEvidenceInput = {
   // Walk-forward
   readonly walkForward?: {
     readonly runId: string;
-    readonly oosExpectancy: number;    // R units
-    readonly stabilityScore: number;   // 0..1
+    readonly oosExpectancy: number; // R units
+    readonly stabilityScore: number; // 0..1
     readonly overfitFlag: boolean;
     readonly totalTrades: number;
   };
@@ -38,36 +38,36 @@ export type DecisionEvidenceInput = {
     readonly runId: string;
     readonly worstDrawdownPct: number; // 0..1 (positive number)
     readonly medianCagr: number;
-    readonly ruinProbability: number;  // 0..1
+    readonly ruinProbability: number; // 0..1
   };
   // Robustness composite
   readonly robustness?: {
     readonly runId: string;
-    readonly score: number;            // 0..1
+    readonly score: number; // 0..1
     readonly verdict: "ROBUST" | "MARGINAL" | "OVERFIT" | "UNRELIABLE";
   };
   // Sensitivity
   readonly sensitivity?: {
     readonly runId: string;
-    readonly cliffScore: number;       // 0..1  (1 = no cliffs)
-    readonly plateauCoverage: number;  // 0..1
+    readonly cliffScore: number; // 0..1  (1 = no cliffs)
+    readonly plateauCoverage: number; // 0..1
   };
   // Optimizer
   readonly optimizer?: {
     readonly runId: string;
-    readonly confidence: number;       // 0..1
+    readonly confidence: number; // 0..1
     readonly selectedCandidate: string;
   };
   // Recommendation validator
   readonly recommendationValidator?: {
     readonly runId: string;
-    readonly reliability: number;      // 0..1
+    readonly reliability: number; // 0..1
     readonly verdict: "RELIABLE" | "MARGINAL" | "UNRELIABLE";
   };
   // Cross-asset consistency
   readonly crossAsset?: {
     readonly runId: string;
-    readonly consistency: number;      // 0..1
+    readonly consistency: number; // 0..1
     readonly assetsCovered: number;
   };
   // Portfolio recommendation
@@ -87,26 +87,26 @@ export type DecisionEvidenceInput = {
       | "PAUSED_BY_PROVIDER"
       | "PAUSED_BY_RESEARCH_GAP"
       | "NOT_READY";
-    readonly accuracy: number;         // 0..1
-    readonly calibration: number;      // 0..1  (Brier-style, 1 = perfect)
+    readonly accuracy: number; // 0..1
+    readonly calibration: number; // 0..1  (Brier-style, 1 = perfect)
     readonly resolvedTrades: number;
   };
   // Recommendation engine expectations
   readonly recommendation?: {
     readonly runId: string;
-    readonly expectedWinRate: number;  // 0..1
+    readonly expectedWinRate: number; // 0..1
     readonly expectedProfitFactor: number;
-    readonly confidence: number;       // 0..1
+    readonly confidence: number; // 0..1
   };
   // Research stability
   readonly researchStability?: {
     readonly runId: string;
-    readonly stability: number;        // 0..1
+    readonly stability: number; // 0..1
   };
   // Regime intelligence
   readonly regime?: {
     readonly runId: string;
-    readonly coverage: number;         // 0..1
+    readonly coverage: number; // 0..1
   };
   // Data quality
   readonly dataQuality?: {
@@ -115,26 +115,26 @@ export type DecisionEvidenceInput = {
     readonly dataHash: string;
   };
   // Operator context
-  readonly minTrades?: number;         // default 50
-  readonly minConfidence?: number;     // default 0.55
+  readonly minTrades?: number; // default 50
+  readonly minConfidence?: number; // default 0.55
 };
 
 export type ScoredComponent = {
   readonly key: string;
   readonly weight: number;
-  readonly score: number;   // 0..1 or NaN if missing
+  readonly score: number; // 0..1 or NaN if missing
   readonly present: boolean;
 };
 
 export const DECISION_WEIGHTS: Readonly<Record<string, number>> = Object.freeze({
   walkForward: 0.15,
-  oosExpectancy: 0.10,
-  monteCarlo: 0.10,
-  robustness: 0.10,
-  portfolioRecommendation: 0.10,
-  shadowAccuracy: 0.10,
-  calibration: 0.10,
-  recommendationReliability: 0.10,
+  oosExpectancy: 0.1,
+  monteCarlo: 0.1,
+  robustness: 0.1,
+  portfolioRecommendation: 0.1,
+  shadowAccuracy: 0.1,
+  calibration: 0.1,
+  recommendationReliability: 0.1,
   crossAsset: 0.075,
   optimizerConfidence: 0.075,
 });
@@ -167,8 +167,8 @@ function normDrawdown(dd: number): number {
 export type DecisionResult = {
   readonly version: string;
   readonly state: DecisionState;
-  readonly score: number;               // 0..1
-  readonly confidence: number;          // 0..1
+  readonly score: number; // 0..1
+  readonly confidence: number; // 0..1
   readonly components: readonly ScoredComponent[];
   readonly hardGates: readonly string[];
   readonly whyGo: readonly string[];
@@ -208,13 +208,38 @@ export function evaluateDecision(inp: DecisionEvidenceInput): DecisionResult {
   };
 
   push("walkForward", !!inp.walkForward, inp.walkForward ? inp.walkForward.stabilityScore : 0);
-  push("oosExpectancy", !!inp.walkForward, inp.walkForward ? normExpectancy(inp.walkForward.oosExpectancy) : 0);
-  push("monteCarlo", !!inp.monteCarlo, inp.monteCarlo ? normDrawdown(inp.monteCarlo.worstDrawdownPct) * (1 - clamp01(inp.monteCarlo.ruinProbability)) : 0);
+  push(
+    "oosExpectancy",
+    !!inp.walkForward,
+    inp.walkForward ? normExpectancy(inp.walkForward.oosExpectancy) : 0,
+  );
+  push(
+    "monteCarlo",
+    !!inp.monteCarlo,
+    inp.monteCarlo
+      ? normDrawdown(inp.monteCarlo.worstDrawdownPct) *
+          (1 - clamp01(inp.monteCarlo.ruinProbability))
+      : 0,
+  );
   push("robustness", !!inp.robustness, inp.robustness ? inp.robustness.score : 0);
-  push("portfolioRecommendation", !!inp.portfolio, inp.portfolio ? (inp.portfolio.recommendation === "ACCEPT" ? 1 : inp.portfolio.recommendation === "REVIEW" ? 0.5 : 0) : 0);
+  push(
+    "portfolioRecommendation",
+    !!inp.portfolio,
+    inp.portfolio
+      ? inp.portfolio.recommendation === "ACCEPT"
+        ? 1
+        : inp.portfolio.recommendation === "REVIEW"
+          ? 0.5
+          : 0
+      : 0,
+  );
   push("shadowAccuracy", !!inp.shadow, inp.shadow ? inp.shadow.accuracy : 0);
   push("calibration", !!inp.shadow, inp.shadow ? inp.shadow.calibration : 0);
-  push("recommendationReliability", !!inp.recommendationValidator, inp.recommendationValidator ? inp.recommendationValidator.reliability : 0);
+  push(
+    "recommendationReliability",
+    !!inp.recommendationValidator,
+    inp.recommendationValidator ? inp.recommendationValidator.reliability : 0,
+  );
   push("crossAsset", !!inp.crossAsset, inp.crossAsset ? inp.crossAsset.consistency : 0);
   push("optimizerConfidence", !!inp.optimizer, inp.optimizer ? inp.optimizer.confidence : 0);
 
@@ -228,13 +253,16 @@ export function evaluateDecision(inp: DecisionEvidenceInput): DecisionResult {
   if (inp.robustness?.verdict === "OVERFIT") hardGates.push("ROBUSTNESS_OVERFIT");
   if (inp.robustness?.verdict === "UNRELIABLE") hardGates.push("ROBUSTNESS_UNRELIABLE");
   if (inp.walkForward?.overfitFlag) hardGates.push("WALK_FORWARD_OVERFIT");
-  if (inp.recommendationValidator?.verdict === "UNRELIABLE") hardGates.push("RECOMMENDATION_UNRELIABLE");
+  if (inp.recommendationValidator?.verdict === "UNRELIABLE")
+    hardGates.push("RECOMMENDATION_UNRELIABLE");
   if (inp.portfolio?.recommendation === "REJECT") hardGates.push("PORTFOLIO_REJECT");
   if (inp.shadow && inp.shadow.readiness === "NOT_READY") hardGates.push("SHADOW_NOT_READY");
   if (inp.dataQuality && !inp.dataQuality.ok) hardGates.push("DATA_QUALITY_FAILURE");
   if (inp.dataQuality && !inp.dataQuality.causalityOk) hardGates.push("CAUSALITY_FAILURE");
-  if (inp.walkForward && inp.walkForward.totalTrades < minTrades) hardGates.push("INSUFFICIENT_TRADES");
-  if (inp.recommendation && inp.recommendation.confidence < minConfidence) hardGates.push("LOW_CONFIDENCE");
+  if (inp.walkForward && inp.walkForward.totalTrades < minTrades)
+    hardGates.push("INSUFFICIENT_TRADES");
+  if (inp.recommendation && inp.recommendation.confidence < minConfidence)
+    hardGates.push("LOW_CONFIDENCE");
   if (missing.length > 0) hardGates.push("MISSING_RESEARCH_CONTEXT");
 
   // State classification
@@ -267,8 +295,14 @@ export function evaluateDecision(inp: DecisionEvidenceInput): DecisionResult {
 
   // Weakest / strongest
   const present = c.filter((x) => x.present);
-  const weakest = present.reduce<ScoredComponent | null>((w, x) => !w || x.score < w.score ? x : w, null);
-  const strongest = present.reduce<ScoredComponent | null>((s, x) => !s || x.score > s.score ? x : s, null);
+  const weakest = present.reduce<ScoredComponent | null>(
+    (w, x) => (!w || x.score < w.score ? x : w),
+    null,
+  );
+  const strongest = present.reduce<ScoredComponent | null>(
+    (s, x) => (!s || x.score > s.score ? x : s),
+    null,
+  );
 
   // Confidence = coverage * (1 - gate penalty)
   const coverage = present.length / c.length;
@@ -277,18 +311,91 @@ export function evaluateDecision(inp: DecisionEvidenceInput): DecisionResult {
 
   // Checklist
   const cl: ChecklistItem[] = [
-    checklist("research", "Research", inp.walkForward, (w) => w.stabilityScore >= 0.6, (w) => `stability=${w.stabilityScore.toFixed(2)}`),
-    checklist("optimizer", "Optimizer", inp.optimizer, (o) => o.confidence >= 0.6, (o) => `confidence=${o.confidence.toFixed(2)}`),
-    checklist("portfolio", "Portfolio", inp.portfolio, (p) => p.recommendation === "ACCEPT", (p) => p.recommendation),
-    checklist("shadow", "Shadow", inp.shadow, (s) => s.readiness.startsWith("READY_FOR"), (s) => s.readiness),
-    checklist("recommendation", "Recommendation", inp.recommendation, (r) => r.confidence >= minConfidence, (r) => `confidence=${r.confidence.toFixed(2)}`),
-    checklist("calibration", "Calibration", inp.shadow, (s) => s.calibration >= 0.6, (s) => `calibration=${s.calibration.toFixed(2)}`),
-    checklist("walkForward", "Walk Forward", inp.walkForward, (w) => !w.overfitFlag && w.totalTrades >= minTrades, (w) => `trades=${w.totalTrades} overfit=${w.overfitFlag}`),
-    checklist("monteCarlo", "Monte Carlo", inp.monteCarlo, (m) => m.worstDrawdownPct <= 0.35 && m.ruinProbability <= 0.05, (m) => `dd=${(m.worstDrawdownPct*100).toFixed(1)}% ruin=${(m.ruinProbability*100).toFixed(1)}%`),
-    checklist("robustness", "Robustness", inp.robustness, (r) => r.verdict === "ROBUST" || r.verdict === "MARGINAL", (r) => r.verdict),
-    checklist("sensitivity", "Sensitivity", inp.sensitivity, (s) => s.cliffScore >= 0.6, (s) => `cliff=${s.cliffScore.toFixed(2)}`),
-    checklist("crossAsset", "Cross Asset", inp.crossAsset, (x) => x.consistency >= 0.6, (x) => `consistency=${x.consistency.toFixed(2)}`),
-    checklist("dataQuality", "Data Quality", inp.dataQuality, (d) => d.ok && d.causalityOk, (d) => `ok=${d.ok} causal=${d.causalityOk}`),
+    checklist(
+      "research",
+      "Research",
+      inp.walkForward,
+      (w) => w.stabilityScore >= 0.6,
+      (w) => `stability=${w.stabilityScore.toFixed(2)}`,
+    ),
+    checklist(
+      "optimizer",
+      "Optimizer",
+      inp.optimizer,
+      (o) => o.confidence >= 0.6,
+      (o) => `confidence=${o.confidence.toFixed(2)}`,
+    ),
+    checklist(
+      "portfolio",
+      "Portfolio",
+      inp.portfolio,
+      (p) => p.recommendation === "ACCEPT",
+      (p) => p.recommendation,
+    ),
+    checklist(
+      "shadow",
+      "Shadow",
+      inp.shadow,
+      (s) => s.readiness.startsWith("READY_FOR"),
+      (s) => s.readiness,
+    ),
+    checklist(
+      "recommendation",
+      "Recommendation",
+      inp.recommendation,
+      (r) => r.confidence >= minConfidence,
+      (r) => `confidence=${r.confidence.toFixed(2)}`,
+    ),
+    checklist(
+      "calibration",
+      "Calibration",
+      inp.shadow,
+      (s) => s.calibration >= 0.6,
+      (s) => `calibration=${s.calibration.toFixed(2)}`,
+    ),
+    checklist(
+      "walkForward",
+      "Walk Forward",
+      inp.walkForward,
+      (w) => !w.overfitFlag && w.totalTrades >= minTrades,
+      (w) => `trades=${w.totalTrades} overfit=${w.overfitFlag}`,
+    ),
+    checklist(
+      "monteCarlo",
+      "Monte Carlo",
+      inp.monteCarlo,
+      (m) => m.worstDrawdownPct <= 0.35 && m.ruinProbability <= 0.05,
+      (m) =>
+        `dd=${(m.worstDrawdownPct * 100).toFixed(1)}% ruin=${(m.ruinProbability * 100).toFixed(1)}%`,
+    ),
+    checklist(
+      "robustness",
+      "Robustness",
+      inp.robustness,
+      (r) => r.verdict === "ROBUST" || r.verdict === "MARGINAL",
+      (r) => r.verdict,
+    ),
+    checklist(
+      "sensitivity",
+      "Sensitivity",
+      inp.sensitivity,
+      (s) => s.cliffScore >= 0.6,
+      (s) => `cliff=${s.cliffScore.toFixed(2)}`,
+    ),
+    checklist(
+      "crossAsset",
+      "Cross Asset",
+      inp.crossAsset,
+      (x) => x.consistency >= 0.6,
+      (x) => `consistency=${x.consistency.toFixed(2)}`,
+    ),
+    checklist(
+      "dataQuality",
+      "Data Quality",
+      inp.dataQuality,
+      (d) => d.ok && d.causalityOk,
+      (d) => `ok=${d.ok} causal=${d.causalityOk}`,
+    ),
   ];
 
   // Supporting Run IDs
@@ -298,7 +405,8 @@ export function evaluateDecision(inp: DecisionEvidenceInput): DecisionResult {
   if (inp.robustness) supportingRunIds.robustness = inp.robustness.runId;
   if (inp.sensitivity) supportingRunIds.sensitivity = inp.sensitivity.runId;
   if (inp.optimizer) supportingRunIds.optimizer = inp.optimizer.runId;
-  if (inp.recommendationValidator) supportingRunIds.recommendationValidator = inp.recommendationValidator.runId;
+  if (inp.recommendationValidator)
+    supportingRunIds.recommendationValidator = inp.recommendationValidator.runId;
   if (inp.crossAsset) supportingRunIds.crossAsset = inp.crossAsset.runId;
   if (inp.portfolio) supportingRunIds.portfolio = inp.portfolio.runId;
   if (inp.shadow) supportingRunIds.shadow = inp.shadow.runId;

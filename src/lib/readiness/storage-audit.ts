@@ -25,15 +25,22 @@ export function auditStorage(input: StorageAuditInput): ReadinessResult[] {
       category: "SECURITY",
       title: `Bucket: ${b.name}`,
       status: wrongVisibility || noIsolation ? "FAIL" : badTtl ? "WARNING" : "PASS",
-      severity: wrongVisibility ? "blocker" : noIsolation ? "critical" : badTtl ? "warning" : "info",
+      severity: wrongVisibility
+        ? "blocker"
+        : noIsolation
+          ? "critical"
+          : badTtl
+            ? "warning"
+            : "info",
       hardBlocker: wrongVisibility || noIsolation,
-      detail: [
-        wrongVisibility ? `visibility mismatch (public=${b.isPublic})` : "",
-        noIsolation ? "no per-user folder isolation on private bucket" : "",
-        badTtl ? `signed URL TTL out of bounds (${b.signedUrlDefaultTtlSeconds}s)` : "",
-      ]
-        .filter(Boolean)
-        .join("; ") || undefined,
+      detail:
+        [
+          wrongVisibility ? `visibility mismatch (public=${b.isPublic})` : "",
+          noIsolation ? "no per-user folder isolation on private bucket" : "",
+          badTtl ? `signed URL TTL out of bounds (${b.signedUrlDefaultTtlSeconds}s)` : "",
+        ]
+          .filter(Boolean)
+          .join("; ") || undefined,
     } as ReadinessResult;
   });
 }

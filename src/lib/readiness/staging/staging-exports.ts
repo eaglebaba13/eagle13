@@ -1,5 +1,9 @@
 import { redactSecretLike } from "../production-readiness-types";
-import type { StagingCheck, StagingJourney, StagingValidationReport } from "./staging-validation-types";
+import type {
+  StagingCheck,
+  StagingJourney,
+  StagingValidationReport,
+} from "./staging-validation-types";
 
 function csvEscape(v: unknown): string {
   const s = v == null ? "" : String(v);
@@ -10,7 +14,10 @@ function csvEscape(v: unknown): string {
 function csvRows(rows: readonly (readonly unknown[])[]): string {
   return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
 }
-function filtered(r: StagingValidationReport, predicate: (c: StagingCheck) => boolean): readonly StagingCheck[] {
+function filtered(
+  r: StagingValidationReport,
+  predicate: (c: StagingCheck) => boolean,
+): readonly StagingCheck[] {
   return r.checks.filter(predicate);
 }
 
@@ -22,12 +29,35 @@ export function stagingSummaryCsv(r: StagingValidationReport): string {
 }
 export function journeyResultsCsv(r: StagingValidationReport): string {
   const rows: (readonly unknown[])[] = [
-    ["journeyId", "title", "role", "status", "durationMs", "stepId", "stepStatus", "route", "httpStatus", "error"],
+    [
+      "journeyId",
+      "title",
+      "role",
+      "status",
+      "durationMs",
+      "stepId",
+      "stepStatus",
+      "route",
+      "httpStatus",
+      "error",
+    ],
   ];
   for (const j of r.journeys as StagingJourney[]) {
-    if (j.steps.length === 0) rows.push([j.id, j.title, j.role, j.status, j.durationMs, "", "", "", "", ""]);
+    if (j.steps.length === 0)
+      rows.push([j.id, j.title, j.role, j.status, j.durationMs, "", "", "", "", ""]);
     for (const s of j.steps) {
-      rows.push([j.id, j.title, j.role, j.status, j.durationMs, s.id, s.status, s.route ?? "", s.httpStatus ?? "", s.error ?? ""]);
+      rows.push([
+        j.id,
+        j.title,
+        j.role,
+        j.status,
+        j.durationMs,
+        s.id,
+        s.status,
+        s.route ?? "",
+        s.httpStatus ?? "",
+        s.error ?? "",
+      ]);
     }
   }
   return csvRows(rows);
@@ -35,13 +65,20 @@ export function journeyResultsCsv(r: StagingValidationReport): string {
 export function providerDrillCsv(r: StagingValidationReport): string {
   return csvRows([
     ["id", "title", "status", "detail"],
-    ...filtered(r, (c) => c.id.startsWith("provider_drill.") || c.id.startsWith("failover.")).map((c) => [c.id, c.title, c.status, c.detail ?? ""]),
+    ...filtered(r, (c) => c.id.startsWith("provider_drill.") || c.id.startsWith("failover.")).map(
+      (c) => [c.id, c.title, c.status, c.detail ?? ""],
+    ),
   ]);
 }
 export function authorizationCsv(r: StagingValidationReport): string {
   return csvRows([
     ["id", "title", "status", "detail"],
-    ...filtered(r, (c) => c.id.startsWith("authz.") || c.id.startsWith("rls.")).map((c) => [c.id, c.title, c.status, c.detail ?? ""]),
+    ...filtered(r, (c) => c.id.startsWith("authz.") || c.id.startsWith("rls.")).map((c) => [
+      c.id,
+      c.title,
+      c.status,
+      c.detail ?? "",
+    ]),
   ]);
 }
 export function performanceCsv(r: StagingValidationReport): string {
@@ -53,13 +90,23 @@ export function performanceCsv(r: StagingValidationReport): string {
 export function bundleAuditCsv(r: StagingValidationReport): string {
   return csvRows([
     ["id", "title", "status", "detail"],
-    ...filtered(r, (c) => c.id.startsWith("bundle.")).map((c) => [c.id, c.title, c.status, c.detail ?? ""]),
+    ...filtered(r, (c) => c.id.startsWith("bundle.")).map((c) => [
+      c.id,
+      c.title,
+      c.status,
+      c.detail ?? "",
+    ]),
   ]);
 }
 export function loadTestCsv(r: StagingValidationReport): string {
   return csvRows([
     ["id", "title", "status", "detail"],
-    ...filtered(r, (c) => c.id.startsWith("load.")).map((c) => [c.id, c.title, c.status, c.detail ?? ""]),
+    ...filtered(r, (c) => c.id.startsWith("load.")).map((c) => [
+      c.id,
+      c.title,
+      c.status,
+      c.detail ?? "",
+    ]),
   ]);
 }
 export function recoveryDrillCsv(r: StagingValidationReport): string {
@@ -71,7 +118,14 @@ export function recoveryDrillCsv(r: StagingValidationReport): string {
 export function incidentDrillCsv(r: StagingValidationReport): string {
   return csvRows([
     ["id", "scenario", "owner", "outcome", "detectionMs", "acknowledgmentMs"],
-    ...r.incidentDrills.map((d) => [d.id, d.scenario, d.owner, d.outcome, d.detectionMs ?? "", d.acknowledgmentMs ?? ""]),
+    ...r.incidentDrills.map((d) => [
+      d.id,
+      d.scenario,
+      d.owner,
+      d.outcome,
+      d.detectionMs ?? "",
+      d.acknowledgmentMs ?? "",
+    ]),
   ]);
 }
 export function releaseChecklistCsv(r: StagingValidationReport): string {

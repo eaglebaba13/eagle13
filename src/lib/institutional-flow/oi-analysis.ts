@@ -27,7 +27,10 @@ function closestStrike(strikes: readonly number[], target: number | null): numbe
   let bestDist = Math.abs(strikes[0] - target);
   for (const s of strikes) {
     const d = Math.abs(s - target);
-    if (d < bestDist) { best = s; bestDist = d; }
+    if (d < bestDist) {
+      best = s;
+      bestDist = d;
+    }
   }
   return best;
 }

@@ -97,7 +97,11 @@ describe("Phase 24D · dashboard preferences", () => {
   });
 
   it("desktop reorder is independent of mobile reorder", () => {
-    const start = { ...DEFAULT_PREFERENCES, desktopOrder: ["a", "b", "c"], mobileOrder: ["a", "b", "c"] };
+    const start = {
+      ...DEFAULT_PREFERENCES,
+      desktopOrder: ["a", "b", "c"],
+      mobileOrder: ["a", "b", "c"],
+    };
     const p = moveWidget(start, "a", "down", "desktop");
     expect(p.desktopOrder).toEqual(["b", "a", "c"]);
     expect(p.mobileOrder).toEqual(["a", "b", "c"]);
@@ -110,7 +114,12 @@ describe("Phase 24D · dashboard preferences", () => {
   });
 
   it("resetDesktop / resetMobile / resetAll", () => {
-    const start = { ...DEFAULT_PREFERENCES, desktopOrder: ["a"], mobileOrder: ["b"], hidden: ["c"] };
+    const start = {
+      ...DEFAULT_PREFERENCES,
+      desktopOrder: ["a"],
+      mobileOrder: ["b"],
+      hidden: ["c"],
+    };
     expect(resetDesktop(start).desktopOrder).toEqual([]);
     expect(resetMobile(start).mobileOrder).toEqual([]);
     expect(resetAll()).toEqual(DEFAULT_PREFERENCES);

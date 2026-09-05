@@ -4,11 +4,7 @@
 // server-only bearer secret.
 
 import { buildSnapshot } from "./snapshot-contract";
-import type {
-  CollectorFreshness,
-  CollectorSnapshot,
-  CollectorSignal,
-} from "./snapshot-contract";
+import type { CollectorFreshness, CollectorSnapshot, CollectorSignal } from "./snapshot-contract";
 
 const CACHE_TTL_MS = 10_000;
 const REQUEST_TIMEOUT_MS = 3_500;
@@ -33,8 +29,7 @@ export interface CollectorRuntimeConfig {
 export function readCollectorConfig(): CollectorRuntimeConfig {
   const url = process.env.TRADINGVIEW_COLLECTOR_URL ?? "";
   const token = process.env.TRADINGVIEW_COLLECTOR_API_TOKEN ?? "";
-  const enabled = (process.env.TRADINGVIEW_COLLECTOR_ENABLED ?? "false")
-    .toLowerCase() === "true";
+  const enabled = (process.env.TRADINGVIEW_COLLECTOR_ENABLED ?? "false").toLowerCase() === "true";
   return {
     enabled,
     urlConfigured: url.length > 0,
@@ -77,23 +72,16 @@ function validateRemote(raw: unknown): CollectorSnapshot | null {
   const r = raw as Record<string, unknown>;
   if (r.symbol !== "TVC:GOLDSILVER") return null;
   const ratio =
-    typeof r.ratio === "number" && Number.isFinite(r.ratio) && r.ratio > 0
-      ? r.ratio
-      : null;
-  const marketTimestamp =
-    typeof r.marketTimestamp === "number" ? r.marketTimestamp : null;
-  const receivedAtMs =
-    typeof r.receivedAt === "string" ? Date.parse(r.receivedAt) : NaN;
+    typeof r.ratio === "number" && Number.isFinite(r.ratio) && r.ratio > 0 ? r.ratio : null;
+  const marketTimestamp = typeof r.marketTimestamp === "number" ? r.marketTimestamp : null;
+  const receivedAtMs = typeof r.receivedAt === "string" ? Date.parse(r.receivedAt) : NaN;
   const freshness = ["LIVE", "STALE", "UNAVAILABLE"].includes(String(r.freshness))
     ? (r.freshness as CollectorFreshness)
     : "UNAVAILABLE";
-  const signal = ["BUY_GOLD", "BUY_SILVER", "NEUTRAL", "UNAVAILABLE"].includes(
-    String(r.signal),
-  )
+  const signal = ["BUY_GOLD", "BUY_SILVER", "NEUTRAL", "UNAVAILABLE"].includes(String(r.signal))
     ? (r.signal as CollectorSignal)
     : "UNAVAILABLE";
-  const connectionStatus =
-    typeof r.connectionStatus === "string" ? r.connectionStatus : "UNKNOWN";
+  const connectionStatus = typeof r.connectionStatus === "string" ? r.connectionStatus : "UNKNOWN";
 
   return buildSnapshot({
     symbol: "TVC:GOLDSILVER",

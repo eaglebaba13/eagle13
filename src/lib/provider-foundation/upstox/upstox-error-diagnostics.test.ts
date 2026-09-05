@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseUpstoxErrorCode } from "./upstox-http.server";
-import {
-  classifyUpstoxTokenFormat,
-  evaluateUpstoxTokenPolicy,
-} from "./upstox-token-policy.server";
+import { classifyUpstoxTokenFormat, evaluateUpstoxTokenPolicy } from "./upstox-token-policy.server";
 import { runUpstoxSmokeTest } from "./upstox-smoke.server";
 
 const LIVE_ENV = {
@@ -23,7 +20,10 @@ function jsonResponse(body: unknown, status: number) {
 describe("upstox diagnostics — error code + token classification", () => {
   it("parses UDAPI errorCode from a v2 error envelope", () => {
     const code = parseUpstoxErrorCode(
-      JSON.stringify({ status: "error", errors: [{ errorCode: "UDAPI100050", message: "Invalid token" }] }),
+      JSON.stringify({
+        status: "error",
+        errors: [{ errorCode: "UDAPI100050", message: "Invalid token" }],
+      }),
     );
     expect(code).toBe("UDAPI100050");
   });
@@ -78,7 +78,10 @@ describe("upstox diagnostics — error code + token classification", () => {
           );
         }
         // historical succeeds
-        return jsonResponse({ data: { candles: [["2026-07-14T09:15:00Z", 100, 110, 95, 103, 1000]] } }, 200);
+        return jsonResponse(
+          { data: { candles: [["2026-07-14T09:15:00Z", 100, 110, 95, 103, 1000]] } },
+          200,
+        );
       },
       nowIso: "2026-07-16T09:15:00.000Z",
     });

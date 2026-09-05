@@ -7,10 +7,7 @@
 //
 // Spec: §§2, 3, 4, 5, 6, 7, 8, 9.
 
-import {
-  INTRADAY_FORMULA_VERSIONS,
-  type IntradayFormulaVersion,
-} from "./engine-version";
+import { INTRADAY_FORMULA_VERSIONS, type IntradayFormulaVersion } from "./engine-version";
 import {
   assertAbsoluteDegree,
   GANN_PLANETS,
@@ -24,8 +21,7 @@ import {
 } from "./gann-intraday.types";
 import { getInstrumentPolicy, type InstrumentSymbol } from "./gann-intraday-policy";
 
-const FORMULA: IntradayFormulaVersion =
-  INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1;
+const FORMULA: IntradayFormulaVersion = INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1;
 
 /** Compute the bounding 360° cycles that straddle previous close. Spec §§5, 6. */
 export function computeCycleBounds(previousClose: number): CycleBounds {
@@ -86,11 +82,7 @@ export function computePlanetLevels(
   ];
   return rows.map(({ src, raw }) => {
     const value = Math.round(raw);
-    const { side, tradeBias, safety } = classify(
-      value,
-      cycles.previousClose,
-      safeDistance,
-    );
+    const { side, tradeBias, safety } = classify(value, cycles.previousClose, safeDistance);
     return {
       planet: input.planet,
       absoluteDegree: input.absoluteDegree,
@@ -128,14 +120,10 @@ export function buildAbsoluteIntradayLevels(args: {
   const policy = getInstrumentPolicy(args.instrument);
   const cycles = computeCycleBounds(args.previousClose);
 
-  const byName = new Map<string, PlanetAbsoluteInput>(
-    args.planets.map((p) => [p.planet, p]),
-  );
+  const byName = new Map<string, PlanetAbsoluteInput>(args.planets.map((p) => [p.planet, p]));
   const missing = GANN_PLANETS.filter((n) => !byName.has(n));
   if (missing.length > 0) {
-    throw new Error(
-      `Missing absolute degrees for planets: ${missing.join(", ")}`,
-    );
+    throw new Error(`Missing absolute degrees for planets: ${missing.join(", ")}`);
   }
 
   const levels: RawAstroLevel[] = [];

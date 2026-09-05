@@ -12,7 +12,9 @@ describe("deriveConfidence stale-input downgrade", () => {
     expect(deriveConfidence(strong, "SUPPORTS_UP")).toBe("EXPERIMENTAL_HIGH");
   });
   it("HIGH → MEDIUM when stale", () => {
-    expect(deriveConfidence(strong, "SUPPORTS_UP", { staleInputs: true })).toBe("EXPERIMENTAL_MEDIUM");
+    expect(deriveConfidence(strong, "SUPPORTS_UP", { staleInputs: true })).toBe(
+      "EXPERIMENTAL_MEDIUM",
+    );
   });
   it("MEDIUM → LOW when stale", () => {
     const mid = [mk("SUPPORTS_UP"), mk("SUPPORTS_UP"), mk("CONFLICT")];

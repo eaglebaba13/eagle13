@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  evaluateProviderEnvPresence,
-  liveCredentialsComplete,
-} from "./env-presence.server";
+import { evaluateProviderEnvPresence, liveCredentialsComplete } from "./env-presence.server";
 
 const FULL_LIVE = {
   UPSTOX_MARKET_DATA_MODE: "live",

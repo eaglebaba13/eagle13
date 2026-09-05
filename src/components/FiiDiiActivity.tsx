@@ -16,8 +16,7 @@ const fmtCr = (n: number) => {
 };
 
 function NetCell({ value }: { value: number }) {
-  const color =
-    value > 0 ? "var(--eb-bull)" : value < 0 ? "var(--eb-bear)" : "var(--eb-muted)";
+  const color = value > 0 ? "var(--eb-bull)" : value < 0 ? "var(--eb-bear)" : "var(--eb-muted)";
   return (
     <td
       style={{

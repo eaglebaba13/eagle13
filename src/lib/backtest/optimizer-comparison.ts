@@ -7,10 +7,7 @@ import type {
   SensitivityCell,
   SensitivityMetrics,
 } from "./parameter-sensitivity";
-import type {
-  OptimizerAggregateInputs,
-  OptimizerResult,
-} from "./explainable-optimizer";
+import type { OptimizerAggregateInputs, OptimizerResult } from "./explainable-optimizer";
 
 export type ComparisonMetrics = {
   readonly profitFactor: number;
@@ -97,8 +94,14 @@ function findCell(
     for (const k of Object.keys(params)) {
       const a = params[k];
       const b = c.params[k];
-      if (a === undefined || b === undefined) { match = false; break; }
-      if (Math.abs(a - b) > 1e-6) { match = false; break; }
+      if (a === undefined || b === undefined) {
+        match = false;
+        break;
+      }
+      if (Math.abs(a - b) > 1e-6) {
+        match = false;
+        break;
+      }
     }
     if (match) return c;
   }

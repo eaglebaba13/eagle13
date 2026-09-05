@@ -98,18 +98,150 @@ function AdminStagingValidationPage() {
             </button>
             {report && (
               <>
-                <button onClick={() => downloadBlob(stagingSummaryCsv(report), `staging-summary-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Summary CSV</button>
-                <button onClick={() => downloadBlob(journeyResultsCsv(report), `staging-journeys-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Journeys CSV</button>
-                <button onClick={() => downloadBlob(providerDrillCsv(report), `staging-providers-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Providers CSV</button>
-                <button onClick={() => downloadBlob(authorizationCsv(report), `staging-authz-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Authz CSV</button>
-                <button onClick={() => downloadBlob(performanceCsv(report), `staging-perf-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Performance CSV</button>
-                <button onClick={() => downloadBlob(bundleAuditCsv(report), `staging-bundle-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Bundle CSV</button>
-                <button onClick={() => downloadBlob(loadTestCsv(report), `staging-load-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Load CSV</button>
-                <button onClick={() => downloadBlob(recoveryDrillCsv(report), `staging-recovery-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Recovery CSV</button>
-                <button onClick={() => downloadBlob(incidentDrillCsv(report), `staging-incident-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Incident CSV</button>
-                <button onClick={() => downloadBlob(releaseChecklistCsv(report), `staging-release-${report.runId}.csv`, "text/csv")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Release CSV</button>
-                <button onClick={() => downloadBlob(fullStagingReportJson(report), `staging-${report.runId}.json`, "application/json")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Full JSON</button>
-                <button onClick={() => downloadBlob(stagingEvidenceBundleJson(report), `staging-evidence-${report.runId}.json`, "application/json")} className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent">Evidence Bundle</button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      stagingSummaryCsv(report),
+                      `staging-summary-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Summary CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      journeyResultsCsv(report),
+                      `staging-journeys-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Journeys CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      providerDrillCsv(report),
+                      `staging-providers-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Providers CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      authorizationCsv(report),
+                      `staging-authz-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Authz CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      performanceCsv(report),
+                      `staging-perf-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Performance CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      bundleAuditCsv(report),
+                      `staging-bundle-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Bundle CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      loadTestCsv(report),
+                      `staging-load-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Load CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      recoveryDrillCsv(report),
+                      `staging-recovery-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Recovery CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      incidentDrillCsv(report),
+                      `staging-incident-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Incident CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      releaseChecklistCsv(report),
+                      `staging-release-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Release CSV
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      fullStagingReportJson(report),
+                      `staging-${report.runId}.json`,
+                      "application/json",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Full JSON
+                </button>
+                <button
+                  onClick={() =>
+                    downloadBlob(
+                      stagingEvidenceBundleJson(report),
+                      `staging-evidence-${report.runId}.json`,
+                      "application/json",
+                    )
+                  }
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  Evidence Bundle
+                </button>
               </>
             )}
           </div>
@@ -124,7 +256,9 @@ function AdminStagingValidationPage() {
         {report && (
           <>
             <div className="grid gap-4 md:grid-cols-3">
-              <div className={`rounded-xl border p-4 ${VERDICT_COLORS[report.verdict] ?? "border-border bg-muted/20"}`}>
+              <div
+                className={`rounded-xl border p-4 ${VERDICT_COLORS[report.verdict] ?? "border-border bg-muted/20"}`}
+              >
                 <p className="text-xs uppercase tracking-wide opacity-80">Verdict</p>
                 <p className="mt-1 text-lg font-semibold">{report.verdict.replace(/_/g, " ")}</p>
                 <p className="mt-2 text-xs opacity-70">Run: {report.runId}</p>
@@ -133,21 +267,25 @@ function AdminStagingValidationPage() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Score</p>
                 <p className="mt-1 text-3xl font-bold text-foreground">{report.score.total}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  ✓ {report.score.passCount} · ⚠ {report.score.warnCount} · ✗ {report.score.failCount} · blockers {report.score.hardBlockerCount}
+                  ✓ {report.score.passCount} · ⚠ {report.score.warnCount} · ✗{" "}
+                  {report.score.failCount} · blockers {report.score.hardBlockerCount}
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Environment</p>
                 <p className="mt-1 text-lg font-semibold text-foreground">{report.environment}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  host={report.stagingHost ?? "—"} · build={report.buildVersion ?? "—"} · commit={report.commitVersion ?? "—"}
+                  host={report.stagingHost ?? "—"} · build={report.buildVersion ?? "—"} · commit=
+                  {report.commitVersion ?? "—"}
                 </p>
               </div>
             </div>
 
             {report.blockers.length > 0 && (
               <section className="rounded-xl border border-red-500/40 bg-red-500/[0.05] p-4">
-                <h2 className="text-sm font-semibold text-red-300">Hard blockers ({report.blockers.length})</h2>
+                <h2 className="text-sm font-semibold text-red-300">
+                  Hard blockers ({report.blockers.length})
+                </h2>
                 <ul className="mt-2 space-y-1 text-sm text-red-200/90">
                   {report.blockers.map((b) => (
                     <li key={b.id}>
@@ -168,8 +306,14 @@ function AdminStagingValidationPage() {
                       <h3 className="text-sm font-semibold text-foreground">{j.title}</h3>
                       <span className="text-xs text-muted-foreground">{j.role}</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{j.status} · {j.durationMs}ms · {j.steps.length} steps</p>
-                    {j.failure && <p className="mt-1 text-xs text-red-300">step={j.failure.stepId} — {j.failure.message}</p>}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {j.status} · {j.durationMs}ms · {j.steps.length} steps
+                    </p>
+                    {j.failure && (
+                      <p className="mt-1 text-xs text-red-300">
+                        step={j.failure.stepId} — {j.failure.message}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -192,13 +336,23 @@ function AdminStagingValidationPage() {
                       <tr key={c.id} className="border-t border-border/60">
                         <td className="px-3 py-1.5 text-xs text-muted-foreground">{c.category}</td>
                         <td className="px-3 py-1.5 text-foreground">{c.title}</td>
-                        <td className={`px-3 py-1.5 text-xs font-semibold ${
-                          c.status === "PASS" ? "text-emerald-400" :
-                          c.status === "WARNING" ? "text-amber-300" :
-                          c.status === "FAIL" || c.status === "BLOCKED" ? "text-red-400" :
-                          "text-muted-foreground"
-                        }`}>{c.status}{c.hardBlocker ? " · BLOCKER" : ""}</td>
-                        <td className="px-3 py-1.5 text-xs text-muted-foreground">{c.detail ?? ""}</td>
+                        <td
+                          className={`px-3 py-1.5 text-xs font-semibold ${
+                            c.status === "PASS"
+                              ? "text-emerald-400"
+                              : c.status === "WARNING"
+                                ? "text-amber-300"
+                                : c.status === "FAIL" || c.status === "BLOCKED"
+                                  ? "text-red-400"
+                                  : "text-muted-foreground"
+                          }`}
+                        >
+                          {c.status}
+                          {c.hardBlocker ? " · BLOCKER" : ""}
+                        </td>
+                        <td className="px-3 py-1.5 text-xs text-muted-foreground">
+                          {c.detail ?? ""}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

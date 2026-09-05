@@ -27,7 +27,12 @@ type Props = {
  * widgets sharing a dependency reuse the same query key from
  * `DATA_DEPENDENCY_QUERY_KEY`.
  */
-export function DashboardGrid({ device, context, preferences, widgets = DASHBOARD_WIDGETS }: Props) {
+export function DashboardGrid({
+  device,
+  context,
+  preferences,
+  widgets = DASHBOARD_WIDGETS,
+}: Props) {
   const adminDisabled = useAdminDisabledWidgets();
   const filtered = useMemo(
     () => resolveWidgetsForContext(context, widgets).filter((w) => !adminDisabled.has(w.id)),
@@ -35,12 +40,16 @@ export function DashboardGrid({ device, context, preferences, widgets = DASHBOAR
   );
   const ordered = useMemo(
     () =>
-      applyPreferences(filtered, preferences ?? {
-        hidden: [],
-        collapsed: [],
-        desktopOrder: [],
-        mobileOrder: [],
-      }, device === "mobile" ? "mobile" : "desktop"),
+      applyPreferences(
+        filtered,
+        preferences ?? {
+          hidden: [],
+          collapsed: [],
+          desktopOrder: [],
+          mobileOrder: [],
+        },
+        device === "mobile" ? "mobile" : "desktop",
+      ),
     [filtered, preferences, device],
   );
 
@@ -60,7 +69,13 @@ export function DashboardGrid({ device, context, preferences, widgets = DASHBOAR
   );
 }
 
-function WidgetSlot({ widget, device }: { widget: WidgetDefinition; device: "desktop" | "tablet" | "mobile" }) {
+function WidgetSlot({
+  widget,
+  device,
+}: {
+  widget: WidgetDefinition;
+  device: "desktop" | "tablet" | "mobile";
+}) {
   const Lazy = useMemo(() => lazy(widget.componentLoader), [widget]);
   const span =
     device === "desktop"

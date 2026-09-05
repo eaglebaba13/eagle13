@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  RESEARCH_LAB_DISCLAIMER,
-  RESEARCH_LAB_VERSION,
-} from "./types";
+import { RESEARCH_LAB_DISCLAIMER, RESEARCH_LAB_VERSION } from "./types";
 import { buildDataset } from "./dataset";
 import { buildResearchRunReport, exportJson, compareRuns } from "./report";
 

@@ -21,9 +21,7 @@ function csvEscape(v: unknown): string {
 function rowsToCsv(rows: readonly Record<string, unknown>[]): string {
   if (rows.length === 0) return HEADER + "empty\n";
   const cols = Object.keys(rows[0]);
-  const body = [cols.join(",")].concat(
-    rows.map((r) => cols.map((c) => csvEscape(r[c])).join(",")),
-  );
+  const body = [cols.join(",")].concat(rows.map((r) => cols.map((c) => csvEscape(r[c])).join(",")));
   return HEADER + body.join("\n") + "\n";
 }
 

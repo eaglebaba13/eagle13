@@ -9,7 +9,11 @@ function fullSnapshot(overrides: Partial<UpstoxSnapshot> = {}): UpstoxSnapshot {
   const strikes = [];
   for (let i = -6; i <= 6; i++) {
     strikes.push(
-      makeStrike(spot + i * 50, { oi: 1000 + i, changeOi: 10, volume: 500, ltp: 100 }, { oi: 900 + i, changeOi: -5, volume: 400, ltp: 90 }),
+      makeStrike(
+        spot + i * 50,
+        { oi: 1000 + i, changeOi: 10, volume: 500, ltp: 100 },
+        { oi: 900 + i, changeOi: -5, volume: 400, ltp: 90 },
+      ),
     );
   }
   return {
@@ -79,10 +83,7 @@ describe("adaptUpstoxToLegacyChain", () => {
   });
 
   it("NO_DATA when provider returned empty payload", () => {
-    const r = adaptUpstoxToLegacyChain(
-      "NIFTY",
-      failResult({ safeError: "empty option chain" }),
-    );
+    const r = adaptUpstoxToLegacyChain("NIFTY", failResult({ safeError: "empty option chain" }));
     expect(r.capability).toBe("NO_DATA");
   });
 

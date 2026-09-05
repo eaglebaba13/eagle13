@@ -22,10 +22,7 @@ import {
 } from "@/lib/shadow/shadow-live-exports";
 import { computeShadowMetrics } from "@/lib/shadow/shadow-metrics";
 import { classifyShadowDrift } from "@/lib/shadow/shadow-drift";
-import {
-  ShadowLiveController,
-  type ControllerSnapshot,
-} from "@/lib/shadow/shadow-live-controller";
+import { ShadowLiveController, type ControllerSnapshot } from "@/lib/shadow/shadow-live-controller";
 import {
   createCsvReplayAdapter,
   createMockAdapter,
@@ -81,8 +78,22 @@ const btnGhost: React.CSSProperties = {
 function mockCandles(): readonly ShadowClosedCandle[] {
   return [
     { date: "2024-01-15T09:15:00Z", open: 100, high: 100.8, low: 99.5, close: 100.5, closed: true },
-    { date: "2024-01-15T09:20:00Z", open: 100.5, high: 101.4, low: 100.3, close: 101.2, closed: true },
-    { date: "2024-01-15T09:25:00Z", open: 101.2, high: 102.1, low: 101.0, close: 102.0, closed: true },
+    {
+      date: "2024-01-15T09:20:00Z",
+      open: 100.5,
+      high: 101.4,
+      low: 100.3,
+      close: 101.2,
+      closed: true,
+    },
+    {
+      date: "2024-01-15T09:25:00Z",
+      open: 101.2,
+      high: 102.1,
+      low: 101.0,
+      close: 102.0,
+      closed: true,
+    },
   ];
 }
 
@@ -122,10 +133,19 @@ type ProviderId = "MOCK" | "CSV_REPLAY" | "YAHOO_LIMITED" | "UNAVAILABLE_TEST";
 const INSTRUMENTS = ["NIFTY50", "BANKNIFTY", "BTC", "XAUUSD", "CRUDEOIL", "NATURALGAS"] as const;
 const TIMEFRAMES = ["1m", "3m", "5m", "15m", "1d"] as const;
 
-function buildProvider(id: ProviderId, instrument: string, timeframe: string): LiveDataProviderAdapter {
+function buildProvider(
+  id: ProviderId,
+  instrument: string,
+  timeframe: string,
+): LiveDataProviderAdapter {
   const session = getSessionPolicy(instrument);
   const marketHours = session
-    ? { timezone: session.timezone, openHHMM: session.openHHMM, closeHHMM: session.closeHHMM, is247: session.is247 }
+    ? {
+        timezone: session.timezone,
+        openHHMM: session.openHHMM,
+        closeHHMM: session.closeHHMM,
+        is247: session.is247,
+      }
     : { timezone: "UTC", openHHMM: "00:00", closeHHMM: "23:59", is247: true };
   const timezone = session?.timezone ?? "UTC";
   const candles = mockCandles();
@@ -275,7 +295,10 @@ export default function ShadowSection() {
   const canStop = snap.schedulerState !== "STOPPED";
   const canRunOnce = !snap.running && snap.schedulerState !== "STOPPED";
 
-  const readiness = snap.lastResult?.readiness ?? { status: "NOT_READY", reasons: [] as readonly string[] };
+  const readiness = snap.lastResult?.readiness ?? {
+    status: "NOT_READY",
+    reasons: [] as readonly string[],
+  };
   const candleStatus = snap.lastResult?.candleStatus ?? "DATA_INCOMPLETE";
   const lastCandle = readLastCandle(snap);
 
@@ -309,22 +332,27 @@ export default function ShadowSection() {
           <Field label="Instrument">
             <Select value={instrument} onChange={setInstrument}>
               {INSTRUMENTS.map((i) => (
-                <option key={i} value={i}>{i}</option>
+                <option key={i} value={i}>
+                  {i}
+                </option>
               ))}
             </Select>
           </Field>
           <Field label="Timeframe">
             <Select value={timeframe} onChange={setTimeframe}>
               {TIMEFRAMES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </Select>
           </Field>
         </div>
         <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-          {provider.label} · {provider.timezone} · open {provider.marketHours.openHHMM}–{provider.marketHours.closeHHMM}
-          {" · "}TFs [{provider.supportedTimeframes.join(", ") || "—"}]
-          {" · "}Instruments [{provider.supportedInstruments.join(", ") || "—"}]
+          {provider.label} · {provider.timezone} · open {provider.marketHours.openHHMM}–
+          {provider.marketHours.closeHHMM}
+          {" · "}TFs [{provider.supportedTimeframes.join(", ") || "—"}]{" · "}Instruments [
+          {provider.supportedInstruments.join(", ") || "—"}]
         </div>
       </div>
 
@@ -332,15 +360,32 @@ export default function ShadowSection() {
       <div style={panel}>
         <div style={lbl}>Observation Controls</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button style={btnGhost} disabled={!canRunOnce} onClick={() => void controller.runOnce()}>Run Once</button>
-          <button style={btnGhost} disabled={!canStart} onClick={() => controller.start()}>Start Observation</button>
-          <button style={btnGhost} disabled={!canPause} onClick={() => controller.pause()}>Pause</button>
-          <button style={btnGhost} disabled={!canResume} onClick={() => controller.resume()}>Resume</button>
-          <button style={btnGhost} disabled={!canStop} onClick={() => controller.stop()}>Stop</button>
+          <button style={btnGhost} disabled={!canRunOnce} onClick={() => void controller.runOnce()}>
+            Run Once
+          </button>
+          <button style={btnGhost} disabled={!canStart} onClick={() => controller.start()}>
+            Start Observation
+          </button>
+          <button style={btnGhost} disabled={!canPause} onClick={() => controller.pause()}>
+            Pause
+          </button>
+          <button style={btnGhost} disabled={!canResume} onClick={() => controller.resume()}>
+            Resume
+          </button>
+          <button style={btnGhost} disabled={!canStop} onClick={() => controller.stop()}>
+            Stop
+          </button>
           <button
-            style={{ ...btnGhost, borderColor: confirmClear ? C.red : C.border, color: confirmClear ? C.red : C.text }}
+            style={{
+              ...btnGhost,
+              borderColor: confirmClear ? C.red : C.border,
+              color: confirmClear ? C.red : C.text,
+            }}
             onClick={() => {
-              if (!confirmClear) { setConfirmClear(true); return; }
+              if (!confirmClear) {
+                setConfirmClear(true);
+                return;
+              }
               controller.clearHistory();
               setConfirmClear(false);
             }}
@@ -377,9 +422,18 @@ export default function ShadowSection() {
       {/* Readiness Checklist */}
       <div style={panel}>
         <div style={lbl}>Readiness Checklist</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 6 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+            gap: 6,
+          }}
+        >
           {readinessChecklist(snap).map((c) => (
-            <div key={c.label} style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: c.ok ? C.green : C.red }}>
+            <div
+              key={c.label}
+              style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: c.ok ? C.green : C.red }}
+            >
               {c.ok ? "✓" : "✗"} {c.label}
               {!c.ok && c.reason ? <span style={{ color: C.muted }}> · {c.reason}</span> : null}
             </div>
@@ -390,13 +444,20 @@ export default function ShadowSection() {
       {/* Closed-candle panel */}
       <div style={panel}>
         <div style={lbl}>Closed-Candle Validation</div>
-        <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: candleStatus === "CLOSED_VALID" ? C.green : C.red }}>
+        <div
+          style={{
+            fontFamily: "var(--eb-mono)",
+            fontSize: 12,
+            color: candleStatus === "CLOSED_VALID" ? C.green : C.red,
+          }}
+        >
           {candleStatus}
           {candleStatus === "CLOSED_VALID" ? " · ELIGIBLE FOR SHADOW PROCESSING" : ""}
         </div>
         <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 6 }}>
-          Timeframe {timeframe} · Timezone {provider.timezone} · Grace {controller.getConfig().candlePolicy.gracePeriodSeconds}s
-          {" · "}Stale-after {controller.getConfig().candlePolicy.staleAfterSeconds}s
+          Timeframe {timeframe} · Timezone {provider.timezone} · Grace{" "}
+          {controller.getConfig().candlePolicy.gracePeriodSeconds}s{" · "}Stale-after{" "}
+          {controller.getConfig().candlePolicy.staleAfterSeconds}s
         </div>
       </div>
 
@@ -415,7 +476,9 @@ export default function ShadowSection() {
           ]}
         />
         <div style={{ marginTop: 8 }}>
-          <button style={btnGhost} onClick={() => void controller.runOnce()}>Retry</button>
+          <button style={btnGhost} onClick={() => void controller.runOnce()}>
+            Retry
+          </button>
         </div>
       </div>
 
@@ -429,26 +492,54 @@ export default function ShadowSection() {
             <table style={{ borderCollapse: "collapse", minWidth: 700 }}>
               <thead>
                 <tr style={{ color: C.muted }}>
-                  {["Instrument", "TF", "Strategy", "Formula", "Side", "Entry", "Stop", "Target", "MFE", "MAE", "Bars", "Max", "Status"].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "4px 8px" }}>{h}</th>
+                  {[
+                    "Instrument",
+                    "TF",
+                    "Strategy",
+                    "Formula",
+                    "Side",
+                    "Entry",
+                    "Stop",
+                    "Target",
+                    "MFE",
+                    "MAE",
+                    "Bars",
+                    "Max",
+                    "Status",
+                  ].map((h) => (
+                    <th key={h} style={{ textAlign: "left", padding: "4px 8px" }}>
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {activePositions.map((p) => (
-                  <tr key={`${p.key.instrument}-${p.key.timeframe}-${p.key.strategy}`} style={{ borderTop: `1px solid ${C.border}` }}>
+                  <tr
+                    key={`${p.key.instrument}-${p.key.timeframe}-${p.key.strategy}`}
+                    style={{ borderTop: `1px solid ${C.border}` }}
+                  >
                     <td style={{ padding: "4px 8px" }}>{p.key.instrument}</td>
                     <td style={{ padding: "4px 8px" }}>{p.key.timeframe}</td>
                     <td style={{ padding: "4px 8px" }}>{p.key.strategy}</td>
                     <td style={{ padding: "4px 8px" }}>{p.key.formulaVersion}</td>
-                    <td style={{ padding: "4px 8px", color: p.position.side === "LONG" ? C.green : C.red }}>{p.position.side}</td>
+                    <td
+                      style={{
+                        padding: "4px 8px",
+                        color: p.position.side === "LONG" ? C.green : C.red,
+                      }}
+                    >
+                      {p.position.side}
+                    </td>
                     <td style={{ padding: "4px 8px" }}>{p.position.entry.toFixed(2)}</td>
                     <td style={{ padding: "4px 8px" }}>{p.position.stop.toFixed(2)}</td>
                     <td style={{ padding: "4px 8px" }}>{p.position.target.toFixed(2)}</td>
                     <td style={{ padding: "4px 8px" }}>{p.mfe.toFixed(2)}</td>
                     <td style={{ padding: "4px 8px" }}>{p.mae.toFixed(2)}</td>
                     <td style={{ padding: "4px 8px" }}>{p.barsElapsed}</td>
-                    <td style={{ padding: "4px 8px" }}>{Number.isFinite(p.maxHoldBars) ? p.maxHoldBars : "∞"}</td>
+                    <td style={{ padding: "4px 8px" }}>
+                      {Number.isFinite(p.maxHoldBars) ? p.maxHoldBars : "∞"}
+                    </td>
                     <td style={{ padding: "4px 8px" }}>{p.status}</td>
                   </tr>
                 ))}
@@ -461,18 +552,26 @@ export default function ShadowSection() {
       {/* Timeline */}
       <div style={panel}>
         <div style={lbl}>Scheduler Timeline</div>
-        <div style={{ maxHeight: 200, overflow: "auto", fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+        <div
+          style={{ maxHeight: 200, overflow: "auto", fontFamily: "var(--eb-mono)", fontSize: 11 }}
+        >
           {snap.timeline.length === 0 ? (
             <div style={{ color: C.muted }}>No events yet.</div>
           ) : (
-            [...snap.timeline].reverse().slice(0, 60).map((e, i) => (
-              <div key={`${e.at}-${i}`} style={{ borderBottom: `1px solid ${C.border}`, padding: "3px 0" }}>
-                <span style={{ color: C.orange }}>{e.kind}</span>
-                <span style={{ color: C.muted }}> · {e.at}</span>
-                <span> · {e.status}</span>
-                {e.reason ? <span style={{ color: C.red }}> · {e.reason}</span> : null}
-              </div>
-            ))
+            [...snap.timeline]
+              .reverse()
+              .slice(0, 60)
+              .map((e, i) => (
+                <div
+                  key={`${e.at}-${i}`}
+                  style={{ borderBottom: `1px solid ${C.border}`, padding: "3px 0" }}
+                >
+                  <span style={{ color: C.orange }}>{e.kind}</span>
+                  <span style={{ color: C.muted }}> · {e.at}</span>
+                  <span> · {e.status}</span>
+                  {e.reason ? <span style={{ color: C.red }}> · {e.reason}</span> : null}
+                </div>
+              ))
           )}
         </div>
       </div>
@@ -480,14 +579,23 @@ export default function ShadowSection() {
       {/* Metrics */}
       <div style={panel}>
         <div style={lbl}>Shadow Metrics</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+            gap: 8,
+          }}
+        >
           <Metric label="Observed" v={metrics.recommendationsObserved} />
           <Metric label="Blocked" v={metrics.recommendationsBlocked} />
           <Metric label="Entries" v={metrics.entries} />
           <Metric label="Wins" v={metrics.wins} />
           <Metric label="Losses" v={metrics.losses} />
           <Metric label="Win rate" v={`${(metrics.winRate * 100).toFixed(1)}%`} />
-          <Metric label="Profit factor" v={Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : "∞"} />
+          <Metric
+            label="Profit factor"
+            v={Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : "∞"}
+          />
           <Metric label="Expectancy" v={metrics.expectancy.toFixed(3)} />
           <Metric label="Max DD" v={metrics.maxDrawdown.toFixed(2)} />
           <Metric label="MFE avg" v={metrics.mfeAvg.toFixed(3)} />
@@ -509,15 +617,37 @@ export default function ShadowSection() {
       {/* Calibration */}
       <div style={panel}>
         <div style={lbl}>Calibration Buckets</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+            gap: 8,
+          }}
+        >
           {BUCKETS.map((b) => {
-            const inB = history.observations.filter((o) => o.hypothetical && o.outcome.resolved && o.confidence >= b.from && o.confidence < b.to);
+            const inB = history.observations.filter(
+              (o) =>
+                o.hypothetical &&
+                o.outcome.resolved &&
+                o.confidence >= b.from &&
+                o.confidence < b.to,
+            );
             const wins = inB.filter((o) => o.outcome.netAfterCosts > 0).length;
             const acc = inB.length === 0 ? 0 : wins / inB.length;
-            const expC = inB.length === 0 ? 0 : inB.reduce((a, o) => a + o.confidence, 0) / inB.length;
+            const expC =
+              inB.length === 0 ? 0 : inB.reduce((a, o) => a + o.confidence, 0) / inB.length;
             const err = Math.abs(expC - acc);
             return (
-              <div key={b.label} style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 8, fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+              <div
+                key={b.label}
+                style={{
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  padding: 8,
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 11,
+                }}
+              >
                 <div style={{ color: C.orange }}>{b.label}</div>
                 <div>Count: {inB.length}</div>
                 <div>Expected: {(expC * 100).toFixed(1)}%</div>
@@ -535,12 +665,20 @@ export default function ShadowSection() {
       {/* Drift */}
       <div style={panel}>
         <div style={lbl}>Drift</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 6 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+            gap: 6,
+          }}
+        >
           {drift.readings.map((r) => (
             <div key={r.dimension} style={{ fontFamily: "var(--eb-mono)", fontSize: 12 }}>
               <span style={{ color: driftColor(r.status) }}>{r.status}</span>
               <span> · {r.dimension}</span>
-              <div style={{ color: C.muted, fontSize: 11 }}>{r.reason} · Δ {r.deltaPct.toFixed(1)}%</div>
+              <div style={{ color: C.muted, fontSize: 11 }}>
+                {r.reason} · Δ {r.deltaPct.toFixed(1)}%
+              </div>
             </div>
           ))}
         </div>
@@ -552,7 +690,13 @@ export default function ShadowSection() {
       {/* Compute counters */}
       <div style={panel}>
         <div style={lbl}>Compute Counters</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
+            gap: 8,
+          }}
+        >
           {Object.entries(snap.counters).map(([k, v]) => (
             <Metric key={k} label={k} v={String(v)} />
           ))}
@@ -578,17 +722,110 @@ export default function ShadowSection() {
       <div style={panel}>
         <div style={lbl}>Exports</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <button style={btnGhost} onClick={() => exp("shadow-observations.csv", "text/csv", buildObservationsCsv(history.observations))}>Observations CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-events.csv", "text/csv", buildEventsCsv(history.events))}>Events CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-sessions.csv", "text/csv", buildSessionsCsv(history.sessions))}>Sessions CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-metrics.csv", "text/csv", buildMetricsCsv(metrics))}>Metrics CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-drift.csv", "text/csv", buildDriftCsv(drift))}>Drift CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-portfolio.csv", "text/csv", buildPortfolioShadowCsv(history.portfolioDecisions))}>Portfolio Shadow CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-live-observations.csv", "text/csv", buildLiveObservationsCsv(snap.lastResult ? [snap.lastResult] : []))}>Live Observations CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-scheduler-events.csv", "text/csv", buildSchedulerEventsCsv(snap.timeline))}>Scheduler Events CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-provider-health.csv", "text/csv", buildProviderHealthCsv([]))}>Provider Health CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-active-positions.csv", "text/csv", buildActivePositionsCsv(activePositions))}>Active Positions CSV</button>
-          <button style={btnGhost} onClick={() => exp("shadow-bundle.json", "application/json", buildShadowBundleJson({ version: "SHADOW_BUNDLE_V1", disclaimer: SHADOW_DISCLAIMER, snapshot: history, metrics, drift }))}>Full Bundle JSON</button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp("shadow-observations.csv", "text/csv", buildObservationsCsv(history.observations))
+            }
+          >
+            Observations CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() => exp("shadow-events.csv", "text/csv", buildEventsCsv(history.events))}
+          >
+            Events CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp("shadow-sessions.csv", "text/csv", buildSessionsCsv(history.sessions))
+            }
+          >
+            Sessions CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() => exp("shadow-metrics.csv", "text/csv", buildMetricsCsv(metrics))}
+          >
+            Metrics CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() => exp("shadow-drift.csv", "text/csv", buildDriftCsv(drift))}
+          >
+            Drift CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp(
+                "shadow-portfolio.csv",
+                "text/csv",
+                buildPortfolioShadowCsv(history.portfolioDecisions),
+              )
+            }
+          >
+            Portfolio Shadow CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp(
+                "shadow-live-observations.csv",
+                "text/csv",
+                buildLiveObservationsCsv(snap.lastResult ? [snap.lastResult] : []),
+              )
+            }
+          >
+            Live Observations CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp("shadow-scheduler-events.csv", "text/csv", buildSchedulerEventsCsv(snap.timeline))
+            }
+          >
+            Scheduler Events CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp("shadow-provider-health.csv", "text/csv", buildProviderHealthCsv([]))
+            }
+          >
+            Provider Health CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp(
+                "shadow-active-positions.csv",
+                "text/csv",
+                buildActivePositionsCsv(activePositions),
+              )
+            }
+          >
+            Active Positions CSV
+          </button>
+          <button
+            style={btnGhost}
+            onClick={() =>
+              exp(
+                "shadow-bundle.json",
+                "application/json",
+                buildShadowBundleJson({
+                  version: "SHADOW_BUNDLE_V1",
+                  disclaimer: SHADOW_DISCLAIMER,
+                  snapshot: history,
+                  metrics,
+                  drift,
+                }),
+              )
+            }
+          >
+            Full Bundle JSON
+          </button>
           <button
             style={btnGhost}
             onClick={() =>
@@ -635,14 +872,27 @@ function driftColor(v: string): string {
   return C.muted;
 }
 
-function readinessChecklist(snap: ControllerSnapshot): readonly { label: string; ok: boolean; reason?: string }[] {
+function readinessChecklist(
+  snap: ControllerSnapshot,
+): readonly { label: string; ok: boolean; reason?: string }[] {
   const r = snap.lastResult;
   const reasons = r?.readiness.reasons ?? [];
   const has = (s: string) => reasons.some((x) => x.includes(s));
   return [
-    { label: "Provider available", ok: !has("PROVIDER_UNAVAILABLE") && !has("PROVIDER_AUTH_REQUIRED") && !has("PROVIDER_RATE_LIMITED"), reason: reasons.find((x) => x.startsWith("PROVIDER_")) },
+    {
+      label: "Provider available",
+      ok:
+        !has("PROVIDER_UNAVAILABLE") &&
+        !has("PROVIDER_AUTH_REQUIRED") &&
+        !has("PROVIDER_RATE_LIMITED"),
+      reason: reasons.find((x) => x.startsWith("PROVIDER_")),
+    },
     { label: "Instrument/timeframe supported", ok: !has("UNSUPPORTED") },
-    { label: "Closed candle valid", ok: r?.candleStatus === "CLOSED_VALID", reason: r?.candleStatus },
+    {
+      label: "Closed candle valid",
+      ok: r?.candleStatus === "CLOSED_VALID",
+      reason: r?.candleStatus,
+    },
     { label: "Research context complete", ok: r?.resolved.ok === true },
     { label: "Recommendation reliability", ok: !has("RELIABILITY") },
     { label: "Formula aligned", ok: !has("FORMULA") },
@@ -662,7 +912,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Select({ value, onChange, children }: { value: string; onChange: (v: string) => void; children: React.ReactNode }) {
+function Select({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+}) {
   return (
     <select
       value={value}
@@ -684,9 +942,26 @@ function Select({ value, onChange, children }: { value: string; onChange: (v: st
 
 function StatGrid({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 6, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
+        gap: 6,
+        fontFamily: "var(--eb-mono)",
+        fontSize: 12,
+      }}
+    >
       {rows.map(([k, v]) => (
-        <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, borderBottom: `1px solid ${C.border}`, padding: "3px 0" }}>
+        <div
+          key={k}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+            borderBottom: `1px solid ${C.border}`,
+            padding: "3px 0",
+          }}
+        >
           <span style={{ color: C.muted }}>{k}</span>
           <span style={{ color: C.text, textAlign: "right", wordBreak: "break-all" }}>{v}</span>
         </div>
@@ -698,8 +973,20 @@ function StatGrid({ rows }: { rows: readonly (readonly [string, string])[] }) {
 function Metric({ label, v }: { label: string; v: string | number }) {
   return (
     <div style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 8 }}>
-      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 14, color: C.text, marginTop: 4 }}>{v}</div>
+      <div
+        style={{
+          fontFamily: "var(--eb-mono)",
+          fontSize: 10,
+          color: C.muted,
+          letterSpacing: 1,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontFamily: "var(--eb-mono)", fontSize: 14, color: C.text, marginTop: 4 }}>
+        {v}
+      </div>
     </div>
   );
 }

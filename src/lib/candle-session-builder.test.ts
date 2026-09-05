@@ -4,15 +4,18 @@ import type { ParsedCandle } from "./candle-csv-parser";
 
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 function mk(date: string, minute: number, close: number): ParsedCandle {
-  const t = Date.UTC(
-    +date.slice(0, 4),
-    +date.slice(5, 7) - 1,
-    +date.slice(8, 10),
-    0, 0, 0,
-  ) - IST_OFFSET + minute * 60 * 1000;
+  const t =
+    Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), 0, 0, 0) -
+    IST_OFFSET +
+    minute * 60 * 1000;
   return {
     timeIst: new Date(t + IST_OFFSET).toISOString().replace("Z", "+05:30"),
-    openTimeMs: t, open: close, high: close + 1, low: close - 1, close, volume: 1,
+    openTimeMs: t,
+    open: close,
+    high: close + 1,
+    low: close - 1,
+    close,
+    volume: 1,
   };
 }
 function fullDay(date: string, base: number): ParsedCandle[] {
@@ -45,7 +48,11 @@ describe("Phase 21.2 Stage 5.1 · session builder", () => {
   });
 
   it("carries ingest + formula provenance", () => {
-    const r = buildSessions({ provider: "Zerodha", instrument: "NIFTY50", rows: fullDay("2026-06-29", 24000) });
+    const r = buildSessions({
+      provider: "Zerodha",
+      instrument: "NIFTY50",
+      rows: fullDay("2026-06-29", 24000),
+    });
     expect(r.ingestVersion).toBe("GANN_ABSOLUTE_INTRADAY_INGEST_V1");
     expect(r.formulaVersion).toBe("GANN_ASTRO_INTRADAY_ABSOLUTE_V1");
   });

@@ -18,11 +18,11 @@ export type ModuleCapability =
 
 export type CapabilityExplainer = {
   capability: ModuleCapability;
-  module: string;      // e.g. "options" | "pcr"
-  stage: string;       // pipeline stage where it failed / passed
-  provider: string;    // provider id
-  reason: string;      // short human-readable explanation
-  suggestion: string;  // recovery suggestion
+  module: string; // e.g. "options" | "pcr"
+  stage: string; // pipeline stage where it failed / passed
+  provider: string; // provider id
+  reason: string; // short human-readable explanation
+  suggestion: string; // recovery suggestion
 };
 
 const REASONS: Record<ModuleCapability, { reason: string; suggestion: string }> = {
@@ -36,7 +36,8 @@ const REASONS: Record<ModuleCapability, { reason: string; suggestion: string }> 
   },
   UNSUPPORTED: {
     reason: "Instrument is not enabled on the configured provider.",
-    suggestion: "Route to a supported instrument (NIFTY / BANKNIFTY) or extend the provider registry.",
+    suggestion:
+      "Route to a supported instrument (NIFTY / BANKNIFTY) or extend the provider registry.",
   },
   AUTH_REQUIRED: {
     reason: "Provider rejected the request with 401/403.",
@@ -48,7 +49,8 @@ const REASONS: Record<ModuleCapability, { reason: string; suggestion: string }> 
   },
   INVALID_RESPONSE: {
     reason: "Provider payload failed schema validation.",
-    suggestion: "Inspect provider drift; extend the schema with `.passthrough()` if a benign field appeared.",
+    suggestion:
+      "Inspect provider drift; extend the schema with `.passthrough()` if a benign field appeared.",
   },
   STALE: {
     reason: "Snapshot age exceeds the freshness threshold.",

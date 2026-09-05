@@ -5,12 +5,7 @@
 
 import type { HistoricalBacktestResult, HistoricalTrade } from "./result";
 
-export type SplitMode =
-  | "70_30"
-  | "60_40"
-  | "80_20"
-  | "ROLLING"
-  | "EXPANDING";
+export type SplitMode = "70_30" | "60_40" | "80_20" | "ROLLING" | "EXPANDING";
 
 export type WalkForwardWindow = {
   index: number;
@@ -172,9 +167,7 @@ function round(n: number, p = 2): number {
   return Math.round(n * f) / f;
 }
 
-export function computeWindowMetrics(
-  result: HistoricalBacktestResult,
-): WindowMetrics {
+export function computeWindowMetrics(result: HistoricalBacktestResult): WindowMetrics {
   const trades = result.trades;
   let wins = 0;
   let losses = 0;
@@ -194,8 +187,7 @@ export function computeWindowMetrics(
   }
   const n = trades.length;
   const winRate = n > 0 ? (wins / n) * 100 : 0;
-  const profitFactor =
-    grossLoss > 0 ? grossGain / grossLoss : grossGain > 0 ? Infinity : 0;
+  const profitFactor = grossLoss > 0 ? grossGain / grossLoss : grossGain > 0 ? Infinity : 0;
   const expectancy = n > 0 ? netPnl / n : 0;
   const avgTrade = expectancy;
   const drawdown = result.drawdown?.max ?? 0;
@@ -301,8 +293,6 @@ export async function runWalkForward(
 
 // ---------------------------------------------------------------------------
 // Utility — flatten every trade across every window for downstream analytics.
-export function flattenValidationTrades(
-  result: WalkForwardResult,
-): readonly HistoricalTrade[] {
+export function flattenValidationTrades(result: WalkForwardResult): readonly HistoricalTrade[] {
   return result.windows.flatMap((w) => [...w.validation.trades]);
 }

@@ -4,18 +4,11 @@
 export type MetalNormalizedUnit = "TROY_OUNCE";
 
 export type MetalClassification =
-  | "VERIFIED_SPOT_METAL"
-  | "TOKENIZED_GOLD"
-  | "TOKENIZED_SILVER"
-  | "UNKNOWN";
+  "VERIFIED_SPOT_METAL" | "TOKENIZED_GOLD" | "TOKENIZED_SILVER" | "UNKNOWN";
 
 export type MetalFreshness = "LIVE" | "DELAYED" | "STALE" | "UNAVAILABLE";
 
-export type GoldSilverSignal =
-  | "BUY_GOLD"
-  | "BUY_SILVER"
-  | "NEUTRAL"
-  | "UNAVAILABLE";
+export type GoldSilverSignal = "BUY_GOLD" | "BUY_SILVER" | "NEUTRAL" | "UNAVAILABLE";
 
 export interface MetalQuoteInput {
   readonly instrument: string;

@@ -50,9 +50,7 @@ export type CandleFetchResult = {
   sessionStatus: string;
 };
 
-async function fetchSessionCandles(
-  args: CandleFetchArgs,
-): Promise<CandleFetchResult> {
+async function fetchSessionCandles(args: CandleFetchArgs): Promise<CandleFetchResult> {
   const symbol = INSTRUMENT_SYMBOL[args.instrument];
   const anchor = parseIstDateAt0915(args.sessionDate);
   const from = Math.floor(anchor.getTime() / 1000);

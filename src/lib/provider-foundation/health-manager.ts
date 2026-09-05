@@ -64,8 +64,7 @@ export class ProviderHealthManager {
   summary(): HealthSummary {
     const calls = this.samples.length;
     const errs = this.samples.filter((s) => !s.ok).length;
-    const avg =
-      calls === 0 ? 0 : this.samples.reduce((a, s) => a + s.latencyMs, 0) / calls;
+    const avg = calls === 0 ? 0 : this.samples.reduce((a, s) => a + s.latencyMs, 0) / calls;
     const lastSuccess = [...this.samples].reverse().find((s) => s.ok) ?? null;
     const lastFailure = [...this.samples].reverse().find((s) => !s.ok) ?? null;
     return {

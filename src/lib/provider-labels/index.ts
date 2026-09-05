@@ -6,12 +6,7 @@
 // use safe aliases from this module.
 
 export type SafeProviderRole =
-  | "MARKET_DATA"
-  | "HISTORICAL"
-  | "OPTIONS"
-  | "COMMODITY"
-  | "BREADTH"
-  | "UNKNOWN";
+  "MARKET_DATA" | "HISTORICAL" | "OPTIONS" | "COMMODITY" | "BREADTH" | "UNKNOWN";
 
 export const SAFE_PROVIDER_LABELS: Readonly<Record<SafeProviderRole, string>> = {
   MARKET_DATA: "Market Data Provider",

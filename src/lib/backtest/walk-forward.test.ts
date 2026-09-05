@@ -10,7 +10,9 @@ import {
 import type { HistoricalBacktestResult, HistoricalTrade } from "./result";
 
 function makeResult(trades: HistoricalTrade[]): HistoricalBacktestResult {
-  let peak = 0, eq = 0, dd = 0;
+  let peak = 0,
+    eq = 0,
+    dd = 0;
   for (const t of trades) {
     eq += t.pnl;
     peak = Math.max(peak, eq);
@@ -42,7 +44,12 @@ function makeResult(trades: HistoricalTrade[]): HistoricalBacktestResult {
   };
 }
 
-function tr(date: string, side: "BUY" | "SELL", outcome: HistoricalTrade["outcome"], pnl: number): HistoricalTrade {
+function tr(
+  date: string,
+  side: "BUY" | "SELL",
+  outcome: HistoricalTrade["outcome"],
+  pnl: number,
+): HistoricalTrade {
   return {
     id: `${date}-${side}`,
     date,

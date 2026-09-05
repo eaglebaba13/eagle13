@@ -48,7 +48,11 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
       retryable: boolean;
       duration_ms: number | null;
       attempted_at: string;
-      smart_alert_events: { title: string | null; type: string | null; priority: string | null } | null;
+      smart_alert_events: {
+        title: string | null;
+        type: string | null;
+        priority: string | null;
+      } | null;
     }>;
 
     // Approximate retry count per fingerprint (attempts share fingerprint).

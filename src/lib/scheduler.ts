@@ -72,18 +72,18 @@ export type ScheduleOptions = {
  * Returns an unsubscribe function that also stops the master timer when the
  * last task leaves (no leaked intervals).
  */
-export function schedule(
-  cb: () => void,
-  periodMs: number,
-  opts: ScheduleOptions = {},
-): () => void {
+export function schedule(cb: () => void, periodMs: number, opts: ScheduleOptions = {}): () => void {
   const now = Date.now();
   const task: Task = {
     id: nextId++,
     name: opts.name ?? `task#${nextId - 1}`,
-    periodMs, cb,
+    periodMs,
+    cb,
     last: now,
-    runs: 0, errors: 0, totalMs: 0, lastDurationMs: 0,
+    runs: 0,
+    errors: 0,
+    totalMs: 0,
+    lastDurationMs: 0,
     createdAt: now,
   };
   tasks.add(task);

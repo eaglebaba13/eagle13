@@ -4,15 +4,7 @@ import type { ApexOptions } from "apexcharts";
 
 type ApexChartProps = {
   type:
-    | "area"
-    | "line"
-    | "bar"
-    | "candlestick"
-    | "radialBar"
-    | "donut"
-    | "heatmap"
-    | "treemap"
-    | "pie";
+    "area" | "line" | "bar" | "candlestick" | "radialBar" | "donut" | "heatmap" | "treemap" | "pie";
   series: ApexOptions["series"];
   options: ApexOptions;
   height?: number;

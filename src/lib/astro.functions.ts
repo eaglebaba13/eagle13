@@ -1,5 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { computeCycles, computeAstroLevels, type PlanetRow, type MoonPhaseInfo } from "./astro-levels";
+import {
+  computeCycles,
+  computeAstroLevels,
+  type PlanetRow,
+  type MoonPhaseInfo,
+} from "./astro-levels";
 import { fetchJson } from "./http";
 import { computeEma } from "./strategy-math";
 import { cached } from "./server-cache";
@@ -93,50 +98,49 @@ export type AstroData = {
   moonPhase: MoonPhaseInfo;
 };
 
-export const getAstro = createServerFn({ method: "GET" }).handler(
-  async (): Promise<AstroData> =>
-    cached<AstroData>(
-      astroCacheKey("astro"),
-      async () => {
-    const { computeAstroPositions } = await import("./astro-engine.server");
-    const anchor = astroAnchorDate();
-    const [market, positions] = await Promise.all([
-      fetchNifty(),
-      Promise.resolve(computeAstroPositions(anchor)),
-    ]);
+export const getAstro = createServerFn({ method: "GET" }).handler(async (): Promise<AstroData> =>
+  cached<AstroData>(
+    astroCacheKey("astro"),
+    async () => {
+      const { computeAstroPositions } = await import("./astro-engine.server");
+      const anchor = astroAnchorDate();
+      const [market, positions] = await Promise.all([
+        fetchNifty(),
+        Promise.resolve(computeAstroPositions(anchor)),
+      ]);
 
-    const cycles = computeCycles(market.prevClose);
-    const planets: PlanetRow[] = positions.planets.map((p) => ({
-      ...p,
-      ...computeAstroLevels(cycles, p.degree),
-    }));
+      const cycles = computeCycles(market.prevClose);
+      const planets: PlanetRow[] = positions.planets.map((p) => ({
+        ...p,
+        ...computeAstroLevels(cycles, p.degree),
+      }));
 
-    const emaBias: "Bullish" | "Bearish" | null =
-      market.ema13 == null ? null : market.livePrice >= market.ema13 ? "Bullish" : "Bearish";
+      const emaBias: "Bullish" | "Bearish" | null =
+        market.ema13 == null ? null : market.livePrice >= market.ema13 ? "Bullish" : "Bearish";
 
-    return {
-      asOf: anchor.toISOString(),
-      ayanamsa: positions.ayanamsa,
-      formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
-      prevClose: market.prevClose,
-      prevDate: market.prevDate,
-      livePrice: market.livePrice,
-      marketState: market.marketState,
-      ema13: market.ema13,
-      emaBias,
-      cycles,
-      moonSign: positions.moonSign,
-      moonNakshatra: positions.moonNakshatra,
-      moonDegree: positions.moonDegree,
-      retroCount: positions.retroCount,
-      bullCount: positions.bullCount,
-      bearCount: positions.bearCount,
-      bullRetroCount: positions.bullRetroCount,
-      bearRetroCount: positions.bearRetroCount,
-      planets,
-      moonPhase: positions.moonPhase,
-    };
-      },
-      { ttlMs: 60_000 },
-    ),
+      return {
+        asOf: anchor.toISOString(),
+        ayanamsa: positions.ayanamsa,
+        formulaVersion: DEFAULT_ASTRO_FORMULA_VERSION,
+        prevClose: market.prevClose,
+        prevDate: market.prevDate,
+        livePrice: market.livePrice,
+        marketState: market.marketState,
+        ema13: market.ema13,
+        emaBias,
+        cycles,
+        moonSign: positions.moonSign,
+        moonNakshatra: positions.moonNakshatra,
+        moonDegree: positions.moonDegree,
+        retroCount: positions.retroCount,
+        bullCount: positions.bullCount,
+        bearCount: positions.bearCount,
+        bullRetroCount: positions.bullRetroCount,
+        bearRetroCount: positions.bearRetroCount,
+        planets,
+        moonPhase: positions.moonPhase,
+      };
+    },
+    { ttlMs: 60_000 },
+  ),
 );

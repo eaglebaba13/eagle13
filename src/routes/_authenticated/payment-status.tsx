@@ -119,7 +119,9 @@ function PaymentStatusPage() {
           </div>
         )}
         {err && (
-          <div className="rounded-md bg-red-500/10 text-red-300 text-xs px-3 py-2">Error: {err}</div>
+          <div className="rounded-md bg-red-500/10 text-red-300 text-xs px-3 py-2">
+            Error: {err}
+          </div>
         )}
 
         {!active && search.plan && search.cycle && (
@@ -190,9 +192,7 @@ function PaymentStatusPage() {
                       {new Date(r.createdAt).toLocaleString()}
                     </div>
                     {r.rejectionReason && (
-                      <div className="mt-1 text-xs text-red-300">
-                        Reason: {r.rejectionReason}
-                      </div>
+                      <div className="mt-1 text-xs text-red-300">Reason: {r.rejectionReason}</div>
                     )}
                   </div>
                   <span
@@ -218,7 +218,13 @@ interface ActivePaymentCardProps {
   onSubmitted: () => void | Promise<void>;
 }
 
-function ActivePaymentCard({ req, envelope, submit, onCancel, onSubmitted }: ActivePaymentCardProps) {
+function ActivePaymentCard({
+  req,
+  envelope,
+  submit,
+  onCancel,
+  onSubmitted,
+}: ActivePaymentCardProps) {
   const [env, setEnv] = useState<Awaited<ReturnType<typeof envelope>> | null>(null);
   const [utr, setUtr] = useState("");
   const [amountPaid, setAmountPaid] = useState<string>((req.expectedAmount / 100).toFixed(0));
@@ -272,7 +278,9 @@ function ActivePaymentCard({ req, envelope, submit, onCancel, onSubmitted }: Act
     setUploading(true);
     setLocalErr(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("not_authenticated");
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `${user.id}/${req.id}-${Date.now()}.${ext}`;
@@ -351,7 +359,11 @@ function ActivePaymentCard({ req, envelope, submit, onCancel, onSubmitted }: Act
             loading="lazy"
           />
           <div className="mt-4 w-full space-y-2 text-sm">
-            <Row label="Amount" value={formatRupees(req.expectedAmount)} onCopy={() => copy((req.expectedAmount / 100).toFixed(2), "Amount")} />
+            <Row
+              label="Amount"
+              value={formatRupees(req.expectedAmount)}
+              onCopy={() => copy((req.expectedAmount / 100).toFixed(2), "Amount")}
+            />
             <Row label="UPI ID" value={req.upiId} onCopy={() => copy(req.upiId, "UPI ID")} />
             <Row label="Payee" value={req.payeeName ?? "EagleBABA"} />
             <Row

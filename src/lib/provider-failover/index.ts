@@ -5,12 +5,7 @@
 //
 // Read-only. No broker/execution paths.
 
-export type ProviderId =
-  | "UPSTOX"
-  | "INDSTOCKS"
-  | "SHOONYA"
-  | "ANGEL"
-  | "MOCK";
+export type ProviderId = "UPSTOX" | "INDSTOCKS" | "SHOONYA" | "ANGEL" | "MOCK";
 
 export type ProviderChainState = "PRIMARY_OK" | "FAILOVER_OK" | "DEGRADED";
 

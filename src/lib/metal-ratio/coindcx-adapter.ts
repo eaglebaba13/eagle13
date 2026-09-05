@@ -58,13 +58,9 @@ export function buildGoldSilverInput(
   const silver = toQuote(preferQuote(silvers), "SILVER");
   // If both exist but quote currencies differ, try to align them.
   if (gold && silver && gold.quoteCurrency !== silver.quoteCurrency) {
-    const alignedSilver = silvers.find(
-      (s) => s.market.quote === gold.quoteCurrency,
-    );
+    const alignedSilver = silvers.find((s) => s.market.quote === gold.quoteCurrency);
     if (alignedSilver) return { gold, silver: toQuote(alignedSilver, "SILVER") };
-    const alignedGold = golds.find(
-      (s) => s.market.quote === silver.quoteCurrency,
-    );
+    const alignedGold = golds.find((s) => s.market.quote === silver.quoteCurrency);
     if (alignedGold) return { gold: toQuote(alignedGold, "GOLD"), silver };
   }
   return { gold, silver };

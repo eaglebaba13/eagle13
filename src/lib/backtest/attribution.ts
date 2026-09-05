@@ -32,9 +32,9 @@ export type AttributionMetrics = {
   avgMae: number;
 };
 
-export type ThreeWayAttribution = Readonly<
-  Record<AttributionBucketId, AttributionMetrics>
-> & { totals: AttributionMetrics };
+export type ThreeWayAttribution = Readonly<Record<AttributionBucketId, AttributionMetrics>> & {
+  totals: AttributionMetrics;
+};
 
 type Side = "BUY" | "SELL";
 
@@ -79,14 +79,21 @@ function accumulate(m: AttributionMetrics, t: HistoricalTrade | null): void {
   m.avgMae += t.mae ?? 0;
 }
 
-function finalise(m: AttributionMetrics, gross: { gain: number; loss: number }): AttributionMetrics {
+function finalise(
+  m: AttributionMetrics,
+  gross: { gain: number; loss: number },
+): AttributionMetrics {
   const n = m.count;
   const winRate = n > 0 ? Math.round((m.wins / n) * 10000) / 100 : 0;
   const expectancy = n > 0 ? Math.round((m.netPnl / n) * 100) / 100 : 0;
   const avgMfe = n > 0 ? Math.round((m.avgMfe / n) * 100) / 100 : 0;
   const avgMae = n > 0 ? Math.round((m.avgMae / n) * 100) / 100 : 0;
   const profitFactor =
-    gross.loss > 0 ? Math.round((gross.gain / gross.loss) * 100) / 100 : gross.gain > 0 ? Infinity : 0;
+    gross.loss > 0
+      ? Math.round((gross.gain / gross.loss) * 100) / 100
+      : gross.gain > 0
+        ? Infinity
+        : 0;
   return {
     ...m,
     winRate,
@@ -176,11 +183,7 @@ export function computeThreeWayAttribution(
     if (k) hybridMap.set(k, t);
   }
 
-  const allKeys = new Set<string>([
-    ...astroMap.keys(),
-    ...smcMap.keys(),
-    ...hybridMap.keys(),
-  ]);
+  const allKeys = new Set<string>([...astroMap.keys(), ...smcMap.keys(), ...hybridMap.keys()]);
 
   for (const k of allKeys) {
     const a = astroMap.get(k) ?? null;
@@ -217,13 +220,12 @@ export function computeThreeWayAttribution(
   buckets.CONFLICT_BLOCKED.count = diagnostics.conflictBlockedCount;
   buckets.DATA_INCOMPLETE.count = diagnostics.dataIncompleteCount;
 
-  const finalised: Record<AttributionBucketId, AttributionMetrics> =
-    Object.fromEntries(
-      (Object.keys(buckets) as AttributionBucketId[]).map((id) => [
-        id,
-        finalise(buckets[id], gross[id]),
-      ]),
-    ) as Record<AttributionBucketId, AttributionMetrics>;
+  const finalised: Record<AttributionBucketId, AttributionMetrics> = Object.fromEntries(
+    (Object.keys(buckets) as AttributionBucketId[]).map((id) => [
+      id,
+      finalise(buckets[id], gross[id]),
+    ]),
+  ) as Record<AttributionBucketId, AttributionMetrics>;
 
   const totalsMetrics = emptyMetrics();
   const totalsGross = { gain: 0, loss: 0 };

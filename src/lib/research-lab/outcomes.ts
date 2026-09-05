@@ -1,11 +1,6 @@
 // Phase 3E — Deterministic outcome computation.
 
-import type {
-  GapDirection,
-  HistoricalRow,
-  Outcome,
-  OutcomeThresholds,
-} from "./types";
+import type { GapDirection, HistoricalRow, Outcome, OutcomeThresholds } from "./types";
 import { DEFAULT_OUTCOME_THRESHOLDS } from "./types";
 
 export function classifyGap(
@@ -14,10 +9,13 @@ export function classifyGap(
   thresholds: OutcomeThresholds = DEFAULT_OUTCOME_THRESHOLDS,
 ): GapDirection | null {
   if (
-    prevClose == null || nextOpen == null ||
-    !Number.isFinite(prevClose) || !Number.isFinite(nextOpen) ||
+    prevClose == null ||
+    nextOpen == null ||
+    !Number.isFinite(prevClose) ||
+    !Number.isFinite(nextOpen) ||
     prevClose <= 0
-  ) return null;
+  )
+    return null;
   const pct = (nextOpen - prevClose) / prevClose;
   if (Math.abs(pct) <= thresholds.flatGapTolerancePct) return "FLAT";
   return pct > 0 ? "GAP_UP" : "GAP_DOWN";

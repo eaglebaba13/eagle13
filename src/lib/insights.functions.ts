@@ -172,20 +172,20 @@ export const getFno = createServerFn({ method: "GET" }).handler(async () =>
   cached(
     "insights-fno",
     async () => {
-  const metas = await fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
-    () => new Map<string, SparkMeta>(),
-  );
-  const movers: Mover[] = [];
-  for (const u of UNIVERSE) {
-    const m = metas.get(u.sym);
-    if (!m) continue;
-    const mv = toMover(m, u.name, u.sector);
-    if (mv) movers.push(mv);
-  }
-  const sorted = [...movers].sort((a, b) => b.changePct - a.changePct);
-  const bullish = sorted.slice(0, 5);
-  const bearish = [...sorted].reverse().slice(0, 5);
-  return { bullish, bearish, updatedAt: new Date().toISOString() };
+      const metas = await fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
+        () => new Map<string, SparkMeta>(),
+      );
+      const movers: Mover[] = [];
+      for (const u of UNIVERSE) {
+        const m = metas.get(u.sym);
+        if (!m) continue;
+        const mv = toMover(m, u.name, u.sector);
+        if (mv) movers.push(mv);
+      }
+      const sorted = [...movers].sort((a, b) => b.changePct - a.changePct);
+      const bullish = sorted.slice(0, 5);
+      const bearish = [...sorted].reverse().slice(0, 5);
+      return { bullish, bearish, updatedAt: new Date().toISOString() };
     },
     { ttlMs: 30_000 },
   ),
@@ -197,49 +197,43 @@ export const getSectors = createServerFn({ method: "GET" }).handler(async () =>
   cached(
     "insights-sectors",
     async () => {
-  const [idxMetas, stockMetas] = await Promise.all([
-    fetchSpark(SECTOR_INDICES.map((s) => s.sym)).catch(
-      () => new Map<string, SparkMeta>(),
-    ),
-    fetchSpark(UNIVERSE.map((u) => u.sym)).catch(
-      () => new Map<string, SparkMeta>(),
-    ),
-  ]);
+      const [idxMetas, stockMetas] = await Promise.all([
+        fetchSpark(SECTOR_INDICES.map((s) => s.sym)).catch(() => new Map<string, SparkMeta>()),
+        fetchSpark(UNIVERSE.map((u) => u.sym)).catch(() => new Map<string, SparkMeta>()),
+      ]);
 
-  // build stock movers grouped by sector key
-  const bySector = new Map<string, Mover[]>();
-  for (const u of UNIVERSE) {
-    const m = stockMetas.get(u.sym);
-    if (!m) continue;
-    const mv = toMover(m, u.name, u.sector);
-    if (!mv) continue;
-    const arr = bySector.get(u.sector) ?? [];
-    arr.push(mv);
-    bySector.set(u.sector, arr);
-  }
+      // build stock movers grouped by sector key
+      const bySector = new Map<string, Mover[]>();
+      for (const u of UNIVERSE) {
+        const m = stockMetas.get(u.sym);
+        if (!m) continue;
+        const mv = toMover(m, u.name, u.sector);
+        if (!mv) continue;
+        const arr = bySector.get(u.sector) ?? [];
+        arr.push(mv);
+        bySector.set(u.sector, arr);
+      }
 
-  const sectors: Sector[] = [];
-  for (const s of SECTOR_INDICES) {
-    const m = idxMetas.get(s.sym);
-    if (!m) continue;
-    const price = m.regularMarketPrice;
-    const prev = m.chartPreviousClose;
-    if (price == null || prev == null || prev === 0) continue;
-    const change = price - prev;
-    const members = (bySector.get(s.key) ?? []).sort(
-      (a, b) => b.changePct - a.changePct,
-    );
-    sectors.push({
-      symbol: s.sym,
-      name: s.name,
-      price: round2(price),
-      change: round2(change),
-      changePct: round2((change / prev) * 100),
-      leaders: members,
-    });
-  }
-  sectors.sort((a, b) => b.changePct - a.changePct);
-  return { sectors, updatedAt: new Date().toISOString() };
+      const sectors: Sector[] = [];
+      for (const s of SECTOR_INDICES) {
+        const m = idxMetas.get(s.sym);
+        if (!m) continue;
+        const price = m.regularMarketPrice;
+        const prev = m.chartPreviousClose;
+        if (price == null || prev == null || prev === 0) continue;
+        const change = price - prev;
+        const members = (bySector.get(s.key) ?? []).sort((a, b) => b.changePct - a.changePct);
+        sectors.push({
+          symbol: s.sym,
+          name: s.name,
+          price: round2(price),
+          change: round2(change),
+          changePct: round2((change / prev) * 100),
+          leaders: members,
+        });
+      }
+      sectors.sort((a, b) => b.changePct - a.changePct);
+      return { sectors, updatedAt: new Date().toISOString() };
     },
     { ttlMs: 30_000 },
   ),
@@ -262,36 +256,36 @@ export const getNews = createServerFn({ method: "GET" }).handler(async () =>
   cached(
     "insights-news",
     async () => {
-  const url =
-    "https://news.google.com/rss/search?q=nifty+sensex+stock+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en";
-  const xml = await fetchTextSafe(url, {
-    accept: "application/rss+xml, application/xml, text/xml",
-  });
-  if (!xml) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
-  const items: NewsItem[] = [];
-  const blocks = xml.split("<item>").slice(1);
-  for (const b of blocks.slice(0, 8)) {
-    const rawTitle = /<title>(.*?)<\/title>/s.exec(b)?.[1] ?? "";
-    const link = /<link>(.*?)<\/link>/s.exec(b)?.[1] ?? "";
-    const pub = /<pubDate>(.*?)<\/pubDate>/s.exec(b)?.[1] ?? "";
-    const source = /<source[^>]*>(.*?)<\/source>/s.exec(b)?.[1] ?? "Google News";
-    let title = decode(rawTitle);
-    // Google News titles are "Headline - Source"
-    title = title.replace(/\s-\s[^-]*$/, (m) => m).trim();
-    let time = "";
-    if (pub) {
-      const d = new Date(pub);
-      if (!isNaN(d.getTime())) {
-        time = d.toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "Asia/Kolkata",
-        });
+      const url =
+        "https://news.google.com/rss/search?q=nifty+sensex+stock+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en";
+      const xml = await fetchTextSafe(url, {
+        accept: "application/rss+xml, application/xml, text/xml",
+      });
+      if (!xml) return { items: [] as NewsItem[], updatedAt: new Date().toISOString() };
+      const items: NewsItem[] = [];
+      const blocks = xml.split("<item>").slice(1);
+      for (const b of blocks.slice(0, 8)) {
+        const rawTitle = /<title>(.*?)<\/title>/s.exec(b)?.[1] ?? "";
+        const link = /<link>(.*?)<\/link>/s.exec(b)?.[1] ?? "";
+        const pub = /<pubDate>(.*?)<\/pubDate>/s.exec(b)?.[1] ?? "";
+        const source = /<source[^>]*>(.*?)<\/source>/s.exec(b)?.[1] ?? "Google News";
+        let title = decode(rawTitle);
+        // Google News titles are "Headline - Source"
+        title = title.replace(/\s-\s[^-]*$/, (m) => m).trim();
+        let time = "";
+        if (pub) {
+          const d = new Date(pub);
+          if (!isNaN(d.getTime())) {
+            time = d.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Asia/Kolkata",
+            });
+          }
+        }
+        if (title) items.push({ title, source: decode(source), link: decode(link), time });
       }
-    }
-    if (title) items.push({ title, source: decode(source), link: decode(link), time });
-  }
-  return { items, updatedAt: new Date().toISOString() };
+      return { items, updatedAt: new Date().toISOString() };
     },
     { ttlMs: 60_000 },
   ),

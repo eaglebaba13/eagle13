@@ -35,14 +35,20 @@ export function runInstitutionalFlowStudy(
     const r = rows[i];
     if (!r.institutionalFlow) continue;
     const flow = r.institutionalFlow;
-    if (flow.gammaAvailable) gammaAvail++; else gammaMissing++;
+    if (flow.gammaAvailable) gammaAvail++;
+    else gammaMissing++;
     sectorAvail[flow.sectorFlow] = (sectorAvail[flow.sectorFlow] ?? 0) + 1;
     const outcome = computeOutcome(i, rows, thresholds);
     const predicted =
-      flow.summary === "PUT_WRITERS_ACTIVE" ? "GAP_UP" :
-      flow.summary === "CALL_WRITERS_ACTIVE" ? "GAP_DOWN" :
-      flow.summary === "BALANCED" ? "NO_TRADE" :
-      flow.summary === "CONFLICT" ? "CONFLICT" : null;
+      flow.summary === "PUT_WRITERS_ACTIVE"
+        ? "GAP_UP"
+        : flow.summary === "CALL_WRITERS_ACTIVE"
+          ? "GAP_DOWN"
+          : flow.summary === "BALANCED"
+            ? "NO_TRADE"
+            : flow.summary === "CONFLICT"
+              ? "CONFLICT"
+              : null;
     const pair: Pair = {
       predicted,
       actual: outcome.gapDirection,

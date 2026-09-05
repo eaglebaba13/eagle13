@@ -71,7 +71,11 @@ function safeParseJson<T>(v: unknown, fallback: T): T {
   if (v == null) return fallback;
   if (typeof v === "object") return v as T;
   if (typeof v === "string") {
-    try { return JSON.parse(v) as T; } catch { return fallback; }
+    try {
+      return JSON.parse(v) as T;
+    } catch {
+      return fallback;
+    }
   }
   return fallback;
 }
@@ -96,7 +100,10 @@ function mapEventRow(r: Record<string, unknown>): PersistedAlertEventRow {
   };
 }
 
-function mapSubscriptionRow(userId: string, r: Record<string, unknown> | null): PersistedSubscriptionRow {
+function mapSubscriptionRow(
+  userId: string,
+  r: Record<string, unknown> | null,
+): PersistedSubscriptionRow {
   if (!r) {
     const s = defaultSubscription(userId);
     return { ...s, updatedAt: new Date().toISOString() };
@@ -112,7 +119,7 @@ function mapSubscriptionRow(userId: string, r: Record<string, unknown> | null): 
     userId: String(r.user_id ?? userId),
     types: merged,
     instruments: Array.isArray(instruments) ? instruments : [],
-    minimumPriority: (String(r.minimum_priority ?? "LOW") as AlertPriority),
+    minimumPriority: String(r.minimum_priority ?? "LOW") as AlertPriority,
     inAppEnabled: r.in_app_enabled !== false,
     emailEnabled: !!r.email_enabled,
     telegramEnabled: !!r.telegram_enabled,
@@ -124,7 +131,10 @@ function mapSubscriptionRow(userId: string, r: Record<string, unknown> | null): 
   };
 }
 
-function mapCheckpointRow(userId: string, r: Record<string, unknown> | null): PersistedCheckpointRow {
+function mapCheckpointRow(
+  userId: string,
+  r: Record<string, unknown> | null,
+): PersistedCheckpointRow {
   if (!r) {
     return {
       userId,
@@ -195,7 +205,9 @@ function sourceToFreshness(source: string | null | undefined, available: boolean
   return "MIXED";
 }
 
-function gapLifecycle(l: string | null | undefined): "PENDING" | "PROVISIONAL" | "FROZEN" | "OUTCOME" {
+function gapLifecycle(
+  l: string | null | undefined,
+): "PENDING" | "PROVISIONAL" | "FROZEN" | "OUTCOME" {
   const s = (l ?? "PENDING").toUpperCase();
   if (s === "FROZEN") return "FROZEN";
   if (s === "EVAL" || s === "PROVISIONAL") return "PROVISIONAL";
@@ -255,22 +267,61 @@ export async function buildEvaluationContext(userId: string): Promise<AlertEvalu
 
   const pcrDirection = decision?.capabilities.pcrCombined.direction ?? null;
   const pcrBias: CanonicalDirection =
-    pcrDirection === "CE" ? "BULLISH" : pcrDirection === "PE" ? "BEARISH" : pcrDirection === "NEUTRAL" ? "NEUTRAL" : "UNKNOWN";
+    pcrDirection === "CE"
+      ? "BULLISH"
+      : pcrDirection === "PE"
+        ? "BEARISH"
+        : pcrDirection === "NEUTRAL"
+          ? "NEUTRAL"
+          : "UNKNOWN";
 
   const vixValue = decision?.context.vix ?? gti?.vix.value ?? null;
 
   const runtimeModules: RuntimeModuleView[] = [
-    { module: "DECISION_ENGINE", status: decision ? "HEALTHY" : "UNAVAILABLE", reason: decision ? null : "unavailable" },
+    {
+      module: "DECISION_ENGINE",
+      status: decision ? "HEALTHY" : "UNAVAILABLE",
+      reason: decision ? null : "unavailable",
+    },
     { module: "GTI", status: gti ? "HEALTHY" : "UNAVAILABLE", reason: gti ? null : "unavailable" },
-    { module: "COMBINED_PCR", status: pcrDirection ? "HEALTHY" : "DEGRADED", reason: pcrDirection ? null : "PCR direction unavailable" },
-    { module: "MARKET_BREADTH", status: gti ? "HEALTHY" : "UNAVAILABLE", reason: gti ? null : "breadth unavailable" },
-    { module: "INDIA_VIX", status: vixValue != null ? "HEALTHY" : "UNAVAILABLE", reason: vixValue == null ? "VIX unavailable" : null },
-    { module: "GANN_GAP_OUTLOOK", status: gap ? "HEALTHY" : "UNAVAILABLE", reason: gap ? null : "outlook unavailable" },
-    { module: "OPTION_STRATEGY_TERMINAL", status: terminal ? "HEALTHY" : "UNAVAILABLE", reason: terminal ? null : "terminal unavailable" },
-    { module: "AI_MARKET_ASSISTANT", status: ai ? "HEALTHY" : "UNAVAILABLE", reason: ai ? null : "assistant unavailable" },
+    {
+      module: "COMBINED_PCR",
+      status: pcrDirection ? "HEALTHY" : "DEGRADED",
+      reason: pcrDirection ? null : "PCR direction unavailable",
+    },
+    {
+      module: "MARKET_BREADTH",
+      status: gti ? "HEALTHY" : "UNAVAILABLE",
+      reason: gti ? null : "breadth unavailable",
+    },
+    {
+      module: "INDIA_VIX",
+      status: vixValue != null ? "HEALTHY" : "UNAVAILABLE",
+      reason: vixValue == null ? "VIX unavailable" : null,
+    },
+    {
+      module: "GANN_GAP_OUTLOOK",
+      status: gap ? "HEALTHY" : "UNAVAILABLE",
+      reason: gap ? null : "outlook unavailable",
+    },
+    {
+      module: "OPTION_STRATEGY_TERMINAL",
+      status: terminal ? "HEALTHY" : "UNAVAILABLE",
+      reason: terminal ? null : "terminal unavailable",
+    },
+    {
+      module: "AI_MARKET_ASSISTANT",
+      status: ai ? "HEALTHY" : "UNAVAILABLE",
+      reason: ai ? null : "assistant unavailable",
+    },
   ];
   const healthyCount = runtimeModules.filter((m) => m.status === "HEALTHY").length;
-  const overall = healthyCount === runtimeModules.length ? "READY" : healthyCount >= runtimeModules.length / 2 ? "PARTIALLY_READY" : "NOT_READY";
+  const overall =
+    healthyCount === runtimeModules.length
+      ? "READY"
+      : healthyCount >= runtimeModules.length / 2
+        ? "PARTIALLY_READY"
+        : "NOT_READY";
 
   const ctx: AlertEvaluationContext = {
     generatedAt,
@@ -391,7 +442,10 @@ export const updateSmartAlertSubscription = createServerFn({ method: "POST" })
       telegram_enabled: data.telegramEnabled ?? current.telegramEnabled,
       webhook_enabled: data.webhookEnabled ?? current.webhookEnabled,
       quiet_hours: data.quietHours === undefined ? current.quietHours : data.quietHours,
-      cooldown_override_sec: data.cooldownOverrideSec === undefined ? current.cooldownOverrideSec : data.cooldownOverrideSec,
+      cooldown_override_sec:
+        data.cooldownOverrideSec === undefined
+          ? current.cooldownOverrideSec
+          : data.cooldownOverrideSec,
       timezone: data.timezone ?? current.timezone,
     };
     const { data: up, error } = await context.supabase
@@ -512,24 +566,28 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
-    const checkpoint = mapCheckpointRow(userId, (cpRow.data as Record<string, unknown> | null) ?? null).checkpoint;
-    const subscription = mapSubscriptionRow(userId, (subRow.data as Record<string, unknown> | null) ?? null);
+    const checkpoint = mapCheckpointRow(
+      userId,
+      (cpRow.data as Record<string, unknown> | null) ?? null,
+    ).checkpoint;
+    const subscription = mapSubscriptionRow(
+      userId,
+      (subRow.data as Record<string, unknown> | null) ?? null,
+    );
 
     let ctx: AlertEvaluationContext;
     try {
       ctx = await buildEvaluationContext(userId);
     } catch (err) {
-      await context.supabase
-        .from("smart_alert_engine_checkpoints")
-        .upsert(
-          {
-            user_id: userId,
-            last_evaluated_at: new Date().toISOString(),
-            last_error: String((err as Error)?.message ?? err),
-            rules_version: SMART_ALERTS_RULES_VERSION,
-          } as never,
-          { onConflict: "user_id" },
-        );
+      await context.supabase.from("smart_alert_engine_checkpoints").upsert(
+        {
+          user_id: userId,
+          last_evaluated_at: new Date().toISOString(),
+          last_error: String((err as Error)?.message ?? err),
+          rules_version: SMART_ALERTS_RULES_VERSION,
+        } as never,
+        { onConflict: "user_id" },
+      );
       throw err;
     }
 
@@ -589,36 +647,32 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     // A failed insert must leave the previous checkpoint intact so that
     // the next run retries emission (idempotent via unique fingerprint).
     if (persistenceFailed) {
-      await context.supabase
-        .from("smart_alert_engine_checkpoints")
-        .upsert(
-          {
-            user_id: userId,
-            last_evaluated_at: ctx.generatedAt,
-            last_error: persistenceError,
-            rules_version: SMART_ALERTS_RULES_VERSION,
-          } as never,
-          { onConflict: "user_id" },
-        );
+      await context.supabase.from("smart_alert_engine_checkpoints").upsert(
+        {
+          user_id: userId,
+          last_evaluated_at: ctx.generatedAt,
+          last_error: persistenceError,
+          rules_version: SMART_ALERTS_RULES_VERSION,
+        } as never,
+        { onConflict: "user_id" },
+      );
     } else {
-      await context.supabase
-        .from("smart_alert_engine_checkpoints")
-        .upsert(
-          {
-            user_id: userId,
-            last_evaluated_at: ctx.generatedAt,
-            last_success_at: ctx.generatedAt,
-            last_error: null,
-            rules_version: SMART_ALERTS_RULES_VERSION,
-            previous: out.nextCheckpoint.previous as unknown as never,
-            fingerprints: {
-              lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
-              lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
-              emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
-            } as unknown as never,
-          } as never,
-          { onConflict: "user_id" },
-        );
+      await context.supabase.from("smart_alert_engine_checkpoints").upsert(
+        {
+          user_id: userId,
+          last_evaluated_at: ctx.generatedAt,
+          last_success_at: ctx.generatedAt,
+          last_error: null,
+          rules_version: SMART_ALERTS_RULES_VERSION,
+          previous: out.nextCheckpoint.previous as unknown as never,
+          fingerprints: {
+            lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
+            lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
+            emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
+          } as unknown as never,
+        } as never,
+        { onConflict: "user_id" },
+      );
     }
 
     return {
@@ -662,7 +716,9 @@ export interface AdminAlertDiagnostics {
 }
 
 async function assertAdmin(ctx: { supabase: unknown; userId: string }): Promise<void> {
-  const s = ctx.supabase as { rpc: (fn: string, p: Record<string, unknown>) => Promise<{ data: unknown }> };
+  const s = ctx.supabase as {
+    rpc: (fn: string, p: Record<string, unknown>) => Promise<{ data: unknown }>;
+  };
   const { data } = await s.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
   if (!data) throw new Error("forbidden");
 }
@@ -686,12 +742,27 @@ export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
       lastCheckpoint,
     ] = await Promise.all([
       context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }),
-      context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }).is("read_at", null),
-      context.supabase.from("smart_alert_events").select("id", { count: "exact", head: true }).gte("generated_at", since),
-      context.supabase.from("smart_alert_subscriptions").select("user_id", { count: "exact", head: true }),
-      context.supabase.from("smart_alert_engine_checkpoints").select("user_id", { count: "exact", head: true }),
-      context.supabase.from("smart_alert_delivery_attempts").select("id", { count: "exact", head: true }),
-      context.supabase.from("smart_alert_delivery_attempts").select("id", { count: "exact", head: true }).neq("status", "OK"),
+      context.supabase
+        .from("smart_alert_events")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null),
+      context.supabase
+        .from("smart_alert_events")
+        .select("id", { count: "exact", head: true })
+        .gte("generated_at", since),
+      context.supabase
+        .from("smart_alert_subscriptions")
+        .select("user_id", { count: "exact", head: true }),
+      context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .select("user_id", { count: "exact", head: true }),
+      context.supabase
+        .from("smart_alert_delivery_attempts")
+        .select("id", { count: "exact", head: true }),
+      context.supabase
+        .from("smart_alert_delivery_attempts")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "OK"),
       context.supabase
         .from("smart_alert_engine_checkpoints")
         .select("last_error, updated_at")
@@ -711,11 +782,12 @@ export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
       .filter((s) => s.length > 0)
       .slice(0, 5);
 
-    const lastRow = (lastCheckpoint.data as {
-      last_evaluated_at?: string | null;
-      last_success_at?: string | null;
-      last_error?: string | null;
-    } | null) ?? null;
+    const lastRow =
+      (lastCheckpoint.data as {
+        last_evaluated_at?: string | null;
+        last_success_at?: string | null;
+        last_error?: string | null;
+      } | null) ?? null;
 
     const health = {
       ...unknownEngineHealth(),

@@ -12,10 +12,7 @@ export interface LeakageCheck {
  * the session's close timestamp. Signals published after close leak
  * information into the same-session outcome and must be rejected.
  */
-export function checkSignalLeakage(
-  event: SignalEvent,
-  row: HistoricalRow,
-): LeakageCheck {
+export function checkSignalLeakage(event: SignalEvent, row: HistoricalRow): LeakageCheck {
   const violations: string[] = [];
   if (event.symbol !== row.symbol) {
     violations.push("SYMBOL_MISMATCH");

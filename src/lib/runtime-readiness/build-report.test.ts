@@ -18,7 +18,10 @@ function cap(status: OptionChainCapability["status"]): OptionChainCapability {
   } as unknown as OptionChainCapability;
 }
 
-function breadth(source: MarketBreadthCapability["source"], status: MarketBreadthCapability["status"] = "SUPPORTED"): MarketBreadthCapability {
+function breadth(
+  source: MarketBreadthCapability["source"],
+  status: MarketBreadthCapability["status"] = "SUPPORTED",
+): MarketBreadthCapability {
   return {
     status,
     reason: "breadth",

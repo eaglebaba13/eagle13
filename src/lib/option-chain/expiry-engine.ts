@@ -6,7 +6,7 @@
 export type ExpiryBucket = "CURRENT_WEEKLY" | "NEXT_WEEKLY" | "MONTHLY";
 
 export interface ClassifiedExpiry {
-  readonly date: string;        // yyyy-mm-dd
+  readonly date: string; // yyyy-mm-dd
   readonly bucket: ExpiryBucket;
   readonly daysToExpiry: number;
 }
@@ -31,7 +31,11 @@ function isLastExpiryOfMonth(iso: string, sortedFutureIsos: readonly string[]): 
   const year = new Date(t).getUTCFullYear();
   const sameMonth = sortedFutureIsos.filter((d) => {
     const dt = parseIsoDate(d);
-    return Number.isFinite(dt) && new Date(dt).getUTCMonth() === month && new Date(dt).getUTCFullYear() === year;
+    return (
+      Number.isFinite(dt) &&
+      new Date(dt).getUTCMonth() === month &&
+      new Date(dt).getUTCFullYear() === year
+    );
   });
   if (sameMonth.length === 0) return false;
   return sameMonth[sameMonth.length - 1] === iso;
@@ -66,16 +70,17 @@ export function classifyExpiries(
   };
 }
 
-export function selectExpiry(
-  selection: ExpirySelection,
-  preferred: string | null,
-): string | null {
+export function selectExpiry(selection: ExpirySelection, preferred: string | null): string | null {
   if (preferred && selection.all.some((e) => e.date === preferred)) return preferred;
   return selection.currentWeekly ?? selection.all[0]?.date ?? null;
 }
 
 /** Freshness: reject if `snapshotIso` older than `maxAgeMs` versus `nowIso`. */
-export function isExpiryFresh(snapshotIso: string, maxAgeMs: number, nowIso: string = new Date().toISOString()): boolean {
+export function isExpiryFresh(
+  snapshotIso: string,
+  maxAgeMs: number,
+  nowIso: string = new Date().toISOString(),
+): boolean {
   const t = Date.parse(snapshotIso);
   const n = Date.parse(nowIso);
   if (!Number.isFinite(t) || !Number.isFinite(n)) return false;

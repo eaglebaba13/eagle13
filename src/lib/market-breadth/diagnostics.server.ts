@@ -84,8 +84,9 @@ export async function buildMarketBreadthDiagnostics(): Promise<MarketBreadthDiag
     lastError: null,
     gti: {
       inputReadiness:
-        [bundle.broad, bundle.nifty50, bundle.topWeighted, ...sectors].filter((s) => s.dataQuality !== "FAILED")
-          .length / 7,
+        [bundle.broad, bundle.nifty50, bundle.topWeighted, ...sectors].filter(
+          (s) => s.dataQuality !== "FAILED",
+        ).length / 7,
       pcrReadiness: pcr.available,
       vixReadiness: vix.regime !== "UNKNOWN",
       sectorReadiness,

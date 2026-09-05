@@ -17,30 +17,56 @@ export type ContextRow = {
   readonly detail: string;
 };
 
-const ROWS: readonly { key: string; label: string; get: (c: ResolvedResearchContext) => string | number | null | undefined }[] = [
+const ROWS: readonly {
+  key: string;
+  label: string;
+  get: (c: ResolvedResearchContext) => string | number | null | undefined;
+}[] = [
   { key: "strategy", label: "Strategy", get: (c) => c.strategy },
   { key: "formulaVersion", label: "Formula Version", get: (c) => c.formulaVersion },
   { key: "baseRunId", label: "Base Run ID", get: (c) => c.baseRunId },
   { key: "parameterSpace", label: "Parameter Space", get: (c) => c.parameterSpace.length },
   { key: "sensitivity", label: "Sensitivity Cells", get: (c) => c.sensitivityCells.length },
-  { key: "walkForward", label: "Walk-Forward Windows", get: (c) => c.aggregate?.walkForwardWindows },
-  { key: "monteCarlo", label: "Monte Carlo Simulations", get: (c) => c.aggregate?.monteCarloSimulations },
+  {
+    key: "walkForward",
+    label: "Walk-Forward Windows",
+    get: (c) => c.aggregate?.walkForwardWindows,
+  },
+  {
+    key: "monteCarlo",
+    label: "Monte Carlo Simulations",
+    get: (c) => c.aggregate?.monteCarloSimulations,
+  },
   { key: "robustness", label: "Robustness Status", get: (c) => c.aggregate?.robustnessStatus },
-  { key: "recValidation", label: "Recommendation Validation", get: (c) => c.aggregate?.calibrationRating },
-  { key: "crossAsset", label: "Cross-Asset Consistency", get: (c) => c.aggregate?.crossAssetConsistency },
+  {
+    key: "recValidation",
+    label: "Recommendation Validation",
+    get: (c) => c.aggregate?.calibrationRating,
+  },
+  {
+    key: "crossAsset",
+    label: "Cross-Asset Consistency",
+    get: (c) => c.aggregate?.crossAssetConsistency,
+  },
   { key: "dataQuality", label: "Data Quality", get: (c) => c.aggregate?.dataQuality },
   { key: "range", label: "Date Range", get: (c) => `${c.from} → ${c.to}` },
   { key: "dataHash", label: "Data Hash", get: (c) => c.dataHash },
   { key: "provider", label: "Provider", get: (c) => c.provider },
 ];
 
-export function buildContextRows(
-  ctx: Partial<ResolvedResearchContext> | null | undefined,
-): { readonly ready: boolean; readonly gaps: readonly ResearchContextGap[]; readonly rows: readonly ContextRow[] } {
+export function buildContextRows(ctx: Partial<ResolvedResearchContext> | null | undefined): {
+  readonly ready: boolean;
+  readonly gaps: readonly ResearchContextGap[];
+  readonly rows: readonly ContextRow[];
+} {
   const { ready, gaps } = inspectResearchContext(ctx);
   const rows: ContextRow[] = ROWS.map((r) => {
     const raw = ctx ? r.get(ctx as ResolvedResearchContext) : undefined;
-    const present = raw !== undefined && raw !== null && raw !== "" && !(typeof raw === "number" && !Number.isFinite(raw));
+    const present =
+      raw !== undefined &&
+      raw !== null &&
+      raw !== "" &&
+      !(typeof raw === "number" && !Number.isFinite(raw));
     return {
       key: r.key,
       label: r.label,
@@ -111,15 +137,34 @@ export type DataHashMismatch = {
 };
 
 export function checkDataHashMismatch(
-  a: { readonly dataHash?: string; readonly from?: string; readonly to?: string; readonly instrument?: string } | null | undefined,
-  b: { readonly dataHash?: string; readonly from?: string; readonly to?: string; readonly instrument?: string } | null | undefined,
+  a:
+    | {
+        readonly dataHash?: string;
+        readonly from?: string;
+        readonly to?: string;
+        readonly instrument?: string;
+      }
+    | null
+    | undefined,
+  b:
+    | {
+        readonly dataHash?: string;
+        readonly from?: string;
+        readonly to?: string;
+        readonly instrument?: string;
+      }
+    | null
+    | undefined,
 ): DataHashMismatch {
   if (!a || !b) return { mismatch: false, reason: null };
   if (a.dataHash && b.dataHash && a.dataHash !== b.dataHash) {
     return { mismatch: true, reason: `data hash differs (${a.dataHash} vs ${b.dataHash})` };
   }
   if (a.from !== b.from || a.to !== b.to) {
-    return { mismatch: true, reason: `date range differs (${a.from}→${a.to} vs ${b.from}→${b.to})` };
+    return {
+      mismatch: true,
+      reason: `date range differs (${a.from}→${a.to} vs ${b.from}→${b.to})`,
+    };
   }
   if (a.instrument && b.instrument && a.instrument !== b.instrument) {
     return { mismatch: true, reason: `instrument differs (${a.instrument} vs ${b.instrument})` };

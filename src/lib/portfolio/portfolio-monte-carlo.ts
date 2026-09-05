@@ -87,7 +87,9 @@ function simulateOnce(
     for (let i = 0; i < n; i++) seq.push(pool[Math.floor(rng() * n)].scaledPnl);
   }
 
-  let eq = 0, peak = 0, maxDD = 0;
+  let eq = 0,
+    peak = 0,
+    maxDD = 0;
   for (const v of seq) {
     eq += v;
     peak = Math.max(peak, eq);

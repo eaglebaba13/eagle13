@@ -46,18 +46,18 @@ export const PROVISIONAL_METHODOLOGY_DEFAULT = {
  * tag each statement so readers can distinguish measurement from folklore.
  */
 export type EvidenceTier =
-  | "VERIFIED_FACT"      // reproducible + cited (original source / spreadsheet)
+  | "VERIFIED_FACT" // reproducible + cited (original source / spreadsheet)
   | "DOCUMENTED_DEFAULT" // current production choice, no source claim
-  | "INFERENCE"          // logically follows from measured data
-  | "HYPOTHESIS"         // plausible, not yet supported by evidence
-  | "BACKTEST_RESULT";   // deterministic backtest / replay measurement
+  | "INFERENCE" // logically follows from measured data
+  | "HYPOTHESIS" // plausible, not yet supported by evidence
+  | "BACKTEST_RESULT"; // deterministic backtest / replay measurement
 
 export type ToleranceStatus = "EXACT" | "ACCEPTABLE" | "WARNING" | "FAIL";
 
 /** Longitude tolerance thresholds (degrees). See Phase 21.0B §6. */
 export const LONGITUDE_TOLERANCE = {
   planet: { exact: 0.05, acceptable: 0.15, warning: 0.5 },
-  moon:   { exact: 0.05, acceptable: 0.1,  warning: 0.25 },
+  moon: { exact: 0.05, acceptable: 0.1, warning: 0.25 },
 } as const;
 
 export function classifyLongitudeDiff(
@@ -93,7 +93,7 @@ export type ReferencePlanet = {
 
 export type ReferenceFixture = {
   fixtureVersion: string;
-  capturedAt: string;   // ISO — when fixture was captured (not "now")
+  capturedAt: string; // ISO — when fixture was captured (not "now")
   timestampIso: string; // ISO — the astronomical instant being audited
   timezone: string;
   location: {
@@ -103,8 +103,8 @@ export type ReferenceFixture = {
     elevationMeters: number;
   };
   referenceEngine: string; // e.g. "Swiss Ephemeris 2.10.03"
-  ayanamshaMode: string;   // e.g. "Lahiri (Chitrapaksha)"
-  ayanamsha: number;       // degrees at timestampIso
+  ayanamshaMode: string; // e.g. "Lahiri (Chitrapaksha)"
+  ayanamsha: number; // degrees at timestampIso
   nodeMode: "mean" | "true";
   moonConvention: "geocentric" | "topocentric";
   planets: ReferencePlanet[];
@@ -122,7 +122,7 @@ export type PlanetComparison = {
     retrograde: boolean;
   };
   reference: ReferencePlanet;
-  diffDeg: number;             // signed, folded
+  diffDeg: number; // signed, folded
   diffArcsec: number;
   toleranceStatus: ToleranceStatus;
   signMatch: boolean;
@@ -218,10 +218,7 @@ export function deriveVerdict(
   }
   const failing = planets.filter((p) => p.toleranceStatus === "FAIL").length;
   const warning = planets.filter((p) => p.toleranceStatus === "WARNING").length;
-  const maxDelta = levelImpacts.reduce(
-    (m, l) => Math.max(m, l.maxLevelDelta),
-    0,
-  );
+  const maxDelta = levelImpacts.reduce((m, l) => Math.max(m, l.maxLevelDelta), 0);
   if (!originalSourceKnown) {
     return {
       verdict: "CANNOT_DETERMINE_WITHOUT_ORIGINAL_SOURCE",

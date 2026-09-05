@@ -1,10 +1,7 @@
 // Phase 23 · Stage 1 — Shadow orchestrator: pure deterministic reducer.
 // No network access, no broker imports, no live-order side effects.
 
-import {
-  computeShadowObservationRunId,
-  computeShadowSessionRunId,
-} from "./shadow-run-id";
+import { computeShadowObservationRunId, computeShadowSessionRunId } from "./shadow-run-id";
 import {
   emptyOutcome,
   RELIABILITY_BLOCKED,
@@ -76,13 +73,16 @@ export function evaluateEntryGates(inp: OrchestratorInput): ShadowGateResult {
   if (d.quality === "DELAYED" && !inp.policy.acceptDelayed) reasons.push("DELAYED_NOT_ACCEPTED");
   if (d.ageSeconds > inp.policy.maxDataAgeSeconds) reasons.push("STALE_DATA");
   if (!d.dataHash) reasons.push("MISSING_DATA_HASH");
-  if (!inp.formulaAligned) return { ok: false, status: "FORMULA_MISMATCH", reasons: ["FORMULA_MISMATCH"] };
-  if (!inp.causalityOk) return { ok: false, status: "CAUSALITY_FAILURE", reasons: ["CAUSALITY_FAILURE"] };
+  if (!inp.formulaAligned)
+    return { ok: false, status: "FORMULA_MISMATCH", reasons: ["FORMULA_MISMATCH"] };
+  if (!inp.causalityOk)
+    return { ok: false, status: "CAUSALITY_FAILURE", reasons: ["CAUSALITY_FAILURE"] };
   if (!inp.recommendation) reasons.push("NO_RECOMMENDATION");
   else {
     if (inp.recommendation.direction === "WAIT") reasons.push("RECOMMENDATION_WAIT");
     if (inp.recommendation.confidence < inp.policy.minConfidence) reasons.push("LOW_CONFIDENCE");
-    if (RELIABILITY_BLOCKED.includes(inp.recommendation.reliability)) reasons.push("RELIABILITY_BLOCKED");
+    if (RELIABILITY_BLOCKED.includes(inp.recommendation.reliability))
+      reasons.push("RELIABILITY_BLOCKED");
   }
   if (!inp.strategiesAgree) reasons.push("STRATEGY_CONFLICT");
   if (inp.portfolio) {
@@ -123,10 +123,7 @@ function computeHypothetical(
   return { side, entry: entryPrice, stop, target, entryDate };
 }
 
-function buildEvidence(
-  inp: OrchestratorInput,
-  reasons: readonly string[],
-): ShadowEvidence {
+function buildEvidence(inp: OrchestratorInput, reasons: readonly string[]): ShadowEvidence {
   return {
     recommendationRunId: inp.recommendation?.runId ?? null,
     portfolioRunId: inp.portfolio?.runId ?? null,
@@ -271,10 +268,7 @@ export function isBlockingStatus(status: ShadowStatus): boolean {
 }
 
 // Data-quality helper — exported so the UI safety panel can render.
-export function qualityAcceptable(
-  q: DataQualityState,
-  policy: ShadowPolicy,
-): boolean {
+export function qualityAcceptable(q: DataQualityState, policy: ShadowPolicy): boolean {
   if (q === "LIVE") return true;
   if (q === "DELAYED") return policy.acceptDelayed;
   return false;

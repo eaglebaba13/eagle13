@@ -10,37 +10,27 @@ import {
 } from "./engine-version";
 import { computeRunId, ZERO_COSTS } from "./backtest-engine";
 import { computeReplayRunId } from "./replay-engine";
-import {
-  assertSingleFormulaVersion,
-  MixedFormulaVersionsError,
-} from "./signal-analytics";
+import { assertSingleFormulaVersion, MixedFormulaVersionsError } from "./signal-analytics";
 import type { BacktestResult } from "./backtest.functions";
 
 describe("Phase 21.0A · formula-version propagation", () => {
   it("defaults to GANN_NIFTY_ASTRO_V1_1", () => {
-    expect(DEFAULT_ASTRO_FORMULA_VERSION).toBe(
-      ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1,
-    );
+    expect(DEFAULT_ASTRO_FORMULA_VERSION).toBe(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1);
   });
 
   it("labels each version correctly", () => {
     expect(astroFormulaLabel(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1)).toBe(
       "Gann Nifty Astro v1.1",
     );
-    expect(
-      astroFormulaLabel(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1),
-    ).toBe("Legacy Cascade v1");
-    expect(astroFormulaSlug(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1)).toBe(
-      "GANN_ASTRO_V1_1",
+    expect(astroFormulaLabel(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1)).toBe(
+      "Legacy Cascade v1",
     );
-    expect(
-      astroFormulaSlug(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1),
-    ).toBe("LEGACY_CASCADE_V1");
-    expect(isLegacyAstroFormula(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1))
-      .toBe(false);
-    expect(
-      isLegacyAstroFormula(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1),
-    ).toBe(true);
+    expect(astroFormulaSlug(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1)).toBe("GANN_ASTRO_V1_1");
+    expect(astroFormulaSlug(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1)).toBe(
+      "LEGACY_CASCADE_V1",
+    );
+    expect(isLegacyAstroFormula(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1)).toBe(false);
+    expect(isLegacyAstroFormula(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1)).toBe(true);
   });
 
   it("cache keys are namespaced and differ per formula version", () => {
@@ -73,9 +63,7 @@ describe("Phase 21.0A · formula-version propagation", () => {
     });
     expect(gann).not.toBe(legacy);
     expect(gann).toContain(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1);
-    expect(legacy).toContain(
-      ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1,
-    );
+    expect(legacy).toContain(ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1);
     // Default (no astroFormulaVersion passed) equals GANN v1.1 form.
     expect(computeRunId(base)).toBe(gann);
   });
@@ -103,7 +91,7 @@ describe("Phase 21.0A · formula-version propagation", () => {
   });
 
   it("assertSingleFormulaVersion accepts uniform results", () => {
-    const r = (v: string) => ({ astroFormulaVersion: v } as unknown as BacktestResult);
+    const r = (v: string) => ({ astroFormulaVersion: v }) as unknown as BacktestResult;
     expect(
       assertSingleFormulaVersion([
         r(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1),
@@ -113,7 +101,7 @@ describe("Phase 21.0A · formula-version propagation", () => {
   });
 
   it("assertSingleFormulaVersion rejects mixed versions", () => {
-    const r = (v: string) => ({ astroFormulaVersion: v } as unknown as BacktestResult);
+    const r = (v: string) => ({ astroFormulaVersion: v }) as unknown as BacktestResult;
     expect(() =>
       assertSingleFormulaVersion([
         r(ASTRO_FORMULA_VERSIONS.GANN_NIFTY_ASTRO_V1_1),

@@ -60,7 +60,9 @@ export type PortfolioRecommendationResult = {
   readonly disclaimer: string;
 };
 
-function clamp01(x: number): number { return Math.max(0, Math.min(1, x)); }
+function clamp01(x: number): number {
+  return Math.max(0, Math.min(1, x));
+}
 
 function hardGates(s: PortfolioScenario, input: RecommendationInput): string[] {
   const gates: string[] = [];
@@ -69,14 +71,18 @@ function hardGates(s: PortfolioScenario, input: RecommendationInput): string[] {
     if (!a.runId) gates.push(`MISSING_RUN_ID:${a.id}`);
     if (a.dataHash === "") gates.push(`MISSING_DATA_HASH:${a.id}`);
     if (a.overfitStatus === "OVERFIT" || a.overfitStatus === "FAIL") gates.push(`OVERFIT:${a.id}`);
-    if (a.reliability === "POOR" || a.reliability === "UNRELIABLE") gates.push(`UNRELIABLE:${a.id}`);
+    if (a.reliability === "POOR" || a.reliability === "UNRELIABLE")
+      gates.push(`UNRELIABLE:${a.id}`);
     if (a.oosExpectancy != null && a.oosExpectancy < 0) gates.push(`NEGATIVE_EDGE:${a.id}`);
     if (a.dataQuality === "LOW") gates.push(`DATA_QUALITY_LOW:${a.id}`);
   }
   // Formula-version alignment: reject if only one asset is present as a portfolio.
   const versions = new Set(assets.map((a) => `${a.formulaVersion}`));
   // Not blocking, but sample adequacy is:
-  if (input.minAlignedObservations != null && result.correlations.alignedObservations < input.minAlignedObservations) {
+  if (
+    input.minAlignedObservations != null &&
+    result.correlations.alignedObservations < input.minAlignedObservations
+  ) {
     gates.push("INSUFFICIENT_ALIGNED_OBSERVATIONS");
   }
   if (input.maxCorrelation != null) {
@@ -90,10 +96,15 @@ function hardGates(s: PortfolioScenario, input: RecommendationInput): string[] {
   if (input.maxDrawdownPct != null && result.metrics.maxDrawdownPct > input.maxDrawdownPct) {
     gates.push("MAX_DRAWDOWN_EXCEEDED");
   }
-  if (input.maxRuinProbability != null && s.monteCarlo && s.monteCarlo.probabilityOfRuin > input.maxRuinProbability) {
+  if (
+    input.maxRuinProbability != null &&
+    s.monteCarlo &&
+    s.monteCarlo.probabilityOfRuin > input.maxRuinProbability
+  ) {
     gates.push("RUIN_PROBABILITY_EXCEEDED");
   }
-  if (result.blockingReasons.length > 0) gates.push(...result.blockingReasons.map((r) => `PORTFOLIO_BLOCK:${r}`));
+  if (result.blockingReasons.length > 0)
+    gates.push(...result.blockingReasons.map((r) => `PORTFOLIO_BLOCK:${r}`));
   if (versions.size === 0) gates.push("NO_FORMULA_VERSION");
   return gates;
 }
@@ -101,7 +112,8 @@ function hardGates(s: PortfolioScenario, input: RecommendationInput): string[] {
 function score(s: PortfolioScenario, input: RecommendationInput): ScenarioScore {
   const { result, assets } = s;
   const oosSamples = assets.map((a) => a.oosExpectancy ?? 0);
-  const oosMean = oosSamples.length > 0 ? oosSamples.reduce((a, b) => a + b, 0) / oosSamples.length : 0;
+  const oosMean =
+    oosSamples.length > 0 ? oosSamples.reduce((a, b) => a + b, 0) / oosSamples.length : 0;
   const oosConsistency = clamp01(0.5 + Math.tanh(oosMean) / 2);
 
   const mc = s.monteCarlo;
@@ -112,9 +124,13 @@ function score(s: PortfolioScenario, input: RecommendationInput): ScenarioScore 
   const meanAbsCorr = (() => {
     const ids = result.correlations.assetIds;
     if (ids.length < 2) return 0;
-    let s = 0, n = 0;
+    let s = 0,
+      n = 0;
     for (let i = 0; i < ids.length; i++)
-      for (let j = i + 1; j < ids.length; j++) { s += Math.abs(result.correlations.returns[i][j]); n++; }
+      for (let j = i + 1; j < ids.length; j++) {
+        s += Math.abs(result.correlations.returns[i][j]);
+        n++;
+      }
     return n > 0 ? s / n : 0;
   })();
   const correlationScore = clamp01(1 - meanAbsCorr);
@@ -127,18 +143,22 @@ function score(s: PortfolioScenario, input: RecommendationInput): ScenarioScore 
   const riskBudget = clamp01(budget.compliance);
 
   const reliabilityMap = { HIGH: 1, MEDIUM: 0.7, LOW: 0.4, POOR: 0, UNRELIABLE: 0 } as const;
-  const reliability = assets.length > 0
-    ? assets.reduce((s, a) => s + (a.reliability ? reliabilityMap[a.reliability] : 0.5), 0) / assets.length
-    : 0.5;
+  const reliability =
+    assets.length > 0
+      ? assets.reduce((s, a) => s + (a.reliability ? reliabilityMap[a.reliability] : 0.5), 0) /
+        assets.length
+      : 0.5;
 
-  const optimizerConfidence = assets.length > 0
-    ? assets.reduce((s, a) => s + (a.recommendationConfidence ?? 0.5), 0) / assets.length
-    : 0.5;
+  const optimizerConfidence =
+    assets.length > 0
+      ? assets.reduce((s, a) => s + (a.recommendationConfidence ?? 0.5), 0) / assets.length
+      : 0.5;
 
   const qMap = { HIGH: 1, MEDIUM: 0.7, LOW: 0.3 } as const;
-  const dataQuality = assets.length > 0
-    ? assets.reduce((s, a) => s + (a.dataQuality ? qMap[a.dataQuality] : 0.5), 0) / assets.length
-    : 0.5;
+  const dataQuality =
+    assets.length > 0
+      ? assets.reduce((s, a) => s + (a.dataQuality ? qMap[a.dataQuality] : 0.5), 0) / assets.length
+      : 0.5;
 
   const sampleAdequacy = clamp01(result.correlations.alignedObservations / 60);
 
@@ -233,15 +253,19 @@ export function computePortfolioRecommendation(
   const recommended = sortedByScore[0] ?? null;
 
   // Conservative = lowest drawdown/tail; Aggressive = highest Sharpe; Balanced = median composite.
-  const conservative = [...eligible].sort((a, b) =>
-    (b.components.ddResilience + b.components.mcDownside) -
-    (a.components.ddResilience + a.components.mcDownside),
-  )[0] ?? null;
-  const aggressive = [...eligible].sort((a, b) => {
-    const sa = (a.evidence.sharpe as number | undefined) ?? 0;
-    const sb = (b.evidence.sharpe as number | undefined) ?? 0;
-    return sb - sa;
-  })[0] ?? null;
+  const conservative =
+    [...eligible].sort(
+      (a, b) =>
+        b.components.ddResilience +
+        b.components.mcDownside -
+        (a.components.ddResilience + a.components.mcDownside),
+    )[0] ?? null;
+  const aggressive =
+    [...eligible].sort((a, b) => {
+      const sa = (a.evidence.sharpe as number | undefined) ?? 0;
+      const sb = (b.evidence.sharpe as number | undefined) ?? 0;
+      return sb - sa;
+    })[0] ?? null;
   const balanced = sortedByScore[Math.floor(sortedByScore.length / 2)] ?? null;
 
   return {

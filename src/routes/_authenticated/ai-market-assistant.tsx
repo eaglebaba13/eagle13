@@ -65,15 +65,20 @@ function AiMarketAssistantPage() {
       <header className="space-y-2">
         <h1 className="text-xl font-semibold text-[var(--eb-text)]">AI Market Assistant</h1>
         <p className="text-xs text-[var(--eb-muted)]">
-          Deterministic explanation layer over canonical modules. No external AI. No broker execution.
-          Research Only — Not Investment Advice.
+          Deterministic explanation layer over canonical modules. No external AI. No broker
+          execution. Research Only — Not Investment Advice.
         </p>
       </header>
 
-      {isLoading && <div className="text-sm text-[var(--eb-muted)]">Loading canonical context…</div>}
+      {isLoading && (
+        <div className="text-sm text-[var(--eb-muted)]">Loading canonical context…</div>
+      )}
       {error && (
         <div className="rounded-md border border-[var(--eb-warn,#eab308)] p-3 text-sm text-[var(--eb-warn,#eab308)]">
-          Assistant unavailable. <button onClick={() => refetch()} className="underline">Retry</button>
+          Assistant unavailable.{" "}
+          <button onClick={() => refetch()} className="underline">
+            Retry
+          </button>
         </div>
       )}
 
@@ -81,9 +86,7 @@ function AiMarketAssistantPage() {
         <>
           <section className="rounded-lg border border-[var(--eb-border)] bg-[var(--eb-card)] p-4">
             <div className="flex flex-wrap items-center gap-3">
-              <Chip className={BIAS_COLOR[res.marketBias]}>
-                Aggregate: {res.marketBias}
-              </Chip>
+              <Chip className={BIAS_COLOR[res.marketBias]}>Aggregate: {res.marketBias}</Chip>
               {(() => {
                 const de =
                   res.supportingEvidence.find((e) => e.module === "DECISION_ENGINE") ||
@@ -108,28 +111,34 @@ function AiMarketAssistantPage() {
 
           <section className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-[var(--eb-border)] p-4">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">Supporting Evidence</h2>
+              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">
+                Supporting Evidence
+              </h2>
               {res.supportingEvidence.length === 0 ? (
                 <p className="text-xs text-[var(--eb-muted)]">No supporting canonical signals.</p>
               ) : (
                 <ul className="space-y-1 text-xs text-[var(--eb-text)]">
                   {res.supportingEvidence.map((e) => (
                     <li key={e.module}>
-                      • <b>{e.module}</b> — {e.bias} <span className="text-[var(--eb-muted)]">({e.freshness})</span>
+                      • <b>{e.module}</b> — {e.bias}{" "}
+                      <span className="text-[var(--eb-muted)]">({e.freshness})</span>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
             <div className="rounded-lg border border-[var(--eb-border)] p-4">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">Conflicting Signals</h2>
+              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">
+                Conflicting Signals
+              </h2>
               {res.conflictingEvidence.length === 0 ? (
                 <p className="text-xs text-[var(--eb-muted)]">No conflicting canonical signals.</p>
               ) : (
                 <ul className="space-y-1 text-xs text-[var(--eb-text)]">
                   {res.conflictingEvidence.map((e) => (
                     <li key={e.module}>
-                      • <b>{e.module}</b> — {e.bias} <span className="text-[var(--eb-muted)]">({e.freshness})</span>
+                      • <b>{e.module}</b> — {e.bias}{" "}
+                      <span className="text-[var(--eb-muted)]">({e.freshness})</span>
                     </li>
                   ))}
                 </ul>
@@ -141,17 +150,25 @@ function AiMarketAssistantPage() {
             <div className="rounded-lg border border-[var(--eb-border)] p-4">
               <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">Risk Factors</h2>
               {res.riskFactors.length === 0 ? (
-                <p className="text-xs text-[var(--eb-muted)]">No elevated risk factors identified.</p>
+                <p className="text-xs text-[var(--eb-muted)]">
+                  No elevated risk factors identified.
+                </p>
               ) : (
                 <ul className="space-y-1 text-xs text-[var(--eb-text)]">
-                  {res.riskFactors.map((r, i) => <li key={i}>• {r}</li>)}
+                  {res.riskFactors.map((r, i) => (
+                    <li key={i}>• {r}</li>
+                  ))}
                 </ul>
               )}
             </div>
             <div className="rounded-lg border border-[var(--eb-border)] p-4">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">What Would Change the View</h2>
+              <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">
+                What Would Change the View
+              </h2>
               <ul className="space-y-1 text-xs text-[var(--eb-text)]">
-                {res.whatWouldChangeTheView.map((r, i) => <li key={i}>• {r}</li>)}
+                {res.whatWouldChangeTheView.map((r, i) => (
+                  <li key={i}>• {r}</li>
+                ))}
               </ul>
             </div>
           </section>
@@ -162,11 +179,21 @@ function AiMarketAssistantPage() {
               <p className="text-xs text-[var(--eb-muted)]">Strategy context unavailable.</p>
             ) : (
               <div className="space-y-1 text-xs text-[var(--eb-text)]">
-                <div><b>Preferred:</b> {res.strategyContext.preferredCategory}</div>
-                <div><b>Rationale:</b> {res.strategyContext.rationale}</div>
-                <div><b>Key risk:</b> {res.strategyContext.keyRisk}</div>
-                <div><b>Required confirmation:</b> {res.strategyContext.requiredConfirmation}</div>
-                <div><b>Invalidation:</b> {res.strategyContext.invalidation}</div>
+                <div>
+                  <b>Preferred:</b> {res.strategyContext.preferredCategory}
+                </div>
+                <div>
+                  <b>Rationale:</b> {res.strategyContext.rationale}
+                </div>
+                <div>
+                  <b>Key risk:</b> {res.strategyContext.keyRisk}
+                </div>
+                <div>
+                  <b>Required confirmation:</b> {res.strategyContext.requiredConfirmation}
+                </div>
+                <div>
+                  <b>Invalidation:</b> {res.strategyContext.invalidation}
+                </div>
               </div>
             )}
           </section>
@@ -206,18 +233,26 @@ function AiMarketAssistantPage() {
             <div className="rounded-lg border border-[var(--eb-border)] p-4">
               <h2 className="mb-2 text-sm font-semibold text-[var(--eb-text)]">Sources</h2>
               <div className="space-y-1 text-xs text-[var(--eb-text)]">
-                <div><b>Used:</b> {res.sources.used.join(", ") || "none"}</div>
-                <div><b>Unavailable:</b> {res.sources.unavailable.join(", ") || "none"}</div>
-                <div><b>Stale:</b> {res.sources.stale.join(", ") || "none"}</div>
-                <div><b>Research-only:</b> {res.sources.researchOnly.join(", ") || "none"}</div>
-                <div className="text-[var(--eb-muted)]">Generated: {new Date(res.generatedAt).toLocaleString()}</div>
+                <div>
+                  <b>Used:</b> {res.sources.used.join(", ") || "none"}
+                </div>
+                <div>
+                  <b>Unavailable:</b> {res.sources.unavailable.join(", ") || "none"}
+                </div>
+                <div>
+                  <b>Stale:</b> {res.sources.stale.join(", ") || "none"}
+                </div>
+                <div>
+                  <b>Research-only:</b> {res.sources.researchOnly.join(", ") || "none"}
+                </div>
+                <div className="text-[var(--eb-muted)]">
+                  Generated: {new Date(res.generatedAt).toLocaleString()}
+                </div>
               </div>
             </div>
           </section>
 
-          <footer className="pt-2 text-[10px] text-[var(--eb-muted)]">
-            {res.disclaimer}
-          </footer>
+          <footer className="pt-2 text-[10px] text-[var(--eb-muted)]">{res.disclaimer}</footer>
         </>
       )}
     </div>

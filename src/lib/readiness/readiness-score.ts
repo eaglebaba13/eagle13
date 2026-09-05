@@ -32,7 +32,14 @@ export function computeReadinessScore(results: readonly ReadinessResult[]): Read
     const applicable = pass + warn + fail;
     const score = applicable === 0 ? 100 : Math.round(((pass + 0.5 * warn) / applicable) * 100);
     const weight = CATEGORY_WEIGHTS[c];
-    categories.push({ category: c, score, weight, passCount: pass, warnCount: warn, failCount: fail });
+    categories.push({
+      category: c,
+      score,
+      weight,
+      passCount: pass,
+      warnCount: warn,
+      failCount: fail,
+    });
     totalWeighted += score * weight;
     totalWeight += weight;
   }

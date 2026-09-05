@@ -52,14 +52,25 @@ export function buildPortfolioSummaryCsv(result: PortfolioResearchResult): strin
 
 export function buildAllocationCsv(result: PortfolioResearchResult): string {
   const rows = [["assetId", "weight", "rationale"]];
-  for (const a of result.allocation.allocations) rows.push([a.assetId, String(a.weight), a.rationale]);
+  for (const a of result.allocation.allocations)
+    rows.push([a.assetId, String(a.weight), a.rationale]);
   return header(result) + rows.map((r) => r.map(csvEscape).join(",")).join("\n") + "\n";
 }
 
 export function buildRiskContributionCsv(result: PortfolioResearchResult): string {
-  const rows = [["assetId", "capitalPct", "volPct", "drawdownPct", "lossPct", "tailPct", "correlationPct"]];
+  const rows = [
+    ["assetId", "capitalPct", "volPct", "drawdownPct", "lossPct", "tailPct", "correlationPct"],
+  ];
   for (const r of result.riskContributions) {
-    rows.push([r.assetId, String(r.capitalPct), String(r.volPct), String(r.drawdownPct), String(r.lossPct), String(r.tailPct), String(r.correlationPct)]);
+    rows.push([
+      r.assetId,
+      String(r.capitalPct),
+      String(r.volPct),
+      String(r.drawdownPct),
+      String(r.lossPct),
+      String(r.tailPct),
+      String(r.correlationPct),
+    ]);
   }
   return header(result) + rows.map((r) => r.map(csvEscape).join(",")).join("\n") + "\n";
 }
@@ -91,11 +102,7 @@ export function buildStressTestCsv(result: PortfolioResearchResult, mc: Portfoli
 }
 
 export function buildPortfolioJson(result: PortfolioResearchResult): string {
-  return JSON.stringify(
-    { disclaimer: PORTFOLIO_DISCLAIMER, result },
-    null,
-    2,
-  );
+  return JSON.stringify({ disclaimer: PORTFOLIO_DISCLAIMER, result }, null, 2);
 }
 
 export type PortfolioPreset = {

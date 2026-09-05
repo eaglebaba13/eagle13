@@ -20,16 +20,12 @@ function ScreenshotPreview({ path }: { path: string }) {
     staleTime: 60_000,
   });
   if (q.isLoading) {
-    return (
-      <div className="mt-1 text-[11px] text-muted-foreground">Loading screenshot…</div>
-    );
+    return <div className="mt-1 text-[11px] text-muted-foreground">Loading screenshot…</div>;
   }
   const url = q.data?.url;
   if (!url) {
     return (
-      <div className="mt-1 text-[11px] text-amber-500">
-        Could not load screenshot ({path})
-      </div>
+      <div className="mt-1 text-[11px] text-amber-500">Could not load screenshot ({path})</div>
     );
   }
   return (
@@ -102,8 +98,7 @@ function AdminReferralsPage() {
   const reviewM = useMutation({
     mutationFn: (id: string) => reviewFn({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "referral-requests"] }),
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Update failed"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Update failed"),
   });
   const approveM = useMutation({
     mutationFn: (v: { id: string; note: string }) =>
@@ -112,8 +107,7 @@ function AdminReferralsPage() {
       toast.success("Referral approved · 7 days Pro granted");
       void qc.invalidateQueries({ queryKey: ["admin", "referral-requests"] });
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Approve failed"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Approve failed"),
   });
   const rejectM = useMutation({
     mutationFn: (v: { id: string; reason: string }) =>
@@ -122,8 +116,7 @@ function AdminReferralsPage() {
       toast.success("Referral rejected");
       void qc.invalidateQueries({ queryKey: ["admin", "referral-requests"] });
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Reject failed"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Reject failed"),
   });
 
   if (!isAdmin) {
@@ -151,8 +144,8 @@ function AdminReferralsPage() {
         <header>
           <h1 className="text-2xl font-semibold">Referral requests</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review INDmoney referral claims. Approving a claim grants 7 days
-            of Pro to the user and writes to the audit log.
+            Review INDmoney referral claims. Approving a claim grants 7 days of Pro to the user and
+            writes to the audit log.
           </p>
         </header>
 
@@ -175,9 +168,7 @@ function AdminReferralsPage() {
 
         <section className="rounded-xl border border-border bg-card">
           {q.isLoading ? (
-            <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Loading…
-            </div>
+            <div className="px-6 py-10 text-center text-sm text-muted-foreground">Loading…</div>
           ) : rows.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-muted-foreground">
               No referral claims for this filter.
@@ -224,29 +215,23 @@ function AdminRow({
     <li className="grid grid-cols-1 gap-3 px-6 py-4 md:grid-cols-[1fr_auto]">
       <div className="min-w-0">
         <div className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{row.broker}</span> ·{" "}
-          Client <span className="font-mono">{row.broker_client_id_masked}</span> ·{" "}
-          Code <span className="font-mono">{row.referral_code}</span>
+          <span className="font-semibold text-foreground">{row.broker}</span> · Client{" "}
+          <span className="font-mono">{row.broker_client_id_masked}</span> · Code{" "}
+          <span className="font-mono">{row.referral_code}</span>
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
-          User <span className="font-mono">{row.user_id.slice(0, 8)}…</span> ·
-          Submitted {submitted} · Status{" "}
-          <span className="font-medium text-foreground">
-            {REFERRAL_STATUS_LABEL[row.status]}
-          </span>
+          User <span className="font-mono">{row.user_id.slice(0, 8)}…</span> · Submitted {submitted}{" "}
+          · Status{" "}
+          <span className="font-medium text-foreground">{REFERRAL_STATUS_LABEL[row.status]}</span>
         </div>
         {row.screenshot_url ? (
           <ScreenshotPreview path={row.screenshot_url} />
         ) : (
           <div className="mt-1 text-[11px] text-amber-500">No screenshot attached</div>
         )}
-        {row.user_note ? (
-          <div className="mt-1 text-xs">Note: {row.user_note}</div>
-        ) : null}
+        {row.user_note ? <div className="mt-1 text-xs">Note: {row.user_note}</div> : null}
         {row.rejection_reason ? (
-          <div className="mt-1 text-xs text-red-500">
-            Rejected: {row.rejection_reason}
-          </div>
+          <div className="mt-1 text-xs text-red-500">Rejected: {row.rejection_reason}</div>
         ) : null}
       </div>
 

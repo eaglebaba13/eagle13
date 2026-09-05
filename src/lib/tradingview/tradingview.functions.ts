@@ -25,10 +25,8 @@ function coerceHealth(raw: unknown): CollectorHealth | null {
   const r = raw as Record<string, unknown>;
   const s = (v: unknown) => (typeof v === "string" ? v : undefined);
   const b = (v: unknown) => (typeof v === "boolean" ? v : undefined);
-  const n = (v: unknown) =>
-    typeof v === "number" && Number.isFinite(v) ? v : undefined;
-  const sn = (v: unknown) =>
-    typeof v === "string" ? v : v === null ? null : undefined;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  const sn = (v: unknown) => (typeof v === "string" ? v : v === null ? null : undefined);
   const nn = (v: unknown) =>
     typeof v === "number" && Number.isFinite(v) ? v : v === null ? null : undefined;
   return {
@@ -77,9 +75,7 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
         receivedAtMs: null,
         now: Date.now(),
         connectionStatus: "DISABLED",
-        reason: !cfg.enabled
-          ? "Collector disabled"
-          : "Collector URL or API token missing",
+        reason: !cfg.enabled ? "Collector disabled" : "Collector URL or API token missing",
       });
     } else {
       snapshot = await client.getGoldSilverRatioSnapshot();
@@ -92,8 +88,7 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
         if (res.ok) {
           const j = (await res.json()) as unknown;
           health = coerceHealth(j);
-        }
-        else healthError = `HTTP ${res.status}`;
+        } else healthError = `HTTP ${res.status}`;
       } catch (err) {
         healthError = err instanceof Error ? err.message : String(err);
       }

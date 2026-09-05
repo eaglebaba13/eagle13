@@ -27,10 +27,16 @@ describe("Phase 21.8 · Stage 2 — recommendation validator", () => {
   it("computes accuracy, precision, recall, F1 for a classic 2×2 case", () => {
     // 3 positive+WIN, 2 positive+LOSS, 1 negative+WIN, 4 negative+LOSS
     const observations: RecommendationObservation[] = [
-      ...Array.from({ length: 3 }, () => obs({ status: "RECOMMENDATION", outcome: "WIN", confidence: 0.8 })),
-      ...Array.from({ length: 2 }, () => obs({ status: "RECOMMENDATION", outcome: "LOSS", confidence: 0.6 })),
+      ...Array.from({ length: 3 }, () =>
+        obs({ status: "RECOMMENDATION", outcome: "WIN", confidence: 0.8 }),
+      ),
+      ...Array.from({ length: 2 }, () =>
+        obs({ status: "RECOMMENDATION", outcome: "LOSS", confidence: 0.6 }),
+      ),
       ...Array.from({ length: 1 }, () => obs({ status: "AVOID", outcome: "WIN", confidence: 0.4 })),
-      ...Array.from({ length: 4 }, () => obs({ status: "AVOID", outcome: "LOSS", confidence: 0.3 })),
+      ...Array.from({ length: 4 }, () =>
+        obs({ status: "AVOID", outcome: "LOSS", confidence: 0.3 }),
+      ),
     ];
     const r = validateRecommendations({ observations });
     expect(r.confusion.tp).toBe(3);

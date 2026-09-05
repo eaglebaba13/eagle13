@@ -150,7 +150,10 @@ describe("Phase 21.8 Stage 1 · regime-recommendation", () => {
       regime: "HIGH_VOLATILITY",
       instrument: "NIFTY50",
       timeframe: "5m",
-      strategies: [ev({ oosExpectancy: -1 }), ev({ strategy: "ASTRO", runId: "R2", robustnessStatus: "OVERFIT" })],
+      strategies: [
+        ev({ oosExpectancy: -1 }),
+        ev({ strategy: "ASTRO", runId: "R2", robustnessStatus: "OVERFIT" }),
+      ],
     });
     expect(rec.recommendationStatus).toBe("AVOID");
     expect(rec.recommendedStrategy).toBeNull();

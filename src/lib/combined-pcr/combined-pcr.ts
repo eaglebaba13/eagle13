@@ -147,7 +147,10 @@ function collectHistoricalScores(
     combined.push(anyValid ? sum : null);
   }
   // If the tip differs (current call not yet pushed), append it.
-  if (currentCombined != null && (combined.length === 0 || combined[combined.length - 1] !== currentCombined)) {
+  if (
+    currentCombined != null &&
+    (combined.length === 0 || combined[combined.length - 1] !== currentCombined)
+  ) {
     combined.push(currentCombined);
   }
   return combined;
@@ -171,16 +174,37 @@ export function computeCombinedPcr(input: ComputeCombinedPcrInput): CombinedPcrR
   const instruments: InstrumentPcr[] = [];
   for (const c of configured) {
     const snap = input.snapshots[c.u] ?? null;
-    const inst = computeInstrumentPcr(c.u, snap, atmMode, atmCustom, c.w, nowIso, freshnessMs, warnings);
+    const inst = computeInstrumentPcr(
+      c.u,
+      snap,
+      atmMode,
+      atmCustom,
+      c.w,
+      nowIso,
+      freshnessMs,
+      warnings,
+    );
     if (inst) instruments.push(inst);
   }
 
   // Renormalize effective weights across instruments with a valid score.
-  const eff = renormalizeWeights(instruments.map((i) => ({ weight: i.configuredWeight, score: i.instrumentScore })));
-  const withEffective: InstrumentPcr[] = instruments.map((i, idx) => ({ ...i, weight: eff[idx] ?? 0 }));
+  const eff = renormalizeWeights(
+    instruments.map((i) => ({ weight: i.configuredWeight, score: i.instrumentScore })),
+  );
+  const withEffective: InstrumentPcr[] = instruments.map((i, idx) => ({
+    ...i,
+    weight: eff[idx] ?? 0,
+  }));
 
   const currentCombined = combinedScore(withEffective);
-  const scores = collectHistoricalScores(input.history ?? null, withEffective, atmMode, atmCustom, eff, currentCombined);
+  const scores = collectHistoricalScores(
+    input.history ?? null,
+    withEffective,
+    atmMode,
+    atmCustom,
+    eff,
+    currentCombined,
+  );
   const series = computeEmaSeries(scores);
   const t = tip(series);
 

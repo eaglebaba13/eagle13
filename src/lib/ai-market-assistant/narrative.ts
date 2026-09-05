@@ -1,24 +1,24 @@
 // Phase 3B — Deterministic template narrative. No LLM.
 
-import type {
-  AssistantBias,
-  AssistantConfidence,
-  CanonicalContext,
-  EvidenceItem,
-} from "./types";
+import type { AssistantBias, AssistantConfidence, CanonicalContext, EvidenceItem } from "./types";
 
 export function buildHeadline(bias: AssistantBias, confidence: AssistantConfidence): string {
   if (bias === "UNAVAILABLE") return "Market view unavailable — insufficient canonical data.";
   if (bias === "CONFLICT") return "Signals are conflicting — directional conviction is limited.";
   const conf =
-    confidence === "HIGH" ? "with broad alignment"
-    : confidence === "MEDIUM" ? "with moderate alignment"
-    : confidence === "LOW" ? "with weak alignment"
-    : "";
+    confidence === "HIGH"
+      ? "with broad alignment"
+      : confidence === "MEDIUM"
+        ? "with moderate alignment"
+        : confidence === "LOW"
+          ? "with weak alignment"
+          : "";
   const dir =
-    bias === "BULLISH" ? "Canonical signals lean bullish"
-    : bias === "BEARISH" ? "Canonical signals lean bearish"
-    : "Canonical signals are balanced";
+    bias === "BULLISH"
+      ? "Canonical signals lean bullish"
+      : bias === "BEARISH"
+        ? "Canonical signals lean bearish"
+        : "Canonical signals are balanced";
   return `${dir} ${conf}.`.replace(/\s+\./, ".");
 }
 
@@ -37,14 +37,19 @@ export function buildSummary(
     return `Directional signals disagree. Bullish inputs: ${sup || "n/a"}. Bearish inputs: ${con || "n/a"}. Directional conviction is limited.`;
   }
   const dirWord =
-    bias === "BULLISH" ? "broadly bullish"
-    : bias === "BEARISH" ? "broadly bearish"
-    : "broadly neutral";
+    bias === "BULLISH"
+      ? "broadly bullish"
+      : bias === "BEARISH"
+        ? "broadly bearish"
+        : "broadly neutral";
   const vixWord =
-    ctx.vixRegime === "HIGH" ? "in a high-volatility regime"
-    : ctx.vixRegime === "LOW" ? "in a low-volatility regime"
-    : ctx.vixRegime === "MID" ? "in a mid-volatility regime"
-    : "with volatility regime unknown";
+    ctx.vixRegime === "HIGH"
+      ? "in a high-volatility regime"
+      : ctx.vixRegime === "LOW"
+        ? "in a low-volatility regime"
+        : ctx.vixRegime === "MID"
+          ? "in a mid-volatility regime"
+          : "with volatility regime unknown";
   return `Current canonical signals are ${dirWord} ${vixWord}. Supporting: ${sup}. Conflicting: ${con}.`;
 }
 
@@ -94,9 +99,13 @@ export function buildWhatWouldChangeTheView(
     items.push("A bullish flip in Decision Engine or GTI would weaken the bearish read.");
     items.push("Breadth thrust with rising PCR would erode the bearish read.");
   } else if (bias === "CONFLICT") {
-    items.push("Convergence of Decision, GTI and PCR onto a single side would resolve the conflict.");
+    items.push(
+      "Convergence of Decision, GTI and PCR onto a single side would resolve the conflict.",
+    );
   } else if (bias === "NEUTRAL") {
-    items.push("Directional break in Decision Engine combined with GTI alignment would tilt the view.");
+    items.push(
+      "Directional break in Decision Engine combined with GTI alignment would tilt the view.",
+    );
   } else {
     items.push("Restoration of canonical data feeds is required before any view can form.");
   }

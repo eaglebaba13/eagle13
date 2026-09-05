@@ -44,7 +44,7 @@ describe("Phase 21.0B · signedLongitudeDiff wrap safety", () => {
 
 describe("Phase 21.0B · deriveVerdict", () => {
   const mkP = (status: PlanetComparison["toleranceStatus"]): PlanetComparison =>
-    ({ toleranceStatus: status } as unknown as PlanetComparison);
+    ({ toleranceStatus: status }) as unknown as PlanetComparison;
   const zeroImpact: LevelImpact[] = [];
 
   it("returns CANNOT_DETERMINE with no planets", () => {
@@ -107,20 +107,24 @@ describe("Phase 21.0B · inferAuditMode", () => {
   });
 
   it("EagleBaba self-baseline → CURRENT_EAGLEBABA_MEAN_GEOCENTRIC", () => {
-    expect(inferAuditMode(f("self-baseline (EagleBaba current)", "mean", "geocentric")))
-      .toBe("CURRENT_EAGLEBABA_MEAN_GEOCENTRIC");
+    expect(inferAuditMode(f("self-baseline (EagleBaba current)", "mean", "geocentric"))).toBe(
+      "CURRENT_EAGLEBABA_MEAN_GEOCENTRIC",
+    );
   });
   it("Swiss mean geocentric", () => {
-    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "geocentric")))
-      .toBe("SWISS_LAHIRI_MEAN_GEOCENTRIC");
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "geocentric"))).toBe(
+      "SWISS_LAHIRI_MEAN_GEOCENTRIC",
+    );
   });
   it("Swiss true geocentric", () => {
-    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "true", "geocentric")))
-      .toBe("SWISS_LAHIRI_TRUE_GEOCENTRIC");
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "true", "geocentric"))).toBe(
+      "SWISS_LAHIRI_TRUE_GEOCENTRIC",
+    );
   });
   it("Swiss mean topocentric", () => {
-    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "topocentric")))
-      .toBe("SWISS_LAHIRI_MEAN_TOPOCENTRIC_MUMBAI");
+    expect(inferAuditMode(f("Swiss Ephemeris 2.10", "mean", "topocentric"))).toBe(
+      "SWISS_LAHIRI_MEAN_TOPOCENTRIC_MUMBAI",
+    );
   });
 });
 

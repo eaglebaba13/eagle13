@@ -110,9 +110,7 @@ export function auditDatabase(input: DatabaseAuditInput): ReadinessResult[] {
       if (c.nullable === false && oc.nullable) return true;
       return false;
     });
-    const missingIdx = (spec.requiredIndexes ?? []).filter(
-      (i) => !observed.indexes.includes(i),
-    );
+    const missingIdx = (spec.requiredIndexes ?? []).filter((i) => !observed.indexes.includes(i));
     if (missingCols.length === 0 && nullabilityIssues.length === 0 && missingIdx.length === 0) {
       out.push({
         id: `db.table.${spec.name}`,
@@ -147,8 +145,14 @@ export function auditDatabase(input: DatabaseAuditInput): ReadinessResult[] {
     id: "db.migrations-applied",
     category: "DATABASE",
     title: "Migrations applied",
-    status: input.migrationsApplied == null ? "UNKNOWN" : input.migrationsApplied > 0 ? "PASS" : "FAIL",
-    severity: input.migrationsApplied == null ? "warning" : input.migrationsApplied > 0 ? "info" : "blocker",
+    status:
+      input.migrationsApplied == null ? "UNKNOWN" : input.migrationsApplied > 0 ? "PASS" : "FAIL",
+    severity:
+      input.migrationsApplied == null
+        ? "warning"
+        : input.migrationsApplied > 0
+          ? "info"
+          : "blocker",
     hardBlocker: input.migrationsApplied === 0,
     detail:
       input.migrationsApplied == null

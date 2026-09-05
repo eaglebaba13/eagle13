@@ -15,12 +15,17 @@ const LIVE_ENV = {
 };
 
 function ok(body: unknown) {
-  return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 describe("upstox smoke — safety boundary", () => {
   it("returns a SERVER_FUNCTION failure report without throwing", () => {
-    const rep = buildServerFunctionFailureReport(new Error("boom"), { nowIso: "2026-07-16T09:15:00.000Z" });
+    const rep = buildServerFunctionFailureReport(new Error("boom"), {
+      nowIso: "2026-07-16T09:15:00.000Z",
+    });
     expect(rep.status).toBe("FAIL");
     expect(rep.errorSource).toBe("SERVER_FUNCTION");
     expect(rep.summary.errorSource).toBe("SERVER_FUNCTION");
@@ -128,8 +133,16 @@ describe("upstox smoke — safety boundary", () => {
       if (calls === 1) return new Response("nope", { status: 500 });
       return ok({ data: { candles: [] } });
     };
-    const first = await runUpstoxSmokeTest({ env: LIVE_ENV, fetchImpl: impl, nowIso: "2026-07-16T09:15:00.000Z" });
-    const second = await runUpstoxSmokeTest({ env: LIVE_ENV, fetchImpl: impl, nowIso: "2026-07-16T09:16:00.000Z" });
+    const first = await runUpstoxSmokeTest({
+      env: LIVE_ENV,
+      fetchImpl: impl,
+      nowIso: "2026-07-16T09:15:00.000Z",
+    });
+    const second = await runUpstoxSmokeTest({
+      env: LIVE_ENV,
+      fetchImpl: impl,
+      nowIso: "2026-07-16T09:16:00.000Z",
+    });
     expect(first.status).not.toBe("PASS");
     expect(second.at).toBe("2026-07-16T09:16:00.000Z");
   }, 30_000);

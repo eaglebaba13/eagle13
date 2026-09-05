@@ -7,16 +7,10 @@
 
 import { INTRADAY_FORMULA_VERSIONS } from "../engine-version";
 
-export const HYBRID_FORMULA_VERSION =
-  INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1;
+export const HYBRID_FORMULA_VERSION = INTRADAY_FORMULA_VERSIONS.ASTRO_SMC_HYBRID_V1;
 
 export type HybridDirection =
-  | "BUY"
-  | "SELL"
-  | "WAIT"
-  | "CONFLICT"
-  | "DATA_INCOMPLETE"
-  | "FORMULA_MISMATCH";
+  "BUY" | "SELL" | "WAIT" | "CONFLICT" | "DATA_INCOMPLETE" | "FORMULA_MISMATCH";
 
 export type HybridWeights = {
   astro: number;
@@ -92,8 +86,7 @@ function normaliseConfig(cfg?: Partial<HybridConfig>): HybridConfig {
   const merged: HybridConfig = {
     weights: { ...DEFAULT_HYBRID_WEIGHTS, ...(cfg?.weights ?? {}) },
     scoreThreshold: cfg?.scoreThreshold ?? DEFAULT_HYBRID_CONFIG.scoreThreshold,
-    minDataQualityPct:
-      cfg?.minDataQualityPct ?? DEFAULT_HYBRID_CONFIG.minDataQualityPct,
+    minDataQualityPct: cfg?.minDataQualityPct ?? DEFAULT_HYBRID_CONFIG.minDataQualityPct,
   };
   return merged;
 }
@@ -120,10 +113,7 @@ export function deriveHybridDecision(input: HybridDecisionInput): HybridDecision
   const dataQualityContribution = round2(dq * cfg.weights.dataQuality);
 
   // Formula mismatch first — this is a wiring bug, not a market decision.
-  if (
-    input.astro &&
-    input.astro.formulaVersion !== input.expectedAstroFormula
-  ) {
+  if (input.astro && input.astro.formulaVersion !== input.expectedAstroFormula) {
     reasons.push(
       `FORMULA_MISMATCH: astro=${input.astro.formulaVersion} expected=${input.expectedAstroFormula}`,
     );
@@ -182,8 +172,7 @@ export function deriveHybridDecision(input: HybridDecisionInput): HybridDecision
     };
   }
 
-  const agrees =
-    (a === "BUY" && s === "BUY") || (a === "SELL" && s === "SELL");
+  const agrees = (a === "BUY" && s === "BUY") || (a === "SELL" && s === "SELL");
   const agreementBonus = agrees ? round2(100 * cfg.weights.agreement) : 0;
   const hybridScore = round2(
     astroContribution + smcContribution + agreementBonus + dataQualityContribution,
@@ -203,9 +192,7 @@ export function deriveHybridDecision(input: HybridDecisionInput): HybridDecision
   }
 
   if (smcScore < cfg.scoreThreshold) {
-    reasons.push(
-      `WAIT: smc score ${smcScore} < threshold ${cfg.scoreThreshold}`,
-    );
+    reasons.push(`WAIT: smc score ${smcScore} < threshold ${cfg.scoreThreshold}`);
     return {
       direction: "WAIT",
       hybridScore,
@@ -218,9 +205,7 @@ export function deriveHybridDecision(input: HybridDecisionInput): HybridDecision
   }
 
   if (dq < cfg.minDataQualityPct) {
-    reasons.push(
-      `WAIT: data-quality ${dq}% < minimum ${cfg.minDataQualityPct}%`,
-    );
+    reasons.push(`WAIT: data-quality ${dq}% < minimum ${cfg.minDataQualityPct}%`);
     return {
       direction: "WAIT",
       hybridScore,
@@ -232,9 +217,7 @@ export function deriveHybridDecision(input: HybridDecisionInput): HybridDecision
     };
   }
 
-  reasons.push(
-    `AGREEMENT: astro=${a} smc=${s} score=${smcScore} dq=${dq}%`,
-  );
+  reasons.push(`AGREEMENT: astro=${a} smc=${s} score=${smcScore} dq=${dq}%`);
   return {
     direction: agrees && a === "BUY" ? "BUY" : "SELL",
     hybridScore,

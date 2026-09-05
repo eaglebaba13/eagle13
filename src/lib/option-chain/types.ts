@@ -50,9 +50,9 @@ export interface OptionChainStrike {
 export interface OptionChainSnapshot {
   readonly instrument: OptionUnderlying;
   readonly spotPrice: number | null;
-  readonly timestamp: string;                // ISO
-  readonly provider: string;                 // e.g. "UPSTOX", "MOCK"
-  readonly expiry: string;                   // ISO date (yyyy-mm-dd)
+  readonly timestamp: string; // ISO
+  readonly provider: string; // e.g. "UPSTOX", "MOCK"
+  readonly expiry: string; // ISO date (yyyy-mm-dd)
   readonly availableExpiries: readonly string[];
   readonly marketSession: MarketSession;
   readonly dataQuality: ProviderDataQuality;
@@ -70,7 +70,11 @@ export const EMPTY_LEG: OptionLeg = {
   greeks: null,
 };
 
-export function makeStrike(strike: number, call?: Partial<OptionLeg>, put?: Partial<OptionLeg>): OptionChainStrike {
+export function makeStrike(
+  strike: number,
+  call?: Partial<OptionLeg>,
+  put?: Partial<OptionLeg>,
+): OptionChainStrike {
   return {
     strike,
     call: { ...EMPTY_LEG, ...(call ?? {}) },

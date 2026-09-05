@@ -47,7 +47,9 @@ describe("computeVerificationReport", () => {
 
   it("READY_FOR_CLOSED_BETA on partials with mid score", () => {
     const items: ChecklistItem[] = Array.from({ length: 10 }, (_, i) => ({
-      id: `i${i}`, category: "Platform", title: "t",
+      id: `i${i}`,
+      category: "Platform",
+      title: "t",
       status: i < 8 ? "PASS" : "PARTIAL",
     }));
     const r = computeVerificationReport({ ...baseInput, items });
@@ -56,7 +58,9 @@ describe("computeVerificationReport", () => {
 
   it("READY_FOR_INTERNAL_BETA on many partials with low score", () => {
     const items: ChecklistItem[] = Array.from({ length: 10 }, (_, i) => ({
-      id: `i${i}`, category: "Platform", title: "t",
+      id: `i${i}`,
+      category: "Platform",
+      title: "t",
       status: i < 3 ? "PASS" : "PARTIAL",
     }));
     const r = computeVerificationReport({ ...baseInput, items });

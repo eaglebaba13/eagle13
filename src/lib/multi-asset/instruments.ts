@@ -4,25 +4,13 @@
 // are resolved dynamically at runtime from the existing provider discovery
 // (see `providers/coindcx/market-discovery.ts` — never hard-coded here).
 
-export type BriefAssetClass =
-  | "INDEX"
-  | "METAL_SPOT"
-  | "METAL_TOKENIZED"
-  | "CRYPTO";
+export type BriefAssetClass = "INDEX" | "METAL_SPOT" | "METAL_TOKENIZED" | "CRYPTO";
 
 export type BriefSession = "NSE_INDEX" | "CRYPTO_24X7";
 
 export interface BriefInstrument {
   /** Canonical, stable identifier used across the brief. */
-  readonly id:
-    | "NIFTY"
-    | "BANKNIFTY"
-    | "GOLD"
-    | "SILVER"
-    | "XAUUSD"
-    | "XAGUSD"
-    | "BTC"
-    | "ETH";
+  readonly id: "NIFTY" | "BANKNIFTY" | "GOLD" | "SILVER" | "XAUUSD" | "XAGUSD" | "BTC" | "ETH";
   readonly displayName: string;
   readonly assetClass: BriefAssetClass;
   readonly session: BriefSession;
@@ -46,20 +34,68 @@ export interface BriefInstrument {
 }
 
 export const BRIEF_INSTRUMENTS: readonly BriefInstrument[] = [
-  { id: "NIFTY",     displayName: "NIFTY 50",       assetClass: "INDEX",             session: "NSE_INDEX",  provider: "upstox" },
-  { id: "BANKNIFTY", displayName: "BANKNIFTY",      assetClass: "INDEX",             session: "NSE_INDEX",  provider: "upstox" },
-  { id: "GOLD",      displayName: "Gold (spot)",    assetClass: "METAL_SPOT",        session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["PAXG", "XAUT"], quotes: ["USDT", "USD"] } },
-  { id: "SILVER",    displayName: "Silver (spot)",  assetClass: "METAL_SPOT",        session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["KAG", "XAG"],   quotes: ["USDT", "USD"] } },
-  { id: "XAUUSD",    displayName: "XAU/USD",        assetClass: "METAL_TOKENIZED",   session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["PAXG", "XAUT"], quotes: ["USDT", "USD"] } },
-  { id: "XAGUSD",    displayName: "XAG/USD",        assetClass: "METAL_TOKENIZED",   session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["KAG", "XAG"],   quotes: ["USDT", "USD"] } },
-  { id: "BTC",       displayName: "Bitcoin",        assetClass: "CRYPTO",            session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["BTC"],          quotes: ["USDT", "INR", "USD"] } },
-  { id: "ETH",       displayName: "Ethereum",       assetClass: "CRYPTO",            session: "CRYPTO_24X7",provider: "coindcx",
-    coindcxHint: { bases: ["ETH"],          quotes: ["USDT", "INR", "USD"] } },
+  {
+    id: "NIFTY",
+    displayName: "NIFTY 50",
+    assetClass: "INDEX",
+    session: "NSE_INDEX",
+    provider: "upstox",
+  },
+  {
+    id: "BANKNIFTY",
+    displayName: "BANKNIFTY",
+    assetClass: "INDEX",
+    session: "NSE_INDEX",
+    provider: "upstox",
+  },
+  {
+    id: "GOLD",
+    displayName: "Gold (spot)",
+    assetClass: "METAL_SPOT",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["PAXG", "XAUT"], quotes: ["USDT", "USD"] },
+  },
+  {
+    id: "SILVER",
+    displayName: "Silver (spot)",
+    assetClass: "METAL_SPOT",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["KAG", "XAG"], quotes: ["USDT", "USD"] },
+  },
+  {
+    id: "XAUUSD",
+    displayName: "XAU/USD",
+    assetClass: "METAL_TOKENIZED",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["PAXG", "XAUT"], quotes: ["USDT", "USD"] },
+  },
+  {
+    id: "XAGUSD",
+    displayName: "XAG/USD",
+    assetClass: "METAL_TOKENIZED",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["KAG", "XAG"], quotes: ["USDT", "USD"] },
+  },
+  {
+    id: "BTC",
+    displayName: "Bitcoin",
+    assetClass: "CRYPTO",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["BTC"], quotes: ["USDT", "INR", "USD"] },
+  },
+  {
+    id: "ETH",
+    displayName: "Ethereum",
+    assetClass: "CRYPTO",
+    session: "CRYPTO_24X7",
+    provider: "coindcx",
+    coindcxHint: { bases: ["ETH"], quotes: ["USDT", "INR", "USD"] },
+  },
 ] as const;
 
 export function getInstrument(id: BriefInstrument["id"]): BriefInstrument {

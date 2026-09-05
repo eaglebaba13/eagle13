@@ -8,21 +8,11 @@
 export const PROVIDER_FOUNDATION_VERSION = "PROVIDER_FOUNDATION_V1";
 export const PROVIDER_SESSION_PREFIX = "PROVIDER_SESSION_V1";
 
-export type ProviderStatus =
-  | "LIVE"
-  | "DELAYED"
-  | "STALE"
-  | "FAILED"
-  | "RATE_LIMITED"
-  | "OFFLINE";
+export type ProviderStatus = "LIVE" | "DELAYED" | "STALE" | "FAILED" | "RATE_LIMITED" | "OFFLINE";
 
 export type ProviderRole = "PRIMARY" | "SECONDARY" | "OFFLINE";
 
-export type ProviderDomain =
-  | "QUOTES"
-  | "HISTORICAL"
-  | "OPTIONS"
-  | "BREADTH";
+export type ProviderDomain = "QUOTES" | "HISTORICAL" | "OPTIONS" | "BREADTH";
 
 export type QuoteSymbol =
   | "NIFTY50"
@@ -51,22 +41,10 @@ export const ALL_QUOTE_SYMBOLS: readonly QuoteSymbol[] = [
 
 export type Timeframe = "1m" | "3m" | "5m" | "15m" | "1h" | "1d";
 
-export const ALL_TIMEFRAMES: readonly Timeframe[] = [
-  "1m",
-  "3m",
-  "5m",
-  "15m",
-  "1h",
-  "1d",
-] as const;
+export const ALL_TIMEFRAMES: readonly Timeframe[] = ["1m", "3m", "5m", "15m", "1h", "1d"] as const;
 
 export type MarketSession =
-  | "PRE_OPEN"
-  | "REGULAR"
-  | "POST_CLOSE"
-  | "CLOSED"
-  | "TWENTY_FOUR_SEVEN"
-  | "UNKNOWN";
+  "PRE_OPEN" | "REGULAR" | "POST_CLOSE" | "CLOSED" | "TWENTY_FOUR_SEVEN" | "UNKNOWN";
 
 export interface ProviderTelemetry {
   readonly status: ProviderStatus;
@@ -205,10 +183,7 @@ export const DEFAULT_FRESHNESS: Readonly<Record<ProviderDomain, FreshnessPolicy>
   BREADTH: { liveMaxSec: 60, delayedMaxSec: 900 },
 };
 
-export function classifyFreshness(
-  ageSec: number,
-  policy: FreshnessPolicy,
-): ProviderStatus {
+export function classifyFreshness(ageSec: number, policy: FreshnessPolicy): ProviderStatus {
   if (!Number.isFinite(ageSec) || ageSec < 0) return "OFFLINE";
   if (ageSec <= policy.liveMaxSec) return "LIVE";
   if (ageSec <= policy.delayedMaxSec) return "DELAYED";

@@ -16,14 +16,38 @@ export interface EntitlementRule {
 }
 
 export const ENTITLEMENT_MATRIX: readonly EntitlementRule[] = [
-  { feature: "backtest", allowedRoles: ["pro", "professional", "enterprise", "admin"], serverAuthoritative: true },
-  { feature: "research", allowedRoles: ["professional", "enterprise", "admin"], serverAuthoritative: true },
-  { feature: "portfolio", allowedRoles: ["professional", "enterprise", "admin"], serverAuthoritative: true },
-  { feature: "shadow", allowedRoles: ["professional", "enterprise", "admin"], serverAuthoritative: true },
-  { feature: "decision", allowedRoles: ["pro", "professional", "enterprise", "admin"], serverAuthoritative: true },
+  {
+    feature: "backtest",
+    allowedRoles: ["pro", "professional", "enterprise", "admin"],
+    serverAuthoritative: true,
+  },
+  {
+    feature: "research",
+    allowedRoles: ["professional", "enterprise", "admin"],
+    serverAuthoritative: true,
+  },
+  {
+    feature: "portfolio",
+    allowedRoles: ["professional", "enterprise", "admin"],
+    serverAuthoritative: true,
+  },
+  {
+    feature: "shadow",
+    allowedRoles: ["professional", "enterprise", "admin"],
+    serverAuthoritative: true,
+  },
+  {
+    feature: "decision",
+    allowedRoles: ["pro", "professional", "enterprise", "admin"],
+    serverAuthoritative: true,
+  },
   { feature: "admin.payments", allowedRoles: ["admin"], serverAuthoritative: true },
   { feature: "diagnostics", allowedRoles: ["admin"], serverAuthoritative: true },
-  { feature: "exports", allowedRoles: ["free", "pro", "professional", "enterprise", "admin"], serverAuthoritative: false },
+  {
+    feature: "exports",
+    allowedRoles: ["free", "pro", "professional", "enterprise", "admin"],
+    serverAuthoritative: false,
+  },
 ];
 
 export interface EntitlementAuditInput {

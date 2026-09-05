@@ -3,13 +3,7 @@
 // export-filename helper. Pure, deterministic, client-safe. Additive to the
 // existing options-analytics module; no production formula is touched.
 
-export type SourceStatus =
-  | "LIVE"
-  | "DELAYED"
-  | "STALE"
-  | "PARTIAL"
-  | "UNAVAILABLE"
-  | "DEMO";
+export type SourceStatus = "LIVE" | "DELAYED" | "STALE" | "PARTIAL" | "UNAVAILABLE" | "DEMO";
 
 export type OptionsIntegrityMeta = {
   sourceStatus: SourceStatus;
@@ -80,7 +74,8 @@ export function evaluateOptionsTradability(inp: TradabilityInputs): TradabilityR
   }
   if (inp.sourceStatus === "UNAVAILABLE") blocking.push("Live option-chain data unavailable");
   if (inp.sourceStatus === "STALE") blocking.push("Provider data is stale");
-  if (inp.sourceStatus === "PARTIAL") blocking.push("Option chain missing critical strikes or fields");
+  if (inp.sourceStatus === "PARTIAL")
+    blocking.push("Option chain missing critical strikes or fields");
   if (inp.sourceStatus === "DELAYED") warnings.push("Provider data is delayed");
 
   if (inp.underlying == null || !Number.isFinite(inp.underlying) || inp.underlying <= 0) {
@@ -159,7 +154,11 @@ export function exportFilename(
 
 /* --------------------------- Expiry validation --------------------------- */
 
-export function isExpiryValid(expiry: string | null, providerExpiries: string[], now: Date = new Date()): boolean {
+export function isExpiryValid(
+  expiry: string | null,
+  providerExpiries: string[],
+  now: Date = new Date(),
+): boolean {
   if (!expiry) return false;
   if (!providerExpiries.includes(expiry)) return false;
   const t = new Date(expiry).getTime();
@@ -202,11 +201,7 @@ export function shouldAcceptAlert(prev: AlertContext | null, curr: AlertContext)
 /* --------------------- Recommendation safety mapping --------------------- */
 
 export type SafeRecommendationAction =
-  | "BUY_CE"
-  | "BUY_PE"
-  | "WAIT"
-  | "DATA_INCOMPLETE"
-  | "MARKET_CLOSED";
+  "BUY_CE" | "BUY_PE" | "WAIT" | "DATA_INCOMPLETE" | "MARKET_CLOSED";
 
 /**
  * Map a raw scored action into the production-safe action set based on the

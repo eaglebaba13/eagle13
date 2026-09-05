@@ -14,40 +14,50 @@ describe("gann-gap scheduler", () => {
 
   it("returns IDLE_PENDING before the 15:26 cutoff", () => {
     const d = decideSchedulerAction({
-      now: istInstant("2024-01-03", 10, 0), config: cfg,
-      hasFrozenForToday: false, hasOutcomeForPending: true,
+      now: istInstant("2024-01-03", 10, 0),
+      config: cfg,
+      hasFrozenForToday: false,
+      hasOutcomeForPending: true,
     });
     expect(d.action).toBe("IDLE_PENDING");
   });
 
   it("returns FREEZE_NOW at cutoff when no frozen record yet", () => {
     const d = decideSchedulerAction({
-      now: istInstant("2024-01-03", 15, 26), config: cfg,
-      hasFrozenForToday: false, hasOutcomeForPending: true,
+      now: istInstant("2024-01-03", 15, 26),
+      config: cfg,
+      hasFrozenForToday: false,
+      hasOutcomeForPending: true,
     });
     expect(d.action).toBe("FREEZE_NOW");
   });
 
   it("returns IDLE_AFTER_FREEZE after freeze completes", () => {
     const d = decideSchedulerAction({
-      now: istInstant("2024-01-03", 15, 30), config: cfg,
-      hasFrozenForToday: true, hasOutcomeForPending: true,
+      now: istInstant("2024-01-03", 15, 30),
+      config: cfg,
+      hasFrozenForToday: true,
+      hasOutcomeForPending: true,
     });
     expect(d.action).toBe("IDLE_AFTER_FREEZE");
   });
 
   it("returns EVALUATE_OUTCOME_NOW after market open when outcome pending", () => {
     const d = decideSchedulerAction({
-      now: istInstant("2024-01-03", 9, 30), config: cfg,
-      hasFrozenForToday: false, hasOutcomeForPending: false,
+      now: istInstant("2024-01-03", 9, 30),
+      config: cfg,
+      hasFrozenForToday: false,
+      hasOutcomeForPending: false,
     });
     expect(d.action).toBe("EVALUATE_OUTCOME_NOW");
   });
 
   it("returns IDLE_NON_TRADING_DAY on weekends when outcome resolved", () => {
     const d = decideSchedulerAction({
-      now: istInstant("2024-01-06", 15, 30), config: cfg, // Saturday
-      hasFrozenForToday: false, hasOutcomeForPending: true,
+      now: istInstant("2024-01-06", 15, 30),
+      config: cfg, // Saturday
+      hasFrozenForToday: false,
+      hasOutcomeForPending: true,
     });
     expect(d.action).toBe("IDLE_NON_TRADING_DAY");
   });

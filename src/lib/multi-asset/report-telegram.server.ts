@@ -29,8 +29,13 @@ export async function deliverMorningBrief(input: {
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) {
     return {
-      delivered: false, attempted: 0, succeeded: 0, failed: 0,
-      parts, messageIds: [], error: "TELEGRAM_CREDENTIALS_UNCONFIGURED",
+      delivered: false,
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      parts,
+      messageIds: [],
+      error: "TELEGRAM_CREDENTIALS_UNCONFIGURED",
     };
   }
 
@@ -46,8 +51,11 @@ export async function deliverMorningBrief(input: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, text: part.text, disable_web_page_preview: true }),
       });
-      const body = (await res.json().catch(() => null)) as
-        | { ok?: boolean; result?: { message_id?: number }; description?: string } | null;
+      const body = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        result?: { message_id?: number };
+        description?: string;
+      } | null;
       if (res.ok && body?.ok && typeof body.result?.message_id === "number") {
         succeeded++;
         messageIds.push(body.result.message_id);

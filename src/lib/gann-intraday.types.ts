@@ -66,25 +66,18 @@ export class AbsoluteDegreeValidationError extends Error {
     readonly received: unknown,
     readonly reason: string,
   ) {
-    super(
-      `Invalid absolute planetary degree for ${planet}: ${String(received)} (${reason})`,
-    );
+    super(`Invalid absolute planetary degree for ${planet}: ${String(received)} (${reason})`);
   }
 }
 
 export class UnsupportedInstrumentError extends Error {
   readonly code = "INTRADAY_ABSOLUTE_METHOD_NOT_VALIDATED" as const;
   constructor(readonly instrument: string) {
-    super(
-      `Absolute-Degree Intraday method not validated for instrument: ${instrument}`,
-    );
+    super(`Absolute-Degree Intraday method not validated for instrument: ${instrument}`);
   }
 }
 
-export function assertAbsoluteDegree(
-  planet: string,
-  d: unknown,
-): AbsolutePlanetDegree {
+export function assertAbsoluteDegree(planet: string, d: unknown): AbsolutePlanetDegree {
   if (typeof d !== "number" || !Number.isFinite(d)) {
     throw new AbsoluteDegreeValidationError(planet, d, "not a finite number");
   }

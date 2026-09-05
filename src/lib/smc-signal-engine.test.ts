@@ -68,7 +68,14 @@ function makeEngine(cs: Candle[], overrides: EngineOverrides = {}): SmcEngineRes
 function bullishStackAt(cs: Candle[], i: number): EngineOverrides {
   return {
     liquidityEvents: [
-      { type: "sweep", side: "sell", index: i - 3, t: cs[i - 3].t, level: cs[i - 3].l, reclaim: true },
+      {
+        type: "sweep",
+        side: "sell",
+        index: i - 3,
+        t: cs[i - 3].t,
+        level: cs[i - 3].l,
+        reclaim: true,
+      },
     ],
     structureEvents: [
       {
@@ -80,9 +87,7 @@ function bullishStackAt(cs: Candle[], i: number): EngineOverrides {
         price: cs[i - 2].c,
       },
     ],
-    displacementCandles: [
-      { index: i - 1, t: cs[i - 1].t, direction: "bull", range: 5, ratio: 3 },
-    ],
+    displacementCandles: [{ index: i - 1, t: cs[i - 1].t, direction: "bull", range: 5, ratio: 3 }],
     fvgs: [
       {
         direction: "bullish",
@@ -126,7 +131,14 @@ function bullishStackAt(cs: Candle[], i: number): EngineOverrides {
 function bearishStackAt(cs: Candle[], i: number): EngineOverrides {
   return {
     liquidityEvents: [
-      { type: "sweep", side: "buy", index: i - 3, t: cs[i - 3].t, level: cs[i - 3].h, reclaim: true },
+      {
+        type: "sweep",
+        side: "buy",
+        index: i - 3,
+        t: cs[i - 3].t,
+        level: cs[i - 3].h,
+        reclaim: true,
+      },
     ],
     structureEvents: [
       {
@@ -138,9 +150,7 @@ function bearishStackAt(cs: Candle[], i: number): EngineOverrides {
         price: cs[i - 2].c,
       },
     ],
-    displacementCandles: [
-      { index: i - 1, t: cs[i - 1].t, direction: "bear", range: 5, ratio: 3 },
-    ],
+    displacementCandles: [{ index: i - 1, t: cs[i - 1].t, direction: "bear", range: 5, ratio: 3 }],
     fvgs: [
       {
         direction: "bearish",
@@ -232,9 +242,7 @@ describe("SMC Signal Engine · basic states", () => {
       expect(s.signal).not.toBe("BUY");
       expect(s.signal).not.toBe("SELL");
     }
-    const under = sig.signals.find((s) =>
-      s.reasons.some((r) => r.startsWith("score_below_min")),
-    );
+    const under = sig.signals.find((s) => s.reasons.some((r) => r.startsWith("score_below_min")));
     expect(under).toBeTruthy();
   });
 });
@@ -274,9 +282,7 @@ describe("SMC Signal Engine · score engine", () => {
       vwapEnabled: false,
       premiumDiscountEnabled: false,
     }).signals.find((s) => s.signal === "BUY")!;
-    expect(withEma.score - withoutEma.score).toBe(
-      DEFAULT_SMC_SIGNAL_CONFIG.weights.ema,
-    );
+    expect(withEma.score - withoutEma.score).toBe(DEFAULT_SMC_SIGNAL_CONFIG.weights.ema);
   });
 });
 
@@ -342,9 +348,7 @@ describe("SMC Signal Engine · optional filters", () => {
       volumeMultiple: 2,
       volumeWindow: 5,
     });
-    const buy = sig.signals.find(
-      (s) => s.signal === "BUY" && s.triggeredRules.includes("volume"),
-    );
+    const buy = sig.signals.find((s) => s.signal === "BUY" && s.triggeredRules.includes("volume"));
     expect(buy).toBeTruthy();
   });
 
@@ -444,9 +448,7 @@ describe("SMC Signal Engine · no-lookahead + determinism", () => {
         cooldownBars: 0,
       });
       expect(prefixSig.signals[k].signal).toBe(full.signals[k].signal);
-      expect(prefixSig.signals[k].structureDirection).toBe(
-        full.signals[k].structureDirection,
-      );
+      expect(prefixSig.signals[k].structureDirection).toBe(full.signals[k].structureDirection);
     }
   });
 
@@ -486,9 +488,7 @@ describe("SMC Signal Engine · config + adapter wiring", () => {
     expect(custom.config.weights.choch).toBe(1);
     expect(custom.config.emaEnabled).toBe(false);
     // Default weights untouched:
-    expect(custom.config.weights.displacement).toBe(
-      DEFAULT_SMC_SIGNAL_CONFIG.weights.displacement,
-    );
+    expect(custom.config.weights.displacement).toBe(DEFAULT_SMC_SIGNAL_CONFIG.weights.displacement);
   });
 
   it("analyzeSmcWithSignals composes Stage 1 + Stage 2 in one call", () => {

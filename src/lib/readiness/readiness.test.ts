@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  auditEnvironment,
-  isPlaceholderValue,
-  type EnvPresence,
-} from "./environment-audit";
+import { auditEnvironment, isPlaceholderValue, type EnvPresence } from "./environment-audit";
 import { auditSecrets } from "./secret-audit";
 import { auditDatabase, EXPECTED_TABLES } from "./database-audit";
 import { auditRls } from "./rls-audit";
@@ -50,7 +46,12 @@ describe("environment audit", () => {
     const vars: EnvPresence[] = [
       { name: "SUPABASE_URL", status: "MISSING", category: "core", required: true },
     ];
-    const r = auditEnvironment({ environment: "production", appUrl: "https://x.com", vars, paidPlansEnabled: false });
+    const r = auditEnvironment({
+      environment: "production",
+      appUrl: "https://x.com",
+      vars,
+      paidPlansEnabled: false,
+    });
     expect(r.find((x) => x.id === "env.SUPABASE_URL")!.hardBlocker).toBe(true);
   });
   it("detects placeholder values", () => {
@@ -62,7 +63,12 @@ describe("environment audit", () => {
     const vars: EnvPresence[] = [
       { name: "MANUAL_UPI_ID", status: "MISSING", category: "payments", required: true },
     ];
-    const r = auditEnvironment({ environment: "production", appUrl: "https://x.com", vars, paidPlansEnabled: true });
+    const r = auditEnvironment({
+      environment: "production",
+      appUrl: "https://x.com",
+      vars,
+      paidPlansEnabled: true,
+    });
     expect(r.find((x) => x.id === "env.payments.aggregate")!.hardBlocker).toBe(true);
   });
   it("flags insecure production URL", () => {
@@ -146,7 +152,9 @@ describe("rls audit", () => {
   it("blocks unsafe SECURITY DEFINER without search_path", () => {
     const r = auditRls({
       policies: [],
-      functions: [{ name: "bad_fn", securityDefiner: true, searchPathSet: false, callableByAnon: false }],
+      functions: [
+        { name: "bad_fn", securityDefiner: true, searchPathSet: false, callableByAnon: false },
+      ],
       rlsEnabledTables: [],
       userDataTables: [],
     });
@@ -206,7 +214,14 @@ describe("providers", () => {
   it("warns on DEGRADED", () => {
     const r = auditProviders({
       probes: [
-        { id: "p", label: "P", status: "DEGRADED", fallbackAllowed: true, fallbackActive: true, required: true },
+        {
+          id: "p",
+          label: "P",
+          status: "DEGRADED",
+          fallbackAllowed: true,
+          fallbackActive: true,
+          required: true,
+        },
       ],
     });
     expect(r[0].status).toBe("WARNING");
@@ -216,7 +231,9 @@ describe("providers", () => {
 describe("failover", () => {
   it("blocks fallback on forbidden dependency", () => {
     const r = auditFailover({
-      activeFallbacks: [{ dependency: "astro.reference", disclosed: true, actionableAllowed: false }],
+      activeFallbacks: [
+        { dependency: "astro.reference", disclosed: true, actionableAllowed: false },
+      ],
     });
     expect(r[0].hardBlocker).toBe(true);
   });
@@ -234,7 +251,12 @@ describe("cache/scheduler/storage/audit-log", () => {
     expect(r[0].status).toBe("MISSING");
   });
   it("scheduler: blocks on duplicate instances", () => {
-    const r = auditScheduler({ schedulerInstances: 2, shadowSchedulerRunning: false, tasks: [], pageHidden: false });
+    const r = auditScheduler({
+      schedulerInstances: 2,
+      shadowSchedulerRunning: false,
+      tasks: [],
+      pageHidden: false,
+    });
     expect(r[0].hardBlocker).toBe(true);
   });
   it("storage: blocks when private bucket is public", () => {
@@ -255,7 +277,11 @@ describe("cache/scheduler/storage/audit-log", () => {
     expect(r[0].hardBlocker).toBe(true);
   });
   it("audit-log: blocks when secrets appear in samples", () => {
-    const r = auditAuditLog({ observedEvents: [], logsSecretsSample: ["found"], logsFullProofUrlsSample: [] });
+    const r = auditAuditLog({
+      observedEvents: [],
+      logsSecretsSample: ["found"],
+      logsFullProofUrlsSample: [],
+    });
     expect(r.find((x) => x.id === "audit.no-secrets")!.hardBlocker).toBe(true);
   });
 });
@@ -287,7 +313,9 @@ describe("build audit", () => {
 
 describe("routes/backup/release/observability/error", () => {
   it("routes: blocks unguarded admin route", () => {
-    const r = auditRoutes([{ path: "/admin", access: "admin", guardKind: "public", serverAuthorized: false }]);
+    const r = auditRoutes([
+      { path: "/admin", access: "admin", guardKind: "public", serverAuthorized: false },
+    ]);
     expect(r[0].hardBlocker).toBe(true);
   });
   it("backup: UNKNOWN db backup is a blocker in production", () => {
@@ -364,8 +392,20 @@ describe("routes/backup/release/observability/error", () => {
 
 describe("score, verdict, run-id, compose, exports", () => {
   const passing = [
-    { id: "a", category: "SECURITY" as const, title: "a", status: "PASS" as const, severity: "info" as const },
-    { id: "b", category: "DATABASE" as const, title: "b", status: "PASS" as const, severity: "info" as const },
+    {
+      id: "a",
+      category: "SECURITY" as const,
+      title: "a",
+      status: "PASS" as const,
+      severity: "info" as const,
+    },
+    {
+      id: "b",
+      category: "DATABASE" as const,
+      title: "b",
+      status: "PASS" as const,
+      severity: "info" as const,
+    },
   ];
   it("score is 100 with all pass and no blockers", () => {
     const s = computeReadinessScore(passing);

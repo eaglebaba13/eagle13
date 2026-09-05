@@ -6,10 +6,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  runBacktest,
-  type BacktestResult,
-} from "@/lib/backtest.functions";
+import { runBacktest, type BacktestResult } from "@/lib/backtest.functions";
 import {
   loadSmcCandles,
   SMC_INSTRUMENTS,
@@ -21,10 +18,7 @@ import {
 } from "@/lib/backtest/smc-data-source";
 import { runUnifiedBacktest } from "@/lib/backtest/unified";
 import { analyzeSmc } from "@/lib/smc-engine";
-import {
-  analyzeSmcSignals,
-  DEFAULT_SMC_SIGNAL_CONFIG,
-} from "@/lib/smc-signal-engine";
+import { analyzeSmcSignals, DEFAULT_SMC_SIGNAL_CONFIG } from "@/lib/smc-signal-engine";
 import { DEFAULT_SMC_EXECUTION } from "@/lib/backtest/adapters/smc-historical.adapter";
 import {
   DEFAULT_HYBRID_CONFIG,
@@ -69,12 +63,8 @@ export default function HybridBacktestPanel() {
   const [weights, setWeights] = useState<HybridWeights>({
     ...DEFAULT_HYBRID_WEIGHTS,
   });
-  const [threshold, setThreshold] = useState<number>(
-    DEFAULT_HYBRID_CONFIG.scoreThreshold,
-  );
-  const [minDq, setMinDq] = useState<number>(
-    DEFAULT_HYBRID_CONFIG.minDataQualityPct,
-  );
+  const [threshold, setThreshold] = useState<number>(DEFAULT_HYBRID_CONFIG.scoreThreshold);
+  const [minDq, setMinDq] = useState<number>(DEFAULT_HYBRID_CONFIG.minDataQualityPct);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,11 +115,7 @@ export default function HybridBacktestPanel() {
       setData(loaded);
       // 3. SMC engines — one pass each.
       const engine = analyzeSmc([...loaded.candles]);
-      const signals = analyzeSmcSignals(
-        [...loaded.candles],
-        engine,
-        DEFAULT_SMC_SIGNAL_CONFIG,
-      );
+      const signals = analyzeSmcSignals([...loaded.candles], engine, DEFAULT_SMC_SIGNAL_CONFIG);
       const astroRes = await astroP;
       setAstro(astroRes);
 
@@ -254,7 +240,18 @@ export default function HybridBacktestPanel() {
         `smcRunId=${smc?.runId ?? ""}`,
       ],
       [
-        "date","side","entry","stop","target","exit","outcome","pnl","hybridScore","astroContribution","smcContribution","astroDirection",
+        "date",
+        "side",
+        "entry",
+        "stop",
+        "target",
+        "exit",
+        "outcome",
+        "pnl",
+        "hybridScore",
+        "astroContribution",
+        "smcContribution",
+        "astroDirection",
       ],
       ...hybrid.trades.map((t) => {
         const m = t.metadata as {
@@ -264,8 +261,18 @@ export default function HybridBacktestPanel() {
           astroDirection?: string | null;
         };
         return [
-          t.date, t.side, t.entry, t.stop, t.target, t.exit, t.outcome, t.pnl,
-          m.hybridScore ?? 0, m.astroContribution ?? 0, m.smcContribution ?? 0, m.astroDirection ?? "",
+          t.date,
+          t.side,
+          t.entry,
+          t.stop,
+          t.target,
+          t.exit,
+          t.outcome,
+          t.pnl,
+          m.hybridScore ?? 0,
+          m.astroContribution ?? 0,
+          m.smcContribution ?? 0,
+          m.astroDirection ?? "",
         ];
       }),
     ];
@@ -291,24 +298,59 @@ export default function HybridBacktestPanel() {
         <div style={sectionHead}>1 · Data</div>
         <div style={grid}>
           <Field label="Instrument">
-            <select value={instrument} onChange={(e) => setInstrument(e.target.value as SmcInstrument)} style={inputStyle}>
-              {SMC_INSTRUMENTS.map((i) => <option key={i} value={i}>{i}</option>)}
+            <select
+              value={instrument}
+              onChange={(e) => setInstrument(e.target.value as SmcInstrument)}
+              style={inputStyle}
+            >
+              {SMC_INSTRUMENTS.map((i) => (
+                <option key={i} value={i}>
+                  {i}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Timeframe">
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value as SmcTimeframe)} style={inputStyle}>
-              {SMC_TIMEFRAMES.map((t) => <option key={t} value={t}>{t}</option>)}
+            <select
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value as SmcTimeframe)}
+              style={inputStyle}
+            >
+              {SMC_TIMEFRAMES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="From">
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              style={inputStyle}
+            />
           </Field>
           <Field label="To">
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              style={inputStyle}
+            />
           </Field>
           <Field label="Intraday CSV">
-            <input type="file" accept=".csv,text/csv" onChange={(e) => onCsvFile(e.target.files?.[0] ?? null)} style={{ ...inputStyle, padding: 4 }} />
-            {csvFileName ? <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>{csvFileName} · {csvText.length.toLocaleString()} bytes</div> : null}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => onCsvFile(e.target.files?.[0] ?? null)}
+              style={{ ...inputStyle, padding: 4 }}
+            />
+            {csvFileName ? (
+              <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>
+                {csvFileName} · {csvText.length.toLocaleString()} bytes
+              </div>
+            ) : null}
           </Field>
         </div>
       </div>
@@ -316,10 +358,30 @@ export default function HybridBacktestPanel() {
       <div style={panel}>
         <div style={sectionHead}>2 · Hybrid Weights &amp; Threshold</div>
         <div style={grid}>
-          <NumField label="Astro Weight" value={weights.astro} step={0.05} onChange={(v) => setWeights({ ...weights, astro: v })} />
-          <NumField label="SMC Weight" value={weights.smc} step={0.05} onChange={(v) => setWeights({ ...weights, smc: v })} />
-          <NumField label="Agreement Bonus" value={weights.agreement} step={0.05} onChange={(v) => setWeights({ ...weights, agreement: v })} />
-          <NumField label="Data-Quality Weight" value={weights.dataQuality} step={0.05} onChange={(v) => setWeights({ ...weights, dataQuality: v })} />
+          <NumField
+            label="Astro Weight"
+            value={weights.astro}
+            step={0.05}
+            onChange={(v) => setWeights({ ...weights, astro: v })}
+          />
+          <NumField
+            label="SMC Weight"
+            value={weights.smc}
+            step={0.05}
+            onChange={(v) => setWeights({ ...weights, smc: v })}
+          />
+          <NumField
+            label="Agreement Bonus"
+            value={weights.agreement}
+            step={0.05}
+            onChange={(v) => setWeights({ ...weights, agreement: v })}
+          />
+          <NumField
+            label="Data-Quality Weight"
+            value={weights.dataQuality}
+            step={0.05}
+            onChange={(v) => setWeights({ ...weights, dataQuality: v })}
+          />
           <NumField label="SMC Score Threshold" value={threshold} onChange={setThreshold} />
           <NumField label="Min Data Quality %" value={minDq} onChange={setMinDq} />
         </div>
@@ -329,11 +391,21 @@ export default function HybridBacktestPanel() {
       </div>
 
       <div style={panel}>
-        <button onClick={runNow} disabled={!canRun} style={{ ...btnPrimary, opacity: canRun ? 1 : 0.5, cursor: canRun ? "pointer" : "not-allowed" }}>
+        <button
+          onClick={runNow}
+          disabled={!canRun}
+          style={{
+            ...btnPrimary,
+            opacity: canRun ? 1 : 0.5,
+            cursor: canRun ? "pointer" : "not-allowed",
+          }}
+        >
           {loading ? "Running…" : "▶ Run Hybrid Backtest"}
         </button>
         {csvText.trim().length === 0 ? (
-          <span style={{ marginLeft: 10, fontSize: 11, color: C.muted }}>Upload intraday CSV first — hybrid needs 5m candles.</span>
+          <span style={{ marginLeft: 10, fontSize: 11, color: C.muted }}>
+            Upload intraday CSV first — hybrid needs 5m candles.
+          </span>
         ) : null}
         {error ? <div style={{ color: C.red, fontSize: 12, marginTop: 8 }}>{error}</div> : null}
       </div>
@@ -353,12 +425,24 @@ export default function HybridBacktestPanel() {
             <div style={sectionHead}>4 · Hybrid Results</div>
             <div style={grid}>
               <KV label="Trades" value={String(hybrid.trades.length)} />
-              <KV label="Wins" value={String(hybrid.trades.filter((t) => t.outcome === "WIN").length)} />
-              <KV label="Losses" value={String(hybrid.trades.filter((t) => t.outcome === "LOSS").length)} />
+              <KV
+                label="Wins"
+                value={String(hybrid.trades.filter((t) => t.outcome === "WIN").length)}
+              />
+              <KV
+                label="Losses"
+                value={String(hybrid.trades.filter((t) => t.outcome === "LOSS").length)}
+              />
               <KV label="Net PnL" value={hybrid.trades.reduce((a, t) => a + t.pnl, 0).toFixed(2)} />
-              <KV label="Max Drawdown" value={hybrid.drawdown ? hybrid.drawdown.max.toFixed(2) : "—"} />
+              <KV
+                label="Max Drawdown"
+                value={hybrid.drawdown ? hybrid.drawdown.max.toFixed(2) : "—"}
+              />
               <KV label="Avg Hybrid Score" value={String(counters.averages.hybridScore)} />
-              <KV label="Avg Astro Contribution" value={String(counters.averages.astroContribution)} />
+              <KV
+                label="Avg Astro Contribution"
+                value={String(counters.averages.astroContribution)}
+              />
               <KV label="Avg SMC Contribution" value={String(counters.averages.smcContribution)} />
             </div>
           </div>
@@ -371,7 +455,10 @@ export default function HybridBacktestPanel() {
               <KV label="WAIT" value={String(counters.counters.WAIT ?? 0)} />
               <KV label="Conflict" value={String(counters.counters.CONFLICT ?? 0)} />
               <KV label="Data Incomplete" value={String(counters.counters.DATA_INCOMPLETE ?? 0)} />
-              <KV label="Formula Mismatch" value={String(counters.counters.FORMULA_MISMATCH ?? 0)} />
+              <KV
+                label="Formula Mismatch"
+                value={String(counters.counters.FORMULA_MISMATCH ?? 0)}
+              />
             </div>
           </div>
 
@@ -389,8 +476,12 @@ export default function HybridBacktestPanel() {
 
           <div style={panel}>
             <div style={sectionHead}>7 · Exports</div>
-            <button onClick={exportCsv} style={btnSecondary}>Download CSV</button>
-            <button onClick={exportJson} style={{ ...btnSecondary, marginLeft: 8 }}>Download JSON</button>
+            <button onClick={exportCsv} style={btnSecondary}>
+              Download CSV
+            </button>
+            <button onClick={exportJson} style={{ ...btnSecondary, marginLeft: 8 }}>
+              Download JSON
+            </button>
           </div>
 
           <div style={panel}>
@@ -415,21 +506,49 @@ function csvCell(v: unknown): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "grid", gap: 4 }}>
-      <span style={{ fontSize: 10, color: C.muted, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</span>
+      <span
+        style={{ fontSize: 10, color: C.muted, letterSpacing: 0.5, textTransform: "uppercase" }}
+      >
+        {label}
+      </span>
       {children}
     </label>
   );
 }
-function NumField({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (v: number) => void }) {
+function NumField({
+  label,
+  value,
+  step = 1,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  step?: number;
+  onChange: (v: number) => void;
+}) {
   return (
     <Field label={label}>
-      <input type="number" step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} style={inputStyle} />
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={inputStyle}
+      />
     </Field>
   );
 }
 function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, borderBottom: `1px solid ${C.border}`, padding: "3px 0" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        fontSize: 12,
+        borderBottom: `1px solid ${C.border}`,
+        padding: "3px 0",
+      }}
+    >
       <span style={{ color: C.muted }}>{label}</span>
       <span style={{ wordBreak: "break-all" }}>{value}</span>
     </div>
@@ -439,14 +558,30 @@ function RunIdRow({ label, version, runId }: { label: string; version: string; r
   return (
     <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 8 }}>
       <span style={{ color: C.orange }}>{label}</span>
-      <span style={{ color: C.muted, wordBreak: "break-all" }}>{version} · {runId}</span>
+      <span style={{ color: C.muted, wordBreak: "break-all" }}>
+        {version} · {runId}
+      </span>
     </div>
   );
 }
 
-const panel: React.CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12 };
-const sectionHead: React.CSSProperties = { fontSize: 12, letterSpacing: 1, color: C.orange, marginBottom: 8 };
-const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 };
+const panel: React.CSSProperties = {
+  background: C.card,
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  padding: 12,
+};
+const sectionHead: React.CSSProperties = {
+  fontSize: 12,
+  letterSpacing: 1,
+  color: C.orange,
+  marginBottom: 8,
+};
+const grid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 10,
+};
 const inputStyle: React.CSSProperties = {
   background: C.bg,
   color: C.text,

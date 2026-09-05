@@ -39,8 +39,8 @@ export function auditLoad(obs: readonly LoadScenarioObservation[]): StagingCheck
       o.errorRate >= LOAD_SAFETY_LIMITS.errorRateFail || o.p95Ms >= LOAD_SAFETY_LIMITS.p95FailMs
         ? "FAIL"
         : o.errorRate >= LOAD_SAFETY_LIMITS.errorRateWarn || o.p95Ms >= LOAD_SAFETY_LIMITS.p95WarnMs
-        ? "WARNING"
-        : "PASS";
+          ? "WARNING"
+          : "PASS";
     checks.push({
       id: `load.${o.id}`,
       category: "LOAD",

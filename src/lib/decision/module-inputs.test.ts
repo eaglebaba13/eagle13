@@ -10,10 +10,7 @@ import type {
   OptionChainCapabilityStatus,
 } from "../option-chain/capability";
 import type { OptionChainProviderMeta } from "../option-chain/provider";
-import type {
-  OptionChainSnapshot,
-  OptionUnderlying,
-} from "../option-chain/types";
+import type { OptionChainSnapshot, OptionUnderlying } from "../option-chain/types";
 import type { CombinedPcrReading } from "../combined-pcr/types";
 import {
   buildDecisionSummary,
@@ -54,7 +51,10 @@ function makeSnapshot(underlying: OptionUnderlying, spot = 20000): OptionChainSn
   };
 }
 
-function makeMeta(status: OptionChainProviderMeta["status"] = "LIVE", safeError: string | null = null): OptionChainProviderMeta {
+function makeMeta(
+  status: OptionChainProviderMeta["status"] = "LIVE",
+  safeError: string | null = null,
+): OptionChainProviderMeta {
   return {
     providerId: "UPSTOX",
     status,
@@ -94,7 +94,8 @@ function envelope(
   return {
     ok: usable,
     snapshot: snap,
-    meta: opts.meta ?? makeMeta(usable ? "LIVE" : "UNAVAILABLE", usable ? null : "empty option chain"),
+    meta:
+      opts.meta ?? makeMeta(usable ? "LIVE" : "UNAVAILABLE", usable ? null : "empty option chain"),
     capability: makeCap(status),
   };
 }

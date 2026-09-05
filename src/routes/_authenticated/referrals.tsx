@@ -4,10 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ClaimReferralDialog } from "@/components/referrals/ClaimReferralDialog";
-import {
-  cancelReferralRequest,
-  listMyReferralRequests,
-} from "@/lib/referrals/referrals.functions";
+import { cancelReferralRequest, listMyReferralRequests } from "@/lib/referrals/referrals.functions";
 import {
   REFERRAL_STATUS_LABEL,
   isTerminalReferralStatus,
@@ -37,8 +34,7 @@ function ReferralsPage() {
       toast.success("Referral claim canceled");
       void qc.invalidateQueries({ queryKey: ["referral-requests"] });
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Cancel failed"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Cancel failed"),
   });
 
   const rows = q.data ?? [];
@@ -51,8 +47,7 @@ function ReferralsPage() {
           <div>
             <h1 className="text-2xl font-semibold">Referral rewards</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Earn {REFERRAL_REWARD_DAYS} days of Pro for each approved
-              INDmoney referral.
+              Earn {REFERRAL_REWARD_DAYS} days of Pro for each approved INDmoney referral.
             </p>
           </div>
           <button
@@ -71,9 +66,7 @@ function ReferralsPage() {
             <h2 className="text-sm font-semibold">Your referral history</h2>
           </div>
           {q.isLoading ? (
-            <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Loading…
-            </div>
+            <div className="px-6 py-10 text-center text-sm text-muted-foreground">Loading…</div>
           ) : rows.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-muted-foreground">
               No referral claims yet.
@@ -118,18 +111,12 @@ function RowItem({
             · Client {row.broker_client_id_masked}
           </span>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">
-          Submitted {submitted}
-        </div>
+        <div className="mt-1 text-xs text-muted-foreground">Submitted {submitted}</div>
         {row.rejection_reason ? (
-          <div className="mt-1 text-xs text-red-500">
-            Rejected: {row.rejection_reason}
-          </div>
+          <div className="mt-1 text-xs text-red-500">Rejected: {row.rejection_reason}</div>
         ) : null}
         {row.admin_note && row.status === "APPROVED" ? (
-          <div className="mt-1 text-xs text-emerald-500">
-            {row.admin_note}
-          </div>
+          <div className="mt-1 text-xs text-emerald-500">{row.admin_note}</div>
         ) : null}
       </div>
       <div className="flex items-center gap-3">

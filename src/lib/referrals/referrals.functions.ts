@@ -26,18 +26,15 @@ export const submitReferralRequest = createServerFn({ method: "POST" })
     if (code.length < 3) throw new Error("invalid_code");
     if (clientId.length < 3) throw new Error("invalid_client_id");
 
-    const { data: row, error } = await context.supabase.rpc(
-      "submit_referral_request",
-      {
-        _broker: data.broker,
-        _referral_code: code,
-        _client_id_masked: clientId,
-        // The RPC accepts nulls even though the generated types widen to string.
-        _screenshot_url: (data.screenshotUrl ?? null) as unknown as string,
-        _user_note: (data.userNote ?? null) as unknown as string,
-        _declaration: true,
-      },
-    );
+    const { data: row, error } = await context.supabase.rpc("submit_referral_request", {
+      _broker: data.broker,
+      _referral_code: code,
+      _client_id_masked: clientId,
+      // The RPC accepts nulls even though the generated types widen to string.
+      _screenshot_url: (data.screenshotUrl ?? null) as unknown as string,
+      _user_note: (data.userNote ?? null) as unknown as string,
+      _declaration: true,
+    });
     if (error) throw new Error(error.message);
 
     // Notify admin via Telegram (fire and forget, never blocks the user).
@@ -78,10 +75,9 @@ export const cancelReferralRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
-    const { data: row, error } = await context.supabase.rpc(
-      "cancel_referral_request",
-      { _id: data.id },
-    );
+    const { data: row, error } = await context.supabase.rpc("cancel_referral_request", {
+      _id: data.id,
+    });
     if (error) throw new Error(error.message);
     return row as unknown as ReferralRequestRow;
   });
@@ -90,10 +86,10 @@ export const cancelReferralRequest = createServerFn({ method: "POST" })
 export const listAdminReferralRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly ReferralRequestRow[]> => {
-    const { data: isAdmin, error: roleErr } = await context.supabase.rpc(
-      "has_role",
-      { _user_id: context.userId, _role: "admin" },
-    );
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (roleErr) throw new Error(roleErr.message);
     if (!isAdmin) throw new Error("forbidden");
     const { data, error } = await context.supabase
@@ -110,10 +106,9 @@ export const adminMarkReferralUnderReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
-    const { data: row, error } = await context.supabase.rpc(
-      "admin_mark_referral_under_review",
-      { _id: data.id },
-    );
+    const { data: row, error } = await context.supabase.rpc("admin_mark_referral_under_review", {
+      _id: data.id,
+    });
     if (error) throw new Error(error.message);
     return row as unknown as ReferralRequestRow;
   });
@@ -123,13 +118,10 @@ export const adminApproveReferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string; adminNote?: string | null }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
-    const { data: row, error } = await context.supabase.rpc(
-      "admin_approve_referral",
-      {
-        _id: data.id,
-        _admin_note: (data.adminNote ?? null) as unknown as string,
-      },
-    );
+    const { data: row, error } = await context.supabase.rpc("admin_approve_referral", {
+      _id: data.id,
+      _admin_note: (data.adminNote ?? null) as unknown as string,
+    });
     if (error) throw new Error(error.message);
     return row as unknown as ReferralRequestRow;
   });
@@ -142,10 +134,10 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
     if (!data.reason || data.reason.trim().length < 3) {
       throw new Error("reason_required");
     }
-    const { data: row, error } = await context.supabase.rpc(
-      "admin_reject_referral",
-      { _id: data.id, _reason: data.reason.trim() },
-    );
+    const { data: row, error } = await context.supabase.rpc("admin_reject_referral", {
+      _id: data.id,
+      _reason: data.reason.trim(),
+    });
     if (error) throw new Error(error.message);
     return row as unknown as ReferralRequestRow;
   });

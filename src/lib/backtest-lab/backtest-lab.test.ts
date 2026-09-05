@@ -10,13 +10,29 @@ import { BACKTEST_LAB_SCHEMA_VERSION } from "./types";
 
 function trade(over: Partial<SimulatedTrade> = {}): SimulatedTrade {
   return {
-    tradeId: "T1", strategyId: "S", symbol: "NIFTY", direction: "LONG",
-    entryTs: "2024-01-01T09:15:00Z", exitTs: "2024-01-01T15:00:00Z",
-    entryPrice: 100, exitPrice: 105, quantity: 1,
-    stop: 95, target: 110,
-    grossPnl: 5, netPnl: 5, returnPct: 5,
-    fees: 0, slippage: 0, mfe: 5, mae: 0, holdingBars: 1,
-    entryReason: "SIG", exitReason: "TARGET", ambiguous: false, warnings: [],
+    tradeId: "T1",
+    strategyId: "S",
+    symbol: "NIFTY",
+    direction: "LONG",
+    entryTs: "2024-01-01T09:15:00Z",
+    exitTs: "2024-01-01T15:00:00Z",
+    entryPrice: 100,
+    exitPrice: 105,
+    quantity: 1,
+    stop: 95,
+    target: 110,
+    grossPnl: 5,
+    netPnl: 5,
+    returnPct: 5,
+    fees: 0,
+    slippage: 0,
+    mfe: 5,
+    mae: 0,
+    holdingBars: 1,
+    entryReason: "SIG",
+    exitReason: "TARGET",
+    ambiguous: false,
+    warnings: [],
     ...over,
   };
 }
@@ -24,15 +40,22 @@ function trade(over: Partial<SimulatedTrade> = {}): SimulatedTrade {
 function strategy(): StrategyDefinition {
   return {
     schemaVersion: BACKTEST_LAB_SCHEMA_VERSION,
-    strategyId: "S1", name: "s", description: "",
-    universe: ["NIFTY"], assetClass: "EQUITY_INDEX",
-    timeframe: "1d", datasetId: "d", datasetHash: "h",
-    from: "2024-01-01", to: "2024-06-30",
+    strategyId: "S1",
+    name: "s",
+    description: "",
+    universe: ["NIFTY"],
+    assetClass: "EQUITY_INDEX",
+    timeframe: "1d",
+    datasetId: "d",
+    datasetHash: "h",
+    from: "2024-01-01",
+    to: "2024-06-30",
     conditions: { kind: "GROUP", operator: "AND", children: [] },
     direction: "LONG",
     entry: { type: "NEXT_BAR_OPEN" },
     exit: {
-      stopType: "NONE", targetType: "NONE",
+      stopType: "NONE",
+      targetType: "NONE",
       sameBarPolicy: "CONSERVATIVE_STOP_FIRST",
     },
     sizing: { method: "FIXED_QTY", fixedQty: 1 },
@@ -94,13 +117,20 @@ describe("monte carlo — deterministic with seed", () => {
 describe("report builder + exports", () => {
   beforeEach(() => _resetForTests());
   const candles: HistoricalCandle[] = Array.from({ length: 5 }, (_, i) => ({
-    ts: `2024-01-0${i + 1}T09:15:00Z`, open: 100 + i, high: 101 + i, low: 99 + i, close: 100 + i,
+    ts: `2024-01-0${i + 1}T09:15:00Z`,
+    open: 100 + i,
+    high: 101 + i,
+    low: 99 + i,
+    close: 100 + i,
     valid: true,
   }));
 
   it("produces a schema-versioned report with disclaimer", () => {
     const report = buildBacktestRunReport({
-      runId: "R1", strategy: strategy(), candles, generatedAt: "2024-01-05T00:00:00Z",
+      runId: "R1",
+      strategy: strategy(),
+      candles,
+      generatedAt: "2024-01-05T00:00:00Z",
     });
     expect(report.schemaVersion).toBe(BACKTEST_LAB_SCHEMA_VERSION);
     expect(report.disclaimer).toMatch(/RESEARCH ONLY/i);
@@ -109,7 +139,10 @@ describe("report builder + exports", () => {
 
   it("CSV export contains headers", () => {
     const report = buildBacktestRunReport({
-      runId: "R1", strategy: strategy(), candles, generatedAt: "2024-01-05T00:00:00Z",
+      runId: "R1",
+      strategy: strategy(),
+      candles,
+      generatedAt: "2024-01-05T00:00:00Z",
     });
     const csv = exportRunCsv(report);
     expect(csv.split("\n")[0]).toContain("tradeId");
@@ -117,14 +150,27 @@ describe("report builder + exports", () => {
 
   it("JSON export is parseable", () => {
     const report = buildBacktestRunReport({
-      runId: "R1", strategy: strategy(), candles, generatedAt: "2024-01-05T00:00:00Z",
+      runId: "R1",
+      strategy: strategy(),
+      candles,
+      generatedAt: "2024-01-05T00:00:00Z",
     });
     expect(() => JSON.parse(exportRunJson(report))).not.toThrow();
   });
 
   it("compareRuns returns paired arrays", () => {
-    const a = buildBacktestRunReport({ runId: "R1", strategy: strategy(), candles, generatedAt: "t" });
-    const b = buildBacktestRunReport({ runId: "R2", strategy: strategy(), candles, generatedAt: "t" });
+    const a = buildBacktestRunReport({
+      runId: "R1",
+      strategy: strategy(),
+      candles,
+      generatedAt: "t",
+    });
+    const b = buildBacktestRunReport({
+      runId: "R2",
+      strategy: strategy(),
+      candles,
+      generatedAt: "t",
+    });
     const cmp = compareRuns(a, b);
     expect(cmp.runs).toEqual(["R1", "R2"]);
     expect(cmp.datasetHashSame).toBe(true);
@@ -134,13 +180,21 @@ describe("report builder + exports", () => {
 describe("portfolio aggregator", () => {
   it("equal-weights runs deterministically", () => {
     const r1 = buildBacktestRunReport({
-      runId: "R1", strategy: strategy(), candles: [], generatedAt: "t",
+      runId: "R1",
+      strategy: strategy(),
+      candles: [],
+      generatedAt: "t",
     });
     const r2 = buildBacktestRunReport({
-      runId: "R2", strategy: { ...strategy(), strategyId: "S2" }, candles: [], generatedAt: "t",
+      runId: "R2",
+      strategy: { ...strategy(), strategyId: "S2" },
+      candles: [],
+      generatedAt: "t",
     });
     const p = runPortfolio({
-      weighting: "EQUAL", runs: [r1, r2], startingCapital: 100_000,
+      weighting: "EQUAL",
+      runs: [r1, r2],
+      startingCapital: 100_000,
     });
     expect(p.weights.R1).toBeCloseTo(0.5);
     expect(p.weights.R2).toBeCloseTo(0.5);
@@ -153,7 +207,10 @@ describe("persistence + diagnostics", () => {
   it("stores strategies and runs; diagnostics summarise them", () => {
     saveStrategy(strategy());
     const report = buildBacktestRunReport({
-      runId: "R1", strategy: strategy(), candles: [], generatedAt: "2024-06-01T00:00:00Z",
+      runId: "R1",
+      strategy: strategy(),
+      candles: [],
+      generatedAt: "2024-06-01T00:00:00Z",
     });
     saveRun(report, 12);
     const d = buildDiagnostics({

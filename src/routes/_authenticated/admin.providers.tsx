@@ -125,7 +125,9 @@ function AdminProvidersPage() {
         </header>
 
         {loadError ? <FailureCard title="Provider diagnostics" message={loadError} /> : null}
-        {report?.safeError ? <FailureCard title="Provider diagnostics" message={report.safeError} /> : null}
+        {report?.safeError ? (
+          <FailureCard title="Provider diagnostics" message={report.safeError} />
+        ) : null}
 
         <EnvPresencePanel report={report} />
 
@@ -171,7 +173,9 @@ function EnvPresencePanel({ report }: { report: ProviderDiagnosticsReport | null
     >
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-200">Server environment presence</h2>
-        <span className={`rounded border px-2 py-0.5 text-[10px] ${banner.cls}`}>{banner.text}</span>
+        <span className={`rounded border px-2 py-0.5 text-[10px] ${banner.cls}`}>
+          {banner.text}
+        </span>
       </div>
       <div className="mb-3 flex flex-wrap gap-3 text-[11px] text-slate-500 font-mono">
         <span>runtime: {p.runtimeEnvironment}</span>
@@ -179,9 +183,14 @@ function EnvPresencePanel({ report }: { report: ProviderDiagnosticsReport | null
       </div>
       <ul className="space-y-1 text-xs text-slate-200">
         {rows.map((r) => (
-          <li key={r.name} className="flex items-center justify-between border-t border-slate-800 py-1 font-mono">
+          <li
+            key={r.name}
+            className="flex items-center justify-between border-t border-slate-800 py-1 font-mono"
+          >
             <span>{r.name}</span>
-            <span className={`rounded border px-2 py-0.5 text-[10px] ${PRESENCE_COLORS[r.status] ?? PRESENCE_COLORS.MISSING}`}>
+            <span
+              className={`rounded border px-2 py-0.5 text-[10px] ${PRESENCE_COLORS[r.status] ?? PRESENCE_COLORS.MISSING}`}
+            >
               {r.status}
             </span>
           </li>
@@ -189,12 +198,14 @@ function EnvPresencePanel({ report }: { report: ProviderDiagnosticsReport | null
       </ul>
       {status === "LIVE_PROVIDER_CONFIGURATION_INCOMPLETE" ? (
         <p className="mt-3 text-[11px] text-red-300/90">
-          Live mode is enabled but one or more credentials are MISSING or PLACEHOLDER. Save them in the platform secret store — mock fallback is deliberately disabled in live mode.
+          Live mode is enabled but one or more credentials are MISSING or PLACEHOLDER. Save them in
+          the platform secret store — mock fallback is deliberately disabled in live mode.
         </p>
       ) : null}
       {status === "SECRETS_SAVED_REDEPLOY_REQUIRED" ? (
         <p className="mt-3 text-[11px] text-amber-300/90">
-          Secrets saved but not visible to this deployment yet. A restart/redeploy is required for them to reach server functions.
+          Secrets saved but not visible to this deployment yet. A restart/redeploy is required for
+          them to reach server functions.
         </p>
       ) : null}
     </section>
@@ -248,7 +259,9 @@ function ProviderDiagnosticsTables({ diag }: { diag: ManagerDiagnostics | null }
               <tr key={h.providerId} className="border-t border-slate-800">
                 <td className="py-1">{h.providerId}</td>
                 <td className="py-1">
-                  <span className={`inline-block rounded border px-2 py-0.5 ${STATUS_COLORS[h.status]}`}>
+                  <span
+                    className={`inline-block rounded border px-2 py-0.5 ${STATUS_COLORS[h.status]}`}
+                  >
                     {h.status}
                   </span>
                 </td>
@@ -278,11 +291,14 @@ function ProviderDiagnosticsTables({ diag }: { diag: ManagerDiagnostics | null }
       <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
         <h2 className="text-sm font-semibold text-slate-200 mb-3">Recent decisions</h2>
         <ul className="text-xs font-mono text-slate-300 space-y-1 max-h-64 overflow-auto">
-          {(diag?.lastDecisions ?? []).slice(-20).reverse().map((d, i) => (
-            <li key={i} className="border-t border-slate-800 py-1">
-              [{d.at}] {d.domain} → {d.chosen ?? "—"} ({d.role}) · {d.reason}
-            </li>
-          ))}
+          {(diag?.lastDecisions ?? [])
+            .slice(-20)
+            .reverse()
+            .map((d, i) => (
+              <li key={i} className="border-t border-slate-800 py-1">
+                [{d.at}] {d.domain} → {d.chosen ?? "—"} ({d.role}) · {d.reason}
+              </li>
+            ))}
         </ul>
       </section>
     </>
@@ -292,7 +308,9 @@ function ProviderDiagnosticsTables({ diag }: { diag: ManagerDiagnostics | null }
 function UpstoxReadOnlySection({ report }: { report: ProviderDiagnosticsReport | null }) {
   return (
     <section className="rounded-md border border-slate-800 bg-slate-950/60 p-4">
-      <h2 className="text-sm font-semibold text-slate-200 mb-3">Upstox ProviderAdapter (read-only)</h2>
+      <h2 className="text-sm font-semibold text-slate-200 mb-3">
+        Upstox ProviderAdapter (read-only)
+      </h2>
       <div className="grid grid-cols-2 gap-3 text-xs font-mono text-slate-300 md:grid-cols-4">
         <Stat label="Adapter" value={report?.providerSelected ?? "…"} />
         <Stat label="Version" value={report?.adapterVersion ?? "—"} />
@@ -300,7 +318,8 @@ function UpstoxReadOnlySection({ report }: { report: ProviderDiagnosticsReport |
         <Stat label="Symbols" value={report?.supportedSymbols.length ?? "…"} />
       </div>
       <p className="mt-3 text-[11px] text-slate-500">
-        Read-only quotes, historical and intraday candles. Token status, health, latency and cache metrics are surfaced server-side only.
+        Read-only quotes, historical and intraday candles. Token status, health, latency and cache
+        metrics are surfaced server-side only.
       </p>
       <div className="mt-2 text-[11px] text-slate-500">
         Supported: {report?.supportedSymbols.join(", ") ?? "…"}
@@ -434,16 +453,19 @@ function AdminAccessPanel({
       </div>
       <ul className="space-y-1">
         {rows.map((r) => (
-          <li key={r.label} className="flex items-center justify-between border-t border-slate-800 py-1">
+          <li
+            key={r.label}
+            className="flex items-center justify-between border-t border-slate-800 py-1"
+          >
             <span>{r.label}</span>
-            <span className={r.ok ? "text-emerald-300" : "text-red-300"}>{r.ok ? "PASS" : "FAIL"}</span>
+            <span className={r.ok ? "text-emerald-300" : "text-red-300"}>
+              {r.ok ? "PASS" : "FAIL"}
+            </span>
           </li>
         ))}
       </ul>
       {!access.canRunSmokeTest && (
-        <div className="mt-2 text-[11px] text-red-300/90">
-          {describeBlocker(access.blocker)}
-        </div>
+        <div className="mt-2 text-[11px] text-red-300/90">{describeBlocker(access.blocker)}</div>
       )}
     </div>
   );
@@ -469,7 +491,9 @@ function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
           className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-200"
         >
           <span className="font-semibold">Error source:</span> {errorSource}
-          {safeSummaryError ? <span className="ml-2 text-red-300/80">· {safeSummaryError}</span> : null}
+          {safeSummaryError ? (
+            <span className="ml-2 text-red-300/80">· {safeSummaryError}</span>
+          ) : null}
         </div>
       ) : null}
 
@@ -477,19 +501,36 @@ function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
         data-testid="smoke-run-diagnostics"
         className="grid grid-cols-2 gap-2 rounded-md border border-slate-800 bg-slate-900/50 p-2 text-[11px] font-mono text-slate-400 md:grid-cols-4"
       >
-        <span>started: {(report as unknown as { requestStartedAt?: string }).requestStartedAt ?? report.at}</span>
-        <span>completed: {(report as unknown as { requestCompletedAt?: string }).requestCompletedAt ?? "—"}</span>
+        <span>
+          started:{" "}
+          {(report as unknown as { requestStartedAt?: string }).requestStartedAt ?? report.at}
+        </span>
+        <span>
+          completed:{" "}
+          {(report as unknown as { requestCompletedAt?: string }).requestCompletedAt ?? "—"}
+        </span>
         <span>duration: {(report as unknown as { durationMs?: number }).durationMs ?? 0}ms</span>
         <span>http: {(report as unknown as { httpStatus?: number | null }).httpStatus ?? "—"}</span>
-        <span>endpoint failed: {(report as unknown as { endpointFailed?: string | null }).endpointFailed ?? "—"}</span>
-        <span>serialization: {(report as unknown as { serializationStatus?: string }).serializationStatus ?? "OK"}</span>
+        <span>
+          endpoint failed:{" "}
+          {(report as unknown as { endpointFailed?: string | null }).endpointFailed ?? "—"}
+        </span>
+        <span>
+          serialization:{" "}
+          {(report as unknown as { serializationStatus?: string }).serializationStatus ?? "OK"}
+        </span>
       </div>
 
       <div>
         {rows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs">
+          <div
+            key={row.label}
+            className="flex items-center justify-between border-t border-slate-800 py-1.5 text-xs"
+          >
             <div className="flex items-center gap-2">
-              <span className={`rounded border px-2 py-0.5 text-[10px] ${SMOKE_STATUS_COLORS[row.status]}`}>
+              <span
+                className={`rounded border px-2 py-0.5 text-[10px] ${SMOKE_STATUS_COLORS[row.status]}`}
+              >
                 {row.status}
               </span>
               <span className="text-slate-200">{row.label}</span>
@@ -511,10 +552,20 @@ function UpstoxSmokeReportView({ report }: { report: UpstoxSmokeReport }) {
   );
 }
 
-function StatusCard({ status, title, note }: { status: SmokeOverall; title: string; note: string }) {
+function StatusCard({
+  status,
+  title,
+  note,
+}: {
+  status: SmokeOverall;
+  title: string;
+  note: string;
+}) {
   return (
     <div className={`rounded-md border px-3 py-2 text-xs ${SMOKE_STATUS_COLORS[status]}`}>
-      <div className="font-semibold">{title}: {status}</div>
+      <div className="font-semibold">
+        {title}: {status}
+      </div>
       <div className="mt-1 opacity-90">{note}</div>
     </div>
   );
@@ -538,13 +589,7 @@ interface SmokeSymbolRow {
   readonly tokenType?: string;
 }
 
-function SymbolTable({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: readonly SmokeSymbolRow[];
-}) {
+function SymbolTable({ title, rows }: { title: string; rows: readonly SmokeSymbolRow[] }) {
   return (
     <div className="rounded border border-slate-800 p-2">
       <div className="mb-1 text-xs font-semibold text-slate-200">{title}</div>
@@ -577,7 +622,9 @@ function SymbolTable({
               <td className="py-0.5 text-right">
                 <div>{r.latencyMs}ms</div>
                 {r.requestTimestamp ? (
-                  <div className="text-[10px] text-slate-600">{r.requestTimestamp.slice(11, 19)}Z</div>
+                  <div className="text-[10px] text-slate-600">
+                    {r.requestTimestamp.slice(11, 19)}Z
+                  </div>
                 ) : null}
               </td>
             </tr>
@@ -626,7 +673,9 @@ function CombinedPcrDiagnosticsSection() {
     }
   }
 
-  useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   const report = result?.ok ? result.report : null;
 
@@ -636,14 +685,22 @@ function CombinedPcrDiagnosticsSection() {
       data-testid="combined-pcr-diagnostics"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-200">Combined PCR — Research diagnostics</h2>
+        <h2 className="text-sm font-semibold text-slate-200">
+          Combined PCR — Research diagnostics
+        </h2>
         <div className="flex items-center gap-2">
           {report ? (
-            <span className={`rounded border px-2 py-0.5 text-[10px] ${
-              report.overall === "READY" ? SMOKE_STATUS_COLORS.PASS
-                : report.overall === "PARTIAL" ? SMOKE_STATUS_COLORS.PARTIAL
-                : SMOKE_STATUS_COLORS.FAIL
-            }`}>{report.overall}</span>
+            <span
+              className={`rounded border px-2 py-0.5 text-[10px] ${
+                report.overall === "READY"
+                  ? SMOKE_STATUS_COLORS.PASS
+                  : report.overall === "PARTIAL"
+                    ? SMOKE_STATUS_COLORS.PARTIAL
+                    : SMOKE_STATUS_COLORS.FAIL
+              }`}
+            >
+              {report.overall}
+            </span>
           ) : null}
           <button
             onClick={() => void refresh()}
@@ -672,8 +729,28 @@ function CombinedPcrDiagnosticsSection() {
             <table className="w-full text-[11px] font-mono text-slate-300">
               <thead className="bg-slate-900/60 text-slate-400">
                 <tr>
-                  {["Underlying","Status","Expiry","ATM","Strikes","Call OI","Put OI","Call ΔOI+","Put ΔOI+","OI PCR","ΔOI PCR","Score","Cfg W","Eff W","Freshness","Cap","Provider"].map((h) => (
-                    <th key={h} className="px-2 py-1 text-left font-semibold">{h}</th>
+                  {[
+                    "Underlying",
+                    "Status",
+                    "Expiry",
+                    "ATM",
+                    "Strikes",
+                    "Call OI",
+                    "Put OI",
+                    "Call ΔOI+",
+                    "Put ΔOI+",
+                    "OI PCR",
+                    "ΔOI PCR",
+                    "Score",
+                    "Cfg W",
+                    "Eff W",
+                    "Freshness",
+                    "Cap",
+                    "Provider",
+                  ].map((h) => (
+                    <th key={h} className="px-2 py-1 text-left font-semibold">
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -694,7 +771,9 @@ function CombinedPcrDiagnosticsSection() {
                     <td className="px-2 py-1">{fmtNum(r.instrumentScore)}</td>
                     <td className="px-2 py-1">{fmtPct(r.configuredWeight)}</td>
                     <td className="px-2 py-1">{fmtPct(r.effectiveWeight)}</td>
-                    <td className="px-2 py-1">{r.freshnessMs == null ? "—" : `${Math.round(r.freshnessMs/1000)}s`}</td>
+                    <td className="px-2 py-1">
+                      {r.freshnessMs == null ? "—" : `${Math.round(r.freshnessMs / 1000)}s`}
+                    </td>
                     <td className="px-2 py-1">{r.capability}</td>
                     <td className="px-2 py-1">{r.provider}</td>
                   </tr>
@@ -709,13 +788,22 @@ function CombinedPcrDiagnosticsSection() {
           >
             <div className="mb-2 flex items-center justify-between">
               <span className="font-semibold text-slate-200">SENSEX capability gate</span>
-              <span className={`rounded border px-2 py-0.5 text-[10px] ${
-                report.sensex.status === "SUPPORTED" ? SMOKE_STATUS_COLORS.PASS
-                  : report.sensex.status === "PARTIAL" ? SMOKE_STATUS_COLORS.PARTIAL
-                  : SMOKE_STATUS_COLORS.FAIL
-              }`}>{report.sensex.status}</span>
+              <span
+                className={`rounded border px-2 py-0.5 text-[10px] ${
+                  report.sensex.status === "SUPPORTED"
+                    ? SMOKE_STATUS_COLORS.PASS
+                    : report.sensex.status === "PARTIAL"
+                      ? SMOKE_STATUS_COLORS.PARTIAL
+                      : SMOKE_STATUS_COLORS.FAIL
+                }`}
+              >
+                {report.sensex.status}
+              </span>
             </div>
-            <div className="text-slate-400">activate: <span className="font-mono">{String(report.sensex.activate)}</span> · missing: {report.sensex.missing.join(", ") || "—"}</div>
+            <div className="text-slate-400">
+              activate: <span className="font-mono">{String(report.sensex.activate)}</span> ·
+              missing: {report.sensex.missing.join(", ") || "—"}
+            </div>
             {report.sensex.safeError && (
               <div className="mt-1 text-amber-300/80">{report.sensex.safeError}</div>
             )}

@@ -26,10 +26,7 @@ import type {
 import type { OptionsChainResponse } from "../options-chain.functions";
 import type { CombinedPcrReading } from "../combined-pcr/types";
 import { safeProviderLabel } from "@/lib/provider-labels";
-import {
-  adaptUpstoxToLegacyChain,
-  isAdaptedChainLive,
-} from "./live-chain-adapter";
+import { adaptUpstoxToLegacyChain, isAdaptedChainLive } from "./live-chain-adapter";
 import {
   explainCapability,
   isCapabilityLive,
@@ -45,9 +42,7 @@ export interface CanonicalChainEnvelope {
   readonly capability: OptionChainCapability;
 }
 
-function canonicalStatusToModule(
-  status: OptionChainCapabilityStatus,
-): ModuleCapability {
+function canonicalStatusToModule(status: OptionChainCapabilityStatus): ModuleCapability {
   switch (status) {
     case "SUPPORTED":
       return "SUPPORTED";
@@ -113,8 +108,7 @@ export function buildOptionsModuleInput(
 
   // If canonical says the chain is not delivered, short-circuit before
   // running the legacy adapter — there is nothing to adapt.
-  const canonicalUsable =
-    canonicalStatus === "SUPPORTED" || canonicalStatus === "PARTIAL";
+  const canonicalUsable = canonicalStatus === "SUPPORTED" || canonicalStatus === "PARTIAL";
   if (!canonicalUsable || !canonical.ok || !canonical.snapshot) {
     const mod = canonicalStatusToModule(canonicalStatus);
     return {
@@ -154,10 +148,7 @@ export function buildOptionsModuleInput(
     canonical.snapshot?.timestamp != null
       ? Math.max(
           0,
-          Math.round(
-            (now.getTime() - new Date(canonical.snapshot.timestamp).getTime()) /
-              1000,
-          ),
+          Math.round((now.getTime() - new Date(canonical.snapshot.timestamp).getTime()) / 1000),
         )
       : null;
 
@@ -281,8 +272,7 @@ export function buildPcrModuleInput(
       providerAlias,
       combinedScore: reading.combinedScore,
       direction: reading.direction,
-      reason:
-        "Combined PCR computed but NIFTY OI-PCR is missing — cannot feed pcrSignal.",
+      reason: "Combined PCR computed but NIFTY OI-PCR is missing — cannot feed pcrSignal.",
       suggestedAction: "Wait for full chain publication and retry.",
       formulaVersion: "combined-pcr@1.0.0",
       instrumentCount: reading.instruments.length,

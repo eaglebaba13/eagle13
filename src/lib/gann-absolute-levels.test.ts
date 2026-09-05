@@ -98,8 +98,7 @@ describe("Phase 21.2 · L1/L2/L3/L4 formulas", () => {
     // L1(Rahu) - L1(Ketu) should differ by 180
     expect(
       Math.abs(
-        r.find((l) => l.sourceLevel === "L1")!.value -
-          k.find((l) => l.sourceLevel === "L1")!.value,
+        r.find((l) => l.sourceLevel === "L1")!.value - k.find((l) => l.sourceLevel === "L1")!.value,
       ),
     ).toBe(180);
   });
@@ -116,9 +115,7 @@ describe("Phase 21.2 · buildAbsoluteIntradayLevels", () => {
   });
   it("all levels carry formula version = GANN_ASTRO_INTRADAY_ABSOLUTE_V1", () => {
     for (const l of bundle.levels)
-      expect(l.formulaVersion).toBe(
-        INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1,
-      );
+      expect(l.formulaVersion).toBe(INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1);
   });
   it("above-close ⇒ RESISTANCE/SELL, below-close ⇒ SUPPORT/BUY", () => {
     for (const l of bundle.levels) {

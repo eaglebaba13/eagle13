@@ -23,7 +23,11 @@ export const getCoindcxCandles = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }) => {
     const { getCandleSnapshot } = await import("./coindcx.server");
-    return getCandleSnapshot({ pair: data.pair, interval: data.interval, nowIso: new Date().toISOString() });
+    return getCandleSnapshot({
+      pair: data.pair,
+      interval: data.interval,
+      nowIso: new Date().toISOString(),
+    });
   });
 
 export const getCoindcxDiagnostics = createServerFn({ method: "GET" })

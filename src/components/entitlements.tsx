@@ -4,7 +4,12 @@
  */
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { hasEntitlement, resolveEffectivePlan, minPlanFor, type UserEntitlementContext } from "@/lib/entitlements";
+import {
+  hasEntitlement,
+  resolveEffectivePlan,
+  minPlanFor,
+  type UserEntitlementContext,
+} from "@/lib/entitlements";
 import type { Capability, PlanId } from "@/lib/plans";
 import { PLANS } from "@/lib/plans";
 import { USAGE_WARNING_THRESHOLD } from "@/lib/usage-limits";
@@ -60,15 +65,7 @@ export function TrialCountdown({ daysLeft }: { daysLeft: number | null }) {
   );
 }
 
-export function UsageMeter({
-  label,
-  used,
-  limit,
-}: {
-  label: string;
-  used: number;
-  limit: number;
-}) {
+export function UsageMeter({ label, used, limit }: { label: string; used: number; limit: number }) {
   const ratio = limit === 0 ? 1 : Math.min(1, used / limit);
   const warn = ratio >= USAGE_WARNING_THRESHOLD;
   const full = ratio >= 1;
@@ -92,13 +89,7 @@ export function UsageMeter({
   );
 }
 
-export function UpgradeBanner({
-  ctx,
-  reason,
-}: {
-  ctx: UserEntitlementContext;
-  reason?: string;
-}) {
+export function UpgradeBanner({ ctx, reason }: { ctx: UserEntitlementContext; reason?: string }) {
   const eff = resolveEffectivePlan(ctx);
   if (eff.planId === "enterprise") return null;
   return (
@@ -108,7 +99,8 @@ export function UpgradeBanner({
           {reason ?? "Unlock premium EagleBABA capabilities"}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">
-          You're on <PlanBadge plan={eff.planId} />. Upgrade for advanced analytics, replay and risk tools.
+          You're on <PlanBadge plan={eff.planId} />. Upgrade for advanced analytics, replay and risk
+          tools.
         </div>
       </div>
       <Link
@@ -139,9 +131,7 @@ export function FeatureLock({
       <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-300">
         ★
       </div>
-      <h3 className="text-lg font-semibold text-foreground">
-        {title ?? "Premium feature"}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground">{title ?? "Premium feature"}</h3>
       <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
         {description ?? "This feature is available on a higher plan."}
       </p>

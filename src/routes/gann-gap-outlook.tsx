@@ -10,10 +10,7 @@ import {
   getGannGapOutcomeHistory,
 } from "@/lib/gann-gap/gann-gap.persistence.functions";
 import { classifySampleStatus } from "@/lib/gann-gap/analytics";
-import {
-  GANN_GAP_DISCLAIMER,
-  type GannGapOutlookLabel,
-} from "@/lib/gann-gap/types";
+import { GANN_GAP_DISCLAIMER, type GannGapOutlookLabel } from "@/lib/gann-gap/types";
 import { GANN_GAP_FORMULA_VERSION, GANN_GAP_CONFIG_VERSION } from "@/lib/gann-gap/formula-version";
 
 export const Route = createFileRoute("/gann-gap-outlook")({
@@ -52,9 +49,24 @@ function GannGapOutlookPage() {
     refetchInterval: 60_000,
     retry: false,
   });
-  const hist = useQuery({ queryKey: ["gann-gap-historical"], queryFn: () => fetchHist().catch(() => null), retry: false, staleTime: 5 * 60_000 });
-  const preds = useQuery({ queryKey: ["gann-gap-pred-history"], queryFn: () => fetchPredHist({ data: { limit: 30 } }).catch(() => [] as any[]), retry: false, staleTime: 5 * 60_000 });
-  const outs = useQuery({ queryKey: ["gann-gap-out-history"], queryFn: () => fetchOutHist({ data: { limit: 30 } }).catch(() => [] as any[]), retry: false, staleTime: 5 * 60_000 });
+  const hist = useQuery({
+    queryKey: ["gann-gap-historical"],
+    queryFn: () => fetchHist().catch(() => null),
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const preds = useQuery({
+    queryKey: ["gann-gap-pred-history"],
+    queryFn: () => fetchPredHist({ data: { limit: 30 } }).catch(() => [] as any[]),
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const outs = useQuery({
+    queryKey: ["gann-gap-out-history"],
+    queryFn: () => fetchOutHist({ data: { limit: 30 } }).catch(() => [] as any[]),
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
 
   return (
     <div className="min-h-screen bg-background px-4 py-6">
@@ -67,22 +79,25 @@ function GannGapOutlookPage() {
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Deterministic Gann Square gap outlook for the next trading session.
-            {" "}
+            Deterministic Gann Square gap outlook for the next trading session.{" "}
             {GANN_GAP_DISCLAIMER}
           </p>
         </header>
 
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {error && (
-          <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+          <div
+            role="alert"
+            className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+          >
             {(error as Error).message}
           </div>
         )}
 
         {data && !data.featureEnabled && (
           <div className="rounded-md border border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-            Feature is currently disabled. Enable <code>gann.gap.outlook</code> in feature flags to run the classifier.
+            Feature is currently disabled. Enable <code>gann.gap.outlook</code> in feature flags to
+            run the classifier.
           </div>
         )}
 
@@ -91,19 +106,26 @@ function GannGapOutlookPage() {
             <section className="rounded-xl border border-border bg-card/60 p-4">
               <h2 className="text-sm font-semibold">Current Outlook</h2>
               <p className="mt-2 text-lg font-semibold">{LABEL_TEXT[data.label]}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Lifecycle: {data.lifecycle} · For session {data.nextTradingDate || "—"}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Source:{" "}
-                <span className="font-medium text-foreground">{data.source}</span>
+                Lifecycle: {data.lifecycle} · For session {data.nextTradingDate || "—"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Source: <span className="font-medium text-foreground">{data.source}</span>
               </p>
               {data.reference != null && (
-                <p className="mt-1 text-xs text-muted-foreground">Reference NIFTY: {data.reference.toFixed(2)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Reference NIFTY: {data.reference.toFixed(2)}
+                </p>
               )}
               {data.confidence && (
-                <p className="mt-1 text-xs text-muted-foreground">Confidence band: {data.confidence}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Confidence band: {data.confidence}
+                </p>
               )}
               <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                {data.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                {data.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
               </ul>
             </section>
 
@@ -139,12 +161,42 @@ function GannGapOutlookPage() {
               <section className="rounded-xl border border-border bg-card/60 p-4">
                 <h2 className="text-sm font-semibold">Closing Zone</h2>
                 <dl className="mt-2 grid gap-1 text-xs">
-                  <div><dt className="inline text-muted-foreground">Reference: </dt><dd className="inline font-medium text-foreground">{data.zone.reference.toFixed(2)}</dd></div>
-                  <div><dt className="inline text-muted-foreground">Nearest below: </dt><dd className="inline font-medium text-foreground">{data.zone.nearestBelow?.level ?? "—"}</dd></div>
-                  <div><dt className="inline text-muted-foreground">Nearest above: </dt><dd className="inline font-medium text-foreground">{data.zone.nearestAbove?.level ?? "—"}</dd></div>
-                  <div><dt className="inline text-muted-foreground">Inside indecision band: </dt><dd className="inline font-medium text-foreground">{String(data.zone.insideIndecisionBand)}</dd></div>
-                  <div><dt className="inline text-muted-foreground">Reclaimed above: </dt><dd className="inline font-medium text-foreground">{String(data.zone.reclaimedAbove)}</dd></div>
-                  <div><dt className="inline text-muted-foreground">Rejected below: </dt><dd className="inline font-medium text-foreground">{String(data.zone.rejectedBelow)}</dd></div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Reference: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {data.zone.reference.toFixed(2)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Nearest below: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {data.zone.nearestBelow?.level ?? "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Nearest above: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {data.zone.nearestAbove?.level ?? "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Inside indecision band: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {String(data.zone.insideIndecisionBand)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Reclaimed above: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {String(data.zone.reclaimedAbove)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline text-muted-foreground">Rejected below: </dt>
+                    <dd className="inline font-medium text-foreground">
+                      {String(data.zone.rejectedBelow)}
+                    </dd>
+                  </div>
                 </dl>
               </section>
             )}
@@ -167,14 +219,27 @@ function GannGapOutlookPage() {
             <section className="rounded-xl border border-border bg-card/60 p-4">
               <h2 className="text-sm font-semibold">Methodology & Version</h2>
               <dl className="mt-2 grid gap-1 text-xs text-muted-foreground">
-                <div><dt className="inline">Formula: </dt><dd className="inline font-medium text-foreground">{GANN_GAP_FORMULA_VERSION}</dd></div>
-                <div><dt className="inline">Config: </dt><dd className="inline font-medium text-foreground">{GANN_GAP_CONFIG_VERSION}</dd></div>
-                <div><dt className="inline">Source: </dt><dd className="inline font-medium text-foreground">{data.source}</dd></div>
-                <div><dt className="inline">Observed at: </dt><dd className="inline font-medium text-foreground">{data.observedAt}</dd></div>
+                <div>
+                  <dt className="inline">Formula: </dt>
+                  <dd className="inline font-medium text-foreground">{GANN_GAP_FORMULA_VERSION}</dd>
+                </div>
+                <div>
+                  <dt className="inline">Config: </dt>
+                  <dd className="inline font-medium text-foreground">{GANN_GAP_CONFIG_VERSION}</dd>
+                </div>
+                <div>
+                  <dt className="inline">Source: </dt>
+                  <dd className="inline font-medium text-foreground">{data.source}</dd>
+                </div>
+                <div>
+                  <dt className="inline">Observed at: </dt>
+                  <dd className="inline font-medium text-foreground">{data.observedAt}</dd>
+                </div>
               </dl>
               <p className="mt-3 text-[11px] text-muted-foreground/80">
-                Level formula: level = n². If n² is even, add +1. Examples: 149→22201, 150→22501, 151→22801, 152→23105.
-                Classifier bands and confirmations are documented in <code>src/lib/gann-gap/</code>.
+                Level formula: level = n². If n² is even, add +1. Examples: 149→22201, 150→22501,
+                151→22801, 152→23105. Classifier bands and confirmations are documented in{" "}
+                <code>src/lib/gann-gap/</code>.
               </p>
             </section>
 
@@ -186,11 +251,30 @@ function GannGapOutlookPage() {
           <section className="rounded-xl border border-border bg-card/60 p-4">
             <h2 className="text-sm font-semibold">Historical Accuracy</h2>
             <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
-              <div><dt className="inline">Total: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.total}</dd></div>
-              <div><dt className="inline">Evaluated: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.evaluated}</dd></div>
-              <div><dt className="inline">Pending: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.pending}</dd></div>
-              <div><dt className="inline">Correct: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.correct}</dd></div>
-              <div><dt className="inline">Incorrect: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.incorrect}</dd></div>
+              <div>
+                <dt className="inline">Total: </dt>
+                <dd className="inline font-medium text-foreground">{hist.data.metrics.total}</dd>
+              </div>
+              <div>
+                <dt className="inline">Evaluated: </dt>
+                <dd className="inline font-medium text-foreground">
+                  {hist.data.metrics.evaluated}
+                </dd>
+              </div>
+              <div>
+                <dt className="inline">Pending: </dt>
+                <dd className="inline font-medium text-foreground">{hist.data.metrics.pending}</dd>
+              </div>
+              <div>
+                <dt className="inline">Correct: </dt>
+                <dd className="inline font-medium text-foreground">{hist.data.metrics.correct}</dd>
+              </div>
+              <div>
+                <dt className="inline">Incorrect: </dt>
+                <dd className="inline font-medium text-foreground">
+                  {hist.data.metrics.incorrect}
+                </dd>
+              </div>
               <div>
                 <dt className="inline">Win rate: </dt>
                 <dd className="inline font-medium text-foreground">
@@ -205,7 +289,12 @@ function GannGapOutlookPage() {
                   {classifySampleStatus(hist.data.metrics.evaluated).replace(/_/g, " ")}
                 </dd>
               </div>
-              <div><dt className="inline">Leakage: </dt><dd className="inline font-medium text-foreground">{hist.data.metrics.leakageDetected}</dd></div>
+              <div>
+                <dt className="inline">Leakage: </dt>
+                <dd className="inline font-medium text-foreground">
+                  {hist.data.metrics.leakageDetected}
+                </dd>
+              </div>
             </div>
             {!hist.data.showRate && (
               <p className="mt-2 text-[11px] text-amber-300">
@@ -264,7 +353,9 @@ function GannGapOutlookPage() {
                       <td className="px-2 py-1">{o.outcomeTradingDate}</td>
                       <td className="px-2 py-1 font-medium text-foreground">{o.actualOutcome}</td>
                       <td className="px-2 py-1">{o.gapPoints?.toFixed?.(2) ?? "—"}</td>
-                      <td className="px-2 py-1">{o.gapPercent != null ? (o.gapPercent * 100).toFixed(3) + "%" : "—"}</td>
+                      <td className="px-2 py-1">
+                        {o.gapPercent != null ? (o.gapPercent * 100).toFixed(3) + "%" : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

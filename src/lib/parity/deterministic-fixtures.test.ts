@@ -18,19 +18,10 @@ import {
   HISTORY_GOLDEN_INPUT,
   HISTORY_GOLDEN_RUN_ID,
 } from "../__fixtures__/parity/history-golden";
-import {
-  computeRunId as computeLegacyBacktestRunId,
-  hashConfig,
-} from "../backtest-engine";
+import { computeRunId as computeLegacyBacktestRunId, hashConfig } from "../backtest-engine";
 import { computeRunId as computeAbsoluteRunId } from "../gann-formula-compare";
-import {
-  DEFAULT_ASTRO_FORMULA_VERSION,
-  INTRADAY_FORMULA_VERSIONS,
-} from "../engine-version";
-import {
-  historyToJson,
-  historyToSummaryCsv,
-} from "../gann-intraday-validation-export";
+import { DEFAULT_ASTRO_FORMULA_VERSION, INTRADAY_FORMULA_VERSIONS } from "../engine-version";
+import { historyToJson, historyToSummaryCsv } from "../gann-intraday-validation-export";
 
 describe("Phase 21.3d-parity-α · deterministic fixture replay", () => {
   it("BacktestResult golden Run-ID is stable across recomputation", () => {

@@ -28,9 +28,9 @@ export interface ShadowObservation {
   readonly entrySlope: number | null;
   readonly confirmationDelayCount: number;
   readonly durationMs: number;
-  readonly forwardMove: number | null;   // score delta at close
-  readonly mfe: number | null;           // max favorable excursion
-  readonly mae: number | null;           // max adverse excursion
+  readonly forwardMove: number | null; // score delta at close
+  readonly mfe: number | null; // max favorable excursion
+  readonly mae: number | null; // max adverse excursion
   readonly reversal: boolean;
   readonly weakening: boolean;
 }
@@ -67,12 +67,15 @@ export function summarizeShadowObservations(
     lastAt: string;
   } | null = null;
 
-  const closeCurrent = (endedAt: string, endScore: number | null, reversalNext: PcrSignalState | null) => {
+  const closeCurrent = (
+    endedAt: string,
+    endScore: number | null,
+    reversalNext: PcrSignalState | null,
+  ) => {
     if (!current) return;
     const dir = directionOf(current.state);
-    const forwardMove = current.entryScore != null && endScore != null
-      ? endScore - current.entryScore
-      : null;
+    const forwardMove =
+      current.entryScore != null && endScore != null ? endScore - current.entryScore : null;
     observations.push({
       id: current.id,
       state: current.state,
@@ -85,7 +88,9 @@ export function summarizeShadowObservations(
       forwardMove,
       mfe: current.mfe === -Infinity ? null : current.mfe,
       mae: current.mae === Infinity ? null : current.mae,
-      reversal: reversalNext ? directionOf(reversalNext) !== "NEUTRAL" && directionOf(reversalNext) !== dir : false,
+      reversal: reversalNext
+        ? directionOf(reversalNext) !== "NEUTRAL" && directionOf(reversalNext) !== dir
+        : false,
       weakening: reversalNext ? isWeakening(reversalNext) : false,
     });
     current = null;

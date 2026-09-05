@@ -84,9 +84,7 @@ function normalizePerOunce(q: MetalQuoteInput): number | null {
   return q.price / q.troyOuncesPerUnit;
 }
 
-export function computeGoldSilverRatio(
-  input: GoldSilverRatioInput,
-): GoldSilverRatioResult {
+export function computeGoldSilverRatio(input: GoldSilverRatioInput): GoldSilverRatioResult {
   const now = input.now ?? Date.now();
   const { gold, silver } = input;
 
@@ -97,9 +95,7 @@ export function computeGoldSilverRatio(
   if (!isValidPrice(silver.price)) return unavailable(input, "Silver price missing or invalid");
 
   const isQuoteCompatible =
-    !!gold.quoteCurrency &&
-    !!silver.quoteCurrency &&
-    gold.quoteCurrency === silver.quoteCurrency;
+    !!gold.quoteCurrency && !!silver.quoteCurrency && gold.quoteCurrency === silver.quoteCurrency;
   if (!isQuoteCompatible) {
     return unavailable(input, "Gold/Silver Ratio unavailable — incompatible quote currencies", {
       quoteCurrency: null,

@@ -22,13 +22,28 @@ export class StrategyValidationError extends Error {
 }
 
 const FAMILIES: ReadonlySet<SignalFamily> = new Set([
-  "DECISION", "GTI", "PCR", "BREADTH", "GANN_GAP",
-  "ASTRO", "SMART_ALERT", "INSTITUTIONAL_FLOW", "OPTION_STRATEGY", "RESEARCH_LAB",
+  "DECISION",
+  "GTI",
+  "PCR",
+  "BREADTH",
+  "GANN_GAP",
+  "ASTRO",
+  "SMART_ALERT",
+  "INSTITUTIONAL_FLOW",
+  "OPTION_STRATEGY",
+  "RESEARCH_LAB",
 ]);
 
 const OPS: ReadonlySet<ComparisonOperator> = new Set([
-  "EQUALS", "NOT_EQUALS", "GREATER_THAN", "LESS_THAN",
-  "GREATER_OR_EQUAL", "LESS_OR_EQUAL", "IN", "NOT_IN", "EXISTS",
+  "EQUALS",
+  "NOT_EQUALS",
+  "GREATER_THAN",
+  "LESS_THAN",
+  "GREATER_OR_EQUAL",
+  "LESS_OR_EQUAL",
+  "IN",
+  "NOT_IN",
+  "EXISTS",
 ]);
 
 const LOGICAL: ReadonlySet<LogicalOperator> = new Set(["AND", "OR", "NOT"]);
@@ -37,23 +52,26 @@ export const MAX_NESTING_DEPTH = 5;
 export const MAX_UNIVERSE_SIZE = 25;
 export const MAX_DATE_RANGE_DAYS = 365 * 20;
 
-export function validateConditionNode(
-  node: ConditionNode,
-  depth = 0,
-): void {
+export function validateConditionNode(node: ConditionNode, depth = 0): void {
   if (depth > MAX_NESTING_DEPTH) {
     throw new StrategyValidationError("NESTING_TOO_DEEP", `Nesting exceeds ${MAX_NESTING_DEPTH}`);
   }
   if (node.kind === "LEAF") return validateLeaf(node);
   if (node.kind === "GROUP") {
     if (!LOGICAL.has(node.operator)) {
-      throw new StrategyValidationError("BAD_LOGICAL", `Unknown logical operator: ${String(node.operator)}`);
+      throw new StrategyValidationError(
+        "BAD_LOGICAL",
+        `Unknown logical operator: ${String(node.operator)}`,
+      );
     }
     if (node.operator === "NOT" && node.children.length !== 1) {
       throw new StrategyValidationError("BAD_NOT_ARITY", "NOT requires exactly one child");
     }
     if (node.children.length === 0) {
-      throw new StrategyValidationError("EMPTY_GROUP", "Condition groups must have at least one child");
+      throw new StrategyValidationError(
+        "EMPTY_GROUP",
+        "Condition groups must have at least one child",
+      );
     }
     for (const c of node.children) validateConditionNode(c, depth + 1);
     return;
@@ -63,10 +81,16 @@ export function validateConditionNode(
 
 function validateLeaf(leaf: ConditionLeaf): void {
   if (!FAMILIES.has(leaf.family)) {
-    throw new StrategyValidationError("UNSUPPORTED_FAMILY", `Unsupported signal family: ${leaf.family}`);
+    throw new StrategyValidationError(
+      "UNSUPPORTED_FAMILY",
+      `Unsupported signal family: ${leaf.family}`,
+    );
   }
   if (!OPS.has(leaf.operator)) {
-    throw new StrategyValidationError("UNSUPPORTED_OPERATOR", `Unsupported operator: ${leaf.operator}`);
+    throw new StrategyValidationError(
+      "UNSUPPORTED_OPERATOR",
+      `Unsupported operator: ${leaf.operator}`,
+    );
   }
   if (!/^[A-Za-z0-9_.]+$/.test(leaf.field)) {
     throw new StrategyValidationError("BAD_FIELD", `Invalid field identifier: ${leaf.field}`);

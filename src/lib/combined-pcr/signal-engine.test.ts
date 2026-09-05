@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  advanceConfirmation,
-  classifyState,
-  INITIAL_CONFIRMATION,
-} from "./signal-engine";
+import { advanceConfirmation, classifyState, INITIAL_CONFIRMATION } from "./signal-engine";
 
 describe("signal-engine", () => {
   it("classifies bands", () => {

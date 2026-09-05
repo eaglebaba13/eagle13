@@ -8,7 +8,7 @@ export type CouponType = "PERCENT" | "AMOUNT";
 export interface CouponDefinition {
   readonly code: string;
   readonly type: CouponType;
-  readonly value: number;         // percent (1..100) or paise amount (>0)
+  readonly value: number; // percent (1..100) or paise amount (>0)
   readonly currency: "INR";
   readonly validFromIso: string;
   readonly validToIso: string;
@@ -64,7 +64,13 @@ export function evaluateCoupon(inp: EvaluateCouponInput): CouponEvaluation {
     discount = c.value;
   }
   if (discount >= inp.basePricePaise) {
-    return { ok: false, discountPaise: discount, finalPricePaise: 0, coupon: c, error: "amount_exceeds_price" };
+    return {
+      ok: false,
+      discountPaise: discount,
+      finalPricePaise: 0,
+      coupon: c,
+      error: "amount_exceeds_price",
+    };
   }
   return {
     ok: true,

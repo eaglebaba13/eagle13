@@ -17,7 +17,12 @@ export interface AccessibilityObservation {
 
 export function auditAccessibility(o: AccessibilityObservation): StagingCheck[] {
   const checks: StagingCheck[] = [];
-  const push = (id: string, ok: boolean, title: string, severity: StagingCheck["severity"] = "warning") => {
+  const push = (
+    id: string,
+    ok: boolean,
+    title: string,
+    severity: StagingCheck["severity"] = "warning",
+  ) => {
     checks.push({
       id: `a11y.${id}`,
       category: "ACCESSIBILITY",

@@ -57,7 +57,9 @@ describe("Phase 21.3d-parity-α · BacktestResult shape oracle", () => {
   });
   it("disclaimers are an ordered non-empty tuple", () => {
     expect(BACKTEST_GOLDEN.disclaimers).toHaveLength(3);
-    expect(BACKTEST_GOLDEN.disclaimers[0].startsWith("Historical results are simulated")).toBe(true);
+    expect(BACKTEST_GOLDEN.disclaimers[0].startsWith("Historical results are simulated")).toBe(
+      true,
+    );
     expect(BACKTEST_GOLDEN.disclaimers[1].startsWith("Daily OHLC data")).toBe(true);
     expect(BACKTEST_GOLDEN.disclaimers[2].startsWith("Backtests are informational")).toBe(true);
   });
@@ -100,9 +102,7 @@ describe("Phase 21.3d-parity-α · HistoryResult shape oracle", () => {
     expect(keySet(HISTORY_GOLDEN.metrics)).toEqual([...HISTORY_METRICS_KEYS].sort());
   });
   it("labeledAs is the exact validation constant", () => {
-    expect(HISTORY_GOLDEN.labeledAs).toBe(
-      "VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION",
-    );
+    expect(HISTORY_GOLDEN.labeledAs).toBe("VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION");
   });
   it("attempted / loaded / failed accounting is consistent", () => {
     expect(HISTORY_GOLDEN.attempted).toBe(HISTORY_GOLDEN.sessionsSummary.length);

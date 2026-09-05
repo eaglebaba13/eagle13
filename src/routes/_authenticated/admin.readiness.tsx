@@ -100,19 +100,37 @@ function AdminReadinessPage() {
             {report && (
               <>
                 <button
-                  onClick={() => downloadBlob(readinessSummaryCsv(report), `readiness-summary-${report.runId}.csv`, "text/csv")}
+                  onClick={() =>
+                    downloadBlob(
+                      readinessSummaryCsv(report),
+                      `readiness-summary-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
                   className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
                 >
                   Summary CSV
                 </button>
                 <button
-                  onClick={() => downloadBlob(hardBlockersCsv(report), `readiness-blockers-${report.runId}.csv`, "text/csv")}
+                  onClick={() =>
+                    downloadBlob(
+                      hardBlockersCsv(report),
+                      `readiness-blockers-${report.runId}.csv`,
+                      "text/csv",
+                    )
+                  }
                   className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
                 >
                   Blockers CSV
                 </button>
                 <button
-                  onClick={() => downloadBlob(fullReadinessJson(report), `readiness-${report.runId}.json`, "application/json")}
+                  onClick={() =>
+                    downloadBlob(
+                      fullReadinessJson(report),
+                      `readiness-${report.runId}.json`,
+                      "application/json",
+                    )
+                  }
                   className="rounded-md border border-border bg-background px-3 py-1.5 text-sm hover:bg-accent"
                 >
                   Full JSON
@@ -134,11 +152,7 @@ function AdminReadinessPage() {
           </div>
         </header>
         {runtime && (
-          <RuntimeReadinessSummary
-            report={runtime}
-            title="Canonical Runtime Readiness"
-            compact
-          />
+          <RuntimeReadinessSummary report={runtime} title="Canonical Runtime Readiness" compact />
         )}
 
         {err && (
@@ -163,14 +177,16 @@ function AdminReadinessPage() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Score</p>
                 <p className="mt-1 text-3xl font-bold text-foreground">{report.score.total}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {report.score.hardBlockerCount} hard blocker(s) · override {report.score.overrideBlocked ? "BLOCKED" : "allowed"}
+                  {report.score.hardBlockerCount} hard blocker(s) · override{" "}
+                  {report.score.overrideBlocked ? "BLOCKED" : "allowed"}
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-muted/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Environment</p>
                 <p className="mt-1 text-lg font-semibold text-foreground">{report.environment}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  build={report.buildVersion ?? "unknown"} · target={report.deploymentTarget ?? "unknown"}
+                  build={report.buildVersion ?? "unknown"} · target=
+                  {report.deploymentTarget ?? "unknown"}
                 </p>
               </div>
             </div>
@@ -239,10 +255,10 @@ function AdminReadinessPage() {
                             r.status === "PASS"
                               ? "text-emerald-400"
                               : r.status === "WARNING"
-                              ? "text-amber-300"
-                              : r.status === "FAIL" || r.status === "MISSING"
-                              ? "text-red-400"
-                              : "text-muted-foreground"
+                                ? "text-amber-300"
+                                : r.status === "FAIL" || r.status === "MISSING"
+                                  ? "text-red-400"
+                                  : "text-muted-foreground"
                           }`}
                         >
                           {r.status}

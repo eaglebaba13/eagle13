@@ -27,7 +27,8 @@ export type PortfolioComparison = {
 };
 
 function delta(a: number | null, b: number | null): { delta: number | null; pct: number | null } {
-  if (a == null || b == null || !Number.isFinite(a) || !Number.isFinite(b)) return { delta: null, pct: null };
+  if (a == null || b == null || !Number.isFinite(a) || !Number.isFinite(b))
+    return { delta: null, pct: null };
   const d = b - a;
   const pct = a !== 0 ? d / Math.abs(a) : null;
   return { delta: d, pct };
@@ -38,11 +39,18 @@ function metricDelta(name: string, a: number | null, b: number | null): MetricDe
   return { metric: name, a, b, delta: d, pctDelta: pct };
 }
 
-export function compareResults(a: PortfolioResearchResult, b: PortfolioResearchResult): PortfolioComparison {
+export function compareResults(
+  a: PortfolioResearchResult,
+  b: PortfolioResearchResult,
+): PortfolioComparison {
   const warnings: string[] = [];
   if (a.runId === b.runId) warnings.push("IDENTICAL_RUN_ID");
-  if (a.config.method !== b.config.method) warnings.push(`ALLOCATION_METHOD_DIFF:${a.config.method}->${b.config.method}`);
-  if (a.config.sizingPolicy.method !== b.config.sizingPolicy.method) warnings.push(`SIZING_METHOD_DIFF:${a.config.sizingPolicy.method}->${b.config.sizingPolicy.method}`);
+  if (a.config.method !== b.config.method)
+    warnings.push(`ALLOCATION_METHOD_DIFF:${a.config.method}->${b.config.method}`);
+  if (a.config.sizingPolicy.method !== b.config.sizingPolicy.method)
+    warnings.push(
+      `SIZING_METHOD_DIFF:${a.config.sizingPolicy.method}->${b.config.sizingPolicy.method}`,
+    );
 
   const M = (r: PortfolioResearchResult) => r.metrics;
   const metrics: MetricDelta[] = [

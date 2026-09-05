@@ -4,9 +4,19 @@ import type { ParsedCandle } from "./candle-csv-parser";
 
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 function mk(date: string, m: number, close: number): ParsedCandle {
-  const t = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), 0, 0, 0)
-    - IST_OFFSET + m * 60 * 1000;
-  return { timeIst: "", openTimeMs: t, open: close, high: close + 1, low: close - 1, close, volume: 1 };
+  const t =
+    Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), 0, 0, 0) -
+    IST_OFFSET +
+    m * 60 * 1000;
+  return {
+    timeIst: "",
+    openTimeMs: t,
+    open: close,
+    high: close + 1,
+    low: close - 1,
+    close,
+    volume: 1,
+  };
 }
 function session(date: string, base: number, offset = 0): ParsedCandle[] {
   const out: ParsedCandle[] = [];

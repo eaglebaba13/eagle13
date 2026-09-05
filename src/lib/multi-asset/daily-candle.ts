@@ -47,8 +47,8 @@ const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 
 /** Max hours since candle close before it is considered STALE. */
-const STALENESS_HOURS_INDEX = 72;   // NSE index — tolerates weekend + one holiday
-const STALENESS_HOURS_24X7 = 30;    // crypto — one full day + small grace
+const STALENESS_HOURS_INDEX = 72; // NSE index — tolerates weekend + one holiday
+const STALENESS_HOURS_24X7 = 30; // crypto — one full day + small grace
 
 function toMs(v: string | number): number {
   return typeof v === "number" ? v : Date.parse(v);

@@ -32,22 +32,26 @@ describe("Phase 21.6 Stage 1 · robustness score", () => {
     expect(r.total).toBeGreaterThanOrEqual(0.75);
   });
   it("classifies weak Monte Carlo P5 and high drawdown as FRAGILE", () => {
-    const r = computeRobustnessScore(inputs({
-      monteCarloP5FinalEquity: 700,
-      maxDrawdownPct: 0.45,
-      profitFactorConsistency: 0.3,
-      sensitivityClassification: "ERRATIC",
-      walkForwardStability: 0.35,
-      oosConsistency: 0.35,
-    }));
+    const r = computeRobustnessScore(
+      inputs({
+        monteCarloP5FinalEquity: 700,
+        maxDrawdownPct: 0.45,
+        profitFactorConsistency: 0.3,
+        sensitivityClassification: "ERRATIC",
+        walkForwardStability: 0.35,
+        oosConsistency: 0.35,
+      }),
+    );
     expect(r.status).toBe("FRAGILE");
   });
   it("detects OVERFIT (strong WF, weak OOS, narrow optimum)", () => {
-    const r = computeRobustnessScore(inputs({
-      walkForwardStability: 0.85,
-      oosConsistency: 0.3,
-      sensitivityClassification: "NARROW_OPTIMUM",
-    }));
+    const r = computeRobustnessScore(
+      inputs({
+        walkForwardStability: 0.85,
+        oosConsistency: 0.3,
+        sensitivityClassification: "NARROW_OPTIMUM",
+      }),
+    );
     expect(r.status).toBe("OVERFIT");
   });
   it("returns INSUFFICIENT_DATA when tradeCount < 20", () => {
@@ -63,8 +67,16 @@ describe("Phase 21.6 Stage 1 · robustness score", () => {
 
 describe("Phase 21.6 Stage 1 · robustness Run ID", () => {
   it("is deterministic and prefixed ROBUSTNESS_V1", () => {
-    const a = computeRobustnessRunId({ researchRunId: "R", monteCarloRunId: "M", sensitivityRunId: "S" });
-    const b = computeRobustnessRunId({ researchRunId: "R", monteCarloRunId: "M", sensitivityRunId: "S" });
+    const a = computeRobustnessRunId({
+      researchRunId: "R",
+      monteCarloRunId: "M",
+      sensitivityRunId: "S",
+    });
+    const b = computeRobustnessRunId({
+      researchRunId: "R",
+      monteCarloRunId: "M",
+      sensitivityRunId: "S",
+    });
     expect(a).toBe(b);
     expect(a).toMatch(/^ROBUSTNESS_V1:[0-9a-f]{8}$/);
   });

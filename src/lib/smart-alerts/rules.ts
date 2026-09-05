@@ -6,12 +6,12 @@ export const RULES_VERSION = SMART_ALERTS_RULES_VERSION;
 
 export interface AlertRuleConfig {
   readonly version: string;
-  readonly vixLowUpper: number;   // <15 → LOW
-  readonly vixMidUpper: number;   // 15–20 → MID; >20 → HIGH
+  readonly vixLowUpper: number; // <15 → LOW
+  readonly vixMidUpper: number; // 15–20 → MID; >20 → HIGH
   readonly gannApproachPoints: number; // distance threshold to fire APPROACHING
   readonly gannTouchTolerancePoints: number; // ± tolerance considered a touch
-  readonly astroLeadMinutes: number;   // window starting-soon lead
-  readonly staleThresholdSec: number;  // freshness before firing DATA_STALE
+  readonly astroLeadMinutes: number; // window starting-soon lead
+  readonly staleThresholdSec: number; // freshness before firing DATA_STALE
   readonly runtimeDegradedGraceSec: number; // grace before firing degraded
 }
 

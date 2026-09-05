@@ -18,10 +18,7 @@ import {
 
 import { useHydrated } from "@/hooks/use-hydrated";
 import { getDecisionSnapshot } from "@/lib/decision.functions";
-import {
-  createAdapter,
-  SUPPORTED_BROKERS,
-} from "@/lib/broker/adapters";
+import { createAdapter, SUPPORTED_BROKERS } from "@/lib/broker/adapters";
 import type {
   BrokerAdapter,
   BrokerHealth,
@@ -87,7 +84,10 @@ function savePaper(list: PaperFill[]) {
 
 function fmt(n: number | null | undefined, digits = 2) {
   if (n == null || !Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return n.toLocaleString("en-IN", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 /**
@@ -99,14 +99,18 @@ function humaniseBrokerError(raw: unknown, fallback: string): string {
   const lower = msg.toLowerCase();
   if (!msg) return fallback;
   if (lower.includes("not connected")) return "Broker is not connected. Reconnect to continue.";
-  if (lower.includes("order not found")) return "That order could not be located. It may have already completed or been cancelled.";
+  if (lower.includes("order not found"))
+    return "That order could not be located. It may have already completed or been cancelled.";
   if (lower.includes("network") || lower.includes("fetch"))
     return "The broker service is unreachable right now. Please retry in a moment.";
   if (lower.includes("timeout")) return "The broker request timed out. Please retry.";
   return msg.length > 160 ? fallback : msg;
 }
 
-function connectionTone(status: string | null | undefined, paperMode: boolean): "ok" | "warn" | "bad" | undefined {
+function connectionTone(
+  status: string | null | undefined,
+  paperMode: boolean,
+): "ok" | "warn" | "bad" | undefined {
   if (paperMode) return "ok";
   if (!status) return undefined;
   const s = status.toUpperCase();
@@ -139,7 +143,10 @@ function BrokerPage() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [creds, setCreds] = useState<{ clientId: string; name: string }>({ clientId: "", name: "" });
+  const [creds, setCreds] = useState<{ clientId: string; name: string }>({
+    clientId: "",
+    name: "",
+  });
 
   // Order ticket state.
   const [ticket, setTicket] = useState<OrderRequest>({
@@ -206,7 +213,10 @@ function BrokerPage() {
     setHealth(null);
     setError(null);
     if (activeAdapter.isConnected()) {
-      activeAdapter.getProfile().then(setProfile).catch(() => {});
+      activeAdapter
+        .getProfile()
+        .then(setProfile)
+        .catch(() => {});
       refreshAccount();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -218,10 +228,21 @@ function BrokerPage() {
     try {
       const p = await activeAdapter.connect(creds);
       setProfile(p);
-      setAudit(appendAudit({ brokerId: p.brokerId, type: "CONNECT", message: `Connected to ${p.brokerName}` }));
+      setAudit(
+        appendAudit({
+          brokerId: p.brokerId,
+          type: "CONNECT",
+          message: `Connected to ${p.brokerName}`,
+        }),
+      );
       await refreshAccount();
     } catch (e) {
-      setError(humaniseBrokerError(e, "We couldn't connect to the broker. Please check your credentials and try again."));
+      setError(
+        humaniseBrokerError(
+          e,
+          "We couldn't connect to the broker. Please check your credentials and try again.",
+        ),
+      );
     } finally {
       setConnecting(false);
     }
@@ -233,10 +254,18 @@ function BrokerPage() {
       setProfile(null);
       setFunds(null);
       setOrders([]);
-      setAudit(appendAudit({ brokerId: activeAdapter.brokerId, type: "DISCONNECT", message: `Disconnected from ${activeAdapter.brokerName}` }));
+      setAudit(
+        appendAudit({
+          brokerId: activeAdapter.brokerId,
+          type: "DISCONNECT",
+          message: `Disconnected from ${activeAdapter.brokerName}`,
+        }),
+      );
       await refreshHealth();
     } catch (e) {
-      setError(humaniseBrokerError(e, "We couldn't disconnect cleanly. Please refresh and try again."));
+      setError(
+        humaniseBrokerError(e, "We couldn't disconnect cleanly. Please refresh and try again."),
+      );
     }
   }
 
@@ -269,20 +298,24 @@ function BrokerPage() {
         const next = [t, ...paperTrades];
         setPaperTrades(next);
         savePaper(next);
-        setAudit(appendAudit({
-          brokerId: "paper",
-          type: "PAPER_OPEN",
-          message: `Paper ${t.side} ${t.quantity} ${t.symbol} @ ${t.entryPrice}`,
-          meta: { id: t.id },
-        }));
+        setAudit(
+          appendAudit({
+            brokerId: "paper",
+            type: "PAPER_OPEN",
+            message: `Paper ${t.side} ${t.quantity} ${t.symbol} @ ${t.entryPrice}`,
+            meta: { id: t.id },
+          }),
+        );
       } else {
         const order = await activeAdapter.placeOrder(ticket);
-        setAudit(appendAudit({
-          brokerId: order.brokerId,
-          type: "ORDER_PLACED",
-          message: `${order.side} ${order.quantity} ${order.symbol} (${order.orderType})`,
-          meta: { orderId: order.orderId },
-        }));
+        setAudit(
+          appendAudit({
+            brokerId: order.brokerId,
+            type: "ORDER_PLACED",
+            message: `${order.side} ${order.quantity} ${order.symbol} (${order.orderType})`,
+            meta: { orderId: order.orderId },
+          }),
+        );
         await refreshAccount();
       }
       setAwaitingConfirm(false);
@@ -295,12 +328,14 @@ function BrokerPage() {
   async function handleCancel(o: Order) {
     try {
       await activeAdapter.cancelOrder(o.orderId);
-      setAudit(appendAudit({
-        brokerId: o.brokerId,
-        type: "ORDER_CANCELLED",
-        message: `Cancelled ${o.side} ${o.symbol}`,
-        meta: { orderId: o.orderId },
-      }));
+      setAudit(
+        appendAudit({
+          brokerId: o.brokerId,
+          type: "ORDER_CANCELLED",
+          message: `Cancelled ${o.side} ${o.symbol}`,
+          meta: { orderId: o.orderId },
+        }),
+      );
       await refreshAccount();
     } catch (e) {
       setError(humaniseBrokerError(e, "The order could not be cancelled. Please retry."));
@@ -318,20 +353,31 @@ function BrokerPage() {
     const next = paperTrades.map((x) => (x.id === t.id ? closed : x));
     setPaperTrades(next);
     savePaper(next);
-    setAudit(appendAudit({
-      brokerId: "paper",
-      type: "PAPER_CLOSE",
-      message: `Paper close ${closed.symbol} pnl ${closed.pnl}`,
-      meta: { id: closed.id, pnl: closed.pnl },
-    }));
+    setAudit(
+      appendAudit({
+        brokerId: "paper",
+        type: "PAPER_CLOSE",
+        message: `Paper close ${closed.symbol} pnl ${closed.pnl}`,
+        meta: { id: closed.id, pnl: closed.pnl },
+      }),
+    );
   }
 
   const stats = useMemo(() => computePaperStats(paperTrades), [paperTrades]);
-  const openOrders = orders.filter((o) => o.status === "OPEN" || o.status === "MODIFIED" || o.status === "PENDING");
+  const openOrders = orders.filter(
+    (o) => o.status === "OPEN" || o.status === "MODIFIED" || o.status === "PENDING",
+  );
 
   const connected = activeAdapter.isConnected() || paperMode;
-  const connectionLabel = paperMode ? "Paper" : health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED");
-  const connTone = connectionTone(paperMode ? "CONNECTED" : health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED"), paperMode);
+  const connectionLabel = paperMode
+    ? "Paper"
+    : (health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED"));
+  const connTone = connectionTone(
+    paperMode
+      ? "CONNECTED"
+      : (health?.status ?? (activeAdapter.isConnected() ? "CONNECTED" : "DISCONNECTED")),
+    paperMode,
+  );
 
   return (
     <div className="eb-page eb-broker">
@@ -342,8 +388,9 @@ function BrokerPage() {
           </div>
           <h1>Broker Workstation</h1>
           <p className="eb-sub">
-            Multi-broker adapter layer with order ticket, margin preview, paper trading, audit log and health telemetry.
-            The trading engines remain frozen — this page is a pure integration layer.
+            Multi-broker adapter layer with order ticket, margin preview, paper trading, audit log
+            and health telemetry. The trading engines remain frozen — this page is a pure
+            integration layer.
           </p>
         </div>
         <div className="eb-broker-modeswitch" role="group" aria-label="Trading mode">
@@ -384,7 +431,9 @@ function BrokerPage() {
       {!paperMode ? (
         <section className="eb-card">
           <header className="eb-card-head">
-            <h2><Plug size={16} /> Broker</h2>
+            <h2>
+              <Plug size={16} /> Broker
+            </h2>
           </header>
           <div className="eb-broker-picker">
             {SUPPORTED_BROKERS.map((b) => (
@@ -427,16 +476,25 @@ function BrokerPage() {
                 {connecting ? "Connecting…" : "Connect"}
               </button>
               <p className="eb-hint">
-                Simulated adapter — production keys and OAuth flows are configured per broker
-                and swapped in by implementing the same <code>BrokerAdapter</code> interface.
+                Simulated adapter — production keys and OAuth flows are configured per broker and
+                swapped in by implementing the same <code>BrokerAdapter</code> interface.
               </p>
             </div>
           ) : (
             <div className="eb-broker-status">
               <div>
-                <div className="eb-kv"><span>Broker</span><strong>{profile?.brokerName}</strong></div>
-                <div className="eb-kv"><span>Client</span><strong>{profile?.clientId}</strong></div>
-                <div className="eb-kv"><span>Name</span><strong>{profile?.name}</strong></div>
+                <div className="eb-kv">
+                  <span>Broker</span>
+                  <strong>{profile?.brokerName}</strong>
+                </div>
+                <div className="eb-kv">
+                  <span>Client</span>
+                  <strong>{profile?.clientId}</strong>
+                </div>
+                <div className="eb-kv">
+                  <span>Name</span>
+                  <strong>{profile?.name}</strong>
+                </div>
               </div>
               <button type="button" className="eb-btn" onClick={handleDisconnect}>
                 <XCircle size={14} /> Disconnect
@@ -449,8 +507,15 @@ function BrokerPage() {
       {/* Account dashboard */}
       <section className="eb-card">
         <header className="eb-card-head">
-          <h2><Wallet size={16} /> Account</h2>
-          <button type="button" className="eb-btn eb-btn-ghost" onClick={refreshAccount} aria-label="Refresh account snapshot">
+          <h2>
+            <Wallet size={16} /> Account
+          </h2>
+          <button
+            type="button"
+            className="eb-btn eb-btn-ghost"
+            onClick={refreshAccount}
+            aria-label="Refresh account snapshot"
+          >
             <RefreshCw size={14} /> Refresh
           </button>
         </header>
@@ -458,7 +523,10 @@ function BrokerPage() {
           <Stat label="Available Margin" value={funds ? fmt(funds.available) : "—"} />
           <Stat label="Used Margin" value={funds ? fmt(funds.usedMargin) : "—"} />
           <Stat label="Portfolio Value" value={funds ? fmt(funds.portfolioValue) : "—"} />
-          <Stat label="Realized / Unrealized" value={funds ? `${fmt(funds.realizedPnL)} / ${fmt(funds.unrealizedPnL)}` : "—"} />
+          <Stat
+            label="Realized / Unrealized"
+            value={funds ? `${fmt(funds.realizedPnL)} / ${fmt(funds.unrealizedPnL)}` : "—"}
+          />
           <Stat label="Open Positions" value="0" />
           <Stat label="Open Orders" value={String(openOrders.length)} />
           <Stat label="Connection" value={connectionLabel} tone={connTone} />
@@ -472,7 +540,9 @@ function BrokerPage() {
       {/* Order ticket */}
       <section className="eb-card">
         <header className="eb-card-head">
-          <h2><Send size={16} /> Order Ticket</h2>
+          <h2>
+            <Send size={16} /> Order Ticket
+          </h2>
           <span className="eb-tag" data-mode={paperMode ? "paper" : "live"}>
             {paperMode ? "PAPER" : `LIVE · ${activeAdapter.brokerName}`}
           </span>
@@ -483,10 +553,16 @@ function BrokerPage() {
           <>
             <div className="eb-grid eb-grid-3">
               <Field label="Instrument">
-                <input value={ticket.symbol} onChange={(e) => setTicket({ ...ticket, symbol: e.target.value })} />
+                <input
+                  value={ticket.symbol}
+                  onChange={(e) => setTicket({ ...ticket, symbol: e.target.value })}
+                />
               </Field>
               <Field label="Side">
-                <select value={ticket.side} onChange={(e) => setTicket({ ...ticket, side: e.target.value as "BUY" | "SELL" })}>
+                <select
+                  value={ticket.side}
+                  onChange={(e) => setTicket({ ...ticket, side: e.target.value as "BUY" | "SELL" })}
+                >
                   <option value="BUY">BUY</option>
                   <option value="SELL">SELL</option>
                 </select>
@@ -496,7 +572,9 @@ function BrokerPage() {
                   type="number"
                   min={1}
                   value={ticket.quantity}
-                  onChange={(e) => setTicket({ ...ticket, quantity: Math.max(1, Number(e.target.value) || 0) })}
+                  onChange={(e) =>
+                    setTicket({ ...ticket, quantity: Math.max(1, Number(e.target.value) || 0) })
+                  }
                 />
               </Field>
               <Field label="Order Type">
@@ -504,7 +582,10 @@ function BrokerPage() {
                   value={ticket.orderType}
                   onChange={(e) => setTicket({ ...ticket, orderType: e.target.value as OrderType })}
                 >
-                  <option>MARKET</option><option>LIMIT</option><option>SL</option><option>SL-M</option>
+                  <option>MARKET</option>
+                  <option>LIMIT</option>
+                  <option>SL</option>
+                  <option>SL-M</option>
                 </select>
               </Field>
               <Field label="Product">
@@ -512,7 +593,9 @@ function BrokerPage() {
                   value={ticket.product}
                   onChange={(e) => setTicket({ ...ticket, product: e.target.value as ProductType })}
                 >
-                  <option>MIS</option><option>NRML</option><option>CNC</option>
+                  <option>MIS</option>
+                  <option>NRML</option>
+                  <option>CNC</option>
                 </select>
               </Field>
               <Field label="Validity">
@@ -520,7 +603,8 @@ function BrokerPage() {
                   value={ticket.validity}
                   onChange={(e) => setTicket({ ...ticket, validity: e.target.value as Validity })}
                 >
-                  <option>DAY</option><option>IOC</option>
+                  <option>DAY</option>
+                  <option>IOC</option>
                 </select>
               </Field>
               <Field label="Price">
@@ -547,7 +631,9 @@ function BrokerPage() {
             </div>
 
             <div className="eb-broker-actions">
-              <button type="button" className="eb-btn" onClick={handlePreview}>Preview</button>
+              <button type="button" className="eb-btn" onClick={handlePreview}>
+                Preview
+              </button>
               {awaitingConfirm ? (
                 <button type="button" className="eb-btn eb-btn-primary" onClick={handlePlaceOrder}>
                   <CheckCircle2 size={14} /> Confirm & Place
@@ -557,7 +643,10 @@ function BrokerPage() {
                 <button
                   type="button"
                   className="eb-btn eb-btn-ghost"
-                  onClick={() => { setAwaitingConfirm(false); setPreview(null); }}
+                  onClick={() => {
+                    setAwaitingConfirm(false);
+                    setPreview(null);
+                  }}
                 >
                   Cancel
                 </button>
@@ -566,19 +655,25 @@ function BrokerPage() {
 
             {preview ? (
               <div className="eb-preview">
-                <h3><ShieldAlert size={14} /> Order Preview — review before placing</h3>
+                <h3>
+                  <ShieldAlert size={14} /> Order Preview — review before placing
+                </h3>
                 <div className="eb-grid eb-grid-4">
                   <Stat label="Required Margin" value={fmt(preview.requiredMargin)} />
                   <Stat label="Brokerage" value={fmt(preview.brokerage)} />
                   <Stat label="Taxes & Fees" value={fmt(preview.taxes)} />
                   <Stat label="Total Cost" value={fmt(preview.totalCost)} />
                   <Stat label="Break-even (₹/unit)" value={fmt(preview.breakEven)} />
-                  <Stat label="Decision Confidence" value={dec ? `${Math.round(dec.confidence)}%` : "—"} />
+                  <Stat
+                    label="Decision Confidence"
+                    value={dec ? `${Math.round(dec.confidence)}%` : "—"}
+                  />
                   <Stat label="Risk Grade" value={dec?.grade ?? "—"} />
                   <Stat label="Regime" value={dec?.regime ?? "—"} />
                 </div>
                 <p className="eb-hint">
-                  Orders are never auto-placed. You must explicitly click <strong>Confirm & Place</strong>.
+                  Orders are never auto-placed. You must explicitly click{" "}
+                  <strong>Confirm & Place</strong>.
                 </p>
               </div>
             ) : null}
@@ -590,15 +685,27 @@ function BrokerPage() {
       {/* Live orders (broker mode) */}
       {!paperMode ? (
         <section className="eb-card">
-          <header className="eb-card-head"><h2><Activity size={16} /> Orders</h2></header>
+          <header className="eb-card-head">
+            <h2>
+              <Activity size={16} /> Orders
+            </h2>
+          </header>
           {orders.length === 0 ? (
             <p className="eb-empty">No orders yet.</p>
           ) : (
             <div className="eb-table-wrap">
               <table className="eb-table">
-                <thead><tr>
-                  <th>Order ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Type</th><th>Status</th><th></th>
-                </tr></thead>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Qty</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {orders.map((o) => (
                     <tr key={o.orderId}>
@@ -610,7 +717,11 @@ function BrokerPage() {
                       <td>{o.status}</td>
                       <td>
                         {o.status === "OPEN" || o.status === "MODIFIED" ? (
-                          <button type="button" className="eb-btn eb-btn-ghost" onClick={() => handleCancel(o)}>
+                          <button
+                            type="button"
+                            className="eb-btn eb-btn-ghost"
+                            onClick={() => handleCancel(o)}
+                          >
                             Cancel
                           </button>
                         ) : null}
@@ -627,7 +738,11 @@ function BrokerPage() {
       {/* Paper trading */}
       {paperMode ? (
         <section className="eb-card">
-          <header className="eb-card-head"><h2><Beaker size={16} /> Paper Trades</h2></header>
+          <header className="eb-card-head">
+            <h2>
+              <Beaker size={16} /> Paper Trades
+            </h2>
+          </header>
           <div className="eb-grid eb-grid-4">
             <Stat label="Trades" value={String(stats.trades)} />
             <Stat label="Win Rate" value={`${stats.winRate}%`} />
@@ -643,9 +758,18 @@ function BrokerPage() {
           ) : (
             <div className="eb-table-wrap">
               <table className="eb-table">
-                <thead><tr>
-                  <th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Status</th><th></th>
-                </tr></thead>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Qty</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>PnL</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {paperTrades.map((t) => (
                     <tr key={t.id}>
@@ -663,9 +787,15 @@ function BrokerPage() {
                               type="number"
                               placeholder="Exit"
                               value={paperExit[t.id] ?? ""}
-                              onChange={(e) => setPaperExit({ ...paperExit, [t.id]: e.target.value })}
+                              onChange={(e) =>
+                                setPaperExit({ ...paperExit, [t.id]: e.target.value })
+                              }
                             />
-                            <button type="button" className="eb-btn eb-btn-ghost" onClick={() => handleClosePaper(t)}>
+                            <button
+                              type="button"
+                              className="eb-btn eb-btn-ghost"
+                              onClick={() => handleClosePaper(t)}
+                            >
                               Close
                             </button>
                           </div>
@@ -682,31 +812,49 @@ function BrokerPage() {
 
       {/* Health */}
       <section className="eb-card">
-        <header className="eb-card-head"><h2><Activity size={16} /> Broker Health</h2></header>
+        <header className="eb-card-head">
+          <h2>
+            <Activity size={16} /> Broker Health
+          </h2>
+        </header>
         <div className="eb-grid eb-grid-4">
           <Stat
             label="Status"
             value={health?.status ?? (paperMode ? "PAPER" : "UNKNOWN")}
-            tone={connectionTone(health?.status ?? (paperMode ? "CONNECTED" : "UNKNOWN"), paperMode)}
+            tone={connectionTone(
+              health?.status ?? (paperMode ? "CONNECTED" : "UNKNOWN"),
+              paperMode,
+            )}
           />
           <Stat
             label="API"
             value={health?.apiStatus ?? "UNKNOWN"}
             tone={connectionTone(health?.apiStatus, paperMode)}
           />
-          <Stat label="Latency" value={health?.latencyMs != null ? `${health.latencyMs} ms` : "—"} />
-          <Stat label="Last Sync" value={health?.lastSync ? new Date(health.lastSync).toLocaleTimeString() : "—"} />
+          <Stat
+            label="Latency"
+            value={health?.latencyMs != null ? `${health.latencyMs} ms` : "—"}
+          />
+          <Stat
+            label="Last Sync"
+            value={health?.lastSync ? new Date(health.lastSync).toLocaleTimeString() : "—"}
+          />
         </div>
       </section>
 
       {/* Audit log */}
       <section className="eb-card">
         <header className="eb-card-head">
-          <h2><ClipboardList size={16} /> Audit Log</h2>
+          <h2>
+            <ClipboardList size={16} /> Audit Log
+          </h2>
           <button
             type="button"
             className="eb-btn eb-btn-ghost"
-            onClick={() => { clearAudit(); setAudit([]); }}
+            onClick={() => {
+              clearAudit();
+              setAudit([]);
+            }}
           >
             <Trash2 size={14} /> Clear
           </button>

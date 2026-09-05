@@ -14,11 +14,41 @@ function makeReading(runId: string, ts: string): GtiResearchReading {
     runId,
     state: "NEUTRAL_RESEARCH",
     confidence: 50,
-    confidenceBreakdown: { base: 50, coveragePenalty: 0, freshnessPenalty: 0, conflictPenalty: 0, agreementBonus: 0, pcrBonus: 0, vixConsistencyBonus: 0, total: 50, formulaVersion: "v" },
+    confidenceBreakdown: {
+      base: 50,
+      coveragePenalty: 0,
+      freshnessPenalty: 0,
+      conflictPenalty: 0,
+      agreementBonus: 0,
+      pcrBonus: 0,
+      vixConsistencyBonus: 0,
+      total: 50,
+      formulaVersion: "v",
+    },
     conflicts: [],
     breadth: { broad: null, nifty50: null, topWeighted: null, sectors: [] },
-    vix: { currentVix: null, previousVix: null, regime: "UNKNOWN", previousRegime: "UNKNOWN", regimeChanged: false, rising: false, freshness: "UNKNOWN", provider: "M", timestamp: ts },
-    pcr: { available: false, combinedScore: null, confirmedState: "UNAVAILABLE", slope: null, slopeChange: null, freshness: "UNKNOWN", dataQuality: "UNAVAILABLE", provider: "M", timestamp: null },
+    vix: {
+      currentVix: null,
+      previousVix: null,
+      regime: "UNKNOWN",
+      previousRegime: "UNKNOWN",
+      regimeChanged: false,
+      rising: false,
+      freshness: "UNKNOWN",
+      provider: "M",
+      timestamp: ts,
+    },
+    pcr: {
+      available: false,
+      combinedScore: null,
+      confirmedState: "UNAVAILABLE",
+      slope: null,
+      slopeChange: null,
+      freshness: "UNKNOWN",
+      dataQuality: "UNAVAILABLE",
+      provider: "M",
+      timestamp: null,
+    },
     warnings: [],
     formulaVersion: "f",
     disclaimer: "RESEARCH ONLY — NOT INVESTMENT ADVICE",
@@ -26,7 +56,9 @@ function makeReading(runId: string, ts: string): GtiResearchReading {
 }
 
 let store: ReturnType<typeof inMemoryStorage>;
-beforeEach(() => { store = inMemoryStorage(); });
+beforeEach(() => {
+  store = inMemoryStorage();
+});
 
 describe("PersistentMarketBreadthHistory", () => {
   it("appends, dedupes, and restores on reload", () => {
@@ -42,7 +74,9 @@ describe("PersistentMarketBreadthHistory", () => {
   it("respects capacity", () => {
     const h = new PersistentMarketBreadthHistory({ storage: store, max: 10 });
     for (let i = 0; i < 20; i++) {
-      h.append(readingToPersisted(makeReading(`r${i}`, `2026-07-16T00:00:${String(i).padStart(2, "0")}Z`)));
+      h.append(
+        readingToPersisted(makeReading(`r${i}`, `2026-07-16T00:00:${String(i).padStart(2, "0")}Z`)),
+      );
     }
     expect(h.load().length).toBe(10);
   });
@@ -54,7 +88,10 @@ describe("PersistentMarketBreadthHistory", () => {
   });
 
   it("rejects wrong schema version", () => {
-    store.setItem("eb.market-breadth.history.v1", JSON.stringify({ schema: MARKET_BREADTH_HISTORY_SCHEMA_VERSION + 999, points: [] }));
+    store.setItem(
+      "eb.market-breadth.history.v1",
+      JSON.stringify({ schema: MARKET_BREADTH_HISTORY_SCHEMA_VERSION + 999, points: [] }),
+    );
     const h = new PersistentMarketBreadthHistory({ storage: store });
     expect(h.load()).toEqual([]);
   });

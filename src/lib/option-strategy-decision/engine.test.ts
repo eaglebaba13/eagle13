@@ -89,7 +89,12 @@ describe("Option Strategy Decision Engine", () => {
       baseInput({
         pcr: { combinedScore: null, state: null, available: false },
         breadth: { advances: null, declines: null, netBreadth: null, available: false },
-        sector: { banking: "UNAVAILABLE", oilGas: "UNAVAILABLE", it: "UNAVAILABLE", available: false },
+        sector: {
+          banking: "UNAVAILABLE",
+          oilGas: "UNAVAILABLE",
+          it: "UNAVAILABLE",
+          available: false,
+        },
         oi: {
           highestCallOiStrike: null,
           highestPutOiStrike: null,

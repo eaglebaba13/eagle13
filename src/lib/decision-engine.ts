@@ -10,14 +10,7 @@
 export type Bias = "BULL" | "BEAR" | "NEUTRAL";
 
 export type ModuleKey =
-  | "astro"
-  | "options"
-  | "pcr"
-  | "breadth"
-  | "sector"
-  | "vix"
-  | "historical"
-  | "replay";
+  "astro" | "options" | "pcr" | "breadth" | "sector" | "vix" | "historical" | "replay";
 
 export type ModuleSignal = {
   key: ModuleKey;
@@ -33,20 +26,10 @@ export type ModuleSignal = {
   note: string;
 };
 
-export type DecisionAction =
-  | "STRONG_BUY_CE"
-  | "BUY_CE"
-  | "WAIT"
-  | "BUY_PE"
-  | "STRONG_BUY_PE";
+export type DecisionAction = "STRONG_BUY_CE" | "BUY_CE" | "WAIT" | "BUY_PE" | "STRONG_BUY_PE";
 
 export type Regime =
-  | "BULL_TREND"
-  | "BEAR_TREND"
-  | "RANGE"
-  | "HIGH_VOLATILITY"
-  | "LOW_VOLATILITY"
-  | "TRANSITION";
+  "BULL_TREND" | "BEAR_TREND" | "RANGE" | "HIGH_VOLATILITY" | "LOW_VOLATILITY" | "TRANSITION";
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
 export type Grade = "A+" | "A" | "B" | "C" | "D";
@@ -85,9 +68,9 @@ export type DecisionContext = {
 
 export type Decision = {
   action: DecisionAction;
-  netScore: number;     // -1..+1
-  rawScore: number;     // pre-penalty net
-  confidence: number;   // 0..100
+  netScore: number; // -1..+1
+  rawScore: number; // pre-penalty net
+  confidence: number; // 0..100
   regime: Regime;
   risk: { level: RiskLevel; reasons: string[] };
   grade: Grade;
@@ -125,14 +108,22 @@ function biasSign(b: Bias): 1 | -1 | 0 {
 
 function labelFor(k: ModuleKey): string {
   switch (k) {
-    case "astro": return "Astro";
-    case "options": return "Options";
-    case "pcr": return "PCR";
-    case "breadth": return "Market Breadth";
-    case "sector": return "Sector Rotation";
-    case "vix": return "VIX";
-    case "historical": return "Historical Accuracy";
-    case "replay": return "Replay";
+    case "astro":
+      return "Astro";
+    case "options":
+      return "Options";
+    case "pcr":
+      return "PCR";
+    case "breadth":
+      return "Market Breadth";
+    case "sector":
+      return "Sector Rotation";
+    case "vix":
+      return "VIX";
+    case "historical":
+      return "Historical Accuracy";
+    case "replay":
+      return "Replay";
   }
 }
 
@@ -142,10 +133,7 @@ function labelFor(k: ModuleKey): string {
  * Aggregate module signals into a single, fully-explainable decision.
  * Deterministic: same inputs → same outputs. Never mutates its inputs.
  */
-export function computeDecision(
-  rawSignals: ModuleSignal[],
-  ctx: DecisionContext,
-): Decision {
+export function computeDecision(rawSignals: ModuleSignal[], ctx: DecisionContext): Decision {
   const generatedAt = ctx.generatedAt ?? new Date().toISOString();
 
   // Normalise: sanitise numbers and ensure a label.
@@ -160,9 +148,7 @@ export function computeDecision(
   // Redistribute the weight of absent modules across the present ones so
   // the effective weights still sum to the total prior weight (~1).
   const totalPrior = signals.reduce((a, s) => a + s.weight, 0);
-  const presentWeight = signals
-    .filter((s) => s.present)
-    .reduce((a, s) => a + s.weight, 0);
+  const presentWeight = signals.filter((s) => s.present).reduce((a, s) => a + s.weight, 0);
   const scale = presentWeight > 0 ? totalPrior / presentWeight : 0;
 
   const contributions: Contribution[] = signals.map((s) => {
@@ -448,7 +434,10 @@ function buildExplanation(inp: {
   if (inp.negatives.length) parts.push(`Against: ${inp.negatives.slice(0, 4).join("; ")}.`);
   if (inp.conflicts.length)
     parts.push(
-      `Conflicts: ${inp.conflicts.slice(0, 3).map((c) => c.reason).join("; ")}.`,
+      `Conflicts: ${inp.conflicts
+        .slice(0, 3)
+        .map((c) => c.reason)
+        .join("; ")}.`,
     );
   if (inp.historicalAccuracy != null)
     parts.push(`Historical accuracy ${Math.round(inp.historicalAccuracy)}%.`);
@@ -458,22 +447,33 @@ function buildExplanation(inp: {
 
 export function humanAction(a: DecisionAction): string {
   switch (a) {
-    case "STRONG_BUY_CE": return "STRONG BUY CE";
-    case "BUY_CE": return "BUY CE";
-    case "WAIT": return "WAIT";
-    case "BUY_PE": return "BUY PE";
-    case "STRONG_BUY_PE": return "STRONG BUY PE";
+    case "STRONG_BUY_CE":
+      return "STRONG BUY CE";
+    case "BUY_CE":
+      return "BUY CE";
+    case "WAIT":
+      return "WAIT";
+    case "BUY_PE":
+      return "BUY PE";
+    case "STRONG_BUY_PE":
+      return "STRONG BUY PE";
   }
 }
 
 export function humanRegime(r: Regime): string {
   switch (r) {
-    case "BULL_TREND": return "Bullish trend";
-    case "BEAR_TREND": return "Bearish trend";
-    case "RANGE": return "Range-bound";
-    case "HIGH_VOLATILITY": return "High volatility";
-    case "LOW_VOLATILITY": return "Low volatility";
-    case "TRANSITION": return "Transition / mixed";
+    case "BULL_TREND":
+      return "Bullish trend";
+    case "BEAR_TREND":
+      return "Bearish trend";
+    case "RANGE":
+      return "Range-bound";
+    case "HIGH_VOLATILITY":
+      return "High volatility";
+    case "LOW_VOLATILITY":
+      return "Low volatility";
+    case "TRANSITION":
+      return "Transition / mixed";
   }
 }
 
@@ -503,7 +503,8 @@ export function astroSignal(inp: {
     confidence: conf,
     weight: 0.25,
     present: true,
-    note: `${inp.bullCount} bullish / ${inp.bearCount} bearish planets` +
+    note:
+      `${inp.bullCount} bullish / ${inp.bearCount} bearish planets` +
       (inp.retroCount ? `, ${inp.retroCount} retrograde` : "") +
       (inp.emaBias ? `, EMA ${inp.emaBias.toLowerCase()}` : ""),
   };
@@ -563,8 +564,7 @@ export function breadthSignal(inp: {
   decliners: number;
   present: boolean;
 }): ModuleSignal {
-  if (!inp.present || inp.advancers + inp.decliners <= 0)
-    return absent("breadth", 0.15);
+  if (!inp.present || inp.advancers + inp.decliners <= 0) return absent("breadth", 0.15);
   const total = inp.advancers + inp.decliners;
   const score = clamp((inp.advancers - inp.decliners) / total, -1, 1);
   return {
@@ -627,8 +627,7 @@ export function historicalSignal(inp: {
   direction: Bias;
   sampleSize: number;
 }): ModuleSignal {
-  if (inp.winRatePct == null || inp.sampleSize <= 0)
-    return absent("historical", 0.1);
+  if (inp.winRatePct == null || inp.sampleSize <= 0) return absent("historical", 0.1);
   const edge = (inp.winRatePct - 50) / 50; // -1..+1
   const score = clamp(biasSign(inp.direction) * Math.abs(edge), -1, 1);
   const conf = clamp(0.3 + Math.min(1, inp.sampleSize / 100) * 0.7, 0.3, 1);

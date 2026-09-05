@@ -10,7 +10,11 @@ import {
   type TokenPolicyEnv,
   type UpstoxTokenStatus,
 } from "./upstox-token-policy.server";
-import { resolveInstrument, UPSTOX_SUPPORTED_SYMBOLS, type UpstoxSupportedSymbol } from "./upstox-instruments.server";
+import {
+  resolveInstrument,
+  UPSTOX_SUPPORTED_SYMBOLS,
+  type UpstoxSupportedSymbol,
+} from "./upstox-instruments.server";
 import type { QuoteSymbol, Timeframe } from "../types";
 import type { UpstoxErrorCode } from "./upstox-types";
 
@@ -95,18 +99,14 @@ export function sanitizeForJson(input: unknown): unknown {
       return { message: redactUpstoxMessage(value.message ?? "error").slice(0, 240) };
     }
     // Runtime objects we must never leak.
-    if (
-      typeof Response !== "undefined" && value instanceof Response
-    ) return "[unserializable:Response]";
-    if (
-      typeof Request !== "undefined" && value instanceof Request
-    ) return "[unserializable:Request]";
-    if (
-      typeof Headers !== "undefined" && value instanceof Headers
-    ) return "[unserializable:Headers]";
-    if (
-      typeof AbortSignal !== "undefined" && value instanceof AbortSignal
-    ) return "[unserializable:AbortSignal]";
+    if (typeof Response !== "undefined" && value instanceof Response)
+      return "[unserializable:Response]";
+    if (typeof Request !== "undefined" && value instanceof Request)
+      return "[unserializable:Request]";
+    if (typeof Headers !== "undefined" && value instanceof Headers)
+      return "[unserializable:Headers]";
+    if (typeof AbortSignal !== "undefined" && value instanceof AbortSignal)
+      return "[unserializable:AbortSignal]";
     if (value instanceof ArrayBuffer) return "[unserializable:ArrayBuffer]";
     if (seen.has(value as object)) return "[circular]";
     seen.add(value as object);
@@ -249,7 +249,12 @@ export interface UpstoxSmokeReport {
 }
 
 const REQUIRED_SYMBOLS: readonly UpstoxSupportedSymbol[] = ["NIFTY50", "BANKNIFTY", "INDIA_VIX"];
-const OPTIONAL_SYMBOLS: readonly UpstoxSupportedSymbol[] = ["GOLD", "SILVER", "CRUDEOIL", "NATURAL_GAS"];
+const OPTIONAL_SYMBOLS: readonly UpstoxSupportedSymbol[] = [
+  "GOLD",
+  "SILVER",
+  "CRUDEOIL",
+  "NATURAL_GAS",
+];
 
 interface QuoteApiResult {
   readonly ok: boolean;
@@ -264,14 +269,13 @@ interface QuoteApiResult {
   readonly last?: number;
 }
 
-async function fetchQuote(
-  http: UpstoxHttpClient,
-  instrumentKey: string,
-): Promise<QuoteApiResult> {
-  const res = await http.request<{ status: string; data: Record<string, { last_price?: number }> }>({
-    path: "v2/market-quote/quotes",
-    query: { instrument_key: instrumentKey },
-  });
+async function fetchQuote(http: UpstoxHttpClient, instrumentKey: string): Promise<QuoteApiResult> {
+  const res = await http.request<{ status: string; data: Record<string, { last_price?: number }> }>(
+    {
+      path: "v2/market-quote/quotes",
+      query: { instrument_key: instrumentKey },
+    },
+  );
   if (!res.ok) {
     const source = errorSourceFromUpstoxCode(res.error.code);
     const safeError =
@@ -284,7 +288,12 @@ async function fetchQuote(
       requestId: res.error.requestId ?? null,
       safeError,
       errorSource: source,
-      providerStatus: res.error.code === "UPSTOX_RATE_LIMITED" ? "RATE_LIMITED" : res.error.code === "UPSTOX_AUTH_REQUIRED" ? "OFFLINE" : "FAILED",
+      providerStatus:
+        res.error.code === "UPSTOX_RATE_LIMITED"
+          ? "RATE_LIMITED"
+          : res.error.code === "UPSTOX_AUTH_REQUIRED"
+            ? "OFFLINE"
+            : "FAILED",
       httpStatus: res.error.httpStatus ?? null,
       upstoxErrorCode: res.error.upstoxErrorCode ?? null,
       endpointPath: res.error.path ?? "v2/market-quote/quotes",
@@ -310,7 +319,11 @@ function toEndpointResult(
   endpoint: EndpointResult["endpoint"],
   symbol: string,
   q: QuoteApiResult,
-  extra?: { readonly instrumentKey?: string; readonly requestTimestamp?: string; readonly tokenType?: "STANDARD" | "ANALYTICS" | "UNKNOWN" },
+  extra?: {
+    readonly instrumentKey?: string;
+    readonly requestTimestamp?: string;
+    readonly tokenType?: "STANDARD" | "ANALYTICS" | "UNKNOWN";
+  },
 ): EndpointResult {
   return {
     endpoint,
@@ -344,7 +357,10 @@ export interface UpstoxSmokeOptions {
 }
 
 function envFromProcess(): TokenPolicyEnv {
-  const p = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const p = (typeof process !== "undefined" ? process.env : {}) as Record<
+    string,
+    string | undefined
+  >;
   return {
     UPSTOX_MARKET_DATA_MODE: p.UPSTOX_MARKET_DATA_MODE ?? "live",
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
@@ -353,7 +369,9 @@ function envFromProcess(): TokenPolicyEnv {
   };
 }
 
-function emptyChecklist(status: SmokeChecklist["authentication"] = "NOT_CONFIGURED"): SmokeChecklist {
+function emptyChecklist(
+  status: SmokeChecklist["authentication"] = "NOT_CONFIGURED",
+): SmokeChecklist {
   return {
     authentication: status,
     instrumentMaster: status === "FAIL" ? "FAIL" : "NOT_CONFIGURED",
@@ -380,7 +398,10 @@ export function buildServerFunctionFailureReport(
   opts: Pick<UpstoxSmokeOptions, "nowIso"> = {},
 ): UpstoxSmokeReport {
   const nowIso = opts.nowIso ?? new Date().toISOString();
-  const raw = error instanceof Error ? (error.message ?? "server function failed") : String(error ?? "server function failed");
+  const raw =
+    error instanceof Error
+      ? (error.message ?? "server function failed")
+      : String(error ?? "server function failed");
   const safeError = redactUpstoxMessage(raw).slice(0, 240);
   const base = buildApplicationAuthFailureReport(safeError, { nowIso });
   return sanitizeForJson({
@@ -419,13 +440,24 @@ export function buildUpstoxSmokeFailureReport(
   const nowIso = opts.nowIso ?? new Date().toISOString();
   const envSource = opts.env ?? envFromProcess();
   const tokenStatus = evaluateUpstoxTokenPolicy(envSource);
-  const configured = tokenStatus.tokenPresent && envSource.UPSTOX_API_KEY != null && envSource.UPSTOX_API_SECRET != null;
-  const safeError = redactUpstoxMessage(error instanceof Error ? error.message : String(error ?? "smoke test failed"));
+  const configured =
+    tokenStatus.tokenPresent &&
+    envSource.UPSTOX_API_KEY != null &&
+    envSource.UPSTOX_API_SECRET != null;
+  const safeError = redactUpstoxMessage(
+    error instanceof Error ? error.message : String(error ?? "smoke test failed"),
+  );
   const errorSource: SmokeErrorSource = tokenStatus.tokenUsable ? "UPSTOX_API" : "PROVIDER_CONFIG";
   const instrumentResolved = REQUIRED_SYMBOLS.map((sym) => {
     const inst = resolveInstrument(sym as QuoteSymbol);
     return inst
-      ? { symbol: sym, resolved: true, instrumentKey: inst.instrumentKey, exchange: inst.exchange, instrumentType: inst.instrumentType }
+      ? {
+          symbol: sym,
+          resolved: true,
+          instrumentKey: inst.instrumentKey,
+          exchange: inst.exchange,
+          instrumentType: inst.instrumentType,
+        }
       : { symbol: sym, resolved: false };
   });
   return {
@@ -477,21 +509,31 @@ export function buildUpstoxSmokeFailureReport(
 }
 
 /** Read-only Upstox smoke test. Never touches order/broker paths. */
-export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise<UpstoxSmokeReport> {
+export async function runUpstoxSmokeTest(
+  opts: UpstoxSmokeOptions = {},
+): Promise<UpstoxSmokeReport> {
   const nowIso = opts.nowIso ?? new Date().toISOString();
   const nowMs = Date.parse(nowIso);
 
-  const envSource: TokenPolicyEnv =
-    opts.env ?? envFromProcess();
+  const envSource: TokenPolicyEnv = opts.env ?? envFromProcess();
 
   const tokenStatus = evaluateUpstoxTokenPolicy(envSource);
-  const configured = tokenStatus.tokenPresent && envSource.UPSTOX_API_KEY != null && envSource.UPSTOX_API_SECRET != null;
+  const configured =
+    tokenStatus.tokenPresent &&
+    envSource.UPSTOX_API_KEY != null &&
+    envSource.UPSTOX_API_SECRET != null;
 
   const targetSymbols = [...REQUIRED_SYMBOLS, ...OPTIONAL_SYMBOLS];
   const instrumentResolved = targetSymbols.map((sym) => {
     const inst = resolveInstrument(sym as QuoteSymbol);
     return inst
-      ? { symbol: sym, resolved: true, instrumentKey: inst.instrumentKey, exchange: inst.exchange, instrumentType: inst.instrumentType }
+      ? {
+          symbol: sym,
+          resolved: true,
+          instrumentKey: inst.instrumentKey,
+          exchange: inst.exchange,
+          instrumentType: inst.instrumentType,
+        }
       : { symbol: sym, resolved: false };
   });
 
@@ -528,17 +570,34 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     };
   }
 
-  const http = new UpstoxHttpClient({ env: envSource, fetchImpl: opts.fetchImpl, maxRetries: 1, backoffBaseMs: 100 });
-  const histAdapter = new UpstoxHistoricalAdapter({ env: envSource, fetchImpl: opts.fetchImpl, maxRetries: 1, backoffBaseMs: 100 });
-  const intraAdapter = new UpstoxIntradayAdapter({ env: envSource, fetchImpl: opts.fetchImpl, maxRetries: 1, backoffBaseMs: 100 });
+  const http = new UpstoxHttpClient({
+    env: envSource,
+    fetchImpl: opts.fetchImpl,
+    maxRetries: 1,
+    backoffBaseMs: 100,
+  });
+  const histAdapter = new UpstoxHistoricalAdapter({
+    env: envSource,
+    fetchImpl: opts.fetchImpl,
+    maxRetries: 1,
+    backoffBaseMs: 100,
+  });
+  const intraAdapter = new UpstoxIntradayAdapter({
+    env: envSource,
+    fetchImpl: opts.fetchImpl,
+    maxRetries: 1,
+    backoffBaseMs: 100,
+  });
 
   const histTf = opts.historicalTimeframe ?? "1d";
   const toIso = opts.historicalToIso ?? nowIso.slice(0, 10);
-  const fromIso = opts.historicalFromIso ?? (() => {
-    const d = new Date(nowMs);
-    d.setUTCDate(d.getUTCDate() - 7);
-    return d.toISOString().slice(0, 10);
-  })();
+  const fromIso =
+    opts.historicalFromIso ??
+    (() => {
+      const d = new Date(nowMs);
+      d.setUTCDate(d.getUTCDate() - 7);
+      return d.toISOString().slice(0, 10);
+    })();
   const intraTf = opts.intradayTimeframe ?? "5m";
 
   const quoteResults: EndpointResult[] = [];
@@ -552,7 +611,10 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   // Each per-symbol/per-endpoint check is isolated so one failure cannot
   // halt reporting for others. Adapter methods should not throw, but if they
   // do we still capture a redacted safe error and continue.
-  const safeQuote = async (entry: { symbol: string; instrumentKey?: string }): Promise<EndpointResult> => {
+  const safeQuote = async (entry: {
+    symbol: string;
+    instrumentKey?: string;
+  }): Promise<EndpointResult> => {
     try {
       const q = await fetchQuote(http, entry.instrumentKey!);
       return toEndpointResult("quote", entry.symbol, q, {
@@ -562,11 +624,17 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
       });
     } catch (e) {
       return {
-        endpoint: "quote", symbol: entry.symbol, ok: false, latencyMs: 0,
-        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        endpoint: "quote",
+        symbol: entry.symbol,
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
-        errorSource: "SERVER_FUNCTION", dataQuality: null,
+        errorSource: "SERVER_FUNCTION",
+        dataQuality: null,
         httpStatus: null,
         upstoxErrorCode: null,
         endpointPath: "v2/market-quote/quotes",
@@ -580,18 +648,33 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     try {
       const startedAt = new Date().toISOString();
       const hist = await histAdapter.fetchRange({
-        symbol: entry.symbol, timeframe: histTf, from: fromIso, to: toIso, nowIso, nowMs,
+        symbol: entry.symbol,
+        timeframe: histTf,
+        from: fromIso,
+        to: toIso,
+        nowIso,
+        nowMs,
       });
       const diag = !hist.ok ? hist.providerDiagnostics : undefined;
       return {
-        endpoint: "historical", symbol: entry.symbol, ok: hist.ok,
-        latencyMs: hist.telemetry.latencyMs, requestId: null,
+        endpoint: "historical",
+        symbol: entry.symbol,
+        ok: hist.ok,
+        latencyMs: hist.telemetry.latencyMs,
+        requestId: null,
         candleCount: hist.ok ? hist.data.candles.length : 0,
         firstCandleTime: hist.ok ? (hist.data.candles[0]?.time ?? null) : null,
-        lastCandleTime: hist.ok ? (hist.data.candles[hist.data.candles.length - 1]?.time ?? null) : null,
-        providerStatus: hist.telemetry.status, marketSession: hist.telemetry.marketSession,
+        lastCandleTime: hist.ok
+          ? (hist.data.candles[hist.data.candles.length - 1]?.time ?? null)
+          : null,
+        providerStatus: hist.telemetry.status,
+        marketSession: hist.telemetry.marketSession,
         cacheHit: false,
-        safeError: hist.ok ? null : redactUpstoxMessage(`${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`),
+        safeError: hist.ok
+          ? null
+          : redactUpstoxMessage(
+              `${hist.reason}${"detail" in hist && hist.detail ? ": " + hist.detail : ""}`,
+            ),
         errorSource: hist.ok ? null : errorSourceFromAdapterReason(hist.reason),
         httpStatus: diag?.httpStatus ?? (hist.ok ? 200 : null),
         upstoxErrorCode: diag?.upstoxErrorCode ?? null,
@@ -599,15 +682,23 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         requestTimestamp: diag?.requestTimestamp ?? startedAt,
         instrumentKey: diag?.instrumentKey ?? null,
         tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
-        dataQuality: hist.ok ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 } : null,
+        dataQuality: hist.ok
+          ? { coveragePct: 100, insufficient: hist.data.candles.length === 0 }
+          : null,
       };
     } catch (e) {
       return {
-        endpoint: "historical", symbol: entry.symbol, ok: false, latencyMs: 0,
-        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        endpoint: "historical",
+        symbol: entry.symbol,
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
-        errorSource: "SERVER_FUNCTION", dataQuality: null,
+        errorSource: "SERVER_FUNCTION",
+        dataQuality: null,
         httpStatus: null,
         upstoxErrorCode: null,
         endpointPath: null,
@@ -625,17 +716,26 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
       const marketClosed = intra.ok && intra.data.candles.length === 0;
       const diag = !intra.ok ? intra.providerDiagnostics : undefined;
       return {
-        endpoint: "intraday", symbol: entry.symbol,
+        endpoint: "intraday",
+        symbol: entry.symbol,
         ok: intra.ok && !marketClosed,
-        latencyMs: intra.telemetry.latencyMs, requestId: null,
+        latencyMs: intra.telemetry.latencyMs,
+        requestId: null,
         candleCount: intra.ok ? intra.data.candles.length : 0,
         firstCandleTime: intra.ok ? (intra.data.candles[0]?.time ?? null) : null,
-        lastCandleTime: intra.ok ? (intra.data.candles[intra.data.candles.length - 1]?.time ?? null) : null,
-        providerStatus: intra.telemetry.status, marketSession: intra.telemetry.marketSession,
+        lastCandleTime: intra.ok
+          ? (intra.data.candles[intra.data.candles.length - 1]?.time ?? null)
+          : null,
+        providerStatus: intra.telemetry.status,
+        marketSession: intra.telemetry.marketSession,
         cacheHit: false,
         safeError: !intra.ok
-          ? redactUpstoxMessage(`${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`)
-          : marketClosed ? "market closed or no current intraday candle" : null,
+          ? redactUpstoxMessage(
+              `${intra.reason}${"detail" in intra && intra.detail ? ": " + intra.detail : ""}`,
+            )
+          : marketClosed
+            ? "market closed or no current intraday candle"
+            : null,
         errorSource: !intra.ok ? errorSourceFromAdapterReason(intra.reason) : null,
         httpStatus: diag?.httpStatus ?? (intra.ok ? 200 : null),
         upstoxErrorCode: diag?.upstoxErrorCode ?? null,
@@ -643,15 +743,23 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
         requestTimestamp: diag?.requestTimestamp ?? startedAt,
         instrumentKey: diag?.instrumentKey ?? null,
         tokenType: tokenStatus.tokenTypeGuess ?? "UNKNOWN",
-        dataQuality: intra.ok ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 } : null,
+        dataQuality: intra.ok
+          ? { coveragePct: 100, insufficient: intra.data.candles.length === 0 }
+          : null,
       };
     } catch (e) {
       return {
-        endpoint: "intraday", symbol: entry.symbol, ok: false, latencyMs: 0,
-        requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+        endpoint: "intraday",
+        symbol: entry.symbol,
+        ok: false,
+        latencyMs: 0,
+        requestId: null,
+        providerStatus: "FAILED",
+        marketSession: "UNKNOWN",
         cacheHit: false,
         safeError: redactUpstoxMessage(e instanceof Error ? e.message : String(e)).slice(0, 240),
-        errorSource: "SERVER_FUNCTION", dataQuality: null,
+        errorSource: "SERVER_FUNCTION",
+        dataQuality: null,
         httpStatus: null,
         upstoxErrorCode: null,
         endpointPath: null,
@@ -669,20 +777,31 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
       safeHistorical(entry),
       safeIntraday(entry),
     ]);
-    const pushFrom = (s: PromiseSettledResult<EndpointResult>, endpoint: EndpointResult["endpoint"]): EndpointResult =>
+    const pushFrom = (
+      s: PromiseSettledResult<EndpointResult>,
+      endpoint: EndpointResult["endpoint"],
+    ): EndpointResult =>
       s.status === "fulfilled"
         ? s.value
         : {
-            endpoint, symbol: entry.symbol, ok: false, latencyMs: 0,
-            requestId: null, providerStatus: "FAILED", marketSession: "UNKNOWN",
+            endpoint,
+            symbol: entry.symbol,
+            ok: false,
+            latencyMs: 0,
+            requestId: null,
+            providerStatus: "FAILED",
+            marketSession: "UNKNOWN",
             cacheHit: false,
             safeError: redactUpstoxMessage(String(s.reason ?? "unknown")).slice(0, 240),
-            errorSource: "SERVER_FUNCTION", dataQuality: null,
+            errorSource: "SERVER_FUNCTION",
+            dataQuality: null,
           };
     const q = pushFrom(qSet, "quote");
     const h = pushFrom(hSet, "historical");
     const i = pushFrom(iSet, "intraday");
-    quoteResults.push(q); historicalResults.push(h); intradayResults.push(i);
+    quoteResults.push(q);
+    historicalResults.push(h);
+    intradayResults.push(i);
     totalCalls += 3;
     totalLatency += q.latencyMs + h.latencyMs + i.latencyMs;
     if (!q.ok) errors++;
@@ -698,10 +817,16 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
   const historicalSuccess = requiredOk(historicalResults);
   const intradaySuccess = requiredOk(intradayResults);
 
-  const anyOk = quoteResults.some((r) => r.ok) || historicalResults.some((r) => r.ok) || intradayResults.some((r) => r.ok);
+  const anyOk =
+    quoteResults.some((r) => r.ok) ||
+    historicalResults.some((r) => r.ok) ||
+    intradayResults.some((r) => r.ok);
   const allRequiredOk = quoteSuccess && historicalSuccess && intradaySuccess;
-  const overall: UpstoxSmokeReport["summary"]["overall"] =
-    allRequiredOk ? "PASS" : anyOk ? "PARTIAL" : "FAIL";
+  const overall: UpstoxSmokeReport["summary"]["overall"] = allRequiredOk
+    ? "PASS"
+    : anyOk
+      ? "PARTIAL"
+      : "FAIL";
 
   // Silence unused-variable lint on the required-set marker.
   void requiredKeys;
@@ -722,9 +847,15 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     const h = historicalResults.find((r) => r.symbol === entry.symbol);
     const i = intradayResults.find((r) => r.symbol === entry.symbol);
     const firstErr =
-      (q && !q.ok && q.errorSource) || (h && !h.ok && h.errorSource) || (i && !i.ok && i.errorSource) || null;
+      (q && !q.ok && q.errorSource) ||
+      (h && !h.ok && h.errorSource) ||
+      (i && !i.ok && i.errorSource) ||
+      null;
     const firstMsg =
-      (q && !q.ok && q.safeError) || (h && !h.ok && h.safeError) || (i && !i.ok && i.safeError) || null;
+      (q && !q.ok && q.safeError) ||
+      (h && !h.ok && h.safeError) ||
+      (i && !i.ok && i.safeError) ||
+      null;
     return {
       symbol: entry.symbol,
       resolved: entry.resolved,
@@ -740,7 +871,9 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
     authentication: tokenStatus.tokenUsable ? "PASS" : "FAIL",
     instrumentMaster: instrumentResolved.every((r) => r.resolved)
       ? "PASS"
-      : instrumentResolved.some((r) => r.resolved) ? "PARTIAL" : "FAIL",
+      : instrumentResolved.some((r) => r.resolved)
+        ? "PARTIAL"
+        : "FAIL",
     quoteApi: endpointChecklistStatus(quoteResults),
     historicalApi: endpointChecklistStatus(historicalResults),
     intradayApi: endpointChecklistStatus(intradayResults),
@@ -750,7 +883,9 @@ export async function runUpstoxSmokeTest(opts: UpstoxSmokeOptions = {}): Promise
 
   const completedAt = new Date().toISOString();
   const startedMs = Date.parse(nowIso);
-  const durationMs = Number.isFinite(startedMs) ? Math.max(0, Date.parse(completedAt) - startedMs) : 0;
+  const durationMs = Number.isFinite(startedMs)
+    ? Math.max(0, Date.parse(completedAt) - startedMs)
+    : 0;
   const failedEndpoint =
     (quoteResults.find((r) => !r.ok) ? "quote" : null) ??
     (historicalResults.find((r) => !r.ok) ? "historical" : null) ??

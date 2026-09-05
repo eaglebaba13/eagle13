@@ -50,8 +50,10 @@ export function evaluateRegistrationSafety(
   if (!result.dataGranularity) return "UNSUPPORTED_TIMEFRAME";
   if (result.trades.length < minTrades) return "INSUFFICIENT_TRADES";
   if (meta?.dataHash === "") return "MISSING_DATA_HASH";
-  if (meta?.overfitStatus === "OVERFIT" || meta?.overfitStatus === "FAIL") return "OPTIMIZER_OVERFIT";
-  if (meta?.reliability === "POOR" || meta?.reliability === "UNRELIABLE") return "UNRELIABLE_RECOMMENDATION";
+  if (meta?.overfitStatus === "OVERFIT" || meta?.overfitStatus === "FAIL")
+    return "OPTIMIZER_OVERFIT";
+  if (meta?.reliability === "POOR" || meta?.reliability === "UNRELIABLE")
+    return "UNRELIABLE_RECOMMENDATION";
   if (meta?.oosExpectancy != null && meta.oosExpectancy < 0) return "NEGATIVE_OOS_EXPECTANCY";
   // Causality sanity: from ≤ to.
   if (result.from && result.to && result.from > result.to) return "CAUSALITY_FAILURE";

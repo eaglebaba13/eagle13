@@ -2,7 +2,12 @@
 // No random shuffling. Leakage guard: validation bars must be strictly
 // later than training bars.
 
-import type { HistoricalCandle, StrategyDefinition, WalkForwardSummary, WalkForwardSplitSummary } from "./types";
+import type {
+  HistoricalCandle,
+  StrategyDefinition,
+  WalkForwardSummary,
+  WalkForwardSplitSummary,
+} from "./types";
 import { simulate } from "./trade-engine";
 import { computeMetrics } from "./performance";
 
@@ -27,18 +32,27 @@ export function runWalkForward(
 
   for (let s = 0; s < splits; s++) {
     const validationEnd = Math.min(n, chunk * (s + 2));
-    const trainEnd = opts.mode === "EXPANDING"
-      ? Math.floor(validationEnd * trainRatio)
-      : Math.floor(chunk * (s + 1) * trainRatio) + chunk * s;
+    const trainEnd =
+      opts.mode === "EXPANDING"
+        ? Math.floor(validationEnd * trainRatio)
+        : Math.floor(chunk * (s + 1) * trainRatio) + chunk * s;
     const trainStart = opts.mode === "EXPANDING" ? 0 : Math.max(0, trainEnd - chunk);
     const validationStart = trainEnd;
-    if (validationStart <= trainStart) { leakage = true; continue; }
+    if (validationStart <= trainStart) {
+      leakage = true;
+      continue;
+    }
     const validationCandles = candles.slice(validationStart, validationEnd);
     const trainCandles = candles.slice(trainStart, trainEnd);
     // Chronological leakage guard.
-    const lastTrainTs = trainCandles.length ? Date.parse(trainCandles[trainCandles.length - 1].ts) : 0;
+    const lastTrainTs = trainCandles.length
+      ? Date.parse(trainCandles[trainCandles.length - 1].ts)
+      : 0;
     const firstValTs = validationCandles.length ? Date.parse(validationCandles[0].ts) : 0;
-    if (lastTrainTs > firstValTs) { leakage = true; continue; }
+    if (lastTrainTs > firstValTs) {
+      leakage = true;
+      continue;
+    }
 
     const validation = simulate(def, validationCandles);
     allValidationTrades.push(...validation.trades);

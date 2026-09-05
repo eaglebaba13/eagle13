@@ -6,10 +6,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const backtestRoute = readFileSync("src/routes/backtest.tsx", "utf8");
-const panel = readFileSync(
-  "src/components/backtest/SmcBacktestPanel.tsx",
-  "utf8",
-);
+const panel = readFileSync("src/components/backtest/SmcBacktestPanel.tsx", "utf8");
 
 describe("Phase 21.4 Stage 4A · SMC panel dispatch on /backtest", () => {
   it("mounts the SMC panel via React.lazy (no eager import)", () => {

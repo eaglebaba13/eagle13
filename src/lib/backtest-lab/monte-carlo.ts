@@ -10,7 +10,7 @@ const MAX_ITERATIONS = 5_000;
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return function () {
-    a = (a + 0x6D2B79F5) >>> 0;
+    a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -27,7 +27,10 @@ function percentile(sorted: number[], p: number): number {
 export function runMonteCarlo(
   trades: readonly SimulatedTrade[],
   startingCapital: number,
-  opts: { iterations: number; seed: number; drawdownThreshold?: number | null } = { iterations: 500, seed: 1 },
+  opts: { iterations: number; seed: number; drawdownThreshold?: number | null } = {
+    iterations: 500,
+    seed: 1,
+  },
 ): MonteCarloSummary {
   const iterations = Math.min(Math.max(1, opts.iterations | 0), MAX_ITERATIONS);
   const seed = opts.seed | 0 || 1;
@@ -41,10 +44,16 @@ export function runMonteCarlo(
 
   if (n === 0) {
     return {
-      iterations, seed,
-      finalEquityP05: startingCapital, finalEquityP50: startingCapital, finalEquityP95: startingCapital,
-      maxDrawdownP05: 0, maxDrawdownP50: 0, maxDrawdownP95: 0,
-      probLoss: 0, probExceedsDrawdown: threshold != null ? 0 : null,
+      iterations,
+      seed,
+      finalEquityP05: startingCapital,
+      finalEquityP50: startingCapital,
+      finalEquityP95: startingCapital,
+      maxDrawdownP05: 0,
+      maxDrawdownP50: 0,
+      maxDrawdownP95: 0,
+      probLoss: 0,
+      probExceedsDrawdown: threshold != null ? 0 : null,
       drawdownThreshold: threshold,
     };
   }
@@ -55,7 +64,9 @@ export function runMonteCarlo(
     // Fisher-Yates with seeded RNG.
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
-      const tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+      const tmp = order[i];
+      order[i] = order[j];
+      order[j] = tmp;
     }
     let equity = startingCapital;
     let peak = startingCapital;
@@ -73,7 +84,8 @@ export function runMonteCarlo(
   finals.sort((a, b) => a - b);
   maxDds.sort((a, b) => a - b);
   return {
-    iterations, seed,
+    iterations,
+    seed,
     finalEquityP05: percentile(finals, 0.05),
     finalEquityP50: percentile(finals, 0.5),
     finalEquityP95: percentile(finals, 0.95),

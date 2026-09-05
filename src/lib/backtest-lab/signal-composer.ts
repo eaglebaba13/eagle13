@@ -2,20 +2,12 @@
 // No eval, no user code, no formula mutation. Returns MATCH / SKIP /
 // INELIGIBLE so missing inputs never fabricate a positive.
 
-import type {
-  ConditionGroup,
-  ConditionLeaf,
-  ConditionNode,
-  SignalValue,
-} from "./types";
+import type { ConditionGroup, ConditionLeaf, ConditionNode, SignalValue } from "./types";
 import { resolveField } from "./types";
 
 export type EvalResult = "MATCH" | "NO_MATCH" | "INELIGIBLE";
 
-function compareLeaf(
-  actual: SignalValue | undefined,
-  leaf: ConditionLeaf,
-): EvalResult {
+function compareLeaf(actual: SignalValue | undefined, leaf: ConditionLeaf): EvalResult {
   if (leaf.operator === "EXISTS") {
     return actual === undefined || actual === null ? "NO_MATCH" : "MATCH";
   }
@@ -28,22 +20,28 @@ function compareLeaf(
       return actual !== leaf.value ? "MATCH" : "NO_MATCH";
     case "GREATER_THAN":
       return typeof actual === "number" && typeof leaf.value === "number" && actual > leaf.value
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
     case "LESS_THAN":
       return typeof actual === "number" && typeof leaf.value === "number" && actual < leaf.value
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
     case "GREATER_OR_EQUAL":
       return typeof actual === "number" && typeof leaf.value === "number" && actual >= leaf.value
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
     case "LESS_OR_EQUAL":
       return typeof actual === "number" && typeof leaf.value === "number" && actual <= leaf.value
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
     case "IN":
       return Array.isArray(leaf.value) && leaf.value.includes(actual as SignalValue)
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
     case "NOT_IN":
       return Array.isArray(leaf.value) && !leaf.value.includes(actual as SignalValue)
-        ? "MATCH" : "NO_MATCH";
+        ? "MATCH"
+        : "NO_MATCH";
   }
 }
 

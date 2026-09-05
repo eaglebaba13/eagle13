@@ -16,7 +16,8 @@ export interface TrafficLightInput {
   /** Count of provider-reported failures in the window. */
   readonly failures?: number;
   /** Explicit provider status override (e.g. OFFLINE, RATE_LIMITED). */
-  readonly providerStatus?: "LIVE" | "DELAYED" | "STALE" | "OFFLINE" | "RATE_LIMITED" | "FAILED" | "UNKNOWN";
+  readonly providerStatus?:
+    "LIVE" | "DELAYED" | "STALE" | "OFFLINE" | "RATE_LIMITED" | "FAILED" | "UNKNOWN";
 }
 
 export interface TrafficLightThresholds {

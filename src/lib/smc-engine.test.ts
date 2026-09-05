@@ -10,10 +10,7 @@ function candle(t: number, o: number, h: number, l: number, c: number, v = 1000)
 // Uptrend then reversal fixture reused across tests.
 function uptrendThenReversal(): Candle[] {
   const out: Candle[] = [];
-  const prices = [
-    100, 98, 105, 102, 110, 107, 115,
-    112, 108, 104, 100, 96, 92,
-  ];
+  const prices = [100, 98, 105, 102, 110, 107, 115, 112, 108, 104, 100, 96, 92];
   let t = 1_700_000_000_000;
   for (const p of prices) {
     out.push(candle(t, p, p + 1, p - 1, p));
@@ -102,9 +99,7 @@ describe("analyzeSmc — structural outputs", () => {
 
   it("detects equal highs (or equal lows) via liquidity engine", () => {
     const r = analyzeSmc(equalHighsSeries(), { lookback: 1 });
-    const eq = r.liquidityLevels.filter(
-      (l) => l.kind === "equal_high" || l.kind === "equal_low",
-    );
+    const eq = r.liquidityLevels.filter((l) => l.kind === "equal_high" || l.kind === "equal_low");
     expect(eq.length).toBeGreaterThan(0);
   });
 
@@ -197,9 +192,7 @@ describe("analyzeSmc — no-lookahead & determinism", () => {
     const full = analyzeSmc(cs);
     const prefix = analyzeSmc(cs.slice(0, 10));
     for (const g of prefix.fvgs) {
-      const match = full.fvgs.find(
-        (x) => x.index === g.index && x.direction === g.direction,
-      );
+      const match = full.fvgs.find((x) => x.index === g.index && x.direction === g.direction);
       expect(match).toBeDefined();
     }
   });

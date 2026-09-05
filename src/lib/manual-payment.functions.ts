@@ -34,7 +34,11 @@ const planCycleSchema = z.object({
 
 const utrSchema = z.object({
   id: z.string().uuid(),
-  utr: z.string().min(6).max(24).regex(/^[A-Za-z0-9]+$/),
+  utr: z
+    .string()
+    .min(6)
+    .max(24)
+    .regex(/^[A-Za-z0-9]+$/),
   paymentDate: z.string().datetime().optional().nullable(),
   amountPaidPaise: z.number().int().positive().max(100000000),
   paymentApp: z.string().max(40).optional().nullable(),
@@ -97,18 +101,15 @@ export const submitManualPaymentUtr = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ManualPaymentRequest> => {
     const check = validateUtr(data.utr);
     if (!check.ok) throw new Error(`invalid_utr:${check.reason}`);
-    const { data: row, error } = await context.supabase.rpc(
-      "submit_manual_payment_utr",
-      {
-        _id: data.id,
-        _utr: data.utr,
-        _payment_date: (data.paymentDate ?? null) as unknown as string,
-        _amount_paid: data.amountPaidPaise,
-        _payment_app: (data.paymentApp ?? null) as unknown as string,
-        _screenshot_url: (data.screenshotPath ?? null) as unknown as string,
-        _user_note: (data.userNote ?? null) as unknown as string,
-      },
-    );
+    const { data: row, error } = await context.supabase.rpc("submit_manual_payment_utr", {
+      _id: data.id,
+      _utr: data.utr,
+      _payment_date: (data.paymentDate ?? null) as unknown as string,
+      _amount_paid: data.amountPaidPaise,
+      _payment_app: (data.paymentApp ?? null) as unknown as string,
+      _screenshot_url: (data.screenshotPath ?? null) as unknown as string,
+      _user_note: (data.userNote ?? null) as unknown as string,
+    });
     if (error) throw new Error(error.message);
     return mapRow(row as unknown as ManualPaymentRow);
   });
@@ -163,7 +164,10 @@ export const getManualPaymentEnvelope = createServerFn({ method: "GET" })
 export const adminListManualPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) =>
-    z.object({ status: z.string().optional() }).partial().parse(v ?? {}),
+    z
+      .object({ status: z.string().optional() })
+      .partial()
+      .parse(v ?? {}),
   )
   .handler(
     async ({

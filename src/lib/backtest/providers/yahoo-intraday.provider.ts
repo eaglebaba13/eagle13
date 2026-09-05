@@ -1,15 +1,8 @@
 // Phase 21.4 · Stage 4C — Yahoo intraday provider. Reserves the id;
 // throws DATA_RANGE_UNAVAILABLE (no daily→intraday fabrication).
 
-import {
-  SmcDataRangeUnavailableError,
-  SMC_INSTRUMENTS,
-  SMC_TIMEFRAMES,
-} from "../smc-data-source";
-import {
-  assertProviderSupports,
-  type IntradayHistoryProviderAdapter,
-} from "./intraday-provider";
+import { SmcDataRangeUnavailableError, SMC_INSTRUMENTS, SMC_TIMEFRAMES } from "../smc-data-source";
+import { assertProviderSupports, type IntradayHistoryProviderAdapter } from "./intraday-provider";
 
 export const yahooIntradayProvider: IntradayHistoryProviderAdapter = {
   id: "YAHOO_INTRADAY",

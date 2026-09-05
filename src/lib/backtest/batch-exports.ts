@@ -43,19 +43,41 @@ export function buildBatchResultsCsv(
   prov: BatchExportProvenance,
 ): string {
   const header = [
-    "strategy","formula","instrument","timeframe","period","from","to",
-    "status","attempts","trades","netPnl","runId","dataHash","errorCode",
+    "strategy",
+    "formula",
+    "instrument",
+    "timeframe",
+    "period",
+    "from",
+    "to",
+    "status",
+    "attempts",
+    "trades",
+    "netPnl",
+    "runId",
+    "dataHash",
+    "errorCode",
   ];
-  const rows = state.records.map((r) => [
-    r.job.strategy, r.job.formula, r.job.instrument, r.job.timeframe,
-    r.job.period.label, r.job.period.from, r.job.period.to,
-    r.status, r.attempts,
-    r.result?.trades.length ?? 0,
-    netPnl(r),
-    r.runId ?? "",
-    r.dataHash ?? "",
-    r.error?.code ?? "",
-  ].map(csvEscape).join(","));
+  const rows = state.records.map((r) =>
+    [
+      r.job.strategy,
+      r.job.formula,
+      r.job.instrument,
+      r.job.timeframe,
+      r.job.period.label,
+      r.job.period.from,
+      r.job.period.to,
+      r.status,
+      r.attempts,
+      r.result?.trades.length ?? 0,
+      netPnl(r),
+      r.runId ?? "",
+      r.dataHash ?? "",
+      r.error?.code ?? "",
+    ]
+      .map(csvEscape)
+      .join(","),
+  );
   return [provenanceHeader(prov), header.join(","), ...rows].join("\n");
 }
 
@@ -63,15 +85,30 @@ export function buildBatchFailuresCsv(
   state: BatchOrchestratorState,
   prov: BatchExportProvenance,
 ): string {
-  const header = ["strategy","formula","instrument","timeframe","period","errorCode","errorMessage"];
+  const header = [
+    "strategy",
+    "formula",
+    "instrument",
+    "timeframe",
+    "period",
+    "errorCode",
+    "errorMessage",
+  ];
   const rows = state.records
     .filter((r) => r.status === "failed" || r.status === "cancelled")
-    .map((r) => [
-      r.job.strategy, r.job.formula, r.job.instrument, r.job.timeframe,
-      r.job.period.label,
-      r.error?.code ?? r.status.toUpperCase(),
-      r.error?.message ?? "",
-    ].map(csvEscape).join(","));
+    .map((r) =>
+      [
+        r.job.strategy,
+        r.job.formula,
+        r.job.instrument,
+        r.job.timeframe,
+        r.job.period.label,
+        r.error?.code ?? r.status.toUpperCase(),
+        r.error?.message ?? "",
+      ]
+        .map(csvEscape)
+        .join(","),
+    );
   return [provenanceHeader(prov), header.join(","), ...rows].join("\n");
 }
 
@@ -79,7 +116,15 @@ export function buildBatchCoverageCsv(
   state: BatchOrchestratorState,
   prov: BatchExportProvenance,
 ): string {
-  const header = ["strategy","instrument","timeframe","total","completed","failed","coveragePct"];
+  const header = [
+    "strategy",
+    "instrument",
+    "timeframe",
+    "total",
+    "completed",
+    "failed",
+    "coveragePct",
+  ];
   type Bucket = { total: number; completed: number; failed: number };
   const buckets = new Map<string, Bucket>();
   for (const r of state.records) {
@@ -90,11 +135,13 @@ export function buildBatchCoverageCsv(
     if (r.status === "failed" || r.status === "cancelled") b.failed += 1;
     buckets.set(k, b);
   }
-  const rows = [...buckets.entries()].sort(([a],[b]) => (a < b ? -1 : 1)).map(([k, b]) => {
-    const [s, i, t] = k.split("|");
-    const pct = b.total > 0 ? Math.round((b.completed / b.total) * 10000) / 100 : 0;
-    return [s, i, t, b.total, b.completed, b.failed, pct].map(csvEscape).join(",");
-  });
+  const rows = [...buckets.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([k, b]) => {
+      const [s, i, t] = k.split("|");
+      const pct = b.total > 0 ? Math.round((b.completed / b.total) * 10000) / 100 : 0;
+      return [s, i, t, b.total, b.completed, b.failed, pct].map(csvEscape).join(",");
+    });
   return [provenanceHeader(prov), header.join(","), ...rows].join("\n");
 }
 

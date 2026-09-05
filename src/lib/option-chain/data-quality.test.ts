@@ -12,7 +12,9 @@ function base(over: Partial<OptionChainSnapshot> = {}): OptionChainSnapshot {
     availableExpiries: [],
     marketSession: "OPEN",
     dataQuality: "OK",
-    strikes: Array.from({ length: 7 }, (_, i) => makeStrike(23_800 + i * 100, { oi: 100 }, { oi: 100 })),
+    strikes: Array.from({ length: 7 }, (_, i) =>
+      makeStrike(23_800 + i * 100, { oi: 100 }, { oi: 100 }),
+    ),
     ...over,
   };
 }
@@ -24,7 +26,9 @@ describe("data-quality", () => {
     expect(assessDataQuality(base(), { nowIso: NOW }).ok).toBe(true);
   });
   it("flags duplicate strike", () => {
-    const s = base({ strikes: [makeStrike(24_000, { oi: 1 }, { oi: 1 }), makeStrike(24_000, { oi: 1 }, { oi: 1 })] });
+    const s = base({
+      strikes: [makeStrike(24_000, { oi: 1 }, { oi: 1 }), makeStrike(24_000, { oi: 1 }, { oi: 1 })],
+    });
     const r = assessDataQuality(s, { nowIso: NOW });
     expect(r.issues.some((i) => i.code === "DUPLICATE_STRIKE")).toBe(true);
     expect(r.ok).toBe(false);
@@ -42,7 +46,10 @@ describe("data-quality", () => {
     expect(r.issues.some((i) => i.code === "FUTURE_TIMESTAMP")).toBe(true);
   });
   it("flags stale", () => {
-    const r = assessDataQuality(base({ timestamp: "2025-01-15T00:00:00Z" }), { nowIso: "2025-01-15T00:30:00Z", staleMs: 60_000 });
+    const r = assessDataQuality(base({ timestamp: "2025-01-15T00:00:00Z" }), {
+      nowIso: "2025-01-15T00:30:00Z",
+      staleMs: 60_000,
+    });
     expect(r.issues.some((i) => i.code === "PROVIDER_STALE")).toBe(true);
   });
   it("flags negative OI as FAIL", () => {

@@ -6,7 +6,9 @@ export interface MorningBriefIntelligenceSection {
   readonly lines: readonly string[];
 }
 
-export function buildMorningBriefSections(snap: IntelligenceSnapshot): MorningBriefIntelligenceSection[] {
+export function buildMorningBriefSections(
+  snap: IntelligenceSnapshot,
+): MorningBriefIntelligenceSection[] {
   const out: MorningBriefIntelligenceSection[] = [];
   if (snap.global.data && snap.global.status !== "UNAVAILABLE") {
     const top = [...snap.global.data.rows]

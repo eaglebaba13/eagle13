@@ -48,13 +48,23 @@ export function snapshotObservability(): ObservabilitySnapshot {
   const hits = buffer.filter((e) => e.type === "cache.hit").length;
   const misses = buffer.filter((e) => e.type === "cache.miss").length;
   const cacheHitRatio = hits + misses === 0 ? null : hits / (hits + misses);
-  const latencies = buffer.filter((e) => e.type === "provider.latency" && typeof e.value === "number");
+  const latencies = buffer.filter(
+    (e) => e.type === "provider.latency" && typeof e.value === "number",
+  );
   const avgLatencyMs =
     latencies.length === 0
       ? null
       : latencies.reduce((s, e) => s + (e.value ?? 0), 0) / latencies.length;
   const recent = buffer.slice(-30);
-  return { total, providerFailures, hydrationErrors, reactErrors, cacheHitRatio, avgLatencyMs, recent };
+  return {
+    total,
+    providerFailures,
+    hydrationErrors,
+    reactErrors,
+    cacheHitRatio,
+    avgLatencyMs,
+    recent,
+  };
 }
 
 export function _resetObservability(): void {

@@ -5,18 +5,18 @@ import type { ParsedCandle } from "./candle-csv-parser";
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 function mk(dateIso: string, minute: number): ParsedCandle {
   // dateIso = YYYY-MM-DD IST; minute = minutes from midnight IST.
-  const t = Date.UTC(
-    +dateIso.slice(0, 4),
-    +dateIso.slice(5, 7) - 1,
-    +dateIso.slice(8, 10),
-    0,
-    0,
-    0,
-  ) - IST_OFFSET + minute * 60 * 1000;
+  const t =
+    Date.UTC(+dateIso.slice(0, 4), +dateIso.slice(5, 7) - 1, +dateIso.slice(8, 10), 0, 0, 0) -
+    IST_OFFSET +
+    minute * 60 * 1000;
   return {
     timeIst: new Date(t + IST_OFFSET).toISOString().replace("Z", "+05:30"),
     openTimeMs: t,
-    open: 100, high: 101, low: 99, close: 100, volume: 1,
+    open: 100,
+    high: 101,
+    low: 99,
+    close: 100,
+    volume: 1,
   };
 }
 

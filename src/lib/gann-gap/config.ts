@@ -16,7 +16,7 @@ export interface GannGapConfig {
   readonly levelsBelow: number;
   readonly levelsAbove: number;
   /** Sample sizes required before showing historical accuracy figures. */
-  readonly minSamplesForRate: number;      // e.g. 30 — show a rate
+  readonly minSamplesForRate: number; // e.g. 30 — show a rate
   readonly minSamplesForConfidence: number; // e.g. 100 — show a confidence band
 }
 

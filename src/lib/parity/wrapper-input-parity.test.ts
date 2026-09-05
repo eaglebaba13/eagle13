@@ -18,10 +18,7 @@ import {
   DEFAULT_ASTRO_FORMULA_VERSION,
   astroCacheKey,
 } from "../engine-version";
-import {
-  hasNonZeroCosts,
-  warnLegacyHashQuirkIfApplicable,
-} from "../backtest/legacy-diagnostics";
+import { hasNonZeroCosts, warnLegacyHashQuirkIfApplicable } from "../backtest/legacy-diagnostics";
 
 function baseKey(costs = ZERO_COSTS) {
   return `backtest:NIFTY50:2024-01-01:2024-03-31:conservative:fabricate:${hashConfig(costs)}`;
@@ -38,10 +35,7 @@ describe("β2a · runBacktest wrapper input & cache-key parity", () => {
 
   it("Legacy Cascade selection produces a distinct cache key and Run ID", () => {
     const signKey = astroCacheKey(baseKey(), DEFAULT_ASTRO_FORMULA_VERSION);
-    const legacyKey = astroCacheKey(
-      baseKey(),
-      ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1,
-    );
+    const legacyKey = astroCacheKey(baseKey(), ASTRO_FORMULA_VERSIONS.LEGACY_EAGLEBABA_CASCADE_V1);
     expect(legacyKey).not.toBe(signKey);
     expect(legacyKey).toContain("LEGACY_EAGLEBABA_CASCADE_V1");
 

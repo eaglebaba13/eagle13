@@ -71,9 +71,7 @@ export function DashboardCardHeader({
         ) : null}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {freshness ? (
-          <DataFreshnessPill result={freshness} provider={provider} compact />
-        ) : null}
+        {freshness ? <DataFreshnessPill result={freshness} provider={provider} compact /> : null}
         {info ? (
           <span
             title={info}

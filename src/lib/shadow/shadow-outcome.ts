@@ -60,7 +60,16 @@ export function trackOutcome(inp: OutcomeInput): ShadowOutcome {
   }
   const last = inp.candles[inp.candles.length - 1];
   if (!last) return emptyOutcome();
-  return finalize("SESSION_CLOSE", last.close, last.date, mfe, mae, inp.candles.length, p, inp.policy);
+  return finalize(
+    "SESSION_CLOSE",
+    last.close,
+    last.date,
+    mfe,
+    mae,
+    inp.candles.length,
+    p,
+    inp.policy,
+  );
 }
 
 function finalize(

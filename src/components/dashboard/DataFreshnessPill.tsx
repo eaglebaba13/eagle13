@@ -1,4 +1,9 @@
-import { classifyFreshness, formatAge, type FreshnessInput, type FreshnessResult } from "@/lib/data-freshness";
+import {
+  classifyFreshness,
+  formatAge,
+  type FreshnessInput,
+  type FreshnessResult,
+} from "@/lib/data-freshness";
 
 type Props = {
   input?: FreshnessInput;

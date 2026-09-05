@@ -7,7 +7,13 @@ export interface VerdictInput {
 
 export function computeStagingVerdict(input: VerdictInput): {
   verdict: StagingVerdict;
-  score: { total: number; passCount: number; warnCount: number; failCount: number; hardBlockerCount: number };
+  score: {
+    total: number;
+    passCount: number;
+    warnCount: number;
+    failCount: number;
+    hardBlockerCount: number;
+  };
 } {
   if (!input.configured) {
     return {

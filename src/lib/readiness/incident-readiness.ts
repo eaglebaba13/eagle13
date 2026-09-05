@@ -13,7 +13,8 @@ export const INCIDENT_PLAYBOOKS: readonly IncidentPlaybook[] = [
     id: "incident.provider-outage",
     scenario: "Provider outage",
     detection: "provider probe FAIL, error-rate spike",
-    immediateAction: "Flip to secondary provider where policy allows; block actionable signals if disclosure required.",
+    immediateAction:
+      "Flip to secondary provider where policy allows; block actionable signals if disclosure required.",
     userFacingStatus: "Show DEGRADED banner + provider label change.",
     escalationOwner: "Data Ops",
     recoveryVerification: "10 minutes of PASS probes; freshness LIVE for 3 consecutive intervals.",

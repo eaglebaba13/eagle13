@@ -41,7 +41,11 @@ const UNDERLYING_INSTRUMENTS: Record<OptionsAuditRow["underlying"], string> = {
   SENSEX: "BSE_INDEX|SENSEX",
 };
 
-function classify(status: number | null, code: string | null, missing: readonly string[]): OptionAuditVerdict {
+function classify(
+  status: number | null,
+  code: string | null,
+  missing: readonly string[],
+): OptionAuditVerdict {
   if (status === 401 || status === 403) return "AUTH_REQUIRED";
   if (status == null) return "UNSUPPORTED";
   if (status >= 400) return code ? "UNSUPPORTED" : "UNSUPPORTED";
@@ -64,7 +68,9 @@ async function probeUnderlying(
     if (!res.ok) {
       return {
         underlying,
-        verdict: classify(res.error.httpStatus ?? null, res.error.upstoxErrorCode ?? null, [...REQUIRED_OPTION_FIELDS]),
+        verdict: classify(res.error.httpStatus ?? null, res.error.upstoxErrorCode ?? null, [
+          ...REQUIRED_OPTION_FIELDS,
+        ]),
         httpStatus: res.error.httpStatus ?? null,
         upstoxErrorCode: res.error.upstoxErrorCode ?? null,
         missingFields: [...REQUIRED_OPTION_FIELDS],

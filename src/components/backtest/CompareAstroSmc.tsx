@@ -10,7 +10,12 @@ import { runBacktest, type BacktestResult } from "@/lib/backtest.functions";
 import { runUnifiedBacktest } from "@/lib/backtest/unified";
 import { analyzeSmc } from "@/lib/smc-engine";
 import { analyzeSmcSignals, DEFAULT_SMC_SIGNAL_CONFIG } from "@/lib/smc-signal-engine";
-import { loadSmcCandles, SmcDataRangeUnavailableError, type SmcInstrument, type SmcTimeframe } from "@/lib/backtest/smc-data-source";
+import {
+  loadSmcCandles,
+  SmcDataRangeUnavailableError,
+  type SmcInstrument,
+  type SmcTimeframe,
+} from "@/lib/backtest/smc-data-source";
 import { DEFAULT_SMC_EXECUTION } from "@/lib/backtest/adapters/smc-historical.adapter";
 import { INTRADAY_FORMULA_VERSIONS } from "@/lib/engine-version";
 import type { HistoricalBacktestResult, HistoricalTrade } from "@/lib/backtest/result";
@@ -98,7 +103,11 @@ export default function CompareAstroSmc(props: {
     try {
       // Astro (server fn) and SMC (client-side) — SEPARATE runs, no merging.
       const astroP = call({
-        data: { symbol: props.instrument === "XAUUSD" ? "GOLD" : props.instrument, from: props.from, to: props.to },
+        data: {
+          symbol: props.instrument === "XAUUSD" ? "GOLD" : props.instrument,
+          from: props.from,
+          to: props.to,
+        },
       });
       const loaded = await loadSmcCandles({
         instrument: props.instrument,
@@ -174,14 +183,30 @@ export default function CompareAstroSmc(props: {
 
       {astro && smc ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
-            <MetricsCard title="Astro Sign-Degree" runId={astro.runId} version={astro.astroFormulaVersion}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 10,
+            }}
+          >
+            <MetricsCard
+              title="Astro Sign-Degree"
+              runId={astro.runId}
+              version={astro.astroFormulaVersion}
+            >
               <Row k="Trades" v={String(astro.summary.taken)} />
               <Row k="Win Rate" v={`${astro.summary.winRate}%`} />
-              <Row k="Profit Factor" v={astro.summary.profitFactor >= 999 ? "∞" : String(astro.summary.profitFactor)} />
+              <Row
+                k="Profit Factor"
+                v={astro.summary.profitFactor >= 999 ? "∞" : String(astro.summary.profitFactor)}
+              />
               <Row k="Net PnL" v={astro.summary.netProfit.toFixed(2)} />
               <Row k="Max Drawdown" v={astro.summary.maxDrawdown.toFixed(2)} />
-              <Row k="BUY / SELL / WAIT" v={`${astro.summary.buy} · ${astro.summary.sell} · ${astro.summary.wait}`} />
+              <Row
+                k="BUY / SELL / WAIT"
+                v={`${astro.summary.buy} · ${astro.summary.sell} · ${astro.summary.wait}`}
+              />
             </MetricsCard>
             <MetricsCard title="SMC_V1" runId={smc.runId} version={smc.formulaVersion}>
               <Row k="Trades" v={String(smc.trades.length)} />
@@ -189,14 +214,23 @@ export default function CompareAstroSmc(props: {
               <Row k="Losses" v={String(smc.trades.filter((t) => t.outcome === "LOSS").length)} />
               <Row k="Net PnL" v={smc.trades.reduce((a, t) => a + t.pnl, 0).toFixed(2)} />
               <Row k="Max Drawdown" v={smc.drawdown ? smc.drawdown.max.toFixed(2) : "—"} />
-              <Row k="Data Coverage" v={smc.dataQuality ? `${smc.dataQuality.coveragePct}%` : "—"} />
+              <Row
+                k="Data Coverage"
+                v={smc.dataQuality ? `${smc.dataQuality.coveragePct}%` : "—"}
+              />
             </MetricsCard>
           </div>
 
           {buckets ? (
             <div style={panel}>
               <div style={sectionHead}>Conflict Buckets (aligned by date)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 8,
+                }}
+              >
                 <Row k="Astro BUY / SMC BUY" v={String(buckets.astroBuySmcBuy)} />
                 <Row k="Astro SELL / SMC SELL" v={String(buckets.astroSellSmcSell)} />
                 <Row k="Astro BUY / SMC SELL" v={String(buckets.astroBuySmcSell)} />
@@ -235,7 +269,15 @@ function MetricsCard({
 }
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, borderBottom: `1px solid ${C.border}`, padding: "3px 0" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        fontSize: 12,
+        borderBottom: `1px solid ${C.border}`,
+        padding: "3px 0",
+      }}
+    >
       <span style={{ color: C.muted }}>{k}</span>
       <span>{v}</span>
     </div>

@@ -21,10 +21,7 @@ import {
   type HybridConfig,
   type HybridDirection,
 } from "../hybrid-decision";
-import {
-  smcHistoricalAdapter,
-  type SmcExecutionConfig,
-} from "./smc-historical.adapter";
+import { smcHistoricalAdapter, type SmcExecutionConfig } from "./smc-historical.adapter";
 import type { SmcEngineResult } from "../../smc-engine";
 import type { Candle } from "../../smc-types";
 
@@ -72,21 +69,19 @@ function readExtras(cfg: AdapterConfig): HybridExtras {
     );
   }
   if (!ex.astroByDate || typeof ex.astroByDate !== "object") {
-    throw new Error(
-      "astro-smc-hybrid adapter requires cfg.extras.astroByDate keyed by yyyy-mm-dd",
-    );
+    throw new Error("astro-smc-hybrid adapter requires cfg.extras.astroByDate keyed by yyyy-mm-dd");
   }
   if (!ex.astroFormulaVersion || !ex.smcFormulaVersion) {
-    throw new Error(
-      "astro-smc-hybrid adapter requires astroFormulaVersion and smcFormulaVersion",
-    );
+    throw new Error("astro-smc-hybrid adapter requires astroFormulaVersion and smcFormulaVersion");
   }
   return ex;
 }
 
-function computeHybridSeries(
-  ex: HybridExtras,
-): { signals: SmcSignalDebug[]; perBar: HybridPerBar[]; counters: Record<HybridDirection, number> } {
+function computeHybridSeries(ex: HybridExtras): {
+  signals: SmcSignalDebug[];
+  perBar: HybridPerBar[];
+  counters: Record<HybridDirection, number>;
+} {
   const dq = ex.dataQualityPct ?? 100;
   const counters: Record<HybridDirection, number> = {
     BUY: 0,
@@ -147,9 +142,7 @@ function computeHybridSeries(
     const forwarded: SmcSignalDebug = {
       ...smcSig,
       signal:
-        decision.direction === "BUY" || decision.direction === "SELL"
-          ? decision.direction
-          : "WAIT",
+        decision.direction === "BUY" || decision.direction === "SELL" ? decision.direction : "WAIT",
       reasons: [...smcSig.reasons, ...decision.reasons],
     };
     signals.push(forwarded);
@@ -274,12 +267,9 @@ export const hybridHistoricalAdapter: HistoricalFormulaAdapter = {
     const n = trades.length;
     const hybridConfig: HybridConfig = {
       weights: { ...DEFAULT_HYBRID_CONFIG.weights, ...(ex?.hybridConfig?.weights ?? {}) },
-      scoreThreshold:
-        ex?.hybridConfig?.scoreThreshold ??
-        DEFAULT_HYBRID_CONFIG.scoreThreshold,
+      scoreThreshold: ex?.hybridConfig?.scoreThreshold ?? DEFAULT_HYBRID_CONFIG.scoreThreshold,
       minDataQualityPct:
-        ex?.hybridConfig?.minDataQualityPct ??
-        DEFAULT_HYBRID_CONFIG.minDataQualityPct,
+        ex?.hybridConfig?.minDataQualityPct ?? DEFAULT_HYBRID_CONFIG.minDataQualityPct,
     };
     return {
       strategy: "ASTRO_SMC_HYBRID",

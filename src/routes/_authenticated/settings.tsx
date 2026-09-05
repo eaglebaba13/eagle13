@@ -126,7 +126,10 @@ function SettingsPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">Notifications</h2>
               {(Object.keys(notifs) as (keyof NotifPrefs)[]).map((k) => (
-                <label key={k} className="flex items-center justify-between py-2 border-b border-border last:border-none">
+                <label
+                  key={k}
+                  className="flex items-center justify-between py-2 border-b border-border last:border-none"
+                >
                   <span className="text-sm capitalize">{k.replace(/_/g, " ")}</span>
                   <input
                     type="checkbox"
@@ -158,11 +161,15 @@ function SettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {tab === "general" && "Manage core account preferences from your Profile page."}
                   {tab === "appearance" && "Theme is available in the top-right theme toggle."}
-                  {tab === "trading" && "Trading defaults live in the Risk Manager and Decision Engine pages."}
-                  {tab === "risk" && "Configure per-trade and daily loss limits inside the Risk Manager."}
+                  {tab === "trading" &&
+                    "Trading defaults live in the Risk Manager and Decision Engine pages."}
+                  {tab === "risk" &&
+                    "Configure per-trade and daily loss limits inside the Risk Manager."}
                   {tab === "broker" && "Broker connections are managed on the Broker page."}
-                  {tab === "privacy" && "Your journal, watchlists and settings are only visible to you."}
-                  {tab === "security" && "Two-factor authentication and session management arrive in a future release."}
+                  {tab === "privacy" &&
+                    "Your journal, watchlists and settings are only visible to you."}
+                  {tab === "security" &&
+                    "Two-factor authentication and session management arrive in a future release."}
                   {tab === "language" && "Language switching is scheduled for a future release."}
                 </p>
               </div>

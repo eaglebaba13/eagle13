@@ -45,13 +45,38 @@ export default function GannCycleWidget() {
         <tbody>
           {levels.gannCycle.map((g) => (
             <tr key={g.deg} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <td style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: "var(--eb-text)", padding: "5px 2px" }}>
+              <td
+                style={{
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 12,
+                  color: "var(--eb-text)",
+                  padding: "5px 2px",
+                }}
+              >
                 {g.deg}°
               </td>
-              <td style={{ fontFamily: "var(--eb-mono)", fontSize: 13, fontWeight: 700, color: "var(--eb-bull)", textAlign: "right", padding: "5px 2px" }}>
+              <td
+                style={{
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "var(--eb-bull)",
+                  textAlign: "right",
+                  padding: "5px 2px",
+                }}
+              >
                 {fmt(g.up)}
               </td>
-              <td style={{ fontFamily: "var(--eb-mono)", fontSize: 13, fontWeight: 700, color: "var(--eb-bear)", textAlign: "right", padding: "5px 2px" }}>
+              <td
+                style={{
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "var(--eb-bear)",
+                  textAlign: "right",
+                  padding: "5px 2px",
+                }}
+              >
                 {fmt(g.down)}
               </td>
             </tr>

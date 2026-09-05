@@ -5,11 +5,7 @@
 import type { DataQualityState } from "./data-quality-state";
 import type { IntradayProviderMetadata } from "./providers";
 import type { ShadowEvent } from "./hybrid-shadow";
-import type {
-  AttributionBucketId,
-  AttributionMetrics,
-  ThreeWayAttribution,
-} from "./attribution";
+import type { AttributionBucketId, AttributionMetrics, ThreeWayAttribution } from "./attribution";
 import type { HybridQualityMetrics } from "./hybrid-quality";
 
 function csvEscape(v: unknown): string {
@@ -38,7 +34,11 @@ export function buildProviderMetadataCsv(m: IntradayProviderMetadata): string {
   ]);
 }
 
-export function buildDataQualityCsv(status: DataQualityState, coveragePct: number, gaps: number): string {
+export function buildDataQualityCsv(
+  status: DataQualityState,
+  coveragePct: number,
+  gaps: number,
+): string {
   return csv([
     ["field", "value"],
     ["status", status],
@@ -60,9 +60,7 @@ export function buildAttributionCsv(a: ThreeWayAttribution): string {
     "avgMfe",
     "avgMae",
   ];
-  const ids = (Object.keys(a) as (AttributionBucketId | "totals")[]).filter(
-    (k) => k !== "totals",
-  );
+  const ids = (Object.keys(a) as (AttributionBucketId | "totals")[]).filter((k) => k !== "totals");
   const row = (id: string, m: AttributionMetrics) => [
     id,
     m.count,

@@ -60,11 +60,19 @@ describe("Phase 3F.2A · compute", () => {
     expect(r.isQuoteCompatible).toBe(true);
   });
   it("BUY_SILVER when ratio > 80", () => {
-    const r = computeGoldSilverRatio({ gold: gold({ price: 2500 }), silver: silver({ price: 30 }), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold({ price: 2500 }),
+      silver: silver({ price: 30 }),
+      now: NOW,
+    });
     expect(r.signal).toBe("BUY_SILVER");
   });
   it("BUY_GOLD when ratio < 50", () => {
-    const r = computeGoldSilverRatio({ gold: gold({ price: 2000 }), silver: silver({ price: 45 }), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold({ price: 2000 }),
+      silver: silver({ price: 45 }),
+      now: NOW,
+    });
     expect(r.signal).toBe("BUY_GOLD");
   });
   it("decimal ratio math is deterministic", () => {
@@ -94,26 +102,46 @@ describe("Phase 3F.2A · compute", () => {
     expect(r.signal).toBe("UNAVAILABLE");
   });
   it("different quote currencies → INCOMPATIBLE_QUOTE", () => {
-    const r = computeGoldSilverRatio({ gold: gold({ quoteCurrency: "USD" }), silver: silver({ quoteCurrency: "INR" }), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold({ quoteCurrency: "USD" }),
+      silver: silver({ quoteCurrency: "INR" }),
+      now: NOW,
+    });
     expect(r.signal).toBe("UNAVAILABLE");
     expect(r.reason).toMatch(/incompatible quote currencies/);
   });
   it("incompatible units (missing troy oz) → INCOMPATIBLE_UNITS", () => {
-    const r = computeGoldSilverRatio({ gold: gold({ troyOuncesPerUnit: null }), silver: silver(), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold({ troyOuncesPerUnit: null }),
+      silver: silver(),
+      now: NOW,
+    });
     expect(r.signal).toBe("UNAVAILABLE");
     expect(r.reason).toMatch(/incompatible units/);
   });
   it("stale gold → UNAVAILABLE with stale freshness", () => {
-    const r = computeGoldSilverRatio({ gold: gold({ freshness: "STALE" }), silver: silver(), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold({ freshness: "STALE" }),
+      silver: silver(),
+      now: NOW,
+    });
     expect(r.signal).toBe("UNAVAILABLE");
     expect(r.freshness).toBe("STALE");
   });
   it("stale silver → UNAVAILABLE with stale freshness", () => {
-    const r = computeGoldSilverRatio({ gold: gold(), silver: silver({ freshness: "STALE" }), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold(),
+      silver: silver({ freshness: "STALE" }),
+      now: NOW,
+    });
     expect(r.freshness).toBe("STALE");
   });
   it("worst freshness propagation: LIVE + DELAYED → DELAYED", () => {
-    const r = computeGoldSilverRatio({ gold: gold(), silver: silver({ freshness: "DELAYED" }), now: NOW });
+    const r = computeGoldSilverRatio({
+      gold: gold(),
+      silver: silver({ freshness: "DELAYED" }),
+      now: NOW,
+    });
     expect(r.freshness).toBe("DELAYED");
     expect(r.signal).not.toBe("UNAVAILABLE");
   });

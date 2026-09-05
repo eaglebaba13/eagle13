@@ -71,9 +71,7 @@ export function InstitutionalFlowWidget() {
             <span className="text-foreground">{data.source}</span>
           </div>
           {data.diagnostics.warnings.length > 0 && (
-            <p className="pt-1 text-[11px] text-amber-300">
-              {data.diagnostics.warnings[0]}
-            </p>
+            <p className="pt-1 text-[11px] text-amber-300">{data.diagnostics.warnings[0]}</p>
           )}
         </div>
       )}

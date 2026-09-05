@@ -10,10 +10,7 @@ export const newsQuery = () =>
     refetchOnWindowFocus: true,
   });
 
-const CAT_META: Record<
-  NewsItem["category"],
-  { label: string; color: string }
-> = {
+const CAT_META: Record<NewsItem["category"], { label: string; color: string }> = {
   MARKET: { label: "INDIAN MARKET", color: "var(--eb-accent)" },
   BTC: { label: "BTC", color: "#f7931a" },
   GOLD: { label: "GOLD", color: "var(--eb-accent2, #f0a500)" },
@@ -146,7 +143,14 @@ export function NewsFeed() {
       </div>
       <div style={{ padding: "6px 14px", maxHeight: 460, overflowY: "auto" }}>
         {data.items.length === 0 ? (
-          <div style={{ padding: 16, fontSize: 12, color: "var(--eb-muted)", fontFamily: "var(--eb-mono)" }}>
+          <div
+            style={{
+              padding: 16,
+              fontSize: 12,
+              color: "var(--eb-muted)",
+              fontFamily: "var(--eb-mono)",
+            }}
+          >
             No recent headlines available.
           </div>
         ) : (

@@ -63,8 +63,14 @@ function hostBucket(host: string) {
   if (!b) {
     b = {
       host,
-      total: 0, ok: 0, failed: 0, retries: 0, totalMs: 0,
-      lastStatus: null, lastSuccessTs: null, lastFailureTs: null,
+      total: 0,
+      ok: 0,
+      failed: 0,
+      retries: 0,
+      totalMs: 0,
+      lastStatus: null,
+      lastSuccessTs: null,
+      lastFailureTs: null,
     };
     perHost.set(host, b);
   }
@@ -141,9 +147,7 @@ export function getApiTotals() {
     ...apiTotals,
     avgMs: apiTotals.total > 0 ? Math.round(apiTotals.totalMs / apiTotals.total) : 0,
     errorRate:
-      apiTotals.total > 0
-        ? Math.round((apiTotals.failed / apiTotals.total) * 1000) / 10
-        : 0,
+      apiTotals.total > 0 ? Math.round((apiTotals.failed / apiTotals.total) * 1000) / 10 : 0,
   };
 }
 

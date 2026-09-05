@@ -3,18 +3,53 @@
 // which previously defined identical copies. No formula changes.
 
 export const PAKSHA_TITHI = [
-  "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
-  "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
-  "Trayodashi", "Chaturdashi", "Purnima/Amavasya",
+  "Pratipada",
+  "Dwitiya",
+  "Tritiya",
+  "Chaturthi",
+  "Panchami",
+  "Shashthi",
+  "Saptami",
+  "Ashtami",
+  "Navami",
+  "Dashami",
+  "Ekadashi",
+  "Dwadashi",
+  "Trayodashi",
+  "Chaturdashi",
+  "Purnima/Amavasya",
 ];
 
 export const KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti"];
 
 export const YOGAS = [
-  "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda",
-  "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata",
-  "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyan", "Parigha", "Shiva",
-  "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti",
+  "Vishkambha",
+  "Priti",
+  "Ayushman",
+  "Saubhagya",
+  "Shobhana",
+  "Atiganda",
+  "Sukarma",
+  "Dhriti",
+  "Shula",
+  "Ganda",
+  "Vriddhi",
+  "Dhruva",
+  "Vyaghata",
+  "Harshana",
+  "Vajra",
+  "Siddhi",
+  "Vyatipata",
+  "Variyan",
+  "Parigha",
+  "Shiva",
+  "Siddha",
+  "Sadhya",
+  "Shubha",
+  "Shukla",
+  "Brahma",
+  "Indra",
+  "Vaidhriti",
 ];
 
 /** Tithi derived from Sun-Moon elongation (each tithi spans 12°). */
@@ -36,7 +71,7 @@ export function deriveKarana(elongation: number): string {
 }
 
 export function deriveYoga(sunAbs: number, moonAbs: number): string {
-  const sum = ((sunAbs + moonAbs) % 360 + 360) % 360;
+  const sum = (((sunAbs + moonAbs) % 360) + 360) % 360;
   return YOGAS[Math.floor(sum / (360 / 27)) % 27];
 }
 
@@ -45,7 +80,9 @@ export function sunTimes(lat: number, lng: number): { sunrise: string; sunset: s
   const tz = 5.5;
   const now = new Date(Date.now() + tz * 3600 * 1000);
   const start = Date.UTC(now.getUTCFullYear(), 0, 0);
-  const day = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000);
+  const day = Math.floor(
+    (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start) / 86400000,
+  );
   const rad = Math.PI / 180;
   const decl = 23.45 * Math.sin(rad * (360 / 365) * (day - 81));
   const cosH = Math.max(-1, Math.min(1, -Math.tan(lat * rad) * Math.tan(decl * rad)));

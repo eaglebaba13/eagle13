@@ -24,11 +24,7 @@ export interface UsageCheck {
 }
 
 /** True iff another consumption is permitted right now. Never counts failed ops. */
-export function checkUsage(
-  used: number,
-  limit: number,
-  resource: UsageResource,
-): UsageCheck {
+export function checkUsage(used: number, limit: number, resource: UsageResource): UsageCheck {
   const clamped = Math.max(0, used);
   const remaining = Math.max(0, limit - clamped);
   const ratio = limit === 0 ? 1 : Math.min(1, clamped / limit);

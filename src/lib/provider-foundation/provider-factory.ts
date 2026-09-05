@@ -59,7 +59,13 @@ function baseTelemetry(cfg: FactoryConfig, nowIso: string, ageSec: number): Prov
   };
 }
 
-function failTelemetry(cfg: FactoryConfig, nowIso: string, status: "OFFLINE" | "RATE_LIMITED" | "FAILED", reason: string, retryAfterMs?: number): ProviderTelemetry {
+function failTelemetry(
+  cfg: FactoryConfig,
+  nowIso: string,
+  status: "OFFLINE" | "RATE_LIMITED" | "FAILED",
+  reason: string,
+  retryAfterMs?: number,
+): ProviderTelemetry {
   return {
     status,
     latencyMs: cfg.latencyMs ?? 0,
@@ -112,11 +118,17 @@ export function createFactoryAdapter(cfg: FactoryConfig): ProviderAdapter {
       };
       return { ok: true, data: tick, telemetry: tick.telemetry };
     },
-    async fetchHistorical(symbol, timeframe: Timeframe, limit, nowIso): Promise<ProviderResult<HistoricalSeries>> {
+    async fetchHistorical(
+      symbol,
+      timeframe: Timeframe,
+      limit,
+      nowIso,
+    ): Promise<ProviderResult<HistoricalSeries>> {
       if (cfg.offline) return fail("UNAVAILABLE", cfg, nowIso);
       if (cfg.rateLimited) return fail("RATE_LIMITED", cfg, nowIso, 1000);
       if (cfg.failReason) return fail(cfg.failReason, cfg, nowIso);
-      if (!cfg.capability.historical?.includes(timeframe)) return fail("UNSUPPORTED_TIMEFRAME", cfg, nowIso);
+      if (!cfg.capability.historical?.includes(timeframe))
+        return fail("UNSUPPORTED_TIMEFRAME", cfg, nowIso);
       const key = `${symbol}:${timeframe}`;
       const candles = cfg.historical?.[key];
       if (!candles) return fail("UNAVAILABLE", cfg, nowIso);
@@ -129,7 +141,11 @@ export function createFactoryAdapter(cfg: FactoryConfig): ProviderAdapter {
       };
       return { ok: true, data: series, telemetry };
     },
-    async fetchOptionsChain(underlying, expiry, nowIso): Promise<ProviderResult<OptionsChainSnapshot>> {
+    async fetchOptionsChain(
+      underlying,
+      expiry,
+      nowIso,
+    ): Promise<ProviderResult<OptionsChainSnapshot>> {
       if (cfg.offline) return fail("UNAVAILABLE", cfg, nowIso);
       if (cfg.rateLimited) return fail("RATE_LIMITED", cfg, nowIso, 1000);
       if (cfg.failReason) return fail(cfg.failReason, cfg, nowIso);
@@ -166,7 +182,8 @@ function fail<T>(
   nowIso: string,
   retryAfterMs?: number,
 ): ProviderResult<T> {
-  const status = reason === "RATE_LIMITED" ? "RATE_LIMITED" : reason === "UNAVAILABLE" ? "OFFLINE" : "FAILED";
+  const status =
+    reason === "RATE_LIMITED" ? "RATE_LIMITED" : reason === "UNAVAILABLE" ? "OFFLINE" : "FAILED";
   return {
     ok: false,
     reason,

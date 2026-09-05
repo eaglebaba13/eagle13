@@ -31,10 +31,7 @@ import {
   INTRADAY_FORMULA_VERSIONS,
   type AstroFormulaVersion,
 } from "../../engine-version";
-import type {
-  AdapterConfig,
-  HistoricalFormulaAdapter,
-} from "../adapter";
+import type { AdapterConfig, HistoricalFormulaAdapter } from "../adapter";
 import type { HistoricalTrade, UnifiedFormulaId } from "../result";
 
 export type DailyCandle = {
@@ -68,9 +65,7 @@ function round2(n: number): number {
 function readExtras(cfg: AdapterConfig): DailyExtras {
   const ex = cfg.extras as DailyExtras | undefined;
   if (!ex || !Array.isArray(ex.candles) || !ex.positions) {
-    throw new Error(
-      "daily-astro adapter requires cfg.extras.candles and cfg.extras.positions",
-    );
+    throw new Error("daily-astro adapter requires cfg.extras.candles and cfg.extras.positions");
   }
   return ex;
 }
@@ -81,9 +76,7 @@ export type DailyAdapterOptions = {
   label: string;
 };
 
-export function createDailyAstroAdapter(
-  opts: DailyAdapterOptions,
-): HistoricalFormulaAdapter {
+export function createDailyAstroAdapter(opts: DailyAdapterOptions): HistoricalFormulaAdapter {
   return {
     id: opts.id,
     label: opts.label,
@@ -109,9 +102,7 @@ export function createDailyAstroAdapter(
     },
     planSessions(cfg) {
       const { candles } = readExtras(cfg);
-      const dates = candles
-        .map((c) => c.date)
-        .filter((d) => d >= cfg.from && d <= cfg.to);
+      const dates = candles.map((c) => c.date).filter((d) => d >= cfg.from && d <= cfg.to);
       return { dates, causality: "daily" };
     },
     async evaluateSession(cfg, date) {

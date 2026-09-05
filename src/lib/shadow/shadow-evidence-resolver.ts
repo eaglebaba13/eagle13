@@ -2,11 +2,7 @@
 // Never reruns strategy/recommendation/portfolio engines. Callers pass
 // pre-computed research artifacts; this resolver validates completeness.
 
-import type {
-  ShadowPolicy,
-  ShadowPortfolioDecision,
-  ShadowRecommendation,
-} from "./shadow-types";
+import type { ShadowPolicy, ShadowPortfolioDecision, ShadowRecommendation } from "./shadow-types";
 
 export type ResearchEvidenceInput = {
   readonly recommendation: ShadowRecommendation | null;
@@ -43,8 +39,7 @@ export function resolveResearchEvidence(inp: ResearchEvidenceInput): ResolvedEvi
   if (!inp.formulaAligned) missing.push("FORMULA_ALIGNMENT");
   if (!inp.causalityOk) missing.push("CAUSALITY");
   if (!inp.reliabilityAcceptable) missing.push("RELIABILITY");
-  if (missing.length > 0)
-    return { ok: false, status: "DATA_INCOMPLETE", missing };
+  if (missing.length > 0) return { ok: false, status: "DATA_INCOMPLETE", missing };
   return {
     ok: true,
     recommendation: inp.recommendation!,

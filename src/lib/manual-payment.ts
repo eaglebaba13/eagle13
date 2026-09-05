@@ -60,10 +60,7 @@ function randomSuffix(len: number): string {
 }
 
 /** Generate a payment reference like `EB-PRO-20260714-8X4K2`. */
-export function generatePaymentReference(
-  plan: PaidPlanId,
-  now: Date = new Date(),
-): string {
+export function generatePaymentReference(plan: PaidPlanId, now: Date = new Date()): string {
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, "0");
   const d = String(now.getUTCDate()).padStart(2, "0");
@@ -132,13 +129,22 @@ export function statusTone(status: ManualPaymentStatus): {
 } {
   switch (status) {
     case "CREATED":
-      return { label: "Awaiting payment", className: "bg-white/5 text-muted-foreground border-white/10" };
+      return {
+        label: "Awaiting payment",
+        className: "bg-white/5 text-muted-foreground border-white/10",
+      };
     case "SUBMITTED":
-      return { label: "Submitted — pending review", className: "bg-amber-500/15 text-amber-300 border-amber-400/30" };
+      return {
+        label: "Submitted — pending review",
+        className: "bg-amber-500/15 text-amber-300 border-amber-400/30",
+      };
     case "UNDER_REVIEW":
       return { label: "Under review", className: "bg-sky-500/15 text-sky-300 border-sky-400/30" };
     case "APPROVED":
-      return { label: "Approved — active", className: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30" };
+      return {
+        label: "Approved — active",
+        className: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+      };
     case "REJECTED":
       return { label: "Rejected", className: "bg-red-500/15 text-red-300 border-red-400/30" };
     case "EXPIRED":

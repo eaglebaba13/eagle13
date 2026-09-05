@@ -51,7 +51,9 @@ function AdminTradingViewPage() {
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
             ADMIN · TRADINGVIEW COLLECTOR (Phase 3F.2C)
           </div>
-          <h1 className="text-xl font-semibold text-foreground">TradingView Gold/Silver Ratio Collector</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            TradingView Gold/Silver Ratio Collector
+          </h1>
           <p className="text-xs text-muted-foreground">
             External Node service. Cloudflare app calls it via a server-only bearer secret.
           </p>
@@ -75,13 +77,14 @@ function AdminTradingViewPage() {
       <section className="rounded border border-border/60 bg-card/40 p-4">
         <Row label="Symbol" value={data?.symbol ?? "TVC:GOLDSILVER"} />
         <Row label="Collector enabled" value={data?.collector?.enabled ? "true" : "false"} />
-        <Row label="Collector URL configured" value={data?.collector?.urlConfigured ? "true" : "false"} />
+        <Row
+          label="Collector URL configured"
+          value={data?.collector?.urlConfigured ? "true" : "false"}
+        />
         <Row
           label="API token configured"
           value={
-            data?.collector?.tokenConfigured
-              ? `yes · ${data.collector.tokenMasked ?? "•••"}`
-              : "no"
+            data?.collector?.tokenConfigured ? `yes · ${data.collector.tokenMasked ?? "•••"}` : "no"
           }
         />
         <Row label="Base URL" value={data?.collector?.baseUrl ?? "—"} />
@@ -104,9 +107,9 @@ function AdminTradingViewPage() {
       </section>
 
       <p className="text-xs text-muted-foreground">
-        The Cloudflare application never imports `@mathieuc/tradingview`. This page verifies
-        the isolated Node collector service (`services/tradingview-ratio-collector/`) is
-        reachable, authenticated, and returning fresh snapshots. Secrets are never displayed.
+        The Cloudflare application never imports `@mathieuc/tradingview`. This page verifies the
+        isolated Node collector service (`services/tradingview-ratio-collector/`) is reachable,
+        authenticated, and returning fresh snapshots. Secrets are never displayed.
       </p>
     </div>
   );

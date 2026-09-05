@@ -3,7 +3,12 @@ import { Card, FlashValue, Row, fmt } from "./legacy-primitives";
 import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function QuoteWidget() {
-  const { activeQuote: quote, accent, freshnessByDependency, providerMetadata } = useDashboardData();
+  const {
+    activeQuote: quote,
+    accent,
+    freshnessByDependency,
+    providerMetadata,
+  } = useDashboardData();
   const freshness = freshnessByDependency?.MARKET_DATA;
   const gate = canDisplayActionableSignal({
     freshness: freshness?.status ?? "UNAVAILABLE",

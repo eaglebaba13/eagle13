@@ -86,7 +86,9 @@ export function buildObservationsCsv(list: readonly ShadowObservation[]): string
 }
 
 export function buildEventsCsv(list: readonly ShadowValidationEvent[]): string {
-  const lines = [row(["eventId", "kind", "at", "reason", "recommendationRunId", "portfolioRunId", "dataHash"])];
+  const lines = [
+    row(["eventId", "kind", "at", "reason", "recommendationRunId", "portfolioRunId", "dataHash"]),
+  ];
   for (const e of list) {
     lines.push(
       row([

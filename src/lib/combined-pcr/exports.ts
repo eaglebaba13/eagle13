@@ -33,12 +33,25 @@ export function readingToCsv(r: CombinedPcrReading): string {
     "provider",
     "timestamp",
   ];
-  const rows = r.instruments.map((i) => [
-    i.underlying, i.rawOiPcr, i.rawChangeOiPcr,
-    i.normalizedOiPcr, i.normalizedChangeOiPcr, i.instrumentScore,
-    i.weight, i.configuredWeight, i.strikeCount, i.atm,
-    i.expiry, i.provider, i.timestamp,
-  ].map(csvEscape).join(","));
+  const rows = r.instruments.map((i) =>
+    [
+      i.underlying,
+      i.rawOiPcr,
+      i.rawChangeOiPcr,
+      i.normalizedOiPcr,
+      i.normalizedChangeOiPcr,
+      i.instrumentScore,
+      i.weight,
+      i.configuredWeight,
+      i.strikeCount,
+      i.atm,
+      i.expiry,
+      i.provider,
+      i.timestamp,
+    ]
+      .map(csvEscape)
+      .join(","),
+  );
   const summary = [
     `# combined_score=${r.combinedScore ?? ""}`,
     `# direction=${r.direction}`,

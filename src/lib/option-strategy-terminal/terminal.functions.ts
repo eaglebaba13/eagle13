@@ -22,11 +22,7 @@ import type {
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import { runStrategyEngine } from "./strategies";
 import { withExplanation } from "./explanation";
-import type {
-  CanonicalBias,
-  CanonicalSignals,
-  StrategyEngineOutput,
-} from "./types";
+import type { CanonicalBias, CanonicalSignals, StrategyEngineOutput } from "./types";
 
 function biasToCanonical(bias: Bias | undefined, present: boolean): CanonicalBias {
   if (!present) return "UNAVAILABLE";
@@ -59,7 +55,12 @@ export interface TerminalResponse {
   readonly decisionEngine: DecisionEngineOutput;
   readonly institutionalFlowEngine: InstitutionalFlowEngineOutput;
   readonly evidence: {
-    readonly decision: { available: boolean; action: string; regime: string; confidence: number | null };
+    readonly decision: {
+      available: boolean;
+      action: string;
+      regime: string;
+      confidence: number | null;
+    };
     readonly pcr: { available: boolean; state: string; direction: string; score: number | null };
     readonly gti: { available: boolean; state: string; confidence: number };
     readonly breadth: { available: boolean; state: string };
@@ -99,7 +100,8 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
     const pcrBias = biasToCanonical(pcrC?.bias, !!pcrC?.present);
     const breadthBias = biasToCanonical(breadthC?.bias, !!breadthC?.present);
     const gtiBias = gti ? gtiStateToBias(gti.gti.state) : "UNAVAILABLE";
-    const gannGapBias = gap && gap.lifecycle !== "PENDING" ? gapLabelToBias(gap.label) : "UNAVAILABLE";
+    const gannGapBias =
+      gap && gap.lifecycle !== "PENDING" ? gapLabelToBias(gap.label) : "UNAVAILABLE";
 
     let decisionBias: CanonicalBias = "UNAVAILABLE";
     if (decision) {
@@ -123,10 +125,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
       decisionConfidence: decisionConfidence != null ? decisionConfidence * 100 : null,
     };
 
-    const engine = withExplanation(
-      signals,
-      runStrategyEngine({ signals, vix, generatedAt }),
-    );
+    const engine = withExplanation(signals, runStrategyEngine({ signals, vix, generatedAt }));
 
     // Phase 27 — Weighted Decision Engine (research-only).
     const sectorRows = flow?.sectorFlow.rows ?? [];
@@ -148,8 +147,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
         netBreadth: flow?.internals.netBreadth ?? null,
         available:
           !!flow &&
-          (flow.internals.availability !== "UNAVAILABLE" ||
-            flow.internals.netBreadth != null),
+          (flow.internals.availability !== "UNAVAILABLE" || flow.internals.netBreadth != null),
       },
       sector: {
         banking: bankingRow?.bias ?? "UNAVAILABLE",
@@ -192,19 +190,19 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
       combinedPcrScore == null
         ? "UNAVAILABLE"
         : combinedPcrScore > 0.1
-        ? "BULLISH"
-        : combinedPcrScore < -0.1
-        ? "BEARISH"
-        : "NEUTRAL";
+          ? "BULLISH"
+          : combinedPcrScore < -0.1
+            ? "BEARISH"
+            : "NEUTRAL";
     const rawPcrOi = decision?.capabilities.pcrCombined.pcrOi ?? null;
     const flowBias: "BULLISH" | "BEARISH" | "NEUTRAL" | "UNAVAILABLE" =
       flow?.summary.bias === "PUT_WRITERS_ACTIVE"
         ? "BULLISH"
         : flow?.summary.bias === "CALL_WRITERS_ACTIVE"
-        ? "BEARISH"
-        : flow?.summary.bias === "BALANCED"
-        ? "NEUTRAL"
-        : "UNAVAILABLE";
+          ? "BEARISH"
+          : flow?.summary.bias === "BALANCED"
+            ? "NEUTRAL"
+            : "UNAVAILABLE";
     const institutionalFlowEngine = computeInstitutionalFlow({
       pcrIndices: [
         {
@@ -245,8 +243,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
       breadthNet: flow?.internals.netBreadth ?? null,
       breadthAvailable:
         !!flow &&
-        (flow.internals.availability !== "UNAVAILABLE" ||
-          flow.internals.netBreadth != null),
+        (flow.internals.availability !== "UNAVAILABLE" || flow.internals.netBreadth != null),
       sectors: (flow?.sectorFlow.rows ?? []).map((r) => ({
         name: r.name,
         bias: r.bias,
@@ -254,8 +251,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
       vix,
       vixRegime: decisionEngine.vixRegime,
       institutionalFlowBias: flowBias,
-      institutionalFlowAvailable:
-        !!flow && flow.summary.availability !== "UNAVAILABLE",
+      institutionalFlowAvailable: !!flow && flow.summary.availability !== "UNAVAILABLE",
       decisionAction: decisionEngine.action,
       decisionConfidence: decisionEngine.confidence,
       strikeRecommended: {
@@ -305,8 +301,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
         },
       },
       source,
-      disclaimer:
-        "RESEARCH ONLY — NOT INVESTMENT ADVICE. This terminal never places orders.",
+      disclaimer: "RESEARCH ONLY — NOT INVESTMENT ADVICE. This terminal never places orders.",
       generatedAt,
     };
   });

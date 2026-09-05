@@ -1,11 +1,7 @@
 // Phase 3E — Segment study pairs by canonical regime fields.
 
 import { computeMetrics, type Pair } from "./metrics";
-import type {
-  HistoricalRow,
-  OutcomeThresholds,
-  RegimeBucket,
-} from "./types";
+import type { HistoricalRow, OutcomeThresholds, RegimeBucket } from "./types";
 import { DEFAULT_OUTCOME_THRESHOLDS } from "./types";
 
 export type RegimeDimension =
@@ -19,20 +15,19 @@ export type RegimeDimension =
   | "INSTITUTIONAL_FLOW"
   | "GAP_SIZE";
 
-export function keyForRow(
-  row: HistoricalRow,
-  pair: Pair,
-  dimension: RegimeDimension,
-): string {
+export function keyForRow(row: HistoricalRow, pair: Pair, dimension: RegimeDimension): string {
   switch (dimension) {
     case "VIX":
       if (row.vix == null) return "UNAVAILABLE";
       if (row.vix < 15) return "VIX_LT_15";
       if (row.vix < 20) return "VIX_15_20";
       return "VIX_GTE_20";
-    case "WEEKDAY": return `DOW_${row.weekday}`;
-    case "MONTH": return row.sessionDate.slice(0, 7);
-    case "DECISION": return row.decision?.state ?? "UNAVAILABLE";
+    case "WEEKDAY":
+      return `DOW_${row.weekday}`;
+    case "MONTH":
+      return row.sessionDate.slice(0, 7);
+    case "DECISION":
+      return row.decision?.state ?? "UNAVAILABLE";
     case "PCR":
       if (row.pcr == null) return "UNAVAILABLE";
       if (row.pcr < 0.9) return "PCR_LT_0_9";
@@ -44,7 +39,8 @@ export function keyForRow(
     case "GTI":
       if (row.gti == null) return "UNAVAILABLE";
       return row.gti > 0 ? "GTI_POS" : row.gti < 0 ? "GTI_NEG" : "GTI_FLAT";
-    case "INSTITUTIONAL_FLOW": return row.institutionalFlow?.summary ?? "UNAVAILABLE";
+    case "INSTITUTIONAL_FLOW":
+      return row.institutionalFlow?.summary ?? "UNAVAILABLE";
     case "GAP_SIZE": {
       const g = pair.gapPoints ?? 0;
       const a = Math.abs(g);
@@ -68,6 +64,7 @@ export function bucketByRegime(
     const k = keyForRow(rows[i], pairs[i], dimension);
     (map.get(k) ?? map.set(k, []).get(k)!).push(pairs[i]);
   }
-  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
+  return [...map.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, ps]) => ({ key: k, label: k, metrics: computeMetrics(ps, thresholds) }));
 }

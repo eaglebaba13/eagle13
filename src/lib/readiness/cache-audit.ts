@@ -42,13 +42,14 @@ export function auditCache(input: CacheAuditInput): ReadinessResult[] {
       title: `Cache namespace: ${n.namespace}@${n.version}`,
       status: dup || failing ? "FAIL" : orphan ? "WARNING" : "PASS",
       severity: dup || failing ? "critical" : orphan ? "warning" : "info",
-      detail: [
-        dup ? "duplicate namespace registration" : "",
-        orphan ? `${n.orphanedLegacyKeys} orphaned legacy keys` : "",
-        failing ? `${n.refreshFailures} refresh failures` : "",
-      ]
-        .filter(Boolean)
-        .join("; ") || undefined,
+      detail:
+        [
+          dup ? "duplicate namespace registration" : "",
+          orphan ? `${n.orphanedLegacyKeys} orphaned legacy keys` : "",
+          failing ? `${n.refreshFailures} refresh failures` : "",
+        ]
+          .filter(Boolean)
+          .join("; ") || undefined,
       evidence: [
         { key: "hit", value: n.hitRate },
         { key: "stale", value: n.staleRate },

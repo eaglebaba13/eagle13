@@ -13,11 +13,21 @@ import { DEFAULT_COMBINED_PCR_WEIGHTS, type InstrumentPcr } from "./types";
 
 function inst(u: "NIFTY" | "BANKNIFTY", score: number | null, w: number): InstrumentPcr {
   return {
-    underlying: u, rawOiPcr: 1, rawChangeOiPcr: 1,
-    normalizedOiPcr: score, normalizedChangeOiPcr: score,
-    instrumentScore: score, weight: w, configuredWeight: w,
-    strikeCount: 21, atm: null, expiry: null, provider: "MOCK",
-    timestamp: new Date().toISOString(), snapshotId: "x", missing: [],
+    underlying: u,
+    rawOiPcr: 1,
+    rawChangeOiPcr: 1,
+    normalizedOiPcr: score,
+    normalizedChangeOiPcr: score,
+    instrumentScore: score,
+    weight: w,
+    configuredWeight: w,
+    strikeCount: 21,
+    atm: null,
+    expiry: null,
+    provider: "MOCK",
+    timestamp: new Date().toISOString(),
+    snapshotId: "x",
+    missing: [],
   };
 }
 

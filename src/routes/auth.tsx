@@ -184,7 +184,10 @@ function AuthPage() {
           </button>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Or continue as a <Link to="/" className="underline hover:text-foreground">guest (read-only)</Link>
+            Or continue as a{" "}
+            <Link to="/" className="underline hover:text-foreground">
+              guest (read-only)
+            </Link>
           </p>
         </div>
 

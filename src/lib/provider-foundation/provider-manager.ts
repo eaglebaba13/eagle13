@@ -103,9 +103,17 @@ export class ProviderManager {
   }
 
   async getQuote(symbol: QuoteSymbol, opts: FetchOptions): Promise<ProviderResult<QuoteTick>> {
-    return this.exec("QUOTES", `quote:${symbol}`, opts, (a) =>
-      a.fetchQuote?.(symbol, opts.nowIso) ??
-      Promise.resolve({ ok: false, reason: "UNAVAILABLE", telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchQuote") } as const),
+    return this.exec(
+      "QUOTES",
+      `quote:${symbol}`,
+      opts,
+      (a) =>
+        a.fetchQuote?.(symbol, opts.nowIso) ??
+        Promise.resolve({
+          ok: false,
+          reason: "UNAVAILABLE",
+          telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchQuote"),
+        } as const),
     );
   }
 
@@ -115,9 +123,17 @@ export class ProviderManager {
     limit: number,
     opts: FetchOptions,
   ): Promise<ProviderResult<HistoricalSeries>> {
-    return this.exec("HISTORICAL", `hist:${symbol}:${timeframe}:${limit}`, opts, (a) =>
-      a.fetchHistorical?.(symbol, timeframe, limit, opts.nowIso) ??
-      Promise.resolve({ ok: false, reason: "UNAVAILABLE", telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchHistorical") } as const),
+    return this.exec(
+      "HISTORICAL",
+      `hist:${symbol}:${timeframe}:${limit}`,
+      opts,
+      (a) =>
+        a.fetchHistorical?.(symbol, timeframe, limit, opts.nowIso) ??
+        Promise.resolve({
+          ok: false,
+          reason: "UNAVAILABLE",
+          telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchHistorical"),
+        } as const),
     );
   }
 
@@ -126,9 +142,17 @@ export class ProviderManager {
     expiry: string,
     opts: FetchOptions,
   ): Promise<ProviderResult<OptionsChainSnapshot>> {
-    return this.exec("OPTIONS", `opt:${underlying}:${expiry}`, opts, (a) =>
-      a.fetchOptionsChain?.(underlying, expiry, opts.nowIso) ??
-      Promise.resolve({ ok: false, reason: "UNAVAILABLE", telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchOptionsChain") } as const),
+    return this.exec(
+      "OPTIONS",
+      `opt:${underlying}:${expiry}`,
+      opts,
+      (a) =>
+        a.fetchOptionsChain?.(underlying, expiry, opts.nowIso) ??
+        Promise.resolve({
+          ok: false,
+          reason: "UNAVAILABLE",
+          telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchOptionsChain"),
+        } as const),
     );
   }
 
@@ -136,9 +160,17 @@ export class ProviderManager {
     universe: BreadthSnapshot["universe"],
     opts: FetchOptions,
   ): Promise<ProviderResult<BreadthSnapshot>> {
-    return this.exec("BREADTH", `bre:${universe}`, opts, (a) =>
-      a.fetchBreadth?.(universe, opts.nowIso) ??
-      Promise.resolve({ ok: false, reason: "UNAVAILABLE", telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchBreadth") } as const),
+    return this.exec(
+      "BREADTH",
+      `bre:${universe}`,
+      opts,
+      (a) =>
+        a.fetchBreadth?.(universe, opts.nowIso) ??
+        Promise.resolve({
+          ok: false,
+          reason: "UNAVAILABLE",
+          telemetry: this.failTelemetry(a.id, opts.nowIso, "no fetchBreadth"),
+        } as const),
     );
   }
 
@@ -160,7 +192,13 @@ export class ProviderManager {
         return {
           ok: false,
           reason: "RATE_LIMITED",
-          telemetry: this.failTelemetry("manager", opts.nowIso, "rate limited", rc.retryAfterMs, "RATE_LIMITED"),
+          telemetry: this.failTelemetry(
+            "manager",
+            opts.nowIso,
+            "rate limited",
+            rc.retryAfterMs,
+            "RATE_LIMITED",
+          ),
         };
       }
     }

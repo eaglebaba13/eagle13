@@ -13,10 +13,7 @@ import {
   annualize,
   type AlignedReturns,
 } from "./aligned-returns";
-import type {
-  PortfolioAsset,
-  PortfolioConstraints,
-} from "./portfolio-types";
+import type { PortfolioAsset, PortfolioConstraints } from "./portfolio-types";
 
 export type FrontierInput = {
   readonly candidates: readonly PortfolioAsset[];
@@ -120,10 +117,7 @@ function violatesConstraints(
   return false;
 }
 
-function diversificationRatio(
-  weights: readonly number[],
-  aligned: AlignedReturns,
-): number {
+function diversificationRatio(weights: readonly number[], aligned: AlignedReturns): number {
   let wSumVol = 0;
   for (let i = 0; i < weights.length; i++) wSumVol += weights[i] * (aligned.stdevs[i] ?? 0);
   const portVol = Math.sqrt(portfolioVariance(weights, aligned.cov));
@@ -192,9 +186,15 @@ export function computeEfficientFrontier(input: FrontierInput): FrontierResult {
   let capped = false;
   for (const bins of simplex(candidates.length, steps)) {
     explored++;
-    if (explored > maxComb) { capped = true; break; }
+    if (explored > maxComb) {
+      capped = true;
+      break;
+    }
     const weights = bins.map((b) => b / steps);
-    if (violatesConstraints(weights, candidates, constraints, minW, maxW)) { rejected++; continue; }
+    if (violatesConstraints(weights, candidates, constraints, minW, maxW)) {
+      rejected++;
+      continue;
+    }
     const meanDaily = portfolioReturn(weights, aligned.means);
     const volDaily = Math.sqrt(portfolioVariance(weights, aligned.cov));
     const ann = annualize(meanDaily, volDaily);
@@ -211,14 +211,22 @@ export function computeEfficientFrontier(input: FrontierInput): FrontierResult {
   }
 
   const classified = markFrontier(feasible);
-  const frontier = classified.filter((p) => p.efficient).sort((a, b) => a.volatility - b.volatility);
+  const frontier = classified
+    .filter((p) => p.efficient)
+    .sort((a, b) => a.volatility - b.volatility);
 
-  const minVariance = classified.reduce<FrontierPoint | null>((best, p) =>
-    best == null || p.volatility < best.volatility ? p : best, null);
-  const maxSharpe = classified.reduce<FrontierPoint | null>((best, p) =>
-    best == null || p.sharpe > best.sharpe ? p : best, null);
-  const maxDiversification = classified.reduce<FrontierPoint | null>((best, p) =>
-    best == null || p.diversificationRatio > best.diversificationRatio ? p : best, null);
+  const minVariance = classified.reduce<FrontierPoint | null>(
+    (best, p) => (best == null || p.volatility < best.volatility ? p : best),
+    null,
+  );
+  const maxSharpe = classified.reduce<FrontierPoint | null>(
+    (best, p) => (best == null || p.sharpe > best.sharpe ? p : best),
+    null,
+  );
+  const maxDiversification = classified.reduce<FrontierPoint | null>(
+    (best, p) => (best == null || p.diversificationRatio > best.diversificationRatio ? p : best),
+    null,
+  );
 
   let targetReturnPortfolio: FrontierPoint | null = null;
   if (targetReturn != null) {

@@ -23,9 +23,7 @@ describe("Phase 21.2 Stage 5 · Decision adapter isolation", () => {
     const sig = absoluteIntradayValidationSignal(snap, null);
     expect(sig.direction).toBe("WAIT");
     expect(sig.dataQuality).toBe("PARTIAL");
-    expect(sig.labeledAs).toBe(
-      "VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION",
-    );
+    expect(sig.labeledAs).toBe("VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION");
   });
 
   it("returns MISSING when snapshot has no ranked levels", () => {

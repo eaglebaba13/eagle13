@@ -7,9 +7,10 @@ export type { OhlcCandle, CandleValidation } from "../backtest-engine";
 import type { CausalityMode } from "./result";
 
 /** Intraday guard: rejects a candle whose end is at or after `nowTs`. */
-export function assertClosedCandle(candleEndTs: number, nowTs: number):
-  | { ok: true }
-  | { ok: false; reason: string } {
+export function assertClosedCandle(
+  candleEndTs: number,
+  nowTs: number,
+): { ok: true } | { ok: false; reason: string } {
   if (!Number.isFinite(candleEndTs) || !Number.isFinite(nowTs)) {
     return { ok: false, reason: "CANDLE_TS_INVALID" };
   }
@@ -20,9 +21,10 @@ export function assertClosedCandle(candleEndTs: number, nowTs: number):
 }
 
 /** Intraday guard: rejects reads before the 09:15 IST anchor. */
-export function assertPostSnapshot(nowTs: number, snapshotTs: number):
-  | { ok: true }
-  | { ok: false; reason: string } {
+export function assertPostSnapshot(
+  nowTs: number,
+  snapshotTs: number,
+): { ok: true } | { ok: false; reason: string } {
   if (nowTs < snapshotTs) {
     return { ok: false, reason: "PRE_SNAPSHOT_LEAKAGE" };
   }

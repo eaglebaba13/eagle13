@@ -7,10 +7,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
-import {
-  runHistoricalValidation,
-  type HistoryResult,
-} from "@/lib/gann-intraday-history.functions";
+import { runHistoricalValidation, type HistoryResult } from "@/lib/gann-intraday-history.functions";
 import {
   historyExportFilename,
   historyToJson,
@@ -24,11 +21,7 @@ import {
   GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION,
   INTRADAY_FORMULA_VERSIONS,
 } from "@/lib/engine-version";
-import {
-  parseCandleCsv,
-  type ParseResult,
-  type ProviderLabel,
-} from "@/lib/candle-csv-parser";
+import { parseCandleCsv, type ParseResult, type ProviderLabel } from "@/lib/candle-csv-parser";
 import { computeDataQuality } from "@/lib/candle-data-quality";
 import { buildSessions, type BuildResult } from "@/lib/candle-session-builder";
 import { compareProviders, type ProviderComparisonResult } from "@/lib/provider-comparison";
@@ -74,7 +67,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function KV({ k, v }: { k: string; v: string | number }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13 }}>
+    <div
+      style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13 }}
+    >
       <span style={{ color: C.muted }}>{k}</span>
       <span style={{ color: C.text, fontFamily: "var(--eb-mono)" }}>{v}</span>
     </div>
@@ -210,9 +205,9 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
           marginTop: 8,
         }}
       >
-        <strong>VALIDATION ONLY — NOT A LIVE TRADE RECOMMENDATION.</strong>{" "}
-        Historical replay of the Absolute-Degree Intraday methodology. No broker action, no
-        production alerts, no default switch.
+        <strong>VALIDATION ONLY — NOT A LIVE TRADE RECOMMENDATION.</strong> Historical replay of the
+        Absolute-Degree Intraday methodology. No broker action, no production alerts, no default
+        switch.
       </div>
       <p style={{ color: C.muted, fontSize: 12, marginTop: 10 }}>
         Engine: {INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1} · Validation:{" "}
@@ -221,9 +216,8 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
 
       <Section title="Historical CSV Import (Stage 5.1)">
         <p style={{ color: C.muted, fontSize: 12, marginTop: 0 }}>
-          Load 5-minute candles from a provider export. Timezone is fixed to
-          Asia/Kolkata; interval to 5m. Data is validated client-side; nothing
-          is uploaded or persisted.
+          Load 5-minute candles from a provider export. Timezone is fixed to Asia/Kolkata; interval
+          to 5m. Data is validated client-side; nothing is uploaded or persisted.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
           <label style={{ fontSize: 12, color: C.muted }}>
@@ -231,7 +225,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <select
               value={importInstrument}
               onChange={(e) => setImportInstrument(e.target.value as InstrumentSymbol)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
               <option value="NIFTY50">NIFTY 50</option>
               <option value="BANKNIFTY">BANK NIFTY</option>
@@ -242,33 +244,87 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <select
               value={providerA}
               onChange={(e) => setProviderA(e.target.value as ProviderLabel)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
-              {(["Generic", "TradingView", "Zerodha", "Upstox", "Dhan", "AngelOne", "NSE"] as ProviderLabel[]).map((p) => (
-                <option key={p} value={p}>{p}</option>
+              {(
+                [
+                  "Generic",
+                  "TradingView",
+                  "Zerodha",
+                  "Upstox",
+                  "Dhan",
+                  "AngelOne",
+                  "NSE",
+                ] as ProviderLabel[]
+              ).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
-            <input type="file" accept=".csv,text/csv" onChange={(e) => readFile(e, setImportA, providerA)} style={{ display: "block", marginTop: 4, fontSize: 12 }} />
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => readFile(e, setImportA, providerA)}
+              style={{ display: "block", marginTop: 4, fontSize: 12 }}
+            />
           </label>
           <label style={{ fontSize: 12, color: C.muted }}>
             Provider B (optional, for comparison)
             <select
               value={providerB}
               onChange={(e) => setProviderB(e.target.value as ProviderLabel)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
-              {(["Generic", "TradingView", "Zerodha", "Upstox", "Dhan", "AngelOne", "NSE"] as ProviderLabel[]).map((p) => (
-                <option key={p} value={p}>{p}</option>
+              {(
+                [
+                  "Generic",
+                  "TradingView",
+                  "Zerodha",
+                  "Upstox",
+                  "Dhan",
+                  "AngelOne",
+                  "NSE",
+                ] as ProviderLabel[]
+              ).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
-            <input type="file" accept=".csv,text/csv" onChange={(e) => readFile(e, setImportB, providerB)} style={{ display: "block", marginTop: 4, fontSize: 12 }} />
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => readFile(e, setImportB, providerB)}
+              style={{ display: "block", marginTop: 4, fontSize: 12 }}
+            />
           </label>
         </div>
-        {importError && <div style={{ color: C.red, marginTop: 8, fontSize: 12 }}>{importError}</div>}
+        {importError && (
+          <div style={{ color: C.red, marginTop: 8, fontSize: 12 }}>{importError}</div>
+        )}
 
         {importA && dqA && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 13, color: C.gold, marginBottom: 6 }}>Provider A · Data quality</div>
+            <div style={{ fontSize: 13, color: C.gold, marginBottom: 6 }}>
+              Provider A · Data quality
+            </div>
             <KV k="Rows parsed" v={importA.rows.length} />
             <KV k="Rows rejected" v={importA.rejected.length} />
             <KV k="Sessions detected" v={dqA.sessionsDetected} />
@@ -281,7 +337,10 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
               <>
                 <KV k="Usable sessions" v={builtA.usable.length} />
                 <KV k="Rejected sessions" v={builtA.rejected.length} />
-                <KV k="Date range" v={builtA.from && builtA.to ? `${builtA.from} → ${builtA.to}` : "—"} />
+                <KV
+                  k="Date range"
+                  v={builtA.from && builtA.to ? `${builtA.from} → ${builtA.to}` : "—"}
+                />
               </>
             )}
           </div>
@@ -310,7 +369,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                   "text/csv",
                 )
               }
-              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+              style={{
+                padding: "6px 12px",
+                background: "transparent",
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 12,
+              }}
             >
               Cleaned candles CSV
             </button>
@@ -322,7 +389,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                   "text/csv",
                 )
               }
-              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+              style={{
+                padding: "6px 12px",
+                background: "transparent",
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 12,
+              }}
             >
               Rejected rows CSV
             </button>
@@ -334,7 +409,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                   "text/csv",
                 )
               }
-              style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+              style={{
+                padding: "6px 12px",
+                background: "transparent",
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 12,
+              }}
             >
               Session summary CSV
             </button>
@@ -347,7 +430,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                     "application/json",
                   )
                 }
-                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+                style={{
+                  padding: "6px 12px",
+                  background: "transparent",
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 12,
+                }}
               >
                 DQ report JSON
               </button>
@@ -356,12 +447,23 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
               <button
                 onClick={() =>
                   downloadBlob(
-                    providerComparisonToCsv(comparison, provenance(`${importA.provider}_vs_${importB?.provider ?? "B"}`)),
+                    providerComparisonToCsv(
+                      comparison,
+                      provenance(`${importA.provider}_vs_${importB?.provider ?? "B"}`),
+                    ),
                     ingestExportFilename(provenance("compare"), "compare", "csv"),
                     "text/csv",
                   )
                 }
-                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+                style={{
+                  padding: "6px 12px",
+                  background: "transparent",
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 12,
+                }}
               >
                 Provider comparison CSV
               </button>
@@ -377,7 +479,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <select
               value={instrument}
               onChange={(e) => setInstrument(e.target.value as InstrumentSymbol)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
               <option value="NIFTY50">NIFTY 50</option>
               <option value="BANKNIFTY">BANK NIFTY</option>
@@ -388,7 +498,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <select
               value={months}
               onChange={(e) => setMonths(Number(e.target.value) as 1 | 3 | 6 | 12)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
               <option value={1}>1 month</option>
               <option value={3}>3 months</option>
@@ -401,7 +519,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <select
               value={ambiguousPolicy}
               onChange={(e) => setAmbiguousPolicy(e.target.value as AmbiguousPolicy)}
-              style={{ display: "block", marginTop: 4, background: C.bg, color: C.text, border: `1px solid ${C.border}`, padding: 6, borderRadius: 4 }}
+              style={{
+                display: "block",
+                marginTop: 4,
+                background: C.bg,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                padding: 6,
+                borderRadius: 4,
+              }}
             >
               <option value="conservative">conservative</option>
               <option value="optimistic">optimistic</option>
@@ -449,9 +575,7 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             Loading historical validation · one provider request in flight…
           </div>
         )}
-        {error && (
-          <div style={{ color: C.red, marginTop: 8, fontSize: 12 }}>Error: {error}</div>
-        )}
+        {error && <div style={{ color: C.red, marginTop: 8, fontSize: 12 }}>Error: {error}</div>}
       </Section>
 
       {result && (
@@ -468,7 +592,11 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
             <KV k="Win rate" v={`${(result.metrics.winRate * 100).toFixed(1)}%`} />
             <KV
               k="Profit factor"
-              v={Number.isFinite(result.metrics.profitFactor) ? result.metrics.profitFactor.toFixed(2) : "∞"}
+              v={
+                Number.isFinite(result.metrics.profitFactor)
+                  ? result.metrics.profitFactor.toFixed(2)
+                  : "∞"
+              }
             />
             <KV k="Expectancy (pts)" v={result.metrics.expectancy.toFixed(2)} />
             <KV k="Net PnL (pts)" v={result.metrics.netPnL.toFixed(0)} />
@@ -494,7 +622,9 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
               </div>
               {readiness.checks.map((c) => (
                 <div key={c.id} style={{ display: "flex", fontSize: 12, padding: "3px 0" }}>
-                  <span style={{ width: 20, color: c.passed ? C.green : C.red }}>{c.passed ? "✓" : "✗"}</span>
+                  <span style={{ width: 20, color: c.passed ? C.green : C.red }}>
+                    {c.passed ? "✓" : "✗"}
+                  </span>
                   <span style={{ flex: 1 }}>{c.label}</span>
                   <span style={{ color: C.muted, fontFamily: "var(--eb-mono)" }}>{c.detail}</span>
                 </div>
@@ -503,7 +633,14 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
           )}
 
           <Section title="Session log">
-            <div style={{ maxHeight: 320, overflow: "auto", fontFamily: "var(--eb-mono)", fontSize: 11 }}>
+            <div
+              style={{
+                maxHeight: 320,
+                overflow: "auto",
+                fontFamily: "var(--eb-mono)",
+                fontSize: 11,
+              }}
+            >
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
                 <thead>
                   <tr style={{ color: C.muted, textAlign: "left" }}>
@@ -543,7 +680,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                     "text/csv",
                   )
                 }
-                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+                style={{
+                  padding: "6px 12px",
+                  background: "transparent",
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 12,
+                }}
               >
                 Download CSV
               </button>
@@ -555,7 +700,15 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
                     "application/json",
                   )
                 }
-                style={{ padding: "6px 12px", background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+                style={{
+                  padding: "6px 12px",
+                  background: "transparent",
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 12,
+                }}
               >
                 Download JSON
               </button>

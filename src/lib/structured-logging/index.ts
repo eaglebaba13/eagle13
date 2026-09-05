@@ -63,7 +63,12 @@ export class StructuredLogger {
     return new StructuredLogger({ ...this.baseContext, ...extra }, this.sink);
   }
 
-  log(level: LogLevel, message: string, data?: Record<string, unknown>, ctx?: LogContext): LogEntry {
+  log(
+    level: LogLevel,
+    message: string,
+    data?: Record<string, unknown>,
+    ctx?: LogContext,
+  ): LogEntry {
     const entry: LogEntry = {
       level,
       message,
@@ -75,14 +80,24 @@ export class StructuredLogger {
     return entry;
   }
 
-  debug(m: string, d?: Record<string, unknown>, c?: LogContext) { return this.log("debug", m, d, c); }
-  info(m: string, d?: Record<string, unknown>, c?: LogContext) { return this.log("info", m, d, c); }
-  warn(m: string, d?: Record<string, unknown>, c?: LogContext) { return this.log("warn", m, d, c); }
-  error(m: string, d?: Record<string, unknown>, c?: LogContext) { return this.log("error", m, d, c); }
+  debug(m: string, d?: Record<string, unknown>, c?: LogContext) {
+    return this.log("debug", m, d, c);
+  }
+  info(m: string, d?: Record<string, unknown>, c?: LogContext) {
+    return this.log("info", m, d, c);
+  }
+  warn(m: string, d?: Record<string, unknown>, c?: LogContext) {
+    return this.log("warn", m, d, c);
+  }
+  error(m: string, d?: Record<string, unknown>, c?: LogContext) {
+    return this.log("error", m, d, c);
+  }
 }
 
 function defaultConsoleSink(entry: LogEntry): void {
   const line = formatEntry(entry);
   // eslint-disable-next-line no-console
-  (entry.level === "error" ? console.error : entry.level === "warn" ? console.warn : console.log)(line);
+  (entry.level === "error" ? console.error : entry.level === "warn" ? console.warn : console.log)(
+    line,
+  );
 }

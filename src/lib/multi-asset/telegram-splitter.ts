@@ -10,7 +10,7 @@
 export const TELEGRAM_MAX_CHARS = 4000; // safe budget under Telegram's 4096 hard limit
 
 export interface BriefSection {
-  readonly id: string;                 // e.g. "A_HEADER", "C_NIFTY", ...
+  readonly id: string; // e.g. "A_HEADER", "C_NIFTY", ...
   readonly title: string;
   readonly body: string;
   readonly protectFromTruncation?: boolean; // true for LEVELS and DISCLAIMERS
@@ -31,7 +31,13 @@ function renderSection(s: BriefSection): string {
   return title ? `${title}\n${body}` : body;
 }
 
-function withHeader(reportId: string, generatedAt: string, seq: number, total: number, body: string): string {
+function withHeader(
+  reportId: string,
+  generatedAt: string,
+  seq: number,
+  total: number,
+  body: string,
+): string {
   return `EagleBABA · Report ${reportId} · ${seq}/${total} · ${generatedAt}\n\n${body}`;
 }
 

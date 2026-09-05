@@ -14,7 +14,12 @@ describe("computeBreadth", () => {
       provider: "MOCK",
       timestamp: new Date().toISOString(),
       expectedSymbols: expected,
-      ticks: [tick("A", "ADVANCE"), tick("B", "ADVANCE"), tick("C", "DECLINE"), tick("D", "UNCHANGED")],
+      ticks: [
+        tick("A", "ADVANCE"),
+        tick("B", "ADVANCE"),
+        tick("C", "DECLINE"),
+        tick("D", "UNCHANGED"),
+      ],
       snapshotId: "s1",
       freshnessMs: 1000,
     });
@@ -60,7 +65,11 @@ describe("computeBreadth", () => {
   });
 
   it("computes weighted breadth from registry weights", () => {
-    const weights = new Map([["A", 0.5], ["B", 0.3], ["C", 0.2]]);
+    const weights = new Map([
+      ["A", 0.5],
+      ["B", 0.3],
+      ["C", 0.2],
+    ]);
     const s = computeBreadth({
       universe: "NIFTY_TOP_WEIGHTED",
       provider: "MOCK",

@@ -244,10 +244,7 @@ describe("Focus alert confirmation", () => {
 describe("Expiry categorization", () => {
   it("marks near, next, and monthly", () => {
     const now = new Date("2026-07-14T00:00:00.000Z");
-    const r = categorizeExpiries(
-      ["2026-07-17", "2026-07-24", "2026-07-31", "2026-08-07"],
-      now,
-    );
+    const r = categorizeExpiries(["2026-07-17", "2026-07-24", "2026-07-31", "2026-08-07"], now);
     expect(r[0].category).toBe("NEAR_WEEKLY");
     // Monthly (last July expiry) supersedes NEXT_WEEKLY labeling on that slot.
     expect(r.find((x) => x.expiry === "2026-07-31")?.category).toBe("MONTHLY");

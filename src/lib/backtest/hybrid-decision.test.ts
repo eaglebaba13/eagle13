@@ -19,11 +19,7 @@ function astro(
 ): AstroInput {
   return { direction, confidence, formulaVersion: fv };
 }
-function smc(
-  signal: SmcInput["signal"],
-  score = 70,
-  fv: string = SMC_V,
-): SmcInput {
+function smc(signal: SmcInput["signal"], score = 70, fv: string = SMC_V): SmcInput {
   return { signal, score, formulaVersion: fv };
 }
 
@@ -177,8 +173,7 @@ describe("deriveHybridDecision", () => {
       expectedSmcFormula: SMC_V,
     });
     const w = DEFAULT_HYBRID_WEIGHTS;
-    const expected =
-      100 * w.astro + 100 * w.smc + 100 * w.agreement + 100 * w.dataQuality;
+    const expected = 100 * w.astro + 100 * w.smc + 100 * w.agreement + 100 * w.dataQuality;
     expect(Math.round(d.hybridScore * 100) / 100).toBeCloseTo(expected, 2);
   });
 

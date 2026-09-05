@@ -15,7 +15,10 @@ const LIVE_ENV = {
 };
 
 function ok(body: unknown) {
-  return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 }
 function status(code: number, body = "err", headers: Record<string, string> = {}) {
   return new Response(body, { status: code, headers });
@@ -29,7 +32,9 @@ describe("upstox smoke — configuration guards", () => {
   it("reports NOT_CONFIGURED when env is missing", async () => {
     const rep = await runUpstoxSmokeTest({
       env: {},
-      fetchImpl: async () => { throw new Error("must not be called"); },
+      fetchImpl: async () => {
+        throw new Error("must not be called");
+      },
       nowIso: "2026-07-16T09:15:00.000Z",
     });
     expect(rep.configured).toBe(false);
@@ -40,7 +45,9 @@ describe("upstox smoke — configuration guards", () => {
   it("reports NOT_CONFIGURED for placeholder token", async () => {
     const rep = await runUpstoxSmokeTest({
       env: { ...LIVE_ENV, UPSTOX_ACCESS_TOKEN: "xxxx" },
-      fetchImpl: async () => { throw new Error("must not be called"); },
+      fetchImpl: async () => {
+        throw new Error("must not be called");
+      },
       nowIso: "2026-07-16T09:15:00.000Z",
     });
     expect(rep.summary.overall).toBe("NOT_CONFIGURED");
@@ -72,7 +79,14 @@ describe("upstox smoke — endpoint outcomes", () => {
         if (url.includes("/market-quote/quotes")) {
           return ok({ status: "success", data: { "NSE_INDEX:Nifty 50": { last_price: 25000 } } });
         }
-        return ok({ data: { candles: [candleTuple("2026-07-14T09:15:00Z", 100), candleTuple("2026-07-15T09:15:00Z", 105)] } });
+        return ok({
+          data: {
+            candles: [
+              candleTuple("2026-07-14T09:15:00Z", 100),
+              candleTuple("2026-07-15T09:15:00Z", 105),
+            ],
+          },
+        });
       },
       nowIso: "2026-07-16T09:15:00.000Z",
     });
@@ -180,8 +194,7 @@ describe("upstox smoke — error source classification", () => {
         UPSTOX_API_SECRET: "sec",
         UPSTOX_ACCESS_TOKEN: "live-tok-abcdef",
       },
-      fetchImpl: async () =>
-        new Response("permission denied by upstox", { status: 403 }),
+      fetchImpl: async () => new Response("permission denied by upstox", { status: 403 }),
       nowIso: "2026-07-16T09:15:00.000Z",
     });
     expect(upstoxRep.summary.errorSource).toBe("UPSTOX_API");

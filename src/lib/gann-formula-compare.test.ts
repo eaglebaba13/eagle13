@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  computeRunId,
-  classifyConflict,
-  FORMULA_VERSIONS_ALL,
-} from "./gann-formula-compare";
+import { computeRunId, classifyConflict, FORMULA_VERSIONS_ALL } from "./gann-formula-compare";
 import { INTRADAY_FORMULA_VERSIONS } from "./engine-version";
 
 describe("Phase 21.2 Stage 5 · formula-version isolation", () => {
@@ -16,13 +12,9 @@ describe("Phase 21.2 Stage 5 · formula-version isolation", () => {
   };
 
   it("Run IDs differ per formula version", () => {
-    const ids = FORMULA_VERSIONS_ALL.map((v) =>
-      computeRunId({ ...base, formulaVersion: v }),
-    );
+    const ids = FORMULA_VERSIONS_ALL.map((v) => computeRunId({ ...base, formulaVersion: v }));
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids[0]).toContain(
-      INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1,
-    );
+    expect(ids[0]).toContain(INTRADAY_FORMULA_VERSIONS.GANN_ASTRO_INTRADAY_ABSOLUTE_V1);
   });
 
   it("Same args = same Run ID (deterministic)", () => {

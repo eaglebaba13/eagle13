@@ -18,19 +18,13 @@ import {
 } from "../backtest-engine";
 import { computeRunId as computeAbsoluteRunId } from "../gann-formula-compare";
 import { computeUnifiedRunId } from "../backtest/run-id";
-import {
-  DEFAULT_ASTRO_FORMULA_VERSION,
-  INTRADAY_FORMULA_VERSIONS,
-} from "../engine-version";
+import { DEFAULT_ASTRO_FORMULA_VERSION, INTRADAY_FORMULA_VERSIONS } from "../engine-version";
 import {
   BACKTEST_GOLDEN_CONFIG_HASH,
   BACKTEST_GOLDEN_INPUT,
   BACKTEST_GOLDEN_RUN_ID,
 } from "../__fixtures__/parity/backtest-golden";
-import {
-  HISTORY_GOLDEN_INPUT,
-  HISTORY_GOLDEN_RUN_ID,
-} from "../__fixtures__/parity/history-golden";
+import { HISTORY_GOLDEN_INPUT, HISTORY_GOLDEN_RUN_ID } from "../__fixtures__/parity/history-golden";
 
 describe("Phase 21.3d-parity-α · legacy daily-astro Run-ID (backtest-engine)", () => {
   it("Sign-Degree conservative fabricate no-costs → locked string", () => {

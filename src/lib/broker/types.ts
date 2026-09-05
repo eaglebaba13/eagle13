@@ -12,13 +12,7 @@ export type OrderSide = "BUY" | "SELL";
 export type OrderType = "MARKET" | "LIMIT" | "SL" | "SL-M";
 export type ProductType = "MIS" | "NRML" | "CNC";
 export type Validity = "DAY" | "IOC";
-export type OrderStatus =
-  | "PENDING"
-  | "OPEN"
-  | "COMPLETE"
-  | "REJECTED"
-  | "CANCELLED"
-  | "MODIFIED";
+export type OrderStatus = "PENDING" | "OPEN" | "COMPLETE" | "REJECTED" | "CANCELLED" | "MODIFIED";
 
 export type BrokerProfile = {
   brokerId: BrokerId;

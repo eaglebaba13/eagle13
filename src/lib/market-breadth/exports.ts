@@ -25,7 +25,17 @@ function snapshotRow(s: MarketBreadthSnapshot | null, label: string): string[] {
 }
 
 export function readingToCsv(r: GtiResearchReading): string {
-  const header = ["label", "universe", "total", "advances", "declines", "unchanged", "coverage", "weightedBreadth", "quality"];
+  const header = [
+    "label",
+    "universe",
+    "total",
+    "advances",
+    "declines",
+    "unchanged",
+    "coverage",
+    "weightedBreadth",
+    "quality",
+  ];
   const rows: string[][] = [
     header,
     snapshotRow(r.breadth.broad, "BROAD"),

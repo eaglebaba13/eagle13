@@ -30,7 +30,8 @@ export default function GlobalMarketsWidget() {
   const items: { label: string; q: IndexQuote; color: string }[] = [];
   if (data.btc) items.push({ label: "BTC / USD", q: data.btc, color: "#f7931a" });
   if (data.gold) items.push({ label: "XAU / USD (GOLD)", q: data.gold, color: "var(--eb-accent)" });
-  if (data.silver) items.push({ label: "XAG / USD (SILVER)", q: data.silver, color: "var(--eb-neutral)" });
+  if (data.silver)
+    items.push({ label: "XAG / USD (SILVER)", q: data.silver, color: "var(--eb-neutral)" });
 
   return (
     <Card
@@ -44,16 +45,29 @@ export default function GlobalMarketsWidget() {
       {items.map((it) => {
         const up = it.q.change >= 0;
         const rowFresh = rowFreshness(it.q, now);
-        const stale = rowFresh && (rowFresh.status === "STALE" || rowFresh.status === "UNAVAILABLE");
+        const stale =
+          rowFresh && (rowFresh.status === "STALE" || rowFresh.status === "UNAVAILABLE");
         return (
           <Row key={it.label} label={it.label}>
             <span style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 15, fontWeight: 700, color: it.color }}>
+              <span
+                suppressHydrationWarning
+                style={{
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: it.color,
+                }}
+              >
                 {fmt(it.q.livePrice)}
               </span>
               <span
                 suppressHydrationWarning
-                style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: stale ? "var(--eb-muted)" : (up ? "var(--eb-bull)" : "var(--eb-bear)") }}
+                style={{
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 12,
+                  color: stale ? "var(--eb-muted)" : up ? "var(--eb-bull)" : "var(--eb-bear)",
+                }}
                 title={rowFresh?.reason}
               >
                 {stale ? "" : (up ? "▲" : "▼") + " "}
@@ -76,10 +90,25 @@ export default function GlobalMarketsWidget() {
             alignItems: "center",
           }}
         >
-          <span style={{ fontSize: 11, fontFamily: "var(--eb-head)", letterSpacing: 1, color: "var(--eb-muted)" }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontFamily: "var(--eb-head)",
+              letterSpacing: 1,
+              color: "var(--eb-muted)",
+            }}
+          >
             GOLD / SILVER RATIO
           </span>
-          <span suppressHydrationWarning style={{ fontFamily: "var(--eb-mono)", fontSize: 18, fontWeight: 700, color: "var(--eb-accent)" }}>
+          <span
+            suppressHydrationWarning
+            style={{
+              fontFamily: "var(--eb-mono)",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "var(--eb-accent)",
+            }}
+          >
             {data.goldSilverRatio}
           </span>
         </div>

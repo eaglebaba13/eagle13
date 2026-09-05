@@ -11,12 +11,12 @@ export function recoveryDrillsToChecks(drills: readonly RecoveryDrill[]): Stagin
         d.outcome === "EXECUTED_PASS"
           ? "PASS"
           : d.outcome === "EXECUTED_FAIL"
-          ? "FAIL"
-          : d.outcome === "DOCUMENTED_ONLY"
-          ? "WARNING"
-          : d.outcome === "NOT_CONFIGURED"
-          ? "FAIL"
-          : "UNKNOWN",
+            ? "FAIL"
+            : d.outcome === "DOCUMENTED_ONLY"
+              ? "WARNING"
+              : d.outcome === "NOT_CONFIGURED"
+                ? "FAIL"
+                : "UNKNOWN",
       severity: noRollback ? "blocker" : d.outcome === "EXECUTED_FAIL" ? "critical" : "info",
       detail: `${d.outcome}${d.detail ? ` — ${d.detail}` : ""}`,
       hardBlocker: noRollback,
@@ -33,10 +33,10 @@ export function incidentDrillsToChecks(drills: readonly IncidentDrill[]): Stagin
       d.outcome === "EXECUTED_PASS"
         ? "PASS"
         : d.outcome === "EXECUTED_FAIL"
-        ? "FAIL"
-        : d.outcome === "DOCUMENTED_ONLY"
-        ? "WARNING"
-        : "UNKNOWN",
+          ? "FAIL"
+          : d.outcome === "DOCUMENTED_ONLY"
+            ? "WARNING"
+            : "UNKNOWN",
     severity: "info",
     detail: `owner=${d.owner} detect=${d.detectionMs ?? "?"}ms ack=${d.acknowledgmentMs ?? "?"}ms`,
   }));

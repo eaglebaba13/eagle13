@@ -2,21 +2,11 @@
 // Market-data only. No trading, no orders, no positions.
 
 export type AssetClass =
-  | "EQUITY"
-  | "INDEX"
-  | "OPTION"
-  | "CRYPTO"
-  | "TOKENIZED_METAL"
-  | "COMMODITY"
-  | "FOREX";
+  "EQUITY" | "INDEX" | "OPTION" | "CRYPTO" | "TOKENIZED_METAL" | "COMMODITY" | "FOREX";
 
 export type AssetGroup = "NSE" | "CRYPTO" | "COMMODITY" | "FOREX";
 
-export type MarketQuoteStatus =
-  | "LIVE"
-  | "DELAYED"
-  | "OFFLINE"
-  | "UNAVAILABLE";
+export type MarketQuoteStatus = "LIVE" | "DELAYED" | "OFFLINE" | "UNAVAILABLE";
 
 /**
  * Canonical normalised quote every provider produces. Providers MUST NOT
@@ -24,11 +14,11 @@ export type MarketQuoteStatus =
  * `status = "UNAVAILABLE"` and `last = null`.
  */
 export interface MarketQuote {
-  readonly symbol: string;          // canonical registry symbol e.g. "NIFTY50", "BTC", "GOLD", "USDINR"
+  readonly symbol: string; // canonical registry symbol e.g. "NIFTY50", "BTC", "GOLD", "USDINR"
   readonly displayName: string;
   readonly assetClass: AssetClass;
   readonly group: AssetGroup;
-  readonly provider: string;        // e.g. "yahoo", "coindcx", "upstox", "unavailable"
+  readonly provider: string; // e.g. "yahoo", "coindcx", "upstox", "unavailable"
   readonly last: number | null;
   readonly changeAbs: number | null;
   readonly changePct: number | null;
@@ -36,7 +26,7 @@ export interface MarketQuote {
   readonly status: MarketQuoteStatus;
   readonly ageSec: number | null;
   readonly updatedAt: string | null; // ISO
-  readonly reason?: string;         // e.g. "provider-not-wired"
+  readonly reason?: string; // e.g. "provider-not-wired"
 }
 
 export interface MarketGroupSummary {

@@ -4,8 +4,13 @@ import { assessDataQuality } from "./data-quality";
 import { makeStrike, type OptionChainSnapshot } from "./types";
 
 const snap: OptionChainSnapshot = {
-  instrument: "NIFTY", spotPrice: 24_000, timestamp: "2025-01-15T00:00:00Z",
-  provider: "MOCK", expiry: "2025-01-16", availableExpiries: [], marketSession: "OPEN",
+  instrument: "NIFTY",
+  spotPrice: 24_000,
+  timestamp: "2025-01-15T00:00:00Z",
+  provider: "MOCK",
+  expiry: "2025-01-16",
+  availableExpiries: [],
+  marketSession: "OPEN",
   dataQuality: "OK",
   strikes: [makeStrike(24_000, { oi: 10, ltp: 50 }, { oi: 20, ltp: 40 })],
 };

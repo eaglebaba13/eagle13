@@ -2,10 +2,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useMemo, useState } from "react";
 
-import { runBacktest, BACKTEST_SYMBOLS, type BacktestResult, type BacktestSymbol, type BacktestTrade } from "@/lib/backtest.functions";
+import {
+  runBacktest,
+  BACKTEST_SYMBOLS,
+  type BacktestResult,
+  type BacktestSymbol,
+  type BacktestTrade,
+} from "@/lib/backtest.functions";
 import { downloadBlob } from "@/lib/download";
 import { FormulaBadge } from "@/components/FormulaBadge";
-import { astroFormulaSlug, ASTRO_FORMULA_VERSIONS, type AstroFormulaVersion } from "@/lib/engine-version";
+import {
+  astroFormulaSlug,
+  ASTRO_FORMULA_VERSIONS,
+  type AstroFormulaVersion,
+} from "@/lib/engine-version";
 import { StrategySelector } from "@/components/backtest/StrategySelector";
 import { FormulaSelector } from "@/components/backtest/FormulaSelector";
 import { getStrategyAdapter, type StrategyId } from "@/lib/backtest/strategy";
@@ -21,22 +31,16 @@ const AbsoluteValidationPanelLazy = lazy(
 
 // Phase 21.4 · Stage 4A — SMC panel + Astro-vs-SMC comparison are lazy-loaded
 // so SMC/CSV/signal modules never enter the Astro-mode bundle.
-const SmcBacktestPanelLazy = lazy(
-  () => import("@/components/backtest/SmcBacktestPanel"),
-);
+const SmcBacktestPanelLazy = lazy(() => import("@/components/backtest/SmcBacktestPanel"));
 
 // Phase 21.4 · Stage 4B — Astro+SMC Hybrid panel is lazy-loaded so hybrid
 // modules never enter the Astro-mode bundle.
-const HybridBacktestPanelLazy = lazy(
-  () => import("@/components/backtest/HybridBacktestPanel"),
-);
+const HybridBacktestPanelLazy = lazy(() => import("@/components/backtest/HybridBacktestPanel"));
 
 // Phase 21.5 · Stage 1B — Research Lab tab is lazy-loaded so walk-forward /
 // comparison / stability / export modules never enter the default Backtest
 // bundle.
-const ResearchPanelLazy = lazy(
-  () => import("@/components/backtest/ResearchPanel"),
-);
+const ResearchPanelLazy = lazy(() => import("@/components/backtest/ResearchPanel"));
 
 const C = {
   bg: "var(--eb-bg)",
@@ -51,22 +55,24 @@ const C = {
 };
 
 const PERIODS = [
-  { key: "1M", label: "1 Month",  days: 30   },
-  { key: "3M", label: "3 Months", days: 90   },
-  { key: "6M", label: "6 Months", days: 182  },
-  { key: "1Y", label: "1 Year",   days: 365  },
-  { key: "2Y", label: "2 Years",  days: 730  },
-  { key: "5Y", label: "5 Years",  days: 1825 },
+  { key: "1M", label: "1 Month", days: 30 },
+  { key: "3M", label: "3 Months", days: 90 },
+  { key: "6M", label: "6 Months", days: 182 },
+  { key: "1Y", label: "1 Year", days: 365 },
+  { key: "2Y", label: "2 Years", days: 730 },
+  { key: "5Y", label: "5 Years", days: 1825 },
 ] as const;
-type PeriodKey = typeof PERIODS[number]["key"] | "CUSTOM";
+type PeriodKey = (typeof PERIODS)[number]["key"] | "CUSTOM";
 
 const SIGNALS = ["ALL", "BUY", "SELL", "WAIT"] as const;
-type SignalFilter = typeof SIGNALS[number];
+type SignalFilter = (typeof SIGNALS)[number];
 
 function isoDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
 }
-function todayIso(): string { return new Date().toISOString().slice(0, 10); }
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export const Route = createFileRoute("/backtest")({
   component: BacktestPage,
@@ -79,7 +85,11 @@ export const Route = createFileRoute("/backtest")({
           "Institutional backtesting engine measuring the historical accuracy of EagleBABA astro BUY / SELL / WAIT signals across NIFTY 50, BANK NIFTY, GOLD, SILVER and BTC.",
       },
       { property: "og:title", content: "Historical Backtest | EagleBABA" },
-      { property: "og:description", content: "Replay every trading day. Measure win rate, profit factor, drawdown and monthly PnL for EagleBABA astro signals." },
+      {
+        property: "og:description",
+        content:
+          "Replay every trading day. Measure win rate, profit factor, drawdown and monthly PnL for EagleBABA astro signals.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex, nofollow" },
@@ -132,7 +142,8 @@ function BacktestPage() {
     if (formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1") {
       return;
     }
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       const astroFormulaVersion: AstroFormulaVersion | undefined =
         formula === "LEGACY_EAGLEBABA_CASCADE_V1"
@@ -146,21 +157,27 @@ function BacktestPage() {
       setResult(res);
     } catch (e) {
       setError(mapTypedError(e));
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo<BacktestTrade[]>(() => {
     if (!result) return [];
-    return result.trades.filter((t) =>
-      (signalFilter === "ALL" || t.signal === signalFilter) &&
-      (nakshatraFilter === "ALL" || t.moonNakshatra === nakshatraFilter) &&
-      (moonSignFilter === "ALL" || t.moonSign === moonSignFilter) &&
-      (dayFilter === "ALL" || t.dayOfWeek === dayFilter) &&
-      (monthFilter === "ALL" || t.month === monthFilter),
+    return result.trades.filter(
+      (t) =>
+        (signalFilter === "ALL" || t.signal === signalFilter) &&
+        (nakshatraFilter === "ALL" || t.moonNakshatra === nakshatraFilter) &&
+        (moonSignFilter === "ALL" || t.moonSign === moonSignFilter) &&
+        (dayFilter === "ALL" || t.dayOfWeek === dayFilter) &&
+        (monthFilter === "ALL" || t.month === monthFilter),
     );
   }, [result, signalFilter, nakshatraFilter, moonSignFilter, dayFilter, monthFilter]);
 
-  const nakOptions = useMemo(() => uniq(result?.trades.map((t) => t.moonNakshatra) ?? []), [result]);
+  const nakOptions = useMemo(
+    () => uniq(result?.trades.map((t) => t.moonNakshatra) ?? []),
+    [result],
+  );
   const signOptions = useMemo(() => uniq(result?.trades.map((t) => t.moonSign) ?? []), [result]);
   const dowOptions = useMemo(() => uniq(result?.trades.map((t) => t.dayOfWeek) ?? []), [result]);
   const monthOptions = useMemo(() => uniq(result?.trades.map((t) => t.month) ?? []), [result]);
@@ -169,11 +186,62 @@ function BacktestPage() {
     if (!result) return;
     const slug = astroFormulaSlug(result.astroFormulaVersion);
     const rows = [
-      [`# EagleBABA Backtest · ${result.astroFormulaVersion}`, `engine=${result.engineVersion}`, `formula=${result.formulaVersion}`, `generatedAt=${result.generatedAt}`, `runId=${result.runId}`],
-      ["date","time","symbol","signal","strength","confidence","entry","exit","high","low","target","stop","targetHit","stopHit","result","pnl","pnlPct","moonSign","moonNakshatra","retroCount","nearest","dayOfWeek","month"],
+      [
+        `# EagleBABA Backtest · ${result.astroFormulaVersion}`,
+        `engine=${result.engineVersion}`,
+        `formula=${result.formulaVersion}`,
+        `generatedAt=${result.generatedAt}`,
+        `runId=${result.runId}`,
+      ],
+      [
+        "date",
+        "time",
+        "symbol",
+        "signal",
+        "strength",
+        "confidence",
+        "entry",
+        "exit",
+        "high",
+        "low",
+        "target",
+        "stop",
+        "targetHit",
+        "stopHit",
+        "result",
+        "pnl",
+        "pnlPct",
+        "moonSign",
+        "moonNakshatra",
+        "retroCount",
+        "nearest",
+        "dayOfWeek",
+        "month",
+      ],
       ...filtered.map((t) => [
-        t.date,t.time,t.symbol,t.signal,t.strength,t.confidence,t.entry,t.exit,t.high,t.low,t.target,t.stop,
-        t.targetHit,t.stopHit,t.result,t.pnl,t.pnlPct,t.moonSign,t.moonNakshatra,t.retroCount,t.nearest ?? "",t.dayOfWeek,t.month,
+        t.date,
+        t.time,
+        t.symbol,
+        t.signal,
+        t.strength,
+        t.confidence,
+        t.entry,
+        t.exit,
+        t.high,
+        t.low,
+        t.target,
+        t.stop,
+        t.targetHit,
+        t.stopHit,
+        t.result,
+        t.pnl,
+        t.pnlPct,
+        t.moonSign,
+        t.moonNakshatra,
+        t.retroCount,
+        t.nearest ?? "",
+        t.dayOfWeek,
+        t.month,
       ]),
     ];
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
@@ -182,14 +250,34 @@ function BacktestPage() {
   const exportJson = () => {
     if (!result) return;
     const slug = astroFormulaSlug(result.astroFormulaVersion);
-    downloadBlob(JSON.stringify(result, null, 2), `eaglebaba-backtest-${symbol}-${slug}-${from}-${to}.json`, "application/json");
+    downloadBlob(
+      JSON.stringify(result, null, 2),
+      `eaglebaba-backtest-${symbol}-${slug}-${from}-${to}.json`,
+      "application/json",
+    );
   };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, padding: "18px 16px 96px" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          marginBottom: 14,
+        }}
+      >
         <div>
-          <div style={{ fontFamily: "var(--eb-head)", fontSize: 20, letterSpacing: 2, color: C.orange }}>
+          <div
+            style={{
+              fontFamily: "var(--eb-head)",
+              fontSize: 20,
+              letterSpacing: 2,
+              color: C.orange,
+            }}
+          >
             🧪 HISTORICAL BACKTEST · EAGLEBABA ASTRO LEVELS
           </div>
           <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 4 }}>
@@ -201,188 +289,341 @@ function BacktestPage() {
             </div>
           ) : null}
         </div>
-        <Link to="/" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>← Dashboard</Link>
+        <Link to="/" style={{ color: C.blue, fontFamily: "var(--eb-mono)", fontSize: 12 }}>
+          ← Dashboard
+        </Link>
       </header>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-        {(["BACKTEST","RESEARCH"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
+        {(["BACKTEST", "RESEARCH"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
             style={{
-              padding: "6px 12px", borderRadius: 6,
+              padding: "6px 12px",
+              borderRadius: 6,
               border: `1px solid ${tab === t ? C.orange : C.border}`,
               background: tab === t ? C.orange : "transparent",
               color: tab === t ? "#04140b" : C.text,
-              fontFamily: "var(--eb-mono)", fontSize: 12, cursor: "pointer",
+              fontFamily: "var(--eb-mono)",
+              fontSize: 12,
+              cursor: "pointer",
               letterSpacing: 1,
-            }}>
+            }}
+          >
             {t === "BACKTEST" ? "Backtest" : "Research"}
           </button>
         ))}
       </div>
 
       {tab === "RESEARCH" ? (
-        <Suspense fallback={
-          <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
-            Loading Research Lab modules…
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div
+              style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}
+            >
+              Loading Research Lab modules…
+            </div>
+          }
+        >
           <ResearchPanelLazy />
         </Suspense>
       ) : (
-      <>
-      {/* Controls */}
-      <section style={panel}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
-          <div>
-            <div style={fieldLbl}>Strategy</div>
-            <StrategySelector value={strategy} onChange={setStrategy} />
-          </div>
-          {strategy === "ASTRO" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? (
-            <div>
-              <div style={fieldLbl}>Formula</div>
-              <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
-              {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
-                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-                  Absolute-Degree Intraday validation runs below · same engine as{" "}
-                  <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
-                    /absolute-intraday-validation
-                  </Link>
-                  . Validation only — not a live trade recommendation.
-                </div>
-              ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
-                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
-                  Legacy Cascade v1 · daily backtest via the shared runner. Astro math reuses the same production primitives as Sign-Degree; envelope carries the legacy formula label and disclosure.
-                </div>
-              ) : formula === "SMC_V1" ? (
-                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
-                  SMC Historical v1 · deterministic Smart Money backtest via the shared runner. Requires 5-minute candles + pre-computed SMC signals supplied through the unified adapter. Validation only — not a live trade recommendation.
-                </div>
-              ) : formula === "ASTRO_SMC_HYBRID_V1" ? (
-                <div style={{ marginTop: 6, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
-                  Astro+SMC Hybrid v1 · trades only when Astro and SMC agree on direction. Direct BUY/SELL conflicts always resolve to WAIT. Validation only — not a live trade recommendation.
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.orange }}>
-              COMING NEXT — {strategy} strategy adapter is not yet wired.
-            </div>
-          )}
-        </div>
-        {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? null : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-          <div>
-            <div style={fieldLbl}>Instrument</div>
-            <select value={symbol} onChange={(e) => setSymbol(e.target.value as BacktestSymbol)} style={selectStyle}>
-              {(Object.keys(BACKTEST_SYMBOLS) as BacktestSymbol[]).map((k) => (
-                <option key={k} value={k}>{BACKTEST_SYMBOLS[k].label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div style={fieldLbl}>Period</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {PERIODS.map((p) => (
-                <button key={p.key} onClick={() => onPeriod(p.key)}
-                  style={{ ...chip, background: period === p.key ? C.orange : "transparent", color: period === p.key ? "#04140b" : C.text }}>
-                  {p.key}
-                </button>
-              ))}
-              <button onClick={() => onPeriod("CUSTOM")}
-                style={{ ...chip, background: period === "CUSTOM" ? C.orange : "transparent", color: period === "CUSTOM" ? "#04140b" : C.text }}>
-                Custom
-              </button>
-            </div>
-          </div>
-          <div>
-            <div style={fieldLbl}>From</div>
-            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPeriod("CUSTOM"); }} style={selectStyle} />
-          </div>
-          <div>
-            <div style={fieldLbl}>To</div>
-            <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPeriod("CUSTOM"); }} style={selectStyle} />
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button onClick={runNow} disabled={loading || strategy !== "ASTRO"}
-              style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, cursor: loading ? "wait" : "pointer" }}>
-              {loading ? "Running…" : "▶ Run Backtest"}
-            </button>
-          </div>
-        </div>
-        )}
-        {loading ? (
-          <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted }}>
-            Running · Strategy={strategy} · Formula={formula} · Instrument={symbol} · {from} → {to}
-          </div>
-        ) : null}
-        {error ? (
-          <div style={{ marginTop: 10, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}>{error}</div>
-        ) : null}
-      </section>
-
-      {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
-        <section style={{ ...panel, marginTop: 14 }}>
-          <Suspense
-            fallback={
-              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
-                Loading Absolute-Degree validation modules…
-              </div>
-            }
-          >
-            <AbsoluteValidationPanelLazy />
-          </Suspense>
-        </section>
-      ) : strategy === "SMC" ? (
-        <section style={{ ...panel, marginTop: 14 }}>
-          <Suspense
-            fallback={
-              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
-                Loading SMC modules…
-              </div>
-            }
-          >
-            <SmcBacktestPanelLazy />
-          </Suspense>
-        </section>
-      ) : strategy === "ASTRO_SMC_HYBRID" ? (
-        <section style={{ ...panel, marginTop: 14 }}>
-          <Suspense
-            fallback={
-              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, padding: 12 }}>
-                Loading Hybrid modules…
-              </div>
-            }
-          >
-            <HybridBacktestPanelLazy />
-          </Suspense>
-        </section>
-      ) : !result && !loading ? (
-        <section style={{ ...panel, marginTop: 14, textAlign: "center", color: C.muted, fontFamily: "var(--eb-mono)", fontSize: 13 }}>
-          Choose an instrument &amp; period, then run the backtest to replay historical astro signals.
-        </section>
-      ) : null}
-
-      {result && formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" && strategy !== "SMC" && strategy !== "ASTRO_SMC_HYBRID" ? (
         <>
-          <SummaryCards r={result} />
-          <IntegrityPanel r={result} />
-          <FiltersBar
-            signals={SIGNALS} signalFilter={signalFilter} setSignalFilter={setSignalFilter}
-            nakOptions={nakOptions} nakshatraFilter={nakshatraFilter} setNakshatraFilter={setNakshatraFilter}
-            signOptions={signOptions} moonSignFilter={moonSignFilter} setMoonSignFilter={setMoonSignFilter}
-            dowOptions={dowOptions} dayFilter={dayFilter} setDayFilter={setDayFilter}
-            monthOptions={monthOptions} monthFilter={monthFilter} setMonthFilter={setMonthFilter}
-            onCsv={exportCsv} onJson={exportJson}
-          />
-          <AiInsights r={result} />
-          <MonthlyTable r={result} />
-          <EquityCurve r={result} />
-          <TradesTable trades={filtered} totalCount={result.trades.length} />
-          <MethodologyDrawer r={result} />
+          {/* Controls */}
+          <section style={panel}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <div style={fieldLbl}>Strategy</div>
+                <StrategySelector value={strategy} onChange={setStrategy} />
+              </div>
+              {strategy === "ASTRO" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? (
+                <div>
+                  <div style={fieldLbl}>Formula</div>
+                  <FormulaSelector strategy={strategy} value={formula} onChange={setFormula} />
+                  {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontFamily: "var(--eb-mono)",
+                        fontSize: 11,
+                        color: C.muted,
+                      }}
+                    >
+                      Absolute-Degree Intraday validation runs below · same engine as{" "}
+                      <Link to="/absolute-intraday-validation" style={{ color: C.blue }}>
+                        /absolute-intraday-validation
+                      </Link>
+                      . Validation only — not a live trade recommendation.
+                    </div>
+                  ) : formula === "LEGACY_EAGLEBABA_CASCADE_V1" ? (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontFamily: "var(--eb-mono)",
+                        fontSize: 11,
+                        color: C.orange,
+                      }}
+                    >
+                      Legacy Cascade v1 · daily backtest via the shared runner. Astro math reuses
+                      the same production primitives as Sign-Degree; envelope carries the legacy
+                      formula label and disclosure.
+                    </div>
+                  ) : formula === "SMC_V1" ? (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontFamily: "var(--eb-mono)",
+                        fontSize: 11,
+                        color: C.orange,
+                      }}
+                    >
+                      SMC Historical v1 · deterministic Smart Money backtest via the shared runner.
+                      Requires 5-minute candles + pre-computed SMC signals supplied through the
+                      unified adapter. Validation only — not a live trade recommendation.
+                    </div>
+                  ) : formula === "ASTRO_SMC_HYBRID_V1" ? (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontFamily: "var(--eb-mono)",
+                        fontSize: 11,
+                        color: C.orange,
+                      }}
+                    >
+                      Astro+SMC Hybrid v1 · trades only when Astro and SMC agree on direction.
+                      Direct BUY/SELL conflicts always resolve to WAIT. Validation only — not a live
+                      trade recommendation.
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.orange }}>
+                  COMING NEXT — {strategy} strategy adapter is not yet wired.
+                </div>
+              )}
+            </div>
+            {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ||
+            strategy === "SMC" ||
+            strategy === "ASTRO_SMC_HYBRID" ? null : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 10,
+                }}
+              >
+                <div>
+                  <div style={fieldLbl}>Instrument</div>
+                  <select
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value as BacktestSymbol)}
+                    style={selectStyle}
+                  >
+                    {(Object.keys(BACKTEST_SYMBOLS) as BacktestSymbol[]).map((k) => (
+                      <option key={k} value={k}>
+                        {BACKTEST_SYMBOLS[k].label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <div style={fieldLbl}>Period</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {PERIODS.map((p) => (
+                      <button
+                        key={p.key}
+                        onClick={() => onPeriod(p.key)}
+                        style={{
+                          ...chip,
+                          background: period === p.key ? C.orange : "transparent",
+                          color: period === p.key ? "#04140b" : C.text,
+                        }}
+                      >
+                        {p.key}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => onPeriod("CUSTOM")}
+                      style={{
+                        ...chip,
+                        background: period === "CUSTOM" ? C.orange : "transparent",
+                        color: period === "CUSTOM" ? "#04140b" : C.text,
+                      }}
+                    >
+                      Custom
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div style={fieldLbl}>From</div>
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => {
+                      setFrom(e.target.value);
+                      setPeriod("CUSTOM");
+                    }}
+                    style={selectStyle}
+                  />
+                </div>
+                <div>
+                  <div style={fieldLbl}>To</div>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => {
+                      setTo(e.target.value);
+                      setPeriod("CUSTOM");
+                    }}
+                    style={selectStyle}
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end" }}>
+                  <button
+                    onClick={runNow}
+                    disabled={loading || strategy !== "ASTRO"}
+                    style={{
+                      ...btnPrimary,
+                      opacity: loading ? 0.6 : 1,
+                      cursor: loading ? "wait" : "pointer",
+                    }}
+                  >
+                    {loading ? "Running…" : "▶ Run Backtest"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {loading ? (
+              <div
+                style={{
+                  marginTop: 10,
+                  fontFamily: "var(--eb-mono)",
+                  fontSize: 11,
+                  color: C.muted,
+                }}
+              >
+                Running · Strategy={strategy} · Formula={formula} · Instrument={symbol} · {from} →{" "}
+                {to}
+              </div>
+            ) : null}
+            {error ? (
+              <div
+                style={{ marginTop: 10, color: C.red, fontFamily: "var(--eb-mono)", fontSize: 12 }}
+              >
+                {error}
+              </div>
+            ) : null}
+          </section>
+
+          {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+            <section style={{ ...panel, marginTop: 14 }}>
+              <Suspense
+                fallback={
+                  <div
+                    style={{
+                      fontFamily: "var(--eb-mono)",
+                      fontSize: 12,
+                      color: C.muted,
+                      padding: 12,
+                    }}
+                  >
+                    Loading Absolute-Degree validation modules…
+                  </div>
+                }
+              >
+                <AbsoluteValidationPanelLazy />
+              </Suspense>
+            </section>
+          ) : strategy === "SMC" ? (
+            <section style={{ ...panel, marginTop: 14 }}>
+              <Suspense
+                fallback={
+                  <div
+                    style={{
+                      fontFamily: "var(--eb-mono)",
+                      fontSize: 12,
+                      color: C.muted,
+                      padding: 12,
+                    }}
+                  >
+                    Loading SMC modules…
+                  </div>
+                }
+              >
+                <SmcBacktestPanelLazy />
+              </Suspense>
+            </section>
+          ) : strategy === "ASTRO_SMC_HYBRID" ? (
+            <section style={{ ...panel, marginTop: 14 }}>
+              <Suspense
+                fallback={
+                  <div
+                    style={{
+                      fontFamily: "var(--eb-mono)",
+                      fontSize: 12,
+                      color: C.muted,
+                      padding: 12,
+                    }}
+                  >
+                    Loading Hybrid modules…
+                  </div>
+                }
+              >
+                <HybridBacktestPanelLazy />
+              </Suspense>
+            </section>
+          ) : !result && !loading ? (
+            <section
+              style={{
+                ...panel,
+                marginTop: 14,
+                textAlign: "center",
+                color: C.muted,
+                fontFamily: "var(--eb-mono)",
+                fontSize: 13,
+              }}
+            >
+              Choose an instrument &amp; period, then run the backtest to replay historical astro
+              signals.
+            </section>
+          ) : null}
+
+          {result &&
+          formula !== "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" &&
+          strategy !== "SMC" &&
+          strategy !== "ASTRO_SMC_HYBRID" ? (
+            <>
+              <SummaryCards r={result} />
+              <IntegrityPanel r={result} />
+              <FiltersBar
+                signals={SIGNALS}
+                signalFilter={signalFilter}
+                setSignalFilter={setSignalFilter}
+                nakOptions={nakOptions}
+                nakshatraFilter={nakshatraFilter}
+                setNakshatraFilter={setNakshatraFilter}
+                signOptions={signOptions}
+                moonSignFilter={moonSignFilter}
+                setMoonSignFilter={setMoonSignFilter}
+                dowOptions={dowOptions}
+                dayFilter={dayFilter}
+                setDayFilter={setDayFilter}
+                monthOptions={monthOptions}
+                monthFilter={monthFilter}
+                setMonthFilter={setMonthFilter}
+                onCsv={exportCsv}
+                onJson={exportJson}
+              />
+              <AiInsights r={result} />
+              <MonthlyTable r={result} />
+              <EquityCurve r={result} />
+              <TradesTable trades={filtered} totalCount={result.trades.length} />
+              <MethodologyDrawer r={result} />
+            </>
+          ) : null}
         </>
-      ) : null}
-      </>
       )}
     </div>
   );
@@ -394,28 +635,64 @@ function SummaryCards({ r }: { r: BacktestResult }) {
   const s = r.summary;
   const cards: [string, string, string?][] = [
     ["Total Signals", String(s.totalSignals)],
-    ["Trades Taken",  String(s.taken)],
-    ["Win Rate",      `${s.winRate}%`, s.winRate >= 55 ? "bull" : s.winRate <= 45 ? "bear" : ""],
-    ["Accuracy",      `${s.accuracy}%`],
-    ["Profit Factor", s.profitFactor >= 999 ? "∞" : String(s.profitFactor), s.profitFactor >= 1.5 ? "bull" : s.profitFactor < 1 ? "bear" : ""],
-    ["Net PnL",       formatNum(s.netProfit), s.netProfit >= 0 ? "bull" : "bear"],
-    ["Max Drawdown",  formatNum(-s.maxDrawdown), "bear"],
-    ["Max Wins Row",  String(s.maxConsecWins)],
-    ["Max Loss Row",  String(s.maxConsecLosses)],
-    ["Avg Profit",    formatNum(s.avgProfit), "bull"],
-    ["Avg Loss",      formatNum(-s.avgLoss), "bear"],
-    ["Best Month",    s.bestMonth ? `${s.bestMonth.month} · ${formatNum(s.bestMonth.pnl)}` : "—"],
-    ["Worst Month",   s.worstMonth ? `${s.worstMonth.month} · ${formatNum(s.worstMonth.pnl)}` : "—"],
+    ["Trades Taken", String(s.taken)],
+    ["Win Rate", `${s.winRate}%`, s.winRate >= 55 ? "bull" : s.winRate <= 45 ? "bear" : ""],
+    ["Accuracy", `${s.accuracy}%`],
+    [
+      "Profit Factor",
+      s.profitFactor >= 999 ? "∞" : String(s.profitFactor),
+      s.profitFactor >= 1.5 ? "bull" : s.profitFactor < 1 ? "bear" : "",
+    ],
+    ["Net PnL", formatNum(s.netProfit), s.netProfit >= 0 ? "bull" : "bear"],
+    ["Max Drawdown", formatNum(-s.maxDrawdown), "bear"],
+    ["Max Wins Row", String(s.maxConsecWins)],
+    ["Max Loss Row", String(s.maxConsecLosses)],
+    ["Avg Profit", formatNum(s.avgProfit), "bull"],
+    ["Avg Loss", formatNum(-s.avgLoss), "bear"],
+    ["Best Month", s.bestMonth ? `${s.bestMonth.month} · ${formatNum(s.bestMonth.pnl)}` : "—"],
+    ["Worst Month", s.worstMonth ? `${s.worstMonth.month} · ${formatNum(s.worstMonth.pnl)}` : "—"],
     ["Buy · Sell · Wait", `${s.buy} · ${s.sell} · ${s.wait}`],
   ];
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <SectionHead>📊 Performance Dashboard</SectionHead>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 8,
+        }}
+      >
         {cards.map(([label, value, tone]) => (
-          <div key={label} style={{ background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, padding: "10px 12px" }}>
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 16, fontWeight: 700, marginTop: 4, color: tone === "bull" ? C.green : tone === "bear" ? C.red : C.text }}>
+          <div
+            key={label}
+            style={{
+              background: "var(--eb-bg)",
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              padding: "10px 12px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--eb-mono)",
+                fontSize: 10,
+                letterSpacing: 0.6,
+                color: C.muted,
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--eb-mono)",
+                fontSize: 16,
+                fontWeight: 700,
+                marginTop: 4,
+                color: tone === "bull" ? C.green : tone === "bear" ? C.red : C.text,
+              }}
+            >
               {value}
             </div>
           </div>
@@ -426,28 +703,83 @@ function SummaryCards({ r }: { r: BacktestResult }) {
 }
 
 function FiltersBar(props: {
-  signals: readonly SignalFilter[]; signalFilter: SignalFilter; setSignalFilter: (v: SignalFilter) => void;
-  nakOptions: string[]; nakshatraFilter: string; setNakshatraFilter: (v: string) => void;
-  signOptions: string[]; moonSignFilter: string; setMoonSignFilter: (v: string) => void;
-  dowOptions: string[]; dayFilter: string; setDayFilter: (v: string) => void;
-  monthOptions: string[]; monthFilter: string; setMonthFilter: (v: string) => void;
-  onCsv: () => void; onJson: () => void;
+  signals: readonly SignalFilter[];
+  signalFilter: SignalFilter;
+  setSignalFilter: (v: SignalFilter) => void;
+  nakOptions: string[];
+  nakshatraFilter: string;
+  setNakshatraFilter: (v: string) => void;
+  signOptions: string[];
+  moonSignFilter: string;
+  setMoonSignFilter: (v: string) => void;
+  dowOptions: string[];
+  dayFilter: string;
+  setDayFilter: (v: string) => void;
+  monthOptions: string[];
+  monthFilter: string;
+  setMonthFilter: (v: string) => void;
+  onCsv: () => void;
+  onJson: () => void;
 }) {
   return (
     <section style={{ ...panel, marginTop: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
         <SectionHead>🎯 Filters</SectionHead>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={props.onCsv} style={btnGhost}>⬇ CSV</button>
-          <button onClick={props.onJson} style={btnGhost}>⬇ JSON</button>
+          <button onClick={props.onCsv} style={btnGhost}>
+            ⬇ CSV
+          </button>
+          <button onClick={props.onJson} style={btnGhost}>
+            ⬇ JSON
+          </button>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginTop: 8 }}>
-        <LabeledSelect label="Signal" value={props.signalFilter} onChange={(v) => props.setSignalFilter(v as SignalFilter)} options={[...props.signals]} />
-        <LabeledSelect label="Nakshatra" value={props.nakshatraFilter} onChange={props.setNakshatraFilter} options={["ALL", ...props.nakOptions]} />
-        <LabeledSelect label="Moon Sign" value={props.moonSignFilter} onChange={props.setMoonSignFilter} options={["ALL", ...props.signOptions]} />
-        <LabeledSelect label="Day of Week" value={props.dayFilter} onChange={props.setDayFilter} options={["ALL", ...props.dowOptions]} />
-        <LabeledSelect label="Month" value={props.monthFilter} onChange={props.setMonthFilter} options={["ALL", ...props.monthOptions]} />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 8,
+          marginTop: 8,
+        }}
+      >
+        <LabeledSelect
+          label="Signal"
+          value={props.signalFilter}
+          onChange={(v) => props.setSignalFilter(v as SignalFilter)}
+          options={[...props.signals]}
+        />
+        <LabeledSelect
+          label="Nakshatra"
+          value={props.nakshatraFilter}
+          onChange={props.setNakshatraFilter}
+          options={["ALL", ...props.nakOptions]}
+        />
+        <LabeledSelect
+          label="Moon Sign"
+          value={props.moonSignFilter}
+          onChange={props.setMoonSignFilter}
+          options={["ALL", ...props.signOptions]}
+        />
+        <LabeledSelect
+          label="Day of Week"
+          value={props.dayFilter}
+          onChange={props.setDayFilter}
+          options={["ALL", ...props.dowOptions]}
+        />
+        <LabeledSelect
+          label="Month"
+          value={props.monthFilter}
+          onChange={props.setMonthFilter}
+          options={["ALL", ...props.monthOptions]}
+        />
       </div>
     </section>
   );
@@ -468,19 +800,63 @@ function AiInsights({ r }: { r: BacktestResult }) {
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <SectionHead>🧠 AI Insights</SectionHead>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 8,
+        }}
+      >
         {rows.map(([label, ins]) => (
-          <div key={label} style={{ background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, padding: "10px 12px" }}>
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</div>
+          <div
+            key={label}
+            style={{
+              background: "var(--eb-bg)",
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              padding: "10px 12px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--eb-mono)",
+                fontSize: 10,
+                color: C.muted,
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+              }}
+            >
+              {label}
+            </div>
             {ins ? (
               <>
-                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 14, fontWeight: 700, marginTop: 4 }}>{ins.key}</div>
-                <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 2 }}>
+                <div
+                  style={{
+                    fontFamily: "var(--eb-mono)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    marginTop: 4,
+                  }}
+                >
+                  {ins.key}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--eb-mono)",
+                    fontSize: 11,
+                    color: C.muted,
+                    marginTop: 2,
+                  }}
+                >
                   {ins.trades} trades · {ins.winRate}% WR · {formatNum(ins.pnl)}
                 </div>
               </>
             ) : (
-              <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, marginTop: 6 }}>Not enough data</div>
+              <div
+                style={{ fontFamily: "var(--eb-mono)", fontSize: 12, color: C.muted, marginTop: 6 }}
+              >
+                Not enough data
+              </div>
             )}
           </div>
         ))}
@@ -498,7 +874,11 @@ function MonthlyTable({ r }: { r: BacktestResult }) {
         <table style={tableStyle}>
           <thead>
             <tr>
-              {["Month","Trades","Wins","Losses","Accuracy","PnL"].map((h) => <th key={h} style={th}>{h}</th>)}
+              {["Month", "Trades", "Wins", "Losses", "Accuracy", "PnL"].map((h) => (
+                <th key={h} style={th}>
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -509,7 +889,9 @@ function MonthlyTable({ r }: { r: BacktestResult }) {
                 <td style={{ ...td, color: C.green }}>{m.wins}</td>
                 <td style={{ ...td, color: C.red }}>{m.losses}</td>
                 <td style={td}>{m.accuracy}%</td>
-                <td style={{ ...td, color: m.pnl >= 0 ? C.green : C.red, fontWeight: 700 }}>{formatNum(m.pnl)}</td>
+                <td style={{ ...td, color: m.pnl >= 0 ? C.green : C.red, fontWeight: 700 }}>
+                  {formatNum(m.pnl)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -525,23 +907,49 @@ function EquityCurve({ r }: { r: BacktestResult }) {
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
   const range = max - min || 1;
-  const W = 800, H = 160, PAD = 8;
-  const points = r.equityCurve.map((p, i) => {
-    const x = PAD + (i / (r.equityCurve.length - 1)) * (W - 2 * PAD);
-    const y = H - PAD - ((p.cumulative - min) / range) * (H - 2 * PAD);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
+  const W = 800,
+    H = 160,
+    PAD = 8;
+  const points = r.equityCurve
+    .map((p, i) => {
+      const x = PAD + (i / (r.equityCurve.length - 1)) * (W - 2 * PAD);
+      const y = H - PAD - ((p.cumulative - min) / range) * (H - 2 * PAD);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
   const zeroY = H - PAD - ((0 - min) / range) * (H - 2 * PAD);
   const finalCum = r.equityCurve[r.equityCurve.length - 1].cumulative;
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <SectionHead>📈 Equity Curve · Cumulative PnL</SectionHead>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" style={{ display: "block" }}>
-        <line x1={PAD} y1={zeroY} x2={W - PAD} y2={zeroY} stroke="var(--eb-border)" strokeDasharray="3 3" />
-        <polyline points={points} fill="none" stroke={finalCum >= 0 ? "var(--eb-bull)" : "var(--eb-bear)"} strokeWidth={1.8} />
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        height={H}
+        preserveAspectRatio="none"
+        style={{ display: "block" }}
+      >
+        <line
+          x1={PAD}
+          y1={zeroY}
+          x2={W - PAD}
+          y2={zeroY}
+          stroke="var(--eb-border)"
+          strokeDasharray="3 3"
+        />
+        <polyline
+          points={points}
+          fill="none"
+          stroke={finalCum >= 0 ? "var(--eb-bull)" : "var(--eb-bear)"}
+          strokeWidth={1.8}
+        />
       </svg>
       <div style={{ fontFamily: "var(--eb-mono)", fontSize: 11, color: C.muted, marginTop: 4 }}>
-        Final: <span style={{ color: finalCum >= 0 ? C.green : C.red, fontWeight: 700 }}>{formatNum(finalCum)}</span> across {r.equityCurve.length} sessions
+        Final:{" "}
+        <span style={{ color: finalCum >= 0 ? C.green : C.red, fontWeight: 700 }}>
+          {formatNum(finalCum)}
+        </span>{" "}
+        across {r.equityCurve.length} sessions
       </div>
     </section>
   );
@@ -552,27 +960,69 @@ function TradesTable({ trades, totalCount }: { trades: BacktestTrade[]; totalCou
   const view = trades.slice(0, limit);
   return (
     <section style={{ ...panel, marginTop: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <SectionHead>📜 Signal Validation ({trades.length} of {totalCount})</SectionHead>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        <SectionHead>
+          📜 Signal Validation ({trades.length} of {totalCount})
+        </SectionHead>
         {trades.length > limit ? (
-          <button style={btnGhost} onClick={() => setLimit((l) => l + 500)}>Show more</button>
+          <button style={btnGhost} onClick={() => setLimit((l) => l + 500)}>
+            Show more
+          </button>
         ) : null}
       </div>
       <div style={{ overflowX: "auto" }}>
         <table style={tableStyle}>
           <thead>
             <tr>
-              {["Date","Time","Signal","Conf","Entry","Exit","High","Low","Target","Stop","Result","PnL","Moon Sign","Nakshatra","Nearest","Day"].map((h) => (
-                <th key={h} style={th}>{h}</th>
+              {[
+                "Date",
+                "Time",
+                "Signal",
+                "Conf",
+                "Entry",
+                "Exit",
+                "High",
+                "Low",
+                "Target",
+                "Stop",
+                "Result",
+                "PnL",
+                "Moon Sign",
+                "Nakshatra",
+                "Nearest",
+                "Day",
+              ].map((h) => (
+                <th key={h} style={th}>
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {view.map((t, idx) => (
-              <tr key={`${t.date}-${idx}`} style={{ borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
+              <tr
+                key={`${t.date}-${idx}`}
+                style={{ borderBottom: `1px solid rgba(255,255,255,0.05)` }}
+              >
                 <td style={td}>{t.date}</td>
                 <td style={td}>{t.time}</td>
-                <td style={{ ...td, color: t.signal === "BUY" ? C.green : t.signal === "SELL" ? C.red : C.orange, fontWeight: 700 }}>{t.signal}</td>
+                <td
+                  style={{
+                    ...td,
+                    color: t.signal === "BUY" ? C.green : t.signal === "SELL" ? C.red : C.orange,
+                    fontWeight: 700,
+                  }}
+                >
+                  {t.signal}
+                </td>
                 <td style={td}>{t.confidence}</td>
                 <td style={td}>{t.entry}</td>
                 <td style={td}>{t.exit}</td>
@@ -580,7 +1030,15 @@ function TradesTable({ trades, totalCount }: { trades: BacktestTrade[]; totalCou
                 <td style={td}>{t.low}</td>
                 <td style={td}>{t.target ?? "—"}</td>
                 <td style={td}>{t.stop ?? "—"}</td>
-                <td style={{ ...td, color: t.result === "WIN" ? C.green : t.result === "LOSS" ? C.red : C.muted, fontWeight: 700 }}>{t.result}</td>
+                <td
+                  style={{
+                    ...td,
+                    color: t.result === "WIN" ? C.green : t.result === "LOSS" ? C.red : C.muted,
+                    fontWeight: 700,
+                  }}
+                >
+                  {t.result}
+                </td>
                 <td style={{ ...td, color: t.pnl >= 0 ? C.green : C.red }}>{formatNum(t.pnl)}</td>
                 <td style={td}>{t.moonSign}</td>
                 <td style={td}>{t.moonNakshatra}</td>
@@ -611,13 +1069,22 @@ function IntegrityPanel({ r }: { r: BacktestResult }) {
     ["Invalid Setup", em.invalidSetupPolicy],
     ["Timezone", em.timezone],
     ["Anchor / Entry", `${em.astroAnchor} → ${em.entryTime}`],
-    ["Coverage", `${dq.coveragePct}% (${dq.loadedSessions}/${dq.expectedSessions})`,
-      dq.coveragePct >= 90 ? "bull" : dq.coveragePct >= 60 ? "" : "bear"],
+    [
+      "Coverage",
+      `${dq.coveragePct}% (${dq.loadedSessions}/${dq.expectedSessions})`,
+      dq.coveragePct >= 90 ? "bull" : dq.coveragePct >= 60 ? "" : "bear",
+    ],
     ["Missing / Invalid", `${dq.missingSessions} · ${dq.invalidSessions}`],
-    ["Ambiguous Trades", `${r.ambiguousCount} (${r.summary.taken > 0 ? Math.round((r.ambiguousCount / r.summary.taken) * 1000) / 10 : 0}%)`],
+    [
+      "Ambiguous Trades",
+      `${r.ambiguousCount} (${r.summary.taken > 0 ? Math.round((r.ambiguousCount / r.summary.taken) * 1000) / 10 : 0}%)`,
+    ],
     ["Invalid Setups", String(r.invalidSetupCount)],
-    ["Sample Size", `${s.sampleSize} · ${s.sampleWarning}`,
-      s.sampleWarning === "MEANINGFUL" ? "bull" : s.sampleWarning === "LIMITED" ? "" : "bear"],
+    [
+      "Sample Size",
+      `${s.sampleSize} · ${s.sampleWarning}`,
+      s.sampleWarning === "MEANINGFUL" ? "bull" : s.sampleWarning === "LIMITED" ? "" : "bear",
+    ],
     ["Expectancy", formatNum(s.expectancy), s.expectancy >= 0 ? "bull" : "bear"],
     ["Sharpe-like", String(s.sharpeLike)],
     ["Sortino-like", String(s.sortinoLike)],
@@ -629,7 +1096,11 @@ function IntegrityPanel({ r }: { r: BacktestResult }) {
   ];
   if (b) {
     items.push(
-      ["Buy & Hold PnL", `${formatNum(b.buyAndHoldPnl)} (${b.buyAndHoldPct}%)`, b.buyAndHoldPnl >= 0 ? "bull" : "bear"],
+      [
+        "Buy & Hold PnL",
+        `${formatNum(b.buyAndHoldPnl)} (${b.buyAndHoldPct}%)`,
+        b.buyAndHoldPnl >= 0 ? "bull" : "bear",
+      ],
       ["Strategy Return", `${b.strategyPct}%`, b.strategyPct >= 0 ? "bull" : "bear"],
       ["Excess vs B&H", `${b.excessPct}%`, b.excessPct >= 0 ? "bull" : "bear"],
       ["Active Days", String(b.activeDays)],
@@ -638,11 +1109,44 @@ function IntegrityPanel({ r }: { r: BacktestResult }) {
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <SectionHead>🔎 Integrity · Reproducibility · Statistics</SectionHead>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+          gap: 8,
+        }}
+      >
         {items.map(([label, value, tone]) => (
-          <div key={label} style={{ background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px" }}>
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 10, letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontFamily: "var(--eb-mono)", fontSize: 12, fontWeight: 700, marginTop: 3, color: tone === "bull" ? C.green : tone === "bear" ? C.red : C.text, wordBreak: "break-all" }}>
+          <div
+            key={label}
+            style={{
+              background: "var(--eb-bg)",
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              padding: "8px 10px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--eb-mono)",
+                fontSize: 10,
+                letterSpacing: 0.6,
+                color: C.muted,
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--eb-mono)",
+                fontSize: 12,
+                fontWeight: 700,
+                marginTop: 3,
+                color: tone === "bull" ? C.green : tone === "bear" ? C.red : C.text,
+                wordBreak: "break-all",
+              }}
+            >
               {value}
             </div>
           </div>
@@ -650,7 +1154,9 @@ function IntegrityPanel({ r }: { r: BacktestResult }) {
       </div>
       {s.sampleWarning !== "MEANINGFUL" ? (
         <div style={{ marginTop: 8, fontFamily: "var(--eb-mono)", fontSize: 11, color: C.orange }}>
-          ⚠️ {s.sampleSize} decided trades — {s.sampleWarning === "INSUFFICIENT" ? "INSUFFICIENT SAMPLE" : "LIMITED SAMPLE"}. Treat statistics as directional, not conclusive.
+          ⚠️ {s.sampleSize} decided trades —{" "}
+          {s.sampleWarning === "INSUFFICIENT" ? "INSUFFICIENT SAMPLE" : "LIMITED SAMPLE"}. Treat
+          statistics as directional, not conclusive.
         </div>
       ) : null}
     </section>
@@ -661,41 +1167,94 @@ function MethodologyDrawer({ r }: { r: BacktestResult }) {
   const [open, setOpen] = useState(false);
   const em = r.executionMeta;
   const costs = em.costs;
-  const zeroCosts = costs.slippagePct === 0 && costs.brokerageFlat === 0 && costs.brokeragePct === 0 && costs.taxesPct === 0;
+  const zeroCosts =
+    costs.slippagePct === 0 &&
+    costs.brokerageFlat === 0 &&
+    costs.brokeragePct === 0 &&
+    costs.taxesPct === 0;
   return (
     <section style={{ ...panel, marginTop: 14 }}>
       <button
         onClick={() => setOpen((v) => !v)}
         style={{
-          background: "transparent", color: C.orange, border: "none",
-          fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 1.5, cursor: "pointer",
-          padding: 0, textAlign: "left", width: "100%",
+          background: "transparent",
+          color: C.orange,
+          border: "none",
+          fontFamily: "var(--eb-head)",
+          fontSize: 13,
+          letterSpacing: 1.5,
+          cursor: "pointer",
+          padding: 0,
+          textAlign: "left",
+          width: "100%",
         }}
         aria-expanded={open}
       >
         {open ? "▼" : "▶"} 📘 METHODOLOGY, ASSUMPTIONS & LIMITATIONS
       </button>
       {open ? (
-        <div style={{ marginTop: 10, fontFamily: "var(--eb-mono)", fontSize: 12, color: C.text, lineHeight: 1.6 }}>
+        <div
+          style={{
+            marginTop: 10,
+            fontFamily: "var(--eb-mono)",
+            fontSize: 12,
+            color: C.text,
+            lineHeight: 1.6,
+          }}
+        >
           <MethodRow k="Data source" v={em.dataSource} />
           <MethodRow k="Candle timeframe" v={em.candleTimeframe} />
           <MethodRow k="Astro anchor time" v={em.astroAnchor} />
           <MethodRow k="Entry assumption" v={`Session open at ${em.entryTime}`} />
           <MethodRow k="Exit assumption" v={em.exitAssumption} />
           <MethodRow k="Both-touched policy" v={em.policy} />
-          <MethodRow k="Invalid setup policy" v={em.invalidSetupPolicy === "fabricate" ? "fabricate ±0.5% band when no level exists" : "strict — mark INVALID_SETUP"} />
+          <MethodRow
+            k="Invalid setup policy"
+            v={
+              em.invalidSetupPolicy === "fabricate"
+                ? "fabricate ±0.5% band when no level exists"
+                : "strict — mark INVALID_SETUP"
+            }
+          />
           <MethodRow k="Slippage" v={zeroCosts ? "none" : `${costs.slippagePct}%`} />
-          <MethodRow k="Brokerage" v={zeroCosts ? "none" : `${costs.brokerageFlat} flat + ${costs.brokeragePct}%`} />
+          <MethodRow
+            k="Brokerage"
+            v={zeroCosts ? "none" : `${costs.brokerageFlat} flat + ${costs.brokeragePct}%`}
+          />
           <MethodRow k="Taxes" v={zeroCosts ? "none" : `${costs.taxesPct}%`} />
           <MethodRow k="Timezone" v={em.timezone} />
           <MethodRow k="Data source adjusted" v={r.dataQuality.adjusted} />
-          <div style={{ marginTop: 10, padding: 10, background: "var(--eb-bg)", border: `1px solid ${C.border}`, borderRadius: 6, color: C.muted }}>
-            <div style={{ color: C.orange, fontWeight: 700, marginBottom: 6 }}>Known limitations</div>
+          <div
+            style={{
+              marginTop: 10,
+              padding: 10,
+              background: "var(--eb-bg)",
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              color: C.muted,
+            }}
+          >
+            <div style={{ color: C.orange, fontWeight: 700, marginBottom: 6 }}>
+              Known limitations
+            </div>
             <ul style={{ margin: 0, paddingLeft: 16 }}>
-              {r.disclaimers.map((d) => <li key={d} style={{ marginBottom: 4 }}>{d}</li>)}
-              <li>Daily OHLC cannot determine whether target or stop was touched first; the both-touched policy above controls the outcome deterministically.</li>
-              <li>Weekend / holiday gaps in the underlying data feed are counted in coverage % — a missing session is not silently treated as a zero-return day.</li>
-              <li>Options-based simulations do not infer premium from index points; the strategy PnL is index-point PnL, not option-premium PnL.</li>
+              {r.disclaimers.map((d) => (
+                <li key={d} style={{ marginBottom: 4 }}>
+                  {d}
+                </li>
+              ))}
+              <li>
+                Daily OHLC cannot determine whether target or stop was touched first; the
+                both-touched policy above controls the outcome deterministically.
+              </li>
+              <li>
+                Weekend / holiday gaps in the underlying data feed are counted in coverage % — a
+                missing session is not silently treated as a zero-return day.
+              </li>
+              <li>
+                Options-based simulations do not infer premium from index points; the strategy PnL
+                is index-point PnL, not option-premium PnL.
+              </li>
             </ul>
           </div>
         </div>
@@ -706,19 +1265,41 @@ function MethodologyDrawer({ r }: { r: BacktestResult }) {
 
 function MethodRow({ k, v }: { k: string; v: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "3px 0", borderBottom: `1px dashed rgba(255,255,255,0.05)` }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "3px 0",
+        borderBottom: `1px dashed rgba(255,255,255,0.05)`,
+      }}
+    >
       <span style={{ color: C.muted }}>{k}</span>
       <span style={{ color: C.text }}>{v}</span>
     </div>
   );
 }
 
-function LabeledSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+function LabeledSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
   return (
     <div>
       <div style={fieldLbl}>{label}</div>
       <select value={value} onChange={(e) => onChange(e.target.value)} style={selectStyle}>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -726,7 +1307,15 @@ function LabeledSelect({ label, value, onChange, options }: { label: string; val
 
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: "var(--eb-head)", fontSize: 13, letterSpacing: 1.5, color: C.orange, marginBottom: 10 }}>
+    <div
+      style={{
+        fontFamily: "var(--eb-head)",
+        fontSize: 13,
+        letterSpacing: 1.5,
+        color: C.orange,
+        marginBottom: 10,
+      }}
+    >
       {children}
     </div>
   );
@@ -744,14 +1333,11 @@ function mapTypedError(e: unknown): string {
       "No historical data is available for that date range. Try a shorter or more recent window.",
     PROVIDER_UNAVAILABLE:
       "Market data provider is temporarily unavailable. Please retry in a few moments.",
-    UNSUPPORTED_TIMEFRAME:
-      "The selected timeframe isn't supported for this instrument.",
-    UNSUPPORTED_INSTRUMENT:
-      "The selected instrument isn't supported by the backtest engine.",
+    UNSUPPORTED_TIMEFRAME: "The selected timeframe isn't supported for this instrument.",
+    UNSUPPORTED_INSTRUMENT: "The selected instrument isn't supported by the backtest engine.",
     INSUFFICIENT_INTRADAY_HISTORY:
       "Not enough intraday history for this range. Try a wider window or a daily timeframe.",
-    STRATEGY_ADAPTER_NOT_AVAILABLE:
-      "This strategy adapter is not available right now.",
+    STRATEGY_ADAPTER_NOT_AVAILABLE: "This strategy adapter is not available right now.",
     DATA_QUALITY_FAILURE:
       "Historical data failed quality checks for this range. Try a different window.",
   };
@@ -784,38 +1370,71 @@ const panel: React.CSSProperties = {
   padding: 14,
 };
 const fieldLbl: React.CSSProperties = {
-  fontFamily: "var(--eb-mono)", fontSize: 10, letterSpacing: 0.6, color: "var(--eb-muted)",
-  textTransform: "uppercase", marginBottom: 4,
+  fontFamily: "var(--eb-mono)",
+  fontSize: 10,
+  letterSpacing: 0.6,
+  color: "var(--eb-muted)",
+  textTransform: "uppercase",
+  marginBottom: 4,
 };
 const selectStyle: React.CSSProperties = {
   width: "100%",
-  background: "var(--eb-bg)", color: "var(--eb-text)",
-  border: "1px solid var(--eb-border)", borderRadius: 6,
-  padding: "6px 8px", fontFamily: "var(--eb-mono)", fontSize: 12,
+  background: "var(--eb-bg)",
+  color: "var(--eb-text)",
+  border: "1px solid var(--eb-border)",
+  borderRadius: 6,
+  padding: "6px 8px",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 12,
 };
 const chip: React.CSSProperties = {
-  border: "1px solid var(--eb-border)", borderRadius: 16,
-  padding: "4px 10px", fontFamily: "var(--eb-mono)", fontSize: 11,
-  cursor: "pointer", color: "var(--eb-text)",
+  border: "1px solid var(--eb-border)",
+  borderRadius: 16,
+  padding: "4px 10px",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 11,
+  cursor: "pointer",
+  color: "var(--eb-text)",
 };
 const btnPrimary: React.CSSProperties = {
-  background: "var(--eb-accent)", color: "#04140b",
-  border: "none", borderRadius: 6, padding: "8px 16px",
-  fontFamily: "var(--eb-mono)", fontSize: 12, fontWeight: 700, letterSpacing: 1,
+  background: "var(--eb-accent)",
+  color: "#04140b",
+  border: "none",
+  borderRadius: 6,
+  padding: "8px 16px",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: 1,
 };
 const btnGhost: React.CSSProperties = {
-  background: "transparent", color: "var(--eb-text)",
-  border: "1px solid var(--eb-border)", borderRadius: 6,
-  padding: "5px 10px", fontFamily: "var(--eb-mono)", fontSize: 11, cursor: "pointer",
+  background: "transparent",
+  color: "var(--eb-text)",
+  border: "1px solid var(--eb-border)",
+  borderRadius: 6,
+  padding: "5px 10px",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 11,
+  cursor: "pointer",
 };
 const tableStyle: React.CSSProperties = {
-  borderCollapse: "collapse", width: "100%", fontFamily: "var(--eb-mono)", fontSize: 11,
+  borderCollapse: "collapse",
+  width: "100%",
+  fontFamily: "var(--eb-mono)",
+  fontSize: 11,
 };
 const th: React.CSSProperties = {
-  padding: "6px 8px", textAlign: "left", color: "var(--eb-accent)",
-  fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase",
-  borderBottom: "1px solid var(--eb-border)", whiteSpace: "nowrap",
+  padding: "6px 8px",
+  textAlign: "left",
+  color: "var(--eb-accent)",
+  fontSize: 10,
+  letterSpacing: 0.6,
+  textTransform: "uppercase",
+  borderBottom: "1px solid var(--eb-border)",
+  whiteSpace: "nowrap",
 };
 const td: React.CSSProperties = {
-  padding: "5px 8px", color: "var(--eb-text)", whiteSpace: "nowrap",
+  padding: "5px 8px",
+  color: "var(--eb-text)",
+  whiteSpace: "nowrap",
 };

@@ -86,10 +86,7 @@ export function renamePreset(
   return { presets: next };
 }
 
-export function deletePreset(
-  lib: OptimizerPresetLibrary,
-  id: string,
-): OptimizerPresetLibrary {
+export function deletePreset(lib: OptimizerPresetLibrary, id: string): OptimizerPresetLibrary {
   return { presets: lib.presets.filter((p) => p.id !== id) };
 }
 

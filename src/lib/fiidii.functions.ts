@@ -18,8 +18,18 @@ type RawRow = {
 };
 
 const MONTHS: Record<string, string> = {
-  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+  Jan: "01",
+  Feb: "02",
+  Mar: "03",
+  Apr: "04",
+  May: "05",
+  Jun: "06",
+  Jul: "07",
+  Aug: "08",
+  Sep: "09",
+  Oct: "10",
+  Nov: "11",
+  Dec: "12",
 };
 
 /** Parse "03-Jul-2026" -> { iso, label } */
@@ -54,9 +64,7 @@ async function fetchFiiFutureNet(iso: string): Promise<number | null> {
   const url = `https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_${d}.csv`;
   const text = await fetchTextSafe(url, { timeoutMs: 8000, accept: "text/csv, */*" });
   if (!text || !text.includes("Participant wise Open Interest")) return null;
-  const line = text
-    .split(/\r?\n/)
-    .find((l) => /^FII\s*,/i.test(l.trim()));
+  const line = text.split(/\r?\n/).find((l) => /^FII\s*,/i.test(l.trim()));
   if (!line) return null;
   const c = line.split(",").map((x) => Number(x.trim()));
   const futIdxLong = num(c[1]);

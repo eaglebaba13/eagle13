@@ -57,10 +57,7 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
       close: q.close?.[i] ?? null,
       date: istDate(t),
     }))
-    .filter(
-      (c): c is OHLC =>
-        c.open != null && c.high != null && c.low != null && c.close != null,
-    );
+    .filter((c): c is OHLC => c.open != null && c.high != null && c.low != null && c.close != null);
 
   if (candles.length === 0) throw new Error(`No candles for ${symbol}`);
 
@@ -116,74 +113,77 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
   return cached<MarketDataResponse>(
     "market-data",
     async () => {
-    // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX.
-    // Yahoo is called only when the Upstox path fails, so successful
-    // Upstox responses do NOT trigger a background Yahoo request. Gold
-    // and Silver remain on Yahoo as the retained historical/commodity
-    // provider (no Upstox spot equivalent — see provider-routing-matrix).
-    const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
-    const nowIso = new Date().toISOString();
-    const [uxNifty, uxBank, uxVix] = await Promise.all([
-      fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
-      fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
-      fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
-    ]);
+      // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX.
+      // Yahoo is called only when the Upstox path fails, so successful
+      // Upstox responses do NOT trigger a background Yahoo request. Gold
+      // and Silver remain on Yahoo as the retained historical/commodity
+      // provider (no Upstox spot equivalent — see provider-routing-matrix).
+      const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
+      const nowIso = new Date().toISOString();
+      const [uxNifty, uxBank, uxVix] = await Promise.all([
+        fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
+        fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
+        fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
+      ]);
 
-    const upstoxNiftyQuote = uxNifty && uxNifty.ok ? uxNifty.quote : null;
-    const upstoxBankQuote = uxBank && uxBank.ok ? uxBank.quote : null;
-    const upstoxVixQuote = uxVix && uxVix.ok ? uxVix.quote : null;
+      const upstoxNiftyQuote = uxNifty && uxNifty.ok ? uxNifty.quote : null;
+      const upstoxBankQuote = uxBank && uxBank.ok ? uxBank.quote : null;
+      const upstoxVixQuote = uxVix && uxVix.ok ? uxVix.quote : null;
 
-    // Lazy Yahoo fallback — only when the primary Upstox path failed.
-    const needsNifty = upstoxNiftyQuote == null;
-    const needsBank = upstoxBankQuote == null;
-    const needsVix = upstoxVixQuote == null;
-    const [yNifty, yBank, yVix, goldR, silverR] = await Promise.all([
-      needsNifty ? fetchIndex("^NSEI").catch((e) => e as Error) : Promise.resolve(null),
-      needsBank ? fetchIndex("^NSEBANK").catch((e) => e as Error) : Promise.resolve(null),
-      needsVix ? fetchIndex("^INDIAVIX").catch(() => null) : Promise.resolve(null),
-      fetchIndex("GC=F").catch(() => null),
-      fetchIndex("SI=F").catch(() => null),
-    ]);
-    const yahooNifty = yNifty instanceof Error ? null : yNifty;
-    const yahooBank = yBank instanceof Error ? null : yBank;
+      // Lazy Yahoo fallback — only when the primary Upstox path failed.
+      const needsNifty = upstoxNiftyQuote == null;
+      const needsBank = upstoxBankQuote == null;
+      const needsVix = upstoxVixQuote == null;
+      const [yNifty, yBank, yVix, goldR, silverR] = await Promise.all([
+        needsNifty ? fetchIndex("^NSEI").catch((e) => e as Error) : Promise.resolve(null),
+        needsBank ? fetchIndex("^NSEBANK").catch((e) => e as Error) : Promise.resolve(null),
+        needsVix ? fetchIndex("^INDIAVIX").catch(() => null) : Promise.resolve(null),
+        fetchIndex("GC=F").catch(() => null),
+        fetchIndex("SI=F").catch(() => null),
+      ]);
+      const yahooNifty = yNifty instanceof Error ? null : yNifty;
+      const yahooBank = yBank instanceof Error ? null : yBank;
 
-    const nifty = upstoxNiftyQuote ?? yahooNifty ?? (yahooBank ?? null);
-    const banknifty = upstoxBankQuote ?? yahooBank ?? (yahooNifty ?? null);
-    const vix: IndexQuote | null = upstoxVixQuote ?? yVix ?? null;
-    const btc: IndexQuote | null = null;
-    const gold: IndexQuote | null = goldR;
-    const silver: IndexQuote | null = silverR;
+      const nifty = upstoxNiftyQuote ?? yahooNifty ?? yahooBank ?? null;
+      const banknifty = upstoxBankQuote ?? yahooBank ?? yahooNifty ?? null;
+      const vix: IndexQuote | null = upstoxVixQuote ?? yVix ?? null;
+      const btc: IndexQuote | null = null;
+      const gold: IndexQuote | null = goldR;
+      const silver: IndexQuote | null = silverR;
 
-    if (!nifty || !banknifty) {
-      const msg = yNifty instanceof Error ? yNifty.message : "provider unavailable";
-      throw new Error(`Live market data is temporarily unavailable. ${msg}`);
-    }
+      if (!nifty || !banknifty) {
+        const msg = yNifty instanceof Error ? yNifty.message : "provider unavailable";
+        throw new Error(`Live market data is temporarily unavailable. ${msg}`);
+      }
 
-    const goldSilverRatio: number | null =
-      gold && silver && silver.livePrice > 0
-        ? Math.round((gold.livePrice / silver.livePrice) * 100) / 100
-        : null;
+      const goldSilverRatio: number | null =
+        gold && silver && silver.livePrice > 0
+          ? Math.round((gold.livePrice / silver.livePrice) * 100) / 100
+          : null;
 
-    const nowStamp = new Date().toISOString();
-    const fallbackMeta = (reason: string) => ({
-      name: `yahoo-fallback (${reason})`,
-      status: "DELAYED" as const,
-      receivedAt: nowStamp,
-      providerTime: null,
-    });
-    const providerMetadata = {
-      nifty: uxNifty && uxNifty.ok
-        ? uxNifty.providerMetadata
-        : fallbackMeta(uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable"),
-      banknifty: uxBank && uxBank.ok
-        ? uxBank.providerMetadata
-        : fallbackMeta(uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable"),
-      vix: uxVix && uxVix.ok
-        ? uxVix.providerMetadata
-        : fallbackMeta(uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
-    };
+      const nowStamp = new Date().toISOString();
+      const fallbackMeta = (reason: string) => ({
+        name: `yahoo-fallback (${reason})`,
+        status: "DELAYED" as const,
+        receivedAt: nowStamp,
+        providerTime: null,
+      });
+      const providerMetadata = {
+        nifty:
+          uxNifty && uxNifty.ok
+            ? uxNifty.providerMetadata
+            : fallbackMeta(uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable"),
+        banknifty:
+          uxBank && uxBank.ok
+            ? uxBank.providerMetadata
+            : fallbackMeta(uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable"),
+        vix:
+          uxVix && uxVix.ok
+            ? uxVix.providerMetadata
+            : fallbackMeta(uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
+      };
 
-    return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
+      return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
     },
     { ttlMs: 30_000 },
   );

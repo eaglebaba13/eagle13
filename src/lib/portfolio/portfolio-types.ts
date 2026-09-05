@@ -2,11 +2,7 @@
 // orders, no broker integration, no production sizing. Source strategy
 // trades and Run IDs are consumed read-only and never mutated.
 
-import type {
-  HistoricalTrade,
-  EquityPoint,
-  UnifiedFormulaId,
-} from "@/lib/backtest/result";
+import type { HistoricalTrade, EquityPoint, UnifiedFormulaId } from "@/lib/backtest/result";
 
 export type AllocationMethod =
   | "EQUAL_WEIGHT"
@@ -30,12 +26,7 @@ export type PositionSizingMethod =
   | "CONFIDENCE_ADJUSTED";
 
 export type RebalancePolicy =
-  | "NEVER"
-  | "MONTHLY"
-  | "QUARTERLY"
-  | "THRESHOLD_DRIFT"
-  | "REGIME_CHANGE"
-  | "RECOMMENDATION_CHANGE";
+  "NEVER" | "MONTHLY" | "QUARTERLY" | "THRESHOLD_DRIFT" | "REGIME_CHANGE" | "RECOMMENDATION_CHANGE";
 
 export type KellyFraction = "FULL" | "HALF" | "QUARTER" | "CUSTOM";
 

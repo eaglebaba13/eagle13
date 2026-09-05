@@ -80,10 +80,7 @@ const baseInputs = (over: Partial<ShadowInputs> = {}): ShadowInputs => ({
 
 describe("Phase 21.2 Stage 5 · shadow alerts", () => {
   it("shadow file never imports broker/notification/decision-engine", () => {
-    const src = readFileSync(
-      new URL("./shadow-alerts.ts", import.meta.url),
-      "utf8",
-    );
+    const src = readFileSync(new URL("./shadow-alerts.ts", import.meta.url), "utf8");
     const imports = (src.match(/^import[\s\S]+?from\s+["'][^"']+["'];/gm) ?? []).join("\n");
     expect(imports).not.toMatch(/broker/);
     expect(imports).not.toMatch(/notification/);
@@ -95,9 +92,7 @@ describe("Phase 21.2 Stage 5 · shadow alerts", () => {
   it("ENTRY_READY_SHADOW requires locked snapshot + closed candle + cube pass", () => {
     const ev = computeShadowEvent(baseInputs());
     expect(ev.stage).toBe("ENTRY_READY_SHADOW");
-    expect(ev.labeledAs).toBe(
-      "VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION",
-    );
+    expect(ev.labeledAs).toBe("VALIDATION_ONLY_NOT_A_LIVE_TRADE_RECOMMENDATION");
   });
 
   it("blocks with DATA_INCOMPLETE when snapshot is not LOCKED", () => {
@@ -107,9 +102,7 @@ describe("Phase 21.2 Stage 5 · shadow alerts", () => {
   });
 
   it("blocks with DATA_INCOMPLETE when formula version mismatches", () => {
-    const ev = computeShadowEvent(
-      baseInputs({ formulaVersion: "LEGACY_EAGLEBABA_CASCADE_V1" }),
-    );
+    const ev = computeShadowEvent(baseInputs({ formulaVersion: "LEGACY_EAGLEBABA_CASCADE_V1" }));
     expect(ev.stage).toBe("DATA_INCOMPLETE");
   });
 
@@ -131,8 +124,12 @@ describe("Phase 21.2 Stage 5 · shadow alerts", () => {
   });
 
   it("emits STOP_HIT / TARGET_HIT on resolution", () => {
-    expect(computeShadowEvent(baseInputs({ simulation: makeSim({ outcome: "STOP" }) })).stage).toBe("STOP_HIT");
-    expect(computeShadowEvent(baseInputs({ simulation: makeSim({ outcome: "TARGET" }) })).stage).toBe("TARGET_HIT");
+    expect(computeShadowEvent(baseInputs({ simulation: makeSim({ outcome: "STOP" }) })).stage).toBe(
+      "STOP_HIT",
+    );
+    expect(
+      computeShadowEvent(baseInputs({ simulation: makeSim({ outcome: "TARGET" }) })).stage,
+    ).toBe("TARGET_HIT");
   });
 
   it("history rolls at 100 items", () => {

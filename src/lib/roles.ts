@@ -4,14 +4,7 @@
  * `hasPermission(role, "some.capability")` so gating can evolve without a
  * refactor.
  */
-export const ROLES = [
-  "admin",
-  "enterprise",
-  "professional",
-  "pro",
-  "free",
-  "guest",
-] as const;
+export const ROLES = ["admin", "enterprise", "professional", "pro", "free", "guest"] as const;
 
 export type AppRole = (typeof ROLES)[number];
 
@@ -77,10 +70,7 @@ export function hasPermission(role: AppRole | null | undefined, cap: Capability)
 
 export function highestRole(roles: readonly AppRole[]): AppRole {
   if (roles.length === 0) return "guest";
-  return roles.reduce<AppRole>(
-    (best, r) => (ROLE_RANK[r] > ROLE_RANK[best] ? r : best),
-    roles[0],
-  );
+  return roles.reduce<AppRole>((best, r) => (ROLE_RANK[r] > ROLE_RANK[best] ? r : best), roles[0]);
 }
 
 export const PLAN_FOR_ROLE: Record<AppRole, string> = {

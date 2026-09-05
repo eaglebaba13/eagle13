@@ -17,11 +17,7 @@ import {
   type Candle5m,
   type ExecutionPlan,
 } from "./gann-intraday-execution";
-import {
-  evaluateCube,
-  type CubeInputs,
-  type CubeResult,
-} from "./gann-cube-engine";
+import { evaluateCube, type CubeInputs, type CubeResult } from "./gann-cube-engine";
 import type { RankedLevel } from "./gann-level-ranking";
 import { getInstrumentPolicy, type InstrumentSymbol } from "./gann-intraday-policy";
 import type { TimedCandle5m } from "./gann-intraday-touch";
@@ -30,13 +26,7 @@ export type AmbiguousPolicy = "conservative" | "optimistic" | "exclude_ambiguous
 export const DEFAULT_AMBIGUOUS_POLICY: AmbiguousPolicy = "conservative";
 
 export type SessionOutcome =
-  | "TARGET"
-  | "STOP"
-  | "OPEN"
-  | "MISSED_CHASE"
-  | "INVALIDATED"
-  | "NO_TOUCH"
-  | "AMBIGUOUS_EXCLUDED";
+  "TARGET" | "STOP" | "OPEN" | "MISSED_CHASE" | "INVALIDATED" | "NO_TOUCH" | "AMBIGUOUS_EXCLUDED";
 
 export type LevelSimulation = {
   level: RankedLevel;
@@ -83,11 +73,7 @@ function stripCandle(c: TimedCandle5m): Candle5m {
   return { open: c.open, high: c.high, low: c.low, close: c.close };
 }
 
-function candleTouchesLevel(
-  c: TimedCandle5m,
-  level: number,
-  tol: number,
-): boolean {
+function candleTouchesLevel(c: TimedCandle5m, level: number, tol: number): boolean {
   if (c.low <= level && level <= c.high) return true;
   if (level > c.high) return level - c.high <= tol;
   return c.low - level <= tol;
@@ -304,8 +290,7 @@ export type SimulateSessionArgs = {
 };
 
 export function simulateSession(args: SimulateSessionArgs): SessionSimulation {
-  const started =
-    typeof performance !== "undefined" ? performance.now() : Date.now();
+  const started = typeof performance !== "undefined" ? performance.now() : Date.now();
   const perLevel = args.ranked.map((lvl) =>
     simulateLevel(
       args.instrument,
@@ -339,8 +324,7 @@ export function simulateSession(args: SimulateSessionArgs): SessionSimulation {
     if (p.cube.action === "BUY" || p.cube.action === "SELL") counters.cubeApproved++;
     if (p.cube.action === "NO_TRADE_CONFLICT") counters.cubeConflict++;
   }
-  const finished =
-    typeof performance !== "undefined" ? performance.now() : Date.now();
+  const finished = typeof performance !== "undefined" ? performance.now() : Date.now();
   return {
     instrument: args.instrument,
     totalCandles: args.candles.length,

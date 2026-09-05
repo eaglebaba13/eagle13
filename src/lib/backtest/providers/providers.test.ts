@@ -16,11 +16,7 @@ describe("Phase 21.4 Stage 4C · intraday providers", () => {
 
   it("listIntradayProviders filters by instrument + timeframe", () => {
     const list = listIntradayProviders("NIFTY50", "5m");
-    expect(list.map((a) => a.id).sort()).toEqual([
-      "BROKER_CSV",
-      "CSV",
-      "YAHOO_INTRADAY",
-    ]);
+    expect(list.map((a) => a.id).sort()).toEqual(["BROKER_CSV", "CSV", "YAHOO_INTRADAY"]);
   });
 
   it("CSV provider rejects empty payload with DATA_RANGE_UNAVAILABLE", async () => {
@@ -62,13 +58,17 @@ describe("Phase 21.4 Stage 4C · intraday providers", () => {
 
   it("CSV provider builds source metadata after a successful load", async () => {
     const rows: string[] = ["datetime,open,high,low,close,volume"];
-    let h = 9, m = 15;
+    let h = 9,
+      m = 15;
     for (let i = 0; i < 75; i++) {
       const hh = String(h).padStart(2, "0");
       const mm = String(m).padStart(2, "0");
       rows.push(`2024-06-04 ${hh}:${mm}:00,22000,22005,21995,22001,100`);
       m += 5;
-      if (m >= 60) { m -= 60; h += 1; }
+      if (m >= 60) {
+        m -= 60;
+        h += 1;
+      }
     }
     const req = {
       instrument: "NIFTY50" as const,

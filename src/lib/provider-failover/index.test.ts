@@ -51,7 +51,9 @@ describe("provider-failover", () => {
   it("handles thrown errors without crashing", async () => {
     const throwing: ProviderFetcher<string> = {
       id: "UPSTOX",
-      fetch: async () => { throw new Error("boom"); },
+      fetch: async () => {
+        throw new Error("boom");
+      },
     };
     const r = await runProviderChain([throwing, fetcher("INDSTOCKS", true, "z")]);
     expect(r.state).toBe("FAILOVER_OK");

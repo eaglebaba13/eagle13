@@ -41,9 +41,7 @@ export function deriveCanonicalVerdict(
     };
   }
   const runtime = report.overall;
-  const criticalContradictions = report.contradictions.some(
-    (c) => c.severity === "critical",
-  );
+  const criticalContradictions = report.contradictions.some((c) => c.severity === "critical");
   const caveats: string[] = [];
 
   if (runtime === "NOT_READY" || criticalContradictions) {
@@ -54,10 +52,9 @@ export function deriveCanonicalVerdict(
       caveats: criticalContradictions
         ? ["Critical cross-module contradictions detected — subscription and closed beta blocked"]
         : ["Runtime NOT READY — subscription blocked; closed beta on hold until blockers clear"],
-      rationale:
-        criticalContradictions
-          ? "Critical contradictions between modules"
-          : "Runtime aggregator reports NOT_READY",
+      rationale: criticalContradictions
+        ? "Critical contradictions between modules"
+        : "Runtime aggregator reports NOT_READY",
       generatedAt: report.generatedAt,
     };
   }
