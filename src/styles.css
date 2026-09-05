@@ -564,10 +564,6 @@ a {
   -webkit-overflow-scrolling: touch;
 }
 
-#lovable-badge {
-  display: none !important;
-}
-
 /* =========================================================================
  * PREMIUM TERMINAL LAYER — deep-space backdrop, live ticker,
  * animated gradient borders, count-glow micro-interactions.
