@@ -14,7 +14,6 @@ function newRunId(): string {
 }
 
 export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .handler(async (): Promise<RuntimeReadinessReport> => {
     const now = new Date().toISOString();
     const { fetchCanonicalOptionChain } =
