@@ -21,6 +21,14 @@ const AUDIO_ASSETS: Record<AudioEvent, string> = {
   NEWS_IMPACT: "/audio/eagle-chirping.wav",
 };
 
+/**
+ * Get the asset URL for an audio event type.
+ * Exported for testing — verifies the actual production mapping.
+ */
+export function getAudioAssetUrl(event: AudioEvent): string {
+  return AUDIO_ASSETS[event];
+}
+
 const STORAGE_KEY = "eb-audio-prefs";
 
 class AudioNotificationManager {
@@ -179,6 +187,14 @@ class AudioNotificationManager {
       return null;
     }
   }
+}
+
+/**
+ * Create a fresh AudioNotificationManager instance for testing.
+ * Does NOT use the singleton — each call creates a new instance.
+ */
+export function createAudioNotificationManager(): AudioNotificationManager {
+  return new AudioNotificationManager();
 }
 
 // Module-level singleton

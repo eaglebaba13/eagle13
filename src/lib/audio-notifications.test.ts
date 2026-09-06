@@ -1,59 +1,302 @@
-import { describe, expect, it, vi } from "vitest";
-import { getAudioNotificationManager } from "./audio-notifications";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import {
+  getAudioAssetUrl,
+  getAudioNotificationManager,
+  createAudioNotificationManager,
+  type AudioEvent,
+} from "./audio-notifications";
 
-describe("audio-notifications", () => {
-  it("returns valid config", () => {
-    const mgr = getAudioNotificationManager();
-    const config = mgr.getConfig();
-    expect(typeof config.enabled).toBe("boolean");
-    expect(typeof config.signalSounds).toBe("boolean");
-    expect(typeof config.newsSounds).toBe("boolean");
+// ────────────────────── Asset Validation ───────────────────────────
+
+describe("audio asset validation", () => {
+  it("eagle-calling.wav exists in public/audio/", () => {
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const assetPath = path.resolve(__dirname, "../../public/audio/eagle-calling.wav");
+    expect(fs.existsSync(assetPath)).toBe(true);
   });
 
-  it("play returns boolean", async () => {
-    const mgr = getAudioNotificationManager();
-    const result = await mgr.play("RESEARCH_SIGNAL", "fp-test-1");
-    expect(typeof result).toBe("boolean");
+  it("eagle-chirping.wav exists in public/audio/", () => {
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const assetPath = path.resolve(__dirname, "../../public/audio/eagle-chirping.wav");
+    expect(fs.existsSync(assetPath)).toBe(true);
+  });
+});
+
+// ────────────────────── Real Mapping Tests ─────────────────────────
+
+describe("audio event → asset mapping", () => {
+  it("RESEARCH_SIGNAL maps to /audio/eagle-calling.wav", () => {
+    expect(getAudioAssetUrl("RESEARCH_SIGNAL")).toBe("/audio/eagle-calling.wav");
   });
 
-  it("play deduplicates by fingerprint", async () => {
-    const mgr = getAudioNotificationManager();
-    await mgr.play("RESEARCH_SIGNAL", "fp-dedup-test");
-    const result = await mgr.play("RESEARCH_SIGNAL", "fp-dedup-test");
+  it("NEWS_IMPACT maps to /audio/eagle-chirping.wav", () => {
+    expect(getAudioAssetUrl("NEWS_IMPACT")).toBe("/audio/eagle-chirping.wav");
+  });
+
+  it("mapping is exhaustive — all AudioEvent types have entries", () => {
+    const events: AudioEvent[] = ["RESEARCH_SIGNAL", "NEWS_IMPACT"];
+    for (const event of events) {
+      expect(getAudioAssetUrl(event)).toBeTruthy();
+      expect(getAudioAssetUrl(event)).toMatch(/^\/audio\/.*\.wav$/);
+    }
+  });
+});
+
+// ────────────────────── Real Playback Invocation ───────────────────
+
+describe("audio playback invocation", () => {
+  it("play attempts eagle-calling asset for RESEARCH_SIGNAL when enabled and user interacted", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    // Simulate user interaction
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    // Mock the internal playAudio to capture the URL
+    let capturedUrl: string | null = null;
+    const originalPlayAudio = (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+      capturedUrl = url;
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-test-play-1");
+    expect(result).toBe(true);
+    expect(capturedUrl).toBe("/audio/eagle-calling.wav");
+  });
+
+  it("play attempts eagle-chirping asset for NEWS_IMPACT", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let capturedUrl: string | null = null;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+      capturedUrl = url;
+    };
+
+    const result = await mgr.play("NEWS_IMPACT", "fp-test-play-news-1");
+    expect(result).toBe(true);
+    expect(capturedUrl).toBe("/audio/eagle-chirping.wav");
+  });
+});
+
+// ────────────────────── Deduplication ──────────────────────────────
+
+describe("audio deduplication", () => {
+  it("same fingerprint → no second playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    await mgr.play("RESEARCH_SIGNAL", "fp-same");
+    await mgr.play("RESEARCH_SIGNAL", "fp-same");
+    expect(playCount).toBe(1);
+  });
+
+  it("different fingerprint → playback allowed for each", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    await mgr.play("RESEARCH_SIGNAL", "fp-a");
+    await mgr.play("RESEARCH_SIGNAL", "fp-b");
+    expect(playCount).toBe(2);
+  });
+
+  it("clearDeduplication allows replaying same fingerprint", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    await mgr.play("RESEARCH_SIGNAL", "fp-clear");
+    mgr.clearDeduplication();
+    await mgr.play("RESEARCH_SIGNAL", "fp-clear");
+    expect(playCount).toBe(2);
+  });
+
+  it("different events with same fingerprint are deduplicated", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    await mgr.play("RESEARCH_SIGNAL", "fp-shared");
+    await mgr.play("NEWS_IMPACT", "fp-shared"); // same fingerprint
+    expect(playCount).toBe(1); // deduplicated
+  });
+});
+
+// ────────────────────── Autoplay / Disabled States ─────────────────
+
+describe("audio autoplay and disabled states", () => {
+  it("before user interaction → no playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    // userInteracted defaults to false
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-no-interact");
+    expect(result).toBe(false);
+    expect(playCount).toBe(0);
+  });
+
+  it("sound disabled → no playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: false, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-disabled");
+    expect(result).toBe(false);
+    expect(playCount).toBe(0);
+  });
+
+  it("signalSounds disabled → no signal playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: false, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-sig-off");
+    expect(result).toBe(false);
+    expect(playCount).toBe(0);
+  });
+
+  it("newsSounds disabled → no news playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: false });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    const result = await mgr.play("NEWS_IMPACT", "fp-news-off");
+    expect(result).toBe(false);
+    expect(playCount).toBe(0);
+  });
+
+  it("newsSounds disabled does NOT affect signal playback", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: false });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let playCount = 0;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      playCount++;
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-news-off-sig-on");
+    expect(result).toBe(true);
+    expect(playCount).toBe(1);
+  });
+});
+
+// ────────────────────── Missing Asset Handling ─────────────────────
+
+describe("missing asset handling", () => {
+  it("playAudio failure returns false, no exception", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    // Mock playAudio to simulate missing asset
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      throw new Error("AudioContext decode failed");
+    };
+
+    const result = await mgr.play("RESEARCH_SIGNAL", "fp-missing");
     expect(result).toBe(false);
   });
 
-  it("different fingerprints are not deduplicated", async () => {
-    const mgr = getAudioNotificationManager();
-    const r1 = await mgr.play("RESEARCH_SIGNAL", "fp-diff-a");
-    const r2 = await mgr.play("RESEARCH_SIGNAL", "fp-diff-b");
-    expect(typeof r1).toBe("boolean");
-    expect(typeof r2).toBe("boolean");
-  });
+  it("application remains functional after playback failure", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
 
-  it("clearDeduplication resets state", async () => {
-    const mgr = getAudioNotificationManager();
-    await mgr.play("RESEARCH_SIGNAL", "fp-clear-1");
-    mgr.clearDeduplication();
-    // After clear, new fingerprint should not be deduplicated
-    const result = await mgr.play("RESEARCH_SIGNAL", "fp-clear-2");
-    expect(typeof result).toBe("boolean");
-  });
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      throw new Error("Asset not found");
+    };
 
-  it("isPlaybackAvailable returns boolean", () => {
-    const mgr = getAudioNotificationManager();
-    expect(typeof mgr.isPlaybackAvailable()).toBe("boolean");
+    // First call fails
+    await mgr.play("RESEARCH_SIGNAL", "fp-fail-1");
+    // Second call with different fingerprint should still be attempted
+    let attempted = false;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async () => {
+      attempted = true;
+    };
+    await mgr.play("RESEARCH_SIGNAL", "fp-fail-2");
+    expect(attempted).toBe(true);
   });
+});
 
-  it("research signal asset path is correct", () => {
-    expect("/audio/eagle-calling.wav").toBe("/audio/eagle-calling.wav");
+// ────────────────────── News Non-trigger ───────────────────────────
+
+describe("news non-trigger", () => {
+  it("unrelated events do NOT trigger eagle-chirping.wav", async () => {
+    const mgr = createAudioNotificationManager();
+    mgr.setConfig({ enabled: true, signalSounds: true, newsSounds: true });
+    (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
+
+    let capturedUrl: string | null = null;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+      capturedUrl = url;
+    };
+
+    // RESEARCH_SIGNAL should use eagle-calling, not eagle-chirping
+    await mgr.play("RESEARCH_SIGNAL", "fp-not-news");
+    expect(capturedUrl).toBe("/audio/eagle-calling.wav");
+    expect(capturedUrl).not.toBe("/audio/eagle-chirping.wav");
   });
+});
 
-  it("news impact asset path is correct", () => {
-    expect("/audio/eagle-chirping.wav").toBe("/audio/eagle-chirping.wav");
+// ────────────────────── Accessibility ──────────────────────────────
+
+describe("SoundToggle accessibility", () => {
+  it("SoundToggle component exists and is importable", async () => {
+    const mod = await import("@/components/SoundToggle");
+    expect(mod.SoundToggle).toBeDefined();
+    expect(typeof mod.SoundToggle).toBe("function");
   });
+});
 
-  it("no broker execution dependency in audio module", () => {
+// ────────────────────── Security ───────────────────────────────────
+
+describe("audio security", () => {
+  it("audio-notifications.ts has no broker execution imports", () => {
     const fs = require("fs") as typeof import("fs");
     const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "audio-notifications.ts");
@@ -61,14 +304,19 @@ describe("audio-notifications", () => {
     expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);
   });
 
-  it("RESEARCH_SIGNAL maps to eagle-calling", () => {
-    // Verify the event→asset mapping is correct
-    const signal = "RESEARCH_SIGNAL";
-    expect(signal).toBe("RESEARCH_SIGNAL");
+  it("SoundToggle.tsx has no broker execution imports", () => {
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const filePath = path.resolve(__dirname, "../components/SoundToggle.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);
   });
 
-  it("NEWS_IMPACT maps to eagle-chirping", () => {
-    const news = "NEWS_IMPACT";
-    expect(news).toBe("NEWS_IMPACT");
+  it("use-audio-alerts.ts has no broker execution imports", () => {
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const filePath = path.resolve(__dirname, "../hooks/use-audio-alerts.ts");
+    const content = fs.readFileSync(filePath, "utf-8");
+    expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);
   });
 });
