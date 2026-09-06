@@ -128,13 +128,11 @@ export class WorkersWebSocketTransport implements WebSocketTransport {
   }
 
   ping(): void {
-    // Cloudflare Workers WebSocket does not expose a ping() method.
-    // INDstocks heartbeat is handled via application-level messages if required,
-    // or via the protocol-level ping/pong managed by the runtime.
-    // Send a JSON ping if the provider requires application-level heartbeat.
-    if (this._readyState === WS_OPEN && this.ws) {
-      try { this.ws.send(JSON.stringify({ type: "ping" })); } catch { /* ignore */ }
-    }
+    // INDstocks documentation does NOT specify a client-initiated application-level
+    // ping message. The server sends periodic heartbeat messages which the client
+    // should handle/ignore. Cloudflare Workers manages protocol-level WebSocket
+    // keepalive transparently. Do NOT send undocumented JSON payloads.
+    // This method is intentionally a no-op.
   }
 
   private attachListeners(): void {

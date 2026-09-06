@@ -18,6 +18,7 @@ import {
 } from "./indstocks-ws-types";
 import type { WebSocketTransport, WebSocketTransportConfig } from "./websocket-transport";
 import { WS_OPEN, WS_CLOSED } from "./websocket-transport";
+import { WorkersWebSocketTransport } from "./workers-ws-transport";
 
 export type WsConnectionListener = (snapshot: WsConnectionSnapshot) => void;
 export type WsMessageListener = (message: WsProviderMessage) => void;
@@ -115,12 +116,9 @@ export class IndstocksWsConnection {
   // ──────────────── Internal ────────────────
 
   private defaultTransportFactory(config: WebSocketTransportConfig): WebSocketTransport {
-    // Dynamic import to avoid bundling issues in different runtimes.
-    // In Cloudflare Workers, this resolves to WorkersWebSocketTransport.
-    // For tests, inject a mock factory.
-    throw new Error(
-      "No transport factory provided. Inject one via constructor opts for your runtime.",
-    );
+    // Production default: Cloudflare Workers-compatible transport using fetch+Upgrade.
+    // Tests inject a mock factory via constructor opts to avoid real connections.
+    return new WorkersWebSocketTransport(config);
   }
 
   private setState(next: WsConnectionState): void {
@@ -207,16 +205,24 @@ export class IndstocksWsConnection {
     }
   }
 
-  // ──────────────── Heartbeat ────────────────
+  // ──────────────── Heartbeat / Stale Detection ────────────────
 
   private startHeartbeat(): void {
     this.clearHeartbeat();
+    // INDstocks sends server-originated heartbeat messages. We do NOT send
+    // client-initiated pings (no documented protocol for it). Instead, we
+    // monitor whether ANY message (including provider heartbeats) arrives
+    // within the heartbeat window. If not, the connection is stale → reconnect.
     this.heartbeatTimer = setInterval(() => {
-      if (this.state !== "CONNECTED" || !this.transport) return;
-      try {
-        this.transport.ping();
-      } catch {
-        // ping failure — will trigger close
+      if (this.state !== "CONNECTED") return;
+      if (!this.lastMessageAt) return;
+      const age = this.nowMs() - Date.parse(this.lastMessageAt);
+      if (age > this.heartbeatIntervalMs * 2) {
+        // No message received within 2× heartbeat window — connection is stale.
+        this.lastError = "stale: no provider message within heartbeat window";
+        this.destroyTransport();
+        this.setState("DISCONNECTED");
+        this.scheduleReconnect();
       }
     }, this.heartbeatIntervalMs);
   }
@@ -225,6 +231,14 @@ export class IndstocksWsConnection {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+    }
+  }
+
+  private destroyTransport(): void {
+    if (this.transport) {
+      this.transport.removeAllListeners();
+      try { this.transport.terminate(); } catch { /* ignore */ }
+      this.transport = null;
     }
   }
 
