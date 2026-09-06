@@ -16,6 +16,7 @@ import { type ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SoundToggle } from "@/components/SoundToggle";
 import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NotificationBell } from "@/components/NotificationBell";
 import { NAV_REGISTRY } from "@/lib/navigation";
@@ -130,6 +131,7 @@ function AppShellHeader() {
       </nav>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        <SoundToggle />
         <ThemeToggle />
         <NotificationBell />
         <div className="hidden lg:block">
