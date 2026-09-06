@@ -5,3 +5,4 @@ export * from "./indstocks-types";
 export * from "./indstocks-instruments";
 export * from "./indstocks-range-policy";
 export * from "./indstocks-normalizer";
+export * from "./indstocks-ws-types";
