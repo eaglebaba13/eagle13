@@ -223,6 +223,83 @@ Key categories:
 
 ---
 
+## Phase 8B — Production Release Reconciliation
+
+**Status: COMPLETE — no application changes required**
+
+### Release Branch
+
+- **Branch**: `production-release-v2`
+- **Created from**: `75abe79` (README commit on top of `910977d`)
+- **Application base**: `910977d9d3367f4e16d47ae89101e0c522fcf516`
+
+### Production Branch Audit
+
+- **Production branch**: `production-hotfix-20260807`
+- **Production HEAD**: `e518d7436776d422074ac8815531accb660f3c21`
+- **Merge base**: `5c0346a85160998e09298cc6585ab8afe564d1a2`
+- **Production-only commits**: 163
+- **Target-only commits**: 25
+- **Branch status**: DIVERGED (1184 files changed)
+
+### Production Changes Classification
+
+All 163 production-only changes classified:
+
+**OBSOLETE** (not needed in target):
+- All Nitro/Coolify/Hostinger deployment (9 commits)
+- All Lovable migration (8+ commits)
+- All lockfile synchronization (2 commits)
+- `package.json` pinned versions, engines, start script
+- `vite.config.ts` Nitro plugin
+- SSR fixes (986bef6, d487445) — target has different route architecture
+- Auth-related changes (f1a96e7, 4238ee2, 1725c19, 13bf800, c3d901a, 2300c61)
+- Provider credential files (e9eb316) — files don't exist in target
+- RLS migration (0cf2372) — not applicable without auth
+- Service role binding (c83a847) — only changed bun.lock/package.json during Lovable
+- Secret tracking (8598864) — already done in target
+- Closed-beta metadata (cc01c1a) — removed in target
+- All "Changes" and "Work in progress" commits with no functional content
+
+**DEFERRED** (separate future scope):
+- GTI AI Decision Engine (`src/lib/gti-ai-decision/`) — 5 files, ~645 lines
+- Advanced Options Analytics (`src/lib/options-analytics/`) — 14 files, ~800+ lines
+- Portfolio Manager (`src/lib/portfolio-manager/`) — 8 files, ~700+ lines
+- Strategy Builder (`src/lib/strategy-builder/`) — 10 files, ~800+ lines
+- Provider Health Registry (`src/lib/provider-health-registry/`) — 8 files, ~500+ lines
+- Watchlist route
+- Strategy Builder route
+- Signal transition hardening (23aac76, 357ef61, ea40912)
+- 6 SQL migrations from August 2026
+
+**PORTED**: None — target branch is self-contained for core functionality.
+
+### SQL Migrations
+
+16 target-branch migrations (July 2026) are present. 6 production-only migrations (August 2026) are for features/auth not in target. Classified as **OBSOLETE** or **DEFERRED**.
+
+### Security
+
+- No production-only security fixes needed porting
+- Target already has credential isolation, server-side tokens, no client secrets
+- Broker execution remains disabled
+
+### Regression Results
+
+```
+Tests:     2508 passed, 0 failed
+Build:     PASS
+Formula:   PASS (zero diff on all 8 protected files)
+Broker:    DISABLED
+```
+
+### Next Step
+
+Deploy `production-release-v2` to Cloudflare Workers via Wrangler.
+Requires: `CLOUDFLARE_API_TOKEN` or `npx wrangler login`.
+
+---
+
 ## Phase 8 Status — Production Deployment + Runtime Certification
 
 **Status: OPEN / NOT CERTIFIED**
