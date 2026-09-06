@@ -136,31 +136,38 @@ export function createAggregatorState(
  * Historical candles use the existing HistoricalCandle format (ISO time).
  * Live candles use epoch ms bucketing.
  * Returns a unified array sorted by timestamp.
+ * Volume is preserved for indicator calculations (e.g. VWAP).
  */
+export interface MergedCandlePoint {
+  readonly x: number;
+  readonly y: readonly [number, number, number, number];
+  readonly volume: number | null;
+}
+
 export function mergeHistoricalAndLive(
   historical: readonly { readonly time: string; readonly open: number; readonly high: number; readonly low: number; readonly close: number; readonly volume: number | null }[],
   completed: readonly LiveCandle[],
   current: LiveCandle | null,
-): Array<{ x: number; y: [number, number, number, number] }> {
-  const all: Array<{ x: number; y: [number, number, number, number] }> = [];
+): MergedCandlePoint[] {
+  const all: MergedCandlePoint[] = [];
 
   for (const c of historical) {
     const ms = Date.parse(c.time);
     if (Number.isFinite(ms)) {
-      all.push({ x: ms, y: [c.open, c.high, c.low, c.close] });
+      all.push({ x: ms, y: [c.open, c.high, c.low, c.close], volume: c.volume });
     }
   }
 
   for (const c of completed) {
-    all.push({ x: c.bucketMs, y: [c.open, c.high, c.low, c.close] });
+    all.push({ x: c.bucketMs, y: [c.open, c.high, c.low, c.close], volume: c.volume });
   }
 
   if (current) {
-    all.push({ x: current.bucketMs, y: [current.open, current.high, current.low, current.close] });
+    all.push({ x: current.bucketMs, y: [current.open, current.high, current.low, current.close], volume: current.volume });
   }
 
   // Deduplicate by x (timestamp), last wins
-  const byX = new Map<number, { x: number; y: [number, number, number, number] }>();
+  const byX = new Map<number, MergedCandlePoint>();
   for (const point of all) {
     byX.set(point.x, point);
   }

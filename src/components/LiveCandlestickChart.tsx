@@ -3,7 +3,7 @@
 // renders candlestick + overlay indicators + oscillator panels.
 // Provider-neutral. No token exposure.
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ApexChart } from "@/components/ApexChart";
 import { OscillatorPanel } from "@/components/OscillatorPanel";
@@ -13,7 +13,8 @@ import { getIndicator } from "@/lib/indicators/registry";
 import {
   indicatorsToChartSeries,
   getOscillatorOptions,
-  type IndicatorSeriesConfig,
+  getOverlaySeriesColors,
+  validateIndicatorParams,
 } from "@/lib/indicators/chart-adapter";
 import type { IndicatorCandle, IndicatorResult } from "@/lib/indicators/types";
 import type { ActiveIndicator } from "@/lib/indicators/ui-state";
@@ -23,6 +24,11 @@ export interface LiveCandlestickChartProps {
   readonly intervalMs?: number;
   readonly height?: number;
   readonly pollIntervalMs?: number;
+}
+
+interface IndicatorError {
+  readonly indicatorId: string;
+  readonly message: string;
 }
 
 export function LiveCandlestickChart({
@@ -40,7 +46,7 @@ export function LiveCandlestickChart({
     refetchOnWindowFocus: false,
   });
 
-  // Convert series data to IndicatorCandle format for indicator calculation
+  // Convert series data to IndicatorCandle format — PRESERVE VOLUME
   const candles: readonly IndicatorCandle[] = useMemo(() => {
     if (!data?.series) return [];
     return data.series.map((point) => ({
@@ -49,25 +55,42 @@ export function LiveCandlestickChart({
       high: point.y[1],
       low: point.y[2],
       close: point.y[3],
-      volume: null, // historical candles from merge don't carry volume separately
+      volume: point.volume ?? null,
     }));
   }, [data?.series]);
 
-  // Compute indicator results
-  const indicatorResults: readonly IndicatorResult[] = useMemo(() => {
-    if (candles.length === 0) return [];
+  // Compute indicator results with explicit error handling
+  const { indicatorResults, indicatorErrors } = useMemo(() => {
+    if (candles.length === 0) return { indicatorResults: [], indicatorErrors: [] };
     const results: IndicatorResult[] = [];
+    const errors: IndicatorError[] = [];
+
     for (const ind of activeIndicators) {
       if (!ind.enabled) continue;
       const def = getIndicator(ind.id);
-      if (!def) continue;
+      if (!def) {
+        errors.push({ indicatorId: ind.id, message: "Unknown indicator" });
+        continue;
+      }
+
+      // Validate parameters before calculation
+      const validation = validateIndicatorParams(ind.params, def.params);
+      if (!validation.valid) {
+        errors.push({ indicatorId: ind.id, message: validation.errors.join("; ") });
+        continue;
+      }
+
       try {
         results.push(def.calculate(candles, ind.params));
-      } catch {
-        // indicator calculation failed — skip silently
+      } catch (err) {
+        errors.push({
+          indicatorId: ind.id,
+          message: err instanceof Error ? err.message : "Calculation failed",
+        });
       }
     }
-    return results;
+
+    return { indicatorResults: results, indicatorErrors: errors };
   }, [candles, activeIndicators]);
 
   // Transform indicators into chart series
@@ -98,7 +121,8 @@ export function LiveCandlestickChart({
     ...overlaySeries.map((s) => ({ name: s.name, data: [...s.data], type: s.type })),
   ];
 
-  const mainOptions = buildChartOptions(symbol, data, overlaySeries.length > 0);
+  const overlayColors = getOverlaySeriesColors(overlaySeries);
+  const mainOptions = buildChartOptions(overlayColors);
 
   return (
     <div>
@@ -115,6 +139,17 @@ export function LiveCandlestickChart({
 
       {/* Indicator controls */}
       <IndicatorControls active={activeIndicators} onChange={setActiveIndicators} />
+
+      {/* Indicator errors */}
+      {indicatorErrors.length > 0 && (
+        <div className="mt-1">
+          {indicatorErrors.map((err) => (
+            <div key={err.indicatorId} className="text-xs text-amber-500">
+              {err.indicatorId}: {err.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main price chart with overlays */}
       <ApexChart type="candlestick" height={height} series={mainSeries} options={mainOptions} />
@@ -146,8 +181,8 @@ function ProviderStatusBadge({ status, freshness, provider }: { status: string; 
   );
 }
 
-function buildChartOptions(symbol: string, data: LiveCandleResponse, hasOverlays: boolean) {
-  const overlayColors = ["#f59e0b", "#3b82f6", "#a855f7", "#6b7280", "#22c55e", "#ef4444"];
+function buildChartOptions(overlayColors: string[]) {
+  const hasOverlays = overlayColors.length > 0;
 
   return {
     chart: {
@@ -172,7 +207,7 @@ function buildChartOptions(symbol: string, data: LiveCandleResponse, hasOverlays
     },
     colors: hasOverlays ? overlayColors : undefined,
     stroke: {
-      width: hasOverlays ? [1, 2, 2, 2, 2, 2] : undefined,
+      width: hasOverlays ? [1, ...overlayColors.map(() => 2)] : undefined,
     },
     grid: {
       borderColor: "#333",

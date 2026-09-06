@@ -27,7 +27,7 @@ export interface LiveCandleResponse {
   readonly freshness: string;
   readonly lastTickTimestamp: string | null;
   readonly lastTickLtp: number | null;
-  readonly series: ReadonlyArray<{ readonly x: number; readonly y: readonly [number, number, number, number] }>;
+  readonly series: ReadonlyArray<{ readonly x: number; readonly y: readonly [number, number, number, number]; readonly volume: number | null }>;
   readonly currentCandle: {
     readonly bucketMs: number;
     readonly open: number;

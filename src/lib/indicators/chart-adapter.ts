@@ -44,6 +44,19 @@ export function getIndicatorColor(outputKey: string): string {
   return INDICATOR_COLORS[outputKey] ?? "#888";
 }
 
+/**
+ * Get ordered colors for overlay series (for ApexCharts colors array).
+ * Returns one color per overlay series, matching their order.
+ */
+export function getOverlaySeriesColors(series: readonly ApexSeriesEntry[]): string[] {
+  return series.map((s) => {
+    // Extract output key from series name (e.g. "SMA Sma" → "sma", "BB Upper" → "upper")
+    const parts = s.name.split(" ");
+    const key = parts[parts.length - 1]?.toLowerCase() ?? "";
+    return getIndicatorColor(key);
+  });
+}
+
 // ────────────────────── Placement rules ────────────────────────────
 
 const OVERLAY_INDICATORS = new Set(["SMA", "EMA", "VWAP", "BOLLINGER"]);
