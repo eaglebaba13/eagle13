@@ -38,6 +38,8 @@ export interface IndstocksAdapterOptions extends IndstocksHttpConfig {
   readonly httpClient?: IndstocksHttpClient;
 }
 
+const ADAPTER_ROLE: "SECONDARY" = "SECONDARY";
+
 function providerTelemetry(input: {
   ok: boolean;
   code?: IndstocksErrorCode;
@@ -129,7 +131,7 @@ export class IndstocksAdapter {
           latencyMs: 0,
           nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: "unsupported symbol",
         }),
@@ -152,7 +154,7 @@ export class IndstocksAdapter {
           latencyMs: res.latencyMs,
           nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: res.error.message,
           retryAfterMs: res.error.retryAfterMs,
@@ -174,7 +176,7 @@ export class IndstocksAdapter {
           latencyMs: res.latencyMs,
           nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: "missing quote last_price",
         }),
@@ -182,7 +184,7 @@ export class IndstocksAdapter {
     }
 
     const prevClose = entry?.prev_close ?? entry?.ohlc?.close ?? null;
-    const telemetry = providerTelemetry({ ok: true, latencyMs: res.latencyMs, nowIso, ageSec: 0, role: "PRIMARY", providerTime: null, reason: null });
+    const telemetry = providerTelemetry({ ok: true, latencyMs: res.latencyMs, nowIso, ageSec: 0, role: ADAPTER_ROLE, providerTime: null, reason: null });
     const tick: QuoteTick = {
       symbol,
       last,
@@ -219,7 +221,7 @@ export class IndstocksAdapter {
           latencyMs: 0,
           nowIso: input.nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: "unsupported symbol",
         }),
@@ -235,7 +237,7 @@ export class IndstocksAdapter {
           latencyMs: 0,
           nowIso: input.nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: "unsupported timeframe",
         }),
@@ -254,7 +256,7 @@ export class IndstocksAdapter {
           latencyMs: 0,
           nowIso: input.nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: plan.reason,
         }),
@@ -308,7 +310,7 @@ export class IndstocksAdapter {
           latencyMs: totalLatency,
           nowIso: input.nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: lastErr.message,
           retryAfterMs: lastErr.retryAfterMs,
@@ -328,7 +330,7 @@ export class IndstocksAdapter {
         latencyMs: totalLatency,
         nowIso: input.nowIso,
         ageSec,
-        role: "PRIMARY",
+        role: ADAPTER_ROLE,
         providerTime: dq.actualTo,
         reason: totalRejected > 0 ? `rejected ${totalRejected} rows` : null,
       }),
@@ -353,7 +355,7 @@ export class IndstocksAdapter {
           latencyMs: 0,
           nowIso,
           ageSec: Infinity,
-          role: "PRIMARY",
+          role: ADAPTER_ROLE,
           providerTime: null,
           reason: "invalid nowIso",
         }),

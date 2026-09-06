@@ -169,6 +169,19 @@ describe("indstocks range policy", () => {
     expect(plan.chunks).toHaveLength(1);
   });
 
+  it("1h maximum window = 14 days (official INDstocks limit)", () => {
+    const plan = planIndstocksRange("1h", "2024-07-01", "2024-07-15");
+    expect(plan.ok).toBe(true);
+    // 14 days = exactly 1 chunk
+    expect(plan.chunks).toHaveLength(1);
+  });
+
+  it("1h range exceeding 14 days splits into multiple chunks", () => {
+    const plan = planIndstocksRange("1h", "2024-07-01", "2024-07-20");
+    expect(plan.ok).toBe(true);
+    expect(plan.chunks.length).toBeGreaterThan(1);
+  });
+
   it("rejects from > to", () => {
     const plan = planIndstocksRange("1d", "2024-07-10", "2024-07-01");
     expect(plan.ok).toBe(false);
@@ -445,5 +458,73 @@ describe("indstocks adapter", () => {
     expect(res.ok).toBe(false);
     const serialized = JSON.stringify(res);
     expect(serialized).not.toContain("super-secret-token-12345");
+  });
+
+  it("telemetry role = SECONDARY on successful quote", async () => {
+    const adapter = new IndstocksAdapter({
+      token: "test",
+      fetchImpl: vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true, data: { "NSE_26000": { last_price: 25000 } } }),
+        headers: { get: () => null },
+      }),
+    });
+    const res = await adapter.fetchQuote("NIFTY50", new Date().toISOString());
+    expect(res.telemetry.role).toBe("SECONDARY");
+  });
+
+  it("telemetry role = SECONDARY on quote failure", async () => {
+    const adapter = new IndstocksAdapter({
+      token: "test",
+      maxRetries: 0,
+      fetchImpl: vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve("Internal Server Error"),
+        headers: { get: () => null },
+      }),
+    });
+    const res = await adapter.fetchQuote("NIFTY50", new Date().toISOString());
+    expect(res.telemetry.role).toBe("SECONDARY");
+  });
+
+  it("telemetry role = SECONDARY on unsupported symbol", async () => {
+    const adapter = new IndstocksAdapter({ token: "test", fetchImpl: vi.fn() });
+    const res = await adapter.fetchQuote("GOLD", new Date().toISOString());
+    expect(res.telemetry.role).toBe("SECONDARY");
+  });
+
+  it("telemetry role = SECONDARY on successful historical", async () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const adapter = new IndstocksAdapter({
+      token: "test",
+      fetchImpl: vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true, data: { candles: [{ ts: nowSec - 86400, o: 25000, h: 25100, l: 24900, c: 25050, v: 1000 }] } }),
+        headers: { get: () => null },
+      }),
+    });
+    const res = await adapter.fetchHistorical("NIFTY50", "1d", 1, new Date().toISOString());
+    expect(res.telemetry.role).toBe("SECONDARY");
+  });
+
+  it("telemetry role = SECONDARY on historical failure", async () => {
+    const adapter = new IndstocksAdapter({
+      token: "test",
+      maxRetries: 0,
+      fetchImpl: vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: () => Promise.resolve("Rate Limited"),
+        headers: { get: () => "5" },
+      }),
+    });
+    const res = await adapter.fetchHistorical("NIFTY50", "1d", 1, new Date().toISOString());
+    expect(res.telemetry.role).toBe("SECONDARY");
+  });
+
+  it("REST scripCode NSE_26000 unchanged for NIFTY50", () => {
+    const i = resolveIndstocksInstrument("NIFTY50");
+    expect(i?.scripCode).toBe("NSE_26000");
   });
 });

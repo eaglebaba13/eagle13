@@ -5,7 +5,8 @@
 import type { QuoteSymbol } from "../types";
 
 export interface IndstocksInstrument {
-  readonly scripCode: string; // REST format: SEGMENT_TOKEN
+  readonly scripCode: string; // REST format: SEGMENT_TOKEN (e.g. NSE_26000)
+  readonly webSocketToken?: string; // WebSocket format: SEGMENT:TOKEN (e.g. NIDX:NIFTY_50) — future use only
   readonly exchange: string;
   readonly segment: string;
   readonly tradingSymbol: string;

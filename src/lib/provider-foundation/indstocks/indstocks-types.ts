@@ -37,7 +37,7 @@ export const TIMEFRAME_TO_INDSTOCKS: Readonly<Record<Timeframe, IndstocksInterva
   "3m": { label: "3minute", maxWindowDays: 7 },
   "5m": { label: "5minute", maxWindowDays: 7 },
   "15m": { label: "15minute", maxWindowDays: 7 },
-  "1h": { label: "60minute", maxWindowDays: 15 },
+  "1h": { label: "60minute", maxWindowDays: 14 },
   "1d": { label: "1day", maxWindowDays: 365 },
 };
 
