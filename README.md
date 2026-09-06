@@ -13,9 +13,11 @@ Institutional-grade Indian stock-market **research platform**.
 | GitHub | `eaglebaba13/eagle13` |
 | Validated branch | `public-unrestricted-upstox-fix` |
 | Validated HEAD | `910977d9d3367f4e16d47ae89101e0c522fcf516` |
+| Release branch | `production-release-v2` |
 | Production URL | `https://eaglebaba.lwill.in/` |
-| Deployment target | Cloudflare Workers |
-| Worker name | `eaglebaba13-eagle13` |
+| Deployment platform | Coolify on Hostinger VPS KVM4 |
+| Runtime | Node.js + Nitro node-server |
+| Cloudflare | DNS/CDN/proxy only (not application deployment) |
 
 ---
 
@@ -214,12 +216,12 @@ Key categories:
 
 ### Deployment Divergence
 
-| Aspect | Production | Target |
+| Aspect | Production (corrected) | Target |
 |--------|-----------|--------|
-| Server runtime | Nitro `node-server` (Coolify/VPS) | TanStack Start (Cloudflare Workers) |
-| vite.config.ts | `nitro({ preset: "node-server" })` | `tanstackStart({ server: { entry: "server" } })` |
-| Start script | `node .output/server/index.mjs` | None (Wrangler) |
-| Node requirement | `>=22.13.0` | None (Workers runtime) |
+| Server runtime | Nitro `node-server` (Coolify/VPS) | Nitro `node-server` (Coolify/VPS) |
+| vite.config.ts | `nitro({ preset: "node-server" })` | `nitro({ preset: "node-server" })` |
+| Start script | `node .output/server/index.mjs` | `node .output/server/index.mjs` |
+| Deployment | Coolify on Hostinger VPS | Coolify on Hostinger VPS |
 
 ---
 
@@ -295,31 +297,106 @@ Broker:    DISABLED
 
 ### Next Step
 
-Deploy `production-release-v2` to Cloudflare Workers via Wrangler.
-Requires: `CLOUDFLARE_API_TOKEN` or `npx wrangler login`.
+Deploy `production-release-v2` to Coolify on Hostinger VPS KVM4.
+
+---
+
+## Phase 8C — Coolify + Hostinger VPS Production Deployment
+
+**Status: SOURCE COMPLETE / RUNTIME UNVERIFIED**
+
+### Deployment Architecture (Corrected)
+
+| Layer | Technology |
+|-------|-----------|
+| Development | VS Code → Kilo Code → GitHub |
+| Source | `production-release-v2` branch |
+| Deployment | Coolify on Hostinger VPS KVM4 |
+| Runtime | Node.js + Nitro node-server |
+| Application | `node .output/server/index.mjs` |
+| DNS/CDN | Cloudflare (proxy only, not application deployment) |
+
+Cloudflare Workers/Wrangler is **NOT** the application deployment target.
+
+### Changes Made
+
+Commit `1f186ae`:
+- Added `nitro` plugin with `node-server` preset to `vite.config.ts`
+- Added `start` script: `node .output/server/index.mjs`
+- Build produces `.output/server/index.mjs` + static assets
+- Audio assets (`eagle-calling.wav`, `eagle-chirping.wav`) included in output
+
+### Build Verification
+
+```
+.output/server/index.mjs:  EXISTS
+.output/nitro.json:        EXISTS
+Asset hash:                index-DGGXpEKA.js
+Audio eagle-calling:       PRESENT in output
+Audio eagle-chirping:      PRESENT in output
+Tests:                     2508 passed, 0 failed
+Formula integrity:         PASS (zero diff against 910977d)
+```
+
+### Required Coolify Configuration
+
+1. Connect Coolify to `eaglebaba13/eagle13` repository
+2. Set branch to `production-release-v2`
+3. Build command: `npm run build`
+4. Start command: `node .output/server/index.mjs`
+5. Configure environment variables in Coolify (NOT in source):
+   - `INDSTOCKS_ACCESS_TOKEN`
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+   - Supabase credentials if required
+6. Configure domain: `eaglebaba.lwill.in`
+
+### Runtime Certification (Pending)
+
+After Coolify deployment, verify:
+
+```
+[ ] https://eaglebaba.lwill.in/ → HTTP 200
+[ ] Production serves index-DGGXpEKA.js (not stale index-C2zJWChg.js)
+[ ] /audio/eagle-calling.wav → 200
+[ ] /audio/eagle-chirping.wav → 200
+[ ] /astro loads
+[ ] /live-market-terminal loads
+[ ] NIFTY50 live data via NIDX:26000
+[ ] Historical bootstrap works
+[ ] Volume reaches VWAP
+[ ] Provider/freshness/data-quality truthful
+[ ] No secrets in client bundle
+[ ] Broker execution disabled
+```
 
 ---
 
 ## Phase 8 Status — Production Deployment + Runtime Certification
 
-**Status: OPEN / NOT CERTIFIED**
+**Status: SOURCE COMPLETE / RUNTIME UNVERIFIED**
 
-Production is stale. Production serves `index-C2zJWChg.js`; validated HEAD builds `index-CP7hgF98.js`.
+Deployment architecture corrected: Coolify on Hostinger VPS KVM4 (not Cloudflare Workers).
 
-Audio assets return 404 in production (stale deployment).
-
-Wrangler authentication was unavailable in the operator environment.
+Release branch `production-release-v2` is ready for Coolify deployment.
 
 ### Required Sequence
 
-1. Reconcile production branch history (Strategy E recommended: create `production-release-v2` from `910977d`, cherry-pick required production-only fixes)
-2. Full regression
-3. Deploy to Cloudflare Workers via Wrangler
+1. Configure Coolify application to deploy `production-release-v2`
+2. Set environment variables in Coolify
+3. Trigger deployment
 4. Wait ~3 minutes
-5. Verify production artifact matches HEAD
+5. Verify production artifact matches release
 6. Verify `/audio/eagle-calling.wav` → 200
 7. Verify `/audio/eagle-chirping.wav` → 200
 8. Verify routes: `/`, `/astro`, `/live-market-terminal`
+9. Verify NIFTY50 live data via `NIDX:26000`
+10. Verify historical bootstrap + live merge
+11. Verify volume reaches VWAP
+12. Verify provider/freshness/data-quality telemetry
+13. Verify credential security (no secrets in client bundle)
+14. Verify broker isolation
+15. Certify production
 9. Verify NIFTY50 live data via `NIDX:26000`
 10. Verify historical bootstrap + live merge
 11. Verify volume reaches VWAP
