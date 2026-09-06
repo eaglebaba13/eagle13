@@ -117,7 +117,19 @@ class LiveMarketStreamManager {
   }
 }
 
-// Module-level singleton (server-side only)
+// Module-level singleton (server-side only).
+//
+// Cloudflare Workers runtime note:
+// In Cloudflare Workers, each V8 isolate maintains its own module-level state.
+// This means the singleton is per-isolate, NOT globally durable across all
+// requests. Multiple isolates may each have their own WebSocket connection.
+// This is acceptable for a research terminal because:
+// 1. Each isolate's connection is independently managed
+// 2. The subscription manager prevents duplicate subscriptions within an isolate
+// 3. Cold starts will re-establish connections via the start() call
+// 4. No critical state is lost — historical data is fetched from REST on demand
+//
+// Do NOT claim this is a globally durable singleton. It is isolate-local.
 let instance: LiveMarketStreamManager | null = null;
 
 export function getLiveMarketStream(): LiveMarketStreamManager {
@@ -125,4 +137,15 @@ export function getLiveMarketStream(): LiveMarketStreamManager {
     instance = new LiveMarketStreamManager();
   }
   return instance;
+}
+
+/**
+ * Reset the singleton (for testing only).
+ * Not safe for production use — breaks other references to the old instance.
+ */
+export function resetLiveMarketStream(): void {
+  if (instance) {
+    instance.stop();
+    instance = null;
+  }
 }

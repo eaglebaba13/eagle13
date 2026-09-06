@@ -165,4 +165,104 @@ describe("candle-aggregator mergeHistoricalAndLive", () => {
     // Live candle should overwrite historical
     expect(result[0].y[0]).toBe(25000); // open from live
   });
+
+  it("no overlap returns all candles", () => {
+    const historical = [
+      { time: "2024-08-30T09:08:00.000Z", open: 24800, high: 24850, low: 24750, close: 24820, volume: 900 },
+      { time: "2024-08-30T09:09:00.000Z", open: 24820, high: 24900, low: 24800, close: 24880, volume: 1100 },
+    ];
+    const completed: LiveCandle[] = [{
+      bucketMs: Date.parse("2024-08-30T09:10:00.000Z"),
+      open: 24880, high: 24950, low: 24850, close: 24920, volume: 700,
+      provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+      openTimestamp: "2024-08-30T09:10:00.000Z", lastTimestamp: "2024-08-30T09:10:50.000Z", tickCount: 8,
+    }];
+    const result = mergeHistoricalAndLive(historical, completed, null);
+    expect(result).toHaveLength(3);
+  });
+
+  it("multiple overlapping candles — live wins", () => {
+    const historical = [
+      { time: "2024-08-30T09:09:00.000Z", open: 24800, high: 24850, low: 24750, close: 24820, volume: 900 },
+      { time: "2024-08-30T09:10:00.000Z", open: 24820, high: 24900, low: 24800, close: 24880, volume: 1100 },
+    ];
+    const completed: LiveCandle[] = [
+      {
+        bucketMs: Date.parse("2024-08-30T09:09:00.000Z"), // overlap
+        open: 24810, high: 24860, low: 24760, close: 24830, volume: 950,
+        provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+        openTimestamp: "2024-08-30T09:09:00.000Z", lastTimestamp: "2024-08-30T09:09:50.000Z", tickCount: 12,
+      },
+      {
+        bucketMs: Date.parse("2024-08-30T09:10:00.000Z"), // overlap
+        open: 24830, high: 24910, low: 24810, close: 24890, volume: 1150,
+        provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+        openTimestamp: "2024-08-30T09:10:00.000Z", lastTimestamp: "2024-08-30T09:10:50.000Z", tickCount: 15,
+      },
+    ];
+    const result = mergeHistoricalAndLive(historical, completed, null);
+    expect(result).toHaveLength(2);
+    // Live values should overwrite historical
+    expect(result[0].y[0]).toBe(24810); // open from live 09:09
+    expect(result[1].y[0]).toBe(24830); // open from live 09:10
+  });
+
+  it("live-only returns live candles", () => {
+    const completed: LiveCandle[] = [{
+      bucketMs: Date.parse("2024-08-30T09:10:00.000Z"),
+      open: 25000, high: 25100, low: 24900, close: 25050, volume: 800,
+      provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+      openTimestamp: "2024-08-30T09:10:00.000Z", lastTimestamp: "2024-08-30T09:10:50.000Z", tickCount: 10,
+    }];
+    const result = mergeHistoricalAndLive([], completed, null);
+    expect(result).toHaveLength(1);
+    expect(result[0].y[0]).toBe(25000);
+  });
+
+  it("historical-only returns historical candles", () => {
+    const historical = [
+      { time: "2024-08-30T09:10:00.000Z", open: 24900, high: 24950, low: 24850, close: 24920, volume: 1000 },
+    ];
+    const result = mergeHistoricalAndLive(historical, [], null);
+    expect(result).toHaveLength(1);
+    expect(result[0].y[0]).toBe(24900);
+  });
+
+  it("empty historical and empty live returns empty", () => {
+    const result = mergeHistoricalAndLive([], [], null);
+    expect(result).toHaveLength(0);
+  });
+
+  it("current candle replaces overlapping historical", () => {
+    const historical = [
+      { time: "2024-08-30T09:10:00.000Z", open: 24900, high: 24950, low: 24850, close: 24920, volume: 1000 },
+    ];
+    const current: LiveCandle = {
+      bucketMs: Date.parse("2024-08-30T09:10:00.000Z"), // same timestamp
+      open: 25000, high: 25100, low: 24900, close: 25080, volume: 1200,
+      provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+      openTimestamp: "2024-08-30T09:10:00.000Z", lastTimestamp: "2024-08-30T09:10:45.000Z", tickCount: 20,
+    };
+    const result = mergeHistoricalAndLive(historical, [], current);
+    expect(result).toHaveLength(1);
+    expect(result[0].y[0]).toBe(25000); // current overwrites historical
+    expect(result[0].y[3]).toBe(25080); // close from current
+  });
+
+  it("chronological ordering with interleaved timestamps", () => {
+    const historical = [
+      { time: "2024-08-30T09:12:00.000Z", open: 25200, high: 25250, low: 25150, close: 25220, volume: 600 },
+      { time: "2024-08-30T09:08:00.000Z", open: 24800, high: 24850, low: 24750, close: 24820, volume: 900 },
+    ];
+    const completed: LiveCandle[] = [{
+      bucketMs: Date.parse("2024-08-30T09:10:00.000Z"),
+      open: 25000, high: 25100, low: 24900, close: 25050, volume: 800,
+      provider: "INDSTOCKS_V1", instrument: "NIFTY50",
+      openTimestamp: "2024-08-30T09:10:00.000Z", lastTimestamp: "2024-08-30T09:10:50.000Z", tickCount: 10,
+    }];
+    const result = mergeHistoricalAndLive(historical, completed, null);
+    expect(result).toHaveLength(3);
+    expect(result[0].x).toBeLessThan(result[1].x);
+    expect(result[1].x).toBeLessThan(result[2].x);
+  });
 });
