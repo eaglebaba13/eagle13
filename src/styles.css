@@ -336,6 +336,19 @@ body {
   --eb-atm-tint:      rgba(29, 111, 216, 0.10);
 }
 
+/* Light theme component overrides — ensure cards/glass work in day mode. */
+:root[data-theme="light"] .eb-card {
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+:root[data-theme="light"] .eb-card:hover {
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+:root[data-theme="light"] .eb-glass {
+  background:
+    linear-gradient(var(--eb-glass), var(--eb-glass)) padding-box,
+    linear-gradient(135deg, rgba(166, 124, 0, 0.15), rgba(138, 100, 0, 0.05)) border-box;
+}
+
 :root[data-theme="light"] {
   /* Warm off-white premium light theme — never pure white. */
   --eb-bg: #f7f4ee;
