@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { IndstocksAdapter, buildIndstocksProviderAdapter } from "./indstocks-historical.adapter.server";
+import {
+  IndstocksAdapter,
+  buildIndstocksProviderAdapter,
+} from "./indstocks-historical.adapter.server";
 import { IndstocksHttpClient } from "./indstocks-http.server";
 import {
   parseIndstocksCandles,
@@ -126,12 +129,44 @@ describe("indstocks normalizer", () => {
 
   it("mergeCandleChunks deduplicates across chunks", () => {
     const chunk1 = [
-      { time: "2024-07-03T00:00:00.000Z", open: 25000, high: 25100, low: 24900, close: 25050, volume: 1000, closed: true as const },
-      { time: "2024-07-04T00:00:00.000Z", open: 25050, high: 25200, low: 25000, close: 25150, volume: 1200, closed: true as const },
+      {
+        time: "2024-07-03T00:00:00.000Z",
+        open: 25000,
+        high: 25100,
+        low: 24900,
+        close: 25050,
+        volume: 1000,
+        closed: true as const,
+      },
+      {
+        time: "2024-07-04T00:00:00.000Z",
+        open: 25050,
+        high: 25200,
+        low: 25000,
+        close: 25150,
+        volume: 1200,
+        closed: true as const,
+      },
     ];
     const chunk2 = [
-      { time: "2024-07-04T00:00:00.000Z", open: 25050, high: 25200, low: 25000, close: 25150, volume: 1200, closed: true as const },
-      { time: "2024-07-05T00:00:00.000Z", open: 25150, high: 25300, low: 25100, close: 25250, volume: 1100, closed: true as const },
+      {
+        time: "2024-07-04T00:00:00.000Z",
+        open: 25050,
+        high: 25200,
+        low: 25000,
+        close: 25150,
+        volume: 1200,
+        closed: true as const,
+      },
+      {
+        time: "2024-07-05T00:00:00.000Z",
+        open: 25150,
+        high: 25300,
+        low: 25100,
+        close: 25250,
+        volume: 1100,
+        closed: true as const,
+      },
     ];
     const merged = mergeIndstocksCandleChunks([chunk1, chunk2]);
     expect(merged).toHaveLength(3);
@@ -139,7 +174,15 @@ describe("indstocks normalizer", () => {
 
   it("computeIndstocksDataQuality reports correctly", () => {
     const candles = [
-      { time: "2024-07-03T00:00:00.000Z", open: 25000, high: 25100, low: 24900, close: 25050, volume: 1000, closed: true as const },
+      {
+        time: "2024-07-03T00:00:00.000Z",
+        open: 25000,
+        high: 25100,
+        low: 24900,
+        close: 25050,
+        volume: 1000,
+        closed: true as const,
+      },
     ];
     const dq = computeIndstocksDataQuality("2024-07-01", "2024-07-10", candles, []);
     expect(dq.candleCount).toBe(1);
@@ -245,9 +288,18 @@ describe("indstocks http client", () => {
       fetchImpl: vi.fn().mockImplementation(async () => {
         calls++;
         if (calls < 2) {
-          return { ok: false, status: 502, text: () => Promise.resolve("Bad Gateway"), headers: { get: () => null } };
+          return {
+            ok: false,
+            status: 502,
+            text: () => Promise.resolve("Bad Gateway"),
+            headers: { get: () => null },
+          };
         }
-        return { ok: true, json: () => Promise.resolve({ success: true }), headers: { get: () => null } };
+        return {
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+          headers: { get: () => null },
+        };
       }),
     });
     const res = await client.request({ path: "/test" });
@@ -264,9 +316,18 @@ describe("indstocks http client", () => {
       fetchImpl: vi.fn().mockImplementation(async () => {
         calls++;
         if (calls < 2) {
-          return { ok: false, status: 429, text: () => Promise.resolve("Rate Limited"), headers: { get: () => "5" } };
+          return {
+            ok: false,
+            status: 429,
+            text: () => Promise.resolve("Rate Limited"),
+            headers: { get: () => "5" },
+          };
         }
-        return { ok: true, json: () => Promise.resolve({ success: true }), headers: { get: () => null } };
+        return {
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+          headers: { get: () => null },
+        };
       }),
     });
     const res = await client.request({ path: "/test" });
@@ -281,7 +342,12 @@ describe("indstocks http client", () => {
       backoffBaseMs: 1,
       fetchImpl: vi.fn().mockImplementation(async () => {
         calls++;
-        return { ok: false, status: 400, text: () => Promise.resolve("Bad Request"), headers: { get: () => null } };
+        return {
+          ok: false,
+          status: 400,
+          text: () => Promise.resolve("Bad Request"),
+          headers: { get: () => null },
+        };
       }),
     });
     const res = await client.request({ path: "/test" });
@@ -374,10 +440,18 @@ describe("indstocks adapter", () => {
       token: "test",
       fetchImpl: vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          data: { "NSE_26000": { last_price: 25000, ohlc: { open: 24900, high: 25100, low: 24800, close: 24950 }, volume: 100000, prev_close: 24950 } },
-        }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              NSE_26000: {
+                last_price: 25000,
+                ohlc: { open: 24900, high: 25100, low: 24800, close: 24950 },
+                volume: 100000,
+                prev_close: 24950,
+              },
+            },
+          }),
         headers: { get: () => null },
       }),
     });
@@ -400,7 +474,12 @@ describe("indstocks adapter", () => {
 
   it("fetchHistorical returns UNSUPPORTED_TIMEFRAME for invalid tf", async () => {
     const adapter = new IndstocksAdapter({ token: "test", fetchImpl: vi.fn() });
-    const res = await adapter.fetchHistorical("NIFTY50", "2m" as never, 30, new Date().toISOString());
+    const res = await adapter.fetchHistorical(
+      "NIFTY50",
+      "2m" as never,
+      30,
+      new Date().toISOString(),
+    );
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe("UNSUPPORTED_TIMEFRAME");
   });
@@ -411,15 +490,16 @@ describe("indstocks adapter", () => {
       token: "test",
       fetchImpl: vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          data: {
-            candles: [
-              { ts: nowSec - 86400, o: 25000, h: 25100, l: 24900, c: 25050, v: 1000 },
-              { ts: nowSec - 43200, o: 25050, h: 25200, l: 25000, c: 25150, v: 1200 },
-            ],
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              candles: [
+                { ts: nowSec - 86400, o: 25000, h: 25100, l: 24900, c: 25050, v: 1000 },
+                { ts: nowSec - 43200, o: 25050, h: 25200, l: 25000, c: 25150, v: 1200 },
+              ],
+            },
+          }),
         headers: { get: () => null },
       }),
     });
@@ -465,7 +545,7 @@ describe("indstocks adapter", () => {
       token: "test",
       fetchImpl: vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ success: true, data: { "NSE_26000": { last_price: 25000 } } }),
+        json: () => Promise.resolve({ success: true, data: { NSE_26000: { last_price: 25000 } } }),
         headers: { get: () => null },
       }),
     });
@@ -500,7 +580,13 @@ describe("indstocks adapter", () => {
       token: "test",
       fetchImpl: vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ success: true, data: { candles: [{ ts: nowSec - 86400, o: 25000, h: 25100, l: 24900, c: 25050, v: 1000 }] } }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              candles: [{ ts: nowSec - 86400, o: 25000, h: 25100, l: 24900, c: 25050, v: 1000 }],
+            },
+          }),
         headers: { get: () => null },
       }),
     });

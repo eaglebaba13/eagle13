@@ -9,12 +9,8 @@ export const smaDefinition: IndicatorDefinition = {
   id: SMA_ID,
   name: "Simple Moving Average",
   description: "Arithmetic mean of closing prices over a specified period.",
-  params: [
-    { key: "period", label: "Period", type: "int", default: 20, min: 1, max: 500 },
-  ],
-  outputs: [
-    { key: "sma", label: "SMA", type: "line" },
-  ],
+  params: [{ key: "period", label: "Period", type: "int", default: 20, min: 1, max: 500 }],
+  outputs: [{ key: "sma", label: "SMA", type: "line" }],
   warmUpPeriod: (params) => params.period ?? 20,
   calculate: (candles, params) => calculateSma(candles, params),
 };

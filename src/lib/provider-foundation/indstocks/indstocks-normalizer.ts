@@ -58,7 +58,12 @@ export function normalizeIndstocksCandles(
       return;
     }
     // Validate OHLC
-    if (!isFiniteNumber(row.o) || !isFiniteNumber(row.h) || !isFiniteNumber(row.l) || !isFiniteNumber(row.c)) {
+    if (
+      !isFiniteNumber(row.o) ||
+      !isFiniteNumber(row.h) ||
+      !isFiniteNumber(row.l) ||
+      !isFiniteNumber(row.c)
+    ) {
       rejected.push({ index, reason: "non-finite OHLC", row });
       return;
     }
@@ -120,7 +125,9 @@ export function computeIndstocksDataQuality(
     actualTo: candles.length > 0 ? candles[candles.length - 1].time : null,
     candleCount: candles.length,
     duplicates: rejected.filter((r) => r.reason === "duplicate timestamp").length,
-    invalidOhlc: rejected.filter((r) => r.reason.includes("OHLC") || r.reason.includes("high") || r.reason.includes("low")).length,
+    invalidOhlc: rejected.filter(
+      (r) => r.reason.includes("OHLC") || r.reason.includes("high") || r.reason.includes("low"),
+    ).length,
     futureRows: rejected.filter((r) => r.reason === "future candle").length,
     provider: "INDSTOCKS",
     timezone: "Asia/Kolkata",

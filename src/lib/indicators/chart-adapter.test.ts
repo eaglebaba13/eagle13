@@ -54,7 +54,10 @@ describe("chart-adapter", () => {
       const result = makeResult(
         "MACD",
         ["macd", "signal", "histogram"],
-        [[null, null, null], [10, 5, 5]],
+        [
+          [null, null, null],
+          [10, 5, 5],
+        ],
       );
       const config = indicatorToChartSeries(result);
       expect(config.placement).toBe("oscillator");
@@ -69,7 +72,10 @@ describe("chart-adapter", () => {
       const result = makeResult(
         "BOLLINGER",
         ["upper", "middle", "lower"],
-        [[null, null, null], [25200, 25000, 24800]],
+        [
+          [null, null, null],
+          [25200, 25000, 24800],
+        ],
       );
       const config = indicatorToChartSeries(result);
       expect(config.placement).toBe("overlay");
@@ -146,54 +152,48 @@ describe("chart-adapter", () => {
 
   describe("validateIndicatorParams", () => {
     it("valid params pass", () => {
-      const result = validateIndicatorParams(
-        { period: 20 },
-        [{ key: "period", type: "int", min: 1, max: 500 }],
-      );
+      const result = validateIndicatorParams({ period: 20 }, [
+        { key: "period", type: "int", min: 1, max: 500 },
+      ]);
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it("below minimum fails", () => {
-      const result = validateIndicatorParams(
-        { period: 0 },
-        [{ key: "period", type: "int", min: 1, max: 500 }],
-      );
+      const result = validateIndicatorParams({ period: 0 }, [
+        { key: "period", type: "int", min: 1, max: 500 },
+      ]);
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain("minimum");
     });
 
     it("above maximum fails", () => {
-      const result = validateIndicatorParams(
-        { period: 1000 },
-        [{ key: "period", type: "int", min: 1, max: 500 }],
-      );
+      const result = validateIndicatorParams({ period: 1000 }, [
+        { key: "period", type: "int", min: 1, max: 500 },
+      ]);
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain("maximum");
     });
 
     it("non-integer for int type fails", () => {
-      const result = validateIndicatorParams(
-        { period: 14.5 },
-        [{ key: "period", type: "int", min: 1, max: 500 }],
-      );
+      const result = validateIndicatorParams({ period: 14.5 }, [
+        { key: "period", type: "int", min: 1, max: 500 },
+      ]);
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain("integer");
     });
 
     it("float type accepts decimals", () => {
-      const result = validateIndicatorParams(
-        { multiplier: 2.5 },
-        [{ key: "multiplier", type: "float", min: 0.1, max: 5 }],
-      );
+      const result = validateIndicatorParams({ multiplier: 2.5 }, [
+        { key: "multiplier", type: "float", min: 0.1, max: 5 },
+      ]);
       expect(result.valid).toBe(true);
     });
 
     it("missing required param fails", () => {
-      const result = validateIndicatorParams(
-        {},
-        [{ key: "period", type: "int", min: 1, max: 500 }],
-      );
+      const result = validateIndicatorParams({}, [
+        { key: "period", type: "int", min: 1, max: 500 },
+      ]);
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain("required");
     });

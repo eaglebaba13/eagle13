@@ -161,8 +161,10 @@ describe("RSI", () => {
   });
 
   it("RSI is in 0-100 range for mixed series", () => {
-    const closes = [44, 44.34, 44.09, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08,
-      45.89, 46.03, 45.61, 46.28, 46.28, 46.00, 46.03, 46.41, 46.22, 45.64];
+    const closes = [
+      44, 44.34, 44.09, 43.61, 44.33, 44.83, 45.1, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28,
+      46.28, 46.0, 46.03, 46.41, 46.22, 45.64,
+    ];
     const result = calculateRsi(candlesFromCloses(closes), { period: 14 });
     for (const p of result.points) {
       if (p.values.rsi != null) {

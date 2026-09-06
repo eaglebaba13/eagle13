@@ -59,9 +59,16 @@ export const WebhookAlertDeliveryProvider = makeDisabledProvider("WEBHOOK");
  */
 export const TelegramAlertDeliveryProvider: AlertDeliveryProvider = {
   id: "TELEGRAM",
-  enabled: typeof process !== "undefined" && !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID,
+  enabled:
+    typeof process !== "undefined" &&
+    !!process.env.TELEGRAM_BOT_TOKEN &&
+    !!process.env.TELEGRAM_CHAT_ID,
   async deliver(event, sub, nowIso) {
-    if (typeof process === "undefined" || !process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) {
+    if (
+      typeof process === "undefined" ||
+      !process.env.TELEGRAM_BOT_TOKEN ||
+      !process.env.TELEGRAM_CHAT_ID
+    ) {
       return {
         provider: "TELEGRAM",
         attemptedAt: nowIso,

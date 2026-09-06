@@ -129,10 +129,15 @@ export function LiveCandlestickChart({
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <span className="text-sm font-medium">{symbol}</span>
-        <ProviderStatusBadge status={data.providerStatus} freshness={data.freshness} provider={data.provider} />
+        <ProviderStatusBadge
+          status={data.providerStatus}
+          freshness={data.freshness}
+          provider={data.provider}
+        />
         {data.currentCandle && (
           <span className="text-xs text-muted-foreground">
-            ticks: {data.currentCandle.tickCount} · candles: {data.completedCount + (data.currentCandle ? 1 : 0)}
+            ticks: {data.currentCandle.tickCount} · candles:{" "}
+            {data.completedCount + (data.currentCandle ? 1 : 0)}
           </span>
         )}
       </div>
@@ -156,11 +161,7 @@ export function LiveCandlestickChart({
 
       {/* Oscillator panels */}
       {oscillators.map((osc) => (
-        <OscillatorPanel
-          key={osc.indicatorId}
-          config={osc}
-          options={getOscillatorOptions(osc)}
-        />
+        <OscillatorPanel key={osc.indicatorId} config={osc} options={getOscillatorOptions(osc)} />
       ))}
     </div>
   );
@@ -168,12 +169,23 @@ export function LiveCandlestickChart({
 
 // ────────────────────── Helpers ────────────────────────────────────
 
-function ProviderStatusBadge({ status, freshness, provider }: { status: string; freshness: string; provider: string }) {
+function ProviderStatusBadge({
+  status,
+  freshness,
+  provider,
+}: {
+  status: string;
+  freshness: string;
+  provider: string;
+}) {
   const color =
-    status === "LIVE" ? "text-green-500" :
-    status === "STALE" ? "text-amber-500" :
-    status === "FAILED" ? "text-red-500" :
-    "text-muted-foreground";
+    status === "LIVE"
+      ? "text-green-500"
+      : status === "STALE"
+        ? "text-amber-500"
+        : status === "FAILED"
+          ? "text-red-500"
+          : "text-muted-foreground";
   return (
     <span className={`text-xs font-mono ${color}`}>
       {provider} · {freshness}

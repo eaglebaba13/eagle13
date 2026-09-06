@@ -13,9 +13,7 @@ export const vwapDefinition: IndicatorDefinition = {
   name: "Volume Weighted Average Price",
   description: "Cumulative VWAP using typical price. Resets on session boundary.",
   params: [],
-  outputs: [
-    { key: "vwap", label: "VWAP", type: "line" },
-  ],
+  outputs: [{ key: "vwap", label: "VWAP", type: "line" }],
   warmUpPeriod: () => 1,
   calculate: (candles, params) => calculateVwap(candles, params),
 };
@@ -48,7 +46,10 @@ export function calculateVwap(
     const vol = candle.volume;
     if (!isFiniteNumber(vol) || vol <= 0) {
       // No volume — cannot compute VWAP, carry forward or null
-      points.push({ time: candle.time, values: { vwap: cumV > 0 ? roundTo(cumPV / cumV, 4) : null } });
+      points.push({
+        time: candle.time,
+        values: { vwap: cumV > 0 ? roundTo(cumPV / cumV, 4) : null },
+      });
       continue;
     }
 

@@ -121,7 +121,13 @@ interface IndicatorRowProps {
   readonly onParamChange: (key: string, value: number) => void;
 }
 
-function IndicatorRow({ indicator, definition, onToggle, onRemove, onParamChange }: IndicatorRowProps) {
+function IndicatorRow({
+  indicator,
+  definition,
+  onToggle,
+  onRemove,
+  onParamChange,
+}: IndicatorRowProps) {
   return (
     <div className="flex items-center gap-2 text-xs">
       {/* Enable/disable toggle */}
@@ -129,7 +135,9 @@ function IndicatorRow({ indicator, definition, onToggle, onRemove, onParamChange
         type="button"
         onClick={onToggle}
         className={`w-3 h-3 rounded-full border ${
-          indicator.enabled ? "bg-green-500 border-green-500" : "bg-transparent border-muted-foreground"
+          indicator.enabled
+            ? "bg-green-500 border-green-500"
+            : "bg-transparent border-muted-foreground"
         }`}
         title={indicator.enabled ? "Disable" : "Enable"}
       />

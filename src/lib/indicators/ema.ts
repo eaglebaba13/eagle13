@@ -10,12 +10,8 @@ export const emaDefinition: IndicatorDefinition = {
   id: EMA_ID,
   name: "Exponential Moving Average",
   description: "Weighted moving average giving more weight to recent prices.",
-  params: [
-    { key: "period", label: "Period", type: "int", default: 20, min: 1, max: 500 },
-  ],
-  outputs: [
-    { key: "ema", label: "EMA", type: "line" },
-  ],
+  params: [{ key: "period", label: "Period", type: "int", default: 20, min: 1, max: 500 }],
+  outputs: [{ key: "ema", label: "EMA", type: "line" }],
   warmUpPeriod: (params) => params.period ?? 20,
   calculate: (candles, params) => calculateEma(candles, params),
 };

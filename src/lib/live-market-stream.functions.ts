@@ -27,7 +27,11 @@ export interface LiveCandleResponse {
   readonly freshness: string;
   readonly lastTickTimestamp: string | null;
   readonly lastTickLtp: number | null;
-  readonly series: ReadonlyArray<{ readonly x: number; readonly y: readonly [number, number, number, number]; readonly volume: number | null }>;
+  readonly series: ReadonlyArray<{
+    readonly x: number;
+    readonly y: readonly [number, number, number, number];
+    readonly volume: number | null;
+  }>;
   readonly currentCandle: {
     readonly bucketMs: number;
     readonly open: number;
@@ -66,9 +70,17 @@ export const getLiveCandles = createServerFn({ method: "GET" })
     stream.subscribe(symbol, intervalMs);
 
     // Fetch historical candles via existing INDstocks REST adapter
-    let historical: readonly { readonly time: string; readonly open: number; readonly high: number; readonly low: number; readonly close: number; readonly volume: number | null }[] = [];
+    let historical: readonly {
+      readonly time: string;
+      readonly open: number;
+      readonly high: number;
+      readonly low: number;
+      readonly close: number;
+      readonly volume: number | null;
+    }[] = [];
     try {
-      const { buildIndstocksProviderAdapter } = await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
+      const { buildIndstocksProviderAdapter } =
+        await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
       const adapter = buildIndstocksProviderAdapter();
       if (adapter.fetchHistorical) {
         const tf = intervalToTimeframe(intervalMs);
@@ -93,19 +105,28 @@ export const getLiveCandles = createServerFn({ method: "GET" })
       subscriptionActive: snap.subscriptionActive,
       provider: snap.telemetry.providerId,
       providerStatus: snap.telemetry.status,
-      freshness: snap.telemetry.status === "LIVE" ? "LIVE" : snap.telemetry.status === "STALE" ? "STALE" : snap.telemetry.status === "DELAYED" ? "DELAYED" : "NO_DATA",
+      freshness:
+        snap.telemetry.status === "LIVE"
+          ? "LIVE"
+          : snap.telemetry.status === "STALE"
+            ? "STALE"
+            : snap.telemetry.status === "DELAYED"
+              ? "DELAYED"
+              : "NO_DATA",
       lastTickTimestamp: snap.lastTick?.timestamp ?? null,
       lastTickLtp: snap.lastTick?.ltp ?? null,
       series,
-      currentCandle: snap.currentCandle ? {
-        bucketMs: snap.currentCandle.bucketMs,
-        open: snap.currentCandle.open,
-        high: snap.currentCandle.high,
-        low: snap.currentCandle.low,
-        close: snap.currentCandle.close,
-        volume: snap.currentCandle.volume,
-        tickCount: snap.currentCandle.tickCount,
-      } : null,
+      currentCandle: snap.currentCandle
+        ? {
+            bucketMs: snap.currentCandle.bucketMs,
+            open: snap.currentCandle.open,
+            high: snap.currentCandle.high,
+            low: snap.currentCandle.low,
+            close: snap.currentCandle.close,
+            volume: snap.currentCandle.volume,
+            tickCount: snap.currentCandle.tickCount,
+          }
+        : null,
       completedCount: snap.completedCandleCount,
       historicalCandleCount: historical.length,
       error: null,
@@ -130,25 +151,39 @@ function errorResponse(symbol: string, message: string): LiveCandleResponse {
   };
 }
 
-function intervalToTimeframe(intervalMs: AggregationIntervalMs): import("./provider-foundation/types").Timeframe {
+function intervalToTimeframe(
+  intervalMs: AggregationIntervalMs,
+): import("./provider-foundation/types").Timeframe {
   switch (intervalMs) {
-    case 60_000: return "1m";
-    case 180_000: return "3m";
-    case 300_000: return "5m";
-    case 900_000: return "15m";
-    case 3_600_000: return "1h";
-    case 86_400_000: return "1d";
+    case 60_000:
+      return "1m";
+    case 180_000:
+      return "3m";
+    case 300_000:
+      return "5m";
+    case 900_000:
+      return "15m";
+    case 3_600_000:
+      return "1h";
+    case 86_400_000:
+      return "1d";
   }
 }
 
 function intervalToLimit(intervalMs: AggregationIntervalMs): number {
   // Fetch enough candles for a reasonable chart bootstrap
   switch (intervalMs) {
-    case 60_000: return 375; // 1 trading day of 1m candles
-    case 180_000: return 125; // 1 day of 3m
-    case 300_000: return 75;  // 1 day of 5m
-    case 900_000: return 25;  // 1 day of 15m
-    case 3_600_000: return 6;  // 1 day of 1h
-    case 86_400_000: return 30; // 30 days of 1d
+    case 60_000:
+      return 375; // 1 trading day of 1m candles
+    case 180_000:
+      return 125; // 1 day of 3m
+    case 300_000:
+      return 75; // 1 day of 5m
+    case 900_000:
+      return 25; // 1 day of 15m
+    case 3_600_000:
+      return 6; // 1 day of 1h
+    case 86_400_000:
+      return 30; // 30 days of 1d
   }
 }

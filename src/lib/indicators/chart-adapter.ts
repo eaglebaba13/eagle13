@@ -28,14 +28,14 @@ export interface IndicatorSeriesConfig {
 // ────────────────────── Indicator color palette ────────────────────
 
 const INDICATOR_COLORS: Record<string, string> = {
-  sma: "#f59e0b",    // amber
-  ema: "#3b82f6",    // blue
-  vwap: "#a855f7",   // purple
-  upper: "#6b7280",  // gray (bollinger)
+  sma: "#f59e0b", // amber
+  ema: "#3b82f6", // blue
+  vwap: "#a855f7", // purple
+  upper: "#6b7280", // gray (bollinger)
   middle: "#f59e0b", // amber (bollinger)
-  lower: "#6b7280",  // gray (bollinger)
-  rsi: "#8b5cf6",    // violet
-  macd: "#3b82f6",   // blue
+  lower: "#6b7280", // gray (bollinger)
+  rsi: "#8b5cf6", // violet
+  macd: "#3b82f6", // blue
   signal: "#ef4444", // red
   histogram: "#6b7280", // gray
 };
@@ -92,9 +92,7 @@ export function indicatorToChartSeries(result: IndicatorResult): IndicatorSeries
       y: point.values[key] ?? null,
     }));
 
-    const outputDef = result.id === "MACD" && key === "histogram"
-      ? { type: "bar" as const }
-      : {};
+    const outputDef = result.id === "MACD" && key === "histogram" ? { type: "bar" as const } : {};
 
     series.push({
       name: formatSeriesName(result.id, key),
@@ -114,9 +112,7 @@ export function indicatorToChartSeries(result: IndicatorResult): IndicatorSeries
  * Transform multiple IndicatorResults into grouped chart configs.
  * Returns overlay series (for price chart) and oscillator configs (for separate panels).
  */
-export function indicatorsToChartSeries(
-  results: readonly IndicatorResult[],
-): {
+export function indicatorsToChartSeries(results: readonly IndicatorResult[]): {
   overlaySeries: readonly ApexSeriesEntry[];
   oscillators: readonly IndicatorSeriesConfig[];
 } {
@@ -161,7 +157,11 @@ export interface OscillatorChartOptions {
   readonly height: number;
   readonly yaxisMin?: number;
   readonly yaxisMax?: number;
-  readonly referenceLines?: readonly { readonly y: number; readonly label: string; readonly color: string }[];
+  readonly referenceLines?: readonly {
+    readonly y: number;
+    readonly label: string;
+    readonly color: string;
+  }[];
 }
 
 export function getOscillatorOptions(config: IndicatorSeriesConfig): OscillatorChartOptions {
@@ -195,7 +195,12 @@ export function getOscillatorOptions(config: IndicatorSeriesConfig): OscillatorC
 
 export function validateIndicatorParams(
   params: Record<string, number>,
-  paramDefs: readonly { readonly key: string; readonly type: "int" | "float"; readonly min: number; readonly max: number }[],
+  paramDefs: readonly {
+    readonly key: string;
+    readonly type: "int" | "float";
+    readonly min: number;
+    readonly max: number;
+  }[],
 ): { readonly valid: boolean; readonly errors: readonly string[] } {
   const errors: string[] = [];
 

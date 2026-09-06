@@ -55,8 +55,11 @@ describe("audio playback invocation", () => {
 
     // Mock the internal playAudio to capture the URL
     let capturedUrl: string | null = null;
-    const originalPlayAudio = (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio;
-    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+    const originalPlayAudio = (mgr as unknown as { playAudio: (url: string) => Promise<void> })
+      .playAudio;
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (
+      url: string,
+    ) => {
       capturedUrl = url;
     };
 
@@ -71,7 +74,9 @@ describe("audio playback invocation", () => {
     (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
 
     let capturedUrl: string | null = null;
-    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (
+      url: string,
+    ) => {
       capturedUrl = url;
     };
 
@@ -272,7 +277,9 @@ describe("news non-trigger", () => {
     (mgr as unknown as { userInteracted: boolean }).userInteracted = true;
 
     let capturedUrl: string | null = null;
-    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (url: string) => {
+    (mgr as unknown as { playAudio: (url: string) => Promise<void> }).playAudio = async (
+      url: string,
+    ) => {
       capturedUrl = url;
     };
 

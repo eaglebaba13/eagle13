@@ -47,7 +47,9 @@ export class IndstocksWsAdapter {
     mappingResolver?: (symbol: QuoteSymbol | string) => WsInstrumentMapping | null,
   ) {
     this.connection = new IndstocksWsConnection(opts);
-    this.subscriptions = new IndstocksWsSubscriptionManager(mappingResolver ?? defaultWsMappingResolver);
+    this.subscriptions = new IndstocksWsSubscriptionManager(
+      mappingResolver ?? defaultWsMappingResolver,
+    );
 
     this.removeConnectionListener = this.connection.onConnectionChange((snap) => {
       if (snap.state === "CONNECTED") {
@@ -94,7 +96,9 @@ export class IndstocksWsAdapter {
 
   onTick(listener: TickListener): () => void {
     this.tickListeners.add(listener);
-    return () => { this.tickListeners.delete(listener); };
+    return () => {
+      this.tickListeners.delete(listener);
+    };
   }
 
   connectionSnapshot(): WsConnectionSnapshot {
@@ -123,7 +127,11 @@ export class IndstocksWsAdapter {
       const tick = this.normalizeTick(msg);
       if (tick) {
         for (const l of this.tickListeners) {
-          try { l(tick); } catch { /* listener error */ }
+          try {
+            l(tick);
+          } catch {
+            /* listener error */
+          }
         }
       }
     }
@@ -135,9 +143,12 @@ export class IndstocksWsAdapter {
     const data = msg.data;
     const symbol = this.instrumentToSymbol.get(data.instrument) ?? data.instrument;
     const nowMs = Date.now();
-    const tickTimestamp = typeof data.timestamp === "number"
-      ? (data.timestamp > 1e12 ? data.timestamp : data.timestamp * 1000)
-      : nowMs;
+    const tickTimestamp =
+      typeof data.timestamp === "number"
+        ? data.timestamp > 1e12
+          ? data.timestamp
+          : data.timestamp * 1000
+        : nowMs;
     const ageSec = Math.max(0, (nowMs - tickTimestamp) / 1000);
 
     return {
@@ -161,10 +172,13 @@ export function buildIndstocksWsTelemetry(
   role: "PRIMARY" | "SECONDARY" = "SECONDARY",
 ): ProviderTelemetry {
   const status: ProviderTelemetry["status"] =
-    snap.state === "CONNECTED" ? "LIVE" :
-    snap.state === "RECONNECTING" ? "STALE" :
-    snap.state === "FAILED" ? "FAILED" :
-    "OFFLINE";
+    snap.state === "CONNECTED"
+      ? "LIVE"
+      : snap.state === "RECONNECTING"
+        ? "STALE"
+        : snap.state === "FAILED"
+          ? "FAILED"
+          : "OFFLINE";
   return {
     status,
     latencyMs: 0,

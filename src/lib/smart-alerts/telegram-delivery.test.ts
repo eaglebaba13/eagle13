@@ -66,10 +66,13 @@ describe("telegram delivery", () => {
   it("returns DELIVERED on successful API response", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ ok: true }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ok: true }),
+      }),
+    );
     const result = await sendTelegramMessage(makeEvent());
     expect(result.status).toBe("DELIVERED");
     expect(result.errorCode).toBeNull();
@@ -78,10 +81,13 @@ describe("telegram delivery", () => {
   it("returns FAILED on Telegram API ok=false", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ ok: false, description: "Bad Request" }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ok: false, description: "Bad Request" }),
+      }),
+    );
     const result = await sendTelegramMessage(makeEvent());
     expect(result.status).toBe("FAILED");
     expect(result.errorCode).toContain("TELEGRAM_API_ERROR");
@@ -90,11 +96,14 @@ describe("telegram delivery", () => {
   it("returns FAILED on HTTP 400", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      text: () => Promise.resolve("Bad Request"),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: () => Promise.resolve("Bad Request"),
+      }),
+    );
     const result = await sendTelegramMessage(makeEvent());
     expect(result.status).toBe("FAILED");
     expect(result.errorCode).toContain("TELEGRAM_HTTP_400");
@@ -103,11 +112,14 @@ describe("telegram delivery", () => {
   it("returns RETRYABLE_FAILURE on HTTP 429", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      text: () => Promise.resolve("Too Many Requests"),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: () => Promise.resolve("Too Many Requests"),
+      }),
+    );
     const result = await sendTelegramMessage(makeEvent());
     expect(result.status).toBe("RETRYABLE_FAILURE");
     expect(result.errorCode).toContain("TELEGRAM_HTTP_429");
@@ -116,11 +128,14 @@ describe("telegram delivery", () => {
   it("returns RETRYABLE_FAILURE on HTTP 500", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: () => Promise.resolve("Internal Server Error"),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve("Internal Server Error"),
+      }),
+    );
     const result = await sendTelegramMessage(makeEvent());
     expect(result.status).toBe("RETRYABLE_FAILURE");
   });
@@ -146,10 +161,13 @@ describe("telegram delivery", () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
     let capturedBody: string | undefined;
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
-      capturedBody = init.body as string;
-      return { ok: true, json: () => Promise.resolve({ ok: true }) };
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+        capturedBody = init.body as string;
+        return { ok: true, json: () => Promise.resolve({ ok: true }) };
+      }),
+    );
     await sendTelegramMessage(makeEvent());
     expect(capturedBody).toBeDefined();
     const parsed = JSON.parse(capturedBody!);
@@ -165,10 +183,13 @@ describe("telegram delivery", () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
     const bodies: string[] = [];
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
-      bodies.push((init as { body: string }).body);
-      return { ok: true, json: () => Promise.resolve({ ok: true }) };
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+        bodies.push((init as { body: string }).body);
+        return { ok: true, json: () => Promise.resolve({ ok: true }) };
+      }),
+    );
     await sendTelegramMessage(event);
     await sendTelegramMessage(event);
     expect(bodies).toHaveLength(2);
@@ -179,10 +200,13 @@ describe("telegram delivery", () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
     process.env.TELEGRAM_CHAT_ID = "123";
     let capturedBody: string | undefined;
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
-      capturedBody = (init as { body: string }).body;
-      return { ok: true, json: () => Promise.resolve({ ok: true }) };
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+        capturedBody = (init as { body: string }).body;
+        return { ok: true, json: () => Promise.resolve({ ok: true }) };
+      }),
+    );
     const event = makeEvent({
       instrument: null,
       previousState: null,
@@ -201,8 +225,12 @@ describe("telegram delivery", () => {
 describe("telegram delivery provider", () => {
   const origEnv = { ...process.env };
 
-  beforeEach(() => { vi.restoreAllMocks(); });
-  afterEach(() => { process.env = { ...origEnv }; });
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    process.env = { ...origEnv };
+  });
 
   it("disabled subscription preference suppresses delivery", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "test-token";
@@ -222,7 +250,11 @@ describe("telegram delivery provider", () => {
       cooldownOverrideSec: null,
       timezone: "Asia/Kolkata",
     };
-    const result = await TelegramServerAlertDeliveryProvider.deliver(event, sub, new Date().toISOString());
+    const result = await TelegramServerAlertDeliveryProvider.deliver(
+      event,
+      sub,
+      new Date().toISOString(),
+    );
     expect(result.status).toBe("SKIPPED");
   });
 
@@ -231,7 +263,11 @@ describe("telegram delivery provider", () => {
     delete process.env.TELEGRAM_CHAT_ID;
     const { TelegramServerAlertDeliveryProvider } = await import("./telegram-delivery.server");
     const event = makeEvent();
-    const result = await TelegramServerAlertDeliveryProvider.deliver(event, null, new Date().toISOString());
+    const result = await TelegramServerAlertDeliveryProvider.deliver(
+      event,
+      null,
+      new Date().toISOString(),
+    );
     expect(result.status).toBe("DISABLED");
     expect(result.errorCode).toBe("MISSING_TELEGRAM_CREDENTIALS");
   });
@@ -244,6 +280,8 @@ describe("telegram safety", () => {
     const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "telegram-delivery.server.ts");
     const content = fs.readFileSync(filePath, "utf-8");
-    expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order|BUY.*order|SELL.*order/i);
+    expect(content).not.toMatch(
+      /placeOrder|modifyOrder|cancelOrder|broker|execute.*order|BUY.*order|SELL.*order/i,
+    );
   });
 });

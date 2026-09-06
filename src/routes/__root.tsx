@@ -192,7 +192,7 @@ function RootComponent() {
   }, [queryClient]);
 
   // Phase 36.1 — Global provider-error safety net.
-      // Non-critical background provider failures (Yahoo Finance HTTP 4xx/5xx,
+  // Non-critical background provider failures (Yahoo Finance HTTP 4xx/5xx,
   // aborted server-fn calls after unmount, transient CORS blips) must never
   // reach the Vite dev overlay or the app-level error boundary.
   useEffect(() => {

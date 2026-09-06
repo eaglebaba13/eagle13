@@ -11,12 +11,8 @@ export const rsiDefinition: IndicatorDefinition = {
   id: RSI_ID,
   name: "Relative Strength Index",
   description: "Momentum oscillator measuring speed and magnitude of price changes. Range 0-100.",
-  params: [
-    { key: "period", label: "Period", type: "int", default: 14, min: 1, max: 200 },
-  ],
-  outputs: [
-    { key: "rsi", label: "RSI", type: "line" },
-  ],
+  params: [{ key: "period", label: "Period", type: "int", default: 14, min: 1, max: 200 }],
+  outputs: [{ key: "rsi", label: "RSI", type: "line" }],
   warmUpPeriod: (params) => (params.period ?? 14) + 1,
   calculate: (candles, params) => calculateRsi(candles, params),
 };

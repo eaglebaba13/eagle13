@@ -53,7 +53,8 @@ export class IndstocksWsConnection {
     this.reconnectBaseMs = opts.reconnectBaseMs ?? INDSTOCKS_WS_DEFAULT_RECONNECT_BASE_MS;
     this.reconnectMaxMs = opts.reconnectMaxMs ?? INDSTOCKS_WS_DEFAULT_RECONNECT_MAX_MS;
     this.heartbeatIntervalMs = opts.heartbeatIntervalMs ?? INDSTOCKS_WS_DEFAULT_HEARTBEAT_MS;
-    this.connectionTimeoutMs = opts.connectionTimeoutMs ?? INDSTOCKS_WS_DEFAULT_CONNECTION_TIMEOUT_MS;
+    this.connectionTimeoutMs =
+      opts.connectionTimeoutMs ?? INDSTOCKS_WS_DEFAULT_CONNECTION_TIMEOUT_MS;
     this.nowMs = opts.nowMs ?? (() => Date.now());
     this.transportFactory = opts.transportFactory ?? this.defaultTransportFactory.bind(this);
   }
@@ -72,16 +73,21 @@ export class IndstocksWsConnection {
 
   onConnectionChange(listener: WsConnectionListener): () => void {
     this.connectionListeners.add(listener);
-    return () => { this.connectionListeners.delete(listener); };
+    return () => {
+      this.connectionListeners.delete(listener);
+    };
   }
 
   onMessage(listener: WsMessageListener): () => void {
     this.messageListeners.add(listener);
-    return () => { this.messageListeners.delete(listener); };
+    return () => {
+      this.messageListeners.delete(listener);
+    };
   }
 
   connect(): void {
-    if (this.state === "CONNECTED" || this.state === "CONNECTING" || this.state === "CLOSING") return;
+    if (this.state === "CONNECTED" || this.state === "CONNECTING" || this.state === "CLOSING")
+      return;
     this.intentionallyClosed = false;
     this.setState("CONNECTING");
     this.createTransport();
@@ -94,7 +100,11 @@ export class IndstocksWsConnection {
     const t = this.transport;
     this.transport = null;
     if (t) {
-      try { t.close(1000, "client close"); } catch { /* ignore */ }
+      try {
+        t.close(1000, "client close");
+      } catch {
+        /* ignore */
+      }
       t.removeAllListeners();
     }
     this.setState("DISCONNECTED");
@@ -126,7 +136,11 @@ export class IndstocksWsConnection {
     this.state = next;
     const snap = this.snapshot();
     for (const l of this.connectionListeners) {
-      try { l(snap); } catch { /* listener error must not crash manager */ }
+      try {
+        l(snap);
+      } catch {
+        /* listener error must not crash manager */
+      }
     }
   }
 
@@ -160,7 +174,11 @@ export class IndstocksWsConnection {
       const parsed = this.parseMessage(data);
       if (parsed) {
         for (const l of this.messageListeners) {
-          try { l(parsed); } catch { /* listener error must not crash manager */ }
+          try {
+            l(parsed);
+          } catch {
+            /* listener error must not crash manager */
+          }
         }
       }
     });
@@ -237,7 +255,11 @@ export class IndstocksWsConnection {
   private destroyTransport(): void {
     if (this.transport) {
       this.transport.removeAllListeners();
-      try { this.transport.terminate(); } catch { /* ignore */ }
+      try {
+        this.transport.terminate();
+      } catch {
+        /* ignore */
+      }
       this.transport = null;
     }
   }
@@ -292,13 +314,20 @@ export class IndstocksWsConnection {
         return { type: "pong" };
       }
       if (json.type === "connected") {
-        return { type: "connected", data: json.data as { heartbeat_interval?: number } | undefined };
+        return {
+          type: "connected",
+          data: json.data as { heartbeat_interval?: number } | undefined,
+        };
       }
       if (json.type === "subscribed") {
         return { type: "subscribed", instruments: json.instruments as string[] };
       }
       if (json.type === "error") {
-        return { type: "error", message: json.message as string | undefined, code: json.code as number | undefined };
+        return {
+          type: "error",
+          message: json.message as string | undefined,
+          code: json.code as number | undefined,
+        };
       }
       return { type: "unknown", raw: json };
     } catch {

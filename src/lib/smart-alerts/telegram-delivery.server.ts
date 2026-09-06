@@ -10,11 +10,7 @@ import type {
 import type { AlertDeliveryProvider } from "./delivery";
 
 export type TelegramDeliveryStatus =
-  | "DELIVERED"
-  | "FAILED"
-  | "DISABLED"
-  | "RETRYABLE_FAILURE"
-  | "CONFIGURATION_ERROR";
+  "DELIVERED" | "FAILED" | "DISABLED" | "RETRYABLE_FAILURE" | "CONFIGURATION_ERROR";
 
 function getTelegramEnv(): { token: string; chatId: string } | null {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
@@ -91,20 +87,17 @@ export async function sendTelegramMessage(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    const response = await fetch(
-      `https://api.telegram.org/bot${env.token}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: env.chatId,
-          text: message,
-          parse_mode: "Markdown",
-          disable_web_page_preview: true,
-        }),
-        signal: controller.signal,
-      },
-    );
+    const response = await fetch(`https://api.telegram.org/bot${env.token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: env.chatId,
+        text: message,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      }),
+      signal: controller.signal,
+    });
 
     clearTimeout(timeout);
 
@@ -175,7 +168,14 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
     return {
       provider: "TELEGRAM",
       attemptedAt: nowIso,
-      status: result.status === "DELIVERED" ? "DELIVERED" : result.status === "CONFIGURATION_ERROR" ? "DISABLED" : result.status === "RETRYABLE_FAILURE" ? "RETRY" : "FAILED",
+      status:
+        result.status === "DELIVERED"
+          ? "DELIVERED"
+          : result.status === "CONFIGURATION_ERROR"
+            ? "DISABLED"
+            : result.status === "RETRYABLE_FAILURE"
+              ? "RETRY"
+              : "FAILED",
       errorCode: result.errorCode,
       retryable: result.status === "RETRYABLE_FAILURE",
       fingerprint: event.fingerprint,

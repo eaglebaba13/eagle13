@@ -96,23 +96,39 @@ export class WorkersWebSocketTransport implements WebSocketTransport {
     this._readyState = WS_CLOSING;
     this.clearConnectionTimer();
     if (this.ws) {
-      try { this.ws.close(code, reason); } catch { /* ignore */ }
+      try {
+        this.ws.close(code, reason);
+      } catch {
+        /* ignore */
+      }
     }
   }
 
   terminate(): void {
     this.clearConnectionTimer();
     if (this.ws) {
-      try { this.ws.close(1006, "terminated"); } catch { /* ignore */ }
+      try {
+        this.ws.close(1006, "terminated");
+      } catch {
+        /* ignore */
+      }
     }
     this.ws = null;
     this._readyState = WS_CLOSED;
   }
 
-  onOpen(handler: () => void): void { this.openHandlers.push(handler); }
-  onMessage(handler: (data: string) => void): void { this.messageHandlers.push(handler); }
-  onClose(handler: (code: number, reason: string) => void): void { this.closeHandlers.push(handler); }
-  onError(handler: (error: Error) => void): void { this.errorHandlers.push(handler); }
+  onOpen(handler: () => void): void {
+    this.openHandlers.push(handler);
+  }
+  onMessage(handler: (data: string) => void): void {
+    this.messageHandlers.push(handler);
+  }
+  onClose(handler: (code: number, reason: string) => void): void {
+    this.closeHandlers.push(handler);
+  }
+  onError(handler: (error: Error) => void): void {
+    this.errorHandlers.push(handler);
+  }
 
   removeAllListeners(): void {
     this.openHandlers = [];
@@ -162,8 +178,36 @@ export class WorkersWebSocketTransport implements WebSocketTransport {
     }
   }
 
-  private emitOpen(): void { for (const h of this.openHandlers) try { h(); } catch { /* */ } }
-  private emitMessage(data: string): void { for (const h of this.messageHandlers) try { h(data); } catch { /* */ } }
-  private emitClose(code: number, reason: string): void { for (const h of this.closeHandlers) try { h(code, reason); } catch { /* */ } }
-  private emitError(err: Error): void { for (const h of this.errorHandlers) try { h(err); } catch { /* */ } }
+  private emitOpen(): void {
+    for (const h of this.openHandlers)
+      try {
+        h();
+      } catch {
+        /* */
+      }
+  }
+  private emitMessage(data: string): void {
+    for (const h of this.messageHandlers)
+      try {
+        h(data);
+      } catch {
+        /* */
+      }
+  }
+  private emitClose(code: number, reason: string): void {
+    for (const h of this.closeHandlers)
+      try {
+        h(code, reason);
+      } catch {
+        /* */
+      }
+  }
+  private emitError(err: Error): void {
+    for (const h of this.errorHandlers)
+      try {
+        h(err);
+      } catch {
+        /* */
+      }
+  }
 }

@@ -21,11 +21,11 @@ export interface LiveCandle {
 export type AggregationIntervalMs = 60_000 | 180_000 | 300_000 | 900_000 | 3_600_000 | 86_400_000;
 
 export const SUPPORTED_INTERVALS: readonly AggregationIntervalMs[] = [
-  60_000,     // 1m
-  180_000,    // 3m
-  300_000,    // 5m
-  900_000,    // 15m
-  3_600_000,  // 1h
+  60_000, // 1m
+  180_000, // 3m
+  300_000, // 5m
+  900_000, // 15m
+  3_600_000, // 1h
   86_400_000, // 1d
 ];
 
@@ -43,7 +43,11 @@ export function bucketTimestamp(epochMs: number, intervalMs: AggregationInterval
   return Math.floor(epochMs / intervalMs) * intervalMs;
 }
 
-function createCandleFromTick(tick: MarketTick, bucketMs: number, intervalMs: AggregationIntervalMs): LiveCandle {
+function createCandleFromTick(
+  tick: MarketTick,
+  bucketMs: number,
+  intervalMs: AggregationIntervalMs,
+): LiveCandle {
   const tickMs = Date.parse(tick.timestamp);
   return {
     bucketMs,
@@ -66,9 +70,10 @@ function updateCandle(candle: LiveCandle, tick: MarketTick): LiveCandle {
     high: Math.max(candle.high, tick.ltp),
     low: Math.min(candle.low, tick.ltp),
     close: tick.ltp,
-    volume: candle.volume != null && tick.volume != null
-      ? candle.volume + tick.volume
-      : candle.volume ?? tick.volume,
+    volume:
+      candle.volume != null && tick.volume != null
+        ? candle.volume + tick.volume
+        : (candle.volume ?? tick.volume),
     lastTimestamp: tick.timestamp,
     tickCount: candle.tickCount + 1,
   };
@@ -145,7 +150,14 @@ export interface MergedCandlePoint {
 }
 
 export function mergeHistoricalAndLive(
-  historical: readonly { readonly time: string; readonly open: number; readonly high: number; readonly low: number; readonly close: number; readonly volume: number | null }[],
+  historical: readonly {
+    readonly time: string;
+    readonly open: number;
+    readonly high: number;
+    readonly low: number;
+    readonly close: number;
+    readonly volume: number | null;
+  }[],
   completed: readonly LiveCandle[],
   current: LiveCandle | null,
 ): MergedCandlePoint[] {
@@ -163,7 +175,11 @@ export function mergeHistoricalAndLive(
   }
 
   if (current) {
-    all.push({ x: current.bucketMs, y: [current.open, current.high, current.low, current.close], volume: current.volume });
+    all.push({
+      x: current.bucketMs,
+      y: [current.open, current.high, current.low, current.close],
+      volume: current.volume,
+    });
   }
 
   // Deduplicate by x (timestamp), last wins

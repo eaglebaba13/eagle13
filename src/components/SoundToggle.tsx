@@ -2,10 +2,17 @@
 // Minimal, accessible, provider-neutral.
 
 import { useState, useEffect, useCallback } from "react";
-import { getAudioNotificationManager, type AudioNotificationConfig } from "@/lib/audio-notifications";
+import {
+  getAudioNotificationManager,
+  type AudioNotificationConfig,
+} from "@/lib/audio-notifications";
 
 export function SoundToggle() {
-  const [config, setConfig] = useState<AudioNotificationConfig>({ enabled: true, signalSounds: true, newsSounds: true });
+  const [config, setConfig] = useState<AudioNotificationConfig>({
+    enabled: true,
+    signalSounds: true,
+    newsSounds: true,
+  });
   const [available, setAvailable] = useState(false);
 
   useEffect(() => {
@@ -44,9 +51,7 @@ export function SoundToggle() {
       aria-pressed={isOn}
     >
       <SoundIcon on={isOn && available} />
-      <span className="hidden sm:inline">
-        {!available ? "Sound" : isOn ? "Sound" : "Muted"}
-      </span>
+      <span className="hidden sm:inline">{!available ? "Sound" : isOn ? "Sound" : "Muted"}</span>
     </button>
   );
 }

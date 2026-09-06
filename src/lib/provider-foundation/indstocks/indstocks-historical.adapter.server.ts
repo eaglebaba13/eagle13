@@ -25,7 +25,10 @@ import {
   type IndstocksHttpConfig,
   type IndstocksHttpResult,
 } from "./indstocks-http.server";
-import { resolveIndstocksInstrument, INDSTOCKS_SUPPORTED_SYMBOLS } from "./indstocks-instruments.server";
+import {
+  resolveIndstocksInstrument,
+  INDSTOCKS_SUPPORTED_SYMBOLS,
+} from "./indstocks-instruments.server";
 import { planIndstocksRange } from "./indstocks-range-policy";
 import {
   computeIndstocksDataQuality,
@@ -184,7 +187,15 @@ export class IndstocksAdapter {
     }
 
     const prevClose = entry?.prev_close ?? entry?.ohlc?.close ?? null;
-    const telemetry = providerTelemetry({ ok: true, latencyMs: res.latencyMs, nowIso, ageSec: 0, role: ADAPTER_ROLE, providerTime: null, reason: null });
+    const telemetry = providerTelemetry({
+      ok: true,
+      latencyMs: res.latencyMs,
+      nowIso,
+      ageSec: 0,
+      role: ADAPTER_ROLE,
+      providerTime: null,
+      reason: null,
+    });
     const tick: QuoteTick = {
       symbol,
       last,
@@ -193,7 +204,8 @@ export class IndstocksAdapter {
       low: entry?.ohlc?.low ?? null,
       prevClose,
       change: prevClose != null ? last - prevClose : null,
-      changePct: prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
+      changePct:
+        prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
       volume: entry?.volume ?? null,
       currency: "INR",
       telemetry,
@@ -273,14 +285,15 @@ export class IndstocksAdapter {
       const startMs = new Date(chunk.from + "T00:00:00Z").getTime();
       const endMs = new Date(chunk.to + "T23:59:59Z").getTime();
 
-      const res: IndstocksHttpResult<IndstocksHistoricalResponse> = await this.http.request<IndstocksHistoricalResponse>({
-        path: `/market/historical/${interval.label}`,
-        query: {
-          "scrip-codes": instr.scripCode,
-          start_time: startMs,
-          end_time: endMs,
-        },
-      });
+      const res: IndstocksHttpResult<IndstocksHistoricalResponse> =
+        await this.http.request<IndstocksHistoricalResponse>({
+          path: `/market/historical/${interval.label}`,
+          query: {
+            "scrip-codes": instr.scripCode,
+            start_time: startMs,
+            end_time: endMs,
+          },
+        });
 
       totalLatency += res.latencyMs;
       if (!res.ok) {

@@ -6,12 +6,7 @@ import type { QuoteSymbol, ProviderTelemetry } from "../types";
 // ────────────────────── Connection State ───────────────────────────
 
 export type WsConnectionState =
-  | "DISCONNECTED"
-  | "CONNECTING"
-  | "CONNECTED"
-  | "RECONNECTING"
-  | "CLOSING"
-  | "FAILED";
+  "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "RECONNECTING" | "CLOSING" | "FAILED";
 
 export interface WsConnectionSnapshot {
   readonly state: WsConnectionState;

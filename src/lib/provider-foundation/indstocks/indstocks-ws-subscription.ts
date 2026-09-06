@@ -3,7 +3,12 @@
 // Prevents duplicates, tracks active subs, resubscribes after reconnect.
 
 import type { QuoteSymbol } from "../types";
-import type { WsPriceMode, WsInstrumentMapping, WsSubscribeMessage, WsUnsubscribeMessage } from "./indstocks-ws-types";
+import type {
+  WsPriceMode,
+  WsInstrumentMapping,
+  WsSubscribeMessage,
+  WsUnsubscribeMessage,
+} from "./indstocks-ws-types";
 
 export interface SubscriptionEntry {
   readonly symbol: QuoteSymbol | string;
@@ -47,7 +52,10 @@ export class IndstocksWsSubscriptionManager {
     };
   }
 
-  unsubscribe(symbol: QuoteSymbol | string, mode: WsPriceMode = "ltp"): WsUnsubscribeMessage | null {
+  unsubscribe(
+    symbol: QuoteSymbol | string,
+    mode: WsPriceMode = "ltp",
+  ): WsUnsubscribeMessage | null {
     const key = this.key(symbol, mode);
     const entry = this.subscriptions.get(key);
     if (!entry) return null;

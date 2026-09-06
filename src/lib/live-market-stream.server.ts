@@ -84,7 +84,13 @@ class LiveMarketStreamManager {
       currentCandle: agg?.current ?? null,
       completedCandleCount: agg?.completed.length ?? 0,
       telemetry: buildIndstocksWsTelemetry(
-        connSnap ?? { state: "DISCONNECTED", connectedAt: null, lastMessageAt: null, reconnectAttempt: 0, lastError: null },
+        connSnap ?? {
+          state: "DISCONNECTED",
+          connectedAt: null,
+          lastMessageAt: null,
+          reconnectAttempt: 0,
+          lastError: null,
+        },
         agg ? 1 : 0,
       ),
       subscriptionActive: subActive,
@@ -94,15 +100,18 @@ class LiveMarketStreamManager {
   getCandleSeries(
     symbol: QuoteSymbol,
     intervalMs: AggregationIntervalMs = 60_000,
-    historical: readonly { readonly time: string; readonly open: number; readonly high: number; readonly low: number; readonly close: number; readonly volume: number | null }[] = [],
+    historical: readonly {
+      readonly time: string;
+      readonly open: number;
+      readonly high: number;
+      readonly low: number;
+      readonly close: number;
+      readonly volume: number | null;
+    }[] = [],
   ): Array<{ x: number; y: [number, number, number, number] }> {
     const key = `${symbol}:${intervalMs}`;
     const agg = this.aggregators.get(key);
-    return mergeHistoricalAndLive(
-      historical,
-      agg?.completed ?? [],
-      agg?.current ?? null,
-    );
+    return mergeHistoricalAndLive(historical, agg?.completed ?? [], agg?.current ?? null);
   }
 
   private handleTick(tick: MarketTick): void {

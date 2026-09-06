@@ -63,7 +63,12 @@ export interface IndstocksQuoteResponse {
     string,
     {
       readonly last_price?: number;
-      readonly ohlc?: { readonly open?: number; readonly high?: number; readonly low?: number; readonly close?: number };
+      readonly ohlc?: {
+        readonly open?: number;
+        readonly high?: number;
+        readonly low?: number;
+        readonly close?: number;
+      };
       readonly volume?: number;
       readonly prev_close?: number;
     }

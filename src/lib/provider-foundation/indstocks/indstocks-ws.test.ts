@@ -1,8 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { IndstocksWsConnection, redactWsError } from "./indstocks-ws-connection.server";
 import { IndstocksWsSubscriptionManager } from "./indstocks-ws-subscription";
-import { IndstocksWsAdapter, defaultWsMappingResolver, buildIndstocksWsTelemetry } from "./indstocks-ws-adapter.server";
-import type { WsConnectionSnapshot, WsInstrumentMapping, IndstocksWsConfig } from "./indstocks-ws-types";
+import {
+  IndstocksWsAdapter,
+  defaultWsMappingResolver,
+  buildIndstocksWsTelemetry,
+} from "./indstocks-ws-adapter.server";
+import type {
+  WsConnectionSnapshot,
+  WsInstrumentMapping,
+  IndstocksWsConfig,
+} from "./indstocks-ws-types";
 import type { QuoteSymbol } from "../types";
 import type { WebSocketTransport, WebSocketTransportConfig } from "./websocket-transport";
 import { WS_OPEN, WS_CLOSED, WS_CONNECTING } from "./websocket-transport";
@@ -13,29 +21,62 @@ function createMockTransport(_config: WebSocketTransportConfig): WebSocketTransp
   const handlers: Record<string, Function[]> = {};
   let rs = WS_CLOSED;
   return {
-    get readyState() { return rs; },
-    connect() { rs = WS_OPEN; (handlers["open"] ?? []).forEach((h) => h()); },
-    send(_data: string) { return rs === WS_OPEN; },
-    close() { rs = WS_CLOSED; (handlers["close"] ?? []).forEach((h) => h(1000, "")); },
-    terminate() { rs = WS_CLOSED; },
+    get readyState() {
+      return rs;
+    },
+    connect() {
+      rs = WS_OPEN;
+      (handlers["open"] ?? []).forEach((h) => h());
+    },
+    send(_data: string) {
+      return rs === WS_OPEN;
+    },
+    close() {
+      rs = WS_CLOSED;
+      (handlers["close"] ?? []).forEach((h) => h(1000, ""));
+    },
+    terminate() {
+      rs = WS_CLOSED;
+    },
     ping() {},
-    onOpen(h: () => void) { (handlers["open"] ??= []).push(h); },
-    onMessage(h: (data: string) => void) { (handlers["message"] ??= []).push(h); },
-    onClose(h: (code: number, reason: string) => void) { (handlers["close"] ??= []).push(h); },
-    onError(h: (error: Error) => void) { (handlers["error"] ??= []).push(h); },
-    removeAllListeners() { /* no-op for mock */ },
+    onOpen(h: () => void) {
+      (handlers["open"] ??= []).push(h);
+    },
+    onMessage(h: (data: string) => void) {
+      (handlers["message"] ??= []).push(h);
+    },
+    onClose(h: (code: number, reason: string) => void) {
+      (handlers["close"] ??= []).push(h);
+    },
+    onError(h: (error: Error) => void) {
+      (handlers["error"] ??= []).push(h);
+    },
+    removeAllListeners() {
+      /* no-op for mock */
+    },
     // Test helpers
-    _emitMessage(data: string) { (handlers["message"] ?? []).forEach((h) => h(data)); },
-    _emitClose(code = 1000) { rs = WS_CLOSED; (handlers["close"] ?? []).forEach((h) => h(code, "")); },
-    _emitError(err: Error) { (handlers["error"] ?? []).forEach((h) => h(err)); },
+    _emitMessage(data: string) {
+      (handlers["message"] ?? []).forEach((h) => h(data));
+    },
+    _emitClose(code = 1000) {
+      rs = WS_CLOSED;
+      (handlers["close"] ?? []).forEach((h) => h(code, ""));
+    },
+    _emitError(err: Error) {
+      (handlers["error"] ?? []).forEach((h) => h(err));
+    },
   };
 }
 
 function createFailingTransport(_config: WebSocketTransportConfig): WebSocketTransport {
   return {
     readyState: WS_CLOSED,
-    connect() { throw new Error("connection refused"); },
-    send() { return false; },
+    connect() {
+      throw new Error("connection refused");
+    },
+    send() {
+      return false;
+    },
     close() {},
     terminate() {},
     ping() {},
@@ -186,7 +227,11 @@ describe("indstocks ws connection (mock transport)", () => {
   });
 
   it("transport failure sets FAILED state", () => {
-    const conn = new IndstocksWsConnection({ token: "test", transportFactory: failingFactory, reconnectBaseMs: 100 });
+    const conn = new IndstocksWsConnection({
+      token: "test",
+      transportFactory: failingFactory,
+      reconnectBaseMs: 100,
+    });
     const states: string[] = [];
     conn.onConnectionChange((snap) => states.push(snap.state));
     conn.connect();
@@ -194,7 +239,10 @@ describe("indstocks ws connection (mock transport)", () => {
   });
 
   it("token not exposed in snapshot", () => {
-    const conn = new IndstocksWsConnection({ token: "super-secret-12345", transportFactory: mockFactory });
+    const conn = new IndstocksWsConnection({
+      token: "super-secret-12345",
+      transportFactory: mockFactory,
+    });
     const snap = conn.snapshot();
     expect(JSON.stringify(snap)).not.toContain("super-secret-12345");
   });
@@ -296,9 +344,14 @@ describe("indstocks ws adapter", () => {
   });
 
   it("token never exposed in telemetry or snapshots", () => {
-    const adapter = new IndstocksWsAdapter({ token: "super-secret-token-12345", transportFactory: mockFactory });
+    const adapter = new IndstocksWsAdapter({
+      token: "super-secret-token-12345",
+      transportFactory: mockFactory,
+    });
     expect(JSON.stringify(adapter.connectionSnapshot())).not.toContain("super-secret-token-12345");
-    expect(JSON.stringify(adapter.subscriptionSnapshot())).not.toContain("super-secret-token-12345");
+    expect(JSON.stringify(adapter.subscriptionSnapshot())).not.toContain(
+      "super-secret-token-12345",
+    );
   });
 });
 
@@ -339,7 +392,10 @@ describe("indstocks ws protocol hardening", () => {
     const trackingFactory = (config: WebSocketTransportConfig) => {
       const mock = createMockTransport(config);
       const originalSend = mock.send.bind(mock);
-      mock.send = (data: string) => { sentMessages.push(data); return originalSend(data); };
+      mock.send = (data: string) => {
+        sentMessages.push(data);
+        return originalSend(data);
+      };
       return mock;
     };
     const conn = new IndstocksWsConnection({
@@ -350,7 +406,9 @@ describe("indstocks ws protocol hardening", () => {
     conn.connect();
     // Wait for at least one heartbeat interval
     const start = Date.now();
-    while (Date.now() - start < 120) { /* spin */ }
+    while (Date.now() - start < 120) {
+      /* spin */
+    }
     conn.close();
     // No JSON ping messages should have been sent
     const pings = sentMessages.filter((m) => m.includes('"ping"'));
