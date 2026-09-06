@@ -5,7 +5,6 @@
 // consumed by every status page and dashboard summary.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildRuntimeReadinessReport } from "./build-report";
 import type { RuntimeReadinessReport } from "./runtime-readiness";
 
@@ -23,7 +22,6 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     const { DEFAULT_COMBINED_PCR_WEIGHTS } = await import("@/lib/combined-pcr/types");
     const { getSnapshotHistory } = await import("@/lib/option-chain/snapshot-history");
     const { evaluateMarketBreadthCapability } = await import("@/lib/market-breadth/capability");
-    const { buildMockBreadthBundle } = await import("@/lib/market-breadth/mock-provider");
     const { evaluateVixRegime } = await import("@/lib/market-breadth/vix-regime");
     const { adaptPcrConfirmation } = await import("@/lib/market-breadth/pcr-confirmation");
     const { classifyGti } = await import("@/lib/market-breadth/gti-classifier");
@@ -65,7 +63,8 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     }
 
     // ── Breadth capability ──────────────────────────────────────
-    const bundle = buildMockBreadthBundle({ scenario: "MIXED" });
+    // Production readiness must use real breadth data, never mock.
+    // When real breadth is unavailable, report UNAVAILABLE explicitly.
     const vix = evaluateVixRegime({
       currentVix: vixValue,
       previousVix: null,
@@ -82,8 +81,8 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
       pcr: pcrConf,
       pcrError: null,
       pcrLatencyMs: null,
-      breadth: { broad: bundle.broad, nifty50: bundle.nifty50 },
-      breadthSource: "RESEARCH_DEMO",
+      breadth: { broad: null, nifty50: null },
+      breadthSource: "CONFIGURATION",
       providerAlias: "BREADTH",
       latencyMs: 0,
     });
@@ -92,13 +91,13 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     let gtiComputed = false;
     try {
       classifyGti({
-        broad: bundle.broad,
-        nifty50: bundle.nifty50,
-        topWeighted: bundle.topWeighted,
-        banking: bundle.banking,
-        it: bundle.it,
-        oilGas: bundle.oilGas,
-        auto: bundle.auto,
+        broad: null,
+        nifty50: null,
+        topWeighted: null,
+        banking: null,
+        it: null,
+        oilGas: null,
+        auto: null,
         pcr: pcrConf,
         vix,
         runId: newRunId(),

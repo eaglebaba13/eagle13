@@ -397,13 +397,6 @@ Release branch `production-release-v2` is ready for Coolify deployment.
 13. Verify credential security (no secrets in client bundle)
 14. Verify broker isolation
 15. Certify production
-9. Verify NIFTY50 live data via `NIDX:26000`
-10. Verify historical bootstrap + live merge
-11. Verify volume reaches VWAP
-12. Verify provider/freshness/data-quality telemetry
-13. Verify credential security (no secrets in client bundle)
-14. Verify broker isolation
-15. Certify production
 
 ---
 
@@ -450,7 +443,7 @@ Advanced analytics must wait until production market-data integrity is certified
 
 ## Lovable History
 
-Lovable was previously integrated (cloud-auth, MCP, Vite config, OAuth, error reporting). It was intentionally and completely removed during Phase 1. No Lovable runtime dependency remains. The project deploys via Cloudflare Workers / Wrangler.
+Lovable was previously integrated (cloud-auth, MCP, Vite config, OAuth, error reporting). It was intentionally and completely removed during Phase 1. No Lovable runtime dependency remains. The project deploys via Coolify on Hostinger VPS KVM4 (not Cloudflare Workers).
 
 ---
 
@@ -488,7 +481,7 @@ REPORT: <structured output>
 STOP IF: <blockers>
 ```
 
-Current Phase 8 prompt intent: "Reconcile the diverged production line safely, deploy the validated release candidate, and certify real production runtime. Do not reimplement INDstocks WebSocket."
+Current prompt intent: "Maintain the existing research terminal. Deploy production-release-v2 to Coolify. Certify live NIFTY50 data. Do not reimplement INDstocks WebSocket."
 
 ---
 
