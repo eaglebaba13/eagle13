@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
