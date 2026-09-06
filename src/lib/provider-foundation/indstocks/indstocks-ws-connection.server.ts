@@ -1,8 +1,8 @@
 // Server-only INDstocks WebSocket connection manager.
-// Handles: connect, heartbeat, reconnect/backoff, lifecycle.
+// Uses provider-neutral WebSocketTransport abstraction.
+// Compatible with Cloudflare Workers runtime.
 // Token never exposed to client/logs/telemetry.
 
-import WebSocket from "ws";
 import type {
   WsConnectionState,
   WsConnectionSnapshot,
@@ -16,15 +16,18 @@ import {
   INDSTOCKS_WS_DEFAULT_HEARTBEAT_MS,
   INDSTOCKS_WS_DEFAULT_CONNECTION_TIMEOUT_MS,
 } from "./indstocks-ws-types";
+import type { WebSocketTransport, WebSocketTransportConfig } from "./websocket-transport";
+import { WS_OPEN, WS_CLOSED } from "./websocket-transport";
 
 export type WsConnectionListener = (snapshot: WsConnectionSnapshot) => void;
 export type WsMessageListener = (message: WsProviderMessage) => void;
 
+export type TransportFactory = (config: WebSocketTransportConfig) => WebSocketTransport;
+
 export class IndstocksWsConnection {
   private state: WsConnectionState = "DISCONNECTED";
-  private ws: WebSocket | null = null;
+  private transport: WebSocketTransport | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private connectionTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private connectedAt: string | null = null;
@@ -41,8 +44,9 @@ export class IndstocksWsConnection {
   private readonly heartbeatIntervalMs: number;
   private readonly connectionTimeoutMs: number;
   private readonly nowMs: () => number;
+  private readonly transportFactory: TransportFactory;
 
-  constructor(opts: IndstocksWsConfig = {}) {
+  constructor(opts: IndstocksWsConfig & { transportFactory?: TransportFactory } = {}) {
     this.url = opts.url ?? INDSTOCKS_WS_URL;
     this.token = opts.token ?? (process.env.INDSTOCKS_ACCESS_TOKEN?.trim() || undefined);
     this.reconnectBaseMs = opts.reconnectBaseMs ?? INDSTOCKS_WS_DEFAULT_RECONNECT_BASE_MS;
@@ -50,6 +54,7 @@ export class IndstocksWsConnection {
     this.heartbeatIntervalMs = opts.heartbeatIntervalMs ?? INDSTOCKS_WS_DEFAULT_HEARTBEAT_MS;
     this.connectionTimeoutMs = opts.connectionTimeoutMs ?? INDSTOCKS_WS_DEFAULT_CONNECTION_TIMEOUT_MS;
     this.nowMs = opts.nowMs ?? (() => Date.now());
+    this.transportFactory = opts.transportFactory ?? this.defaultTransportFactory.bind(this);
   }
 
   // ──────────────── Public API ────────────────
@@ -78,28 +83,25 @@ export class IndstocksWsConnection {
     if (this.state === "CONNECTED" || this.state === "CONNECTING" || this.state === "CLOSING") return;
     this.intentionallyClosed = false;
     this.setState("CONNECTING");
-    this.createSocket();
+    this.createTransport();
   }
 
   close(): void {
     this.intentionallyClosed = true;
     this.clearTimers();
     this.setState("CLOSING");
-    if (this.ws) {
-      try { this.ws.close(1000, "client close"); } catch { /* ignore */ }
-      this.ws = null;
+    const t = this.transport;
+    this.transport = null;
+    if (t) {
+      try { t.close(1000, "client close"); } catch { /* ignore */ }
+      t.removeAllListeners();
     }
     this.setState("DISCONNECTED");
   }
 
   send(data: string): boolean {
-    if (this.state !== "CONNECTED" || !this.ws) return false;
-    try {
-      this.ws.send(data);
-      return true;
-    } catch {
-      return false;
-    }
+    if (this.state !== "CONNECTED" || !this.transport) return false;
+    return this.transport.send(data);
   }
 
   get isConnected(): boolean {
@@ -112,6 +114,15 @@ export class IndstocksWsConnection {
 
   // ──────────────── Internal ────────────────
 
+  private defaultTransportFactory(config: WebSocketTransportConfig): WebSocketTransport {
+    // Dynamic import to avoid bundling issues in different runtimes.
+    // In Cloudflare Workers, this resolves to WorkersWebSocketTransport.
+    // For tests, inject a mock factory.
+    throw new Error(
+      "No transport factory provided. Inject one via constructor opts for your runtime.",
+    );
+  }
+
   private setState(next: WsConnectionState): void {
     if (this.state === next) return;
     this.state = next;
@@ -121,31 +132,24 @@ export class IndstocksWsConnection {
     }
   }
 
-  private createSocket(): void {
+  private createTransport(): void {
     const headers: Record<string, string> = {};
     if (this.token) headers["Authorization"] = this.token;
 
     try {
-      this.ws = new WebSocket(this.url, { headers });
-    } catch (err) {
-      this.lastError = "socket creation failed";
+      this.transport = this.transportFactory({
+        url: this.url,
+        headers,
+        connectionTimeoutMs: this.connectionTimeoutMs,
+      });
+    } catch {
+      this.lastError = "transport creation failed";
       this.setState("FAILED");
       this.scheduleReconnect();
       return;
     }
 
-    // Connection timeout
-    this.connectionTimer = setTimeout(() => {
-      if (this.state === "CONNECTING" || this.state === "RECONNECTING") {
-        this.lastError = "connection timeout";
-        this.destroySocket();
-        this.setState("FAILED");
-        this.scheduleReconnect();
-      }
-    }, this.connectionTimeoutMs);
-
-    this.ws.on("open", () => {
-      this.clearConnectionTimer();
+    this.transport.onOpen(() => {
       this.connectedAt = new Date(this.nowMs()).toISOString();
       this.reconnectAttempt = 0;
       this.lastError = null;
@@ -153,7 +157,7 @@ export class IndstocksWsConnection {
       this.startHeartbeat();
     });
 
-    this.ws.on("message", (data: WebSocket.Data) => {
+    this.transport.onMessage((data: string) => {
       this.lastMessageAt = new Date(this.nowMs()).toISOString();
       const parsed = this.parseMessage(data);
       if (parsed) {
@@ -163,9 +167,8 @@ export class IndstocksWsConnection {
       }
     });
 
-    this.ws.on("close", (code: number, reason: Buffer) => {
+    this.transport.onClose((code: number, reason: string) => {
       this.clearTimers();
-      this.destroySocket();
       if (this.intentionallyClosed) {
         this.setState("DISCONNECTED");
       } else {
@@ -173,19 +176,34 @@ export class IndstocksWsConnection {
         this.setState("DISCONNECTED");
         this.scheduleReconnect();
       }
+      if (this.transport) {
+        this.transport.removeAllListeners();
+        this.transport = null;
+      }
     });
 
-    this.ws.on("error", (err: Error) => {
-      this.lastError = "socket error";
-      // onerror is always followed by onclose, so reconnect is handled there
+    this.transport.onError((_err: Error) => {
+      this.lastError = "transport error";
+      // onerror is typically followed by onclose, so reconnect is handled there
     });
-  }
 
-  private destroySocket(): void {
-    if (this.ws) {
-      this.ws.removeAllListeners();
-      try { this.ws.terminate(); } catch { /* ignore */ }
-      this.ws = null;
+    // For async transports (Workers), connect() returns a promise.
+    // For sync transports (ws), connect() is synchronous.
+    try {
+      const result = this.transport.connect();
+      if (result && typeof (result as Promise<void>).catch === "function") {
+        (result as Promise<void>).catch(() => {
+          // Connection failed — onClose/onError will handle state transition
+        });
+      }
+    } catch {
+      this.lastError = "connect failed";
+      if (this.transport) {
+        this.transport.removeAllListeners();
+        this.transport = null;
+      }
+      this.setState("FAILED");
+      this.scheduleReconnect();
     }
   }
 
@@ -194,10 +212,9 @@ export class IndstocksWsConnection {
   private startHeartbeat(): void {
     this.clearHeartbeat();
     this.heartbeatTimer = setInterval(() => {
-      if (this.state !== "CONNECTED" || !this.ws) return;
+      if (this.state !== "CONNECTED" || !this.transport) return;
       try {
-        // INDstocks expects a ping frame or JSON ping message
-        this.ws.ping();
+        this.transport.ping();
       } catch {
         // ping failure — will trigger close
       }
@@ -227,18 +244,11 @@ export class IndstocksWsConnection {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (this.intentionallyClosed) return;
-      this.createSocket();
+      this.createTransport();
     }, delay);
   }
 
   // ──────────────── Timers ────────────────
-
-  private clearConnectionTimer(): void {
-    if (this.connectionTimer) {
-      clearTimeout(this.connectionTimer);
-      this.connectionTimer = null;
-    }
-  }
 
   private clearReconnectTimer(): void {
     if (this.reconnectTimer) {
@@ -249,18 +259,15 @@ export class IndstocksWsConnection {
 
   private clearTimers(): void {
     this.clearHeartbeat();
-    this.clearConnectionTimer();
     this.clearReconnectTimer();
   }
 
   // ──────────────── Parsing ────────────────
 
-  private parseMessage(data: WebSocket.Data): WsProviderMessage | null {
+  private parseMessage(data: string): WsProviderMessage | null {
     try {
-      const text = typeof data === "string" ? data : data.toString();
-      const json = JSON.parse(text) as Record<string, unknown>;
+      const json = JSON.parse(data) as Record<string, unknown>;
 
-      // INDstocks sends various message types
       if (json.type === "ltp" && json.data) {
         return { type: "ltp", data: json.data as import("./indstocks-ws-types").WsLtpTick };
       }

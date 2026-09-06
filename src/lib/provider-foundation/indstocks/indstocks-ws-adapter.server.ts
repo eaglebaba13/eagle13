@@ -12,7 +12,7 @@ import type {
   WsProviderMessage,
   IndstocksWsConfig,
 } from "./indstocks-ws-types";
-import { IndstocksWsConnection } from "./indstocks-ws-connection.server";
+import { IndstocksWsConnection, type TransportFactory } from "./indstocks-ws-connection.server";
 import { IndstocksWsSubscriptionManager } from "./indstocks-ws-subscription";
 
 export type TickListener = (tick: MarketTick) => void;
@@ -42,7 +42,10 @@ export class IndstocksWsAdapter {
   private removeConnectionListener: (() => void) | null = null;
   private removeMessageListener: (() => void) | null = null;
 
-  constructor(opts: IndstocksWsConfig = {}, mappingResolver?: (symbol: QuoteSymbol | string) => WsInstrumentMapping | null) {
+  constructor(
+    opts: IndstocksWsConfig & { transportFactory?: TransportFactory } = {},
+    mappingResolver?: (symbol: QuoteSymbol | string) => WsInstrumentMapping | null,
+  ) {
     this.connection = new IndstocksWsConnection(opts);
     this.subscriptions = new IndstocksWsSubscriptionManager(mappingResolver ?? defaultWsMappingResolver);
 
