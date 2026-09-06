@@ -158,4 +158,92 @@ describe("telegram delivery", () => {
     expect(parsed.text).toContain("HIGH");
     expect(parsed.parse_mode).toBe("Markdown");
   });
+
+  it("message formatting is deterministic for same event", async () => {
+    const event = makeEvent();
+    // formatTelegramMessage is not exported, but we can verify via sendTelegramMessage
+    process.env.TELEGRAM_BOT_TOKEN = "test-token";
+    process.env.TELEGRAM_CHAT_ID = "123";
+    const bodies: string[] = [];
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+      bodies.push((init as { body: string }).body);
+      return { ok: true, json: () => Promise.resolve({ ok: true }) };
+    }));
+    await sendTelegramMessage(event);
+    await sendTelegramMessage(event);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toBe(bodies[1]);
+  });
+
+  it("null optional event fields are handled safely", async () => {
+    process.env.TELEGRAM_BOT_TOKEN = "test-token";
+    process.env.TELEGRAM_CHAT_ID = "123";
+    let capturedBody: string | undefined;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+      capturedBody = (init as { body: string }).body;
+      return { ok: true, json: () => Promise.resolve({ ok: true }) };
+    }));
+    const event = makeEvent({
+      instrument: null,
+      previousState: null,
+      currentState: null,
+      evidence: [],
+    });
+    const result = await sendTelegramMessage(event);
+    expect(result.status).toBe("DELIVERED");
+    expect(capturedBody).toBeDefined();
+    const parsed = JSON.parse(capturedBody!);
+    expect(parsed.text).toContain("Decision Changed");
+    expect(parsed.text).toContain("Research Only");
+  });
+});
+
+describe("telegram delivery provider", () => {
+  const origEnv = { ...process.env };
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => { process.env = { ...origEnv }; });
+
+  it("disabled subscription preference suppresses delivery", async () => {
+    process.env.TELEGRAM_BOT_TOKEN = "test-token";
+    process.env.TELEGRAM_CHAT_ID = "123";
+    const { TelegramServerAlertDeliveryProvider } = await import("./telegram-delivery.server");
+    const event = makeEvent();
+    const sub = {
+      userId: "u1",
+      types: {} as Record<string, boolean>,
+      instruments: [],
+      minimumPriority: "LOW" as const,
+      inAppEnabled: true,
+      emailEnabled: false,
+      telegramEnabled: false, // disabled
+      webhookEnabled: false,
+      quietHours: null,
+      cooldownOverrideSec: null,
+      timezone: "Asia/Kolkata",
+    };
+    const result = await TelegramServerAlertDeliveryProvider.deliver(event, sub, new Date().toISOString());
+    expect(result.status).toBe("SKIPPED");
+  });
+
+  it("missing credentials returns DISABLED", async () => {
+    delete process.env.TELEGRAM_BOT_TOKEN;
+    delete process.env.TELEGRAM_CHAT_ID;
+    const { TelegramServerAlertDeliveryProvider } = await import("./telegram-delivery.server");
+    const event = makeEvent();
+    const result = await TelegramServerAlertDeliveryProvider.deliver(event, null, new Date().toISOString());
+    expect(result.status).toBe("DISABLED");
+    expect(result.errorCode).toBe("MISSING_TELEGRAM_CREDENTIALS");
+  });
+});
+
+describe("telegram safety", () => {
+  it("telegram-delivery.server.ts has no broker execution imports", () => {
+    // Verify the module does not import order placement, broker, or trading APIs
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const filePath = path.resolve(__dirname, "telegram-delivery.server.ts");
+    const content = fs.readFileSync(filePath, "utf-8");
+    expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order|BUY.*order|SELL.*order/i);
+  });
 });
