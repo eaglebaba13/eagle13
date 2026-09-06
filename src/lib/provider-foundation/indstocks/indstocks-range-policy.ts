@@ -19,7 +19,7 @@ export interface IndstocksRangePlan {
  * Plan legal request windows for a given timeframe and date range.
  * INDstocks limits:
  *   1minute–30minute: 7 days
- *   60minute–240minute: 14 days
+ *   60minute–240minute: 15 days
  *   1day–1month: 365 days
  */
 export function planIndstocksRange(

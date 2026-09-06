@@ -169,14 +169,14 @@ describe("indstocks range policy", () => {
     expect(plan.chunks).toHaveLength(1);
   });
 
-  it("1h maximum window = 14 days (official INDstocks limit)", () => {
-    const plan = planIndstocksRange("1h", "2024-07-01", "2024-07-15");
+  it("1h maximum window = 15 days (official INDstocks limit)", () => {
+    const plan = planIndstocksRange("1h", "2024-07-01", "2024-07-16");
     expect(plan.ok).toBe(true);
-    // 14 days = exactly 1 chunk
+    // 15 days = exactly 1 chunk
     expect(plan.chunks).toHaveLength(1);
   });
 
-  it("1h range exceeding 14 days splits into multiple chunks", () => {
+  it("1h range exceeding 15 days splits into multiple chunks", () => {
     const plan = planIndstocksRange("1h", "2024-07-01", "2024-07-20");
     expect(plan.ok).toBe(true);
     expect(plan.chunks.length).toBeGreaterThan(1);
