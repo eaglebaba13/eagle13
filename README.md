@@ -6,18 +6,33 @@ Institutional-grade Indian stock-market **research platform**.
 
 ---
 
-## Repository
+## Current Release
 
 | Field | Value |
 |-------|-------|
-| GitHub | `eaglebaba13/eagle13` |
-| Validated branch | `public-unrestricted-upstox-fix` |
-| Validated HEAD | `910977d9d3367f4e16d47ae89101e0c522fcf516` |
+| Repository | `eaglebaba13/eagle13` |
 | Release branch | `production-release-v2` |
+| Current HEAD | `5f2463580d5acc2d3ead2e0e5e7c509e4191f669` |
 | Production URL | `https://eaglebaba.lwill.in/` |
+| Last verified deployment | `e62cc28` (Coolify) |
 | Deployment platform | Coolify on Hostinger VPS KVM4 |
 | Runtime | Node.js + Nitro node-server |
-| Cloudflare | DNS/CDN/proxy only (not application deployment) |
+| Start command | `node .output/server/index.mjs` |
+| Development workflow | VS Code → Kilo Code → GitHub → Coolify → Hostinger VPS |
+| Cloudflare | DNS/CDN/proxy only (NOT application deployment) |
+
+**5f24635 is pushed to GitHub but has NOT been deployed to Coolify.**
+
+---
+
+## Historical Development Baseline
+
+The original validated development work was performed on:
+
+- **Branch**: `public-unrestricted-upstox-fix`
+- **Baseline HEAD**: `910977d9d3367f4e16d47ae89101e0c522fcf516`
+
+This branch contains the validated application logic. `production-release-v2` was created from this baseline with deployment-specific configuration (Nitro, Coolify, `.nvmrc`).
 
 ---
 
@@ -31,13 +46,13 @@ The platform is **not** a broker. It cannot place, modify, or cancel orders. BUY
 
 ## Active Markets
 
-| Market | Historical | Live WS | Status |
-|--------|-----------|---------|--------|
-| NIFTY50 | INDstocks REST | `NIDX:26000` | VERIFIED |
-| BANKNIFTY | INDstocks REST | UNRESOLVED | Provider mapping pending |
-| INDIA VIX | INDstocks REST | UNRESOLVED | Provider mapping pending |
+| Market | Historical REST | WebSocket | Status |
+|--------|----------------|-----------|--------|
+| NIFTY50 | `NSE_26000` | `NIDX:26000` | VERIFIED |
+| BANKNIFTY | `NSE_26009` | UNRESOLVED | WS mapping pending |
+| INDIA VIX | `NSE_26017` | UNRESOLVED | WS mapping pending |
 
-Future markets (SENSEX, MCX, Crypto, XAUUSD, XAGUSD) require verified provider support before activation.
+Future markets (SENSEX, MCX, Crypto, XAUUSD, XAGUSD) require verified provider support.
 
 ---
 
@@ -56,11 +71,94 @@ src/lib/fvg-engine.ts
 src/lib/astro-constants.ts
 ```
 
-Also do not modify: SMC outputs, Hybrid outputs, Decision Center calculations, Backtest calculations. Visualization must consume existing canonical outputs.
+Also do not modify: SMC outputs, Hybrid outputs, Decision Center calculations, Backtest calculations.
 
 ---
 
-## Completed Core Modules
+## Current Test Baseline
+
+```
+Test files:  284
+Tests:       2508 passed, 0 failed
+Lint:        0 Prettier errors
+Build:       PASS
+Formula:     PASS (zero diff on all 8 protected files)
+Security:    PASS (no secrets in client bundle)
+Broker:      DISABLED
+```
+
+Known flaky: `manual-payment.test.ts` "formats paise as rupees" — intermittent timeout.
+
+---
+
+## Authentication Status
+
+`requireSupabaseAuth` is **strict** — it throws when no valid Bearer token is present.
+
+Unauthenticated protected server functions remain protected.
+
+`getRuntimeReadinessReport` is intentionally **public** because its server function does not invoke `requireSupabaseAuth`. This is by design — readiness diagnostics do not require user authentication.
+
+---
+
+## Runtime Readiness Status
+
+Production Runtime Readiness does **NOT** use mock breadth data.
+
+Previous `buildMockBreadthBundle` usage has been removed.
+
+When real breadth data is unavailable:
+- Breadth is reported as UNAVAILABLE
+- No `RESEARCH_DEMO` evidence is used
+- GTI receives null breadth inputs rather than fabricated data
+
+Market Breadth is **not** fully live in production readiness.
+
+---
+
+## Browser Visual Verification
+
+**NOT VERIFIED.**
+
+UI component/source hardening has been performed (Phase 9), but browser visual verification has not been completed.
+
+| Aspect | Status |
+|--------|--------|
+| UI component hardening | PARTIAL (CSS tokens, responsive rules) |
+| Browser visual acceptance | NOT VERIFIED |
+| Mobile browser | NOT VERIFIED |
+| Tablet browser | NOT VERIFIED |
+| Desktop browser | NOT VERIFIED |
+| Theme browser verification | NOT VERIFIED |
+| Chart browser verification | NOT VERIFIED |
+
+---
+
+## Broker / Order Execution
+
+Research-only platform. The following are permanently disabled:
+
+- No broker execution
+- No order placement
+- No BUY/SELL execution
+- No auto-trading
+- No GTT
+- No order modification/cancellation
+
+`LIVE_ORDER_ENABLED=false`
+`BROKER_ORDER_EXECUTION_ENABLED=false`
+
+---
+
+## Production Data Integrity
+
+No mock market data may be silently used in production.
+
+Research/demo fixtures may exist for tests but must never be represented as production evidence.
+
+---
+
+## Completed Modules
 
 - Astro Engine + Absolute Degree + Legacy Engine
 - SMC (Smart Money Concepts) composite engine
@@ -71,7 +169,7 @@ Also do not modify: SMC outputs, Hybrid outputs, Decision Center calculations, B
 - Provider Foundation (provider-neutral interfaces)
 - Upstox Live Integration
 - INDstocks Historical REST + Quote adapter
-- INDstocks WebSocket foundation (server-side, Workers-compatible)
+- INDstocks WebSocket foundation (server-side)
 - Live Chart Engine with CandleAggregator
 - Provider-neutral Indicator Engine (SMA, EMA, RSI, MACD, Bollinger, VWAP)
 - Chart Adapter + Oscillator Panel
@@ -86,364 +184,59 @@ Also do not modify: SMC outputs, Hybrid outputs, Decision Center calculations, B
 
 ### Phase 1 — Repository Engineering Hardening
 
-CRLF/LF normalization, `.gitattributes` policy, Prettier `endOfLine: "lf"`, Windows path compatibility fixes, Lovable detachment, auth/subscription gate removal, navigation registry unification, commercial UI removal.
-
-Commits: `fad3963` → `5da34b5` → `5a953b3` → `fc72a34` → `c2724c9` → `7746b43` → `1518aed`
+CRLF/LF normalization, `.gitattributes` policy, Prettier, Windows path fixes, Lovable detachment, auth/subscription gate removal, navigation registry unification, commercial UI removal.
 
 ### Phase 2 — INDstocks Provider Foundation
 
-Historical REST adapter, quote endpoint, instrument master (NIFTY50: `NSE_26000`, BANKNIFTY: `NSE_26009`, INDIA VIX: `NSE_26017`), provider-neutral interfaces, official documentation alignment, range limits (1m–30m: 7 days, 60m–240m: 15 days, 1d–1m: 1 year), telemetry role (SECONDARY).
-
-Commits: `e6a1b59` → `2441b6b` → `be9aca2`
+Historical REST adapter, quote endpoint, instrument master, range limits (1m–30m: 7 days, 60m–240m: 15 days, 1d–1m: 1 year), telemetry role (SECONDARY).
 
 ### Phase 3A — INDstocks WebSocket Foundation
 
-Server-side connection manager (DISCONNECTED/CONNECTING/CONNECTED/RECONNECTING/CLOSING/FAILED), exponential backoff reconnect, heartbeat/stale detection, subscription manager with duplicate prevention and unresolved-token rejection, MarketTick model, provider-neutral WebSocketTransport abstraction, Workers-compatible transport (fetch+Upgrade pattern), no undocumented JSON ping.
-
-NIFTY50 WebSocket: `NIDX:26000` (VERIFIED). BANKNIFTY and INDIA VIX: UNRESOLVED.
-
-Commits: `7f38975` → `f9e69fc` → `bbf71e0`
+Server-side connection manager, exponential backoff, heartbeat/stale detection, subscription manager, MarketTick model, Workers-compatible transport (fetch+Upgrade pattern).
 
 ### Phase 3B — Live Chart Engine
 
-Historical REST bootstrap, CandleAggregator with deterministic time bucketing (1m/3m/5m/15m/1h/1d), `mergeHistoricalAndLive()` with volume preservation (`MergedCandlePoint`), server-side `LiveMarketStreamManager` singleton (Cloudflare isolate-local), `getLiveCandles` server function, `LiveCandlestickChart` component with 2s polling.
-
-Commits: `aea134e` → `57c9e92`
+Historical REST bootstrap, CandleAggregator, `mergeHistoricalAndLive()` with volume preservation, `LiveMarketStreamManager`, `LiveCandlestickChart`.
 
 ### Phase 4.0 — Provider-Neutral Indicator Foundation
 
-IndicatorCandle (epoch-ms OHLCV), IndicatorDefinition, IndicatorResult, typed output interfaces, registry with register/get/list/has. Implementations: SMA, EMA (SMA seed), RSI (Wilder's smoothing), MACD (fast/slow EMA + signal + histogram), Bollinger Bands (SMA ± σ×multiplier), VWAP (IST session reset). 43 tests with known mathematical vectors.
-
-Commit: `f72c5ac`
+SMA, EMA, RSI, MACD, Bollinger Bands, VWAP. Registry, typed outputs, 43 tests.
 
 ### Phase 4.1 — Indicator Chart Adapter + UI Integration
 
-`chart-adapter.ts`: IndicatorResult → ApexCharts series, overlay/oscillator separation, color palette, parameter validation. `IndicatorControls.tsx`: registry-driven selector + parameter editor. `OscillatorPanel.tsx`: RSI/MACD separate panels with reference lines. `LiveCandlestickChart.tsx`: integrated indicator overlay + oscillator panels.
-
-Commit: `6b0e1a9`
+chart-adapter.ts, IndicatorControls, OscillatorPanel, LiveCandlestickChart integration.
 
 ### Phase 4.1.1 — Volume Preservation Fix
 
-`mergeHistoricalAndLive()` returned `{x, y:[o,h,l,c]}` stripping volume. Fixed to return `MergedCandlePoint` with volume field. `LiveCandlestickChart` now reads actual volume from series points. Silent `catch` replaced with typed `IndicatorError[]`. Duplicate chart color source removed — `getOverlaySeriesColors()` in chart-adapter is single source of truth.
-
-Commit: `e5090bd`
+`mergeHistoricalAndLive()` returns `MergedCandlePoint` with volume. VWAP receives actual volume.
 
 ### Phase 5 — Telegram Notification System
 
-Existing architecture verified production-ready: `telegram-delivery.server.ts` with Bot API integration, `AlertDeliveryProvider` interface, subscription preferences (opt-in), delivery persistence to `smart_alert_delivery_attempts`, idempotency via fingerprint, retry classification. 5 new regression tests added.
-
-Commit: `97eece4`
+`telegram-delivery.server.ts` with Bot API, delivery persistence, idempotency, retry classification.
 
 ### Phase 6 — Responsive Premium UI + Audio
 
-`AudioNotificationManager`: Web Audio API + HTMLAudioElement fallback, fingerprint deduplication, browser autoplay handling, localStorage preferences. `SoundToggle`: accessible header control. `useSignalAudio`/`useNewsImpactAudio` hooks. Assets: `public/audio/eagle-calling.wav` (RESEARCH_SIGNAL), `public/audio/eagle-chirping.wav` (NEWS_IMPACT — disabled until canonical event source exists).
-
-Commit: `fd4798a`
-
-### Phase 6.1 — Audio Integration Hardening
-
-Exported `getAudioAssetUrl()` and `createAudioNotificationManager()` for testing. Rewrote tests with real assertions: actual URL verification, mocked playAudio capture, dedup by fingerprint, autoplay blocking, disabled states, missing asset safety, broker isolation. 23 tests.
-
-Commit: `3f495c0`
+AudioNotificationManager, SoundToggle, `eagle-calling.wav` (research signals), `eagle-chirping.wav` (news impact — disabled until canonical event source exists).
 
 ### Phase 7 — Production Regression Hardening
 
-Prettier formatting of all new Phase 3A–6 files. Comment indentation fix in `__root.tsx`. 2508 tests pass. 0 Prettier errors. 80 pre-existing `@typescript-eslint/no-explicit-any` (documented, not hidden).
+Prettier formatting,2508 tests, 0 Prettier errors.
 
-Commit: `910977d`
+### Phase 8 — Production Deployment
 
----
+Coolify on Hostinger VPS KVM4. Nitro node-server. `.nvmrc` = 22. Nixpacks configuration.
 
-## Current Baseline
+### Phase 8B — Production Release Reconciliation
 
-```
-Test files:  284
-Tests:       2508 passed, 0 failed
-Lint:        0 Prettier errors, 80 pre-existing no-explicit-any
-Build:       PASS
-TypeScript:  PASS (production build)
-Formula:     PASS (zero diff on all 8 protected files)
-Security:    PASS (no secrets in client bundle)
-Broker:      DISABLED (LIVE_ORDER_ENABLED=false, BROKER_ORDER_EXECUTION_ENABLED=false)
-```
+`production-release-v2` branch created.163 production-only commits classified as OBSOLETE/DEFERRED/PORTED.
 
-Known issue: `manual-payment.test.ts` "formats paise as rupees" is a flaky timeout. Do not weaken or disable it.
+### Phase 8C — Coolify Deployment
 
----
+`nixpacks.toml` added. `.nvmrc` added. Deployment verified for commit `e62cc28`.
 
-## Branch / Production History
+### Phase 9 — UI/UX Hardening
 
-### Validated Development Branch
-
-- **Branch**: `public-unrestricted-upstox-fix`
-- **HEAD**: `910977d9d3367f4e16d47ae89101e0c522fcf516`
-- **Commits**: 24 ahead of merge base
-
-### Existing Production Branch
-
-- **Branch**: `production-hotfix-20260807`
-- **HEAD**: `e518d7436776d422074ac8815531accb660f3c21`
-- **Commits**: 163 ahead of merge base
-
-### Relationship
-
-**DIVERGED.** Merge base: `5c0346a85160998e09298cc6585ab8afe564d1a2`. 1184 files changed, 46781 insertions, 38662 deletions. Direct branch switching is unsafe.
-
-### Production-Only Changes (163 commits)
-
-Key categories:
-- Nitro node-server deployment (Coolify/Hostinger VPS)
-- npm lockfile synchronization
-- Public research routing + Upstox analytics token
-- Provider credential RLS migration
-- Supabase Google OAuth
-- SSR fixes (homepage blocking, NewsFeed timeout)
-- Decision Engine signal transition hardening
-- Options Analytics, provider health, Portfolio/Risk, Strategy Builder, GTI AI Decision Engine
-
-### Target-Only Changes (24 commits)
-
-Key categories:
-- INDstocks provider foundation (REST + WebSocket)
-- Live chart engine with CandleAggregator
-- Provider-neutral indicator engine (SMA/EMA/RSI/MACD/Bollinger/VWAP)
-- Chart adapter + oscillator panel
-- Telegram notification verification
-- Audio notification system
-- Lovable detachment + auth/subscription removal
-- Navigation registry unification
-- Production regression hardening
-
-### Deployment Divergence
-
-| Aspect | Production (corrected) | Target |
-|--------|-----------|--------|
-| Server runtime | Nitro `node-server` (Coolify/VPS) | Nitro `node-server` (Coolify/VPS) |
-| vite.config.ts | `nitro({ preset: "node-server" })` | `nitro({ preset: "node-server" })` |
-| Start script | `node .output/server/index.mjs` | `node .output/server/index.mjs` |
-| Deployment | Coolify on Hostinger VPS | Coolify on Hostinger VPS |
-
----
-
-## Phase 8B — Production Release Reconciliation
-
-**Status: COMPLETE — no application changes required**
-
-### Release Branch
-
-- **Branch**: `production-release-v2`
-- **Created from**: `75abe79` (README commit on top of `910977d`)
-- **Application base**: `910977d9d3367f4e16d47ae89101e0c522fcf516`
-
-### Production Branch Audit
-
-- **Production branch**: `production-hotfix-20260807`
-- **Production HEAD**: `e518d7436776d422074ac8815531accb660f3c21`
-- **Merge base**: `5c0346a85160998e09298cc6585ab8afe564d1a2`
-- **Production-only commits**: 163
-- **Target-only commits**: 25
-- **Branch status**: DIVERGED (1184 files changed)
-
-### Production Changes Classification
-
-All 163 production-only changes classified:
-
-**OBSOLETE** (not needed in target):
-- All Nitro/Coolify/Hostinger deployment (9 commits)
-- All Lovable migration (8+ commits)
-- All lockfile synchronization (2 commits)
-- `package.json` pinned versions, engines, start script
-- `vite.config.ts` Nitro plugin
-- SSR fixes (986bef6, d487445) — target has different route architecture
-- Auth-related changes (f1a96e7, 4238ee2, 1725c19, 13bf800, c3d901a, 2300c61)
-- Provider credential files (e9eb316) — files don't exist in target
-- RLS migration (0cf2372) — not applicable without auth
-- Service role binding (c83a847) — only changed bun.lock/package.json during Lovable
-- Secret tracking (8598864) — already done in target
-- Closed-beta metadata (cc01c1a) — removed in target
-- All "Changes" and "Work in progress" commits with no functional content
-
-**DEFERRED** (separate future scope):
-- GTI AI Decision Engine (`src/lib/gti-ai-decision/`) — 5 files, ~645 lines
-- Advanced Options Analytics (`src/lib/options-analytics/`) — 14 files, ~800+ lines
-- Portfolio Manager (`src/lib/portfolio-manager/`) — 8 files, ~700+ lines
-- Strategy Builder (`src/lib/strategy-builder/`) — 10 files, ~800+ lines
-- Provider Health Registry (`src/lib/provider-health-registry/`) — 8 files, ~500+ lines
-- Watchlist route
-- Strategy Builder route
-- Signal transition hardening (23aac76, 357ef61, ea40912)
-- 6 SQL migrations from August 2026
-
-**PORTED**: None — target branch is self-contained for core functionality.
-
-### SQL Migrations
-
-16 target-branch migrations (July 2026) are present. 6 production-only migrations (August 2026) are for features/auth not in target. Classified as **OBSOLETE** or **DEFERRED**.
-
-### Security
-
-- No production-only security fixes needed porting
-- Target already has credential isolation, server-side tokens, no client secrets
-- Broker execution remains disabled
-
-### Regression Results
-
-```
-Tests:     2508 passed, 0 failed
-Build:     PASS
-Formula:   PASS (zero diff on all 8 protected files)
-Broker:    DISABLED
-```
-
-### Next Step
-
-Deploy `production-release-v2` to Coolify on Hostinger VPS KVM4.
-
----
-
-## Phase 8C — Coolify + Hostinger VPS Production Deployment
-
-**Status: SOURCE COMPLETE / RUNTIME UNVERIFIED**
-
-### Deployment Architecture (Corrected)
-
-| Layer | Technology |
-|-------|-----------|
-| Development | VS Code → Kilo Code → GitHub |
-| Source | `production-release-v2` branch |
-| Deployment | Coolify on Hostinger VPS KVM4 |
-| Runtime | Node.js + Nitro node-server |
-| Application | `node .output/server/index.mjs` |
-| DNS/CDN | Cloudflare (proxy only, not application deployment) |
-
-Cloudflare Workers/Wrangler is **NOT** the application deployment target.
-
-### Changes Made
-
-Commit `1f186ae`:
-- Added `nitro` plugin with `node-server` preset to `vite.config.ts`
-- Added `start` script: `node .output/server/index.mjs`
-- Build produces `.output/server/index.mjs` + static assets
-- Audio assets (`eagle-calling.wav`, `eagle-chirping.wav`) included in output
-
-### Build Verification
-
-```
-.output/server/index.mjs:  EXISTS
-.output/nitro.json:        EXISTS
-Asset hash:                index-DGGXpEKA.js
-Audio eagle-calling:       PRESENT in output
-Audio eagle-chirping:      PRESENT in output
-Tests:                     2508 passed, 0 failed
-Formula integrity:         PASS (zero diff against 910977d)
-```
-
-### Required Coolify Configuration
-
-1. Connect Coolify to `eaglebaba13/eagle13` repository
-2. Set branch to `production-release-v2`
-3. Build command: `npm run build`
-4. Start command: `node .output/server/index.mjs`
-5. Configure environment variables in Coolify (NOT in source):
-   - `INDSTOCKS_ACCESS_TOKEN`
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
-   - Supabase credentials if required
-6. Configure domain: `eaglebaba.lwill.in`
-
-### Runtime Certification (Pending)
-
-After Coolify deployment, verify:
-
-```
-[ ] https://eaglebaba.lwill.in/ → HTTP 200
-[ ] Production serves index-DGGXpEKA.js (not stale index-C2zJWChg.js)
-[ ] /audio/eagle-calling.wav → 200
-[ ] /audio/eagle-chirping.wav → 200
-[ ] /astro loads
-[ ] /live-market-terminal loads
-[ ] NIFTY50 live data via NIDX:26000
-[ ] Historical bootstrap works
-[ ] Volume reaches VWAP
-[ ] Provider/freshness/data-quality truthful
-[ ] No secrets in client bundle
-[ ] Broker execution disabled
-```
-
----
-
-## Phase 8 Status — Production Deployment + Runtime Certification
-
-**Status: SOURCE COMPLETE / RUNTIME UNVERIFIED**
-
-Deployment architecture corrected: Coolify on Hostinger VPS KVM4 (not Cloudflare Workers).
-
-Release branch `production-release-v2` is ready for Coolify deployment.
-
-### Required Sequence
-
-1. Configure Coolify application to deploy `production-release-v2`
-2. Set environment variables in Coolify
-3. Trigger deployment
-4. Wait ~3 minutes
-5. Verify production artifact matches release
-6. Verify `/audio/eagle-calling.wav` → 200
-7. Verify `/audio/eagle-chirping.wav` → 200
-8. Verify routes: `/`, `/astro`, `/live-market-terminal`
-9. Verify NIFTY50 live data via `NIDX:26000`
-10. Verify historical bootstrap + live merge
-11. Verify volume reaches VWAP
-12. Verify provider/freshness/data-quality telemetry
-13. Verify credential security (no secrets in client bundle)
-14. Verify broker isolation
-15. Certify production
-
----
-
-## Production Certification Checklist
-
-```
-[ ] Release SHA deployed
-[ ] Source/artifact match
-[ ] /audio/eagle-calling.wav → 200
-[ ] /audio/eagle-chirping.wav → 200
-[ ] Routes: /, /astro, /live-market-terminal
-[ ] NIFTY50: NIDX:26000 — real ticks
-[ ] Historical bootstrap works
-[ ] Historical/live merge works
-[ ] Candle aggregation works
-[ ] Volume preserved
-[ ] VWAP receives volume
-[ ] Provider/freshness/data-quality truthful
-[ ] Stale state displayed honestly
-[ ] No mock production data
-[ ] INDstocks token server-side only
-[ ] Telegram token server-side only
-[ ] Supabase service-role server-side only
-[ ] LIVE_ORDER_ENABLED=false
-[ ] BROKER_ORDER_EXECUTION_ENABLED=false
-[ ] No trading execution
-```
-
----
-
-## Future Roadmap
-
-**Priority order:**
-
-1. Production live-data certification (Phase 8)
-2. BANKNIFTY + INDIA VIX provider mapping verification
-3. Performance / observability / launch readiness
-4. Advanced analytics (Max Pain, OI Build-up, Gamma Exposure, Dealer Positioning)
-5. Additional markets (SENSEX, MCX, Crypto, XAUUSD, XAGUSD)
-
-Advanced analytics must wait until production market-data integrity is certified.
-
----
-
-## Lovable History
-
-Lovable was previously integrated (cloud-auth, MCP, Vite config, OAuth, error reporting). It was intentionally and completely removed during Phase 1. No Lovable runtime dependency remains. The project deploys via Coolify on Hostinger VPS KVM4 (not Cloudflare Workers).
+Market semantic tokens added. Light theme card/table overrides. Responsive mobile/tablet CSS. Auth middleware corrected. Runtime Readiness mock data removed.
 
 ---
 
@@ -463,37 +256,14 @@ Lovable was previously integrated (cloud-auth, MCP, Vite config, OAuth, error re
 
 ---
 
-## Prompt Format
-
-Work has been performed through phase-specific prompts. Standard format:
-
-```
-PHASE: <name>
-SOURCE: <commit SHA>
-OBJECTIVE: <what to do>
-INSPECT FIRST: <what to check>
-DO NOT CHANGE: <protected areas>
-IMPLEMENT: <exact scope>
-TEST: <required tests>
-VERIFY: <quality gates>
-COMMIT: <commit message>
-REPORT: <structured output>
-STOP IF: <blockers>
-```
-
-Current prompt intent: "Maintain the existing research terminal. Deploy production-release-v2 to Coolify. Certify live NIFTY50 data. Do not reimplement INDstocks WebSocket."
-
----
-
 ## Status Legend
 
 | Status | Meaning |
 |--------|---------|
-| COMPLETE | Source code exists and tests pass |
-| SOURCE COMPLETE / RUNTIME UNVERIFIED | Code exists, not verified in production |
-| VERIFIED | Independently confirmed |
+| VERIFIED | Independently confirmed with evidence |
 | UNRESOLVED | Known gap, not yet addressed |
 | BLOCKED | Cannot proceed without external action |
 | DEFERRED | Intentionally postponed |
+| NOT VERIFIED | No evidence available |
 
 Never use "complete" merely because source code exists. SOURCE ≠ RUNTIME ≠ PRODUCTION.
