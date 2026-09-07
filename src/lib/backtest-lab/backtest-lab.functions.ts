@@ -1,4 +1,4 @@
-﻿// Phase 3G â€” Backtest Lab server functions.
+﻿// Phase 3G — Backtest Lab server functions.
 // Auth required. Consumer-only. No provider fetches, no eval, no
 // browser-side historical fetch, no broker imports.
 
@@ -7,7 +7,7 @@ import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-mi
 import type {
   BacktestRunReport,
   HistoricalCandle,
-  MonteCarloSummary,
+ MonteCarloSummary,
   StrategyDefinition,
   WalkForwardSummary,
 } from "./types";
@@ -52,7 +52,8 @@ function sanitizeCandles(rows: readonly HistoricalCandle[]): HistoricalCandle[] 
 export const createStrategy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { strategy: StrategyDefinition }) => data)
-  .handler(async ({ data }): Promise<StrategyDefinition> => {
+  .handler(async ({ data, context }): Promise<StrategyDefinition> => {
+    assertAuth(context);
     validateStrategyDefinition(data.strategy);
     saveStrategy(data.strategy);
     return data.strategy;
@@ -61,24 +62,32 @@ export const createStrategy = createServerFn({ method: "POST" })
 export const validateStrategy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { strategy: StrategyDefinition }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
     validateStrategyDefinition(data.strategy);
     return { ok: true, hash: computeStrategyHash(data.strategy) };
   });
 
 export const listStrategiesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => listStratsMem());
+  .handler(async ({ context }) => {
+    assertAuth(context);
+    return listStratsMem();
+  });
 
 export const readStrategyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { strategyId: string }) => data)
-  .handler(async ({ data }) => readStratMem(data.strategyId));
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
+    return readStratMem(data.strategyId);
+  });
 
 export const updateStrategyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { strategy: StrategyDefinition }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
     validateStrategyDefinition(data.strategy);
     updateStrategy(data.strategy);
     return data.strategy;
@@ -87,7 +96,10 @@ export const updateStrategyFn = createServerFn({ method: "POST" })
 export const deleteStrategyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { strategyId: string }) => data)
-  .handler(async ({ data }) => ({ deleted: delStrat(data.strategyId) }));
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
+    return { deleted: delStrat(data.strategyId) };
+  });
 
 export interface RunBacktestInput {
   readonly strategy: StrategyDefinition;
@@ -100,7 +112,8 @@ export interface RunBacktestInput {
 export const runBacktestFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: RunBacktestInput) => data)
-  .handler(async ({ data }): Promise<BacktestRunReport> => {
+  .handler(async ({ data, context }): Promise<BacktestRunReport> => {
+    assertAuth(context);
     const t0 = Date.now();
     const nowIso = new Date().toISOString();
     try {
@@ -134,17 +147,24 @@ export const runBacktestFn = createServerFn({ method: "POST" })
 
 export const listBacktestRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => listRunsMem());
+  .handler(async ({ context }) => {
+    assertAuth(context);
+    return listRunsMem();
+  });
 
 export const readBacktestRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { runId: string }) => data)
-  .handler(async ({ data }) => readRunMem(data.runId));
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
+    return readRunMem(data.runId);
+  });
 
 export const compareBacktestRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { runIds: readonly string[] }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    assertAuth(context);
     const runs = data.runIds
       .map((id) => readRunMem(id))
       .filter((r): r is BacktestRunReport => r != null);
@@ -159,7 +179,8 @@ export const compareBacktestRuns = createServerFn({ method: "POST" })
 export const exportBacktestRunJson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { runId: string }) => data)
-  .handler(async ({ data }): Promise<string> => {
+  .handler(async ({ data, context }): Promise<string> => {
+    assertAuth(context);
     const r = readRunMem(data.runId);
     return r ? exportRunJson(r) : "";
   });
@@ -167,14 +188,16 @@ export const exportBacktestRunJson = createServerFn({ method: "POST" })
 export const exportBacktestRunCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { runId: string }) => data)
-  .handler(async ({ data }): Promise<string> => {
+  .handler(async ({ data, context }): Promise<string> => {
+    assertAuth(context);
     const r = readRunMem(data.runId);
     return r ? exportRunCsv(r) : "";
   });
 
 export const getBacktestLabDiagnostics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    assertAuth(context);
     const stats = persistenceStats();
     return buildDiagnostics({
       nowIso: new Date().toISOString(),
@@ -186,4 +209,3 @@ export const getBacktestLabDiagnostics = createServerFn({ method: "POST" })
       averageDurationMs: stats.avgDurationMs,
     });
   });
-
