@@ -10,6 +10,7 @@ import {
   mergeHistoricalAndLive,
   type CandleAggregatorState,
   type AggregationIntervalMs,
+  type MergedCandlePoint,
 } from "./provider-foundation/indstocks/candle-aggregator";
 import { buildIndstocksWsTelemetry } from "./provider-foundation/indstocks/indstocks-ws-adapter.server";
 import type { QuoteSymbol } from "./provider-foundation/types";
@@ -18,9 +19,9 @@ export interface LiveStreamSnapshot {
   readonly instrument: string;
   readonly connectionState: string;
   readonly lastTick: MarketTick | null;
-  readonly currentCandle: import("./indstocks/candle-aggregator").LiveCandle | null;
+  readonly currentCandle: import("./provider-foundation/indstocks/candle-aggregator").LiveCandle | null;
   readonly completedCandleCount: number;
-  readonly telemetry: import("./types").ProviderTelemetry;
+  readonly telemetry: import("./provider-foundation/types").ProviderTelemetry;
   readonly subscriptionActive: boolean;
 }
 
@@ -108,7 +109,7 @@ class LiveMarketStreamManager {
       readonly close: number;
       readonly volume: number | null;
     }[] = [],
-  ): Array<{ x: number; y: [number, number, number, number] }> {
+  ): MergedCandlePoint[] {
     const key = `${symbol}:${intervalMs}`;
     const agg = this.aggregators.get(key);
     return mergeHistoricalAndLive(historical, agg?.completed ?? [], agg?.current ?? null);
