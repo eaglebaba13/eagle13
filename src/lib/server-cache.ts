@@ -54,7 +54,14 @@ function revalidate<T>(
   const existing = inflight.get(key) as Promise<T> | undefined;
   if (existing) return existing;
 
-  const p = loader()
+  // Bounded timeout prevents hanging promises from blocking all subsequent requests.
+  const TIMEOUT_MS = 30_000; // 30 seconds
+  const p = Promise.race([
+    loader(),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`cache_timeout:${key}`)), TIMEOUT_MS),
+    ),
+  ])
     .then((value) => {
       const now = Date.now();
       store.set(key, { value, freshUntil: now + ttlMs, staleUntil: now + ttlMs + swrMs });
