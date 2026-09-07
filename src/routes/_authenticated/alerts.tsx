@@ -17,6 +17,7 @@ import {
 } from "@/lib/smart-alerts/persistence.functions";
 import { allAlertTypes } from "@/lib/smart-alerts/subscriptions";
 import { ALERT_DISCLAIMER, type AlertPriority, type AlertType } from "@/lib/smart-alerts/types";
+import { callBounded } from "@/lib/bounded-server-call";
 
 export const Route = createFileRoute("/_authenticated/alerts")({
   component: AlertCenterPage,
@@ -80,9 +81,19 @@ function AlertCenterPage() {
 
   const events = useQuery({
     queryKey: ["smart-alerts", "events"],
-    queryFn: () => evFn({ data: { limit: 100 } }),
+    queryFn: async () => {
+      const bounded = await callBounded(
+        () => evFn({ data: { limit: 100 } }),
+        30_000,
+      );
+      if (!bounded.ok || !bounded.data) {
+        throw new Error(bounded.error ?? "Failed to load alerts");
+      }
+      return bounded.data;
+    },
     staleTime: 15_000,
     refetchInterval: 60_000,
+    retry: 1,
   });
   const filtered = useMemo(() => {
     const rows = events.data ?? [];

@@ -10,6 +10,7 @@ import {
 } from "@/lib/institutional-flow/institutional-flow.functions";
 import type { OptionUnderlying } from "@/lib/option-chain/types";
 import { safeProviderLabel } from "@/lib/provider-labels";
+import { callBounded } from "@/lib/bounded-server-call";
 
 export const Route = createFileRoute("/_authenticated/institutional-flow")({
   head: () => ({
@@ -38,8 +39,17 @@ function InstitutionalFlowPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetchFlow({ data: { underlying } });
-      setReport(r);
+      const bounded = await callBounded(
+        () => fetchFlow({ data: { underlying } }),
+        30_000,
+      );
+
+      if (!bounded.ok || !bounded.data) {
+        setError(bounded.error ?? "load failed");
+        return;
+      }
+
+      setReport(bounded.data);
     } catch (e) {
       setError(e instanceof Error ? e.message.slice(0, 200) : "load failed");
     } finally {

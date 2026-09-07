@@ -8,6 +8,7 @@ import { getAiMarketAssistant } from "@/lib/ai-market-assistant/assistant.functi
 import { PRESET_QUESTIONS } from "@/lib/ai-market-assistant/prompts";
 import { answerPreset } from "@/lib/ai-market-assistant/assistant";
 import type { AssistantBias, AssistantConfidence } from "@/lib/ai-market-assistant/types";
+import { callBounded } from "@/lib/bounded-server-call";
 
 export const Route = createFileRoute("/_authenticated/ai-market-assistant")({
   head: () => ({
@@ -53,8 +54,15 @@ function AiMarketAssistantPage() {
   const fn = useServerFn(getAiMarketAssistant);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["ai-market-assistant"],
-    queryFn: () => fn(),
+    queryFn: async () => {
+      const bounded = await callBounded(() => fn(), 30_000);
+      if (!bounded.ok || !bounded.data) {
+        throw new Error(bounded.error ?? "request failed");
+      }
+      return bounded.data;
+    },
     staleTime: 30_000,
+    retry: 1,
   });
   const [answer, setAnswer] = useState<{ q: string; a: string } | null>(null);
 

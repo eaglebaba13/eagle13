@@ -23,6 +23,7 @@ import {
   summarizeGtiShadow,
   type GtiShadowSample,
 } from "@/lib/market-breadth/shadow-validation";
+import { callBounded } from "@/lib/bounded-server-call";
 
 export const Route = createFileRoute("/market-breadth")({
   head: () => ({
@@ -131,14 +132,24 @@ function MarketBreadthPage() {
     try {
       const parsedVix = vix === "" ? null : Number(vix);
       const parsedPrev = previousVix === "" ? null : Number(previousVix);
-      const res = await fetchGti({
-        data: {
-          mockScenario: scenario,
-          vix: Number.isFinite(parsedVix) ? parsedVix : null,
-          previousVix: Number.isFinite(parsedPrev) ? parsedPrev : null,
-          attachLive: true,
-        },
-      });
+      const bounded = await callBounded(
+        () => fetchGti({
+          data: {
+            mockScenario: scenario,
+            vix: Number.isFinite(parsedVix) ? parsedVix : null,
+            previousVix: Number.isFinite(parsedPrev) ? parsedPrev : null,
+            attachLive: true,
+          },
+        }),
+        30_000,
+      );
+
+      if (!bounded.ok || !bounded.data) {
+        setError(bounded.error ?? "request failed");
+        return;
+      }
+
+      const res = bounded.data;
       setResult(res);
       if (res.ok && res.reading) {
         try {

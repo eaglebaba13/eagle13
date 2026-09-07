@@ -32,6 +32,7 @@ import {
   summarizeShadowObservations,
   type ShadowSample,
 } from "@/lib/combined-pcr/shadow-validation";
+import { callBounded } from "@/lib/bounded-server-call";
 
 export const Route = createFileRoute("/combined-pcr")({
   head: () => ({
@@ -101,17 +102,27 @@ function CombinedPcrPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchPcr({
-        data: {
-          atmMode,
-          weights,
-          useMock,
-          mockScenario: useMock ? mockScenario : undefined,
-          previousConfirmed: prevConf.current.confirmed,
-          previousPending: prevConf.current.pending,
-          previousCount: prevConf.current.count,
-        },
-      });
+      const bounded = await callBounded(
+        () => fetchPcr({
+          data: {
+            atmMode,
+            weights,
+            useMock,
+            mockScenario: useMock ? mockScenario : undefined,
+            previousConfirmed: prevConf.current.confirmed,
+            previousPending: prevConf.current.pending,
+            previousCount: prevConf.current.count,
+          },
+        }),
+        30_000,
+      );
+
+      if (!bounded.ok || !bounded.data) {
+        setError(bounded.error ?? "request failed");
+        return;
+      }
+
+      const res = bounded.data;
       setResult(res);
       if (res.ok && res.reading) {
         prevConf.current = {
