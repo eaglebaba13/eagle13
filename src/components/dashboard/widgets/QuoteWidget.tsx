@@ -1,6 +1,7 @@
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, FlashValue, Row, fmt } from "./legacy-primitives";
 import { canDisplayActionableSignal } from "@/lib/actionable-signal";
+import { useMarketSession } from "@/hooks/use-market-session";
 
 export default function QuoteWidget() {
   const {
@@ -17,10 +18,12 @@ export default function QuoteWidget() {
   });
   const up = quote.change >= 0;
   const stale = !gate.allowed;
+  const session = useMarketSession();
+  const marketLabel = session.isOpen ? "MARKET OPEN" : `MARKET ${session.status}`;
   return (
     <Card
       title={`${quote.name} — LIVE`}
-      sub={quote.marketState === "OPEN" ? "MARKET OPEN" : "MARKET CLOSED"}
+      sub={marketLabel}
       accent={accent}
       freshness={freshness}
       provider={providerMetadata?.name}

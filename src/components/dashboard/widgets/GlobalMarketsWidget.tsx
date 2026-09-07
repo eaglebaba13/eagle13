@@ -2,13 +2,14 @@ import type { IndexQuote } from "@/lib/market.functions";
 import { useDashboardData } from "../DashboardDataContext";
 import { Card, Row, fmt } from "./legacy-primitives";
 import { classifyFreshness } from "@/lib/data-freshness";
+import { useMarketSession, deriveMarketSessionStatus } from "@/hooks/use-market-session";
 
-function rowFreshness(q: IndexQuote | null, now: number) {
+function rowFreshness(q: IndexQuote | null, now: number, sessionStatus: string) {
   if (!q) return null;
   return classifyFreshness({
     providerTimestamp: q.updatedAt,
     expectedUpdateMs: 60_000,
-    marketSession: q.marketState === "OPEN" ? "OPEN" : "CLOSED",
+    marketSession: sessionStatus === "OPEN" ? "OPEN" : "CLOSED",
     providerStatus: "OK",
     now,
   });
@@ -16,10 +17,12 @@ function rowFreshness(q: IndexQuote | null, now: number) {
 
 export default function GlobalMarketsWidget() {
   const { data, freshnessByDependency, providerMetadata } = useDashboardData();
+  const session = useMarketSession();
+  const sessionStatus = deriveMarketSessionStatus(session);
   const now = Date.now();
-  const goldFresh = rowFreshness(data.gold, now);
-  const silverFresh = rowFreshness(data.silver, now);
-  const btcFresh = rowFreshness(data.btc, now);
+  const goldFresh = rowFreshness(data.gold, now, sessionStatus);
+  const silverFresh = rowFreshness(data.silver, now, sessionStatus);
+  const btcFresh = rowFreshness(data.btc, now, sessionStatus);
   const worst = [goldFresh, silverFresh, btcFresh].filter(Boolean) as Array<{ status: string }>;
   const rank = (s: string) =>
     s === "ERROR" || s === "UNAVAILABLE" ? 4 : s === "STALE" ? 3 : s === "DELAYED" ? 2 : 1;

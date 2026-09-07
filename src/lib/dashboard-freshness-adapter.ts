@@ -13,6 +13,7 @@ import {
   type ProviderStatus,
 } from "./data-freshness";
 import type { IndexQuote } from "./market.functions";
+import { nseSession } from "./terminal-clock";
 
 export type DashboardFreshnessDependency =
   | "MARKET_DATA"
@@ -43,9 +44,9 @@ const EXPECTED_MS: Record<DashboardFreshnessDependency, number> = {
   MARKET_BREADTH: 60_000,
 };
 
-function session(q?: { marketState?: "OPEN" | "CLOSED" } | null): MarketSessionStatus {
-  if (!q) return "UNKNOWN";
-  return q.marketState === "OPEN" ? "OPEN" : "CLOSED";
+function canonicalSession(now?: number): MarketSessionStatus {
+  const s = nseSession(now);
+  return s.isOpen ? "OPEN" : "CLOSED";
 }
 
 function oldest(...quotes: Array<{ updatedAt?: string } | null | undefined>): string | null {
@@ -74,12 +75,12 @@ function derive(dep: DashboardFreshnessDependency, src: DashboardFreshnessSource
   switch (dep) {
     case "MARKET_DATA": {
       providerTimestamp = oldest(src.nifty, src.banknifty);
-      marketSession = session(src.nifty ?? src.banknifty);
+      marketSession = canonicalSession(now);
       break;
     }
     case "GOLD_SILVER_RATIO": {
       providerTimestamp = oldest(src.gold, src.silver);
-      marketSession = session(src.gold ?? src.silver);
+      marketSession = canonicalSession(now);
       break;
     }
     case "ASTRO_SNAPSHOT":
@@ -87,7 +88,7 @@ function derive(dep: DashboardFreshnessDependency, src: DashboardFreshnessSource
     case "OPTIONS_CHAIN":
     case "MARKET_BREADTH": {
       providerTimestamp = oldest(src.nifty, src.banknifty);
-      marketSession = session(src.nifty ?? src.banknifty);
+      marketSession = canonicalSession(now);
       break;
     }
   }
