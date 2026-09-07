@@ -12,7 +12,7 @@ Institutional-grade Indian stock-market **research platform**.
 |-------|-------|
 | Repository | `eaglebaba13/eagle13` |
 | Release branch | `production-release-v2` |
-| Current HEAD | `5f2463580d5acc2d3ead2e0e5e7c509e4191f669` |
+| CURRENT RELEASE SOURCE HEAD | `c73750630224e9e082bb98459e9cfb7603ceeda5` |
 | Production URL | `https://eaglebaba.lwill.in/` |
 | Last verified deployment | `e62cc28` (Coolify) |
 | Deployment platform | Coolify on Hostinger VPS KVM4 |
@@ -21,7 +21,7 @@ Institutional-grade Indian stock-market **research platform**.
 | Development workflow | VS Code → Kilo Code → GitHub → Coolify → Hostinger VPS |
 | Cloudflare | DNS/CDN/proxy only (NOT application deployment) |
 
-**5f24635 is pushed to GitHub but has NOT been deployed to Coolify.**
+**c737506 is pushed to GitHub but has NOT been deployed to Coolify.**
 
 ---
 
