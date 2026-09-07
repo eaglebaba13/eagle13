@@ -25,8 +25,8 @@ export interface LiveStreamSnapshot {
   readonly subscriptionActive: boolean;
 }
 
-// Provider-neutral candle event emitted when a tick modifies the aggregator.
 export interface LiveCandleEvent {
+  readonly type: "candle_update";
   readonly symbol: string;
   readonly intervalMs: number;
   readonly candle: {
@@ -41,7 +41,6 @@ export interface LiveCandleEvent {
   readonly provider: string;
   readonly freshness: string;
   readonly timestamp: string;
-  // Live status fields — always carried with every event
   readonly lastLtp: number | null;
   readonly lastTick: string | null;
   readonly connectionState: string;
@@ -56,10 +55,11 @@ class LiveMarketStreamManager {
   private lastTicks = new Map<string, MarketTick | null>();
   private started = false;
 
-  // Subscriber mechanism — tick-driven, no polling
-  // Reference counted: multiple SSE subscribers share one provider subscription
+  // Symbol-level provider subscription reference counting
+  private symbolRefCount = new Map<string, number>();
+
+  // Interval-level candle listeners: key = symbol:intervalMs
   private candleListeners = new Map<string, Set<LiveCandleListener>>();
-  private subscriptionRefCount = new Map<string, number>();
 
   start(): void {
     if (this.started) return;
@@ -75,46 +75,63 @@ class LiveMarketStreamManager {
     this.aggregators.clear();
     this.lastTicks.clear();
     this.candleListeners.clear();
-    this.subscriptionRefCount.clear();
+    this.symbolRefCount.clear();
     this.started = false;
   }
 
+  /**
+   * Subscribe to a symbol+interval combination.
+   * Provider subscription is symbol-level and reference counted.
+   * Aggregator/listener state is symbol:interval-level.
+   */
   subscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): boolean {
     if (!this.adapter) return false;
-    const key = `${symbol}:${intervalMs}`;
 
-    // Reference counted — only create provider subscription on first subscriber
-    const refCount = this.subscriptionRefCount.get(key) ?? 0;
+    const aggKey = `${symbol}:${intervalMs}`;
+
+    // Create aggregator if not exists (interval-level)
+    if (!this.aggregators.has(aggKey)) {
+      this.aggregators.set(aggKey, createAggregatorState(symbol, intervalMs));
+    }
+
+    // Symbol-level provider subscription (reference counted)
+    const refCount = this.symbolRefCount.get(symbol) ?? 0;
     if (refCount === 0) {
       const ok = this.adapter.subscribe(symbol);
       if (!ok) return false;
-      this.aggregators.set(key, createAggregatorState(symbol, intervalMs));
       this.lastTicks.set(symbol, null);
     }
-    this.subscriptionRefCount.set(key, refCount + 1);
+    this.symbolRefCount.set(symbol, refCount + 1);
     return true;
   }
 
+  /**
+   * Unsubscribe from a symbol+interval combination.
+   * Provider subscription is only removed when ALL intervals for that symbol
+   * have zero subscribers.
+   */
   unsubscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): void {
-    const key = `${symbol}:${intervalMs}`;
-    const refCount = (this.subscriptionRefCount.get(key) ?? 1) - 1;
+    const aggKey = `${symbol}:${intervalMs}`;
 
+    // Remove interval-level state
+    this.aggregators.delete(aggKey);
+    this.candleListeners.delete(aggKey);
+
+    // Decrement symbol-level ref count
+    const refCount = (this.symbolRefCount.get(symbol) ?? 1) - 1;
     if (refCount <= 0) {
-      // Last subscriber — remove provider subscription
-      this.subscriptionRefCount.delete(key);
-      this.aggregators.delete(key);
+      // Last subscriber for this symbol — remove provider subscription
+      this.symbolRefCount.delete(symbol);
       this.lastTicks.delete(symbol);
-      this.candleListeners.delete(key);
       this.adapter?.unsubscribe(symbol);
     } else {
-      this.subscriptionRefCount.set(key, refCount);
+      this.symbolRefCount.set(symbol, refCount);
     }
   }
 
   /**
    * Register a listener for candle updates on a specific symbol+interval.
-   * Returns an unsubscribe function.
-   * Listener fires ONLY when a provider tick actually modifies the candle.
+   * Returns an unsubscribe function that only removes THIS listener.
    */
   onCandleUpdate(
     symbol: QuoteSymbol,
@@ -178,6 +195,7 @@ class LiveMarketStreamManager {
   private handleTick(tick: MarketTick): void {
     this.lastTicks.set(tick.instrument as string, tick);
 
+    // Update ALL aggregators for this instrument (different intervals)
     for (const [key, agg] of this.aggregators) {
       if (agg.instrument !== tick.instrument) continue;
 
@@ -196,13 +214,14 @@ class LiveMarketStreamManager {
       const listeners = this.candleListeners.get(key);
       if (!listeners || listeners.size === 0) continue;
 
-      // CRITICAL ORDER: emit completed candle FIRST, then new current candle.
-      // This prevents the browser from clearing the new candle when it sees completed=true.
+      // ORDER: emit completed candle FIRST, then new current candle
+      // This prevents browser from clearing new candle at boundary
 
-      // 1. Emit completed previous candle (if one was completed)
+      // 1. Completed previous candle
       if (candleCompleted && next.completed.length > 0) {
         const completedCandle = next.completed[next.completed.length - 1];
         const completedEvent: LiveCandleEvent = {
+          type: "candle_update",
           symbol: tick.instrument as string,
           intervalMs: next.intervalMs,
           candle: {
@@ -227,9 +246,10 @@ class LiveMarketStreamManager {
         }
       }
 
-      // 2. Emit new current candle (always, if it exists)
+      // 2. New current candle
       if (next.current) {
         const currentEvent: LiveCandleEvent = {
+          type: "candle_update",
           symbol: tick.instrument as string,
           intervalMs: next.intervalMs,
           candle: {

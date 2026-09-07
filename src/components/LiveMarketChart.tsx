@@ -12,6 +12,12 @@ import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 import { getIndicator } from "@/lib/indicators/registry";
 import { indicatorsToChartSeries, getOverlaySeriesColors, validateIndicatorParams } from "@/lib/indicators/chart-adapter";
 
+export interface IndicatorError {
+  readonly indicatorId: string;
+  readonly code: string;
+  readonly message: string;
+}
+
 export interface LiveMarketChartProps {
   readonly symbol?: string;
   readonly intervalMs?: number;
@@ -105,17 +111,17 @@ export function LiveMarketChart({
   }, [chartData]);
 
   const { indicatorResults, indicatorErrors } = useMemo(() => {
-    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as string[] };
+    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as IndicatorError[] };
     const results: IndicatorResult[] = [];
-    const errors: string[] = [];
+    const errors: IndicatorError[] = [];
     for (const ind of activeIndicators) {
       if (!ind.enabled) continue;
       const def = getIndicator(ind.id);
-      if (!def) { errors.push(`${ind.id}: unknown indicator`); continue; }
+      if (!def) { errors.push({ indicatorId: ind.id, code: "UNKNOWN_INDICATOR", message: "Unknown indicator" }); continue; }
       const validation = validateIndicatorParams(ind.params, def.params);
-      if (!validation.valid) { errors.push(`${ind.id}: ${validation.errors.join("; ")}`); continue; }
+      if (!validation.valid) { errors.push({ indicatorId: ind.id, code: "INVALID_PARAMS", message: validation.errors.join("; ") }); continue; }
       try { results.push(def.calculate(candles, ind.params)); } catch (err) {
-        errors.push(`${ind.id}: ${err instanceof Error ? err.message : "calculation failed"}`);
+        errors.push({ indicatorId: ind.id, code: "CALCULATION_ERROR", message: err instanceof Error ? err.message : "Calculation failed" });
       }
     }
     return { indicatorResults: results, indicatorErrors: errors };
