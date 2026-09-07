@@ -55,16 +55,18 @@ export async function selfSetCancelAtPeriodEnd(flag: boolean): Promise<void> {
  * Atomically consume a usage slot. Throws `usage_limit_exceeded` when the
  * user is at the plan cap. Callers MUST await this BEFORE performing the
  * gated action.
+ *
+ * The quota is determined server-side from the user's subscription plan.
+ * Callers do NOT supply the quota ceiling — this prevents direct-RPC bypass.
  */
-export async function consumeUsage(resource: string, period: string, max: number): Promise<number> {
+export async function consumeUsage(resource: string, period: string): Promise<number> {
   const { data, error } = await supabase.rpc("consume_usage", {
     _resource: resource,
     _period: period,
-    _max: max,
   });
   if (error) {
     if (error.message.includes("usage_limit_exceeded")) {
-      throw new UsageLimitError(resource, period, max);
+      throw new UsageLimitError(resource, period);
     }
     throw new Error(error.message);
   }
@@ -75,7 +77,6 @@ export class UsageLimitError extends Error {
   constructor(
     public readonly resource: string,
     public readonly period: string,
-    public readonly limit: number,
   ) {
     super(`usage_limit_exceeded:${resource}`);
     this.name = "UsageLimitError";

@@ -1551,7 +1551,7 @@ export type Database = {
         };
       };
       consume_usage: {
-        Args: { _max: number; _period: string; _resource: string };
+        Args: { _period: string; _resource: string };
         Returns: number;
       };
       create_manual_payment_request: {
