@@ -13,6 +13,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
+import { useMarketSession } from "@/hooks/use-market-session";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, MapPin, Download, Printer, FileSpreadsheet, FileText, Radio } from "lucide-react";
 import logoUrl from "@/assets/eaglebaba-logo.png";
@@ -188,6 +189,7 @@ function exportExcel(
 function LiveTerminal() {
   const { data, isFetching, dataUpdatedAt } = useSuspenseQuery(liveQuery());
   const clock = useIstClock();
+  const session = useMarketSession();
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<LivePlanet | null>(null);
   const [location, setLocation] = useState("Mumbai");
@@ -431,11 +433,11 @@ function LiveTerminal() {
                 borderRadius: 6,
                 fontWeight: 700,
                 background:
-                  data.marketState === "OPEN" ? "rgba(16,185,129,0.15)" : "rgba(148,163,184,0.15)",
-                color: data.marketState === "OPEN" ? C.green : C.muted,
+                  session.isOpen ? "rgba(16,185,129,0.15)" : "rgba(148,163,184,0.15)",
+                color: session.isOpen ? C.green : C.muted,
               }}
             >
-              {data.marketState === "OPEN" ? "● MARKET OPEN" : "○ MARKET CLOSED"}
+              {session.isOpen ? "● MARKET OPEN" : `○ MARKET ${session.status}`}
             </span>
             <button
               onClick={() => setShowAlerts((s) => !s)}

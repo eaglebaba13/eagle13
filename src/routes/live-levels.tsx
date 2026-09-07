@@ -13,6 +13,7 @@ import { buildLevelBoard, computeSignal } from "@/lib/astro-levels";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useMarketSession } from "@/hooks/use-market-session";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import {
@@ -584,7 +585,7 @@ function LiveLevelsTerminal() {
                 label="Instrument"
                 value={market.name}
                 color={C.gold}
-                sub={market.marketState === "OPEN" ? "● Market Open" : "○ Market Closed"}
+                sub={session.isOpen ? "● Market Open" : `○ Market ${session.status}`}
               />
               <Stat
                 label="Live Price"

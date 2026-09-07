@@ -13,6 +13,7 @@ import {
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useMarketSession } from "@/hooks/use-market-session";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
@@ -453,6 +454,7 @@ const statusColor: Record<LevelEntry["status"], string> = {
 function AstroDashboard() {
   const { data, isFetching, dataUpdatedAt, refetch } = useSuspenseQuery(astroQuery());
   const clock = useIstClock();
+  const session = useMarketSession();
   const [query, setQuery] = useState("");
 
   const board = useMemo(
@@ -605,11 +607,11 @@ function AstroDashboard() {
                 borderRadius: 6,
                 fontWeight: 700,
                 background:
-                  data.marketState === "OPEN" ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.15)",
-                color: data.marketState === "OPEN" ? C.green : C.muted,
+                  session.isOpen ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.15)",
+                color: session.isOpen ? C.green : C.muted,
               }}
             >
-              {data.marketState === "OPEN" ? "● MARKET OPEN" : "○ MARKET CLOSED"}
+              {session.isOpen ? "● MARKET OPEN" : `○ MARKET ${session.status}`}
             </span>
             <Link
               to="/"
