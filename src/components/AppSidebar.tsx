@@ -9,12 +9,23 @@ const ITEMS = desktopNav();
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const path = useRouterState({ select: (r) => r.location.pathname });
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
   const width = collapsed ? 68 : 210;
 
   const isActive = (it: Item) => {
     if (!it.to) return false;
     if (it.to === "/") return path === "/" && it.id === "dashboard";
-    return path === it.to;
+    // Handle hash-based routes (e.g. /live-market-terminal#live-chart)
+    const [itemPath, itemHash] = it.to.split("#");
+    if (itemHash) {
+      return path === itemPath && hash === `#${itemHash}`;
+    }
+    // For non-hash items, only match if there's no hash in current URL
+    // (prevents Market Terminal from highlighting when Live Chart hash is active)
+    if (path === "/live-market-terminal" && hash === "#live-chart") {
+      return it.id === "live-market-terminal" ? false : path === itemPath;
+    }
+    return path === itemPath;
   };
 
   return (

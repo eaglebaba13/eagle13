@@ -1117,7 +1117,7 @@ function LiveMarketTerminal() {
               <LevelChart m={activeMarket} isMobile={isMobile} isTablet={isTablet} />
             ) : null}
             {/* Live candlestick chart — INDstocks NIFTY50 */}
-            <div style={{ marginTop: 16 }}>
+            <div id="live-chart" style={{ marginTop: 16 }}>
               <LiveCandlestickChart symbol="NIFTY50" intervalMs={60_000} height={isMobile ? 280 : isTablet ? 350 : 400} />
             </div>
           </Panel>

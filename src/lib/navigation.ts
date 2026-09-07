@@ -89,6 +89,17 @@ export const NAV_REGISTRY: NavItem[] = [
     bottomOrder: 3,
   },
   {
+    id: "live-chart",
+    label: "Live Chart",
+    icon: BarChart3,
+    to: "/live-market-terminal#live-chart",
+    section: "CORE",
+    order: 41,
+    status: "LIVE",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
     id: "level-terminal",
     label: "Level Terminal",
     icon: TrendingUp,

@@ -13,6 +13,7 @@ const DRAWER_ITEMS: NavItem[] = mobileDrawerNav();
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (r) => r.location.pathname });
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -61,7 +62,14 @@ export function MobileNav() {
   const isActive = (it: NavItem) => {
     if (!it.to) return false;
     if (it.to === "/") return path === "/" && it.id === "dashboard";
-    return path === it.to;
+    const [itemPath, itemHash] = it.to.split("#");
+    if (itemHash) {
+      return path === itemPath && hash === `#${itemHash}`;
+    }
+    if (path === "/live-market-terminal" && hash === "#live-chart") {
+      return it.id === "live-market-terminal" ? false : path === itemPath;
+    }
+    return path === itemPath;
   };
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
