@@ -2,17 +2,17 @@
 // Manages IndstocksWsAdapter + CandleAggregator for production use.
 // Runs server-side only. Token never exposed to client.
 
-import { IndstocksWsAdapter } from "./indstocks/indstocks-ws-adapter.server";
-import type { MarketTick } from "./indstocks/indstocks-ws-types";
+import { IndstocksWsAdapter } from "./provider-foundation/indstocks/indstocks-ws-adapter.server";
+import type { MarketTick } from "./provider-foundation/indstocks/indstocks-ws-types";
 import {
   aggregateTick,
   createAggregatorState,
   mergeHistoricalAndLive,
   type CandleAggregatorState,
   type AggregationIntervalMs,
-} from "./indstocks/candle-aggregator";
-import { buildIndstocksWsTelemetry } from "./indstocks/indstocks-ws-adapter.server";
-import type { QuoteSymbol } from "./types";
+} from "./provider-foundation/indstocks/candle-aggregator";
+import { buildIndstocksWsTelemetry } from "./provider-foundation/indstocks/indstocks-ws-adapter.server";
+import type { QuoteSymbol } from "./provider-foundation/types";
 
 export interface LiveStreamSnapshot {
   readonly instrument: string;

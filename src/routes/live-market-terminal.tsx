@@ -10,6 +10,7 @@ import {
   type MarketKey,
 } from "@/lib/live-levels.functions";
 import { buildLevelBoard, computeSignal, type SignalKind } from "@/lib/astro-levels";
+import { LiveCandlestickChart } from "@/components/LiveCandlestickChart";
 import {
   fmtClock,
   fmtDur,
@@ -1115,6 +1116,10 @@ function LiveMarketTerminal() {
             {activeMarket ? (
               <LevelChart m={activeMarket} isMobile={isMobile} isTablet={isTablet} />
             ) : null}
+            {/* Live candlestick chart — INDstocks NIFTY50 */}
+            <div style={{ marginTop: 16 }}>
+              <LiveCandlestickChart symbol="NIFTY50" intervalMs={60_000} height={isMobile ? 280 : isTablet ? 350 : 400} />
+            </div>
           </Panel>
 
           <div style={{ height: 16 }} />

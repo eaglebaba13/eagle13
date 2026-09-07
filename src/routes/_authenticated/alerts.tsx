@@ -29,14 +29,28 @@ export const Route = createFileRoute("/_authenticated/alerts")({
       },
     ],
   }),
-  errorComponent: ({ error, reset }) => (
-    <div className="p-6 text-sm text-red-300">
-      <p>Alert Center unavailable: {(error as Error).message}</p>
-      <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
-        Retry
-      </button>
-    </div>
-  ),
+  errorComponent: ({ error, reset }) => {
+    const msg = (error as Error).message || "";
+    const isAuth = msg.includes("Unauthorized") || msg.includes("authorization header");
+    return (
+      <div className="p-6 text-sm" style={{ color: isAuth ? "var(--eb-muted)" : "var(--eb-bear)" }}>
+        {isAuth ? (
+          <div>
+            <p className="font-medium mb-2" style={{ color: "var(--eb-text)" }}>Alert Center requires authentication</p>
+            <p>Sign in to view your personalized research alerts.</p>
+            <p className="mt-2 text-xs opacity-60">Research alerts are user-scoped for privacy.</p>
+          </div>
+        ) : (
+          <div>
+            <p>Alert Center unavailable: {msg}</p>
+            <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
+              Retry
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  },
   notFoundComponent: () => <div className="p-6">Not found</div>,
 });
 

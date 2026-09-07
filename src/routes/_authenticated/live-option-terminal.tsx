@@ -23,6 +23,34 @@ export const Route = createFileRoute("/_authenticated/live-option-terminal")({
     ],
   }),
   component: LiveOptionTerminalPage,
+  errorComponent: ({ error }) => {
+    const msg = (error as Error).message || "";
+    const isAuth = msg.includes("Unauthorized") || msg.includes("authorization header");
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "var(--eb-bg)",
+          color: isAuth ? "var(--eb-muted)" : "var(--eb-bear)",
+          padding: 40,
+          fontFamily: "var(--eb-mono)",
+        }}
+      >
+        {isAuth ? (
+          <div>
+            <p style={{ fontSize: 16, fontWeight: 600, color: "var(--eb-text)", marginBottom: 8 }}>
+              Option Strategy Terminal requires authentication
+            </p>
+            <p style={{ fontSize: 13 }}>Sign in to access the options research workstation.</p>
+          </div>
+        ) : (
+          <div>
+            <p>Unable to load terminal: {msg}</p>
+          </div>
+        )}
+      </div>
+    );
+  },
 });
 
 const BIAS_COLOR: Record<CanonicalBias, string> = {
