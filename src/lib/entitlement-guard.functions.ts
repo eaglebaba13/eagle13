@@ -8,7 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { PLANS, planForRole, type Capability, type PlanId, type SubscriptionStatus } from "./plans";
 import type { AppRole } from "./roles";
 
@@ -41,6 +41,7 @@ export const requireEntitlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => inputSchema.parse(v))
   .handler(async ({ data, context }): Promise<EntitlementDecision> => {
+    assertAuth(context);
     const { supabase, userId } = context;
     const capability = data.capability;
 

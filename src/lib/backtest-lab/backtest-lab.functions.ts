@@ -1,9 +1,9 @@
-// Phase 3G — Backtest Lab server functions.
+﻿// Phase 3G â€” Backtest Lab server functions.
 // Auth required. Consumer-only. No provider fetches, no eval, no
 // browser-side historical fetch, no broker imports.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type {
   BacktestRunReport,
   HistoricalCandle,
@@ -186,3 +186,4 @@ export const getBacktestLabDiagnostics = createServerFn({ method: "POST" })
       averageDurationMs: stats.avgDurationMs,
     });
   });
+

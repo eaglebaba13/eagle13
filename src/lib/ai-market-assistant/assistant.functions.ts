@@ -1,8 +1,8 @@
-// Phase 3B — Assistant server function. Consumer-only aggregation of
+﻿// Phase 3B â€” Assistant server function. Consumer-only aggregation of
 // canonical snapshots. Never creates provider connections directly.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
@@ -155,7 +155,7 @@ function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategy
   const bias = top.profile.bias;
   const risk =
     top.profile.risk === "UNLIMITED"
-      ? "Unlimited downside potential in this profile — position sizing critical."
+      ? "Unlimited downside potential in this profile â€” position sizing critical."
       : `Risk tier: ${top.profile.risk}.`;
   const confirm =
     bias === "NEUTRAL"
@@ -174,3 +174,4 @@ function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategy
 }
 
 export type AiMarketAssistantEnvelope = AssistantEnvelope;
+

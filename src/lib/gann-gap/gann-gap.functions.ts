@@ -1,9 +1,9 @@
-// Phase 2I-B — Gann Gap Outlook server function.
+﻿// Phase 2I-B â€” Gann Gap Outlook server function.
 // Consumes the canonical NIFTY market snapshot; never opens its own
 // provider connection. Feature-flagged and idempotent per session.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { findFeatureFlag } from "@/lib/feature-flags";
 import { DEFAULT_GANN_GAP_CONFIG } from "./config";
 import { GANN_GAP_CONFIG_VERSION, GANN_GAP_FORMULA_VERSION } from "./formula-version";
@@ -71,7 +71,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
     const cfg = DEFAULT_GANN_GAP_CONFIG;
     const life = resolveLifecycle({ now, config: cfg });
 
-    // Canonical market data — never construct a new provider client here.
+    // Canonical market data â€” never construct a new provider client here.
     const { getMarketData } = await import("@/lib/market.functions");
     let reference: number | null = null;
     try {
@@ -123,7 +123,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
       zone,
     });
 
-    // Bias derived from classifier — needed to align confirmations.
+    // Bias derived from classifier â€” needed to align confirmations.
     const bias =
       cls.label === "GAP_UP_RESEARCH"
         ? "SUPPORTS_UP"
@@ -131,7 +131,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
           ? "SUPPORTS_DOWN"
           : "SUPPORTS_UP"; // neutral bias placeholder for aggregation only
 
-    // ── Phase 2I-C: live confirmation wiring ────────────────────────
+    // â”€â”€ Phase 2I-C: live confirmation wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Fetch canonical modules in parallel. Each call is best-effort;
     // failures degrade the individual confirmation to UNAVAILABLE.
     const [gtiRes, decisionRes] = await Promise.allSettled([
@@ -147,7 +147,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
     const gti = gtiRes.status === "fulfilled" ? gtiRes.value : null;
     const decision = decisionRes.status === "fulfilled" ? decisionRes.value : null;
 
-    // Decision bias from action string ("BUY_CE" → BULL, "BUY_PE" → BEAR).
+    // Decision bias from action string ("BUY_CE" â†’ BULL, "BUY_PE" â†’ BEAR).
     const decisionAction = decision?.summary.decision ?? "";
     const decisionBias: "BULL" | "BEAR" | "NEUTRAL" | null = decision
       ? decisionAction.includes("CE")
@@ -198,7 +198,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
         available: false,
         netBreadth: null,
         source: "BREADTH_DEMO",
-        reason: "Market breadth research-demo — no live net breadth wired",
+        reason: "Market breadth research-demo â€” no live net breadth wired",
       },
       bias,
     );
@@ -214,7 +214,7 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
       bias,
     );
 
-    // Astro: no directional adapter exposed yet — remain UNAVAILABLE.
+    // Astro: no directional adapter exposed yet â€” remain UNAVAILABLE.
     const confAstro = astroConfirmation(
       {
         available: false,
@@ -271,3 +271,4 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
       featureEnabled: true,
     };
   });
+

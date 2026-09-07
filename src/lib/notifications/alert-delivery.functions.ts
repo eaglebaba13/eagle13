@@ -1,11 +1,11 @@
-// Phase 44 — Server function for the Telegram Alert Log.
+﻿// Phase 44 â€” Server function for the Telegram Alert Log.
 //
 // Read-only view over `smart_alert_delivery_attempts` joined with the
 // originating `smart_alert_events` (title, type). RLS restricts every
 // SELECT to the current user's rows (admins see all via existing policy).
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
 export interface AlertDeliveryRow {
   readonly id: string;
@@ -75,3 +75,4 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
       retry_count: (attemptsByFp.get(r.fingerprint) ?? 1) - 1,
     }));
   });
+

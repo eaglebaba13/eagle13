@@ -1,11 +1,11 @@
-// Phase 3F.2C — Admin-only diagnostics + public snapshot server functions
+﻿// Phase 3F.2C â€” Admin-only diagnostics + public snapshot server functions
 // backed by the isolated Node TradingView collector service.
 //
 // The Cloudflare app NEVER imports @mathieuc/tradingview. All Node-only work
 // happens in `services/tradingview-ratio-collector/`.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { CollectorSnapshot } from "./snapshot-contract";
 import { buildSnapshot } from "./snapshot-contract";
 
@@ -116,3 +116,4 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
       cacheAgeMs: diag.cacheAgeMs,
     };
   });
+

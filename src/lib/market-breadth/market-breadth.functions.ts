@@ -1,13 +1,13 @@
-// Phase 27 · Stage 3 — Market Breadth / GTI server function.
+﻿// Phase 27 Â· Stage 3 â€” Market Breadth / GTI server function.
 //
 // Consumes the existing Combined PCR server function output (via direct
 // helper import) for the PCR confirmation, but the breadth itself flows
 // from a provider-neutral bundle. When no live breadth provider is
 // wired, the deterministic mock provider fills the bundle so the
-// research page is always testable — never labelled live.
+// research page is always testable â€” never labelled live.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { buildMockBreadthBundle, type MockScenario } from "./mock-provider";
 import { evaluateVixRegime } from "./vix-regime";
 import { adaptPcrConfirmation } from "./pcr-confirmation";
@@ -61,7 +61,7 @@ export const getMarketBreadth = createServerFn({ method: "POST" })
         broadUniverseSize: data.broadUniverseSize,
       });
 
-      // ── Canonical live inputs (India VIX + Combined PCR) ─────
+      // â”€â”€ Canonical live inputs (India VIX + Combined PCR) â”€â”€â”€â”€â”€
       let vixValue: number | null = data.vix ?? null;
       let vixFreshness: "FRESH" | "STALE" | "UNKNOWN" = data.vix != null ? "FRESH" : "UNKNOWN";
       let vixProviderAlias = data.vix != null ? safeProviderLabel("MARKET_DATA") : "N/A";
@@ -278,3 +278,4 @@ export const getMarketBreadthDiagnostics = createServerFn({ method: "GET" })
       };
     }
   });
+

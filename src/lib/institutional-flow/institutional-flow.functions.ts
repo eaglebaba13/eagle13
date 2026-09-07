@@ -1,9 +1,9 @@
-// Phase 3D — Institutional Flow server function.
+﻿// Phase 3D â€” Institutional Flow server function.
 // Consumer only. Canonical option-chain + PCR + breadth + decision + GTI.
 // Never fetches its own providers, never emits signals or orders.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { buildInstitutionalFlowReport } from "./report";
 import type { InstitutionalFlowReport } from "./types";
 import type { OptionUnderlying, OptionChainSnapshot } from "@/lib/option-chain/types";
@@ -20,14 +20,14 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
     const underlying: OptionUnderlying = data.underlying === "BANKNIFTY" ? "BANKNIFTY" : "NIFTY";
     const t0 = Date.now();
 
-    // Canonical option chain — sole source of leg/OI/greeks.
+    // Canonical option chain â€” sole source of leg/OI/greeks.
     const { fetchCanonicalOptionChain } =
       await import("@/lib/option-chain/canonical-snapshot.server");
     const chainRes = await fetchCanonicalOptionChain({ underlying });
     const snapshot: OptionChainSnapshot | null =
       chainRes.ok && chainRes.snapshot ? chainRes.snapshot : null;
 
-    // Combined PCR — reuse canonical snapshot history.
+    // Combined PCR â€” reuse canonical snapshot history.
     let pcrScore: number | null = null;
     let pcrState: string | null = null;
     try {
@@ -58,12 +58,12 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       /* pcr optional */
     }
 
-    // Breadth bundle — canonical research bundle (Phase 2 policy).
+    // Breadth bundle â€” canonical research bundle (Phase 2 policy).
     const { buildMockBreadthBundle } = await import("../market-breadth/mock-provider");
     const { SECTOR_REGISTRY_VERSION } = await import("../market-breadth/sector-registry");
     const bundle = buildMockBreadthBundle({ scenario: "MIXED" });
 
-    // Underlying price change — reuse getMarketData quote if present.
+    // Underlying price change â€” reuse getMarketData quote if present.
     let underlyingPriceChange: number | null = null;
     let vix: number | null = null;
     try {
@@ -76,7 +76,7 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       /* market data optional */
     }
 
-    // Decision + GTI — consume canonical snapshots, do not re-classify here.
+    // Decision + GTI â€” consume canonical snapshots, do not re-classify here.
     let decisionAction: string | null = null;
     let decisionConfidence: number | null = null;
     let gtiState: string | null = null;
@@ -171,3 +171,4 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
   });
 
 export type InstitutionalFlowResponse = Awaited<ReturnType<typeof getInstitutionalFlow>>;
+

@@ -1,5 +1,5 @@
-/**
- * Phase 20.3C — Trusted server functions for the manual UPI payment flow.
+﻿/**
+ * Phase 20.3C â€” Trusted server functions for the manual UPI payment flow.
  *
  * ALL amounts, UPI IDs, payment references and status transitions are
  * decided server-side. The browser can only send:
@@ -12,7 +12,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import {
   getManualPaymentConfig,
   resolveAmountPaise,
@@ -250,3 +250,4 @@ export const adminSignScreenshotUrl = createServerFn({ method: "POST" })
     if (error || !signed) throw new Error(error?.message ?? "sign_failed");
     return { url: signed.signedUrl };
   });
+

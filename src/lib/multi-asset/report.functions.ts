@@ -1,9 +1,9 @@
-// Phase 44B — Morning brief server functions.
+﻿// Phase 44B â€” Morning brief server functions.
 // The heavy Supabase admin client is loaded inside handlers to keep server-only
 // modules out of the client bundle.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import {
   composeMorningReport,
   buildReportId,
@@ -61,7 +61,7 @@ function unavailableRatio(): MacroRatioResult {
 /**
  * Build the payload for today's brief. This is intentionally conservative:
  * every block is UNAVAILABLE unless a validated provider adapter is wired.
- * Later phases attach live provider selectors — the payload shape and
+ * Later phases attach live provider selectors â€” the payload shape and
  * idempotency contract stay stable.
  */
 function buildEmptyPayload(reportDate: string, generatedAt: string): ComposeInput {
@@ -141,7 +141,7 @@ function mapRow(row: Record<string, unknown>): MorningReportRecord {
  * Generate + persist + deliver today's morning brief. Idempotent: repeated
  * calls on the same day reuse the existing row and never re-send when the
  * previous attempt succeeded. Public route hook and admin retry both call
- * this — the delivery step is skipped when `deliveryStatus === "SENT"`.
+ * this â€” the delivery step is skipped when `deliveryStatus === "SENT"`.
  */
 export async function runMorningBrief(opts?: {
   readonly forceRedeliver?: boolean;
@@ -242,7 +242,7 @@ export const getLatestMorningReport = createServerFn({ method: "GET" })
     return data ? mapRow(data as unknown as Record<string, unknown>) : null;
   });
 
-/** Admin manual retry — re-delivers the current-day brief. */
+/** Admin manual retry â€” re-delivers the current-day brief. */
 export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -258,3 +258,4 @@ export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
 export function morningBriefDisclaimer(): string {
   return composeDisclaimerBlock();
 }
+

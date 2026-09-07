@@ -6,7 +6,7 @@
 // touches. No formula math. No trade execution.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
@@ -401,6 +401,7 @@ export async function buildEvaluationContext(userId: string): Promise<AlertEvalu
 export const getSmartAlertSubscription = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PersistedSubscriptionRow> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("smart_alert_subscriptions")
       .select("*")

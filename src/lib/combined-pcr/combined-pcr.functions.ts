@@ -1,4 +1,4 @@
-// Phase 27 · Stage 1 — Combined PCR server function.
+﻿// Phase 27 Â· Stage 1 â€” Combined PCR server function.
 //
 // Consumes the Option Chain Foundation: fetches per-instrument snapshots
 // through the existing OptionChainProvider registry (Upstox / Mock),
@@ -6,7 +6,7 @@
 // No broker, no execution, no changes to existing cache keys.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { OptionUnderlying, OptionChainSnapshot } from "../option-chain/types";
 import type { AtmMode } from "../option-chain/atm-engine";
 import type { OptionChainCapability } from "../option-chain/capability";
@@ -205,3 +205,4 @@ export const getCombinedPcrDiagnostics = createServerFn({ method: "GET" })
       };
     }
   });
+

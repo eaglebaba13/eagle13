@@ -1,11 +1,22 @@
 ﻿// Auth middleware — graceful authentication.
 // Unauthenticated requests pass through with null context.
 // Invalid tokens throw errors.
-// Server functions check for auth context presence.
+// Protected server functions MUST call assertAuth() to reject unauthenticated access.
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+
+/**
+ * Assert that the auth context contains a valid userId.
+ * Call this at the beginning of every protected server function handler.
+ * Throws if userId is null (unauthenticated).
+ */
+export function assertAuth(context: { userId: string | null }): asserts context is { userId: string } {
+  if (!context.userId) {
+    throw new Error("Unauthorized: Authentication required");
+  }
+}
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
