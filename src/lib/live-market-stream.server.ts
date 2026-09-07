@@ -41,6 +41,11 @@ export interface LiveCandleEvent {
   readonly provider: string;
   readonly freshness: string;
   readonly timestamp: string;
+  // Live status fields — always carried with every event
+  readonly lastLtp: number | null;
+  readonly lastTick: string | null;
+  readonly connectionState: string;
+  readonly tickCount: number | null;
 }
 
 export type LiveCandleListener = (event: LiveCandleEvent) => void;
@@ -52,7 +57,9 @@ class LiveMarketStreamManager {
   private started = false;
 
   // Subscriber mechanism — tick-driven, no polling
+  // Reference counted: multiple SSE subscribers share one provider subscription
   private candleListeners = new Map<string, Set<LiveCandleListener>>();
+  private subscriptionRefCount = new Map<string, number>();
 
   start(): void {
     if (this.started) return;
@@ -68,28 +75,40 @@ class LiveMarketStreamManager {
     this.aggregators.clear();
     this.lastTicks.clear();
     this.candleListeners.clear();
+    this.subscriptionRefCount.clear();
     this.started = false;
   }
 
   subscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): boolean {
     if (!this.adapter) return false;
     const key = `${symbol}:${intervalMs}`;
-    if (this.aggregators.has(key)) return true;
 
-    const ok = this.adapter.subscribe(symbol);
-    if (!ok) return false;
-
-    this.aggregators.set(key, createAggregatorState(symbol, intervalMs));
-    this.lastTicks.set(symbol, null);
+    // Reference counted — only create provider subscription on first subscriber
+    const refCount = this.subscriptionRefCount.get(key) ?? 0;
+    if (refCount === 0) {
+      const ok = this.adapter.subscribe(symbol);
+      if (!ok) return false;
+      this.aggregators.set(key, createAggregatorState(symbol, intervalMs));
+      this.lastTicks.set(symbol, null);
+    }
+    this.subscriptionRefCount.set(key, refCount + 1);
     return true;
   }
 
   unsubscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): void {
     const key = `${symbol}:${intervalMs}`;
-    this.aggregators.delete(key);
-    this.lastTicks.delete(symbol);
-    this.candleListeners.delete(key);
-    this.adapter?.unsubscribe(symbol);
+    const refCount = (this.subscriptionRefCount.get(key) ?? 1) - 1;
+
+    if (refCount <= 0) {
+      // Last subscriber — remove provider subscription
+      this.subscriptionRefCount.delete(key);
+      this.aggregators.delete(key);
+      this.lastTicks.delete(symbol);
+      this.candleListeners.delete(key);
+      this.adapter?.unsubscribe(symbol);
+    } else {
+      this.subscriptionRefCount.set(key, refCount);
+    }
   }
 
   /**
@@ -130,7 +149,7 @@ class LiveMarketStreamManager {
           state: "DISCONNECTED",
           connectedAt: null,
           lastMessageAt: null,
-          notifyAttempt: 0,
+          reconnectAttempt: 0,
           lastError: null,
         },
         agg ? 1 : 0,
@@ -159,72 +178,79 @@ class LiveMarketStreamManager {
   private handleTick(tick: MarketTick): void {
     this.lastTicks.set(tick.instrument as string, tick);
 
-    // Update all aggregators for this instrument and emit candle events
     for (const [key, agg] of this.aggregators) {
       if (agg.instrument !== tick.instrument) continue;
 
-      const prev = agg;
+      const prevCompletedCount = agg.completed.length;
       const next = aggregateTick(agg, tick);
       this.aggregators.set(key, next);
 
-      // Determine what changed
-      const completed = next.completed.length > prev.completed.length;
-      const currentCandle = next.current;
+      const candleCompleted = next.completed.length > prevCompletedCount;
+      const connSnap = this.adapter?.connectionSnapshot();
+      const freshness = connSnap?.state === "CONNECTED" ? "LIVE" :
+        connSnap?.state === "RECONNECTING" ? "STALE" : "NO_DATA";
+      const connectionState = connSnap?.state ?? "DISCONNECTED";
+      const lastTickIso = tick.timestamp;
+      const lastLtp = tick.ltp;
 
-      if (currentCandle) {
-        const connSnap = this.adapter?.connectionSnapshot();
-        const freshness = connSnap?.state === "CONNECTED" ? "LIVE" :
-          connSnap?.state === "RECONNECTING" ? "STALE" : "NO_DATA";
+      const listeners = this.candleListeners.get(key);
+      if (!listeners || listeners.size === 0) continue;
 
-        const event: LiveCandleEvent = {
+      // CRITICAL ORDER: emit completed candle FIRST, then new current candle.
+      // This prevents the browser from clearing the new candle when it sees completed=true.
+
+      // 1. Emit completed previous candle (if one was completed)
+      if (candleCompleted && next.completed.length > 0) {
+        const completedCandle = next.completed[next.completed.length - 1];
+        const completedEvent: LiveCandleEvent = {
           symbol: tick.instrument as string,
           intervalMs: next.intervalMs,
           candle: {
-            time: currentCandle.bucketMs,
-            open: currentCandle.open,
-            high: currentCandle.high,
-            low: currentCandle.low,
-            close: currentCandle.close,
-            volume: currentCandle.volume,
+            time: completedCandle.bucketMs,
+            open: completedCandle.open,
+            high: completedCandle.high,
+            low: completedCandle.low,
+            close: completedCandle.close,
+            volume: completedCandle.volume,
+          },
+          completed: true,
+          provider: "INDSTOCKS_V1_WS",
+          freshness,
+          timestamp: new Date().toISOString(),
+          lastLtp,
+          lastTick: lastTickIso,
+          connectionState,
+          tickCount: null,
+        };
+        for (const listener of listeners) {
+          try { listener(completedEvent); } catch { /* listener error */ }
+        }
+      }
+
+      // 2. Emit new current candle (always, if it exists)
+      if (next.current) {
+        const currentEvent: LiveCandleEvent = {
+          symbol: tick.instrument as string,
+          intervalMs: next.intervalMs,
+          candle: {
+            time: next.current.bucketMs,
+            open: next.current.open,
+            high: next.current.high,
+            low: next.current.low,
+            close: next.current.close,
+            volume: next.current.volume,
           },
           completed: false,
           provider: "INDSTOCKS_V1_WS",
           freshness,
           timestamp: new Date().toISOString(),
+          lastLtp,
+          lastTick: lastTickIso,
+          connectionState,
+          tickCount: next.current.tickCount,
         };
-
-        // Emit to all listeners for this symbol+interval
-        const listeners = this.candleListeners.get(key);
-        if (listeners) {
-          for (const listener of listeners) {
-            try { listener(event); } catch { /* listener error must not crash stream */ }
-          }
-        }
-
-        // If a candle was completed, also emit the completed candle event
-        if (completed && next.completed.length > 0) {
-          const completedCandle = next.completed[next.completed.length - 1];
-          const completedEvent: LiveCandleEvent = {
-            symbol: tick.instrument as string,
-            intervalMs: next.intervalMs,
-            candle: {
-              time: completedCandle.bucketMs,
-              open: completedCandle.open,
-              high: completedCandle.high,
-              low: completedCandle.low,
-              close: completedCandle.close,
-              volume: completedCandle.volume,
-            },
-            completed: true,
-            provider: "INDSTOCKS_V1_WS",
-            freshness,
-            timestamp: new Date().toISOString(),
-          };
-          if (listeners) {
-            for (const listener of listeners) {
-              try { listener(completedEvent); } catch { /* listener error */ }
-            }
-          }
+        for (const listener of listeners) {
+          try { listener(currentEvent); } catch { /* listener error */ }
         }
       }
     }

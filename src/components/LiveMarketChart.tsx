@@ -104,18 +104,21 @@ export function LiveMarketChart({
     }));
   }, [chartData]);
 
-  const { indicatorResults } = useMemo(() => {
-    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[] };
+  const { indicatorResults, indicatorErrors } = useMemo(() => {
+    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as string[] };
     const results: IndicatorResult[] = [];
+    const errors: string[] = [];
     for (const ind of activeIndicators) {
       if (!ind.enabled) continue;
       const def = getIndicator(ind.id);
-      if (!def) continue;
+      if (!def) { errors.push(`${ind.id}: unknown indicator`); continue; }
       const validation = validateIndicatorParams(ind.params, def.params);
-      if (!validation.valid) continue;
-      try { results.push(def.calculate(candles, ind.params)); } catch { /* skip */ }
+      if (!validation.valid) { errors.push(`${ind.id}: ${validation.errors.join("; ")}`); continue; }
+      try { results.push(def.calculate(candles, ind.params)); } catch (err) {
+        errors.push(`${ind.id}: ${err instanceof Error ? err.message : "calculation failed"}`);
+      }
     }
-    return { indicatorResults: results };
+    return { indicatorResults: results, indicatorErrors: errors };
   }, [candles, activeIndicators]);
 
   const { overlaySeries } = useMemo(() => indicatorsToChartSeries(indicatorResults), [indicatorResults]);

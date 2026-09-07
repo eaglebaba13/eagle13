@@ -1,6 +1,6 @@
 // Browser-side SSE client for live candle streaming.
 // Uses native EventSource for server-pushed updates.
-// Bounded memory — no unbounded arrays.
+// Bounded memory — explicit max completed candles.
 // No polling. No token exposure.
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -9,13 +9,17 @@ export interface LiveSSECandle {
   readonly time: number;
   readonly open: number;
   readonly high: number;
-  readonly low: number;
+    readonly low: number;
   readonly close: number;
   readonly volume: number | null;
   readonly completed: boolean;
   readonly provider: string;
   readonly freshness: string;
   readonly timestamp: string;
+  readonly lastLtp: number | null;
+  readonly lastTick: string | null;
+  readonly connectionState: string;
+  readonly tickCount: number | null;
 }
 
 export interface LiveSSEStatus {
@@ -35,17 +39,36 @@ export interface LiveSSEStatus {
   readonly completedCount: number;
 }
 
+const MAX_LIVE_COMPLETED_CANDLES = 2000;
+
 export interface LiveSSEState {
   readonly connected: boolean;
   readonly status: LiveSSEStatus | null;
   readonly currentCandle: LiveSSECandle | null;
-  readonly completedCandles: Map<number, LiveSSECandle>; // keyed by time — no duplicates
+  readonly completedCandles: Map<number, LiveSSECandle>; // keyed by time — bounded
   readonly error: string | null;
 }
 
 /**
+ * Bounded Map insert — evicts oldest entries when MAX_LIVE_COMPLETED_CANDLES exceeded.
+ */
+function boundedInsert(map: Map<number, LiveSSECandle>, key: number, value: LiveSSECandle): Map<number, LiveSSECandle> {
+  const newMap = new Map(map);
+  newMap.set(key, value);
+  if (newMap.size > MAX_LIVE_COMPLETED_CANDLES) {
+    // Remove oldest entries (smallest timestamps)
+    const sorted = [...newMap.keys()].sort((a, b) => a - b);
+    const toRemove = sorted.slice(0, newMap.size - MAX_LIVE_COMPLETED_CANDLES);
+    for (const k of toRemove) {
+      newMap.delete(k);
+    }
+  }
+  return newMap;
+}
+
+/**
  * Hook that connects to SSE and maintains live candle state.
- * Uses bounded Map for completed candles (no unbounded array growth).
+ * Uses bounded Map for completed candles (no unbounded array).
  * Current candle is replaced in-place for same timestamp.
  */
 export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
@@ -93,14 +116,34 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
             break;
           case "candle_update":
             setState((s) => {
+              // Update live status from every event (Bug 3 fix)
+              const updatedStatus: LiveSSEStatus = {
+                connectionState: data.connectionState ?? s.status?.connectionState ?? "UNKNOWN",
+                provider: data.provider ?? s.status?.provider ?? "INDSTOCKS_V1_WS",
+                freshness: data.freshness ?? s.status?.freshness ?? "NO_DATA",
+                lastTick: data.lastTick ?? s.status?.lastTick ?? null,
+                lastLtp: data.lastLtp ?? s.status?.lastLtp ?? null,
+                currentCandle: s.status?.currentCandle ?? null,
+                completedCount: s.status?.completedCount ?? 0,
+              };
+
               if (data.completed) {
-                // Completed candle — add to bounded map (deduplicates by time)
-                const newMap = new Map(s.completedCandles);
-                newMap.set(data.candle.time, data);
-                return { ...s, completedCandles: newMap, currentCandle: null };
+                // Completed candle — add to bounded Map (deduplicates by time)
+                const newMap = boundedInsert(s.completedCandles, data.candle.time, data);
+                return {
+                  ...s,
+                  status: { ...updatedStatus, completedCount: newMap.size },
+                  completedCandles: newMap,
+                  // Do NOT clear currentCandle here — the new current candle event
+                  // will arrive immediately after (Bug 1 fix: completed first, then current)
+                };
               }
               // Current candle — replace in-place (same timestamp = update, not duplicate)
-              return { ...s, currentCandle: data };
+              return {
+                ...s,
+                status: { ...updatedStatus, currentCandle: data.candle },
+                currentCandle: data,
+              };
             });
             break;
           case "error":
@@ -114,7 +157,6 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
       setState((s) => ({ ...s, connected: false }));
       es.close();
       esRef.current = null;
-      // Auto-reconnect after3s
       reconnectTimerRef.current = setTimeout(connect, 3000);
     };
   }, [symbol, intervalMs]);
