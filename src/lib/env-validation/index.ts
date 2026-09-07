@@ -37,10 +37,16 @@ export const DEFAULT_ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Supabase publishable key",
   },
   {
+    key: "SUPABASE_SECRET_KEY",
+    category: "secrets",
+    required: false,
+    description: "Supabase secret key (server only, preferred over legacy)",
+  },
+  {
     key: "SUPABASE_SERVICE_ROLE_KEY",
     category: "secrets",
-    required: true,
-    description: "Supabase service role key (server only)",
+    required: false,
+    description: "Supabase service role key (server only, legacy fallback)",
   },
   {
     key: "SUPABASE_DB_URL",
@@ -108,6 +114,13 @@ export function validateEnv(
       if (req.required) missingRequired.push(req.key);
       else missingOptional.push(req.key);
     }
+  }
+
+  // At least one privileged Supabase key must be present
+  const hasSecretKey = presentKeys.includes("SUPABASE_SECRET_KEY");
+  const hasLegacyKey = presentKeys.includes("SUPABASE_SERVICE_ROLE_KEY");
+  if (!hasSecretKey && !hasLegacyKey) {
+    missingRequired.push("SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY)");
   }
 
   return {
