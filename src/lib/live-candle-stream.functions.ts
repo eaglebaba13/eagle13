@@ -87,40 +87,6 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     };
   });
 
-// Server function for polling live candle updates (lightweight, no historical refetch)
-export const getLiveCandlePoll = createServerFn({ method: "GET" })
-  .validator((data: { symbol: string; intervalMs?: number }) => data)
-  .handler(async ({ data }) => {
-    const symbol = data.symbol;
-    const intervalMs = data.intervalMs ?? 60_000;
-
-    if (!VALID_SYMBOLS.has(symbol)) {
-      return { error: `Unsupported symbol: ${symbol}`, series: [], status: null };
-    }
-
-    const { getLiveMarketStream } = await import("./live-market-stream.server");
-    const stream = getLiveMarketStream();
-
-    // Don't re-fetch historical on every poll — just get current live state
-    const snap = stream.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-    const series = stream.getCandleSeries(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-
-    return {
-      error: null,
-      series,
-      status: {
-        symbol,
-        connectionState: snap.connectionState,
-        provider: snap.telemetry.providerId,
-        freshness: snap.telemetry.status === "LIVE" ? "LIVE" : snap.telemetry.status === "STALE" ? "STALE" : "NO_DATA",
-        lastTick: snap.lastTick?.timestamp ?? null,
-        lastLtp: snap.lastTick?.ltp ?? null,
-        currentCandle: snap.currentCandle,
-        completedCount: snap.completedCandleCount,
-      },
-    };
-  });
-
 function intervalToTimeframe(intervalMs: number): import("./provider-foundation/types").Timeframe {
   switch (intervalMs) {
     case 60_000: return "1m";

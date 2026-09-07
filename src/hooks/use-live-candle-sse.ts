@@ -1,5 +1,6 @@
 // Browser-side SSE client for live candle streaming.
 // Uses native EventSource for server-pushed updates.
+// Bounded memory — no unbounded arrays.
 // No polling. No token exposure.
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -38,37 +39,29 @@ export interface LiveSSEState {
   readonly connected: boolean;
   readonly status: LiveSSEStatus | null;
   readonly currentCandle: LiveSSECandle | null;
-  readonly completedCandles: readonly LiveSSECandle[];
+  readonly completedCandles: Map<number, LiveSSECandle>; // keyed by time — no duplicates
   readonly error: string | null;
 }
 
-const INITIAL_STATE: LiveSSEState = {
-  connected: false,
-  status: null,
-  currentCandle: null,
-  completedCandles: [],
-  error: null,
-};
-
 /**
- * Hook that connects to the SSE endpoint and maintains live candle state.
- * Returns current state and reconnection function.
+ * Hook that connects to SSE and maintains live candle state.
+ * Uses bounded Map for completed candles (no unbounded array growth).
+ * Current candle is replaced in-place for same timestamp.
  */
 export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
-  const [state, setState] = useState<LiveSSEState>(INITIAL_STATE);
+  const [state, setState] = useState<LiveSSEState>({
+    connected: false,
+    status: null,
+    currentCandle: null,
+    completedCandles: new Map(),
+    error: null,
+  });
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
-    // Clean up existing connection
-    if (esRef.current) {
-      esRef.current.close();
-      esRef.current = null;
-    }
-    if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = null;
-    }
+    if (esRef.current) { esRef.current.close(); esRef.current = null; }
+    if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
 
     setState((s) => ({ ...s, connected: false, error: null }));
 
@@ -101,12 +94,12 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
           case "candle_update":
             setState((s) => {
               if (data.completed) {
-                return {
-                  ...s,
-                  completedCandles: [...s.completedCandles, data],
-                  currentCandle: null,
-                };
+                // Completed candle — add to bounded map (deduplicates by time)
+                const newMap = new Map(s.completedCandles);
+                newMap.set(data.candle.time, data);
+                return { ...s, completedCandles: newMap, currentCandle: null };
               }
+              // Current candle — replace in-place (same timestamp = update, not duplicate)
               return { ...s, currentCandle: data };
             });
             break;
@@ -114,9 +107,7 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
             setState((s) => ({ ...s, error: data.message }));
             break;
         }
-      } catch {
-        // Malformed message — ignore
-      }
+      } catch { /* malformed — ignore */ }
     };
 
     es.onerror = () => {
@@ -131,14 +122,8 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
   useEffect(() => {
     connect();
     return () => {
-      if (esRef.current) {
-        esRef.current.close();
-        esRef.current = null;
-      }
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = null;
-      }
+      if (esRef.current) { esRef.current.close(); esRef.current = null; }
+      if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
     };
   }, [connect]);
 

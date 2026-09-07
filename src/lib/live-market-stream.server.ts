@@ -25,13 +25,34 @@ export interface LiveStreamSnapshot {
   readonly subscriptionActive: boolean;
 }
 
+// Provider-neutral candle event emitted when a tick modifies the aggregator.
+export interface LiveCandleEvent {
+  readonly symbol: string;
+  readonly intervalMs: number;
+  readonly candle: {
+    readonly time: number;
+    readonly open: number;
+    readonly high: number;
+    readonly low: number;
+    readonly close: number;
+    readonly volume: number | null;
+  };
+  readonly completed: boolean;
+  readonly provider: string;
+  readonly freshness: string;
+  readonly timestamp: string;
+}
+
+export type LiveCandleListener = (event: LiveCandleEvent) => void;
+
 class LiveMarketStreamManager {
   private adapter: IndstocksWsAdapter | null = null;
   private aggregators = new Map<string, CandleAggregatorState>();
   private lastTicks = new Map<string, MarketTick | null>();
-  private tickUnsubscribers = new Map<string, () => void>();
   private started = false;
-  private defaultIntervalMs: AggregationIntervalMs = 60_000; // 1m
+
+  // Subscriber mechanism — tick-driven, no polling
+  private candleListeners = new Map<string, Set<LiveCandleListener>>();
 
   start(): void {
     if (this.started) return;
@@ -42,19 +63,18 @@ class LiveMarketStreamManager {
   }
 
   stop(): void {
-    for (const unsub of this.tickUnsubscribers.values()) unsub();
-    this.tickUnsubscribers.clear();
     this.adapter?.close();
     this.adapter = null;
     this.aggregators.clear();
     this.lastTicks.clear();
+    this.candleListeners.clear();
     this.started = false;
   }
 
   subscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): boolean {
     if (!this.adapter) return false;
     const key = `${symbol}:${intervalMs}`;
-    if (this.aggregators.has(key)) return true; // already subscribed
+    if (this.aggregators.has(key)) return true;
 
     const ok = this.adapter.subscribe(symbol);
     if (!ok) return false;
@@ -68,7 +88,28 @@ class LiveMarketStreamManager {
     const key = `${symbol}:${intervalMs}`;
     this.aggregators.delete(key);
     this.lastTicks.delete(symbol);
+    this.candleListeners.delete(key);
     this.adapter?.unsubscribe(symbol);
+  }
+
+  /**
+   * Register a listener for candle updates on a specific symbol+interval.
+   * Returns an unsubscribe function.
+   * Listener fires ONLY when a provider tick actually modifies the candle.
+   */
+  onCandleUpdate(
+    symbol: QuoteSymbol,
+    intervalMs: AggregationIntervalMs,
+    listener: LiveCandleListener,
+  ): () => void {
+    const key = `${symbol}:${intervalMs}`;
+    if (!this.candleListeners.has(key)) {
+      this.candleListeners.set(key, new Set());
+    }
+    this.candleListeners.get(key)!.add(listener);
+    return () => {
+      this.candleListeners.get(key)?.delete(listener);
+    };
   }
 
   getSnapshot(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): LiveStreamSnapshot {
@@ -89,7 +130,7 @@ class LiveMarketStreamManager {
           state: "DISCONNECTED",
           connectedAt: null,
           lastMessageAt: null,
-          reconnectAttempt: 0,
+          notifyAttempt: 0,
           lastError: null,
         },
         agg ? 1 : 0,
@@ -118,28 +159,80 @@ class LiveMarketStreamManager {
   private handleTick(tick: MarketTick): void {
     this.lastTicks.set(tick.instrument as string, tick);
 
-    // Update all aggregators for this instrument
+    // Update all aggregators for this instrument and emit candle events
     for (const [key, agg] of this.aggregators) {
-      if (agg.instrument === tick.instrument) {
-        this.aggregators.set(key, aggregateTick(agg, tick));
+      if (agg.instrument !== tick.instrument) continue;
+
+      const prev = agg;
+      const next = aggregateTick(agg, tick);
+      this.aggregators.set(key, next);
+
+      // Determine what changed
+      const completed = next.completed.length > prev.completed.length;
+      const currentCandle = next.current;
+
+      if (currentCandle) {
+        const connSnap = this.adapter?.connectionSnapshot();
+        const freshness = connSnap?.state === "CONNECTED" ? "LIVE" :
+          connSnap?.state === "RECONNECTING" ? "STALE" : "NO_DATA";
+
+        const event: LiveCandleEvent = {
+          symbol: tick.instrument as string,
+          intervalMs: next.intervalMs,
+          candle: {
+            time: currentCandle.bucketMs,
+            open: currentCandle.open,
+            high: currentCandle.high,
+            low: currentCandle.low,
+            close: currentCandle.close,
+            volume: currentCandle.volume,
+          },
+          completed: false,
+          provider: "INDSTOCKS_V1_WS",
+          freshness,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Emit to all listeners for this symbol+interval
+        const listeners = this.candleListeners.get(key);
+        if (listeners) {
+          for (const listener of listeners) {
+            try { listener(event); } catch { /* listener error must not crash stream */ }
+          }
+        }
+
+        // If a candle was completed, also emit the completed candle event
+        if (completed && next.completed.length > 0) {
+          const completedCandle = next.completed[next.completed.length - 1];
+          const completedEvent: LiveCandleEvent = {
+            symbol: tick.instrument as string,
+            intervalMs: next.intervalMs,
+            candle: {
+              time: completedCandle.bucketMs,
+              open: completedCandle.open,
+              high: completedCandle.high,
+              low: completedCandle.low,
+              close: completedCandle.close,
+              volume: completedCandle.volume,
+            },
+            completed: true,
+            provider: "INDSTOCKS_V1_WS",
+            freshness,
+            timestamp: new Date().toISOString(),
+          };
+          if (listeners) {
+            for (const listener of listeners) {
+              try { listener(completedEvent); } catch { /* listener error */ }
+            }
+          }
+        }
       }
     }
   }
 }
 
 // Module-level singleton (server-side only).
-//
-// Cloudflare Workers runtime note:
-// In Cloudflare Workers, each V8 isolate maintains its own module-level state.
-// This means the singleton is per-isolate, NOT globally durable across all
-// requests. Multiple isolates may each have their own WebSocket connection.
-// This is acceptable for a research terminal because:
-// 1. Each isolate's connection is independently managed
-// 2. The subscription manager prevents duplicate subscriptions within an isolate
-// 3. Cold starts will re-establish connections via the start() call
-// 4. No critical state is lost — historical data is fetched from REST on demand
-//
-// Do NOT claim this is a globally durable singleton. It is isolate-local.
+// Cloudflare Workers: per-isolate, NOT globally durable.
 let instance: LiveMarketStreamManager | null = null;
 
 export function getLiveMarketStream(): LiveMarketStreamManager {
@@ -149,10 +242,6 @@ export function getLiveMarketStream(): LiveMarketStreamManager {
   return instance;
 }
 
-/**
- * Reset the singleton (for testing only).
- * Not safe for production use — breaks other references to the old instance.
- */
 export function resetLiveMarketStream(): void {
   if (instance) {
     instance.stop();

@@ -66,8 +66,8 @@ export function LiveMarketChart({
   const chartData = useMemo(() => {
     const all: ChartCandle[] = [...historical];
 
-    // Add completed SSE candles
-    for (const c of sse.completedCandles) {
+    // Add completed SSE candles (Map keyed by time — no duplicates)
+    for (const c of sse.completedCandles.values()) {
       all.push({
         x: c.time,
         y: [c.open, c.high, c.low, c.close],
