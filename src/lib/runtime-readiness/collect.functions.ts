@@ -28,25 +28,25 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
     const { classifySmartAlertReadiness, unknownEngineHealth } =
       await import("@/lib/smart-alerts/readiness");
 
-    // ── Quotes / VIX ────────────────────────────────────────────
-    let quotes: Awaited<ReturnType<typeof getMarketData>> | null = null;
-    try {
-      quotes = await getMarketData();
-    } catch {
-      quotes = null;
-    }
+    // ── Parallel independent probes ─────────────────────────────
+    const [quotesRes, niftyRes, bnkRes] = await Promise.allSettled([
+      getMarketData(),
+      fetchCanonicalOptionChain({ underlying: "NIFTY" }),
+      fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }),
+    ]);
+
+    const quotes = quotesRes.status === "fulfilled" ? quotesRes.value : null;
+    const niftyChain = niftyRes.status === "fulfilled" ? niftyRes.value : null;
+    const bnkChain = bnkRes.status === "fulfilled" ? bnkRes.value : null;
+
     const quotesAvailable = !!quotes?.nifty;
     const vixValue = quotes?.vix?.livePrice ?? null;
-
-    // ── Option chains ───────────────────────────────────────────
-    const niftyRes = await fetchCanonicalOptionChain({ underlying: "NIFTY" }).catch(() => null);
-    const bnkRes = await fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }).catch(() => null);
 
     // ── Combined PCR (canonical, reused snapshots) ──────────────
     let pcrReading: ReturnType<typeof computeCombinedPcr> | null = null;
     const snapshots = {
-      NIFTY: niftyRes?.snapshot ?? null,
-      BANKNIFTY: bnkRes?.snapshot ?? null,
+      NIFTY: niftyChain?.snapshot ?? null,
+      BANKNIFTY: bnkChain?.snapshot ?? null,
     };
     if (Object.values(snapshots).some((s) => s != null)) {
       try {
@@ -111,8 +111,8 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
       nowIso: now,
       quotesAvailable,
       vixAvailable: vixValue != null,
-      niftyCapability: niftyRes?.capability ?? null,
-      banknifyCapability: bnkRes?.capability ?? null,
+      niftyCapability: niftyChain?.capability ?? null,
+      banknifyCapability: bnkChain?.capability ?? null,
       combinedPcr: pcrReading,
       breadthCapability: breadthCap,
       gtiComputed,
@@ -133,8 +133,8 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
         // Institutional Flow depends on canonical option-chain OI. Marked
         // available whenever at least one underlying reports SUPPORTED or
         // PARTIAL — heavier module reads still run under `/institutional-flow`.
-        const nifty = niftyRes?.capability?.status;
-        const bnk = bnkRes?.capability?.status;
+        const nifty = niftyChain?.capability?.status;
+        const bnk = bnkChain?.capability?.status;
         const anyUsable = [nifty, bnk].some((s) => s === "SUPPORTED" || s === "PARTIAL");
         return {
           available: anyUsable,

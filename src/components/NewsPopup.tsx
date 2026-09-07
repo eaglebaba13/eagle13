@@ -58,19 +58,6 @@ export function NewsCenter() {
     };
   }, []);
 
-  // Auto-open once per day.
-  useEffect(() => {
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      if (localStorage.getItem(AUTO_KEY) !== today) {
-        localStorage.setItem(AUTO_KEY, today);
-        setOpen(true);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   useEffect(() => {
     if (open) setHasOpened(true);
   }, [open]);
