@@ -426,6 +426,26 @@ function DecisionMatrix({
 
 function ConfidenceGauge({ decision }: { decision: Decision }) {
   const pct = Math.round(decision.confidence);
+  const presentCount = decision.contributions.filter((c) => c.present).length;
+  const totalCount = decision.contributions.length;
+  const missingCount = totalCount - presentCount;
+  const hasConflicts = decision.conflicts.length > 0;
+  const hasMissing = missingCount > 0;
+
+  // Determine confidence explanation
+  let explanation = "";
+  if (pct >= 70 && !hasConflicts && !hasMissing) {
+    explanation = "Strong evidence with aligned signals.";
+  } else if (hasConflicts && hasMissing) {
+    explanation = "Confidence limited by module disagreement and incomplete coverage.";
+  } else if (hasConflicts) {
+    explanation = "Confidence limited by module disagreement.";
+  } else if (hasMissing) {
+    explanation = "Confidence limited by incomplete module coverage.";
+  } else if (pct < 30) {
+    explanation = "Confidence limited by weak directional signals.";
+  }
+
   return (
     <section
       style={{
@@ -458,6 +478,26 @@ function ConfidenceGauge({ decision }: { decision: Decision }) {
           }}
         />
       </div>
+
+      {/* Evidence Coverage */}
+      <div style={{ marginTop: "0.6rem", fontSize: "0.78rem", color: C.muted }}>
+        Evidence Coverage: <strong style={{ color: C.text }}>{presentCount}/{totalCount}</strong>
+        {" modules available"}
+        {hasMissing && (
+          <span style={{ color: C.gold }}>
+            {" · "}
+            {missingCount} unavailable
+          </span>
+        )}
+      </div>
+
+      {/* Confidence Explanation */}
+      {explanation && (
+        <div style={{ marginTop: "0.4rem", fontSize: "0.78rem", color: C.muted }}>
+          {explanation}
+        </div>
+      )}
+
       {decision.penalties.length > 0 && (
         <ul style={{ marginTop: "0.75rem", padding: 0, listStyle: "none", fontSize: "0.78rem" }}>
           {decision.penalties.map((p, i) => (
