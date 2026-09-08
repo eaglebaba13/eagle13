@@ -25,6 +25,7 @@ import { Route as MarketBreadthRouteImport } from './routes/market-breadth'
 import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
 import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
 import { Route as LiveLevelsRouteImport } from './routes/live-levels'
+import { Route as LiveChartRouteImport } from './routes/live-chart'
 import { Route as GannGapOutlookRouteImport } from './routes/gann-gap-outlook'
 import { Route as DecisionRouteImport } from './routes/decision'
 import { Route as CryptoRouteImport } from './routes/crypto'
@@ -161,6 +162,11 @@ const LiveMarketTerminalRoute = LiveMarketTerminalRouteImport.update({
 const LiveLevelsRoute = LiveLevelsRouteImport.update({
   id: '/live-levels',
   path: '/live-levels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveChartRoute = LiveChartRouteImport.update({
+  id: '/live-chart',
+  path: '/live-chart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GannGapOutlookRoute = GannGapOutlookRouteImport.update({
@@ -496,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
+  '/live-chart': typeof LiveChartRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -570,6 +577,7 @@ export interface FileRoutesByTo {
   '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
+  '/live-chart': typeof LiveChartRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -646,6 +654,7 @@ export interface FileRoutesById {
   '/crypto': typeof CryptoRouteWithChildren
   '/decision': typeof DecisionRoute
   '/gann-gap-outlook': typeof GannGapOutlookRoute
+  '/live-chart': typeof LiveChartRoute
   '/live-levels': typeof LiveLevelsRoute
   '/live-market-terminal': typeof LiveMarketTerminalRoute
   '/live-terminal': typeof LiveTerminalRoute
@@ -722,6 +731,7 @@ export interface FileRouteTypes {
     | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
+    | '/live-chart'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -796,6 +806,7 @@ export interface FileRouteTypes {
     | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
+    | '/live-chart'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -871,6 +882,7 @@ export interface FileRouteTypes {
     | '/crypto'
     | '/decision'
     | '/gann-gap-outlook'
+    | '/live-chart'
     | '/live-levels'
     | '/live-market-terminal'
     | '/live-terminal'
@@ -947,6 +959,7 @@ export interface RootRouteChildren {
   CryptoRoute: typeof CryptoRouteWithChildren
   DecisionRoute: typeof DecisionRoute
   GannGapOutlookRoute: typeof GannGapOutlookRoute
+  LiveChartRoute: typeof LiveChartRoute
   LiveLevelsRoute: typeof LiveLevelsRoute
   LiveMarketTerminalRoute: typeof LiveMarketTerminalRoute
   LiveTerminalRoute: typeof LiveTerminalRoute
@@ -1082,6 +1095,13 @@ declare module '@tanstack/react-router' {
       path: '/live-levels'
       fullPath: '/live-levels'
       preLoaderRoute: typeof LiveLevelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-chart': {
+      id: '/live-chart'
+      path: '/live-chart'
+      fullPath: '/live-chart'
+      preLoaderRoute: typeof LiveChartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gann-gap-outlook': {
@@ -1629,6 +1649,7 @@ const rootRouteChildren: RootRouteChildren = {
   CryptoRoute: CryptoRouteWithChildren,
   DecisionRoute: DecisionRoute,
   GannGapOutlookRoute: GannGapOutlookRoute,
+  LiveChartRoute: LiveChartRoute,
   LiveLevelsRoute: LiveLevelsRoute,
   LiveMarketTerminalRoute: LiveMarketTerminalRoute,
   LiveTerminalRoute: LiveTerminalRoute,
