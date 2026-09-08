@@ -1,20 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels } from "@/lib/levels";
-import { InsightsSection, prefetchInsights } from "@/components/InsightsSection";
+import { prefetchInsights } from "@/components/InsightsSection";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NewsCenter } from "@/components/NewsPopup";
-import { NewsFeed, newsQuery } from "@/components/NewsFeed";
-import { FiiDiiActivity, fiiDiiQuery } from "@/components/FiiDiiActivity";
-import { Seasonality, seasonalityQuery } from "@/components/Seasonality";
+import { newsQuery } from "@/components/NewsFeed";
+import { fiiDiiQuery } from "@/components/FiiDiiActivity";
+import { seasonalityQuery } from "@/components/Seasonality";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
-import { GtiSummaryCard } from "@/components/dashboard/GtiSummaryCard";
 import {
   DashboardDataProvider,
   type DashboardTabKey,
@@ -25,8 +24,6 @@ import {
   legacyWidgetsById,
 } from "@/lib/dashboard-widgets";
 import { deriveDashboardFreshness } from "@/lib/dashboard-freshness-adapter";
-import { DashboardParityDiagnostic } from "@/components/dashboard/DashboardParityDiagnostic";
-import { CustomizeDashboardDrawer } from "@/components/dashboard/CustomizeDashboardDrawer";
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
@@ -41,6 +38,32 @@ import {
   RuntimeReadinessStripFallback,
 } from "@/components/runtime-readiness/RuntimeReadinessStrip";
 import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
+
+const GtiSummaryCard = lazy(() =>
+  import("@/components/dashboard/GtiSummaryCard").then((m) => ({ default: m.GtiSummaryCard })),
+);
+const InsightsSection = lazy(() =>
+  import("@/components/InsightsSection").then((m) => ({ default: m.InsightsSection })),
+);
+const FiiDiiActivity = lazy(() =>
+  import("@/components/FiiDiiActivity").then((m) => ({ default: m.FiiDiiActivity })),
+);
+const Seasonality = lazy(() =>
+  import("@/components/Seasonality").then((m) => ({ default: m.Seasonality })),
+);
+const NewsFeed = lazy(() =>
+  import("@/components/NewsFeed").then((m) => ({ default: m.NewsFeed })),
+);
+const CustomizeDashboardDrawer = lazy(() =>
+  import("@/components/dashboard/CustomizeDashboardDrawer").then((m) => ({
+    default: m.CustomizeDashboardDrawer,
+  })),
+);
+const DashboardParityDiagnostic = lazy(() =>
+  import("@/components/dashboard/DashboardParityDiagnostic").then((m) => ({
+    default: m.DashboardParityDiagnostic,
+  })),
+);
 
 const marketQuery = () =>
   queryOptions({
@@ -339,51 +362,61 @@ function Dashboard() {
               </div>
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={pivotWidget} />
               <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannCycleWidget} />
-              <GtiSummaryCard />
+              <Suspense fallback={<SectionSkeleton label="Loading GTI Summary…" />}>
+                <GtiSummaryCard />
+              </Suspense>
             </div>
           </div>
         </DashboardDataProvider>
 
-        <section
-          aria-label="Crypto and tokenized metals"
-          style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: "var(--eb-muted, #94a3b8)",
-            }}
+        <Suspense fallback={<SectionSkeleton label="Loading Crypto & Tokenized Metals…" />}>
+          <section
+            aria-label="Crypto and tokenized metals"
+            style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}
           >
-            Crypto & Tokenized Metals · CoinDCX
-          </div>
-          <DashboardGrid
-            device="desktop"
-            context={{ plan: "free" }}
-            widgets={CRYPTO_DASHBOARD_WIDGETS}
-          />
-        </section>
+            <div
+              style={{
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: "var(--eb-muted, #94a3b8)",
+              }}
+            >
+              Crypto & Tokenized Metals · CoinDCX
+            </div>
+            <DashboardGrid
+              device="desktop"
+              context={{ plan: "free" }}
+              widgets={CRYPTO_DASHBOARD_WIDGETS}
+            />
+          </section>
+        </Suspense>
 
-        <CustomizeDashboardDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          prefs={prefs}
-          onChange={updatePrefs}
-          widgets={LEGACY_DASHBOARD_WIDGETS}
-          device="desktop"
-        />
+        <Suspense fallback={null}>
+          <CustomizeDashboardDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            prefs={prefs}
+            onChange={updatePrefs}
+            widgets={LEGACY_DASHBOARD_WIDGETS}
+            device="desktop"
+          />
+        </Suspense>
 
         {import.meta.env.DEV ||
         (typeof window !== "undefined" &&
           window.localStorage?.getItem("eb-diagnostics") === "on") ? (
-          <DashboardParityDiagnostic
-            widgetContext={{ plan: "free" }}
-            navContext={{ plan: "free" }}
-          />
+          <Suspense fallback={null}>
+            <DashboardParityDiagnostic
+              widgetContext={{ plan: "free" }}
+              navContext={{ plan: "free" }}
+            />
+          </Suspense>
         ) : null}
 
-        <InsightsSection />
+        <Suspense fallback={<SectionSkeleton label="Loading insights…" />}>
+          <InsightsSection />
+        </Suspense>
 
         <Suspense fallback={<SectionSkeleton label="Loading FII & DII activity…" />}>
           <FiiDiiActivity />

@@ -6,8 +6,10 @@ export const newsQuery = () =>
   queryOptions({
     queryKey: ["market-news"],
     queryFn: () => getMarketNews(),
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
   });
 
 const CAT_META: Record<NewsItem["category"], { label: string; color: string }> = {

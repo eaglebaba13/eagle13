@@ -44,7 +44,9 @@ export function GtiSummaryCard() {
     queryKey: [...GTI_SUMMARY_QUERY_KEY],
     queryFn: () => fetchSummary(),
     staleTime: 30_000,
+    gcTime: 5 * 60_000,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   return (

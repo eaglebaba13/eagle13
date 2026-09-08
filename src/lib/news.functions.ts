@@ -59,6 +59,8 @@ async function fetchFeed(category: NewsItem["category"], query: string): Promise
     query + " when:2d",
   )}&hl=en-IN&gl=IN&ceid=IN:en`;
   const xml = await fetchTextSafe(url, {
+    timeoutMs: 3500,
+    retries: 1,
     accept: "application/rss+xml, application/xml, text/xml",
   });
   if (!xml) return [];

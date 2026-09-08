@@ -1,7 +1,11 @@
-import { GoldSilverRatioCard } from "../GoldSilverRatioCard";
+import { lazy, Suspense } from "react";
 import { useDashboardData } from "../DashboardDataContext";
 import { DataFreshnessPill } from "../DataFreshnessPill";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
+
+const GoldSilverRatioCard = lazy(() =>
+  import("../GoldSilverRatioCard").then((m) => ({ default: m.GoldSilverRatioCard })),
+);
 
 export default function GoldSilverWidget() {
   const { data, freshnessByDependency, providerMetadata } = useDashboardData();
@@ -18,7 +22,15 @@ export default function GoldSilverWidget() {
           <DataFreshnessPill result={freshness} provider={providerMetadata?.name} compact />
         </div>
       ) : null}
-      <GoldSilverRatioCard gold={data.gold} silver={data.silver} />
+      <Suspense
+        fallback={
+          <div style={{ padding: 12, fontSize: 11, color: "var(--eb-muted)" }}>
+            Loading Gold–Silver Ratio…
+          </div>
+        }
+      >
+        <GoldSilverRatioCard gold={data.gold} silver={data.silver} />
+      </Suspense>
       {!gate.allowed ? (
         <div
           role="status"

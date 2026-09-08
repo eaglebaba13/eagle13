@@ -21,7 +21,9 @@ export function CryptoSummaryWidget() {
     queryKey: ["coindcx-markets"],
     queryFn: () => fn(),
     staleTime: 10_000,
+    gcTime: 5 * 60_000,
     refetchInterval: 15_000,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 

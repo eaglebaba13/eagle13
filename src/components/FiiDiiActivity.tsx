@@ -5,8 +5,10 @@ export const fiiDiiQuery = () =>
   queryOptions({
     queryKey: ["fii-dii"],
     queryFn: () => getFiiDii(),
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     refetchInterval: 5 * 60_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
 const fmtCr = (n: number) => {
