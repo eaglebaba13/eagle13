@@ -17,6 +17,7 @@ export type ProviderDomain = "QUOTES" | "HISTORICAL" | "OPTIONS" | "BREADTH";
 export type QuoteSymbol =
   | "NIFTY50"
   | "BANKNIFTY"
+  | "FINNIFTY"
   | "INDIA_VIX"
   | "GOLD"
   | "SILVER"
@@ -29,6 +30,7 @@ export type QuoteSymbol =
 export const ALL_QUOTE_SYMBOLS: readonly QuoteSymbol[] = [
   "NIFTY50",
   "BANKNIFTY",
+  "FINNIFTY",
   "INDIA_VIX",
   "GOLD",
   "SILVER",

@@ -12,6 +12,7 @@ describe("Phase 36 · AppShell suppression", () => {
     expect(shouldSuppressShell("/astro")).toBe(true);
     expect(shouldSuppressShell("/live-terminal")).toBe(true);
     expect(shouldSuppressShell("/live-market-terminal")).toBe(true);
+    expect(shouldSuppressShell("/live-chart")).toBe(true);
     expect(shouldSuppressShell("/live-levels")).toBe(true);
     expect(shouldSuppressShell("/option-strategy")).toBe(true);
   });

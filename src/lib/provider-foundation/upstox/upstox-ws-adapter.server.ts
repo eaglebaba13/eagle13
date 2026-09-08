@@ -16,6 +16,7 @@ export const UPSTOX_WS_ADAPTER_ID = "UPSTOX_V3_WS";
 const UPSTOX_INSTRUMENT_MAP: Record<string, string> = {
   NIFTY50: "NSE_INDEX|Nifty 50",
   BANKNIFTY: "NSE_INDEX|Nifty Bank",
+  FINNIFTY: "NSE_INDEX|Nifty Fin Service",
   INDIA_VIX: "NSE_INDEX|India VIX",
   GOLD: "MCX_FO|GOLD",
   SILVER: "MCX_FO|SILVER",
@@ -24,6 +25,7 @@ const UPSTOX_INSTRUMENT_MAP: Record<string, string> = {
 const REVERSE_INSTRUMENT_MAP: Record<string, QuoteSymbol> = {
   "NSE_INDEX|Nifty 50": "NIFTY50",
   "NSE_INDEX|Nifty Bank": "BANKNIFTY",
+  "NSE_INDEX|Nifty Fin Service": "FINNIFTY",
   "NSE_INDEX|India VIX": "INDIA_VIX",
   "MCX_FO|GOLD": "GOLD",
   "MCX_FO|SILVER": "SILVER",
@@ -191,6 +193,7 @@ export class UpstoxWsAdapter {
     const basePrices: Record<string, number> = {
       NIFTY50: 25000,
       BANKNIFTY: 52000,
+      FINNIFTY: 22000,
       INDIA_VIX: 13.5,
       GOLD: 72000,
       SILVER: 85000,

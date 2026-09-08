@@ -29,6 +29,7 @@ const SELF_SHELLED_ROUTES: readonly string[] = [
   "/astro",
   "/live-terminal",
   "/live-market-terminal",
+  "/live-chart",
   "/live-levels",
   "/option-strategy",
 ];

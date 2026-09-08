@@ -92,7 +92,7 @@ export const NAV_REGISTRY: NavItem[] = [
     id: "live-chart",
     label: "Live Chart",
     icon: BarChart3,
-    to: "/live-market-terminal#live-chart",
+    to: "/live-chart",
     section: "CORE",
     order: 41,
     status: "LIVE",
