@@ -119,7 +119,7 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
               // Update live status from every event (Bug 3 fix)
               const updatedStatus: LiveSSEStatus = {
                 connectionState: data.connectionState ?? s.status?.connectionState ?? "UNKNOWN",
-                provider: data.provider ?? s.status?.provider ?? "INDSTOCKS_V1_WS",
+                provider: data.provider ?? s.status?.provider ?? "UPSTOX_V3_WS",
                 freshness: data.freshness ?? s.status?.freshness ?? "NO_DATA",
                 lastTick: data.lastTick ?? s.status?.lastTick ?? null,
                 lastLtp: data.lastLtp ?? s.status?.lastLtp ?? null,

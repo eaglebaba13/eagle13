@@ -189,6 +189,7 @@ function exportExcel(m: MarketBlock, version: AstroFormulaVersion = DEFAULT_ASTR
 
 function LiveLevelsTerminal() {
   const { data, isFetching, dataUpdatedAt } = useSuspenseQuery(levelsQuery());
+  const session = useMarketSession();
   const clock = useIstClock();
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState<MarketKey>("NIFTY");

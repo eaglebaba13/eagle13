@@ -2,7 +2,7 @@
 // Manages IndstocksWsAdapter + CandleAggregator for production use.
 // Runs server-side only. Token never exposed to client.
 
-import { IndstocksWsAdapter } from "./provider-foundation/indstocks/indstocks-ws-adapter.server";
+import { UpstoxWsAdapter } from "./provider-foundation/upstox/upstox-ws-adapter.server";
 import type { MarketTick } from "./provider-foundation/indstocks/indstocks-ws-types";
 import {
   aggregateTick,
@@ -12,7 +12,6 @@ import {
   type AggregationIntervalMs,
   type MergedCandlePoint,
 } from "./provider-foundation/indstocks/candle-aggregator";
-import { buildIndstocksWsTelemetry } from "./provider-foundation/indstocks/indstocks-ws-adapter.server";
 import type { QuoteSymbol } from "./provider-foundation/types";
 
 export interface LiveStreamSnapshot {
@@ -50,7 +49,7 @@ export interface LiveCandleEvent {
 export type LiveCandleListener = (event: LiveCandleEvent) => void;
 
 class LiveMarketStreamManager {
-  private adapter: IndstocksWsAdapter | null = null;
+  private adapter: UpstoxWsAdapter | null = null;
   private aggregators = new Map<string, CandleAggregatorState>();
   private lastTicks = new Map<string, MarketTick | null>();
   private started = false;
@@ -64,7 +63,7 @@ class LiveMarketStreamManager {
   start(): void {
     if (this.started) return;
     this.started = true;
-    this.adapter = new IndstocksWsAdapter();
+    this.adapter = new UpstoxWsAdapter();
     this.adapter.onTick((tick) => this.handleTick(tick));
     this.adapter.connect();
   }
@@ -161,16 +160,18 @@ class LiveMarketStreamManager {
       lastTick,
       currentCandle: agg?.current ?? null,
       completedCandleCount: agg?.completed.length ?? 0,
-      telemetry: buildIndstocksWsTelemetry(
-        connSnap ?? {
-          state: "DISCONNECTED",
-          connectedAt: null,
-          lastMessageAt: null,
-          reconnectAttempt: 0,
-          lastError: null,
-        },
-        agg ? 1 : 0,
-      ),
+      telemetry: this.adapter?.telemetry() ?? {
+        providerId: "UPSTOX_V3_WS",
+        status: "OFFLINE",
+        latencyMs: 0,
+        receivedAt: new Date().toISOString(),
+        providerTime: null,
+        marketSession: "REGULAR",
+        rateLimit: null,
+        retryAfterMs: null,
+        staleReason: "Disconnected",
+        role: "PRIMARY",
+      },
       subscriptionActive: subActive,
     };
   }
@@ -233,7 +234,7 @@ class LiveMarketStreamManager {
             volume: completedCandle.volume,
           },
           completed: true,
-          provider: "INDSTOCKS_V1_WS",
+          provider: "UPSTOX_V3_WS",
           freshness,
           timestamp: new Date().toISOString(),
           lastLtp,
@@ -261,7 +262,7 @@ class LiveMarketStreamManager {
             volume: next.current.volume,
           },
           completed: false,
-          provider: "INDSTOCKS_V1_WS",
+          provider: "UPSTOX_V3_WS",
           freshness,
           timestamp: new Date().toISOString(),
           lastLtp,

@@ -26,7 +26,7 @@ export interface LiveMarketChartProps {
 
 interface ChartCandle {
   readonly x: number;
-  readonly y: [number, number, number, number];
+  readonly y: readonly [number, number, number, number];
   readonly volume: number | null;
 }
 
@@ -170,7 +170,7 @@ export function LiveMarketChart({
       <div className="flex items-center gap-3 mb-2 flex-wrap">
         <span className="text-sm font-medium">{symbol}</span>
         <span className={`text-xs font-mono ${statusColor}`}>● {statusLabel}</span>
-        <span className="text-xs text-muted-foreground font-mono">{sse.status?.provider ?? "INDSTOCKS_V1_WS"}</span>
+        <span className="text-xs text-muted-foreground font-mono">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
         {sse.status?.lastLtp != null && (
           <span className="text-xs font-mono">LTP: {sse.status.lastLtp.toFixed(2)}</span>
         )}
@@ -214,7 +214,7 @@ export function LiveMarketChart({
           <div className="text-center">
             <span className="text-muted-foreground text-sm">NO MARKET DATA</span>
             <p className="text-xs text-muted-foreground mt-1">
-              Provider: {sse.status?.provider ?? "INDSTOCKS_V1_WS"} | Connection: {sse.connected ? "CONNECTED" : "DISCONNECTED"}
+              Provider: {sse.status?.provider ?? "UPSTOX_V3_WS"} | Connection: {sse.connected ? "CONNECTED" : "DISCONNECTED"}
             </p>
           </div>
         </div>

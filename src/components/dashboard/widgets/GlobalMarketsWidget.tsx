@@ -47,7 +47,7 @@ export default function GlobalMarketsWidget() {
     >
       {items.map((it) => {
         const up = it.q.change >= 0;
-        const rowFresh = rowFreshness(it.q, now);
+        const rowFresh = rowFreshness(it.q, now, sessionStatus);
         const stale =
           rowFresh && (rowFresh.status === "STALE" || rowFresh.status === "UNAVAILABLE");
         return (

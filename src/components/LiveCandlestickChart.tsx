@@ -157,7 +157,7 @@ export function LiveCandlestickChart({
       )}
 
       {/* Main price chart with overlays */}
-      <ApexChart type="candlestick" height={height} series={mainSeries} options={mainOptions} />
+      <ApexChart type="candlestick" height={height} series={mainSeries as any} options={mainOptions} />
 
       {/* Oscillator panels */}
       {oscillators.map((osc) => (

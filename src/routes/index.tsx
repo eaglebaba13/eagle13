@@ -409,7 +409,7 @@ function Dashboard() {
           <Suspense fallback={null}>
             <DashboardParityDiagnostic
               widgetContext={{ plan: "free" }}
-              navContext={{ plan: "free" }}
+              navContext={{}}
             />
           </Suspense>
         ) : null}
