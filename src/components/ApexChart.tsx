@@ -7,7 +7,7 @@ type ApexChartProps = {
     "area" | "line" | "bar" | "candlestick" | "radialBar" | "donut" | "heatmap" | "treemap" | "pie";
   series: ApexOptions["series"];
   options: ApexOptions;
-  height?: number;
+  height?: number | string;
 };
 
 /**
@@ -54,13 +54,15 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(series), JSON.stringify(options.labels)]);
 
+  const resolvedHeight = typeof height === "number" ? height : undefined;
+
   return (
-    <div style={{ minHeight: height }}>
+    <div style={{ height, minHeight: resolvedHeight ?? 260 }}>
       <div ref={ref} />
       {!ready ? (
         <div
           style={{
-            height,
+            height: resolvedHeight ?? 260,
             display: "grid",
             placeItems: "center",
             color: "var(--eb-muted)",

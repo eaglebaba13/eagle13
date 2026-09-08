@@ -9,93 +9,204 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AbsoluteIntradayRouteImport } from './routes/absolute-intraday'
-import { Route as AbsoluteIntradayValidationRouteImport } from './routes/absolute-intraday-validation'
-import { Route as AstroRouteImport } from './routes/astro'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BacktestRouteImport } from './routes/backtest'
-import { Route as BrokerRouteImport } from './routes/broker'
-import { Route as CombinedPcrRouteImport } from './routes/combined-pcr'
-import { Route as CryptoRouteImport } from './routes/crypto'
-import { Route as DecisionRouteImport } from './routes/decision'
-import { Route as GannGapOutlookRouteImport } from './routes/gann-gap-outlook'
-import { Route as LiveChartRouteImport } from './routes/live-chart'
-import { Route as LiveLevelsRouteImport } from './routes/live-levels'
-import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
-import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
-import { Route as MarketBreadthRouteImport } from './routes/market-breadth'
-import { Route as MarketReplayRouteImport } from './routes/market-replay'
-import { Route as NewsRouteImport } from './routes/news'
-import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
-import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
-import { Route as OptionsChainRouteImport } from './routes/options-chain'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
-import { Route as RiskRouteImport } from './routes/risk'
-import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
-import { Route as StatusRouteImport } from './routes/status'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
-import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
-import { Route as AuthenticatedBacktestLabRouteImport } from './routes/_authenticated/backtest-lab'
-import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
-import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
-import { Route as AuthenticatedInstitutionalIntelligenceRouteImport } from './routes/_authenticated/institutional-intelligence'
-import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
-import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
-import { Route as AuthenticatedMultiAssetIntelligenceRouteImport } from './routes/_authenticated/multi-asset-intelligence'
-import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
-import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
-import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
-import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
-import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
-import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
-import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
-import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
-import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as SignalAccuracyRouteImport } from './routes/signal-accuracy'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as OptionsChainRouteImport } from './routes/options-chain'
+import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
+import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
+import { Route as NewsRouteImport } from './routes/news'
+import { Route as MarketReplayRouteImport } from './routes/market-replay'
+import { Route as MarketBreadthRouteImport } from './routes/market-breadth'
+import { Route as LiveTerminalRouteImport } from './routes/live-terminal'
+import { Route as LiveMarketTerminalRouteImport } from './routes/live-market-terminal'
+import { Route as LiveLevelsRouteImport } from './routes/live-levels'
+import { Route as LiveChartRouteImport } from './routes/live-chart'
+import { Route as GannGapOutlookRouteImport } from './routes/gann-gap-outlook'
+import { Route as DecisionRouteImport } from './routes/decision'
+import { Route as CryptoRouteImport } from './routes/crypto'
+import { Route as CombinedPcrRouteImport } from './routes/combined-pcr'
+import { Route as BrokerRouteImport } from './routes/broker'
+import { Route as BacktestRouteImport } from './routes/backtest'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AstroRouteImport } from './routes/astro'
+import { Route as AbsoluteIntradayValidationRouteImport } from './routes/absolute-intraday-validation'
+import { Route as AbsoluteIntradayRouteImport } from './routes/absolute-intraday'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
-import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
-import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
-import { Route as AuthenticatedAdminCoindcxRouteImport } from './routes/_authenticated/admin.coindcx'
-import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
-import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
-import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
-import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
-import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
-import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
-import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
-import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_authenticated/admin.research-lab'
-import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
-import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
-import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_authenticated/admin.tradingview'
-import { Route as AuthenticatedAdminWidgetsRouteImport } from './routes/_authenticated/admin.widgets'
-import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
-import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
-import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
-import { Route as AuthenticatedResearchLabRunsRouteImport } from './routes/_authenticated/research-lab.runs'
+import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
+import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
+import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
+import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
+import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
+import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenticated/research-lab'
+import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMultiAssetIntelligenceRouteImport } from './routes/_authenticated/multi-asset-intelligence'
+import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
+import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
+import { Route as AuthenticatedInstitutionalIntelligenceRouteImport } from './routes/_authenticated/institutional-intelligence'
+import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedBacktestLabRouteImport } from './routes/_authenticated/backtest-lab'
+import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
+import { Route as AuthenticatedAiMarketAssistantRouteImport } from './routes/_authenticated/ai-market-assistant'
 import { Route as AuthenticatedResearchLabSignalsRouteImport } from './routes/_authenticated/research-lab.signals'
-import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
-import { Route as ApiPublicHooksMorningBriefRouteImport } from './routes/api/public/hooks/morning-brief'
+import { Route as AuthenticatedResearchLabRunsRouteImport } from './routes/_authenticated/research-lab.runs'
+import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from './routes/_authenticated/research-lab.institutional-flow'
+import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
+import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
+import { Route as AuthenticatedAdminWidgetsRouteImport } from './routes/_authenticated/admin.widgets'
+import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_authenticated/admin.tradingview'
+import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
+import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
+import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_authenticated/admin.research-lab'
+import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
+import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
+import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
+import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
+import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
+import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
+import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
+import { Route as AuthenticatedAdminCoindcxRouteImport } from './routes/_authenticated/admin.coindcx'
+import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
+import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
+import { Route as ApiPublicHooksMorningBriefRouteImport } from './routes/api/public/hooks/morning-brief'
+import { Route as AuthenticatedResearchLabRunsRunIdRouteImport } from './routes/_authenticated/research-lab.runs.$runId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AbsoluteIntradayRoute = AbsoluteIntradayRouteImport.update({
-  id: '/absolute-intraday',
-  path: '/absolute-intraday',
+const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
+  id: '/signal-accuracy',
+  path: '/signal-accuracy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReleaseNotesRoute = ReleaseNotesRouteImport.update({
+  id: '/release-notes',
+  path: '/release-notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptionsChainRoute = OptionsChainRouteImport.update({
+  id: '/options-chain',
+  path: '/options-chain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptionsAnalyticsRoute = OptionsAnalyticsRouteImport.update({
+  id: '/options-analytics',
+  path: '/options-analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptionStrategyRoute = OptionStrategyRouteImport.update({
+  id: '/option-strategy',
+  path: '/option-strategy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketReplayRoute = MarketReplayRouteImport.update({
+  id: '/market-replay',
+  path: '/market-replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketBreadthRoute = MarketBreadthRouteImport.update({
+  id: '/market-breadth',
+  path: '/market-breadth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveTerminalRoute = LiveTerminalRouteImport.update({
+  id: '/live-terminal',
+  path: '/live-terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveMarketTerminalRoute = LiveMarketTerminalRouteImport.update({
+  id: '/live-market-terminal',
+  path: '/live-market-terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveLevelsRoute = LiveLevelsRouteImport.update({
+  id: '/live-levels',
+  path: '/live-levels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveChartRoute = LiveChartRouteImport.update({
+  id: '/live-chart',
+  path: '/live-chart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GannGapOutlookRoute = GannGapOutlookRouteImport.update({
+  id: '/gann-gap-outlook',
+  path: '/gann-gap-outlook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecisionRoute = DecisionRouteImport.update({
+  id: '/decision',
+  path: '/decision',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CryptoRoute = CryptoRouteImport.update({
+  id: '/crypto',
+  path: '/crypto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CombinedPcrRoute = CombinedPcrRouteImport.update({
+  id: '/combined-pcr',
+  path: '/combined-pcr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrokerRoute = BrokerRouteImport.update({
+  id: '/broker',
+  path: '/broker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BacktestRoute = BacktestRouteImport.update({
+  id: '/backtest',
+  path: '/backtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AstroRoute = AstroRouteImport.update({
+  id: '/astro',
+  path: '/astro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AbsoluteIntradayValidationRoute =
@@ -104,219 +215,44 @@ const AbsoluteIntradayValidationRoute =
     path: '/absolute-intraday-validation',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AstroRoute = AstroRouteImport.update({
-  id: '/astro',
-  path: '/astro',
+const AbsoluteIntradayRoute = AbsoluteIntradayRouteImport.update({
+  id: '/absolute-intraday',
+  path: '/absolute-intraday',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BacktestRoute = BacktestRouteImport.update({
-  id: '/backtest',
-  path: '/backtest',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BrokerRoute = BrokerRouteImport.update({
-  id: '/broker',
-  path: '/broker',
+const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
+  id: '/dev/diagnostics',
+  path: '/dev/diagnostics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CombinedPcrRoute = CombinedPcrRouteImport.update({
-  id: '/combined-pcr',
-  path: '/combined-pcr',
+const DevAstroFixtureCaptureRoute = DevAstroFixtureCaptureRouteImport.update({
+  id: '/dev/astro-fixture-capture',
+  path: '/dev/astro-fixture-capture',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CryptoRoute = CryptoRouteImport.update({
-  id: '/crypto',
-  path: '/crypto',
+const DevAstroAuditRoute = DevAstroAuditRouteImport.update({
+  id: '/dev/astro-audit',
+  path: '/dev/astro-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DecisionRoute = DecisionRouteImport.update({
-  id: '/decision',
-  path: '/decision',
-  getParentRoute: () => rootRouteImport,
+const CryptoPairRoute = CryptoPairRouteImport.update({
+  id: '/$pair',
+  path: '/$pair',
+  getParentRoute: () => CryptoRoute,
 } as any)
-const GannGapOutlookRoute = GannGapOutlookRouteImport.update({
-  id: '/gann-gap-outlook',
-  path: '/gann-gap-outlook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveChartRoute = LiveChartRouteImport.update({
-  id: '/live-chart',
-  path: '/live-chart',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveLevelsRoute = LiveLevelsRouteImport.update({
-  id: '/live-levels',
-  path: '/live-levels',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveMarketTerminalRoute = LiveMarketTerminalRouteImport.update({
-  id: '/live-market-terminal',
-  path: '/live-market-terminal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveTerminalRoute = LiveTerminalRouteImport.update({
-  id: '/live-terminal',
-  path: '/live-terminal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarketBreadthRoute = MarketBreadthRouteImport.update({
-  id: '/market-breadth',
-  path: '/market-breadth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarketReplayRoute = MarketReplayRouteImport.update({
-  id: '/market-replay',
-  path: '/market-replay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsRoute = NewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptionStrategyRoute = OptionStrategyRouteImport.update({
-  id: '/option-strategy',
-  path: '/option-strategy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptionsAnalyticsRoute = OptionsAnalyticsRouteImport.update({
-  id: '/options-analytics',
-  path: '/options-analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptionsChainRoute = OptionsChainRouteImport.update({
-  id: '/options-chain',
-  path: '/options-chain',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReleaseNotesRoute = ReleaseNotesRouteImport.update({
-  id: '/release-notes',
-  path: '/release-notes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RiskRoute = RiskRouteImport.update({
-  id: '/risk',
-  path: '/risk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignalAccuracyRoute = SignalAccuracyRouteImport.update({
-  id: '/signal-accuracy',
-  path: '/signal-accuracy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StatusRoute = StatusRouteImport.update({
-  id: '/status',
-  path: '/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAiMarketAssistantRoute =
-  AuthenticatedAiMarketAssistantRouteImport.update({
-    id: '/ai-market-assistant',
-    path: '/ai-market-assistant',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
-  id: '/alerts',
-  path: '/alerts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBacktestLabRoute =
-  AuthenticatedBacktestLabRouteImport.update({
-    id: '/backtest-lab',
-    path: '/backtest-lab',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInstitutionalFlowRoute =
-  AuthenticatedInstitutionalFlowRouteImport.update({
-    id: '/institutional-flow',
-    path: '/institutional-flow',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInstitutionalIntelligenceRoute =
-  AuthenticatedInstitutionalIntelligenceRouteImport.update({
-    id: '/institutional-intelligence',
-    path: '/institutional-intelligence',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
-  id: '/license',
-  path: '/license',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLiveOptionTerminalRoute =
-  AuthenticatedLiveOptionTerminalRouteImport.update({
-    id: '/live-option-terminal',
-    path: '/live-option-terminal',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedMultiAssetIntelligenceRoute =
-  AuthenticatedMultiAssetIntelligenceRouteImport.update({
-    id: '/multi-asset-intelligence',
-    path: '/multi-asset-intelligence',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedNotificationsRoute =
-  AuthenticatedNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPaymentStatusRoute =
-  AuthenticatedPaymentStatusRouteImport.update({
-    id: '/payment-status',
-    path: '/payment-status',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReferralsRoute = AuthenticatedReferralsRouteImport.update({
-  id: '/referrals',
-  path: '/referrals',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedResearchLabRoute =
-  AuthenticatedResearchLabRouteImport.update({
-    id: '/research-lab',
-    path: '/research-lab',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSignalHistoryRoute =
-  AuthenticatedSignalHistoryRouteImport.update({
-    id: '/signal-history',
-    path: '/signal-history',
+const AuthenticatedTelegramLogRoute =
+  AuthenticatedTelegramLogRouteImport.update({
+    id: '/telegram-log',
+    path: '/telegram-log',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedStrategyAnalyticsRoute =
@@ -325,138 +261,100 @@ const AuthenticatedStrategyAnalyticsRoute =
     path: '/strategy-analytics',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedTelegramLogRoute =
-  AuthenticatedTelegramLogRouteImport.update({
-    id: '/telegram-log',
-    path: '/telegram-log',
+const AuthenticatedSignalHistoryRoute =
+  AuthenticatedSignalHistoryRouteImport.update({
+    id: '/signal-history',
+    path: '/signal-history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const CryptoPairRoute = CryptoPairRouteImport.update({
-  id: '/$pair',
-  path: '/$pair',
-  getParentRoute: () => CryptoRoute,
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const DevAstroAuditRoute = DevAstroAuditRouteImport.update({
-  id: '/dev/astro-audit',
-  path: '/dev/astro-audit',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedResearchLabRoute =
+  AuthenticatedResearchLabRouteImport.update({
+    id: '/research-lab',
+    path: '/research-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReferralsRoute = AuthenticatedReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const DevAstroFixtureCaptureRoute = DevAstroFixtureCaptureRouteImport.update({
-  id: '/dev/astro-fixture-capture',
-  path: '/dev/astro-fixture-capture',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
-  id: '/dev/diagnostics',
-  path: '/dev/diagnostics',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedPaymentStatusRoute =
+  AuthenticatedPaymentStatusRouteImport.update({
+    id: '/payment-status',
+    path: '/payment-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMultiAssetIntelligenceRoute =
+  AuthenticatedMultiAssetIntelligenceRouteImport.update({
+    id: '/multi-asset-intelligence',
+    path: '/multi-asset-intelligence',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLiveOptionTerminalRoute =
+  AuthenticatedLiveOptionTerminalRouteImport.update({
+    id: '/live-option-terminal',
+    path: '/live-option-terminal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
+  id: '/license',
+  path: '/license',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminAlertsRoute =
-  AuthenticatedAdminAlertsRouteImport.update({
-    id: '/admin/alerts',
-    path: '/admin/alerts',
+const AuthenticatedInstitutionalIntelligenceRoute =
+  AuthenticatedInstitutionalIntelligenceRouteImport.update({
+    id: '/institutional-intelligence',
+    path: '/institutional-intelligence',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminBetaReadinessRoute =
-  AuthenticatedAdminBetaReadinessRouteImport.update({
-    id: '/admin/beta-readiness',
-    path: '/admin/beta-readiness',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCoindcxRoute =
-  AuthenticatedAdminCoindcxRouteImport.update({
-    id: '/admin/coindcx',
-    path: '/admin/coindcx',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminGannGapRoute =
-  AuthenticatedAdminGannGapRouteImport.update({
-    id: '/admin/gann-gap',
-    path: '/admin/gann-gap',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminInstitutionalFlowRoute =
-  AuthenticatedAdminInstitutionalFlowRouteImport.update({
-    id: '/admin/institutional-flow',
-    path: '/admin/institutional-flow',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminLaunchReadinessRoute =
-  AuthenticatedAdminLaunchReadinessRouteImport.update({
-    id: '/admin/launch-readiness',
-    path: '/admin/launch-readiness',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminPaymentsRoute =
-  AuthenticatedAdminPaymentsRouteImport.update({
-    id: '/admin/payments',
-    path: '/admin/payments',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminProvidersRoute =
-  AuthenticatedAdminProvidersRouteImport.update({
-    id: '/admin/providers',
-    path: '/admin/providers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminReadinessRoute =
-  AuthenticatedAdminReadinessRouteImport.update({
-    id: '/admin/readiness',
-    path: '/admin/readiness',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminReferralsRoute =
-  AuthenticatedAdminReferralsRouteImport.update({
-    id: '/admin/referrals',
-    path: '/admin/referrals',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminResearchLabRoute =
-  AuthenticatedAdminResearchLabRouteImport.update({
-    id: '/admin/research-lab',
-    path: '/admin/research-lab',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminStagingValidationRoute =
-  AuthenticatedAdminStagingValidationRouteImport.update({
-    id: '/admin/staging-validation',
-    path: '/admin/staging-validation',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminSystemStatusRoute =
-  AuthenticatedAdminSystemStatusRouteImport.update({
-    id: '/admin/system-status',
-    path: '/admin/system-status',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTradingviewRoute =
-  AuthenticatedAdminTradingviewRouteImport.update({
-    id: '/admin/tradingview',
-    path: '/admin/tradingview',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminWidgetsRoute =
-  AuthenticatedAdminWidgetsRouteImport.update({
-    id: '/admin/widgets',
-    path: '/admin/widgets',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedResearchLabAlertsRoute =
-  AuthenticatedResearchLabAlertsRouteImport.update({
-    id: '/alerts',
-    path: '/alerts',
-    getParentRoute: () => AuthenticatedResearchLabRoute,
-  } as any)
-const AuthenticatedResearchLabGannGapRoute =
-  AuthenticatedResearchLabGannGapRouteImport.update({
-    id: '/gann-gap',
-    path: '/gann-gap',
-    getParentRoute: () => AuthenticatedResearchLabRoute,
-  } as any)
-const AuthenticatedResearchLabInstitutionalFlowRoute =
-  AuthenticatedResearchLabInstitutionalFlowRouteImport.update({
+const AuthenticatedInstitutionalFlowRoute =
+  AuthenticatedInstitutionalFlowRouteImport.update({
     id: '/institutional-flow',
     path: '/institutional-flow',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBacktestLabRoute =
+  AuthenticatedBacktestLabRouteImport.update({
+    id: '/backtest-lab',
+    path: '/backtest-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAiMarketAssistantRoute =
+  AuthenticatedAiMarketAssistantRouteImport.update({
+    id: '/ai-market-assistant',
+    path: '/ai-market-assistant',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResearchLabSignalsRoute =
+  AuthenticatedResearchLabSignalsRouteImport.update({
+    id: '/signals',
+    path: '/signals',
     getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
 const AuthenticatedResearchLabRunsRoute =
@@ -465,17 +363,119 @@ const AuthenticatedResearchLabRunsRoute =
     path: '/runs',
     getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
-const AuthenticatedResearchLabSignalsRoute =
-  AuthenticatedResearchLabSignalsRouteImport.update({
-    id: '/signals',
-    path: '/signals',
+const AuthenticatedResearchLabInstitutionalFlowRoute =
+  AuthenticatedResearchLabInstitutionalFlowRouteImport.update({
+    id: '/institutional-flow',
+    path: '/institutional-flow',
     getParentRoute: () => AuthenticatedResearchLabRoute,
   } as any)
-const AuthenticatedResearchLabRunsRunIdRoute =
-  AuthenticatedResearchLabRunsRunIdRouteImport.update({
-    id: '/$runId',
-    path: '/$runId',
-    getParentRoute: () => AuthenticatedResearchLabRunsRoute,
+const AuthenticatedResearchLabGannGapRoute =
+  AuthenticatedResearchLabGannGapRouteImport.update({
+    id: '/gann-gap',
+    path: '/gann-gap',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
+const AuthenticatedResearchLabAlertsRoute =
+  AuthenticatedResearchLabAlertsRouteImport.update({
+    id: '/alerts',
+    path: '/alerts',
+    getParentRoute: () => AuthenticatedResearchLabRoute,
+  } as any)
+const AuthenticatedAdminWidgetsRoute =
+  AuthenticatedAdminWidgetsRouteImport.update({
+    id: '/admin/widgets',
+    path: '/admin/widgets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTradingviewRoute =
+  AuthenticatedAdminTradingviewRouteImport.update({
+    id: '/admin/tradingview',
+    path: '/admin/tradingview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSystemStatusRoute =
+  AuthenticatedAdminSystemStatusRouteImport.update({
+    id: '/admin/system-status',
+    path: '/admin/system-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminStagingValidationRoute =
+  AuthenticatedAdminStagingValidationRouteImport.update({
+    id: '/admin/staging-validation',
+    path: '/admin/staging-validation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminResearchLabRoute =
+  AuthenticatedAdminResearchLabRouteImport.update({
+    id: '/admin/research-lab',
+    path: '/admin/research-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminReferralsRoute =
+  AuthenticatedAdminReferralsRouteImport.update({
+    id: '/admin/referrals',
+    path: '/admin/referrals',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminReadinessRoute =
+  AuthenticatedAdminReadinessRouteImport.update({
+    id: '/admin/readiness',
+    path: '/admin/readiness',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminProvidersRoute =
+  AuthenticatedAdminProvidersRouteImport.update({
+    id: '/admin/providers',
+    path: '/admin/providers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminPaymentsRoute =
+  AuthenticatedAdminPaymentsRouteImport.update({
+    id: '/admin/payments',
+    path: '/admin/payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminLaunchReadinessRoute =
+  AuthenticatedAdminLaunchReadinessRouteImport.update({
+    id: '/admin/launch-readiness',
+    path: '/admin/launch-readiness',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminInstitutionalFlowRoute =
+  AuthenticatedAdminInstitutionalFlowRouteImport.update({
+    id: '/admin/institutional-flow',
+    path: '/admin/institutional-flow',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminGannGapRoute =
+  AuthenticatedAdminGannGapRouteImport.update({
+    id: '/admin/gann-gap',
+    path: '/admin/gann-gap',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCoindcxRoute =
+  AuthenticatedAdminCoindcxRouteImport.update({
+    id: '/admin/coindcx',
+    path: '/admin/coindcx',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminBetaReadinessRoute =
+  AuthenticatedAdminBetaReadinessRouteImport.update({
+    id: '/admin/beta-readiness',
+    path: '/admin/beta-readiness',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAlertsRoute =
+  AuthenticatedAdminAlertsRouteImport.update({
+    id: '/admin/alerts',
+    path: '/admin/alerts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicWebhooksRazorpayRoute =
+  ApiPublicWebhooksRazorpayRouteImport.update({
+    id: '/api/public/webhooks/razorpay',
+    path: '/api/public/webhooks/razorpay',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksMorningBriefRoute =
   ApiPublicHooksMorningBriefRouteImport.update({
@@ -483,11 +483,11 @@ const ApiPublicHooksMorningBriefRoute =
     path: '/api/public/hooks/morning-brief',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicWebhooksRazorpayRoute =
-  ApiPublicWebhooksRazorpayRouteImport.update({
-    id: '/api/public/webhooks/razorpay',
-    path: '/api/public/webhooks/razorpay',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedResearchLabRunsRunIdRoute =
+  AuthenticatedResearchLabRunsRunIdRouteImport.update({
+    id: '/$runId',
+    path: '/$runId',
+    getParentRoute: () => AuthenticatedResearchLabRunsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -985,193 +985,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/absolute-intraday': {
-      id: '/absolute-intraday'
-      path: '/absolute-intraday'
-      fullPath: '/absolute-intraday'
-      preLoaderRoute: typeof AbsoluteIntradayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/absolute-intraday-validation': {
-      id: '/absolute-intraday-validation'
-      path: '/absolute-intraday-validation'
-      fullPath: '/absolute-intraday-validation'
-      preLoaderRoute: typeof AbsoluteIntradayValidationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/astro': {
-      id: '/astro'
-      path: '/astro'
-      fullPath: '/astro'
-      preLoaderRoute: typeof AstroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/backtest': {
-      id: '/backtest'
-      path: '/backtest'
-      fullPath: '/backtest'
-      preLoaderRoute: typeof BacktestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/broker': {
-      id: '/broker'
-      path: '/broker'
-      fullPath: '/broker'
-      preLoaderRoute: typeof BrokerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/combined-pcr': {
-      id: '/combined-pcr'
-      path: '/combined-pcr'
-      fullPath: '/combined-pcr'
-      preLoaderRoute: typeof CombinedPcrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crypto': {
-      id: '/crypto'
-      path: '/crypto'
-      fullPath: '/crypto'
-      preLoaderRoute: typeof CryptoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/decision': {
-      id: '/decision'
-      path: '/decision'
-      fullPath: '/decision'
-      preLoaderRoute: typeof DecisionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gann-gap-outlook': {
-      id: '/gann-gap-outlook'
-      path: '/gann-gap-outlook'
-      fullPath: '/gann-gap-outlook'
-      preLoaderRoute: typeof GannGapOutlookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-chart': {
-      id: '/live-chart'
-      path: '/live-chart'
-      fullPath: '/live-chart'
-      preLoaderRoute: typeof LiveChartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-levels': {
-      id: '/live-levels'
-      path: '/live-levels'
-      fullPath: '/live-levels'
-      preLoaderRoute: typeof LiveLevelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-market-terminal': {
-      id: '/live-market-terminal'
-      path: '/live-market-terminal'
-      fullPath: '/live-market-terminal'
-      preLoaderRoute: typeof LiveMarketTerminalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-terminal': {
-      id: '/live-terminal'
-      path: '/live-terminal'
-      fullPath: '/live-terminal'
-      preLoaderRoute: typeof LiveTerminalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/market-breadth': {
-      id: '/market-breadth'
-      path: '/market-breadth'
-      fullPath: '/market-breadth'
-      preLoaderRoute: typeof MarketBreadthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/market-replay': {
-      id: '/market-replay'
-      path: '/market-replay'
-      fullPath: '/market-replay'
-      preLoaderRoute: typeof MarketReplayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news': {
-      id: '/news'
-      path: '/news'
-      fullPath: '/news'
-      preLoaderRoute: typeof NewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/option-strategy': {
-      id: '/option-strategy'
-      path: '/option-strategy'
-      fullPath: '/option-strategy'
-      preLoaderRoute: typeof OptionStrategyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/options-analytics': {
-      id: '/options-analytics'
-      path: '/options-analytics'
-      fullPath: '/options-analytics'
-      preLoaderRoute: typeof OptionsAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/options-chain': {
-      id: '/options-chain'
-      path: '/options-chain'
-      fullPath: '/options-chain'
-      preLoaderRoute: typeof OptionsChainRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/release-notes': {
-      id: '/release-notes'
-      path: '/release-notes'
-      fullPath: '/release-notes'
-      preLoaderRoute: typeof ReleaseNotesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/risk': {
-      id: '/risk'
-      path: '/risk'
-      fullPath: '/risk'
-      preLoaderRoute: typeof RiskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signal-accuracy': {
-      id: '/signal-accuracy'
-      path: '/signal-accuracy'
-      fullPath: '/signal-accuracy'
-      preLoaderRoute: typeof SignalAccuracyRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/status': {
@@ -1181,158 +999,193 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
+    '/signal-accuracy': {
+      id: '/signal-accuracy'
+      path: '/signal-accuracy'
+      fullPath: '/signal-accuracy'
+      preLoaderRoute: typeof SignalAccuracyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ai-market-assistant': {
-      id: '/_authenticated/ai-market-assistant'
-      path: '/ai-market-assistant'
-      fullPath: '/ai-market-assistant'
-      preLoaderRoute: typeof AuthenticatedAiMarketAssistantRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/alerts': {
-      id: '/_authenticated/alerts'
-      path: '/alerts'
-      fullPath: '/alerts'
-      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/backtest-lab': {
-      id: '/_authenticated/backtest-lab'
-      path: '/backtest-lab'
-      fullPath: '/backtest-lab'
-      preLoaderRoute: typeof AuthenticatedBacktestLabRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/billing': {
-      id: '/_authenticated/billing'
-      path: '/billing'
-      fullPath: '/billing'
-      preLoaderRoute: typeof AuthenticatedBillingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institutional-flow': {
-      id: '/_authenticated/institutional-flow'
-      path: '/institutional-flow'
-      fullPath: '/institutional-flow'
-      preLoaderRoute: typeof AuthenticatedInstitutionalFlowRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institutional-intelligence': {
-      id: '/_authenticated/institutional-intelligence'
-      path: '/institutional-intelligence'
-      fullPath: '/institutional-intelligence'
-      preLoaderRoute: typeof AuthenticatedInstitutionalIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/license': {
-      id: '/_authenticated/license'
-      path: '/license'
-      fullPath: '/license'
-      preLoaderRoute: typeof AuthenticatedLicenseRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/live-option-terminal': {
-      id: '/_authenticated/live-option-terminal'
-      path: '/live-option-terminal'
-      fullPath: '/live-option-terminal'
-      preLoaderRoute: typeof AuthenticatedLiveOptionTerminalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/multi-asset-intelligence': {
-      id: '/_authenticated/multi-asset-intelligence'
-      path: '/multi-asset-intelligence'
-      fullPath: '/multi-asset-intelligence'
-      preLoaderRoute: typeof AuthenticatedMultiAssetIntelligenceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/notifications': {
-      id: '/_authenticated/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/payment-status': {
-      id: '/_authenticated/payment-status'
-      path: '/payment-status'
-      fullPath: '/payment-status'
-      preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/referrals': {
-      id: '/_authenticated/referrals'
-      path: '/referrals'
-      fullPath: '/referrals'
-      preLoaderRoute: typeof AuthenticatedReferralsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/research-lab': {
-      id: '/_authenticated/research-lab'
-      path: '/research-lab'
-      fullPath: '/research-lab'
-      preLoaderRoute: typeof AuthenticatedResearchLabRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/signal-history': {
-      id: '/_authenticated/signal-history'
-      path: '/signal-history'
-      fullPath: '/signal-history'
-      preLoaderRoute: typeof AuthenticatedSignalHistoryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/strategy-analytics': {
-      id: '/_authenticated/strategy-analytics'
-      path: '/strategy-analytics'
-      fullPath: '/strategy-analytics'
-      preLoaderRoute: typeof AuthenticatedStrategyAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/telegram-log': {
-      id: '/_authenticated/telegram-log'
-      path: '/telegram-log'
-      fullPath: '/telegram-log'
-      preLoaderRoute: typeof AuthenticatedTelegramLogRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/crypto/$pair': {
-      id: '/crypto/$pair'
-      path: '/$pair'
-      fullPath: '/crypto/$pair'
-      preLoaderRoute: typeof CryptoPairRouteImport
-      parentRoute: typeof CryptoRoute
-    }
-    '/dev/astro-audit': {
-      id: '/dev/astro-audit'
-      path: '/dev/astro-audit'
-      fullPath: '/dev/astro-audit'
-      preLoaderRoute: typeof DevAstroAuditRouteImport
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/astro-fixture-capture': {
-      id: '/dev/astro-fixture-capture'
-      path: '/dev/astro-fixture-capture'
-      fullPath: '/dev/astro-fixture-capture'
-      preLoaderRoute: typeof DevAstroFixtureCaptureRouteImport
+    '/release-notes': {
+      id: '/release-notes'
+      path: '/release-notes'
+      fullPath: '/release-notes'
+      preLoaderRoute: typeof ReleaseNotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/options-chain': {
+      id: '/options-chain'
+      path: '/options-chain'
+      fullPath: '/options-chain'
+      preLoaderRoute: typeof OptionsChainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/options-analytics': {
+      id: '/options-analytics'
+      path: '/options-analytics'
+      fullPath: '/options-analytics'
+      preLoaderRoute: typeof OptionsAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/option-strategy': {
+      id: '/option-strategy'
+      path: '/option-strategy'
+      fullPath: '/option-strategy'
+      preLoaderRoute: typeof OptionStrategyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market-replay': {
+      id: '/market-replay'
+      path: '/market-replay'
+      fullPath: '/market-replay'
+      preLoaderRoute: typeof MarketReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market-breadth': {
+      id: '/market-breadth'
+      path: '/market-breadth'
+      fullPath: '/market-breadth'
+      preLoaderRoute: typeof MarketBreadthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-terminal': {
+      id: '/live-terminal'
+      path: '/live-terminal'
+      fullPath: '/live-terminal'
+      preLoaderRoute: typeof LiveTerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-market-terminal': {
+      id: '/live-market-terminal'
+      path: '/live-market-terminal'
+      fullPath: '/live-market-terminal'
+      preLoaderRoute: typeof LiveMarketTerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-levels': {
+      id: '/live-levels'
+      path: '/live-levels'
+      fullPath: '/live-levels'
+      preLoaderRoute: typeof LiveLevelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-chart': {
+      id: '/live-chart'
+      path: '/live-chart'
+      fullPath: '/live-chart'
+      preLoaderRoute: typeof LiveChartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gann-gap-outlook': {
+      id: '/gann-gap-outlook'
+      path: '/gann-gap-outlook'
+      fullPath: '/gann-gap-outlook'
+      preLoaderRoute: typeof GannGapOutlookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decision': {
+      id: '/decision'
+      path: '/decision'
+      fullPath: '/decision'
+      preLoaderRoute: typeof DecisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crypto': {
+      id: '/crypto'
+      path: '/crypto'
+      fullPath: '/crypto'
+      preLoaderRoute: typeof CryptoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/combined-pcr': {
+      id: '/combined-pcr'
+      path: '/combined-pcr'
+      fullPath: '/combined-pcr'
+      preLoaderRoute: typeof CombinedPcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/broker': {
+      id: '/broker'
+      path: '/broker'
+      fullPath: '/broker'
+      preLoaderRoute: typeof BrokerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/backtest': {
+      id: '/backtest'
+      path: '/backtest'
+      fullPath: '/backtest'
+      preLoaderRoute: typeof BacktestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/astro': {
+      id: '/astro'
+      path: '/astro'
+      fullPath: '/astro'
+      preLoaderRoute: typeof AstroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/absolute-intraday-validation': {
+      id: '/absolute-intraday-validation'
+      path: '/absolute-intraday-validation'
+      fullPath: '/absolute-intraday-validation'
+      preLoaderRoute: typeof AbsoluteIntradayValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/absolute-intraday': {
+      id: '/absolute-intraday'
+      path: '/absolute-intraday'
+      fullPath: '/absolute-intraday'
+      preLoaderRoute: typeof AbsoluteIntradayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/diagnostics': {
@@ -1342,130 +1195,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevDiagnosticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/alerts': {
-      id: '/_authenticated/admin/alerts'
-      path: '/admin/alerts'
-      fullPath: '/admin/alerts'
-      preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
+    '/dev/astro-fixture-capture': {
+      id: '/dev/astro-fixture-capture'
+      path: '/dev/astro-fixture-capture'
+      fullPath: '/dev/astro-fixture-capture'
+      preLoaderRoute: typeof DevAstroFixtureCaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/astro-audit': {
+      id: '/dev/astro-audit'
+      path: '/dev/astro-audit'
+      fullPath: '/dev/astro-audit'
+      preLoaderRoute: typeof DevAstroAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crypto/$pair': {
+      id: '/crypto/$pair'
+      path: '/$pair'
+      fullPath: '/crypto/$pair'
+      preLoaderRoute: typeof CryptoPairRouteImport
+      parentRoute: typeof CryptoRoute
+    }
+    '/_authenticated/telegram-log': {
+      id: '/_authenticated/telegram-log'
+      path: '/telegram-log'
+      fullPath: '/telegram-log'
+      preLoaderRoute: typeof AuthenticatedTelegramLogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/beta-readiness': {
-      id: '/_authenticated/admin/beta-readiness'
-      path: '/admin/beta-readiness'
-      fullPath: '/admin/beta-readiness'
-      preLoaderRoute: typeof AuthenticatedAdminBetaReadinessRouteImport
+    '/_authenticated/strategy-analytics': {
+      id: '/_authenticated/strategy-analytics'
+      path: '/strategy-analytics'
+      fullPath: '/strategy-analytics'
+      preLoaderRoute: typeof AuthenticatedStrategyAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/coindcx': {
-      id: '/_authenticated/admin/coindcx'
-      path: '/admin/coindcx'
-      fullPath: '/admin/coindcx'
-      preLoaderRoute: typeof AuthenticatedAdminCoindcxRouteImport
+    '/_authenticated/signal-history': {
+      id: '/_authenticated/signal-history'
+      path: '/signal-history'
+      fullPath: '/signal-history'
+      preLoaderRoute: typeof AuthenticatedSignalHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/gann-gap': {
-      id: '/_authenticated/admin/gann-gap'
-      path: '/admin/gann-gap'
-      fullPath: '/admin/gann-gap'
-      preLoaderRoute: typeof AuthenticatedAdminGannGapRouteImport
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/institutional-flow': {
-      id: '/_authenticated/admin/institutional-flow'
-      path: '/admin/institutional-flow'
-      fullPath: '/admin/institutional-flow'
-      preLoaderRoute: typeof AuthenticatedAdminInstitutionalFlowRouteImport
+    '/_authenticated/research-lab': {
+      id: '/_authenticated/research-lab'
+      path: '/research-lab'
+      fullPath: '/research-lab'
+      preLoaderRoute: typeof AuthenticatedResearchLabRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/launch-readiness': {
-      id: '/_authenticated/admin/launch-readiness'
-      path: '/admin/launch-readiness'
-      fullPath: '/admin/launch-readiness'
-      preLoaderRoute: typeof AuthenticatedAdminLaunchReadinessRouteImport
+    '/_authenticated/referrals': {
+      id: '/_authenticated/referrals'
+      path: '/referrals'
+      fullPath: '/referrals'
+      preLoaderRoute: typeof AuthenticatedReferralsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/payments': {
-      id: '/_authenticated/admin/payments'
-      path: '/admin/payments'
-      fullPath: '/admin/payments'
-      preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/providers': {
-      id: '/_authenticated/admin/providers'
-      path: '/admin/providers'
-      fullPath: '/admin/providers'
-      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+    '/_authenticated/payment-status': {
+      id: '/_authenticated/payment-status'
+      path: '/payment-status'
+      fullPath: '/payment-status'
+      preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/readiness': {
-      id: '/_authenticated/admin/readiness'
-      path: '/admin/readiness'
-      fullPath: '/admin/readiness'
-      preLoaderRoute: typeof AuthenticatedAdminReadinessRouteImport
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/referrals': {
-      id: '/_authenticated/admin/referrals'
-      path: '/admin/referrals'
-      fullPath: '/admin/referrals'
-      preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
+    '/_authenticated/multi-asset-intelligence': {
+      id: '/_authenticated/multi-asset-intelligence'
+      path: '/multi-asset-intelligence'
+      fullPath: '/multi-asset-intelligence'
+      preLoaderRoute: typeof AuthenticatedMultiAssetIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/research-lab': {
-      id: '/_authenticated/admin/research-lab'
-      path: '/admin/research-lab'
-      fullPath: '/admin/research-lab'
-      preLoaderRoute: typeof AuthenticatedAdminResearchLabRouteImport
+    '/_authenticated/live-option-terminal': {
+      id: '/_authenticated/live-option-terminal'
+      path: '/live-option-terminal'
+      fullPath: '/live-option-terminal'
+      preLoaderRoute: typeof AuthenticatedLiveOptionTerminalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/staging-validation': {
-      id: '/_authenticated/admin/staging-validation'
-      path: '/admin/staging-validation'
-      fullPath: '/admin/staging-validation'
-      preLoaderRoute: typeof AuthenticatedAdminStagingValidationRouteImport
+    '/_authenticated/license': {
+      id: '/_authenticated/license'
+      path: '/license'
+      fullPath: '/license'
+      preLoaderRoute: typeof AuthenticatedLicenseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/system-status': {
-      id: '/_authenticated/admin/system-status'
-      path: '/admin/system-status'
-      fullPath: '/admin/system-status'
-      preLoaderRoute: typeof AuthenticatedAdminSystemStatusRouteImport
+    '/_authenticated/institutional-intelligence': {
+      id: '/_authenticated/institutional-intelligence'
+      path: '/institutional-intelligence'
+      fullPath: '/institutional-intelligence'
+      preLoaderRoute: typeof AuthenticatedInstitutionalIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/tradingview': {
-      id: '/_authenticated/admin/tradingview'
-      path: '/admin/tradingview'
-      fullPath: '/admin/tradingview'
-      preLoaderRoute: typeof AuthenticatedAdminTradingviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/widgets': {
-      id: '/_authenticated/admin/widgets'
-      path: '/admin/widgets'
-      fullPath: '/admin/widgets'
-      preLoaderRoute: typeof AuthenticatedAdminWidgetsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/research-lab/alerts': {
-      id: '/_authenticated/research-lab/alerts'
-      path: '/alerts'
-      fullPath: '/research-lab/alerts'
-      preLoaderRoute: typeof AuthenticatedResearchLabAlertsRouteImport
-      parentRoute: typeof AuthenticatedResearchLabRoute
-    }
-    '/_authenticated/research-lab/gann-gap': {
-      id: '/_authenticated/research-lab/gann-gap'
-      path: '/gann-gap'
-      fullPath: '/research-lab/gann-gap'
-      preLoaderRoute: typeof AuthenticatedResearchLabGannGapRouteImport
-      parentRoute: typeof AuthenticatedResearchLabRoute
-    }
-    '/_authenticated/research-lab/institutional-flow': {
-      id: '/_authenticated/research-lab/institutional-flow'
+    '/_authenticated/institutional-flow': {
+      id: '/_authenticated/institutional-flow'
       path: '/institutional-flow'
-      fullPath: '/research-lab/institutional-flow'
-      preLoaderRoute: typeof AuthenticatedResearchLabInstitutionalFlowRouteImport
+      fullPath: '/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedInstitutionalFlowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/backtest-lab': {
+      id: '/_authenticated/backtest-lab'
+      path: '/backtest-lab'
+      fullPath: '/backtest-lab'
+      preLoaderRoute: typeof AuthenticatedBacktestLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/alerts': {
+      id: '/_authenticated/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-market-assistant': {
+      id: '/_authenticated/ai-market-assistant'
+      path: '/ai-market-assistant'
+      fullPath: '/ai-market-assistant'
+      preLoaderRoute: typeof AuthenticatedAiMarketAssistantRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/research-lab/signals': {
+      id: '/_authenticated/research-lab/signals'
+      path: '/signals'
+      fullPath: '/research-lab/signals'
+      preLoaderRoute: typeof AuthenticatedResearchLabSignalsRouteImport
       parentRoute: typeof AuthenticatedResearchLabRoute
     }
     '/_authenticated/research-lab/runs': {
@@ -1475,19 +1356,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResearchLabRunsRouteImport
       parentRoute: typeof AuthenticatedResearchLabRoute
     }
-    '/_authenticated/research-lab/signals': {
-      id: '/_authenticated/research-lab/signals'
-      path: '/signals'
-      fullPath: '/research-lab/signals'
-      preLoaderRoute: typeof AuthenticatedResearchLabSignalsRouteImport
+    '/_authenticated/research-lab/institutional-flow': {
+      id: '/_authenticated/research-lab/institutional-flow'
+      path: '/institutional-flow'
+      fullPath: '/research-lab/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedResearchLabInstitutionalFlowRouteImport
       parentRoute: typeof AuthenticatedResearchLabRoute
     }
-    '/_authenticated/research-lab/runs/$runId': {
-      id: '/_authenticated/research-lab/runs/$runId'
-      path: '/$runId'
-      fullPath: '/research-lab/runs/$runId'
-      preLoaderRoute: typeof AuthenticatedResearchLabRunsRunIdRouteImport
-      parentRoute: typeof AuthenticatedResearchLabRunsRoute
+    '/_authenticated/research-lab/gann-gap': {
+      id: '/_authenticated/research-lab/gann-gap'
+      path: '/gann-gap'
+      fullPath: '/research-lab/gann-gap'
+      preLoaderRoute: typeof AuthenticatedResearchLabGannGapRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
+    '/_authenticated/research-lab/alerts': {
+      id: '/_authenticated/research-lab/alerts'
+      path: '/alerts'
+      fullPath: '/research-lab/alerts'
+      preLoaderRoute: typeof AuthenticatedResearchLabAlertsRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRoute
+    }
+    '/_authenticated/admin/widgets': {
+      id: '/_authenticated/admin/widgets'
+      path: '/admin/widgets'
+      fullPath: '/admin/widgets'
+      preLoaderRoute: typeof AuthenticatedAdminWidgetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/tradingview': {
+      id: '/_authenticated/admin/tradingview'
+      path: '/admin/tradingview'
+      fullPath: '/admin/tradingview'
+      preLoaderRoute: typeof AuthenticatedAdminTradingviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/system-status': {
+      id: '/_authenticated/admin/system-status'
+      path: '/admin/system-status'
+      fullPath: '/admin/system-status'
+      preLoaderRoute: typeof AuthenticatedAdminSystemStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/staging-validation': {
+      id: '/_authenticated/admin/staging-validation'
+      path: '/admin/staging-validation'
+      fullPath: '/admin/staging-validation'
+      preLoaderRoute: typeof AuthenticatedAdminStagingValidationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/research-lab': {
+      id: '/_authenticated/admin/research-lab'
+      path: '/admin/research-lab'
+      fullPath: '/admin/research-lab'
+      preLoaderRoute: typeof AuthenticatedAdminResearchLabRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/referrals': {
+      id: '/_authenticated/admin/referrals'
+      path: '/admin/referrals'
+      fullPath: '/admin/referrals'
+      preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/readiness': {
+      id: '/_authenticated/admin/readiness'
+      path: '/admin/readiness'
+      fullPath: '/admin/readiness'
+      preLoaderRoute: typeof AuthenticatedAdminReadinessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/providers': {
+      id: '/_authenticated/admin/providers'
+      path: '/admin/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/payments': {
+      id: '/_authenticated/admin/payments'
+      path: '/admin/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/launch-readiness': {
+      id: '/_authenticated/admin/launch-readiness'
+      path: '/admin/launch-readiness'
+      fullPath: '/admin/launch-readiness'
+      preLoaderRoute: typeof AuthenticatedAdminLaunchReadinessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/institutional-flow': {
+      id: '/_authenticated/admin/institutional-flow'
+      path: '/admin/institutional-flow'
+      fullPath: '/admin/institutional-flow'
+      preLoaderRoute: typeof AuthenticatedAdminInstitutionalFlowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/gann-gap': {
+      id: '/_authenticated/admin/gann-gap'
+      path: '/admin/gann-gap'
+      fullPath: '/admin/gann-gap'
+      preLoaderRoute: typeof AuthenticatedAdminGannGapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/coindcx': {
+      id: '/_authenticated/admin/coindcx'
+      path: '/admin/coindcx'
+      fullPath: '/admin/coindcx'
+      preLoaderRoute: typeof AuthenticatedAdminCoindcxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/beta-readiness': {
+      id: '/_authenticated/admin/beta-readiness'
+      path: '/admin/beta-readiness'
+      fullPath: '/admin/beta-readiness'
+      preLoaderRoute: typeof AuthenticatedAdminBetaReadinessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/alerts': {
+      id: '/_authenticated/admin/alerts'
+      path: '/admin/alerts'
+      fullPath: '/admin/alerts'
+      preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/webhooks/razorpay': {
+      id: '/api/public/webhooks/razorpay'
+      path: '/api/public/webhooks/razorpay'
+      fullPath: '/api/public/webhooks/razorpay'
+      preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/morning-brief': {
       id: '/api/public/hooks/morning-brief'
@@ -1496,12 +1496,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMorningBriefRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/webhooks/razorpay': {
-      id: '/api/public/webhooks/razorpay'
-      path: '/api/public/webhooks/razorpay'
-      fullPath: '/api/public/webhooks/razorpay'
-      preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/research-lab/runs/$runId': {
+      id: '/_authenticated/research-lab/runs/$runId'
+      path: '/$runId'
+      fullPath: '/research-lab/runs/$runId'
+      preLoaderRoute: typeof AuthenticatedResearchLabRunsRunIdRouteImport
+      parentRoute: typeof AuthenticatedResearchLabRunsRoute
     }
   }
 }
@@ -1675,3 +1675,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -34,6 +34,12 @@ const TIMEFRAMES = [
   { label: "1D", ms: 86_400_000 },
 ] as const;
 
+const BASE_PRICES: Record<string, number> = {
+  NIFTY50: 25000,
+  BANKNIFTY: 52000,
+  FINNIFTY: 22000,
+};
+
 const levelsQuery = () =>
   queryOptions({
     queryKey: ["live-levels"],
@@ -60,6 +66,26 @@ interface ChartCandle {
   readonly x: number;
   readonly y: readonly [number, number, number, number];
   readonly volume: number | null;
+}
+
+function generateMockCandles(symbolKey: string, count = 30): readonly ChartCandle[] {
+  const base = BASE_PRICES[symbolKey] ?? 25000;
+  const now = Date.now();
+  const intervalMs = 60_000;
+  const candles: ChartCandle[] = [];
+  let price = base;
+  for (let i = count - 1; i >= 0; i--) {
+    const time = now - i * intervalMs;
+    const open = price;
+    const change = (Math.random() - 0.5) * base * 0.003;
+    const close = open + change;
+    const high = Math.max(open, close) + Math.random() * base * 0.001;
+    const low = Math.min(open, close) - Math.random() * base * 0.001;
+    const volume = Math.floor(Math.random() * 100000) + 10000;
+    candles.push({ x: time, y: [open, high, low, close], volume });
+    price = close;
+  }
+  return candles;
 }
 
 function LiveChartPage() {
@@ -123,8 +149,14 @@ function LiveChartPage() {
     return [...byTime.values()].sort((a, b) => a.x - b.x);
   }, [historical, sse.completedCandles, sse.currentCandle]);
 
+  const displayCandles = useMemo(() => {
+    if (chartData.length > 0) return chartData;
+    if (bootstrapStatus === "done") return generateMockCandles(symbol, 30);
+    return [];
+  }, [chartData, bootstrapStatus, symbol]);
+
   const candles: readonly IndicatorCandle[] = useMemo(() => {
-    return chartData.map((c) => ({
+    return displayCandles.map((c) => ({
       time: c.x,
       open: c.y[0],
       high: c.y[1],
@@ -132,7 +164,7 @@ function LiveChartPage() {
       close: c.y[3],
       volume: c.volume,
     }));
-  }, [chartData]);
+  }, [displayCandles]);
 
   const { indicatorResults, indicatorErrors } = useMemo(() => {
     if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as { indicatorId: string; message: string }[] };
@@ -209,20 +241,21 @@ function LiveChartPage() {
   }, [showAstroLevels, showGannLevels, showSquareRootLevels, liveLevels, symbol]);
 
   const chartSeries = useMemo(() => {
-    if (chartData.length === 0) return [];
+    const source = displayCandles.length > 0 ? displayCandles : chartData;
+    if (source.length === 0) return [];
     const series: any[] = [
-      { type: "candlestick", name: symbol, data: chartData.map((c) => ({ x: c.x, y: c.y })) },
+      { type: "candlestick", name: symbol, data: source.map((c) => ({ x: c.x, y: c.y })) },
     ];
     if (showVolume) {
       series.push({
         type: "bar",
         name: "Volume",
-        data: chartData.map((c) => ({ x: c.x, y: c.volume ?? 0 })),
+        data: source.map((c) => ({ x: c.x, y: c.volume ?? 0 })),
       });
     }
     series.push(...overlaySeries.map((s) => ({ name: s.name, data: [...s.data], type: s.type })));
     return series;
-  }, [chartData, symbol, overlaySeries, showVolume]);
+  }, [displayCandles, chartData, symbol, overlaySeries, showVolume]);
 
   const chartOptions = useMemo(() => {
     const yaxis: any[] = [
@@ -242,6 +275,7 @@ function LiveChartPage() {
         toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
         animations: { enabled: false },
         crosshair: { show: true },
+        height: "100%",
       },
       title: { text: undefined },
       xaxis: { type: "datetime" as const, labels: { style: { colors: "#888", fontSize: "10px" } } },
@@ -274,7 +308,7 @@ function LiveChartPage() {
   }, [overlaySeries, astroAnnotations, showVolume]);
 
   const statusColor = sse.status?.freshness === "LIVE" ? "text-green-500" :
-    sse.status?.freshness === "STALE" ? "text-amber-500" : "text-muted-foreground";
+    sse.status?.freshness === "STALE" ? "text-amber-500" : "text-zinc-400";
   const statusLabel = sse.connected ? (sse.status?.freshness ?? "CONNECTING") : "OFFLINE";
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
@@ -282,154 +316,163 @@ function LiveChartPage() {
   const moonPhase = liveLevels?.moonPhase;
   const moonNakshatra = liveLevels?.moonNakshatra;
 
-  return (
-    <div className="eb-shell" style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <AppSidebar />
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, padding: 12, gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            {SYMBOLS.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setSymbol(s.key)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: 6,
-                  border: symbol === s.key ? "1px solid var(--eb-accent)" : "1px solid var(--eb-border)",
-                  background: symbol === s.key ? "var(--eb-accent)" : "transparent",
-                  color: symbol === s.key ? "#000" : "var(--eb-text)",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+  const topControls = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1">
+        {SYMBOLS.map((s) => (
+          <button
+            key={s.key}
+            onClick={() => setSymbol(s.key)}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+            style={{
+              border: symbol === s.key ? "1px solid #22c55e" : "1px solid #3f3f46",
+              background: symbol === s.key ? "#22c55e" : "transparent",
+              color: symbol === s.key ? "#000" : "#e4e4e7",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
-          <div style={{ display: "flex", gap: 4 }}>
-            {TIMEFRAMES.map((tf) => (
-              <button
-                key={tf.ms}
-                onClick={() => setIntervalMs(tf.ms)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 4,
-                  border: intervalMs === tf.ms ? "1px solid var(--eb-accent)" : "1px solid var(--eb-border)",
-                  background: intervalMs === tf.ms ? "var(--eb-accent)" : "transparent",
-                  color: intervalMs === tf.ms ? "#000" : "var(--eb-text)",
-                  cursor: "pointer",
-                  fontSize: 11,
-                  fontWeight: 500,
-                }}
-              >
-                {tf.label}
-              </button>
-            ))}
-          </div>
+      <div className="h-4 w-px bg-zinc-700" />
 
-          <div style={{ display: "flex", gap: 8, marginLeft: "auto", alignItems: "center" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--eb-text)" }}>
-              <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} />
-              Volume
-            </label>
+      <div className="flex items-center gap-1">
+        {TIMEFRAMES.map((tf) => (
+          <button
+            key={tf.ms}
+            onClick={() => setIntervalMs(tf.ms)}
+            className="px-2 py-1.5 rounded-md text-xs font-medium transition-colors"
+            style={{
+              border: intervalMs === tf.ms ? "1px solid #22c55e" : "1px solid #3f3f46",
+              background: intervalMs === tf.ms ? "#22c55e" : "transparent",
+              color: intervalMs === tf.ms ? "#000" : "#e4e4e7",
+            }}
+          >
+            {tf.label}
+          </button>
+        ))}
+      </div>
 
-            <select
-              value={showAstroLevels ? "astro" : showGannLevels ? "gann" : showSquareRootLevels ? "sqrt" : "none"}
-              onChange={(e) => {
-                const v = e.target.value;
-                setShowAstroLevels(v === "astro");
-                setShowGannLevels(v === "gann");
-                setShowSquareRootLevels(v === "sqrt");
-              }}
-              style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid var(--eb-border)", background: "var(--eb-card)", color: "var(--eb-text)", fontSize: 12 }}
-            >
-              <option value="none">Overlays: None</option>
-              <option value="astro">Astro Levels</option>
-              <option value="gann">Gann Square of 9</option>
-              <option value="sqrt">Square Root Levels</option>
-            </select>
+      <div className="h-4 w-px bg-zinc-700" />
 
-            <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--eb-text)" }}>
-              <input type="checkbox" checked={showMoonPhase} onChange={(e) => setShowMoonPhase(e.target.checked)} />
-              Moon Phase
-            </label>
+      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
+        <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} />
+        Volume
+      </label>
 
-            <select
-              value={activeIndicators.map((i) => `${i.id}:${i.enabled}`).join(",") || "none"}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "none") {
-                  setActiveIndicators([]);
-                  return;
-                }
-                const ids = val.split(",").map((part) => part.split(":")[0]);
-                setActiveIndicators(
-                  listIndicators()
-                    .filter((def) => ids.includes(def.id))
-                    .map((def) => ({ id: def.id as IndicatorId, enabled: true, params: Object.fromEntries(def.params.map((p) => [p.key, p.default])) })),
-                );
-              }}
-              style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid var(--eb-border)", background: "var(--eb-card)", color: "var(--eb-text)", fontSize: 12 }}
-            >
-              <option value="none">Indicators: None</option>
-              {listIndicators().map((def) => (
-                <option key={def.id} value={`${def.id}:1`}>
-                  {def.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <select
+        value={showAstroLevels ? "astro" : showGannLevels ? "gann" : showSquareRootLevels ? "sqrt" : "none"}
+        onChange={(e) => {
+          const v = e.target.value;
+          setShowAstroLevels(v === "astro");
+          setShowGannLevels(v === "gann");
+          setShowSquareRootLevels(v === "sqrt");
+        }}
+        className="px-2 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs"
+      >
+        <option value="none">Overlays: None</option>
+        <option value="astro">Astro Levels</option>
+        <option value="gann">Gann Square of 9</option>
+        <option value="sqrt">Square Root Levels</option>
+      </select>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: "var(--eb-muted)" }}>
-          <span className={`font-mono ${statusColor}`}>● {statusLabel}</span>
-          <span className="font-mono">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
-          {sse.status?.lastLtp != null && <span className="font-mono">LTP: {sse.status.lastLtp.toFixed(2)}</span>}
-          {market && (
-            <span className="font-mono">
-              {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg: {market.changePct.toFixed(2)}%
-            </span>
-          )}
-          {showMoonPhase && moonPhase && (
-            <span style={{ color: "var(--eb-accent)" }}>
-              {moonPhase.phaseName} | {moonNakshatra}
-            </span>
-          )}
-        </div>
+      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
+        <input type="checkbox" checked={showMoonPhase} onChange={(e) => setShowMoonPhase(e.target.checked)} />
+        Moon Phase
+      </label>
 
-        {indicatorErrors.length > 0 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {indicatorErrors.map((err) => (
-              <span key={err.indicatorId} className="text-xs text-amber-500 font-mono">
-                {err.indicatorId}: {err.message}
-              </span>
-            ))}
-          </div>
+      <select
+        value={activeIndicators.map((i) => `${i.id}:${i.enabled}`).join(",") || "none"}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val === "none") {
+            setActiveIndicators([]);
+            return;
+          }
+          const ids = val.split(",").map((part) => part.split(":")[0]);
+          setActiveIndicators(
+            listIndicators()
+              .filter((def) => ids.includes(def.id))
+              .map((def) => ({ id: def.id as IndicatorId, enabled: true, params: Object.fromEntries(def.params.map((p) => [p.key, p.default])) })),
+          );
+        }}
+        className="px-2 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs"
+      >
+        <option value="none">Indicators: None</option>
+        {listIndicators().map((def) => (
+          <option key={def.id} value={`${def.id}:1`}>
+            {def.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const bottomStatus = (
+    <div className="shrink-0 px-3 py-1.5 border-t border-zinc-800 text-xs flex items-center justify-between bg-[#0b0e14]">
+      <div className="flex items-center gap-3">
+        <span className={`font-mono ${statusColor}`}>● {statusLabel}</span>
+        <span className="font-mono text-zinc-400">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
+        {sse.status?.lastLtp != null && <span className="font-mono text-zinc-300">LTP: {sse.status.lastLtp.toFixed(2)}</span>}
+      </div>
+      <div className="flex items-center gap-3">
+        {market && (
+          <span className="font-mono text-zinc-400">
+            {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg: {market.changePct.toFixed(2)}%
+          </span>
         )}
+        {showMoonPhase && moonPhase && (
+          <span className="text-zinc-300">
+            {moonPhase.phaseName} | {moonNakshatra}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 
-        <div style={{ flex: 1, minHeight: 0, background: "var(--eb-bg)", borderRadius: 12, border: "1px solid var(--eb-border)", overflow: "hidden" }}>
+  return (
+    <div className="flex flex-col h-screen w-full bg-[#0d1117] text-white overflow-hidden">
+      <AppSidebar />
+      <div className="flex flex-col h-full w-full">
+        <div className="flex items-center justify-between p-3 border-b border-zinc-800 shrink-0">
+          {topControls}
+          {indicatorErrors.length > 0 && (
+            <div className="flex items-center gap-2 ml-2">
+              {indicatorErrors.map((err) => (
+                <span key={err.indicatorId} className="text-[10px] text-amber-500 font-mono">
+                  {err.indicatorId}: {err.message}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 w-full min-h-0 relative p-2">
           {bootstrapStatus === "loading" && (
-            <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--eb-muted)", fontSize: 14 }}>
-              Loading chart…
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="eb-shimmer px-4 py-2 rounded-md text-xs text-zinc-400">
+                Loading chart…
+              </div>
             </div>
           )}
           {bootstrapStatus === "error" && (
-            <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--eb-bear)", fontSize: 14 }}>
-              Chart error: {bootstrapError}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs text-red-400">Chart error: {bootstrapError}</span>
             </div>
           )}
           {bootstrapStatus === "done" && chartData.length === 0 && (
-            <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--eb-muted)", fontSize: 14 }}>
-              NO MARKET DATA
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs text-zinc-500">NO MARKET DATA — showing demo candles</span>
             </div>
           )}
-          {bootstrapStatus === "done" && chartData.length > 0 && (
-            <ApexChart type="candlestick" height={720} series={chartSeries} options={chartOptions} />
-          )}
+          <div className="w-full h-full">
+            <ApexChart type="candlestick" height="100%" series={chartSeries} options={chartOptions} />
+          </div>
         </div>
-      </main>
+
+        {bottomStatus}
+      </div>
     </div>
   );
 }
