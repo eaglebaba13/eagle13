@@ -3,7 +3,11 @@
  * composes a `ProductionReadinessReport`. Never emits raw secret values.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  assertAuth,
+  type AuthContext,
+} from "@/integrations/supabase/auth-middleware";
 import {
   auditEnvironment,
   CORE_REQUIRED_ENV,
@@ -63,7 +67,7 @@ function envPresence(): EnvPresence[] {
   ];
 }
 
-async function assertAdmin(supabase: any, userId: string) {
+async function assertAdmin(supabase: NonNullable<AuthContext["supabase"]>, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!data) throw new Error("forbidden");
 }
@@ -71,9 +75,10 @@ async function assertAdmin(supabase: any, userId: string) {
 export const getProductionReadinessReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProductionReadinessReport> => {
+    assertAuth(context);
     await assertAdmin(context.supabase, context.userId);
 
-    const environment: "development" | "staging" | "production" | "unknown" = ((): any => {
+    const environment: "development" | "staging" | "production" | "unknown" = (() => {
       const n = (process.env?.NODE_ENV ?? "").toLowerCase();
       if (n === "production") return "production";
       if (n === "staging") return "staging";

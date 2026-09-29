@@ -37,7 +37,9 @@ export const Route = createFileRoute("/_authenticated/alerts")({
       <div className="p-6 text-sm" style={{ color: isAuth ? "var(--eb-muted)" : "var(--eb-bear)" }}>
         {isAuth ? (
           <div>
-            <p className="font-medium mb-2" style={{ color: "var(--eb-text)" }}>Alert Center requires authentication</p>
+            <p className="font-medium mb-2" style={{ color: "var(--eb-text)" }}>
+              Alert Center requires authentication
+            </p>
             <p>Sign in to view your personalized research alerts.</p>
             <p className="mt-2 text-xs opacity-60">Research alerts are user-scoped for privacy.</p>
           </div>
@@ -82,10 +84,7 @@ function AlertCenterPage() {
   const events = useQuery({
     queryKey: ["smart-alerts", "events"],
     queryFn: async () => {
-      const bounded = await callBounded(
-        () => evFn({ data: { limit: 100 } }),
-        30_000,
-      );
+      const bounded = await callBounded(() => evFn({ data: { limit: 100 } }), 30_000);
       if (!bounded.ok || !bounded.data) {
         throw new Error(bounded.error ?? "Failed to load alerts");
       }

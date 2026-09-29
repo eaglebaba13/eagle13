@@ -94,7 +94,8 @@ export function calculateMacd(
   }
 
   // Build points
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
   for (let i = 0; i < candles.length; i++) {
     const m = macdLine[i] != null ? roundTo(macdLine[i]!, 4) : null;
     const s = signalLine[i] != null ? roundTo(signalLine[i]!, 4) : null;

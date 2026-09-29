@@ -171,4 +171,3 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
   });
 
 export type InstitutionalFlowResponse = Awaited<ReturnType<typeof getInstitutionalFlow>>;
-

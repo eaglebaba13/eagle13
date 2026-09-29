@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { RuntimeStatusBadge, sourceLabel } from "./RuntimeStatusBadge";
+import { RuntimeStatusBadge } from "./RuntimeStatusBadge";
+import { sourceLabel } from "./runtime-status.utils";
 import { RuntimeModuleCard } from "./RuntimeModuleCard";
 import { RuntimeContradictionPanel } from "./RuntimeContradictionPanel";
 import { RuntimeReadinessSummary } from "./RuntimeReadinessSummary";

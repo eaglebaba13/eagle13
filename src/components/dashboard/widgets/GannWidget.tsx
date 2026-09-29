@@ -1,5 +1,6 @@
-import { useDashboardData } from "../DashboardDataContext";
-import { Card, Row, fmt } from "./legacy-primitives";
+import { useDashboardData } from "../use-dashboard-data";
+import { Card, Row } from "./legacy-primitives";
+import { fmt } from "@/lib/format";
 import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function GannWidget() {

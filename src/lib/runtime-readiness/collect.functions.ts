@@ -12,8 +12,8 @@ function newRunId(): string {
   return `rt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
-  .handler(async (): Promise<RuntimeReadinessReport> => {
+export const getRuntimeReadinessReport = createServerFn({ method: "POST" }).handler(
+  async (): Promise<RuntimeReadinessReport> => {
     const now = new Date().toISOString();
     const { fetchCanonicalOptionChain } =
       await import("@/lib/option-chain/canonical-snapshot.server");
@@ -147,6 +147,7 @@ export const getRuntimeReadinessReport = createServerFn({ method: "POST" })
         };
       })(),
     });
-  });
+  },
+);
 
 export type RuntimeReadinessResult = Awaited<ReturnType<typeof getRuntimeReadinessReport>>;

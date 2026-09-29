@@ -481,7 +481,10 @@ function ConfidenceGauge({ decision }: { decision: Decision }) {
 
       {/* Evidence Coverage */}
       <div style={{ marginTop: "0.6rem", fontSize: "0.78rem", color: C.muted }}>
-        Evidence Coverage: <strong style={{ color: C.text }}>{presentCount}/{totalCount}</strong>
+        Evidence Coverage:{" "}
+        <strong style={{ color: C.text }}>
+          {presentCount}/{totalCount}
+        </strong>
         {" modules available"}
         {hasMissing && (
           <span style={{ color: C.gold }}>

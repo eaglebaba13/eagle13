@@ -154,11 +154,10 @@ function round4(n: number): number {
 function fnv1a(input: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < input.length; i++) {
-    // eslint-disable-next-line no-bitwise
     h ^= input.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
-  // eslint-disable-next-line no-bitwise
+
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 

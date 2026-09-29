@@ -4,13 +4,13 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
 import { computeLevels } from "@/lib/levels";
-import { prefetchInsights } from "@/components/InsightsSection";
+import { prefetchInsights } from "@/lib/insights.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NewsCenter } from "@/components/NewsPopup";
-import { newsQuery } from "@/components/NewsFeed";
-import { fiiDiiQuery } from "@/components/FiiDiiActivity";
-import { seasonalityQuery } from "@/components/Seasonality";
+import { newsQuery } from "@/lib/news.functions";
+import { fiiDiiQuery } from "@/lib/fiidii.functions";
+import { seasonalityQuery } from "@/lib/seasonality.functions";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
@@ -51,9 +51,7 @@ const FiiDiiActivity = lazy(() =>
 const Seasonality = lazy(() =>
   import("@/components/Seasonality").then((m) => ({ default: m.Seasonality })),
 );
-const NewsFeed = lazy(() =>
-  import("@/components/NewsFeed").then((m) => ({ default: m.NewsFeed })),
-);
+const NewsFeed = lazy(() => import("@/components/NewsFeed").then((m) => ({ default: m.NewsFeed })));
 const CustomizeDashboardDrawer = lazy(() =>
   import("@/components/dashboard/CustomizeDashboardDrawer").then((m) => ({
     default: m.CustomizeDashboardDrawer,
@@ -407,10 +405,7 @@ function Dashboard() {
         (typeof window !== "undefined" &&
           window.localStorage?.getItem("eb-diagnostics") === "on") ? (
           <Suspense fallback={null}>
-            <DashboardParityDiagnostic
-              widgetContext={{ plan: "free" }}
-              navContext={{}}
-            />
+            <DashboardParityDiagnostic widgetContext={{ plan: "free" }} navContext={{}} />
           </Suspense>
         ) : null}
 

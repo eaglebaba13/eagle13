@@ -606,8 +606,7 @@ function AstroDashboard() {
                 padding: "3px 8px",
                 borderRadius: 6,
                 fontWeight: 700,
-                background:
-                  session.isOpen ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.15)",
+                background: session.isOpen ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.15)",
                 color: session.isOpen ? C.green : C.muted,
               }}
             >

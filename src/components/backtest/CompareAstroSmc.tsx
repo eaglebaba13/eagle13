@@ -19,6 +19,7 @@ import {
 import { DEFAULT_SMC_EXECUTION } from "@/lib/backtest/adapters/smc-historical.adapter";
 import { INTRADAY_FORMULA_VERSIONS } from "@/lib/engine-version";
 import type { HistoricalBacktestResult, HistoricalTrade } from "@/lib/backtest/result";
+import { computeConflictBuckets } from "@/lib/backtest/astro-smc-conflicts";
 
 const C = {
   card: "var(--eb-card)",
@@ -31,45 +32,6 @@ const C = {
   muted: "var(--eb-muted)",
   bg: "var(--eb-bg)",
 };
-
-type ConflictBucket = {
-  astroBuySmcBuy: number;
-  astroSellSmcSell: number;
-  astroBuySmcSell: number;
-  astroSellSmcBuy: number;
-  astroOnly: number;
-  smcOnly: number;
-};
-
-export function computeConflictBuckets(
-  astroTradesByDate: Map<string, "BUY" | "SELL" | "WAIT">,
-  smcTradesByDate: Map<string, "BUY" | "SELL">,
-): ConflictBucket {
-  const b: ConflictBucket = {
-    astroBuySmcBuy: 0,
-    astroSellSmcSell: 0,
-    astroBuySmcSell: 0,
-    astroSellSmcBuy: 0,
-    astroOnly: 0,
-    smcOnly: 0,
-  };
-  const allDates = new Set([...astroTradesByDate.keys(), ...smcTradesByDate.keys()]);
-  for (const d of allDates) {
-    const a = astroTradesByDate.get(d);
-    const s = smcTradesByDate.get(d);
-    if (a && a !== "WAIT" && s) {
-      if (a === "BUY" && s === "BUY") b.astroBuySmcBuy++;
-      else if (a === "SELL" && s === "SELL") b.astroSellSmcSell++;
-      else if (a === "BUY" && s === "SELL") b.astroBuySmcSell++;
-      else if (a === "SELL" && s === "BUY") b.astroSellSmcBuy++;
-    } else if (a && a !== "WAIT" && !s) {
-      b.astroOnly++;
-    } else if (!a && s) {
-      b.smcOnly++;
-    }
-  }
-  return b;
-}
 
 function smcTradeMap(trades: readonly HistoricalTrade[]): Map<string, "BUY" | "SELL"> {
   const m = new Map<string, "BUY" | "SELL">();

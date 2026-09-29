@@ -432,8 +432,7 @@ function LiveTerminal() {
                 padding: "3px 8px",
                 borderRadius: 6,
                 fontWeight: 700,
-                background:
-                  session.isOpen ? "rgba(16,185,129,0.15)" : "rgba(148,163,184,0.15)",
+                background: session.isOpen ? "rgba(16,185,129,0.15)" : "rgba(148,163,184,0.15)",
                 color: session.isOpen ? C.green : C.muted,
               }}
             >
@@ -1520,5 +1519,12 @@ function LevelChart({ planets, price }: { planets: LivePlanet[]; price: number }
     [planets, price],
   );
 
-  return <ApexChart type="line" series={series} options={options as any} height={340} />;
+  return (
+    <ApexChart
+      type="line"
+      series={series}
+      options={options as import("apexcharts").ApexOptions}
+      height={340}
+    />
+  );
 }

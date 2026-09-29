@@ -1,3 +1,5 @@
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
+
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -720,7 +722,9 @@ function LiveMarketTerminal() {
         setNotes((n) => [{ id: key, text, kind: activePred.next }, ...n].slice(0, 6));
         if (sound && typeof window !== "undefined") {
           try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const ctx = new (
+              window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext
+            )();
             const o = ctx.createOscillator();
             const g = ctx.createGain();
             o.connect(g);
@@ -1118,7 +1122,11 @@ function LiveMarketTerminal() {
             ) : null}
             {/* Live candlestick chart — INDstocks NIFTY50 */}
             <div id="live-chart" style={{ marginTop: 16 }}>
-              <LiveMarketChart symbol="NIFTY50" intervalMs={60_000} height={isMobile ? 280 : isTablet ? 350 : 400} />
+              <LiveMarketChart
+                symbol="NIFTY50"
+                intervalMs={60_000}
+                height={isMobile ? 280 : isTablet ? 350 : 400}
+              />
             </div>
           </Panel>
 

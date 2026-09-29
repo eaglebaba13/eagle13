@@ -8,10 +8,10 @@ const iso = (offsetMs: number) => new Date(NOW - offsetMs).toISOString();
 describe("Phase 24E · dashboard health summary", () => {
   it("returns LIVE when all critical deps fresh", () => {
     const f = deriveDashboardFreshness({
-      nifty: { updatedAt: iso(2_000) },
-      banknifty: { updatedAt: iso(2_000) },
-      gold: { updatedAt: iso(2_000) },
-      silver: { updatedAt: iso(2_000) },
+      nifty: { marketState: "OPEN", updatedAt: iso(2_000) },
+      banknifty: { marketState: "OPEN", updatedAt: iso(2_000) },
+      gold: { marketState: "OPEN", updatedAt: iso(2_000) },
+      silver: { marketState: "OPEN", updatedAt: iso(2_000) },
       now: NOW,
     });
     const s = summarizeDashboardHealth({ freshness: f, providerStatus: "OK", lastSuccessAt: NOW });
@@ -20,10 +20,10 @@ describe("Phase 24E · dashboard health summary", () => {
 
   it("elevates to STALE when critical dep stale", () => {
     const f = deriveDashboardFreshness({
-      nifty: { updatedAt: iso(30 * 60_000) },
-      banknifty: { updatedAt: iso(30 * 60_000) },
-      gold: { updatedAt: iso(30 * 60_000) },
-      silver: { updatedAt: iso(30 * 60_000) },
+      nifty: { marketState: "OPEN", updatedAt: iso(30 * 60_000) },
+      banknifty: { marketState: "OPEN", updatedAt: iso(30 * 60_000) },
+      gold: { marketState: "OPEN", updatedAt: iso(30 * 60_000) },
+      silver: { marketState: "OPEN", updatedAt: iso(30 * 60_000) },
       now: NOW,
     });
     const s = summarizeDashboardHealth({ freshness: f, providerStatus: "OK" });

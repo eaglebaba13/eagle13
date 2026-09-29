@@ -1345,7 +1345,7 @@ function mapTypedError(e: unknown): string {
     if (raw.includes(code)) return friendly[code];
   }
   // Strip raw HTTP / JSON noise so the UI never surfaces server error bodies.
-  if (/^\s*[{\[]/.test(raw) || /HTTP\s*\d{3}|status\s*\d{3}|4\d\d|5\d\d/i.test(raw)) {
+  if (/^\s*[{[]/.test(raw) || /HTTP\s*\d{3}|status\s*\d{3}|4\d\d|5\d\d/i.test(raw)) {
     return "Backtest failed — please retry. If the problem persists, check diagnostics.";
   }
   return raw || "Backtest failed — please retry.";

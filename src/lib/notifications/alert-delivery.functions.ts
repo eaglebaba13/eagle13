@@ -28,6 +28,7 @@ export interface AlertDeliveryRow {
 export const listAlertDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly AlertDeliveryRow[]> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("smart_alert_delivery_attempts")
       .select(
@@ -75,4 +76,3 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
       retry_count: (attemptsByFp.get(r.fingerprint) ?? 1) - 1,
     }));
   });
-

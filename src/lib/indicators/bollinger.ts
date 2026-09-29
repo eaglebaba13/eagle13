@@ -31,7 +31,8 @@ export function calculateBollinger(
 ): IndicatorResult {
   const period = Math.max(2, Math.floor(params.period ?? 20));
   const mult = params.multiplier ?? 2;
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
 
   for (let i = 0; i < candles.length; i++) {
     if (i < period - 1) {

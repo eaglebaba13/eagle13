@@ -22,7 +22,8 @@ export function calculateRsi(
   params: Record<string, number>,
 ): IndicatorResult {
   const period = Math.max(1, Math.floor(params.period ?? 14));
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
 
   if (candles.length < period + 1) {
     // Not enough data for even one RSI value

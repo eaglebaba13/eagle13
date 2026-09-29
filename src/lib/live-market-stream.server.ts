@@ -18,7 +18,8 @@ export interface LiveStreamSnapshot {
   readonly instrument: string;
   readonly connectionState: string;
   readonly lastTick: MarketTick | null;
-  readonly currentCandle: import("./provider-foundation/indstocks/candle-aggregator").LiveCandle | null;
+  readonly currentCandle:
+    import("./provider-foundation/indstocks/candle-aggregator").LiveCandle | null;
   readonly completedCandleCount: number;
   readonly telemetry: import("./provider-foundation/types").ProviderTelemetry;
   readonly subscriptionActive: boolean;
@@ -206,8 +207,12 @@ class LiveMarketStreamManager {
 
       const candleCompleted = next.completed.length > prevCompletedCount;
       const connSnap = this.adapter?.connectionSnapshot();
-      const freshness = connSnap?.state === "CONNECTED" ? "LIVE" :
-        connSnap?.state === "RECONNECTING" ? "STALE" : "NO_DATA";
+      const freshness =
+        connSnap?.state === "CONNECTED"
+          ? "LIVE"
+          : connSnap?.state === "RECONNECTING"
+            ? "STALE"
+            : "NO_DATA";
       const connectionState = connSnap?.state ?? "DISCONNECTED";
       const lastTickIso = tick.timestamp;
       const lastLtp = tick.ltp;
@@ -243,7 +248,11 @@ class LiveMarketStreamManager {
           tickCount: null,
         };
         for (const listener of listeners) {
-          try { listener(completedEvent); } catch { /* listener error */ }
+          try {
+            listener(completedEvent);
+          } catch {
+            /* listener error */
+          }
         }
       }
 
@@ -271,7 +280,11 @@ class LiveMarketStreamManager {
           tickCount: next.current.tickCount,
         };
         for (const listener of listeners) {
-          try { listener(currentEvent); } catch { /* listener error */ }
+          try {
+            listener(currentEvent);
+          } catch {
+            /* listener error */
+          }
         }
       }
     }

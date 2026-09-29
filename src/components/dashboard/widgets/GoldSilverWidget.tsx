@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { useDashboardData } from "../DashboardDataContext";
+import { useDashboardData } from "../use-dashboard-data";
 import { DataFreshnessPill } from "../DataFreshnessPill";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 

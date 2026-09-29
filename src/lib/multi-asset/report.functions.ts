@@ -232,6 +232,7 @@ export async function runMorningBrief(opts?: {
 export const getLatestMorningReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("morning_reports")
       .select("*")
@@ -246,6 +247,7 @@ export const getLatestMorningReport = createServerFn({ method: "GET" })
 export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    assertAuth(context);
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -258,4 +260,3 @@ export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
 export function morningBriefDisclaimer(): string {
   return composeDisclaimerBlock();
 }
-

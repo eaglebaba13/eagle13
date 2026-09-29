@@ -22,7 +22,8 @@ export function calculateEma(
 ): IndicatorResult {
   const period = Math.max(1, Math.floor(params.period ?? 20));
   const multiplier = 2 / (period + 1);
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
   let ema: number | null = null;
   let seedSum = 0;
   let seedCount = 0;

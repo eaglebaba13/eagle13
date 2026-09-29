@@ -103,17 +103,18 @@ function CombinedPcrPage() {
     setError(null);
     try {
       const bounded = await callBounded(
-        () => fetchPcr({
-          data: {
-            atmMode,
-            weights,
-            useMock,
-            mockScenario: useMock ? mockScenario : undefined,
-            previousConfirmed: prevConf.current.confirmed,
-            previousPending: prevConf.current.pending,
-            previousCount: prevConf.current.count,
-          },
-        }),
+        () =>
+          fetchPcr({
+            data: {
+              atmMode,
+              weights,
+              useMock,
+              mockScenario: useMock ? mockScenario : undefined,
+              previousConfirmed: prevConf.current.confirmed,
+              previousPending: prevConf.current.pending,
+              previousCount: prevConf.current.count,
+            },
+          }),
         30_000,
       );
 

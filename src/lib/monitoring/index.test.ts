@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { MonitoringBuffer, summariseMonitoring } from "./index";
+import { MonitoringBuffer, summariseMonitoring, type MonitoringSampleKind } from "./index";
 
 describe("monitoring", () => {
   const now = 1_000_000;
-  const s = (kind: any, value: number, offset = 0) => ({ kind, value, at: now - offset });
+  const s = (kind: MonitoringSampleKind, value: number, offset = 0) => ({
+    kind,
+    value,
+    at: now - offset,
+  });
 
   it("computes latency percentiles and error rate", () => {
     const samples = [

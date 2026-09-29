@@ -4,22 +4,36 @@
 // Protected server functions MUST call assertAuth() to reject unauthenticated access.
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type JwtPayload } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-/**
- * Assert that the auth context contains a valid userId.
- * Call this at the beginning of every protected server function handler.
- * Throws if userId is null (unauthenticated).
- */
-export function assertAuth(context: { userId: string | null }): asserts context is { userId: string } {
-  if (!context.userId) {
+export interface AuthContext {
+  supabase: SupabaseClient<Database> | null;
+  userId: string | null;
+  claims: JwtPayload | null;
+}
+
+/** Narrow a verified authenticated context without changing nullable middleware behavior. */
+export function assertAuth(context: AuthContext): asserts context is AuthContext & {
+  userId: string;
+  supabase: SupabaseClient<Database>;
+  claims: JwtPayload;
+} {
+  if (!context.userId || !context.supabase || !context.claims) {
     throw new Error("Unauthorized: Authentication required");
   }
 }
 
+function authContext(
+  supabase: SupabaseClient<Database> | null,
+  userId: string | null,
+  claims: JwtPayload | null,
+): AuthContext {
+  return { supabase, userId, claims };
+}
+
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+  return value.startsWith("sb_publishable_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -56,14 +70,14 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     // Server functions that require auth should check for null context.
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return next({
-        context: { supabase: null, userId: null, claims: null },
+        context: authContext(null, null, null),
       });
     }
 
     // Supabase not configured — pass through
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       return next({
-        context: { supabase: null, userId: null, claims: null },
+        context: authContext(null, null, null),
       });
     }
 
@@ -71,7 +85,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     if (!token || token.split(".").length !== 3) {
       // Invalid token format — pass through (don't crash the request)
       return next({
-        context: { supabase: null, userId: null, claims: null },
+        context: authContext(null, null, null),
       });
     }
 
@@ -87,16 +101,12 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     if (!data?.claims?.sub) {
       // Invalid/expired token — pass through without auth
       return next({
-        context: { supabase, userId: null, claims: null },
+        context: authContext(supabase, null, null),
       });
     }
 
     return next({
-      context: {
-        supabase,
-        userId: data.claims.sub,
-        claims: data.claims,
-      },
+      context: authContext(supabase, data.claims.sub, data.claims),
     });
   },
 );

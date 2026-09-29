@@ -8,6 +8,8 @@ import {
   getGannGapHistoricalValidation,
   getGannGapPredictionHistory,
   getGannGapOutcomeHistory,
+  type PersistedPredictionRow,
+  type PersistedOutcomeRow,
 } from "@/lib/gann-gap/gann-gap.persistence.functions";
 import { classifySampleStatus } from "@/lib/gann-gap/analytics";
 import { GANN_GAP_DISCLAIMER, type GannGapOutlookLabel } from "@/lib/gann-gap/types";
@@ -57,13 +59,14 @@ function GannGapOutlookPage() {
   });
   const preds = useQuery({
     queryKey: ["gann-gap-pred-history"],
-    queryFn: () => fetchPredHist({ data: { limit: 30 } }).catch(() => [] as any[]),
+    queryFn: () =>
+      fetchPredHist({ data: { limit: 30 } }).catch(() => [] as PersistedPredictionRow[]),
     retry: false,
     staleTime: 5 * 60_000,
   });
   const outs = useQuery({
     queryKey: ["gann-gap-out-history"],
-    queryFn: () => fetchOutHist({ data: { limit: 30 } }).catch(() => [] as any[]),
+    queryFn: () => fetchOutHist({ data: { limit: 30 } }).catch(() => [] as PersistedOutcomeRow[]),
     retry: false,
     staleTime: 5 * 60_000,
   });
@@ -319,7 +322,7 @@ function GannGapOutlookPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {preds.data.map((p: any) => (
+                  {preds.data.map((p) => (
                     <tr key={p.predictionId} className="border-t border-border/40">
                       <td className="px-2 py-1">{p.tradingDate}</td>
                       <td className="px-2 py-1">{p.nextTradingDate ?? "—"}</td>
@@ -348,7 +351,7 @@ function GannGapOutlookPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {outs.data.map((o: any) => (
+                  {outs.data.map((o) => (
                     <tr key={o.id} className="border-t border-border/40">
                       <td className="px-2 py-1">{o.outcomeTradingDate}</td>
                       <td className="px-2 py-1 font-medium text-foreground">{o.actualOutcome}</td>

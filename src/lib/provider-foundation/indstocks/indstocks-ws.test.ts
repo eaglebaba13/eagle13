@@ -17,8 +17,19 @@ import { WS_OPEN, WS_CLOSED, WS_CONNECTING } from "./websocket-transport";
 
 // ────────────────────── Mock Transport ─────────────────────────────
 
-function createMockTransport(_config: WebSocketTransportConfig): WebSocketTransport {
-  const handlers: Record<string, Function[]> = {};
+interface MockWebSocketTransport extends WebSocketTransport {
+  _emitMessage(data: string): void;
+  _emitClose(code?: number): void;
+  _emitError(error: Error): void;
+}
+
+function createMockTransport(_config: WebSocketTransportConfig): MockWebSocketTransport {
+  const handlers: {
+    open?: Array<() => void>;
+    message?: Array<(data: string) => void>;
+    close?: Array<(code: number, reason: string) => void>;
+    error?: Array<(error: Error) => void>;
+  } = {};
   let rs = WS_CLOSED;
   return {
     get readyState() {
@@ -388,7 +399,7 @@ describe("indstocks ws protocol hardening", () => {
   });
 
   it("no application-level JSON ping is sent by transport", () => {
-    let sentMessages: string[] = [];
+    const sentMessages: string[] = [];
     const trackingFactory = (config: WebSocketTransportConfig) => {
       const mock = createMockTransport(config);
       const originalSend = mock.send.bind(mock);

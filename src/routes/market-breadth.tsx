@@ -133,14 +133,15 @@ function MarketBreadthPage() {
       const parsedVix = vix === "" ? null : Number(vix);
       const parsedPrev = previousVix === "" ? null : Number(previousVix);
       const bounded = await callBounded(
-        () => fetchGti({
-          data: {
-            mockScenario: scenario,
-            vix: Number.isFinite(parsedVix) ? parsedVix : null,
-            previousVix: Number.isFinite(parsedPrev) ? parsedPrev : null,
-            attachLive: true,
-          },
-        }),
+        () =>
+          fetchGti({
+            data: {
+              mockScenario: scenario,
+              vix: Number.isFinite(parsedVix) ? parsedVix : null,
+              previousVix: Number.isFinite(parsedPrev) ? parsedPrev : null,
+              attachLive: true,
+            },
+          }),
         30_000,
       );
 

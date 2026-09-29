@@ -1,5 +1,7 @@
-import { useDashboardData } from "../DashboardDataContext";
-import { Card, fmt, tdStyle, thStyle } from "./legacy-primitives";
+import { useDashboardData } from "../use-dashboard-data";
+import { Card } from "./legacy-primitives";
+import { fmt } from "@/lib/format";
+import { tdStyle, thStyle } from "./widget-styles";
 import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 
 export default function PivotWidget() {

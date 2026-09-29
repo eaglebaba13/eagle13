@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { UpstoxSmokeReport } from "./upstox-smoke.server";
 
 /**
@@ -25,6 +25,7 @@ export const testUpstoxProvider = createServerFn({ method: "GET" })
 
       let isAdmin: boolean | null = null;
       try {
+        assertAuth(context);
         const { data } = await context.supabase.rpc("has_role", {
           _user_id: context.userId,
           _role: "admin",

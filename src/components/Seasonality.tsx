@@ -1,15 +1,5 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { getSeasonality } from "@/lib/seasonality.functions";
-
-export const seasonalityQuery = () =>
-  queryOptions({
-    queryKey: ["seasonality"],
-    queryFn: () => getSeasonality(),
-    staleTime: 30 * 60_000,
-    gcTime: 60 * 60_000,
-    refetchInterval: 30 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { seasonalityQuery } from "@/lib/seasonality.functions";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 

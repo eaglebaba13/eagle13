@@ -5,6 +5,33 @@
 import type { WebSocketTransport, WebSocketTransportConfig } from "./websocket-transport";
 import { WS_OPEN, WS_CLOSED, WS_CONNECTING, WS_CLOSING } from "./websocket-transport";
 
+type WorkersSocket = Pick<
+  WebSocket,
+  "send" | "close" | "onopen" | "onmessage" | "onclose" | "onerror"
+> & {
+  accept(): void;
+};
+
+function isWorkersSocket(value: unknown): value is WorkersSocket {
+  if (!value || typeof value !== "object") return false;
+  return (
+    "accept" in value &&
+    typeof value.accept === "function" &&
+    "send" in value &&
+    typeof value.send === "function" &&
+    "close" in value &&
+    typeof value.close === "function" &&
+    "onopen" in value &&
+    (value.onopen === null || typeof value.onopen === "function") &&
+    "onmessage" in value &&
+    (value.onmessage === null || typeof value.onmessage === "function") &&
+    "onclose" in value &&
+    (value.onclose === null || typeof value.onclose === "function") &&
+    "onerror" in value &&
+    (value.onerror === null || typeof value.onerror === "function")
+  );
+}
+
 /**
  * Cloudflare Workers transport for connecting to external WebSocket servers.
  * Uses the Workers fetch API with Upgrade: websocket to support custom headers
@@ -15,7 +42,7 @@ import { WS_OPEN, WS_CLOSED, WS_CONNECTING, WS_CLOSING } from "./websocket-trans
  * response.webSocket.
  */
 export class WorkersWebSocketTransport implements WebSocketTransport {
-  private ws: WebSocket | null = null;
+  private ws: WorkersSocket | null = null;
   private _readyState: number = WS_CLOSED;
   private readonly url: string;
   private readonly headers: Record<string, string>;
@@ -61,8 +88,8 @@ export class WorkersWebSocketTransport implements WebSocketTransport {
       this.clearConnectionTimer();
 
       // In Cloudflare Workers, an upgraded response has status 101 and a webSocket property.
-      const webSocket = (response as unknown as { webSocket?: WebSocket }).webSocket;
-      if (!webSocket) {
+      const webSocket = "webSocket" in response ? response.webSocket : undefined;
+      if (!isWorkersSocket(webSocket)) {
         this._readyState = WS_CLOSED;
         this.emitError(new Error("WebSocket upgrade failed"));
         this.emitClose(4001, "upgrade failed");

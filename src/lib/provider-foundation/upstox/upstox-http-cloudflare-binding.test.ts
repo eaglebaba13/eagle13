@@ -16,10 +16,14 @@ describe("UpstoxHttpClient — Cloudflare `this` binding", () => {
   });
 
   it("invokes globalThis.fetch with globalThis as `this` (no Illegal invocation)", async () => {
-    let seenThis: unknown = "unset";
+    let invokedWithExpectedThis = false;
     // Emulate the Workers runtime check: throw when `this` is not globalThis.
-    const strictFetch = function (this: unknown, _url: string, _init?: RequestInit) {
-      seenThis = this;
+    const strictFetch: typeof fetch = function (
+      this: typeof globalThis,
+      _url: RequestInfo | URL,
+      _init?: RequestInit,
+    ) {
+      invokedWithExpectedThis = this === globalThis || this === undefined;
       if (this !== globalThis && this !== undefined) {
         throw new TypeError("Illegal invocation");
       }
@@ -29,7 +33,7 @@ describe("UpstoxHttpClient — Cloudflare `this` binding", () => {
           headers: { "content-type": "application/json" },
         }),
       );
-    } as unknown as typeof fetch;
+    };
     globalThis.fetch = strictFetch;
 
     const client = new UpstoxHttpClient({
@@ -44,6 +48,6 @@ describe("UpstoxHttpClient — Cloudflare `this` binding", () => {
 
     expect(res.ok).toBe(true);
     // Must be globalThis (or undefined via bind), never the client instance.
-    expect(seenThis === globalThis || seenThis === undefined).toBe(true);
+    expect(invokedWithExpectedThis).toBe(true);
   });
 });

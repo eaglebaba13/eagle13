@@ -6,6 +6,7 @@ import {
   newCorrelationId,
   newErrorId,
   newRequestId,
+  type LogEntry,
 } from "./index";
 
 describe("structured-logging", () => {
@@ -17,7 +18,7 @@ describe("structured-logging", () => {
   });
 
   it("logger emits entries with base + call context", () => {
-    const entries: any[] = [];
+    const entries: LogEntry[] = [];
     const log = new StructuredLogger({ correlationId: "cid_1" }, (e) => entries.push(e));
     log.info("hello", { k: 1 }, { requestId: "req_1" });
     expect(entries).toHaveLength(1);
@@ -28,7 +29,7 @@ describe("structured-logging", () => {
   });
 
   it("child inherits base context", () => {
-    const entries: any[] = [];
+    const entries: LogEntry[] = [];
     const root = new StructuredLogger({ correlationId: "c" }, (e) => entries.push(e));
     const child = root.child({ requestId: "r" });
     child.error("boom");

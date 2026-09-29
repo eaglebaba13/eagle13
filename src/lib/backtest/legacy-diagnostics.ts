@@ -31,7 +31,7 @@ export function warnLegacyHashQuirkIfApplicable(costs: CostModel): void {
   if (!hasNonZeroCosts(costs)) return;
   // Intentional console.debug — never console.error / never thrown / never
   // returned to the client. Filtered at the log tier.
-  // eslint-disable-next-line no-console
+
   console.debug(
     `[backtest] ${LEGACY_RUN_ID_HASH_QUIRK_CODE} — nested costs (${JSON.stringify(costs)}) do not fully participate in the legacy Run ID hash. Sign-Degree/Legacy output preserved as-is.`,
   );

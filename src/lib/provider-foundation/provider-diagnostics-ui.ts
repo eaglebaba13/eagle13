@@ -91,7 +91,7 @@ export function redactUiError(error: unknown): string {
   return raw
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
-    .replace(/UPSTOX_(API_KEY|API_SECRET|ACCESS_TOKEN)=[^\s"']+/gi, "UPSTOX_$1=[REDACTED]")
+    .replace(/([A-Z][A-Z0-9_]*_(?:API_KEY|API_SECRET|ACCESS_TOKEN))=[^\s"']+/gi, "$1=[REDACTED]")
     .slice(0, 240);
 }
 

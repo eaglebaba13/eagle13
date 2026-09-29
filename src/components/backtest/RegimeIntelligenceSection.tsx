@@ -63,7 +63,7 @@ export type RegimeIntelligenceSectionProps = {
 
 export default function RegimeIntelligenceSection(props: RegimeIntelligenceSectionProps) {
   const [selectedRegime, setSelectedRegime] = useState<MarketRegime>(props.regime ?? "UNKNOWN");
-  const evidence = props.evidence ?? [];
+  const evidence = useMemo(() => props.evidence ?? [], [props.evidence]);
 
   const rec: RegimeRecommendation | null = useMemo(() => {
     if (evidence.length === 0) return null;

@@ -7,7 +7,7 @@ import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-mi
 import type {
   BacktestRunReport,
   HistoricalCandle,
- MonteCarloSummary,
+  MonteCarloSummary,
   StrategyDefinition,
   WalkForwardSummary,
 } from "./types";

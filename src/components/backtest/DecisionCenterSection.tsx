@@ -174,11 +174,13 @@ function toInput(f: FormShape): DecisionEvidenceInput {
     minTrades: n(f.minTrades) ?? 50,
     minConfidence: n(f.minConf) ?? 0.55,
   };
+  const mutableInp: { -readonly [K in keyof DecisionEvidenceInput]: DecisionEvidenceInput[K] } =
+    inp;
   const wf_oos = n(f.wf_oos);
   const wf_stab = n(f.wf_stab);
   const wf_trades = n(f.wf_trades);
   if (f.wf_id && wf_oos !== null && wf_stab !== null && wf_trades !== null) {
-    (inp as any).walkForward = {
+    mutableInp.walkForward = {
       runId: f.wf_id,
       oosExpectancy: wf_oos,
       stabilityScore: wf_stab,
@@ -190,7 +192,7 @@ function toInput(f: FormShape): DecisionEvidenceInput {
   const mc_c = n(f.mc_cagr);
   const mc_r = n(f.mc_ruin);
   if (f.mc_id && mc_dd !== null && mc_c !== null && mc_r !== null) {
-    (inp as any).monteCarlo = {
+    mutableInp.monteCarlo = {
       runId: f.mc_id,
       worstDrawdownPct: mc_dd,
       medianCagr: mc_c,
@@ -199,17 +201,17 @@ function toInput(f: FormShape): DecisionEvidenceInput {
   }
   const rb_s = n(f.rb_score);
   if (f.rb_id && rb_s !== null)
-    (inp as any).robustness = { runId: f.rb_id, score: rb_s, verdict: f.rb_verdict };
+    mutableInp.robustness = { runId: f.rb_id, score: rb_s, verdict: f.rb_verdict };
   const sn_c = n(f.sn_cliff);
   const sn_p = n(f.sn_plat);
   if (f.sn_id && sn_c !== null && sn_p !== null)
-    (inp as any).sensitivity = { runId: f.sn_id, cliffScore: sn_c, plateauCoverage: sn_p };
+    mutableInp.sensitivity = { runId: f.sn_id, cliffScore: sn_c, plateauCoverage: sn_p };
   const op_c = n(f.op_conf);
   if (f.op_id && op_c !== null)
-    (inp as any).optimizer = { runId: f.op_id, confidence: op_c, selectedCandidate: f.op_cand };
+    mutableInp.optimizer = { runId: f.op_id, confidence: op_c, selectedCandidate: f.op_cand };
   const rv_r = n(f.rv_rel);
   if (f.rv_id && rv_r !== null)
-    (inp as any).recommendationValidator = {
+    mutableInp.recommendationValidator = {
       runId: f.rv_id,
       reliability: rv_r,
       verdict: f.rv_verdict,
@@ -217,11 +219,11 @@ function toInput(f: FormShape): DecisionEvidenceInput {
   const cx_c = n(f.cx_cons);
   const cx_a = n(f.cx_assets);
   if (f.cx_id && cx_c !== null && cx_a !== null)
-    (inp as any).crossAsset = { runId: f.cx_id, consistency: cx_c, assetsCovered: cx_a };
+    mutableInp.crossAsset = { runId: f.cx_id, consistency: cx_c, assetsCovered: cx_a };
   const pf_d = n(f.pf_dd);
   const pf_v = n(f.pf_div);
   if (f.pf_id && pf_d !== null && pf_v !== null)
-    (inp as any).portfolio = {
+    mutableInp.portfolio = {
       runId: f.pf_id,
       recommendation: f.pf_rec,
       expectedDrawdown: pf_d,
@@ -231,7 +233,7 @@ function toInput(f: FormShape): DecisionEvidenceInput {
   const sh_c = n(f.sh_cal);
   const sh_r = n(f.sh_res);
   if (f.sh_id && sh_a !== null && sh_c !== null && sh_r !== null)
-    (inp as any).shadow = {
+    mutableInp.shadow = {
       runId: f.sh_id,
       readiness: f.sh_ready,
       accuracy: sh_a,
@@ -242,19 +244,18 @@ function toInput(f: FormShape): DecisionEvidenceInput {
   const rc_p = n(f.rc_pf);
   const rc_c = n(f.rc_conf);
   if (f.rc_id && rc_w !== null && rc_p !== null && rc_c !== null)
-    (inp as any).recommendation = {
+    mutableInp.recommendation = {
       runId: f.rc_id,
       expectedWinRate: rc_w,
       expectedProfitFactor: rc_p,
       confidence: rc_c,
     };
   const rs_s = n(f.rs_stab);
-  if (f.rs_id && rs_s !== null)
-    (inp as any).researchStability = { runId: f.rs_id, stability: rs_s };
+  if (f.rs_id && rs_s !== null) mutableInp.researchStability = { runId: f.rs_id, stability: rs_s };
   const rg_c = n(f.rg_cov);
-  if (f.rg_id && rg_c !== null) (inp as any).regime = { runId: f.rg_id, coverage: rg_c };
+  if (f.rg_id && rg_c !== null) mutableInp.regime = { runId: f.rg_id, coverage: rg_c };
   if (f.dq_hash)
-    (inp as any).dataQuality = { ok: f.dq_ok, causalityOk: f.dq_causal, dataHash: f.dq_hash };
+    mutableInp.dataQuality = { ok: f.dq_ok, causalityOk: f.dq_causal, dataHash: f.dq_hash };
   return inp;
 }
 
@@ -596,7 +597,7 @@ export default function DecisionCenterSection() {
           <Select
             lbl="Verdict"
             value={f.rb_verdict}
-            onChange={(v) => set("rb_verdict", v as any)}
+            onChange={(v) => set("rb_verdict", v)}
             options={["ROBUST", "MARGINAL", "OVERFIT", "UNRELIABLE"]}
           />
         </Group>
@@ -619,7 +620,7 @@ export default function DecisionCenterSection() {
           <Select
             lbl="Verdict"
             value={f.rv_verdict}
-            onChange={(v) => set("rv_verdict", v as any)}
+            onChange={(v) => set("rv_verdict", v)}
             options={["RELIABLE", "MARGINAL", "UNRELIABLE"]}
           />
         </Group>
@@ -635,7 +636,7 @@ export default function DecisionCenterSection() {
           <Select
             lbl="Recommendation"
             value={f.pf_rec}
-            onChange={(v) => set("pf_rec", v as any)}
+            onChange={(v) => set("pf_rec", v)}
             options={["ACCEPT", "REVIEW", "REJECT"]}
           />
           <Field lbl="Expected DD" value={f.pf_dd} onChange={(v) => set("pf_dd", v)} />
@@ -647,7 +648,7 @@ export default function DecisionCenterSection() {
           <Select
             lbl="Readiness"
             value={f.sh_ready}
-            onChange={(v) => set("sh_ready", v as any)}
+            onChange={(v) => set("sh_ready", v)}
             options={[
               "READY_FOR_SCHEDULED_SHADOW",
               "READY_FOR_MANUAL_OBSERVATION",
@@ -748,21 +749,21 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Select({
+function Select<T extends string>({
   lbl,
   value,
   onChange,
   options,
 }: {
   lbl: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: readonly string[];
+  value: T;
+  onChange: (v: T) => void;
+  options: readonly T[];
 }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <span style={label}>{lbl}</span>
-      <select style={inputStyle} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select style={inputStyle} value={value} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => (
           <option key={o} value={o}>
             {o}

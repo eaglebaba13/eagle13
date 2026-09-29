@@ -1,5 +1,6 @@
-import { useDashboardData } from "../DashboardDataContext";
-import { Card, fmt } from "./legacy-primitives";
+import { useDashboardData } from "../use-dashboard-data";
+import { Card } from "./legacy-primitives";
+import { fmt } from "@/lib/format";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 
 export default function SafeZonesWidget() {

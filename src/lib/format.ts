@@ -16,3 +16,7 @@ export function inrPrice(n: number): string {
 export function usdLike(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
+
+/** Two-decimal Indian-grouped number used by dashboard widget cards. */
+export const fmt = (n: number) =>
+  n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -241,6 +241,7 @@ export const getMarketBreadthDiagnostics = createServerFn({ method: "GET" })
     try {
       let isAdmin = false;
       try {
+        assertAuth(context);
         const { data } = await context.supabase.rpc("has_role", {
           _user_id: context.userId,
           _role: "admin",
@@ -278,4 +279,3 @@ export const getMarketBreadthDiagnostics = createServerFn({ method: "GET" })
       };
     }
   });
-

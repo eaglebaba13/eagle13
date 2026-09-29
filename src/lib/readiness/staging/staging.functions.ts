@@ -3,7 +3,11 @@
  * report; a real staging harness injects probes and journey resolvers.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  assertAuth,
+  type AuthContext,
+} from "@/integrations/supabase/auth-middleware";
 import type { StagingValidationReport } from "./staging-validation-types";
 import { composeStagingReport } from "./staging-report";
 import { DEFAULT_ALLOWED_HOSTS, validateStagingConfig } from "./staging-config.server";
@@ -21,7 +25,7 @@ import {
 import { auditPerformance, DEFAULT_PERFORMANCE_BUDGETS } from "../performance-audit";
 import { stagingReleaseChecklist } from "./staging-release-checklist";
 
-async function assertAdmin(supabase: any, userId: string) {
+async function assertAdmin(supabase: NonNullable<AuthContext["supabase"]>, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!data) throw new Error("forbidden");
 }
@@ -29,6 +33,7 @@ async function assertAdmin(supabase: any, userId: string) {
 export const getStagingValidationReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StagingValidationReport> => {
+    assertAuth(context);
     await assertAdmin(context.supabase, context.userId);
 
     const baseUrl = process.env?.STAGING_BASE_URL ?? null;

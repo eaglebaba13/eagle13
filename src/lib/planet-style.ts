@@ -55,7 +55,9 @@ export const PLANET_STYLE: Record<string, PlanetVisual> = {
 };
 
 /** Returns the CSS custom-property style block for a planet orb. */
-export function orbStyle(planet: string): React.CSSProperties {
+export function orbStyle(
+  planet: string,
+): React.CSSProperties & Record<"--orb" | "--orb-glow", string> {
   const s = PLANET_STYLE[planet] ?? { orb: "#888", glow: "rgba(255,255,255,0.35)", line: "#888" };
-  return { ["--orb" as any]: s.orb, ["--orb-glow" as any]: s.glow };
+  return { "--orb": s.orb, "--orb-glow": s.glow };
 }

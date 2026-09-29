@@ -52,18 +52,18 @@ export function summariseFlow(i: SummaryInput): InstitutionalSummary {
   } else if (callDominant && pcrBear) {
     bias = "CALL_WRITERS_ACTIVE";
     rationale.push("Call writers dominate ΔOI and PCR confirms bearish positioning.");
-  } else if (putDominant) {
-    bias = "PUT_WRITERS_ACTIVE";
-    rationale.push("Put writers dominate ΔOI. PCR confirmation not aligned.");
-  } else if (callDominant) {
-    bias = "CALL_WRITERS_ACTIVE";
-    rationale.push("Call writers dominate ΔOI. PCR confirmation not aligned.");
   } else if (pcrBull && callDominant) {
     bias = "CONFLICT";
     rationale.push("PCR bullish but call writers active — conflicting evidence.");
   } else if (pcrBear && putDominant) {
     bias = "CONFLICT";
     rationale.push("PCR bearish but put writers active — conflicting evidence.");
+  } else if (putDominant) {
+    bias = "PUT_WRITERS_ACTIVE";
+    rationale.push("Put writers dominate ΔOI. PCR confirmation not aligned.");
+  } else if (callDominant) {
+    bias = "CALL_WRITERS_ACTIVE";
+    rationale.push("Call writers dominate ΔOI. PCR confirmation not aligned.");
   } else {
     bias = "BALANCED";
     rationale.push("Neither side dominates ΔOI within tolerance.");

@@ -95,8 +95,14 @@ describe("journey runner", () => {
   });
   it("planned journeys cover all required roles", () => {
     const roles = new Set(STAGING_JOURNEY_PLANS.map((p) => p.role));
-    for (const r of ["anon", "free", "pro", "professional", "admin"])
-      expect(roles.has(r as any)).toBe(true);
+    const requiredRoles: Array<(typeof STAGING_JOURNEY_PLANS)[number]["role"]> = [
+      "anon",
+      "free",
+      "pro",
+      "professional",
+      "admin",
+    ];
+    for (const role of requiredRoles) expect(roles.has(role)).toBe(true);
   });
   it("failure isolates the journey (stops on first FAIL)", () => {
     const j = runJourney(
