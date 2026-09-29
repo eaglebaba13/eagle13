@@ -17,6 +17,7 @@ import {
   validateIndicatorParams,
 } from "@/lib/indicators/chart-adapter";
 import type { IndicatorCandle, IndicatorResult } from "@/lib/indicators/types";
+import type { ApexOptions } from "apexcharts";
 import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 
 export interface LiveCandlestickChartProps {
@@ -116,8 +117,8 @@ export function LiveCandlestickChart({
   }
 
   // Build main chart series: candlestick + overlay indicators
-  const mainSeries = [
-    { name: symbol, data: data.series },
+  const mainSeries: ApexOptions["series"] = [
+    { name: symbol, data: [...data.series] },
     ...overlaySeries.map((s) => ({ name: s.name, data: [...s.data], type: s.type })),
   ];
 
@@ -157,7 +158,7 @@ export function LiveCandlestickChart({
       )}
 
       {/* Main price chart with overlays */}
-      <ApexChart type="candlestick" height={height} series={mainSeries as any} options={mainOptions} />
+      <ApexChart type="candlestick" height={height} series={mainSeries} options={mainOptions} />
 
       {/* Oscillator panels */}
       {oscillators.map((osc) => (

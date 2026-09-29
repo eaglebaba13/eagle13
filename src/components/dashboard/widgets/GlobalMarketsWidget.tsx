@@ -1,6 +1,7 @@
 import type { IndexQuote } from "@/lib/market.functions";
-import { useDashboardData } from "../DashboardDataContext";
-import { Card, Row, fmt } from "./legacy-primitives";
+import { useDashboardData } from "../use-dashboard-data";
+import { Card, Row } from "./legacy-primitives";
+import { fmt } from "@/lib/format";
 import { classifyFreshness } from "@/lib/data-freshness";
 import { useMarketSession, deriveMarketSessionStatus } from "@/hooks/use-market-session";
 

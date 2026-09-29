@@ -9,7 +9,7 @@ export interface LiveSSECandle {
   readonly time: number;
   readonly open: number;
   readonly high: number;
-    readonly low: number;
+  readonly low: number;
   readonly close: number;
   readonly volume: number | null;
   readonly completed: boolean;
@@ -52,7 +52,11 @@ export interface LiveSSEState {
 /**
  * Bounded Map insert — evicts oldest entries when MAX_LIVE_COMPLETED_CANDLES exceeded.
  */
-function boundedInsert(map: Map<number, LiveSSECandle>, key: number, value: LiveSSECandle): Map<number, LiveSSECandle> {
+function boundedInsert(
+  map: Map<number, LiveSSECandle>,
+  key: number,
+  value: LiveSSECandle,
+): Map<number, LiveSSECandle> {
   const newMap = new Map(map);
   newMap.set(key, value);
   if (newMap.size > MAX_LIVE_COMPLETED_CANDLES) {
@@ -83,8 +87,14 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
-    if (esRef.current) { esRef.current.close(); esRef.current = null; }
-    if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
+    if (esRef.current) {
+      esRef.current.close();
+      esRef.current = null;
+    }
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
 
     setState((s) => ({ ...s, connected: false, error: null }));
 
@@ -150,7 +160,9 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
             setState((s) => ({ ...s, error: data.message }));
             break;
         }
-      } catch { /* malformed — ignore */ }
+      } catch {
+        /* malformed — ignore */
+      }
     };
 
     es.onerror = () => {
@@ -164,8 +176,14 @@ export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
   useEffect(() => {
     connect();
     return () => {
-      if (esRef.current) { esRef.current.close(); esRef.current = null; }
-      if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
+      if (esRef.current) {
+        esRef.current.close();
+        esRef.current = null;
+      }
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
     };
   }, [connect]);
 

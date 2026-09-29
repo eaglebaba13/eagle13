@@ -14,6 +14,7 @@ export const listNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: ListNotificationsInput | undefined) => data ?? {})
   .handler(async ({ data, context }): Promise<readonly NotificationRow[]> => {
+    assertAuth(context);
     const limit = Math.min(Math.max(data.limit ?? 100, 1), 200);
     let q = context.supabase
       .from("notifications")
@@ -31,6 +32,7 @@ export const listNotifications = createServerFn({ method: "GET" })
 export const getNotificationUnreadCount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
+    assertAuth(context);
     const { count, error } = await context.supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
@@ -44,6 +46,7 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<NotificationRow> => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("mark_notification_read", {
       _id: data.id,
     });
@@ -54,6 +57,7 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ updated: number }> => {
+    assertAuth(context);
     const { data, error } = await context.supabase.rpc("mark_all_notifications_read");
     if (error) throw new Error(error.message);
     return { updated: (data as unknown as number) ?? 0 };
@@ -63,6 +67,7 @@ export const deleteNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    assertAuth(context);
     const { error } = await context.supabase
       .from("notifications")
       .delete()

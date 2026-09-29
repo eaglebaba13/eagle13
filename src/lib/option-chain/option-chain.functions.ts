@@ -2,7 +2,7 @@
 // Read-only, per-user auth. Never returns tokens or raw upstream bodies.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { OptionUnderlying } from "./types";
 
 export interface GetOptionChainInput {
@@ -88,6 +88,7 @@ export const getOptionChainDiagnostics = createServerFn({ method: "GET" })
     try {
       let isAdmin = false;
       try {
+        assertAuth(context);
         const { data } = await context.supabase.rpc("has_role", {
           _user_id: context.userId,
           _role: "admin",

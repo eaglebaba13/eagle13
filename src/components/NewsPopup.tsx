@@ -16,9 +16,8 @@ import {
 } from "lucide-react";
 import { getMarketNewsFeed } from "@/lib/news-feed.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { NewsCard, NewsSettings } from "@/components/news-shared";
 import {
-  NewsCard,
-  NewsSettings,
   useNewsPrefs,
   useLocalSet,
   filterNews,
@@ -29,7 +28,7 @@ import {
   AUTO_KEY,
   READ_KEY,
   SAVE_KEY,
-} from "@/components/news-shared";
+} from "@/components/news-shared.utils";
 import type { NewsCategory } from "@/lib/news-feed.functions";
 
 export function NewsCenter() {
@@ -92,7 +91,7 @@ export function NewsCenter() {
     retryDelay: (attempt) => [5000, 15000, 30000][attempt] ?? 30000,
   });
 
-  const allItems = q.data?.items ?? [];
+  const allItems = useMemo(() => q.data?.items ?? [], [q.data?.items]);
   const diag = q.data?.diagnostics;
   const items = useMemo(() => applyPrefs(allItems, prefs), [allItems, prefs]);
   const breakingUnread = useMemo(() => unreadBreaking(items, read), [items, read]);

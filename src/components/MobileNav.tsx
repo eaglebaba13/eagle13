@@ -45,7 +45,7 @@ export function MobileNav() {
       }
     };
     document.addEventListener("keydown", onKey);
-
+    const trigger = triggerRef.current;
     // Move focus into the drawer for screen readers / keyboard users.
     const t = window.setTimeout(() => {
       drawerRef.current?.querySelector<HTMLElement>("a,button")?.focus();
@@ -55,7 +55,7 @@ export function MobileNav() {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKey);
       window.clearTimeout(t);
-      triggerRef.current?.focus();
+      trigger?.focus();
     };
   }, [open]);
 

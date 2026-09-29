@@ -3,7 +3,7 @@
 // re-check `has_role(auth.uid(),'admin')` server-side.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { ReferralBroker, ReferralRequestRow } from "./types";
 
 // --------- User: submit a claim ---------
@@ -20,6 +20,7 @@ export const submitReferralRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: SubmitReferralInput) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
+    assertAuth(context);
     if (!data.declarationAccepted) throw new Error("declaration_required");
     const code = (data.referralCode ?? "").trim();
     const clientId = (data.brokerClientIdMasked ?? "").trim();
@@ -61,6 +62,7 @@ export const submitReferralRequest = createServerFn({ method: "POST" })
 export const listMyReferralRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly ReferralRequestRow[]> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("referral_requests")
       .select("*")
@@ -75,6 +77,7 @@ export const cancelReferralRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("cancel_referral_request", {
       _id: data.id,
     });
@@ -86,6 +89,7 @@ export const cancelReferralRequest = createServerFn({ method: "POST" })
 export const listAdminReferralRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly ReferralRequestRow[]> => {
+    assertAuth(context);
     const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -106,6 +110,7 @@ export const adminMarkReferralUnderReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("admin_mark_referral_under_review", {
       _id: data.id,
     });
@@ -118,6 +123,7 @@ export const adminApproveReferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string; adminNote?: string | null }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("admin_approve_referral", {
       _id: data.id,
       _admin_note: (data.adminNote ?? null) as unknown as string,
@@ -131,6 +137,7 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string; reason: string }) => data)
   .handler(async ({ data, context }): Promise<ReferralRequestRow> => {
+    assertAuth(context);
     if (!data.reason || data.reason.trim().length < 3) {
       throw new Error("reason_required");
     }

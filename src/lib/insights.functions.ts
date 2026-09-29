@@ -1,3 +1,4 @@
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson, fetchTextSafe } from "./http";
 import { cached } from "./server-cache";
@@ -290,3 +291,20 @@ export const getNews = createServerFn({ method: "GET" }).handler(async () =>
     { ttlMs: 60_000 },
   ),
 );
+
+/* -------------------------- query options -------------------------- */
+
+export const fnoQuery = () =>
+  queryOptions({ queryKey: ["fno"], queryFn: () => getFno(), refetchInterval: 60_000 });
+
+export const sectorsQuery = () =>
+  queryOptions({ queryKey: ["sectors"], queryFn: () => getSectors(), refetchInterval: 60_000 });
+
+export const newsQuery = () =>
+  queryOptions({ queryKey: ["news"], queryFn: () => getNews(), refetchInterval: 300_000 });
+
+export function prefetchInsights(qc: QueryClient) {
+  qc.prefetchQuery(fnoQuery());
+  qc.prefetchQuery(sectorsQuery());
+  qc.prefetchQuery(newsQuery());
+}

@@ -1,5 +1,6 @@
-import { useDashboardData } from "../DashboardDataContext";
-import { Card, FlashValue, Row, fmt } from "./legacy-primitives";
+import { useDashboardData } from "../use-dashboard-data";
+import { Card, FlashValue, Row } from "./legacy-primitives";
+import { fmt } from "@/lib/format";
 import { canDisplayActionableSignal } from "@/lib/actionable-signal";
 import { useMarketSession } from "@/hooks/use-market-session";
 

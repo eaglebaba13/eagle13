@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { classifyDegradation, RESEARCH_PANEL_MARKER, RESEARCH_TABS_MARKER } from "./ResearchPanel";
+import { RESEARCH_PANEL_MARKER, RESEARCH_TABS_MARKER } from "./ResearchPanel";
+import { classifyDegradation } from "./research-panel.utils";
 
 describe("ResearchPanel · degradation classification", () => {
   it("exports lazy marker", () => {

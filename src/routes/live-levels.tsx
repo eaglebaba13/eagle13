@@ -16,6 +16,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useMarketSession } from "@/hooks/use-market-session";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
+
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
 import {
   Bell,
   X,
@@ -313,7 +315,7 @@ function LiveLevelsTerminal() {
         setAlerts((a) => [...fresh, ...a].slice(0, 40));
         if (sound && typeof window !== "undefined") {
           try {
-            const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+            const AC = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
             if (AC) {
               const ctx = new AC();
               const o = ctx.createOscillator();
@@ -1556,5 +1558,12 @@ function LevelChart({ market, fmt }: { market: MarketBlock; fmt: (n: number) => 
     [market, fmt],
   );
 
-  return <ApexChart type="line" series={series} options={options as any} height={360} />;
+  return (
+    <ApexChart
+      type="line"
+      series={series}
+      options={options as import("apexcharts").ApexOptions}
+      height={360}
+    />
+  );
 }

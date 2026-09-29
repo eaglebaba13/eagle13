@@ -42,7 +42,6 @@ export class UpstoxWsAdapter {
   private lastError: string | null = null;
   private readonly tickListeners = new Set<TickListener>();
   private readonly activeSubscribedSymbols = new Set<QuoteSymbol>();
-  private simIntervalId: ReturnType<typeof setInterval> | null = null;
 
   connect(): void {
     if (this.state === "CONNECTED" || this.state === "CONNECTING") return;
@@ -50,8 +49,8 @@ export class UpstoxWsAdapter {
 
     const token = process.env.UPSTOX_ACCESS_TOKEN?.trim();
     if (!token) {
-      // Fallback: Start local tick simulator when token is not configured
-      this.startLocalSimulator();
+      this.lastError = "Upstox credentials unavailable";
+      this.state = "DISCONNECTED";
       return;
     }
 
@@ -72,15 +71,18 @@ export class UpstoxWsAdapter {
         throw new Error(`Upstox WS authorization failed HTTP ${res.status}`);
       }
 
-      const json = (await res.json()) as { status?: string; data?: { authorizedRedirectUri?: string } };
+      const json = (await res.json()) as {
+        status?: string;
+        data?: { authorizedRedirectUri?: string };
+      };
       const wsUrl = json.data?.authorizedRedirectUri;
       if (!wsUrl) {
         throw new Error("Upstox WS authorization response missing authorizedRedirectUri");
       }
 
       if (typeof WebSocket === "undefined") {
-        // Node / Server environment without global WebSocket — fallback to tick simulator
-        this.startLocalSimulator();
+        this.lastError = "WebSocket transport unavailable";
+        this.state = "DISCONNECTED";
         return;
       }
 
@@ -113,7 +115,7 @@ export class UpstoxWsAdapter {
       };
     } catch (err) {
       this.lastError = err instanceof Error ? err.message : "Upstox WS error";
-      this.startLocalSimulator();
+      this.state = "DISCONNECTED";
     }
   }
 
@@ -144,7 +146,11 @@ export class UpstoxWsAdapter {
         payload = JSON.parse(data);
       } else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
         const text = new TextDecoder().decode(data as ArrayBuffer);
-        try { payload = JSON.parse(text); } catch { return; }
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          return;
+        }
       }
 
       if (!payload || typeof payload !== "object") return;
@@ -161,7 +167,8 @@ export class UpstoxWsAdapter {
         const feedObj = rawFeed as Record<string, unknown>;
         const ff = (feedObj.ff ?? feedObj.fullFeed ?? feedObj) as Record<string, unknown>;
         const marketFF = (ff.marketFF ?? ff) as Record<string, unknown>;
-        const ltpc = (marketFF.ltpc ?? marketFF) as { ltp?: number; cp?: number; close?: number } | undefined;
+        const ltpc = (marketFF.ltpc ?? marketFF) as
+          { ltp?: number; cp?: number; close?: number } | undefined;
         const ltp = ltpc?.ltp ?? (marketFF.ltp as number | undefined);
 
         if (typeof ltp === "number" && Number.isFinite(ltp)) {
@@ -185,50 +192,7 @@ export class UpstoxWsAdapter {
     }
   }
 
-  private startLocalSimulator(): void {
-    if (this.simIntervalId) return;
-    this.state = "CONNECTED";
-    this.connectedAt = new Date().toISOString();
-
-    const basePrices: Record<string, number> = {
-      NIFTY50: 25000,
-      BANKNIFTY: 52000,
-      FINNIFTY: 22000,
-      INDIA_VIX: 13.5,
-      GOLD: 72000,
-      SILVER: 85000,
-    };
-
-    this.simIntervalId = setInterval(() => {
-      if (this.activeSubscribedSymbols.size === 0) return;
-      const nowIso = new Date().toISOString();
-      for (const sym of this.activeSubscribedSymbols) {
-        const base = basePrices[sym] ?? 25000;
-        const delta = (Math.random() - 0.49) * (base * 0.0008);
-        basePrices[sym] = Number((base + delta).toFixed(2));
-        const ltp = basePrices[sym];
-        const tick: MarketTick = {
-          instrument: sym,
-          provider: UPSTOX_WS_ADAPTER_ID,
-          timestamp: nowIso,
-          ltp,
-          bid: null,
-          ask: null,
-          volume: Math.floor(Math.random() * 50) + 1,
-          source: "LTP",
-          freshness: "LIVE",
-          quality: "OK",
-        };
-        this.emitTick(tick);
-      }
-    }, 2000);
-  }
-
   close(): void {
-    if (this.simIntervalId) {
-      clearInterval(this.simIntervalId);
-      this.simIntervalId = null;
-    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;

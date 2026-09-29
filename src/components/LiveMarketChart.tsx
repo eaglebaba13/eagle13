@@ -10,7 +10,11 @@ import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
 import type { IndicatorCandle, IndicatorResult } from "@/lib/indicators/types";
 import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 import { getIndicator } from "@/lib/indicators/registry";
-import { indicatorsToChartSeries, getOverlaySeriesColors, validateIndicatorParams } from "@/lib/indicators/chart-adapter";
+import {
+  indicatorsToChartSeries,
+  getOverlaySeriesColors,
+  validateIndicatorParams,
+} from "@/lib/indicators/chart-adapter";
 
 export interface IndicatorError {
   readonly indicatorId: string;
@@ -65,7 +69,9 @@ export function LiveMarketChart({
       }
     }
     bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [symbol, intervalMs]);
 
   // Merge historical + live candles
@@ -85,7 +91,12 @@ export function LiveMarketChart({
     if (sse.currentCandle) {
       all.push({
         x: sse.currentCandle.time,
-        y: [sse.currentCandle.open, sse.currentCandle.high, sse.currentCandle.low, sse.currentCandle.close],
+        y: [
+          sse.currentCandle.open,
+          sse.currentCandle.high,
+          sse.currentCandle.low,
+          sse.currentCandle.close,
+        ],
         volume: sse.currentCandle.volume,
       });
     }
@@ -111,23 +122,47 @@ export function LiveMarketChart({
   }, [chartData]);
 
   const { indicatorResults, indicatorErrors } = useMemo(() => {
-    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as IndicatorError[] };
+    if (candles.length === 0)
+      return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as IndicatorError[] };
     const results: IndicatorResult[] = [];
     const errors: IndicatorError[] = [];
     for (const ind of activeIndicators) {
       if (!ind.enabled) continue;
       const def = getIndicator(ind.id);
-      if (!def) { errors.push({ indicatorId: ind.id, code: "UNKNOWN_INDICATOR", message: "Unknown indicator" }); continue; }
+      if (!def) {
+        errors.push({
+          indicatorId: ind.id,
+          code: "UNKNOWN_INDICATOR",
+          message: "Unknown indicator",
+        });
+        continue;
+      }
       const validation = validateIndicatorParams(ind.params, def.params);
-      if (!validation.valid) { errors.push({ indicatorId: ind.id, code: "INVALID_PARAMS", message: validation.errors.join("; ") }); continue; }
-      try { results.push(def.calculate(candles, ind.params)); } catch (err) {
-        errors.push({ indicatorId: ind.id, code: "CALCULATION_ERROR", message: err instanceof Error ? err.message : "Calculation failed" });
+      if (!validation.valid) {
+        errors.push({
+          indicatorId: ind.id,
+          code: "INVALID_PARAMS",
+          message: validation.errors.join("; "),
+        });
+        continue;
+      }
+      try {
+        results.push(def.calculate(candles, ind.params));
+      } catch (err) {
+        errors.push({
+          indicatorId: ind.id,
+          code: "CALCULATION_ERROR",
+          message: err instanceof Error ? err.message : "Calculation failed",
+        });
       }
     }
     return { indicatorResults: results, indicatorErrors: errors };
   }, [candles, activeIndicators]);
 
-  const { overlaySeries } = useMemo(() => indicatorsToChartSeries(indicatorResults), [indicatorResults]);
+  const { overlaySeries } = useMemo(
+    () => indicatorsToChartSeries(indicatorResults),
+    [indicatorResults],
+  );
 
   // Chart series
   const chartSeries = useMemo(() => {
@@ -141,27 +176,53 @@ export function LiveMarketChart({
     ];
   }, [chartData, symbol, overlaySeries]);
 
-  const chartOptions = useMemo(() => ({
-    chart: {
-      type: "candlestick" as const,
-      background: "transparent",
-      toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
-      animations: { enabled: false },
-      crosshair: { show: true },
-    },
-    title: { text: undefined },
-    xaxis: { type: "datetime" as const, labels: { style: { colors: "#888", fontSize: "10px" } } },
-    yaxis: { labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
-    plotOptions: { candlestick: { colors: { upward: "#22c55e", downward: "#ef4444" }, wick: { useFillColor: true } } },
-    colors: overlaySeries.length > 0 ? getOverlaySeriesColors(overlaySeries) : undefined,
-    stroke: { width: overlaySeries.length > 0 ? [1, ...overlaySeries.map(() => 2)] : undefined },
-    grid: { borderColor: "#333", strokeDashArray: 3 },
-    tooltip: { theme: "dark" as const },
-  }), [overlaySeries]);
+  const chartOptions = useMemo(
+    () => ({
+      chart: {
+        type: "candlestick" as const,
+        background: "transparent",
+        toolbar: {
+          show: true,
+          tools: {
+            download: false,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+          },
+        },
+        animations: { enabled: false },
+        crosshair: { show: true },
+      },
+      title: { text: undefined },
+      xaxis: { type: "datetime" as const, labels: { style: { colors: "#888", fontSize: "10px" } } },
+      yaxis: {
+        labels: { style: { colors: "#888", fontSize: "10px" } },
+        tooltip: { enabled: true },
+      },
+      plotOptions: {
+        candlestick: {
+          colors: { upward: "#22c55e", downward: "#ef4444" },
+          wick: { useFillColor: true },
+        },
+      },
+      colors: overlaySeries.length > 0 ? getOverlaySeriesColors(overlaySeries) : undefined,
+      stroke: { width: overlaySeries.length > 0 ? [1, ...overlaySeries.map(() => 2)] : undefined },
+      grid: { borderColor: "#333", strokeDashArray: 3 },
+      tooltip: { theme: "dark" as const },
+    }),
+    [overlaySeries],
+  );
 
   // Status display
-  const statusColor = sse.status?.freshness === "LIVE" ? "text-green-500" :
-    sse.status?.freshness === "STALE" ? "text-amber-500" : "text-muted-foreground";
+  const statusColor =
+    sse.status?.freshness === "LIVE"
+      ? "text-green-500"
+      : sse.status?.freshness === "STALE"
+        ? "text-amber-500"
+        : "text-muted-foreground";
   const statusLabel = sse.connected ? (sse.status?.freshness ?? "CONNECTING") : "OFFLINE";
 
   return (
@@ -170,7 +231,9 @@ export function LiveMarketChart({
       <div className="flex items-center gap-3 mb-2 flex-wrap">
         <span className="text-sm font-medium">{symbol}</span>
         <span className={`text-xs font-mono ${statusColor}`}>● {statusLabel}</span>
-        <span className="text-xs text-muted-foreground font-mono">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
+        <span className="text-xs text-muted-foreground font-mono">
+          {sse.status?.provider ?? "UPSTOX_V3_WS"}
+        </span>
         {sse.status?.lastLtp != null && (
           <span className="text-xs font-mono">LTP: {sse.status.lastLtp.toFixed(2)}</span>
         )}
@@ -214,7 +277,8 @@ export function LiveMarketChart({
           <div className="text-center">
             <span className="text-muted-foreground text-sm">NO MARKET DATA</span>
             <p className="text-xs text-muted-foreground mt-1">
-              Provider: {sse.status?.provider ?? "UPSTOX_V3_WS"} | Connection: {sse.connected ? "CONNECTED" : "DISCONNECTED"}
+              Provider: {sse.status?.provider ?? "UPSTOX_V3_WS"} | Connection:{" "}
+              {sse.connected ? "CONNECTED" : "DISCONNECTED"}
             </p>
           </div>
         </div>

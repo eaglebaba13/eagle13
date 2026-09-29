@@ -42,6 +42,7 @@ import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
+import { Route as ApiLiveCandlesRouteImport } from './routes/api/live-candles'
 import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
 import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
 import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
@@ -248,6 +249,11 @@ const CryptoPairRoute = CryptoPairRouteImport.update({
   id: '/$pair',
   path: '/$pair',
   getParentRoute: () => CryptoRoute,
+} as any)
+const ApiLiveCandlesRoute = ApiLiveCandlesRouteImport.update({
+  id: '/api/live-candles',
+  path: '/api/live-candles',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTelegramLogRoute =
   AuthenticatedTelegramLogRouteImport.update({
@@ -537,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -612,6 +619,7 @@ export interface FileRoutesByTo {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -689,6 +697,7 @@ export interface FileRoutesById {
   '/_authenticated/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/_authenticated/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
@@ -766,6 +775,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -841,6 +851,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -917,6 +928,7 @@ export interface FileRouteTypes {
     | '/_authenticated/signal-history'
     | '/_authenticated/strategy-analytics'
     | '/_authenticated/telegram-log'
+    | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
@@ -976,6 +988,7 @@ export interface RootRouteChildren {
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
+  ApiLiveCandlesRoute: typeof ApiLiveCandlesRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
   DevAstroFixtureCaptureRoute: typeof DevAstroFixtureCaptureRoute
   DevDiagnosticsRoute: typeof DevDiagnosticsRoute
@@ -1215,6 +1228,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/crypto/$pair'
       preLoaderRoute: typeof CryptoPairRouteImport
       parentRoute: typeof CryptoRoute
+    }
+    '/api/live-candles': {
+      id: '/api/live-candles'
+      path: '/api/live-candles'
+      fullPath: '/api/live-candles'
+      preLoaderRoute: typeof ApiLiveCandlesRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/telegram-log': {
       id: '/_authenticated/telegram-log'
@@ -1666,6 +1686,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignalAccuracyRoute: SignalAccuracyRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
+  ApiLiveCandlesRoute: ApiLiveCandlesRoute,
   DevAstroAuditRoute: DevAstroAuditRoute,
   DevAstroFixtureCaptureRoute: DevAstroFixtureCaptureRoute,
   DevDiagnosticsRoute: DevDiagnosticsRoute,

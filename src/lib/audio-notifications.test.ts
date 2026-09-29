@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   getAudioAssetUrl,
   getAudioNotificationManager,
@@ -10,15 +12,11 @@ import {
 
 describe("audio asset validation", () => {
   it("eagle-calling.wav exists in public/audio/", () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const assetPath = path.resolve(__dirname, "../../public/audio/eagle-calling.wav");
     expect(fs.existsSync(assetPath)).toBe(true);
   });
 
   it("eagle-chirping.wav exists in public/audio/", () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const assetPath = path.resolve(__dirname, "../../public/audio/eagle-chirping.wav");
     expect(fs.existsSync(assetPath)).toBe(true);
   });
@@ -304,24 +302,18 @@ describe("SoundToggle accessibility", () => {
 
 describe("audio security", () => {
   it("audio-notifications.ts has no broker execution imports", () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "audio-notifications.ts");
     const content = fs.readFileSync(filePath, "utf-8");
     expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);
   });
 
   it("SoundToggle.tsx has no broker execution imports", () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "../components/SoundToggle.tsx");
     const content = fs.readFileSync(filePath, "utf-8");
     expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);
   });
 
   it("use-audio-alerts.ts has no broker execution imports", () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "../hooks/use-audio-alerts.ts");
     const content = fs.readFileSync(filePath, "utf-8");
     expect(content).not.toMatch(/placeOrder|modifyOrder|cancelOrder|broker|execute.*order/i);

@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchTextSafe } from "./http";
 import {
@@ -189,3 +190,13 @@ export const getMarketNews = createServerFn({ method: "GET" }).handler(
       { ttlMs: 60_000 },
     ),
 );
+
+export const newsQuery = () =>
+  queryOptions({
+    queryKey: ["market-news"],
+    queryFn: () => getMarketNews(),
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });

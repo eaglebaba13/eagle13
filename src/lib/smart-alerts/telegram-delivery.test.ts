@@ -1,3 +1,6 @@
+import { defaultSubscription } from "./subscriptions";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { sendTelegramMessage } from "./telegram-delivery.server";
 import type { AlertEvent } from "./types";
@@ -239,7 +242,7 @@ describe("telegram delivery provider", () => {
     const event = makeEvent();
     const sub = {
       userId: "u1",
-      types: {} as Record<string, boolean>,
+      types: defaultSubscription("u1").types,
       instruments: [],
       minimumPriority: "LOW" as const,
       inAppEnabled: true,
@@ -276,8 +279,6 @@ describe("telegram delivery provider", () => {
 describe("telegram safety", () => {
   it("telegram-delivery.server.ts has no broker execution imports", () => {
     // Verify the module does not import order placement, broker, or trading APIs
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
     const filePath = path.resolve(__dirname, "telegram-delivery.server.ts");
     const content = fs.readFileSync(filePath, "utf-8");
     expect(content).not.toMatch(

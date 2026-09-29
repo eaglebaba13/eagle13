@@ -94,7 +94,7 @@ function pct(n: number): string {
 export default function RecommendationValidationSection(
   props: RecommendationValidationSectionProps,
 ) {
-  const observations = props.observations ?? [];
+  const observations = useMemo(() => props.observations ?? [], [props.observations]);
   const rep = useMemo(() => validateRecommendations({ observations }), [observations]);
 
   const doExport = (kind: "csv" | "json") => {

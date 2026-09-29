@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, type ReactNode } from "react";
 import type { IndexQuote } from "@/lib/market.functions";
 import type { Levels } from "@/lib/levels";
 import type { DashboardFreshnessMap } from "@/lib/dashboard-freshness-adapter";
@@ -52,17 +52,6 @@ export function DashboardDataProvider({
   children: ReactNode;
 }) {
   return <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>;
-}
-
-export function useDashboardData(): DashboardContextValue {
-  const ctx = useContext(DashboardDataContext);
-  if (!ctx) {
-    throw new Error(
-      "useDashboardData() must be used inside <DashboardDataProvider>. " +
-        "The `/` dashboard route provides this context.",
-    );
-  }
-  return ctx;
 }
 
 export default DashboardDataContext;

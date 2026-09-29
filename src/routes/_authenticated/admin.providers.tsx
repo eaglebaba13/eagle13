@@ -148,12 +148,12 @@ const PRESENCE_COLORS: Record<string, string> = {
 
 function EnvPresencePanel({ report }: { report: ProviderDiagnosticsReport | null }) {
   if (!report) return null;
-  const p = report.envPresence;
+  const p = report.publicEnvPresence;
   const rows: readonly { name: string; status: string }[] = [
-    { name: "UPSTOX_MARKET_DATA_MODE", status: p.UPSTOX_MARKET_DATA_MODE },
-    { name: "UPSTOX_API_KEY", status: p.UPSTOX_API_KEY },
-    { name: "UPSTOX_API_SECRET", status: p.UPSTOX_API_SECRET },
-    { name: "UPSTOX_ACCESS_TOKEN", status: p.UPSTOX_ACCESS_TOKEN },
+    { name: "Market-data mode", status: p.marketDataMode },
+    { name: "Provider API key", status: p.apiKey },
+    { name: "Provider API secret", status: p.apiSecret },
+    { name: "Provider access token", status: p.accessToken },
   ];
   const status = report.configurationStatus;
   const banner =
@@ -391,7 +391,7 @@ function UpstoxLiveSmokeTestPanel() {
           {state.kind === "running" ? "Running live provider test…" : "Run Live Provider Test"}
         </button>
         <span className="text-[11px] text-slate-500">
-          Read-only. Uses server-side UPSTOX_ACCESS_TOKEN. No orders, no writes.
+          Read-only. Uses server-side provider credentials. No orders, no writes.
         </span>
       </div>
 

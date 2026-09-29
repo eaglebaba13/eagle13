@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
@@ -68,3 +69,13 @@ export const getSeasonality = createServerFn({ method: "GET" }).handler(
       { ttlMs: 15 * 60_000 },
     ),
 );
+
+export const seasonalityQuery = () =>
+  queryOptions({
+    queryKey: ["seasonality"],
+    queryFn: () => getSeasonality(),
+    staleTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
+    refetchInterval: 30 * 60_000,
+    refetchOnWindowFocus: false,
+  });

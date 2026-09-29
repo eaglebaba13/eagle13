@@ -28,7 +28,8 @@ export function calculateVwap(
   candles: readonly IndicatorCandle[],
   _params: Record<string, number>,
 ): IndicatorResult {
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
   let cumPV = 0;
   let cumV = 0;
   let lastDayKey: number | null = null;

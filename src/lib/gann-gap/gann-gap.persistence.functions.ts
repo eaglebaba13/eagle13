@@ -3,7 +3,12 @@
 // reads use RLS-scoped selects. No SQL is duplicated here.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  assertAuth,
+  type AuthContext,
+} from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { GANN_GAP_CONFIG_VERSION, GANN_GAP_FORMULA_VERSION } from "./formula-version";
 import { OUTCOME_RULE_VERSION, classifyActualOutcome } from "./outcome-rules";
 import {
@@ -176,7 +181,10 @@ function buildRowFromOutlook(o: GannGapOutlook): Record<string, unknown> {
   };
 }
 
-async function assertAdmin(ctx: { supabase: any; userId: string }): Promise<void> {
+async function assertAdmin(ctx: {
+  supabase: NonNullable<AuthContext["supabase"]>;
+  userId: string;
+}): Promise<void> {
   const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
   if (!data) throw new Error("forbidden");
 }
@@ -191,6 +199,7 @@ export const freezeGannGapPrediction = createServerFn({ method: "POST" })
     async ({
       context,
     }): Promise<{ ok: boolean; row: PersistedPredictionRow | null; reason?: string }> => {
+      assertAuth(context);
       await assertAdmin(context);
       const outlook = await getGannGapOutlook();
       if (!outlook.featureEnabled) return { ok: false, row: null, reason: "feature-disabled" };
@@ -200,7 +209,7 @@ export const freezeGannGapPrediction = createServerFn({ method: "POST" })
 
       const row = buildRowFromOutlook({ ...outlook, lifecycle: "FROZEN" });
       const { data, error } = await context.supabase.rpc("gann_gap_upsert_prediction", {
-        _row: row as any,
+        _row: row as Json,
       });
       if (error) throw new Error(error.message);
       return { ok: true, row: mapPredictionRow(data as Record<string, unknown>) };
@@ -214,6 +223,7 @@ export const freezeGannGapPrediction = createServerFn({ method: "POST" })
 export const getLatestGannGapPrediction = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PersistedPredictionRow | null> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("gann_gap_predictions")
       .select("*")
@@ -230,6 +240,7 @@ export const getGannGapPredictionHistory = createServerFn({ method: "GET" })
     limit: Math.max(1, Math.min(200, d?.limit ?? 60)),
   }))
   .handler(async ({ context, data }): Promise<PersistedPredictionRow[]> => {
+    assertAuth(context);
     const { data: rows, error } = await context.supabase
       .from("gann_gap_predictions")
       .select("*")
@@ -245,6 +256,7 @@ export const getGannGapOutcomeHistory = createServerFn({ method: "GET" })
     limit: Math.max(1, Math.min(200, d?.limit ?? 60)),
   }))
   .handler(async ({ context, data }): Promise<PersistedOutcomeRow[]> => {
+    assertAuth(context);
     const { data: rows, error } = await context.supabase
       .from("gann_gap_outcomes")
       .select("*")
@@ -264,6 +276,7 @@ export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
     async ({
       context,
     }): Promise<{ evaluated: number; skipped: number; details: readonly string[] }> => {
+      assertAuth(context);
       await assertAdmin(context);
       const { data: preds, error: pe } = await context.supabase
         .from("gann_gap_predictions")
@@ -285,7 +298,7 @@ export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
           .select("prediction_id, outcome_rule_version")
           .in("prediction_id", ids)
           .eq("outcome_rule_version", OUTCOME_RULE_VERSION);
-        existingIds = new Set((outs ?? []).map((o: any) => String(o.prediction_id)));
+        existingIds = new Set((outs ?? []).map((o) => String(o.prediction_id)));
       }
 
       // Consume canonical market data once for the current session's open.
@@ -337,7 +350,7 @@ export const evaluatePendingGannGapOutcome = createServerFn({ method: "POST" })
           outcome_rule_version: OUTCOME_RULE_VERSION,
         };
         const { error } = await context.supabase.rpc("gann_gap_upsert_outcome", {
-          _row: outcomeRow as any,
+          _row: outcomeRow as Json,
         });
         if (error) {
           skipped++;
@@ -370,6 +383,7 @@ export interface GannGapHistoricalValidation {
 export const getGannGapHistoricalValidation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<GannGapHistoricalValidation> => {
+    assertAuth(context);
     // Only compare like-for-like: current formula + config + outcome rule versions.
     const { data: preds, error: pe } = await context.supabase
       .from("gann_gap_predictions")
@@ -382,7 +396,7 @@ export const getGannGapHistoricalValidation = createServerFn({ method: "GET" })
       .order("trading_date", { ascending: false })
       .limit(500);
     if (pe) throw new Error(pe.message);
-    const predictionRows: FrozenPredictionRecord[] = ((preds ?? []) as any[]).map((r) => ({
+    const predictionRows: FrozenPredictionRecord[] = (preds ?? []).map((r) => ({
       predictionId: String(r.prediction_id),
       tradingDate: String(r.trading_date),
       nextTradingDate: String(r.next_trading_date ?? ""),
@@ -401,9 +415,9 @@ export const getGannGapHistoricalValidation = createServerFn({ method: "GET" })
         .in("prediction_id", ids)
         .eq("outcome_rule_version", OUTCOME_RULE_VERSION);
       if (oe) throw new Error(oe.message);
-      outcomeRows = ((outs ?? []) as any[]).map((r) => ({
+      outcomeRows = (outs ?? []).map((r) => ({
         predictionId: String(r.prediction_id),
-        outcome: String(r.actual_outcome) as any,
+        outcome: String(r.actual_outcome) as OutcomeRecord["outcome"],
         ruleVersion: String(r.outcome_rule_version),
         evaluatedAt: String(r.evaluated_at),
       }));
@@ -442,13 +456,14 @@ export interface GannGapSchedulerState {
 export const getGannGapSchedulerState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<GannGapSchedulerState> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("gann_gap_scheduler_state")
       .select("*")
       .order("id", { ascending: true })
       .limit(1);
     if (error) throw new Error(error.message);
-    const row = ((data ?? []) as any[])[0];
+    const row = (data ?? [])[0];
     return {
       enabled: !!row?.enabled,
       lastRunAt: row?.last_run_at ?? null,
@@ -477,6 +492,7 @@ export interface GannGapDiagnostics {
 export const getGannGapDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<GannGapDiagnostics> => {
+    assertAuth(context);
     await assertAdmin(context);
     const [outlookRes, predRes, outRes, predCountRes, outCountRes, histRes, schedRes] =
       await Promise.allSettled([
@@ -496,13 +512,11 @@ export const getGannGapDiagnostics = createServerFn({ method: "GET" })
     const outlook = outlookRes.status === "fulfilled" ? outlookRes.value : null;
     const latestPrediction = predRes.status === "fulfilled" ? predRes.value : null;
     const latestOutcomeRow =
-      outRes.status === "fulfilled"
-        ? (((outRes.value as any)?.data as Record<string, unknown>[] | null)?.[0] ?? null)
-        : null;
+      outRes.status === "fulfilled" ? (outRes.value.data?.[0] ?? null) : null;
     const predictionCount =
-      predCountRes.status === "fulfilled" ? Number((predCountRes.value as any)?.count ?? 0) : 0;
+      predCountRes.status === "fulfilled" ? Number(predCountRes.value.count ?? 0) : 0;
     const outcomeCount =
-      outCountRes.status === "fulfilled" ? Number((outCountRes.value as any)?.count ?? 0) : 0;
+      outCountRes.status === "fulfilled" ? Number(outCountRes.value.count ?? 0) : 0;
     const historical: GannGapHistoricalValidation =
       histRes.status === "fulfilled"
         ? histRes.value

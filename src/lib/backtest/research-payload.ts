@@ -37,7 +37,6 @@ export type ResearchDataContext = {
 export function computeCandleDataHash(candles: readonly Candle[]): string {
   let h = 0x811c9dc5;
   const step = (n: number) => {
-    // eslint-disable-next-line no-bitwise
     h ^= n & 0xff;
     h = Math.imul(h, 0x01000193);
   };
@@ -45,7 +44,7 @@ export function computeCandleDataHash(candles: readonly Candle[]): string {
     const key = `${c.t}|${c.o}|${c.h}|${c.l}|${c.c}|${c.v ?? 0}`;
     for (let i = 0; i < key.length; i++) step(key.charCodeAt(i));
   }
-  // eslint-disable-next-line no-bitwise
+
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 

@@ -3,7 +3,7 @@
 // Runtime implementations: Cloudflare Workers (fetch+Upgrade), Node ws (tests).
 
 export interface WebSocketTransport {
-  connect(): void;
+  connect(): void | Promise<void>;
   send(data: string): boolean;
   close(code?: number, reason?: string): void;
   terminate(): void;

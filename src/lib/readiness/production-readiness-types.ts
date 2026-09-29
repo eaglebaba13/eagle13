@@ -112,7 +112,7 @@ export const READINESS_REPORT_GENERATOR = "PRODUCTION_READINESS_V1";
 
 /** Any string that looks even remotely like a secret — used for redaction. */
 export const SECRET_LIKE_PATTERN =
-  /(sk_(live|test)_[a-z0-9]+|sb_secret_[a-z0-9_-]+|eyJ[a-zA-Z0-9_-]{20,}|(?:[A-Za-z0-9+/]{40,}={0,2}))/gi;
+  /(sk_(live|test)_[a-z0-9]+|[a-z][a-z0-9]*_(?:secret|private)_[a-z0-9_-]+|eyJ[a-zA-Z0-9_-]{20,}|(?:[A-Za-z0-9+/]{40,}={0,2}))/gi;
 
 export function redactSecretLike(value: string): string {
   if (!value) return value;

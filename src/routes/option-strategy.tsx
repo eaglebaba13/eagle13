@@ -1,3 +1,5 @@
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
+
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -95,7 +97,7 @@ const inr = inrPrice;
 
 function beep(freq = 880) {
   try {
-    const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const AC = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
     if (!AC) return;
     const ctx = new AC();
     const o = ctx.createOscillator();
@@ -1514,7 +1516,12 @@ function SectorChart({ sectors }: { sectors: Sector[] }) {
           </button>
         </div>
       </div>
-      <ApexChart type="bar" series={series} options={options as any} height={300} />
+      <ApexChart
+        type="bar"
+        series={series}
+        options={options as import("apexcharts").ApexOptions}
+        height={300}
+      />
     </>
   );
 }
@@ -1550,5 +1557,12 @@ function TopChart({ stocks }: { stocks: TopStock[] }) {
     }),
     [ordered],
   );
-  return <ApexChart type="bar" series={series} options={options as any} height={300} />;
+  return (
+    <ApexChart
+      type="bar"
+      series={series}
+      options={options as import("apexcharts").ApexOptions}
+      height={300}
+    />
+  );
 }

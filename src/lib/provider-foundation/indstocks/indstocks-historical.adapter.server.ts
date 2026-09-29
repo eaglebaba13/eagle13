@@ -17,6 +17,7 @@ import {
   INDSTOCKS_CACHE_NAMESPACE,
   TIMEFRAME_TO_INDSTOCKS,
   type IndstocksErrorCode,
+  type IndstocksError,
   type IndstocksHistoricalResponse,
   type IndstocksQuoteResponse,
 } from "./indstocks-types";
@@ -41,7 +42,7 @@ export interface IndstocksAdapterOptions extends IndstocksHttpConfig {
   readonly httpClient?: IndstocksHttpClient;
 }
 
-const ADAPTER_ROLE: "SECONDARY" = "SECONDARY";
+const ADAPTER_ROLE = "SECONDARY" as const;
 
 function providerTelemetry(input: {
   ok: boolean;
@@ -270,7 +271,7 @@ export class IndstocksAdapter {
           ageSec: Infinity,
           role: ADAPTER_ROLE,
           providerTime: null,
-          reason: plan.reason,
+          reason: plan.reason ?? null,
         }),
       };
     }

@@ -14,9 +14,8 @@ import {
   Zap,
 } from "lucide-react";
 import { getMarketNewsFeed, type NewsCategory } from "@/lib/news-feed.functions";
+import { NewsCard, NewsSettings } from "@/components/news-shared";
 import {
-  NewsCard,
-  NewsSettings,
   useNewsPrefs,
   useLocalSet,
   filterNews,
@@ -24,7 +23,7 @@ import {
   relTime,
   READ_KEY,
   SAVE_KEY,
-} from "@/components/news-shared";
+} from "@/components/news-shared.utils";
 import logoUrl from "@/assets/eaglebaba-logo.png";
 
 export const Route = createFileRoute("/news")({
@@ -70,7 +69,7 @@ function NewsPage() {
     retryDelay: (attempt) => [5000, 15000, 30000][attempt] ?? 30000,
   });
 
-  const allItems = q.data?.items ?? [];
+  const allItems = useMemo(() => q.data?.items ?? [], [q.data?.items]);
   const diag = q.data?.diagnostics;
   const filtered = useMemo(
     () => filterNews(allItems, { query, cat, prefs }),

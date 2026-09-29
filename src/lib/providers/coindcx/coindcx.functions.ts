@@ -2,7 +2,7 @@
 // Market-data only. No trading, no auth-required endpoints.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import type { CoindcxSupportedInterval } from "./endpoints";
 
 export const listCoindcxMarkets = createServerFn({ method: "GET" }).handler(async () => {
@@ -33,6 +33,7 @@ export const getCoindcxCandles = createServerFn({ method: "GET" })
 export const getCoindcxDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    assertAuth(context);
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",

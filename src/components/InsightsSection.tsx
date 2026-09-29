@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { queryOptions, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
-  getFno,
-  getSectors,
-  getNews,
+  fnoQuery,
+  newsQuery,
+  sectorsQuery,
   type Mover,
   type Sector,
   type NewsItem,
@@ -12,19 +12,6 @@ import {
 const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
-
-const fnoQuery = () =>
-  queryOptions({ queryKey: ["fno"], queryFn: () => getFno(), refetchInterval: 60_000 });
-const sectorsQuery = () =>
-  queryOptions({ queryKey: ["sectors"], queryFn: () => getSectors(), refetchInterval: 60_000 });
-const newsQuery = () =>
-  queryOptions({ queryKey: ["news"], queryFn: () => getNews(), refetchInterval: 300_000 });
-
-export function prefetchInsights(qc: QueryClient) {
-  qc.prefetchQuery(fnoQuery());
-  qc.prefetchQuery(sectorsQuery());
-  qc.prefetchQuery(newsQuery());
-}
 
 /* ------------------------------ card ------------------------------ */
 

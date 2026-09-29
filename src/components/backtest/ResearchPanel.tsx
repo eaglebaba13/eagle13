@@ -22,6 +22,7 @@ import {
   type BacktestTrade,
 } from "@/lib/backtest.functions";
 import { ApexChart } from "@/components/ApexChart";
+import { classifyDegradation } from "./research-panel.utils";
 import {
   estimateGridCells,
   validateSensitivityGrid,
@@ -351,18 +352,6 @@ function sliceResult(
 }
 
 // -- Degradation classification (transparent thresholds).
-export function classifyDegradation(
-  pct: number,
-  tradeCount: number,
-): "STABLE" | "MILD" | "MATERIAL" | "SEVERE" | "INSUFFICIENT_DATA" {
-  if (tradeCount < 20) return "INSUFFICIENT_DATA";
-  const a = Math.abs(pct);
-  if (a <= 10) return "STABLE";
-  if (a <= 25) return "MILD";
-  if (a <= 50) return "MATERIAL";
-  return "SEVERE";
-}
-
 type RunState = {
   selected: string[];
   splitMode: SplitMode;
@@ -2162,7 +2151,7 @@ function SensitivitySection({ instrument }: { instrument: string }) {
         return { name: s.name, values: vals };
       });
       const cursor = new Array<number>(axes.length).fill(0);
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const combo: Record<string, number> = {};
         for (let i = 0; i < axes.length; i++) combo[axes[i].name] = axes[i].values[cursor[i]];
@@ -3073,11 +3062,14 @@ function CrossAssetSection({
     return out;
   }, [strategies, cxRows]);
 
-  const provenance = {
-    researchRunId,
-    generatedAt: new Date().toISOString(),
-    engineVersion: CROSS_ASSET_ENGINE_VERSION,
-  };
+  const provenance = useMemo(
+    () => ({
+      researchRunId,
+      generatedAt: new Date().toISOString(),
+      engineVersion: CROSS_ASSET_ENGINE_VERSION,
+    }),
+    [researchRunId],
+  );
 
   const exportCsv = useCallback(() => {
     const csv = buildCrossAssetCsv(cxRows, provenance);

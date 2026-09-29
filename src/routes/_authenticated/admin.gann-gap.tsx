@@ -11,6 +11,7 @@ import {
   freezeGannGapPrediction,
   evaluatePendingGannGapOutcome,
   getGannGapPredictionHistory,
+  type PersistedPredictionRow,
 } from "@/lib/gann-gap/gann-gap.persistence.functions";
 import { GANN_GAP_DISCLAIMER } from "@/lib/gann-gap/types";
 import { downloadBlob } from "@/lib/download";
@@ -45,7 +46,8 @@ function AdminGannGapPage() {
 
   const history = useQuery({
     queryKey: ["admin", "gann-gap", "history"],
-    queryFn: () => fetchHistory({ data: { limit: 50 } }).catch(() => [] as any[]),
+    queryFn: () =>
+      fetchHistory({ data: { limit: 50 } }).catch(() => [] as PersistedPredictionRow[]),
     retry: false,
     staleTime: 30_000,
   });
@@ -247,7 +249,7 @@ function AdminGannGapPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {history.data.slice(0, 30).map((h: any) => (
+                      {history.data.slice(0, 30).map((h) => (
                         <tr key={h.predictionId} className="border-t border-border/40">
                           <td className="px-2 py-1">{h.tradingDate}</td>
                           <td className="px-2 py-1">{h.nextTradingDate ?? "—"}</td>

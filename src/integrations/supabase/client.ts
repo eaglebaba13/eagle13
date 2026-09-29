@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+  return value.startsWith("sb_publishable_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {

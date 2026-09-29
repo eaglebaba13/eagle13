@@ -5,7 +5,7 @@ import { auditDatabase, EXPECTED_TABLES } from "./database-audit";
 import { auditRls } from "./rls-audit";
 import { auditAuth } from "./auth-audit";
 import { auditEntitlements } from "./entitlement-audit";
-import { auditPaymentReadiness } from "./payment-readiness";
+import { auditPaymentReadiness, type PaymentReadinessInput } from "./payment-readiness";
 import { auditProviders } from "./provider-readiness";
 import { auditFailover } from "./failover-policy";
 import { auditCache } from "./cache-audit";
@@ -188,9 +188,25 @@ describe("entitlements audit", () => {
 
 describe("payment readiness", () => {
   it("skips when paid plans disabled", () => {
-    const r = auditPaymentReadiness({
+    const input: PaymentReadinessInput = {
       paidPlansEnabled: false,
-    } as any);
+      upiConfigured: false,
+      serverSideAmountResolution: false,
+      planCycleValidated: false,
+      requestExpiryHours: 0,
+      utrValidationActive: false,
+      screenshotBucketPrivate: false,
+      adminApprovalRoleGuarded: false,
+      duplicateActiveRequestBlocked: false,
+      duplicateUtrDetection: false,
+      amountMismatchFlagged: false,
+      approvalIsAtomic: false,
+      auditLogsEnabled: false,
+      rejectionReasonRequired: false,
+      subscriptionExtendsOnActive: false,
+      providerLabel: "disabled",
+    };
+    const r = auditPaymentReadiness(input);
     expect(r[0].status).toBe("NOT_APPLICABLE");
   });
 });
@@ -416,7 +432,7 @@ describe("score, verdict, run-id, compose, exports", () => {
   it("hard blockers force override-blocked", () => {
     const s = computeReadinessScore([
       { ...passing[0], hardBlocker: true, status: "FAIL", severity: "blocker" },
-    ] as any);
+    ]);
     expect(s.overrideBlocked).toBe(true);
   });
   it("verdict DEPLOYMENT_BLOCKED when hard blockers present", () => {

@@ -53,6 +53,7 @@ export const getCollectorGoldSilverRatio = createServerFn({ method: "GET" })
 export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    assertAuth(context);
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -116,4 +117,3 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
       cacheAgeMs: diag.cacheAgeMs,
     };
   });
-

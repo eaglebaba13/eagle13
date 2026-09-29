@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { runUnifiedBacktest } from "./unified";
 import { INTRADAY_FORMULA_VERSIONS } from "../engine-version";
-import { computeConflictBuckets } from "../../components/backtest/CompareAstroSmc";
+import { computeConflictBuckets } from "./astro-smc-conflicts";
 
 describe("Phase 21.4 Stage 4A · SMC unified dispatch", () => {
   it("same config + same candles + same signals → identical Run ID (determinism)", async () => {

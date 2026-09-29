@@ -33,6 +33,26 @@ export type ProviderConfigurationStatus =
   | "SECRETS_SAVED_REDEPLOY_REQUIRED"
   | "NOT_CONFIGURED";
 
+export interface PublicProviderEnvPresence {
+  readonly marketDataMode: ProviderEnvPresence["UPSTOX_MARKET_DATA_MODE"];
+  readonly apiKey: ProviderEnvPresence["UPSTOX_API_KEY"];
+  readonly apiSecret: ProviderEnvPresence["UPSTOX_API_SECRET"];
+  readonly accessToken: ProviderEnvPresence["UPSTOX_ACCESS_TOKEN"];
+  readonly runtimeEnvironment: ProviderEnvPresence["runtimeEnvironment"];
+  readonly deploymentRestartRequired: boolean;
+}
+
+function publicEnvPresence(env: ProviderEnvPresence): PublicProviderEnvPresence {
+  return {
+    marketDataMode: env.UPSTOX_MARKET_DATA_MODE,
+    apiKey: env.UPSTOX_API_KEY,
+    apiSecret: env.UPSTOX_API_SECRET,
+    accessToken: env.UPSTOX_ACCESS_TOKEN,
+    runtimeEnvironment: env.runtimeEnvironment,
+    deploymentRestartRequired: env.deploymentRestartRequired,
+  };
+}
+
 export interface ProviderDiagnosticsReport {
   readonly at: string;
   readonly providerSelected: string | null;
@@ -42,6 +62,7 @@ export interface ProviderDiagnosticsReport {
   readonly fallbackReason: string | null;
   readonly tokenStatus: ReturnType<typeof evaluateUpstoxTokenPolicy>;
   readonly envPresence: ProviderEnvPresence;
+  readonly publicEnvPresence: PublicProviderEnvPresence;
   readonly configurationStatus: ProviderConfigurationStatus;
   readonly supportedSymbols: readonly string[];
   readonly supportedIntervals: readonly string[];
@@ -200,6 +221,7 @@ export async function buildProviderDiagnosticsReport(
         fallbackReason: null,
         tokenStatus,
         envPresence,
+        publicEnvPresence: publicEnvPresence(envPresence),
         configurationStatus: "LIVE_ACTIVE",
         supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
         supportedIntervals: SUPPORTED_INTERVALS,
@@ -224,6 +246,7 @@ export async function buildProviderDiagnosticsReport(
         fallbackReason: tokenStatus.tokenUsable ? "development mode" : tokenStatus.reason,
         tokenStatus,
         envPresence,
+        publicEnvPresence: publicEnvPresence(envPresence),
         configurationStatus: "MOCK_ACTIVE",
         supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
         supportedIntervals: SUPPORTED_INTERVALS,
@@ -248,6 +271,7 @@ export async function buildProviderDiagnosticsReport(
       fallbackReason: tokenStatus.reason,
       tokenStatus,
       envPresence,
+      publicEnvPresence: publicEnvPresence(envPresence),
       configurationStatus,
       supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
       supportedIntervals: SUPPORTED_INTERVALS,
@@ -278,6 +302,7 @@ export function buildProviderDiagnosticsFailureReport(
     fallbackReason: "provider diagnostics failed",
     tokenStatus,
     envPresence,
+    publicEnvPresence: publicEnvPresence(envPresence),
     configurationStatus: "NOT_CONFIGURED",
     supportedSymbols: UPSTOX_SUPPORTED_SYMBOLS,
     supportedIntervals: SUPPORTED_INTERVALS,

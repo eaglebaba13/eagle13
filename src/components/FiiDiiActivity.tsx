@@ -1,15 +1,5 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { getFiiDii, type FiiDiiRow } from "@/lib/fiidii.functions";
-
-export const fiiDiiQuery = () =>
-  queryOptions({
-    queryKey: ["fii-dii"],
-    queryFn: () => getFiiDii(),
-    staleTime: 5 * 60_000,
-    gcTime: 15 * 60_000,
-    refetchInterval: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { fiiDiiQuery, type FiiDiiRow } from "@/lib/fiidii.functions";
 
 const fmtCr = (n: number) => {
   const sign = n > 0 ? "+" : n < 0 ? "−" : "";

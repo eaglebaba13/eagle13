@@ -20,9 +20,7 @@ export async function callBounded<T>(
   try {
     const data = await Promise.race([
       fn(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("TIMEOUT")), timeoutMs),
-      ),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), timeoutMs)),
     ]);
     return { ok: true, data, error: null, timedOut: false };
   } catch (err) {

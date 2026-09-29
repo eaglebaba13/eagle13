@@ -3,7 +3,7 @@
 // the screenshot proof uploaded under `{user_id}/referrals/...`.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
 const BUCKET = "payment-proofs";
 const EXPIRES_IN = 5 * 60; // 5 minutes
@@ -12,6 +12,7 @@ export const adminReferralScreenshotUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { path: string }) => data)
   .handler(async ({ data, context }): Promise<{ url: string; expiresIn: number }> => {
+    assertAuth(context);
     const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",

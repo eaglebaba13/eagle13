@@ -24,7 +24,7 @@ export type MarketBreadthCapabilityStatus =
 
 export type MarketBreadthFailingStage = "NONE" | "VIX" | "PCR" | "BREADTH" | "AGGREGATION";
 
-export type MarketBreadthSourceKind = "LIVE" | "RESEARCH_DEMO" | "MIXED";
+export type MarketBreadthSourceKind = "LIVE" | "RESEARCH_DEMO" | "MIXED" | "CONFIGURATION";
 
 export interface MarketBreadthCapability {
   readonly status: MarketBreadthCapabilityStatus;

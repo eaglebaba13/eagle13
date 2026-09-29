@@ -22,14 +22,25 @@ export interface ProviderAdminAccess {
 /**
  * Admin-only access diagnostics for `/admin/providers`. Read-only; never
  * returns tokens, provider bodies, emails, or raw Supabase error payloads.
- * The middleware itself enforces authentication; if the request lacks a
- * valid bearer token it 401s before this handler runs and the client
- * surfaces AUTH_REQUIRED.
+ * The nullable middleware context is handled explicitly. Unauthenticated
+ * callers receive AUTH_REQUIRED without attempting protected database reads.
  */
 export const getProviderAdminAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProviderAdminAccess> => {
     const userIdPresent = typeof context.userId === "string" && context.userId.length > 0;
+    if (!userIdPresent || !context.userId || !context.supabase) {
+      return {
+        authenticated: userIdPresent,
+        userIdPresent,
+        profilePresent: false,
+        adminRolePresent: false,
+        hasRoleRpcOk: false,
+        canRunSmokeTest: false,
+        blocker: "AUTH_REQUIRED",
+        safeMessage: describeBlocker("AUTH_REQUIRED"),
+      };
+    }
 
     let profilePresent = false;
     try {

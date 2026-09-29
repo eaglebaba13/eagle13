@@ -6,7 +6,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { PRODUCTION_PIPELINE } from "@/lib/ci-cd-pipeline";
-import { DEFAULT_ENV_REQUIREMENTS } from "@/lib/env-validation";
+import { PUBLIC_ENV_REQUIREMENTS } from "@/lib/env-validation/public";
 import { RECOVERY_CHECKLIST } from "@/lib/backup-recovery";
 import { MIGRATION_CHECKLIST, ROLLBACK_CHECKLIST } from "@/lib/release-management";
 import { REQUIRED_SECURITY_HEADERS } from "@/lib/security-audit";
@@ -107,7 +107,7 @@ function SystemStatusPage() {
 
       <Section title="Environment Requirements">
         <ul className="grid grid-cols-1 gap-1 text-sm md:grid-cols-2">
-          {DEFAULT_ENV_REQUIREMENTS.map((r) => (
+          {PUBLIC_ENV_REQUIREMENTS.map((r) => (
             <li key={r.key} className="flex items-baseline justify-between gap-3">
               <span className="font-mono text-xs">{r.key}</span>
               <span className="text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Phase 20.3C â€” Trusted server functions for the manual UPI payment flow.
  *
  * ALL amounts, UPI IDs, payment references and status transitions are
@@ -12,7 +12,11 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  assertAuth,
+  type AuthContext,
+} from "@/integrations/supabase/auth-middleware";
 import {
   getManualPaymentConfig,
   resolveAmountPaise,
@@ -48,7 +52,7 @@ const utrSchema = z.object({
 
 const idOnly = z.object({ id: z.string().uuid() });
 
-async function assertAdmin(supabase: any, userId: string) {
+async function assertAdmin(supabase: NonNullable<AuthContext["supabase"]>, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!data) throw new Error("forbidden");
 }
@@ -57,6 +61,7 @@ export const createManualPaymentRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => planCycleSchema.parse(v))
   .handler(async ({ data, context }): Promise<ManualPaymentRequest> => {
+    assertAuth(context);
     const cfg = getManualPaymentConfig();
     const plan = data.plan as PaidPlanId;
     const cycle = data.cycle as BillingCycle;
@@ -99,6 +104,7 @@ export const submitManualPaymentUtr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => utrSchema.parse(v))
   .handler(async ({ data, context }): Promise<ManualPaymentRequest> => {
+    assertAuth(context);
     const check = validateUtr(data.utr);
     if (!check.ok) throw new Error(`invalid_utr:${check.reason}`);
     const { data: row, error } = await context.supabase.rpc("submit_manual_payment_utr", {
@@ -118,6 +124,7 @@ export const cancelManualPaymentRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => idOnly.parse(v))
   .handler(async ({ data, context }): Promise<ManualPaymentRequest> => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("cancel_manual_payment_request", {
       _id: data.id,
     });
@@ -128,6 +135,7 @@ export const cancelManualPaymentRequest = createServerFn({ method: "POST" })
 export const listMyManualPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ManualPaymentRequest[]> => {
+    assertAuth(context);
     const { data, error } = await context.supabase
       .from("manual_payment_requests")
       .select("*")
@@ -174,6 +182,7 @@ export const adminListManualPayments = createServerFn({ method: "GET" })
       data,
       context,
     }): Promise<{ rows: ManualPaymentRequest[]; duplicateUtrs: string[] }> => {
+      assertAuth(context);
       await assertAdmin(context.supabase, context.userId);
       let q = context.supabase
         .from("manual_payment_requests")
@@ -200,6 +209,7 @@ export const adminMarkManualPaymentUnderReview = createServerFn({ method: "POST"
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => idOnly.parse(v))
   .handler(async ({ data, context }) => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc(
       "admin_mark_manual_payment_under_review",
       { _id: data.id },
@@ -216,6 +226,7 @@ export const adminApproveManualPayment = createServerFn({ method: "POST" })
       .parse(v),
   )
   .handler(async ({ data, context }) => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("admin_approve_manual_payment", {
       _id: data.id,
       _admin_note: (data.adminNote ?? null) as unknown as string,
@@ -230,6 +241,7 @@ export const adminRejectManualPayment = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), reason: z.string().min(3).max(500) }).parse(v),
   )
   .handler(async ({ data, context }) => {
+    assertAuth(context);
     const { data: row, error } = await context.supabase.rpc("admin_reject_manual_payment", {
       _id: data.id,
       _reason: data.reason,
@@ -242,6 +254,7 @@ export const adminSignScreenshotUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => z.object({ path: z.string().min(3).max(512) }).parse(v))
   .handler(async ({ data, context }): Promise<{ url: string }> => {
+    assertAuth(context);
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
@@ -250,4 +263,3 @@ export const adminSignScreenshotUrl = createServerFn({ method: "POST" })
     if (error || !signed) throw new Error(error?.message ?? "sign_failed");
     return { url: signed.signedUrl };
   });
-

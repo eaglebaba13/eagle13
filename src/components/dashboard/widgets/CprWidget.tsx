@@ -1,5 +1,5 @@
 import { cprBias } from "@/lib/levels";
-import { useDashboardData } from "../DashboardDataContext";
+import { useDashboardData } from "../use-dashboard-data";
 import { Card, StatBox } from "./legacy-primitives";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 

@@ -22,7 +22,7 @@ export function assessDataQuality(input: {
   let future = 0;
   let missingPrev = 0;
   let missingNext = 0;
-  let stale = 0;
+  const stale = 0;
   let partial = 0;
   const nowTs = Date.parse(input.nowIso);
   for (let i = 0; i < rows.length; i++) {

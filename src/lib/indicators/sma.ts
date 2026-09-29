@@ -20,7 +20,8 @@ export function calculateSma(
   params: Record<string, number>,
 ): IndicatorResult {
   const period = Math.max(1, Math.floor(params.period ?? 20));
-  const points: IndicatorResult["points"] = [];
+  // Private builder; the returned IndicatorResult and its points remain readonly.
+  const points: Array<IndicatorResult["points"][number]> = [];
 
   for (let i = 0; i < candles.length; i++) {
     if (i < period - 1) {

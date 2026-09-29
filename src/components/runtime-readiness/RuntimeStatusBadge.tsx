@@ -5,6 +5,7 @@ import type {
   ModuleReadiness,
   ModuleSource,
 } from "@/lib/runtime-readiness/runtime-evidence";
+import { SOURCE_LABEL } from "./runtime-status.utils";
 
 const STATUS_TONE: Record<string, string> = {
   // Use both light and dark tone variants so text stays WCAG-legible in both themes.
@@ -18,15 +19,6 @@ const STATUS_TONE: Record<string, string> = {
   PARTIALLY_READY: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40",
   NOT_READY: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/40",
   NOT_APPLICABLE: "bg-muted text-muted-foreground border-border/60",
-};
-
-const SOURCE_LABEL: Record<ModuleSource, string> = {
-  LIVE: "Live",
-  MIXED: "Mixed",
-  RESEARCH_DEMO: "Research Demo",
-  CONFIGURATION: "Configured",
-  STATIC: "Static",
-  UNKNOWN: "Unknown",
 };
 
 export interface RuntimeStatusBadgeProps {
@@ -62,8 +54,4 @@ export function RuntimeStatusBadge({
       )}
     </span>
   );
-}
-
-export function sourceLabel(source: ModuleSource): string {
-  return SOURCE_LABEL[source];
 }

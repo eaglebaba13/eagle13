@@ -271,4 +271,3 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
       featureEnabled: true,
     };
   });
-

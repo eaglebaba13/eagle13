@@ -1096,7 +1096,7 @@ function csvCell(v: unknown): string {
 
 // Underscore-suppress: keep the type import so the tsc `verbatimModuleSyntax`
 // checker doesn't complain when only used in prop typing.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 type _T = BacktestTrade;
 
 /* ------------------------- styles ------------------------- */

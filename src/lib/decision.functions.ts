@@ -241,7 +241,7 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
         // ----- Options + PCR signals -----
         let optionsSig: ModuleSignal = absentSignal("options", 0.2, "Options");
         let pcrSig: ModuleSignal = absentSignal("pcr", 0.1, "PCR");
-        let optionsSource = chain?.integrity.sourceStatus ?? "UNAVAILABLE";
+        const optionsSource = chain?.integrity.sourceStatus ?? "UNAVAILABLE";
         if (niftyOptions?.usable && chain && chain.integrity.sourceStatus !== "UNAVAILABLE") {
           const legs = chain.snapshot.legs;
           // pcrOi is sourced from Combined PCR when available. If the

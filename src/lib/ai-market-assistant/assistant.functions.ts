@@ -174,4 +174,3 @@ function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategy
 }
 
 export type AiMarketAssistantEnvelope = AssistantEnvelope;
-

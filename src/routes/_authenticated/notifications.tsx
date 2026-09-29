@@ -68,7 +68,7 @@ function NotificationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const rows = q.data ?? [];
+  const rows = useMemo(() => q.data ?? [], [q.data]);
   const unreadCount = useMemo(() => rows.filter((r) => !r.read_at).length, [rows]);
 
   return (

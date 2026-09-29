@@ -1,16 +1,6 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { getMarketNews, type NewsItem } from "@/lib/news.functions";
-
-export const newsQuery = () =>
-  queryOptions({
-    queryKey: ["market-news"],
-    queryFn: () => getMarketNews(),
-    staleTime: 60_000,
-    gcTime: 10 * 60_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: false,
-  });
+import { newsQuery, type NewsItem } from "@/lib/news.functions";
 
 const CAT_META: Record<NewsItem["category"], { label: string; color: string }> = {
   MARKET: { label: "INDIAN MARKET", color: "var(--eb-accent)" },

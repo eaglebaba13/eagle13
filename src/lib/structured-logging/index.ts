@@ -96,7 +96,7 @@ export class StructuredLogger {
 
 function defaultConsoleSink(entry: LogEntry): void {
   const line = formatEntry(entry);
-  // eslint-disable-next-line no-console
+
   (entry.level === "error" ? console.error : entry.level === "warn" ? console.warn : console.log)(
     line,
   );

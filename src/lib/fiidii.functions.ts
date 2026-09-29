@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchJson, fetchTextSafe } from "./http";
 
@@ -113,3 +114,13 @@ export const getFiiDii = createServerFn({ method: "GET" }).handler(
     return { rows, fetchedAt: new Date().toISOString() };
   },
 );
+
+export const fiiDiiQuery = () =>
+  queryOptions({
+    queryKey: ["fii-dii"],
+    queryFn: () => getFiiDii(),
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });

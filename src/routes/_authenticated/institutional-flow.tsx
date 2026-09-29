@@ -39,10 +39,7 @@ function InstitutionalFlowPage() {
     setLoading(true);
     setError(null);
     try {
-      const bounded = await callBounded(
-        () => fetchFlow({ data: { underlying } }),
-        30_000,
-      );
+      const bounded = await callBounded(() => fetchFlow({ data: { underlying } }), 30_000);
 
       if (!bounded.ok || !bounded.data) {
         setError(bounded.error ?? "load failed");

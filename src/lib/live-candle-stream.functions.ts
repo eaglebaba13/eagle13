@@ -17,7 +17,7 @@ export interface LiveCandleUpdate {
   readonly candle: {
     readonly time: number;
     readonly open: number;
-  readonly high: number;
+    readonly high: number;
     readonly low: number;
     readonly close: number;
     readonly volume: number | null;
@@ -55,20 +55,39 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     stream.subscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
 
     // Fetch historical candles
-    let historical: readonly { readonly time: string; readonly open: number; readonly high: number; readonly low: number; readonly close: number; readonly volume: number | null }[] = [];
+    let historical: readonly {
+      readonly time: string;
+      readonly open: number;
+      readonly high: number;
+      readonly low: number;
+      readonly close: number;
+      readonly volume: number | null;
+    }[] = [];
     try {
-      const { buildIndstocksProviderAdapter } = await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
+      const { buildIndstocksProviderAdapter } =
+        await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
       const adapter = buildIndstocksProviderAdapter();
       if (adapter.fetchHistorical) {
         const tf = intervalToTimeframe(intervalMs);
         const limit = intervalToLimit(intervalMs);
-        const result = await adapter.fetchHistorical(symbol as QuoteSymbol, tf, limit, new Date().toISOString());
+        const result = await adapter.fetchHistorical(
+          symbol as QuoteSymbol,
+          tf,
+          limit,
+          new Date().toISOString(),
+        );
         if (result.ok) historical = result.data.candles;
       }
-    } catch { /* historical unavailable — continue with live only */ }
+    } catch {
+      /* historical unavailable — continue with live only */
+    }
 
     const snap = stream.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-    const series = stream.getCandleSeries(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs, historical);
+    const series = stream.getCandleSeries(
+      symbol as QuoteSymbol,
+      intervalMs as AggregationIntervalMs,
+      historical,
+    );
 
     return {
       error: null,
@@ -77,7 +96,12 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
         symbol,
         connectionState: snap.connectionState,
         provider: snap.telemetry.providerId,
-        freshness: snap.telemetry.status === "LIVE" ? "LIVE" : snap.telemetry.status === "STALE" ? "STALE" : "NO_DATA",
+        freshness:
+          snap.telemetry.status === "LIVE"
+            ? "LIVE"
+            : snap.telemetry.status === "STALE"
+              ? "STALE"
+              : "NO_DATA",
         lastTick: snap.lastTick?.timestamp ?? null,
         lastLtp: snap.lastTick?.ltp ?? null,
         currentCandle: snap.currentCandle,
@@ -89,24 +113,38 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
 
 function intervalToTimeframe(intervalMs: number): import("./provider-foundation/types").Timeframe {
   switch (intervalMs) {
-    case 60_000: return "1m";
-    case 180_000: return "3m";
-    case 300_000: return "5m";
-    case 900_000: return "15m";
-    case 3_600_000: return "1h";
-    case 86_400_000: return "1d";
-    default: return "1m";
+    case 60_000:
+      return "1m";
+    case 180_000:
+      return "3m";
+    case 300_000:
+      return "5m";
+    case 900_000:
+      return "15m";
+    case 3_600_000:
+      return "1h";
+    case 86_400_000:
+      return "1d";
+    default:
+      return "1m";
   }
 }
 
 function intervalToLimit(intervalMs: number): number {
   switch (intervalMs) {
-    case 60_000: return 375;
-    case 180_000: return 125;
-    case 300_000: return 75;
-    case 900_000: return 25;
-    case 3_600_000: return 6;
-    case 86_400_000: return 30;
-    default: return 375;
+    case 60_000:
+      return 375;
+    case 180_000:
+      return 125;
+    case 300_000:
+      return 75;
+    case 900_000:
+      return 25;
+    case 3_600_000:
+      return 6;
+    case 86_400_000:
+      return 30;
+    default:
+      return 375;
   }
 }

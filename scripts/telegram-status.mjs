@@ -94,7 +94,11 @@ function validate(input) {
       return `"${key}" must be a finite number`;
     }
   }
-  if (input.commitSha !== undefined && input.commitSha !== null && typeof input.commitSha !== "string") {
+  if (
+    input.commitSha !== undefined &&
+    input.commitSha !== null &&
+    typeof input.commitSha !== "string"
+  ) {
     return '"commitSha" must be a string or null';
   }
   if (
@@ -148,9 +152,8 @@ const status = {
 let renderResearchStatusMessage;
 let sendResearchStatus;
 try {
-  ({ renderResearchStatusMessage, sendResearchStatus } = await import(
-    "../src/lib/smart-alerts/telegram-delivery.server.ts"
-  ));
+  ({ renderResearchStatusMessage, sendResearchStatus } =
+    await import("../src/lib/smart-alerts/telegram-delivery.server.ts"));
 } catch (err) {
   process.stderr.write(
     `unable to load the server-only Telegram delivery module (${err instanceof Error ? err.message : String(err)})\n`,

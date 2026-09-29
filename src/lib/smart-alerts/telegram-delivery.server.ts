@@ -122,7 +122,10 @@ async function postTelegramMessage(
       const isRetryable = response.status === 429 || response.status >= 500;
       return {
         status: isRetryable ? "RETRYABLE_FAILURE" : "FAILED",
-        errorCode: redactCredentials(`TELEGRAM_HTTP_${response.status}: ${body.slice(0, 100)}`, env),
+        errorCode: redactCredentials(
+          `TELEGRAM_HTTP_${response.status}: ${body.slice(0, 100)}`,
+          env,
+        ),
       };
     }
 
@@ -130,10 +133,7 @@ async function postTelegramMessage(
     if (!data.ok) {
       return {
         status: "FAILED",
-        errorCode: redactCredentials(
-          `TELEGRAM_API_ERROR: ${data.description ?? "unknown"}`,
-          env,
-        ),
+        errorCode: redactCredentials(`TELEGRAM_API_ERROR: ${data.description ?? "unknown"}`, env),
       };
     }
 
@@ -302,9 +302,7 @@ export function renderResearchStatusMessage(status: ResearchStatus): string {
  * Dispatch a research milestone status update through the shared Telegram transport.
  * Never throws; never logs; never returns or embeds credentials.
  */
-export async function sendResearchStatus(
-  status: ResearchStatus,
-): Promise<ResearchStatusDelivery> {
+export async function sendResearchStatus(status: ResearchStatus): Promise<ResearchStatusDelivery> {
   const rendered = renderResearchStatusMessage(status);
   const result = await postTelegramMessage(rendered);
   const stamp = status.timestamp?.trim();

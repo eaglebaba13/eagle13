@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { shouldSuppressShell, buildBreadcrumbs } from "./AppShell";
+import { shouldSuppressShell, buildBreadcrumbs } from "./app-shell.utils";
 
 describe("Phase 36 · AppShell suppression", () => {
   it("suppresses on /auth and its children", () => {

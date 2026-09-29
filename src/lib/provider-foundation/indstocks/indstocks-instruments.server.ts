@@ -39,15 +39,6 @@ const FALLBACK_MASTER: Readonly<Record<string, IndstocksInstrument>> = {
     instrumentType: "INDEX",
     timezone: "Asia/Kolkata",
   },
-  FINNIFTY: {
-    scripCode: "NSE_26026",
-    exchange: "NSE",
-    segment: "INDEX",
-    tradingSymbol: "NIFTY FIN SERVICE",
-    name: "Nifty Financial Services",
-    instrumentType: "INDEX",
-    timezone: "Asia/Kolkata",
-  },
   INDIA_VIX: {
     scripCode: "NSE_26017",
     exchange: "NSE",
@@ -59,12 +50,11 @@ const FALLBACK_MASTER: Readonly<Record<string, IndstocksInstrument>> = {
   },
 };
 
-export type IndstocksSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "FINNIFTY" | "INDIA_VIX";
+export type IndstocksSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "INDIA_VIX";
 
 export const INDSTOCKS_SUPPORTED_SYMBOLS: readonly IndstocksSupportedSymbol[] = [
   "NIFTY50",
   "BANKNIFTY",
-  "FINNIFTY",
   "INDIA_VIX",
 ];
 

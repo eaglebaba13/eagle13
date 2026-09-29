@@ -207,8 +207,8 @@ export class IndstocksWsConnection {
     // For sync transports (ws), connect() is synchronous.
     try {
       const result = this.transport.connect();
-      if (result && typeof (result as Promise<void>).catch === "function") {
-        (result as Promise<void>).catch(() => {
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {
           // Connection failed — onClose/onError will handle state transition
         });
       }

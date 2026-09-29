@@ -1,6 +1,7 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { DataFreshnessPill } from "../DataFreshnessPill";
 import type { FreshnessResult } from "@/lib/data-freshness";
+import { fmt } from "@/lib/format";
 
 // Phase 24C · Shared presentation primitives for legacy dashboard cards.
 // Extracted verbatim from `src/routes/index.tsx` so adapter widgets render
@@ -9,9 +10,6 @@ import type { FreshnessResult } from "@/lib/data-freshness";
 // Phase 24E · Card now accepts optional freshness / methodology / blocked
 // metadata so every widget can consistently disclose data provenance and
 // signal safety without touching its raw values.
-
-export const fmt = (n: number) =>
-  n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function Card({
   title,
@@ -230,22 +228,3 @@ export function StatBox({ label, value, color }: { label: string; value: number;
     </div>
   );
 }
-
-export const thStyle: CSSProperties = {
-  padding: "6px 9px",
-  textAlign: "left",
-  fontSize: 10,
-  color: "var(--eb-muted)",
-  fontFamily: "var(--eb-mono)",
-  letterSpacing: 0.8,
-  borderBottom: "1px solid var(--eb-border)",
-  fontWeight: "normal",
-  textTransform: "uppercase",
-};
-
-export const tdStyle: CSSProperties = {
-  padding: "6px 9px",
-  fontFamily: "var(--eb-mono)",
-  fontSize: 13,
-  borderBottom: "1px solid rgba(255,255,255,0.025)",
-};

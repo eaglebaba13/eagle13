@@ -18,11 +18,11 @@ import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import type { OHLC } from "@/lib/market.functions";
 import type { IndicatorId } from "@/lib/indicators/types";
+import type { ApexOptions, ApexYAxis } from "apexcharts";
 
 const SYMBOLS = [
   { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey },
   { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey },
-  { key: "FINNIFTY", label: "FIN NIFTY", marketKey: "FINNIFTY" as MarketKey },
 ] as const;
 
 const TIMEFRAMES = [
@@ -33,12 +33,6 @@ const TIMEFRAMES = [
   { label: "1h", ms: 3_600_000 },
   { label: "1D", ms: 86_400_000 },
 ] as const;
-
-const BASE_PRICES: Record<string, number> = {
-  NIFTY50: 25000,
-  BANKNIFTY: 52000,
-  FINNIFTY: 22000,
-};
 
 const levelsQuery = () =>
   queryOptions({
@@ -56,7 +50,8 @@ export const Route = createFileRoute("/live-chart")({
       { title: "Live Chart | EagleBABA" },
       {
         name: "description",
-        content: "Standalone live candlestick chart with astro overlays, volume and technical indicators.",
+        content:
+          "Standalone live candlestick chart with astro overlays, volume and technical indicators.",
       },
     ],
   }),
@@ -66,26 +61,6 @@ interface ChartCandle {
   readonly x: number;
   readonly y: readonly [number, number, number, number];
   readonly volume: number | null;
-}
-
-function generateMockCandles(symbolKey: string, count = 30): readonly ChartCandle[] {
-  const base = BASE_PRICES[symbolKey] ?? 25000;
-  const now = Date.now();
-  const intervalMs = 60_000;
-  const candles: ChartCandle[] = [];
-  let price = base;
-  for (let i = count - 1; i >= 0; i--) {
-    const time = now - i * intervalMs;
-    const open = price;
-    const change = (Math.random() - 0.5) * base * 0.003;
-    const close = open + change;
-    const high = Math.max(open, close) + Math.random() * base * 0.001;
-    const low = Math.min(open, close) - Math.random() * base * 0.001;
-    const volume = Math.floor(Math.random() * 100000) + 10000;
-    candles.push({ x: time, y: [open, high, low, close], volume });
-    price = close;
-  }
-  return candles;
 }
 
 function LiveChartPage() {
@@ -127,7 +102,9 @@ function LiveChartPage() {
       }
     }
     bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [symbol, intervalMs]);
 
   const chartData = useMemo(() => {
@@ -138,7 +115,12 @@ function LiveChartPage() {
     if (sse.currentCandle) {
       all.push({
         x: sse.currentCandle.time,
-        y: [sse.currentCandle.open, sse.currentCandle.high, sse.currentCandle.low, sse.currentCandle.close],
+        y: [
+          sse.currentCandle.open,
+          sse.currentCandle.high,
+          sse.currentCandle.low,
+          sse.currentCandle.close,
+        ],
         volume: sse.currentCandle.volume,
       });
     }
@@ -149,11 +131,7 @@ function LiveChartPage() {
     return [...byTime.values()].sort((a, b) => a.x - b.x);
   }, [historical, sse.completedCandles, sse.currentCandle]);
 
-  const displayCandles = useMemo(() => {
-    if (chartData.length > 0) return chartData;
-    if (bootstrapStatus === "done") return generateMockCandles(symbol, 30);
-    return [];
-  }, [chartData, bootstrapStatus, symbol]);
+  const displayCandles = chartData;
 
   const candles: readonly IndicatorCandle[] = useMemo(() => {
     return displayCandles.map((c) => ({
@@ -167,7 +145,11 @@ function LiveChartPage() {
   }, [displayCandles]);
 
   const { indicatorResults, indicatorErrors } = useMemo(() => {
-    if (candles.length === 0) return { indicatorResults: [] as IndicatorResult[], indicatorErrors: [] as { indicatorId: string; message: string }[] };
+    if (candles.length === 0)
+      return {
+        indicatorResults: [] as IndicatorResult[],
+        indicatorErrors: [] as { indicatorId: string; message: string }[],
+      };
     const results: IndicatorResult[] = [];
     const errors: { indicatorId: string; message: string }[] = [];
     for (const ind of activeIndicators) {
@@ -185,13 +167,19 @@ function LiveChartPage() {
       try {
         results.push(def.calculate(candles, ind.params));
       } catch (err) {
-        errors.push({ indicatorId: ind.id, message: err instanceof Error ? err.message : "Calculation failed" });
+        errors.push({
+          indicatorId: ind.id,
+          message: err instanceof Error ? err.message : "Calculation failed",
+        });
       }
     }
     return { indicatorResults: results, indicatorErrors: errors };
   }, [candles, activeIndicators]);
 
-  const { overlaySeries } = useMemo(() => indicatorsToChartSeries(indicatorResults), [indicatorResults]);
+  const { overlaySeries } = useMemo(
+    () => indicatorsToChartSeries(indicatorResults),
+    [indicatorResults],
+  );
 
   const astroAnnotations = useMemo(() => {
     if (!showAstroLevels || !liveLevels) return [];
@@ -214,25 +202,66 @@ function LiveChartPage() {
       const s1 = levels.s1;
       const s2 = levels.s2;
       annotations.push(
-        { y: r1, borderColor: "#22c55e", label: { text: `${p.planet} R1`, style: { color: "#22c55e", background: "transparent" } } },
-        { y: r2, borderColor: "#22c55e", label: { text: `${p.planet} R2`, style: { color: "#22c55e", background: "transparent" } } },
-        { y: s1, borderColor: "#ef4444", label: { text: `${p.planet} S1`, style: { color: "#ef4444", background: "transparent" } } },
-        { y: s2, borderColor: "#ef4444", label: { text: `${p.planet} S2`, style: { color: "#ef4444", background: "transparent" } } },
+        {
+          y: r1,
+          borderColor: "#22c55e",
+          label: { text: `${p.planet} R1`, style: { color: "#22c55e", background: "transparent" } },
+        },
+        {
+          y: r2,
+          borderColor: "#22c55e",
+          label: { text: `${p.planet} R2`, style: { color: "#22c55e", background: "transparent" } },
+        },
+        {
+          y: s1,
+          borderColor: "#ef4444",
+          label: { text: `${p.planet} S1`, style: { color: "#ef4444", background: "transparent" } },
+        },
+        {
+          y: s2,
+          borderColor: "#ef4444",
+          label: { text: `${p.planet} S2`, style: { color: "#ef4444", background: "transparent" } },
+        },
       );
     }
 
-    const gann = computeLevels({ open: market.prevClose, high: market.livePrice, low: market.livePrice, close: market.prevClose, date: market.prevDate }, 100);
+    const gann = computeLevels(
+      {
+        open: market.prevClose,
+        high: market.livePrice,
+        low: market.livePrice,
+        close: market.prevClose,
+        date: market.prevDate,
+      },
+      100,
+    );
     if (showGannLevels) {
       annotations.push(
-        { y: gann.gannUp, borderColor: "#eab308", label: { text: "Gann Up", style: { color: "#eab308", background: "transparent" } } },
-        { y: gann.gannDown, borderColor: "#a855f7", label: { text: "Gann Down", style: { color: "#a855f7", background: "transparent" } } },
+        {
+          y: gann.gannUp,
+          borderColor: "#eab308",
+          label: { text: "Gann Up", style: { color: "#eab308", background: "transparent" } },
+        },
+        {
+          y: gann.gannDown,
+          borderColor: "#a855f7",
+          label: { text: "Gann Down", style: { color: "#a855f7", background: "transparent" } },
+        },
       );
     }
     if (showSquareRootLevels) {
       for (const c of gann.gannCycle) {
         annotations.push(
-          { y: c.up, borderColor: "#3b82f6", label: { text: `SR ${c.deg}°`, style: { color: "#3b82f6", background: "transparent" } } },
-          { y: c.down, borderColor: "#f97316", label: { text: `SR ${c.deg}°`, style: { color: "#f97316", background: "transparent" } } },
+          {
+            y: c.up,
+            borderColor: "#3b82f6",
+            label: { text: `SR ${c.deg}°`, style: { color: "#3b82f6", background: "transparent" } },
+          },
+          {
+            y: c.down,
+            borderColor: "#f97316",
+            label: { text: `SR ${c.deg}°`, style: { color: "#f97316", background: "transparent" } },
+          },
         );
       }
     }
@@ -243,7 +272,7 @@ function LiveChartPage() {
   const chartSeries = useMemo(() => {
     const source = displayCandles.length > 0 ? displayCandles : chartData;
     if (source.length === 0) return [];
-    const series: any[] = [
+    const series: NonNullable<ApexOptions["series"]> = [
       { type: "candlestick", name: symbol, data: source.map((c) => ({ x: c.x, y: c.y })) },
     ];
     if (showVolume) {
@@ -258,7 +287,7 @@ function LiveChartPage() {
   }, [displayCandles, chartData, symbol, overlaySeries, showVolume]);
 
   const chartOptions = useMemo(() => {
-    const yaxis: any[] = [
+    const yaxis: ApexYAxis[] = [
       { labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
     ];
     if (showVolume) {
@@ -272,7 +301,18 @@ function LiveChartPage() {
       chart: {
         type: "candlestick" as const,
         background: "transparent",
-        toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+        toolbar: {
+          show: true,
+          tools: {
+            download: false,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+          },
+        },
         animations: { enabled: false },
         crosshair: { show: true },
         height: "100%",
@@ -281,7 +321,10 @@ function LiveChartPage() {
       xaxis: { type: "datetime" as const, labels: { style: { colors: "#888", fontSize: "10px" } } },
       yaxis,
       plotOptions: {
-        candlestick: { colors: { upward: "#22c55e", downward: "#ef4444" }, wick: { useFillColor: true } },
+        candlestick: {
+          colors: { upward: "#22c55e", downward: "#ef4444" },
+          wick: { useFillColor: true },
+        },
       },
       colors: overlaySeries.length > 0 ? getOverlaySeriesColors(overlaySeries) : undefined,
       stroke: { width: overlaySeries.length > 0 ? [1, ...overlaySeries.map(() => 2)] : undefined },
@@ -307,8 +350,12 @@ function LiveChartPage() {
     };
   }, [overlaySeries, astroAnnotations, showVolume]);
 
-  const statusColor = sse.status?.freshness === "LIVE" ? "text-green-500" :
-    sse.status?.freshness === "STALE" ? "text-amber-500" : "text-zinc-400";
+  const statusColor =
+    sse.status?.freshness === "LIVE"
+      ? "text-green-500"
+      : sse.status?.freshness === "STALE"
+        ? "text-amber-500"
+        : "text-zinc-400";
   const statusLabel = sse.connected ? (sse.status?.freshness ?? "CONNECTING") : "OFFLINE";
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
@@ -357,12 +404,24 @@ function LiveChartPage() {
       <div className="h-4 w-px bg-zinc-700" />
 
       <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
-        <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={showVolume}
+          onChange={(e) => setShowVolume(e.target.checked)}
+        />
         Volume
       </label>
 
       <select
-        value={showAstroLevels ? "astro" : showGannLevels ? "gann" : showSquareRootLevels ? "sqrt" : "none"}
+        value={
+          showAstroLevels
+            ? "astro"
+            : showGannLevels
+              ? "gann"
+              : showSquareRootLevels
+                ? "sqrt"
+                : "none"
+        }
         onChange={(e) => {
           const v = e.target.value;
           setShowAstroLevels(v === "astro");
@@ -378,7 +437,11 @@ function LiveChartPage() {
       </select>
 
       <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
-        <input type="checkbox" checked={showMoonPhase} onChange={(e) => setShowMoonPhase(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={showMoonPhase}
+          onChange={(e) => setShowMoonPhase(e.target.checked)}
+        />
         Moon Phase
       </label>
 
@@ -394,7 +457,11 @@ function LiveChartPage() {
           setActiveIndicators(
             listIndicators()
               .filter((def) => ids.includes(def.id))
-              .map((def) => ({ id: def.id as IndicatorId, enabled: true, params: Object.fromEntries(def.params.map((p) => [p.key, p.default])) })),
+              .map((def) => ({
+                id: def.id as IndicatorId,
+                enabled: true,
+                params: Object.fromEntries(def.params.map((p) => [p.key, p.default])),
+              })),
           );
         }}
         className="px-2 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs"
@@ -414,12 +481,15 @@ function LiveChartPage() {
       <div className="flex items-center gap-3">
         <span className={`font-mono ${statusColor}`}>● {statusLabel}</span>
         <span className="font-mono text-zinc-400">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
-        {sse.status?.lastLtp != null && <span className="font-mono text-zinc-300">LTP: {sse.status.lastLtp.toFixed(2)}</span>}
+        {sse.status?.lastLtp != null && (
+          <span className="font-mono text-zinc-300">LTP: {sse.status.lastLtp.toFixed(2)}</span>
+        )}
       </div>
       <div className="flex items-center gap-3">
         {market && (
           <span className="font-mono text-zinc-400">
-            {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg: {market.changePct.toFixed(2)}%
+            {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg:{" "}
+            {market.changePct.toFixed(2)}%
           </span>
         )}
         {showMoonPhase && moonPhase && (
@@ -467,7 +537,12 @@ function LiveChartPage() {
             </div>
           )}
           <div className="w-full h-full">
-            <ApexChart type="candlestick" height="100%" series={chartSeries} options={chartOptions} />
+            <ApexChart
+              type="candlestick"
+              height="100%"
+              series={chartSeries}
+              options={chartOptions}
+            />
           </div>
         </div>
 

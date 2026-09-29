@@ -428,6 +428,7 @@ export const updateSmartAlertSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: SubscriptionUpdate) => d ?? {})
   .handler(async ({ context, data }): Promise<PersistedSubscriptionRow> => {
+    assertAuth(context);
     const current = await getSmartAlertSubscription();
     const nextTypes: Record<AlertType, boolean> = { ...current.types };
     if (data.types) {
@@ -469,6 +470,7 @@ export const getSmartAlertEvents = createServerFn({ method: "GET" })
     unreadOnly: !!d?.unreadOnly,
   }))
   .handler(async ({ context, data }): Promise<PersistedAlertEventRow[]> => {
+    assertAuth(context);
     let q = context.supabase
       .from("smart_alert_events")
       .select("*")
@@ -484,6 +486,7 @@ export const getSmartAlertEvents = createServerFn({ method: "GET" })
 export const getSmartAlertUnreadCount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
+    assertAuth(context);
     const { count, error } = await context.supabase
       .from("smart_alert_events")
       .select("id", { count: "exact", head: true })
@@ -498,6 +501,7 @@ export const markSmartAlertRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    assertAuth(context);
     const { error } = await context.supabase
       .from("smart_alert_events")
       .update({ read_at: new Date().toISOString() })
@@ -511,6 +515,7 @@ export const markSmartAlertDismissed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    assertAuth(context);
     const now = new Date().toISOString();
     const { error } = await context.supabase
       .from("smart_alert_events")
@@ -524,6 +529,7 @@ export const markSmartAlertDismissed = createServerFn({ method: "POST" })
 export const markAllSmartAlertsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ ok: true }> => {
+    assertAuth(context);
     const { error } = await context.supabase
       .from("smart_alert_events")
       .update({ read_at: new Date().toISOString() })
@@ -552,6 +558,7 @@ export interface SmartAlertRunResult {
 export const runSmartAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SmartAlertRunResult> => {
+    assertAuth(context);
     const userId = context.userId;
 
     // Load checkpoint + subscription in parallel.
@@ -727,6 +734,7 @@ async function assertAdmin(ctx: { supabase: unknown; userId: string }): Promise<
 export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminAlertDiagnostics> => {
+    assertAuth(context);
     await assertAdmin(context);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { classifySmartAlertReadiness, unknownEngineHealth } = await import("./readiness");
