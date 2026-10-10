@@ -46,6 +46,7 @@ export function summariseFlow(i: SummaryInput): InstitutionalSummary {
   const pcrBull = pcr != null && pcr >= 1.2;
   const pcrBear = pcr != null && pcr <= 0.8;
 
+  // Conflicting PCR and writer dominance take precedence over unconfirmed dominance.
   if (putDominant && pcrBull) {
     bias = "PUT_WRITERS_ACTIVE";
     rationale.push("Put writers dominate ΔOI and PCR confirms bullish positioning.");

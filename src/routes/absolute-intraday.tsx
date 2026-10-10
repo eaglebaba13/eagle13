@@ -68,7 +68,7 @@ export const Route = createFileRoute("/absolute-intraday")({
   }),
   errorComponent: ({ error, reset }) => (
     <div style={{ padding: 32, color: C.red, fontFamily: "var(--eb-mono)" }}>
-      Snapshot unavailable: {error.message}
+      Snapshot unavailable: {error instanceof Error ? error.message : "Unexpected error"}
       <button
         onClick={reset}
         style={{

@@ -6,6 +6,7 @@
 // the intentional commodity/ratio fallback (see docs).
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { getMarketDataImpl } from "./market.functions";
 
 type UxOk = {
   ok: true;
@@ -100,8 +101,7 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
   });
 
   it("prefers Upstox for NIFTY/BANKNIFTY/VIX and does NOT call Yahoo for those symbols", async () => {
-    const mod = await import("./market.functions");
-    const res = (await mod.getMarketDataImpl()) as {
+    const res = (await getMarketDataImpl()) as {
       providerMetadata?: Record<string, { name: string }>;
     };
     // Yahoo should be called ONLY for GC=F and SI=F (commodities), never for indices.

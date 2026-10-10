@@ -1,3 +1,5 @@
+import type { ApexOptions, ApexYAxis } from "apexcharts";
+import { useMarketSession } from "@/hooks/use-market-session";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -18,12 +20,8 @@ import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import type { OHLC } from "@/lib/market.functions";
 import type { IndicatorId } from "@/lib/indicators/types";
-import type { ApexOptions, ApexYAxis } from "apexcharts";
 
-const SYMBOLS = [
-  { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey },
-  { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey },
-] as const;
+const SYMBOLS = [{ key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey }] as const;
 
 const TIMEFRAMES = [
   { label: "1m", ms: 60_000 },
@@ -66,6 +64,28 @@ interface ChartCandle {
 function LiveChartPage() {
   const [symbol, setSymbol] = useState<string>("NIFTY50");
   const [intervalMs, setIntervalMs] = useState<number>(60_000);
+  return (
+    <LiveChartSelection
+      key={`${symbol}:${intervalMs}`}
+      symbol={symbol}
+      setSymbol={setSymbol}
+      intervalMs={intervalMs}
+      setIntervalMs={setIntervalMs}
+    />
+  );
+}
+function LiveChartSelection({
+  symbol,
+  setSymbol,
+  intervalMs,
+  setIntervalMs,
+}: {
+  symbol: string;
+  setSymbol: (s: string) => void;
+  intervalMs: number;
+  setIntervalMs: (n: number) => void;
+}) {
+  const session = useMarketSession();
   const [showVolume, setShowVolume] = useState(true);
   const [showAstroLevels, setShowAstroLevels] = useState(true);
   const [showGannLevels, setShowGannLevels] = useState(false);
@@ -182,7 +202,7 @@ function LiveChartPage() {
   );
 
   const astroAnnotations = useMemo(() => {
-    if (!showAstroLevels || !liveLevels) return [];
+    if (!liveLevels) return [];
     const marketDef = SYMBOLS.find((s) => s.key === symbol);
     if (!marketDef) return [];
     const market = liveLevels.markets.find((m) => m.key === marketDef.marketKey);
@@ -195,7 +215,7 @@ function LiveChartPage() {
       label?: { text: string; style: { color: string; background: string } };
     }[] = [];
 
-    for (const p of market.planets) {
+    for (const p of showAstroLevels ? market.planets : []) {
       const levels = computeGannAstroLevels(cycles, p.degree);
       const r1 = levels.r1;
       const r2 = levels.r2;
@@ -279,14 +299,14 @@ function LiveChartPage() {
       series.push({
         type: "bar",
         name: "Volume",
-        data: source.map((c) => ({ x: c.x, y: c.volume ?? 0 })),
+        data: source.map((c) => ({ x: c.x, y: c.volume })),
       });
     }
     series.push(...overlaySeries.map((s) => ({ name: s.name, data: [...s.data], type: s.type })));
     return series;
   }, [displayCandles, chartData, symbol, overlaySeries, showVolume]);
 
-  const chartOptions = useMemo(() => {
+  const chartOptions = useMemo<ApexOptions>(() => {
     const yaxis: ApexYAxis[] = [
       { labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
     ];
@@ -356,7 +376,8 @@ function LiveChartPage() {
       : sse.status?.freshness === "STALE"
         ? "text-amber-500"
         : "text-zinc-400";
-  const statusLabel = sse.connected ? (sse.status?.freshness ?? "CONNECTING") : "OFFLINE";
+  const statusLabel =
+    sse.error ?? (sse.connected ? (sse.status?.freshness ?? "NO_DATA") : "UNAVAILABLE");
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
   const market = liveLevels?.markets.find((m) => m.key === marketDef?.marketKey);
@@ -468,7 +489,7 @@ function LiveChartPage() {
       >
         <option value="none">Indicators: None</option>
         {listIndicators().map((def) => (
-          <option key={def.id} value={`${def.id}:1`}>
+          <option key={def.id} value={`${def.id}:true`}>
             {def.name}
           </option>
         ))}
@@ -479,8 +500,12 @@ function LiveChartPage() {
   const bottomStatus = (
     <div className="shrink-0 px-3 py-1.5 border-t border-zinc-800 text-xs flex items-center justify-between bg-[#0b0e14]">
       <div className="flex items-center gap-3">
+        <span className="font-mono text-zinc-400">MARKET {session.isOpen ? "OPEN" : "CLOSED"}</span>
         <span className={`font-mono ${statusColor}`}>● {statusLabel}</span>
-        <span className="font-mono text-zinc-400">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
+        <span className="font-mono text-zinc-400">{sse.status?.provider ?? "UNAVAILABLE"}</span>
+        <span className="font-mono text-zinc-400">
+          {sse.status?.lastTick ?? "NO TICK"} ? {sse.status?.quality ?? "UNKNOWN"} ? Levels: Yahoo
+        </span>
         {sse.status?.lastLtp != null && (
           <span className="font-mono text-zinc-300">LTP: {sse.status.lastLtp.toFixed(2)}</span>
         )}
@@ -528,7 +553,7 @@ function LiveChartPage() {
           )}
           {bootstrapStatus === "error" && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs text-red-400">Chart error: {bootstrapError}</span>
+              <span className="text-xs text-red-400">PROVIDER ERROR: {bootstrapError}</span>
             </div>
           )}
           {bootstrapStatus === "done" && chartData.length === 0 && (
@@ -537,12 +562,14 @@ function LiveChartPage() {
             </div>
           )}
           <div className="w-full h-full">
-            <ApexChart
-              type="candlestick"
-              height="100%"
-              series={chartSeries}
-              options={chartOptions}
-            />
+            {chartData.length > 0 && (
+              <ApexChart
+                type="candlestick"
+                height="100%"
+                series={chartSeries}
+                options={chartOptions}
+              />
+            )}
           </div>
         </div>
 

@@ -86,7 +86,7 @@ export const Route = createFileRoute("/")({
   errorComponent: ({ error }) => (
     <div className="eb-shell" style={{ padding: 40 }}>
       <p style={{ color: "var(--eb-bear)", fontFamily: "var(--eb-mono)" }}>
-        Live data unavailable: {error.message}
+        Live data unavailable: {error instanceof Error ? error.message : "Unexpected error"}
       </p>
     </div>
   ),

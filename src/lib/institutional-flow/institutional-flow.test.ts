@@ -266,3 +266,216 @@ describe("Institutional Flow — analytics", () => {
     expect(c.blockers.length).toBeGreaterThan(0);
   });
 });
+
+import { institutionalFlowToTerminalBias } from "@/lib/option-strategy-terminal/direction";
+import type { FlowBias } from "./types";
+
+const summaryCases: readonly {
+  call: number;
+  put: number;
+  pcr: number | null;
+  bias: FlowBias;
+  headline: string;
+  rationale: string;
+}[] = [
+  {
+    call: 200,
+    put: 100,
+    pcr: 1.3,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bullish but call writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: 0.7,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bearish but put writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: 1.3,
+    bias: "PUT_WRITERS_ACTIVE",
+    headline: "Put writers active",
+    rationale: "Put writers dominate \u0394OI and PCR confirms bullish positioning.",
+  },
+  {
+    call: 200,
+    put: 100,
+    pcr: 0.7,
+    bias: "CALL_WRITERS_ACTIVE",
+    headline: "Call writers active",
+    rationale: "Call writers dominate \u0394OI and PCR confirms bearish positioning.",
+  },
+  {
+    call: 200,
+    put: 100,
+    pcr: 1.2,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bullish but call writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: 0.8,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bearish but put writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: 1.2,
+    bias: "PUT_WRITERS_ACTIVE",
+    headline: "Put writers active",
+    rationale: "Put writers dominate \u0394OI and PCR confirms bullish positioning.",
+  },
+  {
+    call: 200,
+    put: 100,
+    pcr: 0.8,
+    bias: "CALL_WRITERS_ACTIVE",
+    headline: "Call writers active",
+    rationale: "Call writers dominate \u0394OI and PCR confirms bearish positioning.",
+  },
+  {
+    call: 200,
+    put: 100,
+    pcr: 1.199,
+    bias: "CALL_WRITERS_ACTIVE",
+    headline: "Call writers active",
+    rationale: "Call writers dominate \u0394OI. PCR confirmation not aligned.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: 0.801,
+    bias: "PUT_WRITERS_ACTIVE",
+    headline: "Put writers active",
+    rationale: "Put writers dominate \u0394OI. PCR confirmation not aligned.",
+  },
+  {
+    call: 120,
+    put: 100,
+    pcr: 1.3,
+    bias: "BALANCED",
+    headline: "Balanced positioning",
+    rationale: "Neither side dominates \u0394OI within tolerance.",
+  },
+  {
+    call: 100,
+    put: 120,
+    pcr: 0.7,
+    bias: "BALANCED",
+    headline: "Balanced positioning",
+    rationale: "Neither side dominates \u0394OI within tolerance.",
+  },
+  {
+    call: 120.001,
+    put: 100,
+    pcr: 1.3,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bullish but call writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 100,
+    put: 120.001,
+    pcr: 0.7,
+    bias: "CONFLICT",
+    headline: "Conflicting positioning",
+    rationale: "PCR bearish but put writers active \u2014 conflicting evidence.",
+  },
+  {
+    call: 200,
+    put: 100,
+    pcr: null,
+    bias: "CALL_WRITERS_ACTIVE",
+    headline: "Call writers active",
+    rationale: "Call writers dominate \u0394OI. PCR confirmation not aligned.",
+  },
+  {
+    call: 100,
+    put: 200,
+    pcr: null,
+    bias: "PUT_WRITERS_ACTIVE",
+    headline: "Put writers active",
+    rationale: "Put writers dominate \u0394OI. PCR confirmation not aligned.",
+  },
+  {
+    call: 100,
+    put: 100,
+    pcr: 1,
+    bias: "BALANCED",
+    headline: "Balanced positioning",
+    rationale: "Neither side dominates \u0394OI within tolerance.",
+  },
+  {
+    call: 0,
+    put: 0,
+    pcr: null,
+    bias: "BALANCED",
+    headline: "Balanced positioning",
+    rationale: "Neither side dominates \u0394OI within tolerance.",
+  },
+];
+
+describe("Institutional Flow ? approved summary precedence", () => {
+  it.each(summaryCases)(
+    "call=$call put=$put PCR=$pcr ? $bias",
+    ({ call, put, pcr, bias, headline, rationale }) => {
+      const oi = { ...analyzeOi(mkSnapshot()), totalCallChangeOi: call, totalPutChangeOi: put };
+      const buildUp = classifyBuildUp({
+        underlyingPriceChange: null,
+        totalCallChangeOi: null,
+        totalPutChangeOi: null,
+      });
+      const maxPain = computeMaxPain({ snapshot: mkSnapshot() });
+      const result = summariseFlow({ oi, buildUp, maxPain, pcrScore: pcr });
+      expect(result.bias).toBe(bias);
+      expect(result.headline).toBe(headline);
+      expect(result.rationale).toEqual([rationale]);
+      expect(result.availability).toBe(pcr == null ? "PARTIAL" : "OK");
+      const expectedMapping =
+        bias === "PUT_WRITERS_ACTIVE"
+          ? "BULLISH"
+          : bias === "CALL_WRITERS_ACTIVE"
+            ? "BEARISH"
+            : bias === "BALANCED"
+              ? "NEUTRAL"
+              : "UNAVAILABLE";
+      expect(institutionalFlowToTerminalBias(result.bias)).toBe(expectedMapping);
+    },
+  );
+  it("unavailable OI stays unavailable even with directional PCR", () => {
+    const oi = {
+      ...analyzeOi(mkSnapshot()),
+      availability: "UNAVAILABLE" as const,
+      totalCallChangeOi: null,
+      totalPutChangeOi: null,
+    };
+    const result = summariseFlow({
+      oi,
+      buildUp: classifyBuildUp({
+        underlyingPriceChange: null,
+        totalCallChangeOi: null,
+        totalPutChangeOi: null,
+      }),
+      maxPain: computeMaxPain({ snapshot: mkSnapshot() }),
+      pcrScore: 1.3,
+    });
+    expect(result).toEqual({
+      bias: "UNAVAILABLE",
+      headline: "Option OI unavailable",
+      rationale: ["Snapshot missing call/put OI"],
+      evidence: [],
+      availability: "UNAVAILABLE",
+    });
+    expect(institutionalFlowToTerminalBias(result.bias)).toBe("UNAVAILABLE");
+    expect(institutionalFlowToTerminalBias(undefined)).toBe("UNAVAILABLE");
+  });
+});

@@ -113,7 +113,7 @@ export function aggregateTick(
     return {
       ...state,
       current: createCandleFromTick(tick, bucketMs, state.intervalMs),
-      completed: [...state.completed, state.current],
+      completed: [...state.completed, state.current].slice(-2000),
     };
   }
 

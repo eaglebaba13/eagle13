@@ -83,3 +83,16 @@ export function mergeDirection(signals: CanonicalSignals): DirectionResult {
     reasons,
   };
 }
+
+// Preserve the terminal contract: conflicting positioning is unavailable here.
+export function institutionalFlowToTerminalBias(
+  bias: import("@/lib/institutional-flow/types").FlowBias | undefined,
+): "BULLISH" | "BEARISH" | "NEUTRAL" | "UNAVAILABLE" {
+  return bias === "PUT_WRITERS_ACTIVE"
+    ? "BULLISH"
+    : bias === "CALL_WRITERS_ACTIVE"
+      ? "BEARISH"
+      : bias === "BALANCED"
+        ? "NEUTRAL"
+        : "UNAVAILABLE";
+}

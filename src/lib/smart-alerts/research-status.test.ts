@@ -31,7 +31,10 @@ function payload(overrides: Partial<ResearchStatus> = {}): ResearchStatus {
 
 type Call = { url: string; init: RequestInit };
 
-const okResponse = { ok: true, json: () => Promise.resolve({ ok: true }) };
+const okResponse = {
+  ok: true,
+  json: () => Promise.resolve({ ok: true, result: { message_id: 1 } }),
+};
 
 function httpError(status: number, body: string) {
   return { ok: false, status, text: () => Promise.resolve(body) };
@@ -63,6 +66,7 @@ describe("research status telegram dispatch", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     process.env = { ...origEnv };
   });
 
@@ -165,7 +169,7 @@ describe("research status telegram dispatch", () => {
     });
     const network = await sendResearchStatus(payload());
     expect(network.status).toBe("RETRYABLE_FAILURE");
-    expect(network.errorCode).toContain("[REDACTED]");
+    expect(network.errorCode).toBe("TELEGRAM_NETWORK_ERROR");
     expect(JSON.stringify(network)).not.toContain(TOKEN);
     expect(JSON.stringify(network)).not.toContain(CHAT_ID);
 

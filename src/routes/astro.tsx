@@ -71,7 +71,9 @@ export const Route = createFileRoute("/astro")({
   }),
   errorComponent: ({ error }) => (
     <div style={{ background: C.bg, minHeight: "100vh", padding: 40, color: C.red }}>
-      <p style={{ fontFamily: "var(--eb-mono)" }}>Astro data unavailable: {error.message}</p>
+      <p style={{ fontFamily: "var(--eb-mono)" }}>
+        Astro data unavailable: {error instanceof Error ? error.message : "Unexpected error"}
+      </p>
       <Link to="/" style={{ color: C.blue }}>
         ← Back to market dashboard
       </Link>

@@ -2,7 +2,9 @@
 // Split out of `router.tsx` so that module only exports `getRouter`
 // (React Fast Refresh). Behavior is unchanged.
 
-export function DefaultError({ error }: { error: Error }) {
+import type { ErrorComponentProps } from "@tanstack/react-router";
+
+export function DefaultError({ error }: ErrorComponentProps<unknown>) {
   if (typeof console !== "undefined") console.error(error);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

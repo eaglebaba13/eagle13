@@ -49,8 +49,9 @@ export class UpstoxWsAdapter {
 
     const token = process.env.UPSTOX_ACCESS_TOKEN?.trim();
     if (!token) {
-      this.lastError = "Upstox credentials unavailable";
+      // Missing credentials fail closed.
       this.state = "DISCONNECTED";
+      this.lastError = "CONFIGURATION_ERROR";
       return;
     }
 
@@ -81,8 +82,9 @@ export class UpstoxWsAdapter {
       }
 
       if (typeof WebSocket === "undefined") {
-        this.lastError = "WebSocket transport unavailable";
+        // Node / Server environment without global WebSocket — fallback to tick simulator
         this.state = "DISCONNECTED";
+        this.lastError = "PROVIDER_ERROR";
         return;
       }
 
@@ -114,7 +116,7 @@ export class UpstoxWsAdapter {
         }
       };
     } catch (err) {
-      this.lastError = err instanceof Error ? err.message : "Upstox WS error";
+      this.lastError = "PROVIDER_ERROR";
       this.state = "DISCONNECTED";
     }
   }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAlertEngine, emptyCheckpoint } from "./engine";
 import { defaultSubscription } from "./subscriptions";
 import type { AlertEvaluationContext } from "./types";
@@ -42,6 +42,52 @@ function baseCtx(overrides: Partial<AlertEvaluationContext> = {}): AlertEvaluati
 }
 
 describe("smart-alerts engine", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("sends an opted-in transition once and suppresses delivery on repeat", async () => {
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", "test-only-token");
+    vi.stubEnv("TELEGRAM_CHAT_ID", "test-only-chat");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, result: { message_id: 1 } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const subscription = { ...defaultSubscription("u1"), telegramEnabled: true };
+    const initial = baseCtx();
+    const first = await runAlertEngine({
+      context: initial,
+      checkpoint: emptyCheckpoint("u1", initial.generatedAt),
+      subscription,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    const changed = baseCtx({
+      generatedAt: "2026-07-17T04:31:00.000Z",
+      decision: { available: true, action: "SELL", bias: "BEARISH", freshness: "LIVE" },
+    });
+    const second = await runAlertEngine({
+      context: changed,
+      checkpoint: first.nextCheckpoint,
+      subscription,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(second.emitted[0].deliveryStatus).toContainEqual(
+      expect.objectContaining({
+        provider: "TELEGRAM",
+        status: "DELIVERED",
+      }),
+    );
+    const repeated = await runAlertEngine({
+      context: changed,
+      checkpoint: second.nextCheckpoint,
+      subscription,
+    });
+    expect(repeated.emitted).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("emits nothing on first evaluation (no prior state)", async () => {
     const r = await runAlertEngine({
       context: baseCtx(),

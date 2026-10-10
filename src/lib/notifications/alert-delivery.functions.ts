@@ -29,6 +29,7 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly AlertDeliveryRow[]> => {
     assertAuth(context);
+    if (!context.supabase) throw new Error("Unauthorized: Authentication required");
     const { data, error } = await context.supabase
       .from("smart_alert_delivery_attempts")
       .select(

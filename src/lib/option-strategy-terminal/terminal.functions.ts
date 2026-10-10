@@ -21,6 +21,7 @@ import type {
 
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import { runStrategyEngine } from "./strategies";
+import { institutionalFlowToTerminalBias } from "./direction";
 import { withExplanation } from "./explanation";
 import type { CanonicalBias, CanonicalSignals, StrategyEngineOutput } from "./types";
 
@@ -195,14 +196,7 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
             ? "BEARISH"
             : "NEUTRAL";
     const rawPcrOi = decision?.capabilities.pcrCombined.pcrOi ?? null;
-    const flowBias: "BULLISH" | "BEARISH" | "NEUTRAL" | "UNAVAILABLE" =
-      flow?.summary.bias === "PUT_WRITERS_ACTIVE"
-        ? "BULLISH"
-        : flow?.summary.bias === "CALL_WRITERS_ACTIVE"
-          ? "BEARISH"
-          : flow?.summary.bias === "BALANCED"
-            ? "NEUTRAL"
-            : "UNAVAILABLE";
+    const flowBias = institutionalFlowToTerminalBias(flow?.summary.bias);
     const institutionalFlowEngine = computeInstitutionalFlow({
       pcrIndices: [
         {

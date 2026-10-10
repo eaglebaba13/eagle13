@@ -22,7 +22,7 @@ import {
   type BacktestTrade,
 } from "@/lib/backtest.functions";
 import { ApexChart } from "@/components/ApexChart";
-import { classifyDegradation } from "./research-panel.utils";
+import { classifyDegradation, createCrossAssetExportActions } from "./research-panel.utils";
 import {
   estimateGridCells,
   validateSensitivityGrid,
@@ -2995,9 +2995,6 @@ import {
   buildLeaderboard,
   buildResearchSummary,
   computeConsistencyScore,
-  buildCrossAssetCsv,
-  buildCrossAssetJson,
-  CROSS_ASSET_ENGINE_VERSION,
   type CrossAssetRow,
   type LeaderboardEntry,
 } from "@/lib/backtest/cross-asset";
@@ -3062,34 +3059,31 @@ function CrossAssetSection({
     return out;
   }, [strategies, cxRows]);
 
-  const provenance = useMemo(
-    () => ({
-      researchRunId,
-      generatedAt: new Date().toISOString(),
-      engineVersion: CROSS_ASSET_ENGINE_VERSION,
-    }),
-    [researchRunId],
+  const exportActions = useMemo(
+    () =>
+      createCrossAssetExportActions(cxRows, researchRunId, { leaderboard, summary, consistency }),
+    [cxRows, researchRunId, leaderboard, summary, consistency],
   );
 
   const exportCsv = useCallback(() => {
-    const csv = buildCrossAssetCsv(cxRows, provenance);
+    const csv = exportActions.csv();
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
     a.download = `cross_asset_${instrument}_${from}_${to}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [cxRows, provenance, instrument, from, to]);
+  }, [exportActions, instrument, from, to]);
 
   const exportJson = useCallback(() => {
-    const json = buildCrossAssetJson(cxRows, provenance, { leaderboard, summary, consistency });
+    const json = exportActions.json();
     const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url;
     a.download = `cross_asset_${instrument}_${from}_${to}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [cxRows, provenance, leaderboard, summary, consistency, instrument, from, to]);
+  }, [exportActions, instrument, from, to]);
 
   return (
     <>

@@ -1,6 +1,6 @@
 // Server-only INDstocks WebSocket connection manager.
 // Uses provider-neutral WebSocketTransport abstraction.
-// Compatible with Cloudflare Workers runtime.
+// Node production runtime.
 // Token never exposed to client/logs/telemetry.
 
 import type {
@@ -18,7 +18,7 @@ import {
 } from "./indstocks-ws-types";
 import type { WebSocketTransport, WebSocketTransportConfig } from "./websocket-transport";
 import { WS_OPEN, WS_CLOSED } from "./websocket-transport";
-import { WorkersWebSocketTransport } from "./workers-ws-transport";
+import { NodeWebSocketTransport } from "./node-ws-transport.server";
 
 export type WsConnectionListener = (snapshot: WsConnectionSnapshot) => void;
 export type WsMessageListener = (message: WsProviderMessage) => void;
@@ -88,6 +88,11 @@ export class IndstocksWsConnection {
   connect(): void {
     if (this.state === "CONNECTED" || this.state === "CONNECTING" || this.state === "CLOSING")
       return;
+    if (!this.token) {
+      this.lastError = "CONFIGURATION_ERROR";
+      this.setState("FAILED");
+      return;
+    }
     this.intentionallyClosed = false;
     this.setState("CONNECTING");
     this.createTransport();
@@ -126,9 +131,9 @@ export class IndstocksWsConnection {
   // ──────────────── Internal ────────────────
 
   private defaultTransportFactory(config: WebSocketTransportConfig): WebSocketTransport {
-    // Production default: Cloudflare Workers-compatible transport using fetch+Upgrade.
+    // Production uses Node ws with an authenticated handshake.
     // Tests inject a mock factory via constructor opts to avoid real connections.
-    return new WorkersWebSocketTransport(config);
+    return new NodeWebSocketTransport(config);
   }
 
   private setState(next: WsConnectionState): void {
@@ -188,7 +193,7 @@ export class IndstocksWsConnection {
       if (this.intentionallyClosed) {
         this.setState("DISCONNECTED");
       } else {
-        this.lastError = `closed: ${code}`;
+        if (this.lastError !== "PROVIDER_AUTH_ERROR") this.lastError = `closed: ${code}`;
         this.setState("DISCONNECTED");
         this.scheduleReconnect();
       }
@@ -199,17 +204,18 @@ export class IndstocksWsConnection {
     });
 
     this.transport.onError((_err: Error) => {
-      this.lastError = "transport error";
+      if (this.lastError !== "PROVIDER_AUTH_ERROR")
+        this.lastError =
+          _err.message === "PROVIDER_AUTH_ERROR" ? "PROVIDER_AUTH_ERROR" : "PROVIDER_ERROR";
       // onerror is typically followed by onclose, so reconnect is handled there
     });
 
-    // For async transports (Workers), connect() returns a promise.
-    // For sync transports (ws), connect() is synchronous.
+    // Node ws connects synchronously; async transports may return a promise.
     try {
       const result = this.transport.connect();
       if (result && typeof result.catch === "function") {
         result.catch(() => {
-          // Connection failed — onClose/onError will handle state transition
+          // Connection failed - onClose/onError will handle state transition
         });
       }
     } catch {
@@ -233,8 +239,7 @@ export class IndstocksWsConnection {
     // within the heartbeat window. If not, the connection is stale → reconnect.
     this.heartbeatTimer = setInterval(() => {
       if (this.state !== "CONNECTED") return;
-      if (!this.lastMessageAt) return;
-      const age = this.nowMs() - Date.parse(this.lastMessageAt);
+      const age = this.nowMs() - Date.parse(this.lastMessageAt ?? this.connectedAt!);
       if (age > this.heartbeatIntervalMs * 2) {
         // No message received within 2× heartbeat window — connection is stale.
         this.lastError = "stale: no provider message within heartbeat window";
@@ -270,6 +275,10 @@ export class IndstocksWsConnection {
     if (this.intentionallyClosed) return;
     if (this.reconnectTimer) return; // already scheduled
 
+    if (this.reconnectAttempt >= 5 || this.lastError === "PROVIDER_AUTH_ERROR") {
+      this.setState("FAILED");
+      return;
+    }
     this.reconnectAttempt++;
     const delay = Math.min(
       this.reconnectBaseMs * 2 ** (this.reconnectAttempt - 1),
@@ -302,7 +311,23 @@ export class IndstocksWsConnection {
 
   private parseMessage(data: string): WsProviderMessage | null {
     try {
-      const json = JSON.parse(data) as Record<string, unknown>;
+      const parsed: unknown = JSON.parse(data);
+      if (!parsed || typeof parsed !== "object") return null;
+      const json = parsed as Record<string, unknown>;
+      // Official price envelope: mode/instrument/timestamp with data.ltp.
+      if (json.mode === "ltp" && json.data && typeof json.data === "object") {
+        const payload = json.data as Record<string, unknown>;
+        if (
+          typeof json.instrument !== "string" ||
+          typeof json.timestamp !== "number" ||
+          typeof payload.ltp !== "number"
+        )
+          return null;
+        return {
+          type: "ltp",
+          data: { instrument: json.instrument, timestamp: json.timestamp, ltp: payload.ltp },
+        };
+      }
 
       if (json.type === "ltp" && json.data) {
         return { type: "ltp", data: json.data as import("./indstocks-ws-types").WsLtpTick };

@@ -2,7 +2,17 @@
 // Manages IndstocksWsAdapter + CandleAggregator for production use.
 // Runs server-side only. Token never exposed to client.
 
-import { UpstoxWsAdapter } from "./provider-foundation/upstox/upstox-ws-adapter.server";
+import {
+  createLiveMarketProvider,
+  type LiveMarketStreamProvider,
+} from "./live-market-provider.server";
+import {
+  tickFreshness,
+  validSelection,
+  candleSchema,
+  type LiveCandleEvent,
+} from "./live-candle-contract";
+export type { LiveCandleEvent } from "./live-candle-contract";
 import type { MarketTick } from "./provider-foundation/indstocks/indstocks-ws-types";
 import {
   aggregateTick,
@@ -25,32 +35,14 @@ export interface LiveStreamSnapshot {
   readonly subscriptionActive: boolean;
 }
 
-export interface LiveCandleEvent {
-  readonly type: "candle_update";
-  readonly symbol: string;
-  readonly intervalMs: number;
-  readonly candle: {
-    readonly time: number;
-    readonly open: number;
-    readonly high: number;
-    readonly low: number;
-    readonly close: number;
-    readonly volume: number | null;
-  };
-  readonly completed: boolean;
-  readonly provider: string;
-  readonly freshness: string;
-  readonly timestamp: string;
-  readonly lastLtp: number | null;
-  readonly lastTick: string | null;
-  readonly connectionState: string;
-  readonly tickCount: number | null;
-}
-
 export type LiveCandleListener = (event: LiveCandleEvent) => void;
 
-class LiveMarketStreamManager {
-  private adapter: UpstoxWsAdapter | null = null;
+export class LiveMarketStreamManager {
+  constructor(
+    private readonly factory: () => LiveMarketStreamProvider = createLiveMarketProvider,
+  ) {}
+  private intervalRefs = new Map<string, number>();
+  private adapter: LiveMarketStreamProvider | null = null;
   private aggregators = new Map<string, CandleAggregatorState>();
   private lastTicks = new Map<string, MarketTick | null>();
   private started = false;
@@ -64,7 +56,7 @@ class LiveMarketStreamManager {
   start(): void {
     if (this.started) return;
     this.started = true;
-    this.adapter = new UpstoxWsAdapter();
+    this.adapter = this.factory();
     this.adapter.onTick((tick) => this.handleTick(tick));
     this.adapter.connect();
   }
@@ -76,6 +68,7 @@ class LiveMarketStreamManager {
     this.lastTicks.clear();
     this.candleListeners.clear();
     this.symbolRefCount.clear();
+    this.intervalRefs.clear();
     this.started = false;
   }
 
@@ -85,7 +78,7 @@ class LiveMarketStreamManager {
    * Aggregator/listener state is symbol:interval-level.
    */
   subscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): boolean {
-    if (!this.adapter) return false;
+    if (!this.adapter || !validSelection(symbol, intervalMs)) return false;
 
     const aggKey = `${symbol}:${intervalMs}`;
 
@@ -102,6 +95,7 @@ class LiveMarketStreamManager {
       this.lastTicks.set(symbol, null);
     }
     this.symbolRefCount.set(symbol, refCount + 1);
+    this.intervalRefs.set(aggKey, (this.intervalRefs.get(aggKey) ?? 0) + 1);
     return true;
   }
 
@@ -113,9 +107,13 @@ class LiveMarketStreamManager {
   unsubscribe(symbol: QuoteSymbol, intervalMs: AggregationIntervalMs = 60_000): void {
     const aggKey = `${symbol}:${intervalMs}`;
 
-    // Remove interval-level state
-    this.aggregators.delete(aggKey);
-    this.candleListeners.delete(aggKey);
+    const refs = this.intervalRefs.get(aggKey) ?? 0;
+    if (refs === 0) return;
+    if (refs === 1) {
+      this.intervalRefs.delete(aggKey);
+      this.aggregators.delete(aggKey);
+      this.candleListeners.delete(aggKey);
+    } else this.intervalRefs.set(aggKey, refs - 1);
 
     // Decrement symbol-level ref count
     const refCount = (this.symbolRefCount.get(symbol) ?? 1) - 1;
@@ -127,6 +125,7 @@ class LiveMarketStreamManager {
     } else {
       this.symbolRefCount.set(symbol, refCount);
     }
+    if (this.symbolRefCount.size === 0) this.stop();
   }
 
   /**
@@ -161,16 +160,22 @@ class LiveMarketStreamManager {
       lastTick,
       currentCandle: agg?.current ?? null,
       completedCandleCount: agg?.completed.length ?? 0,
-      telemetry: this.adapter?.telemetry() ?? {
-        providerId: "UPSTOX_V3_WS",
-        status: "OFFLINE",
-        latencyMs: 0,
-        receivedAt: new Date().toISOString(),
-        providerTime: null,
-        marketSession: "REGULAR",
+      telemetry: {
+        providerId: this.adapter?.id ?? "INDSTOCKS_V1",
+        status: lastTick
+          ? tickFreshness(lastTick.timestamp) === "LIVE" && connSnap?.state === "CONNECTED"
+            ? "LIVE"
+            : "STALE"
+          : connSnap?.state === "FAILED"
+            ? "FAILED"
+            : "OFFLINE",
+        latencyMs: lastTick ? Math.max(0, Date.now() - Date.parse(lastTick.timestamp)) : 0,
+        receivedAt: connSnap?.lastMessageAt ?? new Date().toISOString(),
+        providerTime: lastTick?.timestamp ?? null,
+        marketSession: "UNKNOWN",
         rateLimit: null,
         retryAfterMs: null,
-        staleReason: "Disconnected",
+        staleReason: connSnap?.lastError ?? null,
         role: "PRIMARY",
       },
       subscriptionActive: subActive,
@@ -191,11 +196,32 @@ class LiveMarketStreamManager {
   ): MergedCandlePoint[] {
     const key = `${symbol}:${intervalMs}`;
     const agg = this.aggregators.get(key);
-    return mergeHistoricalAndLive(historical, agg?.completed ?? [], agg?.current ?? null);
+    return mergeHistoricalAndLive(historical, agg?.completed ?? [], agg?.current ?? null).filter(
+      (c) =>
+        candleSchema.safeParse({
+          time: c.x,
+          open: c.y[0],
+          high: c.y[1],
+          low: c.y[2],
+          close: c.y[3],
+          volume: c.volume,
+        }).success,
+    );
   }
 
   private handleTick(tick: MarketTick): void {
-    this.lastTicks.set(tick.instrument as string, tick);
+    if (
+      !validSelection(tick.instrument, 60000) ||
+      !Number.isFinite(Date.parse(tick.timestamp)) ||
+      Date.parse(tick.timestamp) > Date.now() + 5000 ||
+      !Number.isFinite(tick.ltp) ||
+      tick.ltp <= 0 ||
+      (tick.volume !== null && (!Number.isFinite(tick.volume) || tick.volume < 0))
+    )
+      return;
+    const previous = this.lastTicks.get(tick.instrument);
+    if (previous && Date.parse(tick.timestamp) <= Date.parse(previous.timestamp)) return;
+    this.lastTicks.set(tick.instrument, tick);
 
     // Update ALL aggregators for this instrument (different intervals)
     for (const [key, agg] of this.aggregators) {
@@ -205,14 +231,10 @@ class LiveMarketStreamManager {
       const next = aggregateTick(agg, tick);
       this.aggregators.set(key, next);
 
-      const candleCompleted = next.completed.length > prevCompletedCount;
+      const candleCompleted =
+        next.current?.bucketMs !== agg.current?.bucketMs && agg.current !== null;
       const connSnap = this.adapter?.connectionSnapshot();
-      const freshness =
-        connSnap?.state === "CONNECTED"
-          ? "LIVE"
-          : connSnap?.state === "RECONNECTING"
-            ? "STALE"
-            : "NO_DATA";
+      const freshness = tickFreshness(tick.timestamp);
       const connectionState = connSnap?.state ?? "DISCONNECTED";
       const lastTickIso = tick.timestamp;
       const lastLtp = tick.ltp;
@@ -239,9 +261,10 @@ class LiveMarketStreamManager {
             volume: completedCandle.volume,
           },
           completed: true,
-          provider: "UPSTOX_V3_WS",
+          provider: tick.provider,
+          quality: tick.quality,
           freshness,
-          timestamp: new Date().toISOString(),
+          timestamp: tick.timestamp,
           lastLtp,
           lastTick: lastTickIso,
           connectionState,
@@ -271,9 +294,10 @@ class LiveMarketStreamManager {
             volume: next.current.volume,
           },
           completed: false,
-          provider: "UPSTOX_V3_WS",
+          provider: tick.provider,
+          quality: tick.quality,
           freshness,
-          timestamp: new Date().toISOString(),
+          timestamp: tick.timestamp,
           lastLtp,
           lastTick: lastTickIso,
           connectionState,
@@ -292,7 +316,7 @@ class LiveMarketStreamManager {
 }
 
 // Module-level singleton (server-side only).
-// Cloudflare Workers: per-isolate, NOT globally durable.
+// One bounded subscription manager per Node process.
 let instance: LiveMarketStreamManager | null = null;
 
 export function getLiveMarketStream(): LiveMarketStreamManager {
