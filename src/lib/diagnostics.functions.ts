@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { getCacheMetrics } from "./server-cache";
 import { getApiHealth, getApiLog, getApiTotals, getErrorLog } from "./diagnostics";
 import {
@@ -29,8 +30,20 @@ export type ServerDiagnostics = {
   errors: ReturnType<typeof getErrorLog>;
 };
 
-export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ServerDiagnostics> => {
+export const getServerDiagnostics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ServerDiagnostics> => {
+    // Admin-only: diagnostics expose cache keys, upstream API logs and error
+    // stack traces. assertAuth() rejects the middleware's anonymous pass-through
+    // (userId === null); the has_role RPC then enforces admin authorization
+    // server-side, mirroring referrals/admin.functions.ts.
+    assertAuth(context);
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("forbidden");
     const cache = getCacheMetrics();
     let corrected = 0;
     let legacy = 0;
@@ -70,5 +83,4 @@ export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
       },
       errors: getErrorLog(),
     };
-  },
-);
+  });
