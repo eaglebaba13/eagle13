@@ -1,4 +1,5 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createMiddleware, createServerFn } from "@tanstack/react-start";
+import { assertAuth, requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getCacheMetrics } from "./server-cache";
 import { getApiHealth, getApiLog, getApiTotals, getErrorLog } from "./diagnostics";
 import {
@@ -29,8 +30,36 @@ export type ServerDiagnostics = {
   errors: ReturnType<typeof getErrorLog>;
 };
 
-export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ServerDiagnostics> => {
+// This boundary must precede auth: claim verification can throw before the handler.
+// Do not retain the original exception, cause, stack or provider error response.
+const diagnosticsFailureBoundary = createMiddleware({ type: "function" }).server(
+  async ({ next }) => {
+    try {
+      return await next();
+    } catch {
+      const error = new Error("Diagnostics unavailable");
+      delete error.stack;
+      throw error;
+    }
+  },
+);
+
+export const getServerDiagnostics = createServerFn({ method: "GET" })
+  .middleware([diagnosticsFailureBoundary, requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ServerDiagnostics> => {
+    assertAuth(context);
+    if (typeof context.userId !== "string" || context.claims.sub !== context.userId) {
+      throw new Error("Diagnostics unavailable");
+    }
+    const role = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!role || role.error !== null || role.data !== true) {
+      throw new Error("Diagnostics unavailable");
+    }
+
+    // No diagnostics collector may run before the strict admin check above.
     const cache = getCacheMetrics();
     let corrected = 0;
     let legacy = 0;
@@ -54,7 +83,12 @@ export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
     return {
       ts: Date.now(),
       isDev: process.env.NODE_ENV !== "production",
-      cache,
+      // Cache keys and free-text logs may embed credentials or internal URLs.
+      // Preserve field types and numerical metrics, not arbitrary sensitive text.
+      cache: {
+        ...cache,
+        keys: cache.keys.map((entry, index) => ({ ...entry, key: `cache-entry-${index + 1}` })),
+      },
       formulaVersion: {
         default: DEFAULT_ASTRO_FORMULA_VERSION,
         label: astroFormulaLabel(DEFAULT_ASTRO_FORMULA_VERSION),
@@ -65,10 +99,23 @@ export const getServerDiagnostics = createServerFn({ method: "GET" }).handler(
       },
       api: {
         totals: getApiTotals(),
-        hosts: getApiHealth(),
-        log: getApiLog(),
+        hosts: getApiHealth().map((entry, index) => ({
+          ...entry,
+          host: `host-${index + 1}`,
+          ...(entry.lastError === undefined ? {} : { lastError: "[REDACTED]" }),
+        })),
+        log: getApiLog().map((entry) => ({
+          ...entry,
+          host: "[REDACTED]",
+          url: "[REDACTED]",
+          ...(entry.error === undefined ? {} : { error: "[REDACTED]" }),
+        })),
       },
-      errors: getErrorLog(),
+      errors: getErrorLog().map((entry) => ({
+        ...entry,
+        message: "[REDACTED]",
+        ...(entry.source === undefined ? {} : { source: "[REDACTED]" }),
+        ...(entry.stack === undefined ? {} : { stack: "[REDACTED]" }),
+      })),
     };
-  },
-);
+  });
