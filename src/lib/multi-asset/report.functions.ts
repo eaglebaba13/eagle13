@@ -147,6 +147,9 @@ export async function runMorningBrief(opts?: {
   readonly forceRedeliver?: boolean;
 }): Promise<MorningReportRecord> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { deliverMorningBrief, getMorningBriefDeliveryDisabledReason } =
+    await import("./report-telegram.server");
+  const disabledReason = getMorningBriefDeliveryDisabledReason();
   const now = Date.now();
   const reportDate = todayIst(now);
   const reportKey = buildReportKey(reportDate);
@@ -225,9 +228,6 @@ export async function runMorningBrief(opts?: {
     }),
   );
   const sections = composeMorningReport(payload);
-  const { deliverMorningBrief, getMorningBriefDeliveryDisabledReason } =
-    await import("./report-telegram.server");
-  const disabledReason = getMorningBriefDeliveryDisabledReason();
   const nowAttemptedAt = new Date().toISOString();
   let deliveryAttemptedAt: string | undefined;
   if (!disabledReason) {
@@ -278,6 +278,7 @@ export async function runMorningBrief(opts?: {
     reportId: payload.reportId,
     generatedAt: payload.generatedAt,
     sections,
+    disabledReason,
   });
 
   const nextStatus: "SENT" | "FAILED" | "PENDING" = outcome.delivered

@@ -116,6 +116,7 @@ describe("runMorningBrief idempotency", () => {
     expect(result.deliveryStatus).toBe("SENT");
     expect(result.deliveryAttempts).toBe(1);
     expect(mocks.from).toHaveBeenCalledOnce();
+    expect(mocks.getMorningBriefDeliveryDisabledReason).toHaveBeenCalledOnce();
     expect(mocks.deliverMorningBrief).not.toHaveBeenCalled();
   });
 
@@ -131,6 +132,7 @@ describe("runMorningBrief idempotency", () => {
 
     expect(result.deliveryStatus).toBe("FAILED");
     expect(result.deliveryAttempts).toBe(1);
+    expect(mocks.getMorningBriefDeliveryDisabledReason).toHaveBeenCalledOnce();
     expect(mocks.deliverMorningBrief).not.toHaveBeenCalled();
   });
 
@@ -170,6 +172,10 @@ describe("runMorningBrief idempotency", () => {
     expect(savedValues.delivery_attempts).toBeUndefined();
     expect(savedValues.last_attempted_at).toBeUndefined();
     expect(savedValues.delivery_error).toBe("TELEGRAM_DISABLED");
+    expect(mocks.getMorningBriefDeliveryDisabledReason).toHaveBeenCalledOnce();
+    expect(mocks.deliverMorningBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ disabledReason: "TELEGRAM_DISABLED" }),
+    );
   });
 
   it("claims a send once and persists its actual success", async () => {
@@ -215,6 +221,10 @@ describe("runMorningBrief idempotency", () => {
       expect.objectContaining({ delivery_attempts: 1, last_attempted_at: expect.any(String) }),
     );
     expect(mocks.deliverMorningBrief).toHaveBeenCalledOnce();
+    expect(mocks.deliverMorningBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ disabledReason: null }),
+    );
+    expect(mocks.getMorningBriefDeliveryDisabledReason).toHaveBeenCalledOnce();
   });
 
   it("does not report delivery as persisted when the database update fails", async () => {
@@ -264,5 +274,6 @@ describe("runMorningBrief idempotency", () => {
     expect(vi.mocked(console.error).mock.calls.flat().join("")).toContain(
       "MORNING_BRIEF_DELIVERY_PERSISTENCE_FAILED",
     );
+    expect(mocks.getMorningBriefDeliveryDisabledReason).toHaveBeenCalledOnce();
   });
 });

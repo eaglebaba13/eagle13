@@ -40,7 +40,6 @@ export async function handleMorningBriefRequest(request: Request): Promise<Respo
       dataQuality: record.dataQuality,
       deliveryStatus: record.deliveryStatus,
       deliveryAttempts: record.deliveryAttempts,
-      attempted: record.telegramMessageIds.length,
     });
   } catch {
     logEvent("error", "morning_brief.scheduler_failed", { errorCode: "MORNING_BRIEF_RUN_FAILED" });

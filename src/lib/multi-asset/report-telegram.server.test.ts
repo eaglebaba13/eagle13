@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { deliverMorningBrief } from "./report-telegram.server";
+import {
+  deliverMorningBrief,
+  getMorningBriefDeliveryDisabledReason,
+} from "./report-telegram.server";
 
 const input = {
   reportId: "MB-2026-10-28-v44B.1",
@@ -9,6 +12,13 @@ const input = {
 
 const token = "synthetic-telegram-token";
 const chatId = "synthetic-chat-id";
+
+function configuredInput() {
+  return {
+    ...input,
+    disabledReason: getMorningBriefDeliveryDisabledReason(),
+  };
+}
 
 beforeEach(() => {
   vi.stubEnv("TELEGRAM_ENABLED", "true");
@@ -35,7 +45,7 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
     vi.stubEnv(key, value);
     vi.stubGlobal("fetch", vi.fn());
 
-    const result = await deliverMorningBrief(input);
+    const result = await deliverMorningBrief(configuredInput());
 
     expect(result).toMatchObject({ delivered: false, attempted: 0, errorCode: reason });
     expect(fetch).not.toHaveBeenCalled();
@@ -45,7 +55,7 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
     vi.stubEnv("TELEGRAM_CHAT_ID", "");
     vi.stubGlobal("fetch", vi.fn());
 
-    const result = await deliverMorningBrief(input);
+    const result = await deliverMorningBrief(configuredInput());
 
     expect(result).toMatchObject({
       delivered: false,
@@ -65,7 +75,7 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
         ),
     );
 
-    const result = await deliverMorningBrief(input);
+    const result = await deliverMorningBrief(configuredInput());
 
     expect(result).toMatchObject({
       delivered: true,
@@ -87,8 +97,8 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
       .mockResolvedValueOnce(new Response(token, { status: 403 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const apiFailure = await deliverMorningBrief(input);
-    const httpFailure = await deliverMorningBrief(input);
+    const apiFailure = await deliverMorningBrief(configuredInput());
+    const httpFailure = await deliverMorningBrief(configuredInput());
 
     expect(apiFailure.errorCode).toBe("TELEGRAM_API_400");
     expect(httpFailure.errorCode).toBe("TELEGRAM_HTTP_403");
@@ -99,7 +109,7 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
   it("does not expose credential-bearing network errors in outcomes or logs", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error(`${token} ${chatId}`)));
 
-    const result = await deliverMorningBrief(input);
+    const result = await deliverMorningBrief(configuredInput());
     const logOutput = vi.mocked(console.warn).mock.calls.flat().join("");
 
     expect(result.errorCode).toBe("TELEGRAM_NETWORK_ERROR");
@@ -107,5 +117,21 @@ describe("deliverMorningBrief feature flags and outcomes", () => {
     expect(JSON.stringify(result)).not.toContain(chatId);
     expect(logOutput).not.toContain(token);
     expect(logOutput).not.toContain(chatId);
+  });
+
+  it("uses the supplied disabled reason without reevaluating environment flags", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    const result = await deliverMorningBrief({
+      ...input,
+      disabledReason: "TELEGRAM_MORNING_BRIEF_DISABLED",
+    });
+
+    expect(result).toMatchObject({
+      delivered: false,
+      attempted: 0,
+      errorCode: "TELEGRAM_MORNING_BRIEF_DISABLED",
+    });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

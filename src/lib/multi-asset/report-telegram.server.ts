@@ -42,6 +42,7 @@ export async function deliverMorningBrief(input: {
   readonly reportId: string;
   readonly generatedAt: string;
   readonly sections: readonly BriefSection[];
+  readonly disabledReason: string | null;
 }): Promise<DeliveryOutcome> {
   const parts = splitBriefIntoParts({
     reportId: input.reportId,
@@ -49,8 +50,7 @@ export async function deliverMorningBrief(input: {
     sections: input.sections,
   });
 
-  const disabledReason = getMorningBriefDeliveryDisabledReason();
-  if (disabledReason) {
+  if (input.disabledReason) {
     const outcome: DeliveryOutcome = {
       delivered: false,
       attempted: 0,
@@ -58,7 +58,7 @@ export async function deliverMorningBrief(input: {
       failed: 0,
       parts,
       messageIds: [],
-      errorCode: disabledReason,
+      errorCode: input.disabledReason,
     };
     logDelivery(false, outcome.attempted, outcome.errorCode);
     return outcome;

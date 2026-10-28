@@ -29,8 +29,8 @@ beforeEach(() => {
     payload: { reportId: "MB-2026-10-28-v44B.1" },
     dataQuality: "PARTIAL",
     deliveryStatus: "SENT",
-    deliveryAttempts: 1,
-    telegramMessageIds: [1],
+    deliveryAttempts: 3,
+    telegramMessageIds: [1, 2],
   });
 });
 
@@ -44,12 +44,14 @@ describe("Morning Brief scheduler hook authentication", () => {
     const response = await handleMorningBriefRequest(requestWithSecret(schedulerSecret));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const body = await response.json();
+    expect(body).toMatchObject({
       ok: true,
       dataQuality: "PARTIAL",
       deliveryStatus: "SENT",
-      deliveryAttempts: 1,
+      deliveryAttempts: 3,
     });
+    expect(body).not.toHaveProperty("attempted");
     expect(mocks.runMorningBrief).toHaveBeenCalledOnce();
   });
 
