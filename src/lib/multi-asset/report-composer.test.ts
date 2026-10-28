@@ -117,6 +117,15 @@ describe("composeMorningReport", () => {
     expect(metals?.body).toContain("Lower Threshold: 55");
     expect(metals?.body).toContain("Upper Threshold: 80");
   });
+  it("labels unavailable provider fields without inventing market values", () => {
+    const report = composeMorningReport(baseInput());
+    const header = report.find((section) => section.id === "A_HEADER");
+    const nifty = report.find((section) => section.id === "C_NIFTY");
+
+    expect(header?.body).toContain("Data quality: PARTIAL");
+    expect(nifty?.body).toContain("NIFTY 50: UNAVAILABLE (UNAVAILABLE)");
+    expect(nifty?.body).not.toContain("Price ");
+  });
 });
 
 describe("report key/id derivation", () => {

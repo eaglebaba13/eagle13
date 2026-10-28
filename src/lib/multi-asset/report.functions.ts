@@ -147,6 +147,9 @@ export async function runMorningBrief(opts?: {
   readonly forceRedeliver?: boolean;
 }): Promise<MorningReportRecord> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { deliverMorningBrief, getMorningBriefDeliveryDisabledReason } =
+    await import("./report-telegram.server");
+  const disabledReason = getMorningBriefDeliveryDisabledReason();
   const now = Date.now();
   const reportDate = todayIst(now);
   const reportKey = buildReportKey(reportDate);
@@ -192,39 +195,139 @@ export async function runMorningBrief(opts?: {
   }
 
   if (record.deliveryStatus === "SENT" && !opts?.forceRedeliver) {
+    console.info(
+      JSON.stringify({
+        event: "morning_brief.delivery_skipped",
+        reportId: payload.reportId,
+        reason: "already_sent",
+        dataQuality,
+      }),
+    );
     return record;
   }
 
+  if (record.deliveryAttempts > 0 && !opts?.forceRedeliver) {
+    console.warn(
+      JSON.stringify({
+        event: "morning_brief.delivery_skipped",
+        reportId: payload.reportId,
+        reason: "previous_attempt_requires_admin_retry",
+        deliveryStatus: record.deliveryStatus,
+        deliveryAttempts: record.deliveryAttempts,
+      }),
+    );
+    return record;
+  }
+
+  console.info(
+    JSON.stringify({
+      event: "morning_brief.report_ready",
+      reportId: payload.reportId,
+      dataQuality,
+      overallStatus: payload.overallStatus,
+    }),
+  );
   const sections = composeMorningReport(payload);
-  const { deliverMorningBrief } = await import("./report-telegram.server");
+  const nowAttemptedAt = new Date().toISOString();
+  let deliveryAttemptedAt: string | undefined;
+  if (!disabledReason) {
+    const claimed = await supabaseAdmin
+      .from("morning_reports")
+      .update({
+        delivery_attempts: record.deliveryAttempts + 1,
+        last_attempted_at: nowAttemptedAt,
+      })
+      .eq("id", record.id)
+      .eq("delivery_attempts", record.deliveryAttempts)
+      .eq("delivery_status", record.deliveryStatus)
+      .select("*")
+      .maybeSingle();
+
+    if (claimed.error) {
+      console.error(
+        JSON.stringify({
+          event: "morning_brief.delivery_claim_failed",
+          reportId: payload.reportId,
+          errorCode: "MORNING_BRIEF_DELIVERY_CLAIM_FAILED",
+        }),
+      );
+      throw new Error("morning_brief_delivery_claim_failed");
+    }
+    if (!claimed.data) {
+      const latest = await supabaseAdmin
+        .from("morning_reports")
+        .select("*")
+        .eq("id", record.id)
+        .maybeSingle();
+      if (latest.error || !latest.data) {
+        throw new Error("morning_brief_delivery_state_unavailable");
+      }
+      console.info(
+        JSON.stringify({
+          event: "morning_brief.delivery_skipped",
+          reportId: payload.reportId,
+          reason: "concurrent_attempt_claimed",
+        }),
+      );
+      return mapRow(latest.data as Record<string, unknown>);
+    }
+    deliveryAttemptedAt = nowAttemptedAt;
+  }
+
   const outcome = await deliverMorningBrief({
     reportId: payload.reportId,
     generatedAt: payload.generatedAt,
     sections,
+    disabledReason,
   });
 
   const nextStatus: "SENT" | "FAILED" | "PENDING" = outcome.delivered
     ? "SENT"
     : outcome.attempted === 0
-      ? "PENDING"
+      ? record.deliveryStatus
       : "FAILED";
+
+  if (outcome.attempted === 0 && record.deliveryStatus === "SENT") {
+    return record;
+  }
 
   const updated = await supabaseAdmin
     .from("morning_reports")
     .update({
       delivery_status: nextStatus,
-      delivery_error: outcome.error ?? null,
-      delivery_attempts: record.deliveryAttempts + 1,
+      delivery_error: outcome.errorCode ?? null,
+      ...(deliveryAttemptedAt ? { last_attempted_at: deliveryAttemptedAt } : {}),
       telegram_message_ids: [
-        ...outcome.messageIds,
+        ...new Set([...record.telegramMessageIds, ...outcome.messageIds]),
       ] as unknown as import("@/integrations/supabase/types").Json,
-      last_attempted_at: new Date().toISOString(),
     })
     .eq("id", record.id)
     .select("*")
     .single();
 
-  if (updated.error || !updated.data) return record;
+  if (updated.error || !updated.data) {
+    console.error(
+      JSON.stringify({
+        event: "morning_brief.delivery_persistence_failed",
+        reportId: payload.reportId,
+        intendedStatus: nextStatus,
+        errorCode: "MORNING_BRIEF_DELIVERY_PERSISTENCE_FAILED",
+      }),
+    );
+    throw new Error("morning_brief_delivery_persistence_failed");
+  }
+  console.info(
+    JSON.stringify({
+      event: "morning_brief.delivery_recorded",
+      reportId: payload.reportId,
+      dataQuality,
+      deliveryStatus: nextStatus,
+      deliveryAttempts: Number(updated.data.delivery_attempts ?? record.deliveryAttempts),
+      deliveredParts: outcome.succeeded,
+      failedParts: outcome.failed,
+      ...(outcome.errorCode ? { errorCode: outcome.errorCode } : {}),
+    }),
+  );
   return mapRow(updated.data as Record<string, unknown>);
 }
 
