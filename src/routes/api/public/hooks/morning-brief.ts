@@ -1,41 +1,57 @@
-// Phase 44B — Public cron hook that triggers the morning brief.
-// Called by pg_cron at 02:45 UTC (08:15 IST). Authenticated by the standard
-// Supabase anon apikey header, matching the pattern documented in the
-// scheduler knowledge card.
+// Phase 44B — Scheduled hook for the morning brief.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { runMorningBrief } from "@/lib/multi-asset/report.functions";
+import { authorizeMorningBriefCronRequest } from "@/lib/multi-asset/morning-brief-cron-auth.server";
 
-function unauthorized(): Response {
-  return new Response(JSON.stringify({ error: "unauthorized" }), {
-    status: 401,
-    headers: { "Content-Type": "application/json" },
-  });
+function logEvent(level: "info" | "warn" | "error", event: string, fields: object = {}): void {
+  console[level](JSON.stringify({ event, ...fields }));
+}
+
+export async function handleMorningBriefRequest(request: Request): Promise<Response> {
+  const authorization = authorizeMorningBriefCronRequest(request);
+  if (!authorization.authorized) {
+    logEvent("warn", "morning_brief.scheduler_auth_rejected", { reason: authorization.reason });
+    const notConfigured = authorization.reason === "not_configured";
+    return Response.json(
+      {
+        ok: false,
+        error: notConfigured ? "scheduler_auth_not_configured" : "unauthorized",
+        ...(notConfigured
+          ? { message: "Configure MORNING_BRIEF_CRON_SECRET on the application server." }
+          : {}),
+      },
+      { status: notConfigured ? 503 : 401 },
+    );
+  }
+
+  logEvent("info", "morning_brief.scheduler_invoked");
+  try {
+    const record = await runMorningBrief();
+    logEvent("info", "morning_brief.scheduler_completed", {
+      reportId: record.payload.reportId,
+      dataQuality: record.dataQuality,
+      deliveryStatus: record.deliveryStatus,
+      deliveryAttempts: record.deliveryAttempts,
+    });
+    return Response.json({
+      ok: true,
+      reportId: record.payload.reportId,
+      dataQuality: record.dataQuality,
+      deliveryStatus: record.deliveryStatus,
+      deliveryAttempts: record.deliveryAttempts,
+      attempted: record.telegramMessageIds.length,
+    });
+  } catch {
+    logEvent("error", "morning_brief.scheduler_failed", { errorCode: "MORNING_BRIEF_RUN_FAILED" });
+    return Response.json({ ok: false, error: "morning_brief_run_failed" }, { status: 500 });
+  }
 }
 
 export const Route = createFileRoute("/api/public/hooks/morning-brief")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey") ?? "";
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!expected || apikey !== expected) return unauthorized();
-        try {
-          const record = await runMorningBrief();
-          return Response.json({
-            ok: true,
-            reportId: record.payload.reportId,
-            deliveryStatus: record.deliveryStatus,
-            deliveryAttempts: record.deliveryAttempts,
-            attempted: record.telegramMessageIds.length,
-          });
-        } catch (err) {
-          return Response.json(
-            { ok: false, error: err instanceof Error ? err.message : String(err) },
-            { status: 500 },
-          );
-        }
-      },
+      POST: async ({ request }) => handleMorningBriefRequest(request),
     },
   },
 });
