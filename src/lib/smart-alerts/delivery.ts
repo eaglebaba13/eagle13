@@ -64,6 +64,16 @@ export const TelegramAlertDeliveryProvider: AlertDeliveryProvider = {
     !!process.env.TELEGRAM_BOT_TOKEN &&
     !!process.env.TELEGRAM_CHAT_ID,
   async deliver(event, sub, nowIso) {
+    if (sub?.telegramEnabled !== true) {
+      return {
+        provider: "TELEGRAM",
+        attemptedAt: nowIso,
+        status: "SKIPPED",
+        errorCode: null,
+        retryable: false,
+        fingerprint: event.fingerprint,
+      };
+    }
     if (
       typeof process === "undefined" ||
       !process.env.TELEGRAM_BOT_TOKEN ||

@@ -2,7 +2,7 @@
 // The Telegram HTTP request is always mocked; the real API is never called.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { promises as fsPromises, readdirSync, statSync } from "node:fs";
 import {
   renderResearchStatusMessage,
   sendResearchStatus,
@@ -31,7 +31,10 @@ function payload(overrides: Partial<ResearchStatus> = {}): ResearchStatus {
 
 type Call = { url: string; init: RequestInit };
 
-const okResponse = { ok: true, json: () => Promise.resolve({ ok: true }) };
+const okResponse = {
+  ok: true,
+  json: () => Promise.resolve({ ok: true, result: { message_id: 1 } }),
+};
 
 function httpError(status: number, body: string) {
   return { ok: false, status, text: () => Promise.resolve(body) };
@@ -63,6 +66,7 @@ describe("research status telegram dispatch", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     process.env = { ...origEnv };
   });
 
@@ -165,7 +169,7 @@ describe("research status telegram dispatch", () => {
     });
     const network = await sendResearchStatus(payload());
     expect(network.status).toBe("RETRYABLE_FAILURE");
-    expect(network.errorCode).toContain("[REDACTED]");
+    expect(network.errorCode).toBe("TELEGRAM_NETWORK_ERROR");
     expect(JSON.stringify(network)).not.toContain(TOKEN);
     expect(JSON.stringify(network)).not.toContain(CHAT_ID);
 
@@ -209,14 +213,13 @@ describe("integrity guards", () => {
     expect(rendered).toContain("TASK_");
   });
 
-  it("11. client-side bundles cannot import server-only telegram modules", () => {
+  it("11. client-side bundles cannot import server-only telegram modules", async () => {
     // Structural guard: walk src/routes (client-side) and ensure no import of *.server.ts
     function walk(dir: string, out: string[] = []): string[] {
-      for (const entry of readdirSync(dir)) {
-        const full = `${dir}/${entry}`;
-        const st = statSync(full);
-        if (st.isDirectory()) walk(full, out);
-        else if (/\.(tsx?|jsx?)$/.test(entry)) out.push(full);
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) walk(full, out);
+        else if (entry.isFile() && /\.(tsx?|jsx?)$/.test(entry.name)) out.push(full);
       }
       return out;
     }
@@ -224,11 +227,13 @@ describe("integrity guards", () => {
     const clientRoutes = walk("src/routes").filter(
       (p) => !p.includes("/api/") && !p.endsWith(".server.ts"),
     );
-    for (const file of clientRoutes) {
-      const content = readFileSync(file, "utf8");
-      expect(content).not.toMatch(/from\s+["'][^"']*telegram-delivery\.server/);
-      expect(content).not.toMatch(/from\s+["'][^"']*report-telegram\.server/);
-    }
+    await Promise.all(
+      clientRoutes.map(async (file) => {
+        const content = await fsPromises.readFile(file, "utf8");
+        expect(content).not.toMatch(/from\s+["'][^"']*telegram-delivery\.server/);
+        expect(content).not.toMatch(/from\s+["'][^"']*report-telegram\.server/);
+      }),
+    );
   });
 
   it("12. all 8 protected formula files exist and are referenced in frozen list", () => {

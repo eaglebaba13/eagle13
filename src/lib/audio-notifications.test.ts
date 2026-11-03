@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { SoundToggle } from "@/components/SoundToggle";
 import {
   getAudioAssetUrl,
   getAudioNotificationManager,
@@ -291,10 +292,9 @@ describe("news non-trigger", () => {
 // ────────────────────── Accessibility ──────────────────────────────
 
 describe("SoundToggle accessibility", () => {
-  it("SoundToggle component exists and is importable", async () => {
-    const mod = await import("@/components/SoundToggle");
-    expect(mod.SoundToggle).toBeDefined();
-    expect(typeof mod.SoundToggle).toBe("function");
+  it("SoundToggle component exists and is importable", () => {
+    expect(SoundToggle).toBeDefined();
+    expect(typeof SoundToggle).toBe("function");
   });
 });
 

@@ -73,6 +73,12 @@ export const DEFAULT_ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Upstox access token (rotates)",
   },
   {
+    key: "UPSTOX_ANALYTICS_TOKEN",
+    category: "provider-keys",
+    required: false,
+    description: "Upstox Analytics Token (read-only)",
+  },
+  {
     key: "UPSTOX_MARKET_DATA_MODE",
     category: "feature-flags",
     required: false,

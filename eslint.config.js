@@ -15,7 +15,10 @@ export default tseslint.config(
       "services",
       "docs",
       ".git",
-      "diagnostics.test.orig.ts",
+      ".archify",
+      "supabase/.temp",
+      ".worktrees",
+      "backups",
     ],
   },
   {

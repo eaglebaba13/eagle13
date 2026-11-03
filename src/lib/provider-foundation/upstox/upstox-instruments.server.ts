@@ -20,11 +20,10 @@ export interface UpstoxInstrument {
   readonly timezone: "Asia/Kolkata";
 }
 
-export const UPSTOX_INSTRUMENT_MASTER_VERSION = "fallback-2026-07-16";
+export const UPSTOX_INSTRUMENT_MASTER_VERSION = "verified-2026-11-01";
 
-// Instrument keys sourced from Upstox public instrument master.
-// Only symbols with a known NSE/MCX listing are included. External assets
-// like XAUUSD / BTC are intentionally omitted — see `resolveInstrument`.
+// Index keys are verified against Upstox's current official complete
+// instrument master. Contract-specific futures are not enabled here.
 const FALLBACK_MASTER: Readonly<Record<string, UpstoxInstrument>> = {
   NIFTY50: {
     instrumentKey: "NSE_INDEX|Nifty 50",
@@ -62,80 +61,14 @@ const FALLBACK_MASTER: Readonly<Record<string, UpstoxInstrument>> = {
     expiry: null,
     timezone: "Asia/Kolkata",
   },
-  GOLD: {
-    instrumentKey: "MCX_FO|GOLD",
-    exchange: "MCX",
-    segment: "COM",
-    tradingSymbol: "GOLD",
-    name: "Gold Futures",
-    instrumentType: "COMMODITY",
-    lotSize: 100,
-    tickSize: 1,
-    expiry: null,
-    timezone: "Asia/Kolkata",
-  },
-  SILVER: {
-    instrumentKey: "MCX_FO|SILVER",
-    exchange: "MCX",
-    segment: "COM",
-    tradingSymbol: "SILVER",
-    name: "Silver Futures",
-    instrumentType: "COMMODITY",
-    lotSize: 30,
-    tickSize: 1,
-    expiry: null,
-    timezone: "Asia/Kolkata",
-  },
-  CRUDEOIL: {
-    instrumentKey: "MCX_FO|CRUDEOIL",
-    exchange: "MCX",
-    segment: "COM",
-    tradingSymbol: "CRUDEOIL",
-    name: "Crude Oil Futures",
-    instrumentType: "COMMODITY",
-    lotSize: 100,
-    tickSize: 1,
-    expiry: null,
-    timezone: "Asia/Kolkata",
-  },
-  NATURAL_GAS: {
-    instrumentKey: "MCX_FO|NATURALGAS",
-    exchange: "MCX",
-    segment: "COM",
-    tradingSymbol: "NATURALGAS",
-    name: "Natural Gas Futures",
-    instrumentType: "COMMODITY",
-    lotSize: 1250,
-    tickSize: 0.1,
-    expiry: null,
-    timezone: "Asia/Kolkata",
-  },
-  USDINR: {
-    instrumentKey: "NSE_FO|USDINR",
-    exchange: "NSE",
-    segment: "CDS",
-    tradingSymbol: "USDINR",
-    name: "USD/INR",
-    instrumentType: "CURRENCY",
-    lotSize: 1000,
-    tickSize: 0.0025,
-    expiry: null,
-    timezone: "Asia/Kolkata",
-  },
 };
 
-export type UpstoxSupportedSymbol =
-  "NIFTY50" | "BANKNIFTY" | "INDIA_VIX" | "GOLD" | "SILVER" | "CRUDEOIL" | "NATURAL_GAS" | "USDINR";
+export type UpstoxSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "INDIA_VIX";
 
 export const UPSTOX_SUPPORTED_SYMBOLS: readonly UpstoxSupportedSymbol[] = [
   "NIFTY50",
   "BANKNIFTY",
   "INDIA_VIX",
-  "GOLD",
-  "SILVER",
-  "CRUDEOIL",
-  "NATURAL_GAS",
-  "USDINR",
 ];
 
 export function isUpstoxSupported(sym: string): sym is UpstoxSupportedSymbol {

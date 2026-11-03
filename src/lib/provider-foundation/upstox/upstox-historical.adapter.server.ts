@@ -133,11 +133,13 @@ function quoteTelemetry(input: {
   code?: UpstoxErrorCode;
   latencyMs: number;
   nowIso: string;
+  providerTime?: string | null;
+  ageSec?: number;
   retryAfterMs?: number;
   reason: string | null;
 }): ProviderTelemetry {
   const status = input.ok
-    ? "LIVE"
+    ? classifyFreshness(input.ageSec ?? Number.POSITIVE_INFINITY, DEFAULT_FRESHNESS.QUOTES)
     : input.code === "UPSTOX_RATE_LIMITED"
       ? "RATE_LIMITED"
       : input.code === "UPSTOX_AUTH_REQUIRED" || input.code === "UPSTOX_FORBIDDEN"
@@ -149,7 +151,7 @@ function quoteTelemetry(input: {
     status,
     latencyMs: input.latencyMs,
     receivedAt: input.nowIso,
-    providerTime: null,
+    providerTime: input.providerTime ?? null,
     marketSession: "UNKNOWN",
     rateLimit: null,
     retryAfterMs: input.retryAfterMs ?? null,
@@ -168,6 +170,28 @@ function ageSecFromIso(iso: string | null, nowMs: number): number {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return Number.POSITIVE_INFINITY;
   return Math.max(0, (nowMs - t) / 1000);
+}
+
+function parseProviderTimestamp(value: unknown): string | null {
+  let timestamp: number;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    timestamp = value < 100_000_000_000 ? value * 1000 : value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^\d+$/.test(trimmed)) {
+      const numeric = Number(trimmed);
+      if (!Number.isFinite(numeric)) return null;
+      timestamp = numeric < 100_000_000_000 ? numeric * 1000 : numeric;
+    } else {
+      timestamp = Date.parse(trimmed);
+    }
+  } else {
+    return null;
+  }
+  return Number.isFinite(timestamp) && Math.abs(timestamp) <= 8_640_000_000_000_000
+    ? new Date(timestamp).toISOString()
+    : null;
 }
 
 /** Deterministic cache key builder. */
@@ -226,6 +250,8 @@ export class UpstoxHistoricalAdapter {
         string,
         {
           last_price?: number;
+          last_trade_time?: number | string;
+          timestamp?: string;
           ohlc?: { open?: number; high?: number; low?: number; close?: number };
           volume?: number;
         }
@@ -266,7 +292,15 @@ export class UpstoxHistoricalAdapter {
       };
     }
     const prevClose = row?.ohlc?.close ?? null;
-    const telemetry = quoteTelemetry({ ok: true, latencyMs: res.latencyMs, nowIso, reason: null });
+    const providerTime = parseProviderTimestamp(row?.last_trade_time ?? row?.timestamp);
+    const telemetry = quoteTelemetry({
+      ok: true,
+      latencyMs: res.latencyMs,
+      nowIso,
+      providerTime,
+      ageSec: ageSecFromIso(providerTime, Date.parse(nowIso)),
+      reason: providerTime ? null : "provider timestamp unavailable",
+    });
     const tick: QuoteTick = {
       symbol,
       last,

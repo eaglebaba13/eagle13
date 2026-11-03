@@ -52,7 +52,8 @@ function emptyOutlook(
 
 export const getGannGapOutlook = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<GannGapOutlook> => {
+  .handler(async ({ context }): Promise<GannGapOutlook> => {
+    assertAuth(context);
     const now = new Date();
     const nowIso = now.toISOString();
     const flag = findFeatureFlag("gann.gap.outlook");

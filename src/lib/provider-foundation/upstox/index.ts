@@ -20,6 +20,9 @@ export {
 export {
   evaluateUpstoxTokenPolicy,
   redactedTokenStatus,
+  resolveUpstoxAccessToken,
+  resolveUpstoxAnalyticsToken,
+  resolveUpstoxMarketDataToken,
   type UpstoxTokenStatus,
   type UpstoxTokenSource,
   type UpstoxTokenExpiryStatus,

@@ -32,6 +32,17 @@ trading formulas.
 blockers stop research execution only; they never affect live-market
 readiness (Decision, Options, PCR, Breadth, GTI, Alerts).
 
+## Persistence and Run IDs
+
+Run reports and failure metrics are stored in Supabase/PostgreSQL by the
+`research_lab_durable_persistence` migration. Reads are owner-scoped, with
+row-level security as a second boundary; cross-user diagnostics require the
+admin role. Failure metrics are written through an owner-checked RPC using
+database time. Run IDs are allocated with a PostgreSQL sequence through an
+authenticated RPC, so allocation is database-backed across server instances
+and restarts. Apply and validate the migration in the target environment before
+enabling this feature there; the server does not fall back to process memory.
+
 ## Disclaimer
 
 Historical results do not guarantee future performance.

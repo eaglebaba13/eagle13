@@ -6,6 +6,7 @@
 // the intentional commodity/ratio fallback (see docs).
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { getMarketDataImpl } from "./market.functions";
 
 type UxOk = {
   ok: true;
@@ -25,6 +26,8 @@ type UxOk = {
     status: string;
     receivedAt: string;
     providerTime: string | null;
+    candlesAvailable: boolean;
+    dataQuality: "OK" | "MISSING" | "INVALID" | "STALE";
   };
 };
 
@@ -52,8 +55,14 @@ const makeUpstoxQuote = (label: string, price: number): UxOk => ({
     status: "LIVE",
     receivedAt: new Date().toISOString(),
     providerTime: new Date().toISOString(),
+    candlesAvailable: true,
+    dataQuality: "OK",
   },
 });
+
+const { vixProviderUnavailable } = vi.hoisted(() => ({
+  vixProviderUnavailable: { value: false },
+}));
 
 // Track Yahoo URLs the module tries to fetch.
 const yahooCalls: string[] = [];
@@ -85,6 +94,20 @@ vi.mock("./server-cache", () => ({
 
 vi.mock("./upstox-market-data.server", () => ({
   fetchUpstoxIndexQuote: vi.fn(async (sym: "NIFTY50" | "BANKNIFTY" | "INDIA_VIX") => {
+    if (sym === "INDIA_VIX" && vixProviderUnavailable.value) {
+      return {
+        ok: false,
+        reason: "UNAVAILABLE",
+        providerMetadata: {
+          name: "upstox-historical-v1",
+          status: "OFFLINE",
+          receivedAt: new Date().toISOString(),
+          providerTime: null,
+          candlesAvailable: false,
+          dataQuality: "MISSING",
+        },
+      };
+    }
     if (sym === "NIFTY50") return makeUpstoxQuote("^NSEI", 25000);
     if (sym === "BANKNIFTY") return makeUpstoxQuote("^NSEBANK", 52000);
     return makeUpstoxQuote("^INDIAVIX", 12);
@@ -94,16 +117,14 @@ vi.mock("./upstox-market-data.server", () => ({
 describe("market.functions — provider routing (Phase 36.3)", () => {
   beforeEach(() => {
     yahooCalls.length = 0;
+    vixProviderUnavailable.value = false;
   });
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("prefers Upstox for NIFTY/BANKNIFTY/VIX and does NOT call Yahoo for those symbols", async () => {
-    const mod = await import("./market.functions");
-    const res = (await mod.getMarketDataImpl()) as {
-      providerMetadata?: Record<string, { name: string }>;
-    };
+    const res = await getMarketDataImpl();
     // Yahoo should be called ONLY for GC=F and SI=F (commodities), never for indices.
     const indexHits = yahooCalls.filter((u) => /NSEI|NSEBANK|INDIAVIX/i.test(u));
     expect(indexHits, "no Yahoo index requests when Upstox is healthy").toEqual([]);
@@ -114,5 +135,19 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
     expect(res.providerMetadata?.nifty.name).toBe("upstox-historical-v1");
     expect(res.providerMetadata?.banknifty.name).toBe("upstox-historical-v1");
     expect(res.providerMetadata?.vix.name).toBe("upstox-historical-v1");
+    expect(res.providerMetadata?.vix.providerTime).not.toBeNull();
+    expect(res.providerMetadata?.vix.candlesAvailable).toBe(true);
+    expect(res.providerMetadata?.vix.dataQuality).toBe("OK");
+  });
+
+  it("reports Yahoo fallback as delayed and retains its provider timestamp", async () => {
+    vixProviderUnavailable.value = true;
+
+    const res = await getMarketDataImpl();
+    expect(yahooCalls.some((url) => /INDIAVIX/i.test(url))).toBe(true);
+    expect(res.providerMetadata?.vix.name).toBe("yahoo-chart-fallback");
+    expect(res.providerMetadata?.vix.status).toBe("DELAYED");
+    expect(res.providerMetadata?.vix.providerTime).not.toBeNull();
+    expect(res.providerMetadata?.vix.candlesAvailable).toBe(true);
   });
 });

@@ -1,191 +1,125 @@
-// Browser-side SSE client for live candle streaming.
-// Uses native EventSource for server-pushed updates.
-// Bounded memory — explicit max completed candles.
-// No polling. No token exposure.
+import { useEffect, useState, useCallback } from "react";
+import {
+  parseLiveEvent,
+  type LiveCandleEvent,
+  type LiveStatusEvent,
+  type LiveCandleSseEvent,
+} from "@/lib/live-candle-contract";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-
-export interface LiveSSECandle {
-  readonly time: number;
-  readonly open: number;
-  readonly high: number;
-  readonly low: number;
-  readonly close: number;
-  readonly volume: number | null;
-  readonly completed: boolean;
-  readonly provider: string;
-  readonly freshness: string;
-  readonly timestamp: string;
-  readonly lastLtp: number | null;
-  readonly lastTick: string | null;
-  readonly connectionState: string;
-  readonly tickCount: number | null;
-}
-
-export interface LiveSSEStatus {
-  readonly connectionState: string;
-  readonly provider: string;
-  readonly freshness: string;
-  readonly lastTick: string | null;
-  readonly lastLtp: number | null;
-  readonly currentCandle: {
-    readonly open: number;
-    readonly high: number;
-    readonly low: number;
-    readonly close: number;
-    readonly volume: number | null;
-    readonly tickCount: number;
-  } | null;
-  readonly completedCount: number;
-}
-
-const MAX_LIVE_COMPLETED_CANDLES = 2000;
-
+export type LiveSSECandle = LiveCandleEvent["candle"] & Omit<LiveCandleEvent, "candle" | "type">;
+export type LiveSSEStatus = Omit<LiveStatusEvent, "type" | "symbol" | "intervalMs">;
 export interface LiveSSEState {
   readonly connected: boolean;
   readonly status: LiveSSEStatus | null;
   readonly currentCandle: LiveSSECandle | null;
-  readonly completedCandles: Map<number, LiveSSECandle>; // keyed by time — bounded
+  readonly completedCandles: Map<number, LiveSSECandle>;
   readonly error: string | null;
 }
-
-/**
- * Bounded Map insert — evicts oldest entries when MAX_LIVE_COMPLETED_CANDLES exceeded.
- */
-function boundedInsert(
-  map: Map<number, LiveSSECandle>,
-  key: number,
-  value: LiveSSECandle,
-): Map<number, LiveSSECandle> {
-  const newMap = new Map(map);
-  newMap.set(key, value);
-  if (newMap.size > MAX_LIVE_COMPLETED_CANDLES) {
-    // Remove oldest entries (smallest timestamps)
-    const sorted = [...newMap.keys()].sort((a, b) => a - b);
-    const toRemove = sorted.slice(0, newMap.size - MAX_LIVE_COMPLETED_CANDLES);
-    for (const k of toRemove) {
-      newMap.delete(k);
-    }
-  }
-  return newMap;
-}
-
-/**
- * Hook that connects to SSE and maintains live candle state.
- * Uses bounded Map for completed candles (no unbounded array).
- * Current candle is replaced in-place for same timestamp.
- */
-export function useLiveCandleSSE(symbol: string, intervalMs: number = 60_000) {
-  const [state, setState] = useState<LiveSSEState>({
+export function emptyLiveState(): LiveSSEState {
+  return {
     connected: false,
     status: null,
     currentCandle: null,
     completedCandles: new Map(),
     error: null,
-  });
-  const esRef = useRef<EventSource | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const connect = useCallback(() => {
-    if (esRef.current) {
-      esRef.current.close();
-      esRef.current = null;
-    }
-    if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = null;
-    }
-
-    setState((s) => ({ ...s, connected: false, error: null }));
-
-    const url = `/api/live-candles?symbol=${encodeURIComponent(symbol)}&intervalMs=${intervalMs}`;
-    const es = new EventSource(url);
-    esRef.current = es;
-
-    es.onopen = () => {
-      setState((s) => ({ ...s, connected: true }));
+  };
+}
+export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): LiveSSEState {
+  if (event.type === "error") return { ...state, error: event.message };
+  if (event.type === "status") {
+    const c = event.currentCandle;
+    return {
+      ...state,
+      status: event,
+      error: event.error,
+      currentCandle:
+        c && event.lastTick
+          ? {
+              ...c,
+              symbol: event.symbol,
+              intervalMs: event.intervalMs,
+              provider: event.provider,
+              freshness: event.freshness,
+              quality: event.quality,
+              lastTick: event.lastTick,
+              lastLtp: event.lastLtp,
+              connectionState: event.connectionState,
+              completed: false,
+              timestamp: event.lastTick,
+              tickCount: null,
+            }
+          : state.currentCandle,
     };
-
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        switch (data.type) {
-          case "status":
-            setState((s) => ({
-              ...s,
-              status: {
-                connectionState: data.connectionState,
-                provider: data.provider,
-                freshness: data.freshness,
-                lastTick: data.lastTick,
-                lastLtp: data.lastLtp,
-                currentCandle: data.currentCandle,
-                completedCount: data.completedCount,
-              },
-            }));
-            break;
-          case "candle_update":
-            setState((s) => {
-              // Update live status from every event (Bug 3 fix)
-              const updatedStatus: LiveSSEStatus = {
-                connectionState: data.connectionState ?? s.status?.connectionState ?? "UNKNOWN",
-                provider: data.provider ?? s.status?.provider ?? "UPSTOX_V3_WS",
-                freshness: data.freshness ?? s.status?.freshness ?? "NO_DATA",
-                lastTick: data.lastTick ?? s.status?.lastTick ?? null,
-                lastLtp: data.lastLtp ?? s.status?.lastLtp ?? null,
-                currentCandle: s.status?.currentCandle ?? null,
-                completedCount: s.status?.completedCount ?? 0,
-              };
-
-              if (data.completed) {
-                // Completed candle — add to bounded Map (deduplicates by time)
-                const newMap = boundedInsert(s.completedCandles, data.candle.time, data);
-                return {
-                  ...s,
-                  status: { ...updatedStatus, completedCount: newMap.size },
-                  completedCandles: newMap,
-                  // Do NOT clear currentCandle here — the new current candle event
-                  // will arrive immediately after (Bug 1 fix: completed first, then current)
-                };
-              }
-              // Current candle — replace in-place (same timestamp = update, not duplicate)
-              return {
-                ...s,
-                status: { ...updatedStatus, currentCandle: data.candle },
-                currentCandle: data,
-              };
-            });
-            break;
-          case "error":
-            setState((s) => ({ ...s, error: data.message }));
-            break;
-        }
-      } catch {
-        /* malformed — ignore */
-      }
-    };
-
-    es.onerror = () => {
-      setState((s) => ({ ...s, connected: false }));
-      es.close();
-      esRef.current = null;
-      reconnectTimerRef.current = setTimeout(connect, 3000);
-    };
-  }, [symbol, intervalMs]);
-
+  }
+  const { candle, ...metadata } = event;
+  const normalized: LiveSSECandle = { ...metadata, ...candle };
+  if (state.currentCandle && candle.time < state.currentCandle.time && !event.completed)
+    return state;
+  const completed = new Map(state.completedCandles);
+  if (event.completed) {
+    completed.set(candle.time, normalized);
+    while (completed.size > 2000) completed.delete(Math.min(...completed.keys()));
+  }
+  return {
+    ...state,
+    completedCandles: completed,
+    currentCandle: event.completed ? state.currentCandle : normalized,
+    status: { ...metadata, currentCandle: candle, completedCount: completed.size, error: null },
+    error: null,
+  };
+}
+export function useLiveCandleSSE(symbol: string, intervalMs = 60000) {
+  const key = `${symbol}:${intervalMs}`;
+  const [stored, setStored] = useState({ key, state: emptyLiveState() });
+  const [retry, setRetry] = useState(0);
+  const reconnect = useCallback(() => setRetry((n) => n + 1), []);
   useEffect(() => {
+    let disposed = false;
+    let attempts = 0;
+    let es: EventSource | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const update = (fn: (state: LiveSSEState) => LiveSSEState) => {
+      if (!disposed)
+        setStored((s) => ({ key, state: fn(s.key === key ? s.state : emptyLiveState()) }));
+    };
+    setStored({ key, state: emptyLiveState() });
+    const connect = () => {
+      if (disposed) return;
+      const source = new EventSource(
+        `/api/live-candles?symbol=${encodeURIComponent(symbol)}&intervalMs=${intervalMs}`,
+      );
+      es = source;
+      source.onopen = () => {
+        if (!disposed && es === source) update((s) => ({ ...s, connected: true }));
+      };
+      source.onmessage = (message) => {
+        if (disposed || es !== source) return;
+        try {
+          const parsed: unknown = JSON.parse(message.data);
+          const event = parseLiveEvent(parsed, symbol, intervalMs);
+          if (event) update((s) => applyLiveEvent(s, event));
+        } catch {
+          /* Invalid wire payload rejected. */
+        }
+      };
+      source.onerror = () => {
+        source.close();
+        if (disposed || es !== source) return;
+        es = null;
+        update((s) => ({
+          ...s,
+          connected: false,
+          error: attempts >= 5 ? "UNAVAILABLE" : "RECONNECTING",
+        }));
+        if (attempts < 5) timer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 30000));
+      };
+    };
     connect();
     return () => {
-      if (esRef.current) {
-        esRef.current.close();
-        esRef.current = null;
-      }
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = null;
-      }
+      disposed = true;
+      es?.close();
+      if (timer) clearTimeout(timer);
     };
-  }, [connect]);
-
-  return { state, reconnect: connect };
+  }, [symbol, intervalMs, key, retry]);
+  return { state: stored.key === key ? stored.state : emptyLiveState(), reconnect };
 }

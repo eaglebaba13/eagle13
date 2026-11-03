@@ -1,5 +1,5 @@
 import { createContext, type ReactNode } from "react";
-import type { IndexQuote } from "@/lib/market.functions";
+import type { IndexQuote, MarketDataResponse } from "@/lib/market.functions";
 import type { Levels } from "@/lib/levels";
 import type { DashboardFreshnessMap } from "@/lib/dashboard-freshness-adapter";
 import type { ProviderStatus } from "@/lib/data-freshness";
@@ -38,6 +38,7 @@ export type DashboardContextValue = {
   lastSuccessfulUpdate?: number | null;
   freshnessByDependency?: DashboardFreshnessMap;
   providerMetadata?: { name?: string; status?: ProviderStatus };
+  marketProviderMetadata?: MarketDataResponse["providerMetadata"];
   queryError?: unknown;
   queryStale?: boolean;
 };

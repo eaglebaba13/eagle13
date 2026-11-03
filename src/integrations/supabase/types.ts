@@ -8,6 +8,48 @@ export type Database = {
   };
   public: {
     Tables: {
+      research_lab_failures: {
+        Row: {
+          created_at: string;
+          id: number;
+          owner_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          owner_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          owner_id?: string;
+        };
+        Relationships: [];
+      };
+      research_lab_runs: {
+        Row: {
+          created_at: string;
+          duration_ms: number | null;
+          owner_id: string;
+          report: Json;
+          run_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          duration_ms?: number | null;
+          owner_id: string;
+          report: Json;
+          run_id: string;
+        };
+        Update: {
+          created_at?: string;
+          duration_ms?: number | null;
+          owner_id?: string;
+          report?: Json;
+          run_id?: string;
+        };
+        Relationships: [];
+      };
       audit_log: {
         Row: {
           actor_user_id: string | null;
@@ -1660,12 +1702,26 @@ export type Database = {
         };
       };
       get_entitlement_snapshot: { Args: { _target?: string }; Returns: Json };
+      allocate_research_lab_run_id: { Args: never; Returns: string };
+      record_research_lab_failure: { Args: { p_owner_id: string }; Returns: undefined };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
           _user_id: string;
         };
         Returns: boolean;
+      };
+      research_lab_admin_snapshot: {
+        Args: never;
+        Returns: {
+          average_duration_ms: number | null;
+          created_at: string | null;
+          duration_ms: number | null;
+          failed_runs: number;
+          last_failure_at: string | null;
+          run_report: Json | null;
+          run_id: string | null;
+        }[];
       };
       mark_all_notifications_read: { Args: never; Returns: number };
       mark_notification_read: {

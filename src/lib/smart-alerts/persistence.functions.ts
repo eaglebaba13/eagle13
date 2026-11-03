@@ -559,6 +559,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SmartAlertRunResult> => {
     assertAuth(context);
+    if (!context.supabase) throw new Error("Unauthorized: Authentication required");
     const userId = context.userId;
 
     // Load checkpoint + subscription in parallel.
@@ -574,6 +575,9 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
+    // Failed reads must not reset dedupe state or substitute default preferences.
+    if (cpRow.error) throw new Error("SMART_ALERT_CHECKPOINT_READ_FAILED");
+    if (subRow.error) throw new Error("SMART_ALERT_SUBSCRIPTION_READ_FAILED");
     const checkpoint = mapCheckpointRow(
       userId,
       (cpRow.data as Record<string, unknown> | null) ?? null,
@@ -602,11 +606,12 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     const out = await runAlertEngine({ context: ctx, checkpoint, subscription });
 
     // Persist events (idempotent via unique (user_id, fingerprint) constraint).
-    // Track any failure so the checkpoint is NOT advanced if event
-    // persistence did not succeed — retries then remain idempotent because
-    // the unique fingerprint constraint blocks duplicates.
+    // Track event failures without advancing the checkpoint. The unique key
+    // prevents duplicate event rows, but delivery has already happened; a
+    // subsequent evaluation can resend Telegram after a failed event write.
     const emittedIds: string[] = [];
     let persistenceFailed = false;
+    let eventPersistenceFailed = false;
     let persistenceError: string | null = null;
     for (const ev of out.emitted) {
       const insertRow = {
@@ -630,57 +635,80 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
         .maybeSingle();
       if (insErr) {
         persistenceFailed = true;
-        persistenceError = insErr.message;
+        eventPersistenceFailed = true;
+        persistenceError = "SMART_ALERT_EVENT_WRITE_FAILED";
         continue;
       }
       const insertedId = (ins as { id?: string } | null)?.id;
+      if (!insertedId) {
+        persistenceFailed = true;
+        eventPersistenceFailed = true;
+        persistenceError = "SMART_ALERT_EVENT_ID_MISSING";
+        continue;
+      }
       if (insertedId) emittedIds.push(insertedId);
 
       // Delivery attempts (audit trail, no PII).
       for (const att of ev.deliveryStatus) {
-        await context.supabase.from("smart_alert_delivery_attempts").insert({
-          user_id: userId,
-          event_id: insertedId ?? null,
-          fingerprint: ev.fingerprint,
-          provider: att.provider,
-          status: att.status,
-          error_code: att.errorCode,
-          retryable: att.retryable,
-          attempted_at: att.attemptedAt,
-        } as never);
+        const { error: attemptError } = await context.supabase
+          .from("smart_alert_delivery_attempts")
+          .insert({
+            user_id: userId,
+            event_id: insertedId ?? null,
+            fingerprint: ev.fingerprint,
+            provider: att.provider,
+            status: att.status,
+            error_code: att.errorCode,
+            retryable: att.retryable,
+            attempted_at: att.attemptedAt,
+          } as never);
+        if (attemptError) {
+          persistenceFailed = true;
+          persistenceError = "SMART_ALERT_DELIVERY_AUDIT_WRITE_FAILED";
+        }
       }
     }
 
     // Only advance the checkpoint after every event persisted successfully.
     // A failed insert must leave the previous checkpoint intact so that
-    // the next run retries emission (idempotent via unique fingerprint).
-    if (persistenceFailed) {
-      await context.supabase.from("smart_alert_engine_checkpoints").upsert(
-        {
-          user_id: userId,
-          last_evaluated_at: ctx.generatedAt,
-          last_error: persistenceError,
-          rules_version: SMART_ALERTS_RULES_VERSION,
-        } as never,
-        { onConflict: "user_id" },
-      );
+    // the next run retries emission. This does not guarantee delivery dedupe.
+    if (eventPersistenceFailed) {
+      const { error: checkpointError } = await context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .upsert(
+          {
+            user_id: userId,
+            last_evaluated_at: ctx.generatedAt,
+            last_error: persistenceError,
+            rules_version: SMART_ALERTS_RULES_VERSION,
+          } as never,
+          { onConflict: "user_id" },
+        );
+      if (checkpointError) persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
     } else {
-      await context.supabase.from("smart_alert_engine_checkpoints").upsert(
-        {
-          user_id: userId,
-          last_evaluated_at: ctx.generatedAt,
-          last_success_at: ctx.generatedAt,
-          last_error: null,
-          rules_version: SMART_ALERTS_RULES_VERSION,
-          previous: out.nextCheckpoint.previous as unknown as never,
-          fingerprints: {
-            lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
-            lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
-            emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
-          } as unknown as never,
-        } as never,
-        { onConflict: "user_id" },
-      );
+      // An audit-only failure must not cause already-sent messages to be resent.
+      const { error: checkpointError } = await context.supabase
+        .from("smart_alert_engine_checkpoints")
+        .upsert(
+          {
+            user_id: userId,
+            last_evaluated_at: ctx.generatedAt,
+            ...(persistenceFailed ? {} : { last_success_at: ctx.generatedAt }),
+            last_error: persistenceError,
+            rules_version: SMART_ALERTS_RULES_VERSION,
+            previous: out.nextCheckpoint.previous as unknown as never,
+            fingerprints: {
+              lastFingerprintsByType: out.nextCheckpoint.lastFingerprintsByType,
+              lastEmittedAtByFingerprint: out.nextCheckpoint.lastEmittedAtByFingerprint,
+              emittedFingerprintsThisSession: out.nextCheckpoint.emittedFingerprintsThisSession,
+            } as unknown as never,
+          } as never,
+          { onConflict: "user_id" },
+        );
+      if (checkpointError) {
+        persistenceFailed = true;
+        persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
+      }
     }
 
     return {
@@ -771,7 +799,7 @@ export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
       context.supabase
         .from("smart_alert_delivery_attempts")
         .select("id", { count: "exact", head: true })
-        .neq("status", "OK"),
+        .in("status", ["FAILED", "RETRY"]),
       context.supabase
         .from("smart_alert_engine_checkpoints")
         .select("last_error, updated_at")

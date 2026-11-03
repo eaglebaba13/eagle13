@@ -4,11 +4,9 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import type { QuoteSymbol } from "./provider-foundation/types";
-import { INDSTOCKS_SUPPORTED_SYMBOLS } from "./provider-foundation/indstocks/indstocks-instruments.server";
+import { validSelection } from "./live-candle-contract";
 import type { AggregationIntervalMs } from "./provider-foundation/indstocks/candle-aggregator";
 import { SUPPORTED_INTERVALS } from "./provider-foundation/indstocks/candle-aggregator";
-
-const VALID_SYMBOLS: ReadonlySet<string> = new Set(INDSTOCKS_SUPPORTED_SYMBOLS);
 
 export interface LiveCandleUpdate {
   readonly type: "candle_update";
@@ -45,14 +43,12 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     const symbol = data.symbol;
     const intervalMs = data.intervalMs ?? 60_000;
 
-    if (!VALID_SYMBOLS.has(symbol)) {
+    if (!validSelection(symbol, intervalMs)) {
       return { error: `Unsupported symbol: ${symbol}`, series: [], status: null };
     }
 
     const { getLiveMarketStream } = await import("./live-market-stream.server");
     const stream = getLiveMarketStream();
-    stream.start();
-    stream.subscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
 
     // Fetch historical candles
     let historical: readonly {
@@ -77,6 +73,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
           new Date().toISOString(),
         );
         if (result.ok) historical = result.data.candles;
+        else return { error: "PROVIDER_ERROR", series: [], status: null };
       }
     } catch {
       /* historical unavailable — continue with live only */

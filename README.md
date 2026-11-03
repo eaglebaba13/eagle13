@@ -16,6 +16,7 @@ Institutional-grade Indian stock-market **research platform**.
 | Production URL | `https://eaglebaba.lwill.in/` |
 | Last verified deployment | `e62cc28` (Coolify) |
 | Deployment platform | Coolify on Hostinger VPS KVM4 |
+| Canonical Production Server | `root@200.234.35.116` |
 | Runtime | Node.js + Nitro node-server |
 | Start command | `node .output/server/index.mjs` |
 | Development workflow | VS Code → Kilo Code → GitHub → Coolify → Hostinger VPS |

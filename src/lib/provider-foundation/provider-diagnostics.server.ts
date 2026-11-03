@@ -38,6 +38,7 @@ export interface PublicProviderEnvPresence {
   readonly apiKey: ProviderEnvPresence["UPSTOX_API_KEY"];
   readonly apiSecret: ProviderEnvPresence["UPSTOX_API_SECRET"];
   readonly accessToken: ProviderEnvPresence["UPSTOX_ACCESS_TOKEN"];
+  readonly analyticsToken: ProviderEnvPresence["UPSTOX_ANALYTICS_TOKEN"];
   readonly runtimeEnvironment: ProviderEnvPresence["runtimeEnvironment"];
   readonly deploymentRestartRequired: boolean;
 }
@@ -48,6 +49,7 @@ function publicEnvPresence(env: ProviderEnvPresence): PublicProviderEnvPresence 
     apiKey: env.UPSTOX_API_KEY,
     apiSecret: env.UPSTOX_API_SECRET,
     accessToken: env.UPSTOX_ACCESS_TOKEN,
+    analyticsToken: env.UPSTOX_ANALYTICS_TOKEN,
     runtimeEnvironment: env.runtimeEnvironment,
     deploymentRestartRequired: env.deploymentRestartRequired,
   };
@@ -83,6 +85,8 @@ function readEnv(): ProviderDiagnosticsEnv {
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
     UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
     UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
+    UPSTOX_ANALYTICS_TOKEN: p.UPSTOX_ANALYTICS_TOKEN,
+    Upstox_Analytics_Token: p.Upstox_Analytics_Token,
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
     NODE_ENV: p.NODE_ENV,
     MODE: p.MODE,
@@ -96,7 +100,11 @@ function redactProviderError(error: unknown): string {
   return raw
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
-    .replace(/UPSTOX_(API_KEY|API_SECRET|ACCESS_TOKEN)=[^\s"']+/gi, "UPSTOX_$1=[REDACTED]")
+    .replace(
+      /UPSTOX_(API_KEY|API_SECRET|ACCESS_TOKEN|ANALYTICS_TOKEN)=[^\s"']+/gi,
+      "UPSTOX_$1=[REDACTED]",
+    )
+    .replace(/Upstox_Analytics_Token=[^\s"']+/gi, "Upstox_Analytics_Token=[REDACTED]")
     .slice(0, 240);
 }
 
@@ -116,6 +124,8 @@ function toPresenceInput(env: ProviderDiagnosticsEnv): ProviderEnvPresenceInput 
     UPSTOX_API_KEY: env.UPSTOX_API_KEY,
     UPSTOX_API_SECRET: env.UPSTOX_API_SECRET,
     UPSTOX_ACCESS_TOKEN: env.UPSTOX_ACCESS_TOKEN,
+    UPSTOX_ANALYTICS_TOKEN: env.UPSTOX_ANALYTICS_TOKEN,
+    Upstox_Analytics_Token: env.Upstox_Analytics_Token,
     NODE_ENV: env.NODE_ENV,
     MODE: env.MODE,
     DEPLOYMENT_ENVIRONMENT: env.DEPLOYMENT_ENVIRONMENT,

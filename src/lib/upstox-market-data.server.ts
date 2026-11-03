@@ -6,7 +6,8 @@
 // so callers can fall back cleanly — NEVER a mock value.
 
 import { UpstoxHistoricalAdapter } from "./provider-foundation/upstox/upstox-historical.adapter.server";
-import type { QuoteSymbol } from "./provider-foundation/types";
+import type { ProviderStatus, QuoteSymbol } from "./provider-foundation/types";
+import type { DataQualityStatus } from "./data-freshness";
 import { mapUpstoxToIndexQuote } from "./upstox-quote-mapper";
 import type { IndexQuote } from "./market.functions";
 
@@ -23,15 +24,25 @@ export interface UpstoxIndexQuoteResult {
   readonly quote: IndexQuote;
   readonly providerMetadata: {
     readonly name: "upstox-historical-v1";
-    readonly status: string; // ProviderStatus from telemetry
+    readonly status: ProviderStatus;
     readonly receivedAt: string;
     readonly providerTime: string | null;
+    readonly candlesAvailable: boolean;
+    readonly dataQuality: DataQualityStatus;
   };
 }
 export interface UpstoxIndexQuoteFailure {
   readonly ok: false;
   readonly reason: string;
   readonly detail?: string;
+  readonly providerMetadata: {
+    readonly name: "upstox-historical-v1";
+    readonly status: ProviderStatus;
+    readonly receivedAt: string;
+    readonly providerTime: string | null;
+    readonly candlesAvailable: boolean;
+    readonly dataQuality: DataQualityStatus;
+  };
 }
 
 export async function fetchUpstoxIndexQuote(
@@ -45,7 +56,19 @@ export async function fetchUpstoxIndexQuote(
       adapter.fetchHistorical(symbol, "1d", 5, nowIso).catch(() => null),
     ]);
     if (!quoteRes.ok) {
-      return { ok: false, reason: quoteRes.reason, detail: quoteRes.detail };
+      return {
+        ok: false,
+        reason: quoteRes.reason,
+        detail: quoteRes.detail,
+        providerMetadata: {
+          name: "upstox-historical-v1",
+          status: quoteRes.telemetry.status,
+          receivedAt: quoteRes.telemetry.receivedAt,
+          providerTime: quoteRes.telemetry.providerTime,
+          candlesAvailable: !!(histRes && histRes.ok && histRes.data.candles.length),
+          dataQuality: "MISSING",
+        },
+      };
     }
     const meta = NAME_BY_SYMBOL[symbol];
     const candles = histRes && histRes.ok ? histRes.data.candles : [];
@@ -63,6 +86,13 @@ export async function fetchUpstoxIndexQuote(
         status: quoteRes.data.telemetry.status,
         receivedAt: quoteRes.data.telemetry.receivedAt,
         providerTime: quoteRes.data.telemetry.providerTime,
+        candlesAvailable: candles.length > 0,
+        dataQuality:
+          !candles.length || !quote.prevDay.date
+            ? "MISSING"
+            : histRes?.ok && histRes.data.telemetry.staleReason
+              ? "INVALID"
+              : "OK",
       },
     };
   } catch (err) {
@@ -70,6 +100,14 @@ export async function fetchUpstoxIndexQuote(
       ok: false,
       reason: "UNKNOWN",
       detail: err instanceof Error ? err.message : String(err),
+      providerMetadata: {
+        name: "upstox-historical-v1",
+        status: "FAILED",
+        receivedAt: nowIso,
+        providerTime: null,
+        candlesAvailable: false,
+        dataQuality: "MISSING",
+      },
     };
   }
 }
