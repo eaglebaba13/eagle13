@@ -75,7 +75,9 @@ export const Route = createFileRoute("/option-strategy")({
   }),
   errorComponent: ({ error }) => (
     <div style={{ background: C.bg, minHeight: "100vh", padding: 40, color: C.red }}>
-      <p style={{ fontFamily: "var(--eb-mono)" }}>Strategy data unavailable: {error.message}</p>
+      <p style={{ fontFamily: "var(--eb-mono)" }}>
+        Strategy data unavailable: {error instanceof Error ? error.message : "Unexpected error"}
+      </p>
       <Link to="/astro" style={{ color: C.blue }}>
         ← Back to Astro dashboard
       </Link>

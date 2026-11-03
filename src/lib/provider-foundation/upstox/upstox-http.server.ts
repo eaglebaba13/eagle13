@@ -8,7 +8,13 @@
 // deterministically without hitting the network.
 
 import type { UpstoxError, UpstoxErrorCode } from "./upstox-types";
-import { evaluateUpstoxTokenPolicy, type TokenPolicyEnv } from "./upstox-token-policy.server";
+import {
+  evaluateUpstoxTokenPolicy,
+  resolveUpstoxAccessToken,
+  resolveUpstoxAnalyticsToken,
+  resolveUpstoxMarketDataToken,
+  type TokenPolicyEnv,
+} from "./upstox-token-policy.server";
 
 export interface UpstoxHttpConfig {
   readonly baseUrl?: string;
@@ -59,6 +65,11 @@ function redact(msg: string): string {
     msg
       .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
       .replace(/access_token=[^&\s"']+/gi, "access_token=[REDACTED]")
+      .replace(
+        /(UPSTOX_ANALYTICS_TOKEN|UPSTOX_ACCESS_TOKEN|Upstox_Analytics_Token)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"']+)/gi,
+        "$1=[REDACTED]",
+      )
+      .replace(/"(?:access_)?token"\s*:\s*"[^"]+"/gi, '"token":"[REDACTED]"')
       .replace(/"api[_-]?(key|secret)"\s*:\s*"[^"]+"/gi, '"api_$1":"[REDACTED]"')
       // Never leak the raw HTTP response body — keep only the status prefix.
       .replace(/HTTP\s+(\d{3}):\s*.*/gi, "HTTP $1")
@@ -133,6 +144,7 @@ function envOf(cfg: UpstoxHttpConfig): TokenPolicyEnv {
     UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
     UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
     UPSTOX_ANALYTICS_TOKEN: p.UPSTOX_ANALYTICS_TOKEN,
+    Upstox_Analytics_Token: p.Upstox_Analytics_Token,
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
   };
 }
@@ -202,15 +214,15 @@ export class UpstoxHttpClient {
         },
       };
     }
-    const analyticsToken = this.env.UPSTOX_ANALYTICS_TOKEN?.trim();
-    const accessToken = this.env.UPSTOX_ACCESS_TOKEN?.trim();
+    const analyticsToken = resolveUpstoxAnalyticsToken(this.env);
+    const accessToken = resolveUpstoxAccessToken(this.env);
 
     const token =
       opts.tokenKind === "access"
         ? accessToken
         : opts.tokenKind === "analytics"
           ? analyticsToken
-          : analyticsToken || accessToken;
+          : resolveUpstoxMarketDataToken(this.env);
 
     if (!token) {
       return {

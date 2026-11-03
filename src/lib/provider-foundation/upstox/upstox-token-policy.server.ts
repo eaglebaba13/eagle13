@@ -70,7 +70,27 @@ export interface TokenPolicyEnv {
   readonly UPSTOX_API_SECRET?: string;
   readonly UPSTOX_ACCESS_TOKEN?: string;
   readonly UPSTOX_ANALYTICS_TOKEN?: string;
+  readonly Upstox_Analytics_Token?: string;
   readonly UPSTOX_SANDBOX_ACCESS_TOKEN?: string;
+}
+
+export function resolveUpstoxAnalyticsToken(env: TokenPolicyEnv): string | undefined {
+  for (const candidate of [env.UPSTOX_ANALYTICS_TOKEN, env.Upstox_Analytics_Token]) {
+    const token = candidate?.trim();
+    if (!isPlaceholder(token)) return token;
+  }
+  return undefined;
+}
+
+export function resolveUpstoxAccessToken(env: TokenPolicyEnv): string | undefined {
+  const token = env.UPSTOX_ACCESS_TOKEN?.trim();
+  return isPlaceholder(token) ? undefined : token;
+}
+
+export function resolveUpstoxMarketDataToken(env: TokenPolicyEnv): string | undefined {
+  const analyticsToken = resolveUpstoxAnalyticsToken(env);
+  if (analyticsToken) return analyticsToken;
+  return resolveUpstoxAccessToken(env);
 }
 
 /**
@@ -84,10 +104,8 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
   const mode = (env.UPSTOX_MARKET_DATA_MODE ?? "").toLowerCase() === "live" ? "live" : "disabled";
   const apiKeyOk = !isPlaceholder(env.UPSTOX_API_KEY);
   const apiSecretOk = !isPlaceholder(env.UPSTOX_API_SECRET);
-  const accessOk = !isPlaceholder(env.UPSTOX_ACCESS_TOKEN);
-  const analyticsOk = !isPlaceholder(env.UPSTOX_ANALYTICS_TOKEN);
-  const liveOk = accessOk || analyticsOk;
-  const selectedToken = analyticsOk ? env.UPSTOX_ANALYTICS_TOKEN : env.UPSTOX_ACCESS_TOKEN;
+  const selectedToken = resolveUpstoxMarketDataToken(env);
+  const liveOk = selectedToken !== undefined;
   const classified = classifyUpstoxTokenFormat(selectedToken);
 
   if (mode !== "live") {
@@ -125,11 +143,8 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
     tokenPresent: true,
     tokenSource: "LIVE",
     tokenExpiryStatus: "UNKNOWN",
-    tokenUsable: apiKeyOk && apiSecretOk,
-    reason:
-      apiKeyOk && apiSecretOk
-        ? "live token configured"
-        : "live token present but API key/secret missing",
+    tokenUsable: true,
+    reason: "live token configured",
     mode: "live",
     apiKeyConfigured: apiKeyOk,
     apiSecretConfigured: apiSecretOk,

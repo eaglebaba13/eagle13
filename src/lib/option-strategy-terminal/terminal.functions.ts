@@ -7,7 +7,7 @@
 // and feeds them into the deterministic strategy engine.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
@@ -75,7 +75,8 @@ export interface TerminalResponse {
 
 export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<TerminalResponse> => {
+  .handler(async ({ context }): Promise<TerminalResponse> => {
+    assertAuth(context);
     const generatedAt = new Date().toISOString();
     const [decisionRes, gtiRes, gapRes, flowRes] = await Promise.allSettled([
       getDecisionSnapshot(),

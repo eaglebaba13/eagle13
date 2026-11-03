@@ -68,5 +68,6 @@ export function mapUpstoxToIndexQuote(input: MapUpstoxQuoteInput): IndexQuote {
     marketState,
     prevDay,
     updatedAt: tick.telemetry.receivedAt ?? new Date().toISOString(),
+    providerTime: tick.telemetry.providerTime,
   };
 }

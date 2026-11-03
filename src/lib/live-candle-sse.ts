@@ -1,150 +1,113 @@
-// Server-Sent Events endpoint for live candle streaming.
-// Tick-driven: subscribes to LiveMarketStreamManager candle events.
-// NO polling. NO setInterval for data. Token never exposed.
-
+import { getLiveMarketStream, type LiveMarketStreamManager } from "./live-market-stream.server";
+import {
+  validSelection,
+  tickFreshness,
+  type LiveCandleSseEvent,
+  type LiveStatusEvent,
+} from "./live-candle-contract";
 import type { QuoteSymbol } from "./provider-foundation/types";
-import { INDSTOCKS_SUPPORTED_SYMBOLS } from "./provider-foundation/indstocks/indstocks-instruments.server";
 import type { AggregationIntervalMs } from "./provider-foundation/indstocks/candle-aggregator";
-import type { LiveCandleEvent } from "./live-market-stream.server";
 
-const VALID_SYMBOLS: ReadonlySet<string> = new Set(INDSTOCKS_SUPPORTED_SYMBOLS);
-
-function writeSSE(data: string): Uint8Array {
-  return new TextEncoder().encode(`data: ${data}\n\n`);
-}
-
-function writeSSEComment(comment: string): Uint8Array {
-  return new TextEncoder().encode(`: ${comment}\n\n`);
-}
-
-/**
- * Create an SSE streaming response for live candle data.
- * Tick-driven: subscribes to LiveMarketStreamManager candle events.
- * NO polling. NO setInterval for data. Token never exposed.
- */
-export function createLiveCandleSSE(symbol: string, intervalMs: number): Response {
-  if (!VALID_SYMBOLS.has(symbol)) {
-    return new Response(
-      `data: ${JSON.stringify({ type: "error", message: `Unsupported symbol: ${symbol}` })}\n\n`,
-      { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
-    );
-  }
-
+// Status ticks update age/freshness only; market data remains provider-driven.
+export function createLiveCandleSSE(
+  symbol: string,
+  intervalMs: number,
+  signal?: AbortSignal,
+  mgr: LiveMarketStreamManager = getLiveMarketStream(),
+): Response {
+  if (!validSelection(symbol, intervalMs))
+    return Response.json({ error: "UNVERIFIED_SYMBOL_OR_INTERVAL" }, { status: 400 });
   let closed = false;
-  let unsubCandle: (() => void) | null = null;
-  let keepaliveId: ReturnType<typeof setInterval> | null = null;
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const { getLiveMarketStream } = await import("./live-market-stream.server");
-      const mgr = getLiveMarketStream();
-      mgr.start();
-      mgr.subscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-
-      // Send initial status
-      const snap = mgr.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-      controller.enqueue(
-        writeSSE(
-          JSON.stringify({
-            type: "status",
-            symbol,
-            connectionState: snap.connectionState,
-            provider: snap.telemetry.providerId,
-            freshness:
-              snap.telemetry.status === "LIVE"
-                ? "LIVE"
-                : snap.telemetry.status === "STALE"
-                  ? "STALE"
-                  : "NO_DATA",
-            lastTick: snap.lastTick?.timestamp ?? null,
-            lastLtp: snap.lastTick?.ltp ?? null,
-            currentCandle: snap.currentCandle
-              ? {
-                  open: snap.currentCandle.open,
-                  high: snap.currentCandle.high,
-                  low: snap.currentCandle.low,
-                  close: snap.currentCandle.close,
-                  volume: snap.currentCandle.volume,
-                  tickCount: snap.currentCandle.tickCount,
-                }
-              : null,
-            completedCount: snap.completedCandleCount,
-          }),
-        ),
-      );
-
-      // Send current candle snapshot if it exists
-      if (snap.currentCandle) {
-        controller.enqueue(
-          writeSSE(
-            JSON.stringify({
-              type: "candle_update",
-              symbol,
-              intervalMs,
-              candle: {
-                time: snap.currentCandle.bucketMs,
-                open: snap.currentCandle.open,
-                high: snap.currentCandle.high,
-                low: snap.currentCandle.low,
-                close: snap.currentCandle.close,
-                volume: snap.currentCandle.volume,
-              },
-              completed: false,
-              provider: snap.telemetry.providerId,
-              freshness:
-                snap.telemetry.status === "LIVE"
-                  ? "LIVE"
-                  : snap.telemetry.status === "STALE"
-                    ? "STALE"
-                    : "NO_DATA",
-              timestamp: new Date().toISOString(),
-            }),
-          ),
-        );
+  let subscribed = false;
+  let removeListener: (() => void) | undefined;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let closeController: (() => void) | undefined;
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    if (timer) clearInterval(timer);
+    removeListener?.();
+    if (subscribed) mgr.unsubscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+    signal?.removeEventListener("abort", cleanup);
+    closeController?.();
+  };
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      closeController = () => {
+        try {
+          controller.close();
+        } catch {
+          /* Already cancelled. */
+        }
+      };
+      const send = (event: LiveCandleSseEvent) => {
+        if (closed) return;
+        try {
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch {
+          cleanup();
+        }
+      };
+      if (signal?.aborted) {
+        cleanup();
+        return;
       }
-
-      // Subscribe to tick-driven candle events — NO POLLING
-      unsubCandle = mgr.onCandleUpdate(
+      signal?.addEventListener("abort", cleanup, { once: true });
+      mgr.start();
+      subscribed = mgr.subscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+      const status = (): LiveStatusEvent => {
+        const snap = mgr.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+        const c = snap.currentCandle;
+        return {
+          type: "status",
+          symbol,
+          intervalMs,
+          provider: snap.telemetry.providerId,
+          connectionState: snap.connectionState,
+          freshness:
+            snap.connectionState === "FAILED"
+              ? "UNAVAILABLE"
+              : snap.lastTick
+                ? snap.connectionState === "CONNECTED"
+                  ? tickFreshness(snap.lastTick.timestamp)
+                  : "STALE"
+                : "NO_DATA",
+          quality: snap.lastTick?.quality ?? "UNKNOWN",
+          lastTick: snap.lastTick?.timestamp ?? null,
+          lastLtp: snap.lastTick?.ltp ?? null,
+          completedCount: snap.completedCandleCount,
+          error: snap.telemetry.staleReason,
+          currentCandle: c
+            ? {
+                time: c.bucketMs,
+                open: c.open,
+                high: c.high,
+                low: c.low,
+                close: c.close,
+                volume: c.volume,
+              }
+            : null,
+        };
+      };
+      if (!subscribed) {
+        send({ type: "error", symbol, intervalMs, message: "UNAVAILABLE" });
+        cleanup();
+        return;
+      }
+      removeListener = mgr.onCandleUpdate(
         symbol as QuoteSymbol,
         intervalMs as AggregationIntervalMs,
-        (event: LiveCandleEvent) => {
-          if (closed) return;
-          try {
-            controller.enqueue(writeSSE(JSON.stringify(event)));
-          } catch {
-            closed = true;
-          }
-        },
+        send,
       );
-
-      // Keepalive comment every 30s to prevent proxy timeout
-      // SSE comment frames (: text) are NOT data events
-      keepaliveId = setInterval(() => {
-        if (!closed) {
-          try {
-            controller.enqueue(writeSSEComment("keepalive"));
-          } catch {
-            closed = true;
-          }
-        }
-      }, 30_000);
+      send(status());
+      timer = setInterval(() => send(status()), 5000);
     },
-    cancel() {
-      closed = true;
-      unsubCandle?.();
-      unsubCandle = null;
-      if (keepaliveId) {
-        clearInterval(keepaliveId);
-        keepaliveId = null;
-      }
-    },
+    cancel: cleanup,
   });
-
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     },
   });

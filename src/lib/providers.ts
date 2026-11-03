@@ -26,6 +26,7 @@ export const YahooChartResultSchema = z
         shortName: z.string().optional(),
         longName: z.string().optional(),
         regularMarketPrice: num.optional(),
+        regularMarketTime: num.optional(),
         chartPreviousClose: num.optional(),
         previousClose: num.optional(),
       })

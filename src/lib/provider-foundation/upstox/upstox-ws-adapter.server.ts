@@ -1,5 +1,5 @@
 // Upstox V3 WebSocket Market Data Feed Adapter — server-only.
-// Wraps Upstox V3 Market Data Feed WebSocket (v2/feed/market-data-feed/authorize)
+// Wraps Upstox V3 Market Data Feed WebSocket.
 // into a provider-neutral streaming interface. Token never exposed to client.
 
 import type { QuoteSymbol, ProviderTelemetry, ProviderStatus } from "../types";
@@ -8,6 +8,7 @@ import type {
   WsConnectionSnapshot,
   WsPriceMode,
 } from "../indstocks/indstocks-ws-types";
+import { resolveUpstoxMarketDataToken } from "./upstox-token-policy.server";
 
 export type TickListener = (tick: MarketTick) => void;
 
@@ -47,10 +48,15 @@ export class UpstoxWsAdapter {
     if (this.state === "CONNECTED" || this.state === "CONNECTING") return;
     this.state = "CONNECTING";
 
-    const token = process.env.UPSTOX_ACCESS_TOKEN?.trim();
+    const token = resolveUpstoxMarketDataToken({
+      UPSTOX_ANALYTICS_TOKEN: process.env.UPSTOX_ANALYTICS_TOKEN,
+      Upstox_Analytics_Token: process.env.Upstox_Analytics_Token,
+      UPSTOX_ACCESS_TOKEN: process.env.UPSTOX_ACCESS_TOKEN,
+    });
     if (!token) {
-      this.lastError = "Upstox credentials unavailable";
+      // Missing credentials fail closed.
       this.state = "DISCONNECTED";
+      this.lastError = "CONFIGURATION_ERROR";
       return;
     }
 
@@ -59,7 +65,7 @@ export class UpstoxWsAdapter {
 
   private async authorizeAndConnect(token: string): Promise<void> {
     try {
-      const res = await fetch("https://api.upstox.com/v2/feed/market-data-feed/authorize", {
+      const res = await fetch("https://api.upstox.com/v3/feed/market-data-feed/authorize", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -72,21 +78,26 @@ export class UpstoxWsAdapter {
       }
 
       const json = (await res.json()) as {
-        status?: string;
-        data?: { authorizedRedirectUri?: string };
+        status?: unknown;
+        data?: { authorized_redirect_uri?: unknown } | null;
       };
-      const wsUrl = json.data?.authorizedRedirectUri;
-      if (!wsUrl) {
-        throw new Error("Upstox WS authorization response missing authorizedRedirectUri");
+      const redirectUri = json.data?.authorized_redirect_uri;
+      if (json.status !== "success" || typeof redirectUri !== "string") {
+        throw new Error("Upstox WS authorization response is invalid");
+      }
+      const wsUrl = new URL(redirectUri);
+      if (wsUrl.protocol !== "wss:" || !wsUrl.hostname) {
+        throw new Error("Upstox WS authorization URL is invalid");
       }
 
       if (typeof WebSocket === "undefined") {
-        this.lastError = "WebSocket transport unavailable";
+        // Node / Server environment without global WebSocket — fallback to tick simulator
         this.state = "DISCONNECTED";
+        this.lastError = "PROVIDER_ERROR";
         return;
       }
 
-      this.ws = new WebSocket(wsUrl);
+      this.ws = new WebSocket(wsUrl.toString());
       this.ws.binaryType = "arraybuffer";
 
       this.ws.onopen = () => {
@@ -114,7 +125,7 @@ export class UpstoxWsAdapter {
         }
       };
     } catch (err) {
-      this.lastError = err instanceof Error ? err.message : "Upstox WS error";
+      this.lastError = "PROVIDER_ERROR";
       this.state = "DISCONNECTED";
     }
   }

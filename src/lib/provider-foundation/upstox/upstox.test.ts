@@ -12,6 +12,9 @@ import {
   parseUpstoxCandles,
   planRange,
   redactUpstoxMessage,
+  resolveUpstoxAccessToken,
+  resolveUpstoxAnalyticsToken,
+  resolveUpstoxMarketDataToken,
   resolveInstrument,
   tupleToRaw,
   upstoxHistoricalCacheKey,
@@ -79,6 +82,49 @@ describe("upstox token policy", () => {
     expect(s.tokenSource).toBe("LIVE");
     expect(s.tokenUsable).toBe(true);
   });
+  it("accepts the Coolify Analytics Token variable without OAuth credentials", () => {
+    const token = "analytics-token-fixture";
+    const env = {
+      UPSTOX_MARKET_DATA_MODE: "live",
+      Upstox_Analytics_Token: token,
+    };
+    const s = evaluateUpstoxTokenPolicy(env);
+    expect(s.tokenUsable).toBe(true);
+    expect(resolveUpstoxAnalyticsToken(env)).toBe(token);
+    expect(resolveUpstoxMarketDataToken(env)).toBe(token);
+    expect(JSON.stringify(s)).not.toContain(token);
+  });
+  it("prefers Analytics Token but preserves legacy access-token fallback", () => {
+    expect(
+      resolveUpstoxMarketDataToken({
+        UPSTOX_ANALYTICS_TOKEN: "canonical-analytics-token",
+        Upstox_Analytics_Token: "coolify-analytics-token",
+        UPSTOX_ACCESS_TOKEN: "legacy-access-token",
+      }),
+    ).toBe("canonical-analytics-token");
+    expect(resolveUpstoxMarketDataToken({ Upstox_Analytics_Token: "coolify-token" })).toBe(
+      "coolify-token",
+    );
+    expect(resolveUpstoxMarketDataToken({ UPSTOX_ACCESS_TOKEN: "legacy-token" })).toBe(
+      "legacy-token",
+    );
+    expect(
+      resolveUpstoxAnalyticsToken({
+        UPSTOX_ANALYTICS_TOKEN: "placeholder",
+        Upstox_Analytics_Token: "coolify-token",
+      }),
+    ).toBe("coolify-token");
+    expect(resolveUpstoxAccessToken({ UPSTOX_ACCESS_TOKEN: "xxxx" })).toBeUndefined();
+  });
+  it("rejects absent and placeholder Analytics credentials", () => {
+    expect(resolveUpstoxMarketDataToken({})).toBeUndefined();
+    expect(
+      evaluateUpstoxTokenPolicy({
+        UPSTOX_MARKET_DATA_MODE: "live",
+        Upstox_Analytics_Token: "placeholder",
+      }).tokenUsable,
+    ).toBe(false);
+  });
 });
 
 describe("upstox instrument master", () => {
@@ -88,11 +134,17 @@ describe("upstox instrument master", () => {
       expect(inst).not.toBeNull();
       expect(inst!.timezone).toBe("Asia/Kolkata");
     }
+    expect(resolveInstrument("INDIA_VIX")?.instrumentKey).toBe("NSE_INDEX|India VIX");
+    expect(resolveInstrument("INDIA_VIX")?.tradingSymbol).toBe("INDIA VIX");
   });
-  it("does not resolve external assets (XAUUSD/BTC)", () => {
-    expect(resolveInstrument("XAUUSD" as never)).toBeNull();
-    expect(resolveInstrument("BTC" as never)).toBeNull();
+  it("does not resolve external or unverified markets", () => {
+    expect(resolveInstrument("XAUUSD")).toBeNull();
+    expect(resolveInstrument("BTC")).toBeNull();
+    expect(resolveInstrument("FINNIFTY")).toBeNull();
+    expect(resolveInstrument("GOLD")).toBeNull();
+    expect(resolveInstrument("SILVER")).toBeNull();
     expect(isUpstoxSupported("BTC")).toBe(false);
+    expect(isUpstoxSupported("FINNIFTY")).toBe(false);
   });
 });
 
@@ -191,6 +243,14 @@ describe("upstox normalization", () => {
 });
 
 describe("upstox http redaction", () => {
+  it("redacts both configured Analytics Token variable names", () => {
+    const red = redactUpstoxMessage(
+      'UPSTOX_ANALYTICS_TOKEN=canonical-secret Upstox_Analytics_Token="coolify-secret"',
+    );
+    expect(red).not.toContain("canonical-secret");
+    expect(red).not.toContain("coolify-secret");
+  });
+
   it("redacts bearer tokens from messages", () => {
     const msg = 'called with Authorization: Bearer live-token-1234567890 body {"api_key":"abc"}';
     const red = redactUpstoxMessage(msg);
@@ -269,6 +329,33 @@ describe("upstox http redaction", () => {
     expect(seenUrl).not.toContain("live-token-1234567890");
     expect(seenAuth).toContain("Bearer");
   });
+  it("uses the Coolify Analytics Token for read-only requests without exposing it", async () => {
+    const token = "coolify-analytics-token-fixture";
+    let seenAuthorization = "";
+    let seenUrl = "";
+    const client = new UpstoxHttpClient({
+      env: {
+        UPSTOX_MARKET_DATA_MODE: "live",
+        Upstox_Analytics_Token: token,
+      },
+      fetchImpl: async (input, init) => {
+        seenAuthorization = String(
+          (init?.headers as Record<string, string>)["Authorization"] ?? "",
+        );
+        seenUrl = String(input);
+        return jsonResponse({ status: "success", data: {} });
+      },
+    });
+    const res = await client.request({
+      path: "v2/market-quote/quotes",
+      query: { instrument_key: "NSE_INDEX|India VIX" },
+    });
+    expect(res.ok).toBe(true);
+    expect(seenAuthorization).toBe(`Bearer ${token}`);
+    expect(new URL(seenUrl).searchParams.get("instrument_key")).toBe("NSE_INDEX|India VIX");
+    expect(seenUrl).not.toContain(token);
+    expect(JSON.stringify(res)).not.toContain(token);
+  });
 });
 
 describe("upstox adapter (mock HTTP)", () => {
@@ -327,6 +414,72 @@ describe("upstox adapter (mock HTTP)", () => {
     }
     expect(capturedUrl).toContain("/v3/historical-candle/");
     expect(capturedUrl).toContain("/days/1/");
+  });
+
+  it("uses the official INDIA VIX instrument key for quote and V3 candle requests", async () => {
+    const providerTime = Date.parse("2026-07-16T09:30:00.000Z");
+    const quoteAdapter = makeAdapter(async (input) => {
+      const url = new URL(String(input));
+      expect(url.pathname).toBe("/v2/market-quote/quotes");
+      expect(url.searchParams.get("instrument_key")).toBe("NSE_INDEX|India VIX");
+      return jsonResponse({
+        data: {
+          "NSE_INDEX|India VIX": {
+            last_price: 16.25,
+            last_trade_time: providerTime,
+            ohlc: { open: 16, high: 17, low: 15, close: 15.5 },
+          },
+        },
+      });
+    });
+    const quote = await quoteAdapter.fetchQuote("INDIA_VIX", "2026-07-16T09:30:01.000Z");
+    expect(quote.ok).toBe(true);
+    if (quote.ok) {
+      expect(quote.data.last).toBe(16.25);
+      expect(quote.data.telemetry.providerTime).toBe("2026-07-16T09:30:00.000Z");
+    }
+
+    let candleUrl = "";
+    const candleAdapter = makeAdapter(async (input) => {
+      candleUrl = String(input);
+      return jsonResponse({
+        data: {
+          candles: [
+            tuple("2025-01-02T09:15:00Z", 15, 16, 14, 15.5, 0),
+            tuple("2025-01-03T09:15:00Z", 15.5, 16.5, 15, 16, 0),
+          ],
+        },
+      });
+    });
+    const candles = await candleAdapter.fetchRange({
+      symbol: "INDIA_VIX",
+      timeframe: "1d",
+      from: "2025-01-01",
+      to: "2025-01-05",
+      nowIso: "2026-07-16T00:00:00Z",
+      nowMs: Date.parse("2026-07-16T00:00:00Z"),
+    });
+    expect(candles.ok).toBe(true);
+    expect(candleUrl).toContain("/NSE_INDEX%7CIndia%20VIX/days/1/");
+  });
+
+  it("does not treat an out-of-range provider timestamp as fresh", async () => {
+    const adapter = makeAdapter(async () =>
+      jsonResponse({
+        data: {
+          "NSE_INDEX|India VIX": {
+            last_price: 16.25,
+            last_trade_time: 1e99,
+          },
+        },
+      }),
+    );
+    const result = await adapter.fetchQuote("INDIA_VIX", "2026-07-16T09:30:01.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.telemetry.providerTime).toBeNull();
+      expect(result.data.telemetry.status).toBe("OFFLINE");
+    }
   });
 
   it("chunks a >30-day 1m request into multiple HTTP calls", async () => {

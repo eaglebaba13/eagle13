@@ -127,6 +127,10 @@ function AlertCenterPage() {
     mutationFn: (v: { t: AlertType; on: boolean }) => updSub({ data: { types: { [v.t]: v.on } } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["smart-alerts", "subscription"] }),
   });
+  const toggleTelegram = useMutation({
+    mutationFn: (enabled: boolean) => updSub({ data: { telegramEnabled: enabled } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["smart-alerts", "subscription"] }),
+  });
   const readMut = useMutation({
     mutationFn: (id: string) => readFn({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["smart-alerts"] }),
@@ -274,6 +278,38 @@ function AlertCenterPage() {
         </section>
 
         <aside className="space-y-2 rounded-lg border border-border/60 p-3">
+          <h2 className="text-sm font-semibold">Delivery</h2>
+          <label className="flex items-center justify-between gap-2 text-xs">
+            <span>Telegram notifications</span>
+            <input
+              type="checkbox"
+              checked={subscription.data?.telegramEnabled === true}
+              disabled={!subscription.data || toggleTelegram.isPending}
+              onChange={(ev) => toggleTelegram.mutate(ev.target.checked)}
+              aria-describedby="telegram-delivery-note"
+              className="h-4 w-4"
+            />
+          </label>
+          <p id="telegram-delivery-note" className="text-[11px] text-muted-foreground">
+            Opt in to send eligible research alerts to the shared, operator-configured Telegram
+            destination. Evaluation is manual via Evaluate now.
+          </p>
+          {subscription.error && (
+            <p role="alert" className="text-xs text-red-300">
+              Notification preferences unavailable.
+            </p>
+          )}
+          {toggleTelegram.error && (
+            <p role="alert" className="text-xs text-red-300">
+              Telegram preference could not be saved.
+            </p>
+          )}
+          {(run.error || run.data?.persistenceFailed) && (
+            <p role="alert" className="text-xs text-red-300">
+              {run.data?.persistenceError ?? "Alert evaluation failed."} Verify delivery history
+              before retrying.
+            </p>
+          )}
           <h2 className="text-sm font-semibold">Alert types</h2>
           <p className="text-[11px] text-muted-foreground">
             Toggle categories you want to receive.

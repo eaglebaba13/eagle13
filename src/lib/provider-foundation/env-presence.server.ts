@@ -9,6 +9,7 @@ export interface ProviderEnvPresence {
   readonly UPSTOX_API_KEY: EnvPresenceStatus;
   readonly UPSTOX_API_SECRET: EnvPresenceStatus;
   readonly UPSTOX_ACCESS_TOKEN: EnvPresenceStatus;
+  readonly UPSTOX_ANALYTICS_TOKEN: EnvPresenceStatus;
   readonly runtimeEnvironment: RuntimeEnvironment;
   readonly deploymentRestartRequired: boolean;
 }
@@ -18,6 +19,8 @@ export interface ProviderEnvPresenceInput {
   readonly UPSTOX_API_KEY?: string;
   readonly UPSTOX_API_SECRET?: string;
   readonly UPSTOX_ACCESS_TOKEN?: string;
+  readonly UPSTOX_ANALYTICS_TOKEN?: string;
+  readonly Upstox_Analytics_Token?: string;
   readonly NODE_ENV?: string;
   readonly MODE?: string;
   readonly DEPLOYMENT_ENVIRONMENT?: string;
@@ -64,6 +67,8 @@ export function evaluateProviderEnvPresence(env: ProviderEnvPresenceInput): Prov
   const apiKey = classifySecret(env.UPSTOX_API_KEY);
   const apiSecret = classifySecret(env.UPSTOX_API_SECRET);
   const accessToken = classifySecret(env.UPSTOX_ACCESS_TOKEN);
+  const analyticsToken = classifySecret(env.UPSTOX_ANALYTICS_TOKEN ?? env.Upstox_Analytics_Token);
+  const liveToken = analyticsToken === "PRESENT" ? analyticsToken : accessToken;
   const runtimeEnvironment = detectRuntime(env);
 
   // Heuristic: the platform requires a redeploy/restart after secret changes.
@@ -71,7 +76,7 @@ export function evaluateProviderEnvPresence(env: ProviderEnvPresenceInput): Prov
   // MISSING or PLACEHOLDER — the user likely saved secrets that have not yet
   // been injected into the current running deployment.
   const modeIsLive = (env.UPSTOX_MARKET_DATA_MODE ?? "").trim().toLowerCase() === "live";
-  const anyMissing = apiKey !== "PRESENT" || apiSecret !== "PRESENT" || accessToken !== "PRESENT";
+  const anyMissing = liveToken !== "PRESENT";
   const deploymentRestartRequired = modeIsLive && anyMissing;
 
   return {
@@ -79,17 +84,16 @@ export function evaluateProviderEnvPresence(env: ProviderEnvPresenceInput): Prov
     UPSTOX_API_KEY: apiKey,
     UPSTOX_API_SECRET: apiSecret,
     UPSTOX_ACCESS_TOKEN: accessToken,
+    UPSTOX_ANALYTICS_TOKEN: analyticsToken,
     runtimeEnvironment,
     deploymentRestartRequired,
   };
 }
 
-/** Live mode is fully configured only when all three secrets are PRESENT. */
+/** Live mode is configured when an Analytics or legacy access token is present. */
 export function liveCredentialsComplete(p: ProviderEnvPresence): boolean {
   return (
     p.UPSTOX_MARKET_DATA_MODE === "PRESENT" &&
-    p.UPSTOX_API_KEY === "PRESENT" &&
-    p.UPSTOX_API_SECRET === "PRESENT" &&
-    p.UPSTOX_ACCESS_TOKEN === "PRESENT"
+    (p.UPSTOX_ANALYTICS_TOKEN === "PRESENT" || p.UPSTOX_ACCESS_TOKEN === "PRESENT")
   );
 }

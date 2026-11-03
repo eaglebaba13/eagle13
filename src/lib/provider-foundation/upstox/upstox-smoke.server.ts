@@ -15,7 +15,7 @@ import {
   UPSTOX_SUPPORTED_SYMBOLS,
   type UpstoxSupportedSymbol,
 } from "./upstox-instruments.server";
-import type { QuoteSymbol, Timeframe } from "../types";
+import type { Timeframe } from "../types";
 import type { UpstoxErrorCode } from "./upstox-types";
 
 export type SmokeErrorSource =
@@ -249,12 +249,8 @@ export interface UpstoxSmokeReport {
 }
 
 const REQUIRED_SYMBOLS: readonly UpstoxSupportedSymbol[] = ["NIFTY50", "BANKNIFTY", "INDIA_VIX"];
-const OPTIONAL_SYMBOLS: readonly UpstoxSupportedSymbol[] = [
-  "GOLD",
-  "SILVER",
-  "CRUDEOIL",
-  "NATURAL_GAS",
-];
+// Keep optional-market support disabled until each provider contract is verified.
+const OPTIONAL_SYMBOLS: readonly string[] = [];
 
 interface QuoteApiResult {
   readonly ok: boolean;
@@ -366,6 +362,8 @@ function envFromProcess(): TokenPolicyEnv {
     UPSTOX_API_KEY: p.UPSTOX_API_KEY,
     UPSTOX_API_SECRET: p.UPSTOX_API_SECRET,
     UPSTOX_ACCESS_TOKEN: p.UPSTOX_ACCESS_TOKEN,
+    UPSTOX_ANALYTICS_TOKEN: p.UPSTOX_ANALYTICS_TOKEN,
+    Upstox_Analytics_Token: p.Upstox_Analytics_Token,
   };
 }
 
@@ -449,7 +447,7 @@ export function buildUpstoxSmokeFailureReport(
   );
   const errorSource: SmokeErrorSource = tokenStatus.tokenUsable ? "UPSTOX_API" : "PROVIDER_CONFIG";
   const instrumentResolved = REQUIRED_SYMBOLS.map((sym) => {
-    const inst = resolveInstrument(sym as QuoteSymbol);
+    const inst = resolveInstrument(sym);
     return inst
       ? {
           symbol: sym,
@@ -525,7 +523,7 @@ export async function runUpstoxSmokeTest(
 
   const targetSymbols = [...REQUIRED_SYMBOLS, ...OPTIONAL_SYMBOLS];
   const instrumentResolved = targetSymbols.map((sym) => {
-    const inst = resolveInstrument(sym as QuoteSymbol);
+    const inst = resolveInstrument(sym);
     return inst
       ? {
           symbol: sym,

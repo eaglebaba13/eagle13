@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { fetchJson } from "./http";
 import { cached } from "./server-cache";
 import { YahooChartSchema, parseProvider } from "./providers";
+import type { DataQualityStatus } from "./data-freshness";
+import type { ProviderStatus as MarketProviderStatus } from "./provider-foundation/types";
 
 export type OHLC = {
   open: number;
@@ -21,6 +23,17 @@ export type IndexQuote = {
   marketState: "OPEN" | "CLOSED";
   prevDay: OHLC;
   updatedAt: string;
+  providerTime?: string | null;
+};
+
+export type MarketProviderMetadata = {
+  name: string;
+  status: MarketProviderStatus;
+  receivedAt: string;
+  providerTime: string | null;
+  candlesAvailable: boolean;
+  dataQuality: DataQualityStatus;
+  fallbackReason?: string | null;
 };
 
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
@@ -74,6 +87,14 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
   const livePrice = meta.regularMarketPrice ?? prevDay.close;
   const change = livePrice - prevDay.close;
   const changePct = prevDay.close ? (change / prevDay.close) * 100 : 0;
+  const regularMarketTime = meta.regularMarketTime;
+  const latestCandleTime = ts.at(-1);
+  const providerTime =
+    typeof regularMarketTime === "number" && Number.isFinite(regularMarketTime)
+      ? new Date(regularMarketTime * 1000).toISOString()
+      : typeof latestCandleTime === "number"
+        ? new Date(latestCandleTime * 1000).toISOString()
+        : null;
 
   return {
     symbol,
@@ -91,6 +112,7 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
       date: prevDay.date,
     },
     updatedAt: new Date().toISOString(),
+    providerTime,
   };
 }
 
@@ -103,9 +125,9 @@ export type MarketDataResponse = {
   silver: IndexQuote | null;
   goldSilverRatio: number | null;
   providerMetadata?: {
-    nifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
-    banknifty: { name: string; status: string; receivedAt: string; providerTime: string | null };
-    vix: { name: string; status: string; receivedAt: string; providerTime: string | null };
+    nifty: MarketProviderMetadata;
+    banknifty: MarketProviderMetadata;
+    vix: MarketProviderMetadata;
   };
 };
 
@@ -162,25 +184,34 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
           : null;
 
       const nowStamp = new Date().toISOString();
-      const fallbackMeta = (reason: string) => ({
-        name: `yahoo-fallback (${reason})`,
-        status: "DELAYED" as const,
+      const fallbackMeta = (quote: IndexQuote | null, reason: string): MarketProviderMetadata => ({
+        name: quote ? "yahoo-chart-fallback" : "upstox-historical-v1",
+        status: quote ? "DELAYED" : "OFFLINE",
         receivedAt: nowStamp,
-        providerTime: null,
+        providerTime: quote?.providerTime ?? null,
+        candlesAvailable: !!quote?.prevDay.date,
+        dataQuality: quote ? (quote.prevDay.date ? "OK" : "MISSING") : "MISSING",
+        fallbackReason: reason,
       });
       const providerMetadata = {
         nifty:
           uxNifty && uxNifty.ok
             ? uxNifty.providerMetadata
-            : fallbackMeta(uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable"),
+            : fallbackMeta(
+                yahooNifty ?? yahooBank,
+                uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable",
+              ),
         banknifty:
           uxBank && uxBank.ok
             ? uxBank.providerMetadata
-            : fallbackMeta(uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable"),
+            : fallbackMeta(
+                yahooBank ?? yahooNifty,
+                uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable",
+              ),
         vix:
           uxVix && uxVix.ok
             ? uxVix.providerMetadata
-            : fallbackMeta(uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
+            : fallbackMeta(yVix, uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
       };
 
       return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };

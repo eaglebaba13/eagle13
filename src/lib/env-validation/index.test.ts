@@ -27,9 +27,12 @@ describe("env-validation", () => {
   });
 
   it("separates optional keys into missingOptional", () => {
-    const r = validateEnv(fullEnv({ UPSTOX_ACCESS_TOKEN: undefined }));
+    const r = validateEnv(
+      fullEnv({ UPSTOX_ACCESS_TOKEN: undefined, UPSTOX_ANALYTICS_TOKEN: undefined }),
+    );
     expect(r.ok).toBe(true);
     expect(r.missingOptional).toContain("UPSTOX_ACCESS_TOKEN");
+    expect(r.missingOptional).toContain("UPSTOX_ANALYTICS_TOKEN");
   });
 
   it("groups by category", () => {

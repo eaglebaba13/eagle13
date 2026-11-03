@@ -86,7 +86,7 @@ export const Route = createFileRoute("/")({
   errorComponent: ({ error }) => (
     <div className="eb-shell" style={{ padding: 40 }}>
       <p style={{ color: "var(--eb-bear)", fontFamily: "var(--eb-mono)" }}>
-        Live data unavailable: {error.message}
+        Live data unavailable: {error instanceof Error ? error.message : "Unexpected error"}
       </p>
     </div>
   ),
@@ -201,6 +201,7 @@ function Dashboard() {
       lastSuccessfulUpdate: dataUpdatedAt || null,
       freshnessByDependency,
       providerMetadata: { name: "Market Data Provider", status: "OK" as const },
+      marketProviderMetadata: data.providerMetadata,
       queryError: error,
       queryStale: isStale,
     }),
@@ -227,7 +228,7 @@ function Dashboard() {
   const leftRail = useMemo(() => {
     const ids: string[] = [
       "legacy-quote",
-      ...(data.vix ? ["legacy-vix"] : []),
+      "legacy-vix",
       "legacy-gold-silver",
       "legacy-signal",
       "legacy-global-markets",
@@ -236,7 +237,7 @@ function Dashboard() {
       .filter((id) => !isHidden(prefs, id))
       .map((id) => widgetById.get(id)!)
       .filter(Boolean);
-  }, [widgetById, data.vix, prefs]);
+  }, [widgetById, prefs]);
   const rightRailPick = (id: string) =>
     isHidden(prefs, id) ? [] : [widgetById.get(id)!].filter(Boolean);
   const cprWidget = rightRailPick("legacy-cpr");

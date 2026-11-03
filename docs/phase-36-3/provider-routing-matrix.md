@@ -33,7 +33,8 @@ No trading formulas, weights, thresholds or Decision Engine inputs were modified
 
 ## Migrated this phase
 
-- `src/lib/market.functions.ts` — Upstox is called first for NIFTY / BANKNIFTY / INDIA VIX; Yahoo index requests are dispatched only for symbols whose Upstox call failed. `providerMetadata` records `yahoo-fallback (<reason>)` so the active provider, freshness and degraded status are visible in `/status` and every widget consuming `providerMetadata`.
+- `src/lib/market.functions.ts` — Upstox is called first for NIFTY / BANKNIFTY / INDIA VIX; Yahoo index requests are dispatched only for symbols whose Upstox call failed. Per-index metadata records the active provider, provider timestamp, candle availability and data quality.
+- INDIA VIX maps to Upstox's official `NSE_INDEX|India VIX` key. The instrument mapping is contract-tested, but the configured provider currently returns HTTP 403 for live quote and candle requests. The VIX widget identifies fallback data as delayed and shows provider timestamp, quality and daily-candle availability; it suppresses signal/mood when data is stale or incomplete. Live Upstox availability remains blocked pending provider authorization.
 
 ## Retained Yahoo paths (with reason)
 

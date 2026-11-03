@@ -15,6 +15,7 @@ describe("provider env-presence diagnostic", () => {
     expect(p.UPSTOX_API_KEY).toBe("PRESENT");
     expect(p.UPSTOX_API_SECRET).toBe("PRESENT");
     expect(p.UPSTOX_ACCESS_TOKEN).toBe("PRESENT");
+    expect(p.UPSTOX_ANALYTICS_TOKEN).toBe("MISSING");
     expect(p.runtimeEnvironment).toBe("production");
     expect(p.deploymentRestartRequired).toBe(false);
     expect(liveCredentialsComplete(p)).toBe(true);
@@ -31,6 +32,7 @@ describe("provider env-presence diagnostic", () => {
     expect(p.UPSTOX_API_KEY).toBe("MISSING");
     expect(p.UPSTOX_API_SECRET).toBe("MISSING");
     expect(p.UPSTOX_ACCESS_TOKEN).toBe("MISSING");
+    expect(p.UPSTOX_ANALYTICS_TOKEN).toBe("MISSING");
     // Serialized diagnostic must never contain a value.
     const serialized = JSON.stringify(p);
     expect(serialized).not.toContain("live-token");
@@ -50,6 +52,17 @@ describe("provider env-presence diagnostic", () => {
   it("signals redeploy-required when live mode is set but credentials are missing", () => {
     const p = evaluateProviderEnvPresence({ UPSTOX_MARKET_DATA_MODE: "live" });
     expect(p.deploymentRestartRequired).toBe(true);
+  });
+
+  it("accepts the Coolify Analytics Token name without exposing its value", () => {
+    const p = evaluateProviderEnvPresence({
+      UPSTOX_MARKET_DATA_MODE: "live",
+      Upstox_Analytics_Token: "analytics-secret-value",
+    });
+    expect(p.UPSTOX_ANALYTICS_TOKEN).toBe("PRESENT");
+    expect(p.deploymentRestartRequired).toBe(false);
+    expect(liveCredentialsComplete(p)).toBe(true);
+    expect(JSON.stringify(p)).not.toContain("analytics-secret-value");
   });
 
   it("reports INVALID for an unrecognized mode value", () => {

@@ -72,6 +72,7 @@ export class IndstocksWsAdapter {
     this.connection.close();
     this.subscriptions.clear();
     this.instrumentToSymbol.clear();
+    this.tickListeners.clear();
     this.removeConnectionListener?.();
     this.removeMessageListener?.();
     this.removeConnectionListener = null;
@@ -83,9 +84,13 @@ export class IndstocksWsAdapter {
     if (!msg) return false;
 
     const mapping = defaultWsMappingResolver(symbol);
-    if (mapping) this.instrumentToSymbol.set(mapping.wsToken, symbol);
+    if (mapping) {
+      this.instrumentToSymbol.set(mapping.wsToken, symbol);
+      this.instrumentToSymbol.set(mapping.wsToken.split(":")[1], symbol);
+    }
 
-    return this.connection.send(JSON.stringify(msg));
+    this.connection.send(JSON.stringify(msg));
+    return true;
   }
 
   unsubscribe(symbol: QuoteSymbol, mode: WsPriceMode = "ltp"): boolean {
@@ -141,14 +146,29 @@ export class IndstocksWsAdapter {
   private normalizeTick(msg: WsProviderMessage): MarketTick | null {
     if (msg.type !== "ltp" && msg.type !== "quote") return null;
     const data = msg.data;
-    const symbol = this.instrumentToSymbol.get(data.instrument) ?? data.instrument;
+    const symbol = this.instrumentToSymbol.get(data.instrument);
+    if (
+      !symbol ||
+      !Number.isFinite(data.ltp) ||
+      data.ltp <= 0 ||
+      !Number.isFinite(data.timestamp) ||
+      data.timestamp <= 0
+    )
+      return null;
+    if (data.volume != null && (!Number.isFinite(data.volume) || data.volume < 0)) return null;
     const nowMs = Date.now();
     const tickTimestamp =
       typeof data.timestamp === "number"
         ? data.timestamp > 1e12
           ? data.timestamp
           : data.timestamp * 1000
-        : nowMs;
+        : NaN;
+    if (
+      !Number.isFinite(tickTimestamp) ||
+      tickTimestamp > nowMs + 5000 ||
+      !Number.isFinite(new Date(tickTimestamp).getTime())
+    )
+      return null;
     const ageSec = Math.max(0, (nowMs - tickTimestamp) / 1000);
 
     return {

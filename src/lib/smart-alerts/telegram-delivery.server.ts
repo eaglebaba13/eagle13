@@ -19,15 +19,6 @@ function getTelegramEnv(): { token: string; chatId: string } | null {
   return { token, chatId };
 }
 
-// Defence in depth: nothing derived from a network response or thrown error may
-// ever carry a credential out of this module.
-function redactCredentials(text: string, env: { token: string; chatId: string }): string {
-  let out = text;
-  if (env.token) out = out.split(env.token).join("[REDACTED]");
-  if (env.chatId) out = out.split(env.chatId).join("[REDACTED]");
-  return out;
-}
-
 function formatTelegramMessage(event: AlertEvent): string {
   const lines: string[] = [];
 
@@ -39,7 +30,7 @@ function formatTelegramMessage(event: AlertEvent): string {
     INFO: "\u2139\ufe0f",
   };
 
-  lines.push(`${priorityEmoji[event.priority] ?? ""} **${event.title}**`);
+  lines.push(`${priorityEmoji[event.priority] ?? ""} ${event.title}`);
   lines.push("");
 
   if (event.instrument) {
@@ -49,6 +40,7 @@ function formatTelegramMessage(event: AlertEvent): string {
   lines.push(`\ud83d\udcca Type: ${event.type}`);
   lines.push(`\u2696\ufe0f Priority: ${event.priority}`);
   lines.push(`\ud83d\udcc5 Date: ${event.tradingDate}`);
+  lines.push(`Timestamp: ${event.createdAt}`);
 
   if (event.previousState || event.currentState) {
     lines.push("");
@@ -77,7 +69,7 @@ function formatTelegramMessage(event: AlertEvent): string {
   lines.push(`\u23f0 Freshness: ${event.freshness}`);
   lines.push(`\ud83d\udd17 Run: ${event.id.slice(0, 8)}`);
   lines.push("");
-  lines.push(`_${event.disclaimer}_`);
+  lines.push(event.disclaimer);
 
   return lines.join("\n");
 }
@@ -86,8 +78,7 @@ type TelegramSendResult = { status: TelegramDeliveryStatus; errorCode: string | 
 
 type TelegramParseMode = "Markdown" | "HTML";
 
-// The single server-side Bot API transport for this repository.
-// Every Telegram message path routes through here — no second HTTP client.
+// Server-side Bot API transport shared by Smart Alerts and operator milestones.
 // Credentials are read from process.env only, never logged, and never included
 // in returned error codes. Callers own their own message formatting.
 async function postTelegramMessage(
@@ -98,11 +89,13 @@ async function postTelegramMessage(
   if (!env) {
     return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
   }
+  if (text.length === 0 || text.length > 4096) {
+    return { status: "FAILED", errorCode: "TELEGRAM_MESSAGE_LENGTH_INVALID" };
+  }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-
     const response = await fetch(`https://api.telegram.org/bot${env.token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,47 +108,61 @@ async function postTelegramMessage(
       signal: controller.signal,
     });
 
-    clearTimeout(timeout);
-
     if (!response.ok) {
-      const body = await response.text().catch(() => "");
       const isRetryable = response.status === 429 || response.status >= 500;
       return {
         status: isRetryable ? "RETRYABLE_FAILURE" : "FAILED",
-        errorCode: redactCredentials(
-          `TELEGRAM_HTTP_${response.status}: ${body.slice(0, 100)}`,
-          env,
-        ),
+        errorCode: `TELEGRAM_HTTP_${response.status}`,
       };
     }
 
-    const data = (await response.json()) as { ok: boolean; description?: string };
-    if (!data.ok) {
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch (err) {
+      if (controller.signal.aborted) throw err;
+      return { status: "FAILED", errorCode: "TELEGRAM_INVALID_RESPONSE" };
+    }
+    if (!data || typeof data !== "object" || !("ok" in data)) {
+      return { status: "FAILED", errorCode: "TELEGRAM_INVALID_RESPONSE" };
+    }
+    if (data.ok === false) {
       return {
         status: "FAILED",
-        errorCode: redactCredentials(`TELEGRAM_API_ERROR: ${data.description ?? "unknown"}`, env),
+        errorCode: "TELEGRAM_API_ERROR",
       };
+    }
+    if (
+      data.ok !== true ||
+      !("result" in data) ||
+      !data.result ||
+      typeof data.result !== "object" ||
+      !("message_id" in data.result) ||
+      typeof data.result.message_id !== "number" ||
+      !Number.isInteger(data.result.message_id)
+    ) {
+      return { status: "FAILED", errorCode: "TELEGRAM_INVALID_RESPONSE" };
     }
 
     return { status: "DELIVERED", errorCode: null };
   } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
+    if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
       return { status: "RETRYABLE_FAILURE", errorCode: "TELEGRAM_TIMEOUT" };
     }
     return {
       status: "RETRYABLE_FAILURE",
-      errorCode: redactCredentials(
-        `TELEGRAM_NETWORK_ERROR: ${err instanceof Error ? err.message : String(err)}`,
-        env,
-      ),
+      errorCode: "TELEGRAM_NETWORK_ERROR",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 export async function sendTelegramMessage(
   event: AlertEvent,
 ): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
-  return postTelegramMessage(formatTelegramMessage(event), "Markdown");
+  // Plain text prevents user/provider strings from becoming Telegram markup.
+  return postTelegramMessage(formatTelegramMessage(event));
 }
 
 export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
@@ -168,7 +175,7 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
     sub: AlertSubscription | null,
     nowIso: string,
   ): Promise<AlertDeliveryAttempt> {
-    const telegramEnabled = sub?.telegramEnabled ?? true;
+    const telegramEnabled = sub?.telegramEnabled === true;
     if (!telegramEnabled) {
       return {
         provider: "TELEGRAM",

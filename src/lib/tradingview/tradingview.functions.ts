@@ -44,7 +44,8 @@ function coerceHealth(raw: unknown): CollectorHealth | null {
 /** Authenticated snapshot read for dashboard widgets. */
 export const getCollectorGoldSilverRatio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<CollectorSnapshot> => {
+  .handler(async ({ context }): Promise<CollectorSnapshot> => {
+    assertAuth(context);
     const mod = await import("./collector-client.server");
     return mod.getGoldSilverRatioSnapshot();
   });
@@ -54,11 +55,11 @@ export const getTradingViewDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     assertAuth(context);
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
-    if (!isAdmin) throw new Error("forbidden");
+    if (error || isAdmin !== true) throw new Error("forbidden");
 
     const startedAt = new Date().toISOString();
     const client = await import("./collector-client.server");

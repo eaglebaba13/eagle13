@@ -56,7 +56,8 @@ export interface AssistantEnvelope {
 
 export const getAiMarketAssistant = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<AssistantEnvelope> => {
+  .handler(async ({ context }): Promise<AssistantEnvelope> => {
+    assertAuth(context);
     const started = Date.now();
     const generatedAt = new Date().toISOString();
     const errors: string[] = [];
