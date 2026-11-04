@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Timer for EagleBABA Upstox Token Refresh (08:30 IST / 03:00 UTC)
+Requires=eaglebaba-upstox-refresh.service
+
+[Timer]
+# Run every morning at 03:00 UTC (08:30 AM IST, 30 minutes before NSE pre-open at 09:00 AM IST)
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

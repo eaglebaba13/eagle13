@@ -1,0 +1,15 @@
+[Unit]
+Description=EagleBABA Upstox Daily Access Token Refresh Service
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+# Execute headless refresh script inside active Coolify application container
+ExecStart=/bin/sh -c 'CONTAINER=$$(/usr/bin/docker ps -q --filter "label=coolify.resourceName=eaglebaba" | head -n1); if [ -n "$$CONTAINER" ]; then /usr/bin/docker exec $$CONTAINER node /app/scripts/refresh-upstox-token.mjs; else echo "[TokenRefresh] Error: Active eaglebaba container not found" >&2; exit 1; fi'
+StandardOutput=append:/var/log/eaglebaba-token-refresh.log
+StandardError=append:/var/log/eaglebaba-token-refresh.log
+
+[Install]
+WantedBy=multi-user.target

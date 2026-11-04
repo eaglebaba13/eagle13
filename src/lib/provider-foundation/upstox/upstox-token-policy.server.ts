@@ -72,6 +72,157 @@ export interface TokenPolicyEnv {
   readonly UPSTOX_ANALYTICS_TOKEN?: string;
   readonly Upstox_Analytics_Token?: string;
   readonly UPSTOX_SANDBOX_ACCESS_TOKEN?: string;
+  readonly UPSTOX_TOKEN_FILE?: string;
+}
+
+export interface UpstoxTokenFilePayload {
+  readonly access_token?: string;
+  readonly token?: string;
+  readonly updated_at?: string;
+  readonly expires_at?: string;
+  readonly source?: string;
+  readonly user_id?: string;
+  readonly user_name?: string;
+}
+
+/**
+ * Decodes the JWT `exp` timestamp (in milliseconds) without external dependencies.
+ * Returns `undefined` if the token is not a JWT or lacks a valid numeric `exp` claim.
+ */
+export function decodeJwtExpiry(token: string | undefined | null): number | undefined {
+  if (isPlaceholder(token)) return undefined;
+  try {
+    const segs = String(token).trim().split(".");
+    if (segs.length !== 3) return undefined;
+    const base64 = segs[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr =
+      typeof Buffer !== "undefined"
+        ? Buffer.from(base64, "base64").toString("utf-8")
+        : typeof atob !== "undefined"
+          ? atob(base64)
+          : undefined;
+    if (!jsonStr) return undefined;
+    const parsed = JSON.parse(jsonStr) as { exp?: number };
+    if (typeof parsed?.exp === "number" && Number.isFinite(parsed.exp)) {
+      return parsed.exp * 1000;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Resolves the path to the daily hot-reload token file.
+ * Priority:
+ *  1. env.UPSTOX_TOKEN_FILE
+ *  2. process.env.UPSTOX_TOKEN_FILE
+ *  3. Default Linux container volume path `/app/.tokens/upstox_token.json`
+ */
+export function resolveUpstoxTokenFilePath(env?: TokenPolicyEnv): string | undefined {
+  const custom =
+    env?.UPSTOX_TOKEN_FILE ??
+    (typeof process !== "undefined" ? process.env?.UPSTOX_TOKEN_FILE : undefined);
+  if (custom && custom.trim().length > 0) {
+    if (custom.trim().toLowerCase() === "none" || custom.trim().toLowerCase() === "off") {
+      return undefined;
+    }
+    return custom.trim();
+  }
+  if (typeof process !== "undefined" && process.platform === "linux") {
+    return "/app/.tokens/upstox_token.json";
+  }
+  return undefined;
+}
+
+interface TokenFileCache {
+  mtimeMs: number;
+  filePath: string;
+  token: string | undefined;
+  expiresAtMs?: number;
+}
+
+let cachedFileToken: TokenFileCache | null = null;
+
+/**
+ * Safely reads the access token from the shared hot-reload file with mtime caching.
+ * Silently handles filesystem errors and environment constraints.
+ */
+export function readTokenFromFile(filePath: string): string | undefined {
+  try {
+    // Only available in Node.js server environments with node:fs
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    if (!fs.existsSync(filePath)) {
+      return undefined;
+    }
+    const stat = fs.statSync(filePath);
+    if (
+      cachedFileToken &&
+      cachedFileToken.filePath === filePath &&
+      cachedFileToken.mtimeMs === stat.mtimeMs
+    ) {
+      if (cachedFileToken.expiresAtMs && Date.now() >= cachedFileToken.expiresAtMs) {
+        return undefined; // Expired
+      }
+      return cachedFileToken.token;
+    }
+
+    const raw = fs.readFileSync(filePath, "utf-8").trim();
+    if (!raw) return undefined;
+
+    let tokenCandidate: string | undefined;
+    let expiresAtMs: number | undefined;
+
+    if (raw.startsWith("{")) {
+      const parsed = JSON.parse(raw) as UpstoxTokenFilePayload;
+      tokenCandidate = parsed.access_token || parsed.token;
+      if (parsed.expires_at) {
+        const parsedExp = Date.parse(parsed.expires_at);
+        if (Number.isFinite(parsedExp)) {
+          expiresAtMs = parsedExp;
+        }
+      }
+    } else {
+      tokenCandidate = raw;
+    }
+
+    const cleanToken = tokenCandidate?.trim();
+    if (!cleanToken || isPlaceholder(cleanToken)) {
+      cachedFileToken = { mtimeMs: stat.mtimeMs, filePath, token: undefined };
+      return undefined;
+    }
+
+    if (!expiresAtMs) {
+      expiresAtMs = decodeJwtExpiry(cleanToken);
+    }
+
+    if (expiresAtMs && Date.now() >= expiresAtMs) {
+      cachedFileToken = { mtimeMs: stat.mtimeMs, filePath, token: undefined, expiresAtMs };
+      return undefined;
+    }
+
+    cachedFileToken = {
+      mtimeMs: stat.mtimeMs,
+      filePath,
+      token: cleanToken,
+      expiresAtMs,
+    };
+
+    // Propagate to process.env in-memory so any direct consumers stay synchronized
+    if (typeof process !== "undefined" && process.env) {
+      process.env.UPSTOX_ACCESS_TOKEN = cleanToken;
+    }
+
+    return cleanToken;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Clear token file cache (useful for tests and manual reloads) */
+export function resetTokenFileCache(): void {
+  cachedFileToken = null;
 }
 
 export function resolveUpstoxAnalyticsToken(env: TokenPolicyEnv): string | undefined {
@@ -82,12 +233,28 @@ export function resolveUpstoxAnalyticsToken(env: TokenPolicyEnv): string | undef
   return undefined;
 }
 
-export function resolveUpstoxAccessToken(env: TokenPolicyEnv): string | undefined {
+export function resolveUpstoxAccessToken(env: TokenPolicyEnv = {}): string | undefined {
+  const filePath = resolveUpstoxTokenFilePath(env);
+  if (filePath) {
+    const fileToken = readTokenFromFile(filePath);
+    if (fileToken && !isPlaceholder(fileToken)) {
+      return fileToken;
+    }
+  }
+
   const token = env.UPSTOX_ACCESS_TOKEN?.trim();
   return isPlaceholder(token) ? undefined : token;
 }
 
-export function resolveUpstoxMarketDataToken(env: TokenPolicyEnv): string | undefined {
+export function resolveUpstoxMarketDataToken(env: TokenPolicyEnv = {}): string | undefined {
+  const filePath = resolveUpstoxTokenFilePath(env);
+  if (filePath) {
+    const fileToken = readTokenFromFile(filePath);
+    if (fileToken && !isPlaceholder(fileToken)) {
+      return fileToken;
+    }
+  }
+
   const analyticsToken = resolveUpstoxAnalyticsToken(env);
   if (analyticsToken) return analyticsToken;
   return resolveUpstoxAccessToken(env);
@@ -107,12 +274,19 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
   const selectedToken = resolveUpstoxMarketDataToken(env);
   const liveOk = selectedToken !== undefined;
   const classified = classifyUpstoxTokenFormat(selectedToken);
+  let expiryStatus: UpstoxTokenExpiryStatus = "UNKNOWN";
+  if (selectedToken) {
+    const expMs = decodeJwtExpiry(selectedToken);
+    if (expMs !== undefined) {
+      expiryStatus = Date.now() >= expMs ? "EXPIRED" : "OK";
+    }
+  }
 
   if (mode !== "live") {
     return {
       tokenPresent: liveOk,
       tokenSource: liveOk ? "LIVE" : "NONE",
-      tokenExpiryStatus: "UNKNOWN",
+      tokenExpiryStatus: expiryStatus,
       tokenUsable: false,
       reason: "UPSTOX_MARKET_DATA_MODE != live (adapter disabled)",
       mode: "disabled",
@@ -139,10 +313,25 @@ export function evaluateUpstoxTokenPolicy(env: TokenPolicyEnv): UpstoxTokenStatu
       tokenLength: 0,
     };
   }
+  if (expiryStatus === "EXPIRED") {
+    return {
+      tokenPresent: true,
+      tokenSource: "LIVE",
+      tokenExpiryStatus: "EXPIRED",
+      tokenUsable: false,
+      reason: "Configured Upstox access token has expired (JWT exp claim in past)",
+      mode: "live",
+      apiKeyConfigured: apiKeyOk,
+      apiSecretConfigured: apiSecretOk,
+      tokenFormat: classified.format,
+      tokenTypeGuess: classified.guess,
+      tokenLength: classified.length,
+    };
+  }
   return {
     tokenPresent: true,
     tokenSource: "LIVE",
-    tokenExpiryStatus: "UNKNOWN",
+    tokenExpiryStatus: expiryStatus,
     tokenUsable: true,
     reason: "live token configured",
     mode: "live",

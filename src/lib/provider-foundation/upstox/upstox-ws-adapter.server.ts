@@ -122,6 +122,7 @@ export class UpstoxWsAdapter implements LiveMarketStreamProvider {
         UPSTOX_ANALYTICS_TOKEN: process.env.UPSTOX_ANALYTICS_TOKEN,
         Upstox_Analytics_Token: process.env.Upstox_Analytics_Token,
         UPSTOX_ACCESS_TOKEN: process.env.UPSTOX_ACCESS_TOKEN,
+        UPSTOX_TOKEN_FILE: process.env.UPSTOX_TOKEN_FILE,
       });
 
     if (!token) {
@@ -132,6 +133,23 @@ export class UpstoxWsAdapter implements LiveMarketStreamProvider {
     }
 
     void this.authorizeAndConnect(token);
+  }
+
+  /**
+   * Hot-reloads token and reconnects active subscriptions if disconnected or on error.
+   */
+  reloadTokenAndReconnect(): void {
+    this.reconnectAttempt = 0;
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch {
+        /* ignore */
+      }
+      this.ws = null;
+    }
+    this.state = "DISCONNECTED";
+    this.connect();
   }
 
   close(): void {

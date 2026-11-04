@@ -146,6 +146,7 @@ function envOf(cfg: UpstoxHttpConfig): TokenPolicyEnv {
     UPSTOX_ANALYTICS_TOKEN: p.UPSTOX_ANALYTICS_TOKEN,
     Upstox_Analytics_Token: p.Upstox_Analytics_Token,
     UPSTOX_SANDBOX_ACCESS_TOKEN: p.UPSTOX_SANDBOX_ACCESS_TOKEN,
+    UPSTOX_TOKEN_FILE: p.UPSTOX_TOKEN_FILE,
   };
 }
 
@@ -181,7 +182,7 @@ export class UpstoxHttpClient {
   private readonly maxRetries: number;
   private readonly backoffBaseMs: number;
   private readonly fetchImpl: typeof fetch;
-  private readonly env: TokenPolicyEnv;
+  private readonly explicitEnv?: TokenPolicyEnv;
 
   constructor(cfg: UpstoxHttpConfig = {}) {
     this.baseUrl = cfg.baseUrl ?? DEFAULT_BASE_URL;
@@ -194,7 +195,11 @@ export class UpstoxHttpClient {
     // globalThis when using the platform fetch. Injected fetches (tests,
     // custom transports) are used as-is.
     this.fetchImpl = cfg.fetchImpl ?? (globalThis.fetch.bind(globalThis) as typeof fetch);
-    this.env = envOf(cfg);
+    this.explicitEnv = cfg.env;
+  }
+
+  private get env(): TokenPolicyEnv {
+    return this.explicitEnv ?? envOf({});
   }
 
   tokenStatus() {
