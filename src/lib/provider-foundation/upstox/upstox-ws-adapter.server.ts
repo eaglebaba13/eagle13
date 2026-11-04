@@ -43,6 +43,19 @@ export const REVERSE_INSTRUMENT_MAP: Readonly<Record<string, QuoteSymbol>> = Obj
   "MCX_FO|SILVER": "SILVER",
 });
 
+/**
+ * Serializes a subscription control message into a binary UTF-8 Uint8Array / Buffer.
+ * Upstox V3 Market Data Feeder requires WebSocket control & subscription frames
+ * to be transmitted as binary (opcode 0x2) frames; text frames are dropped.
+ */
+export function encodeBinaryPayload(data: unknown): Uint8Array {
+  const json = typeof data === "string" ? data : JSON.stringify(data);
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(json, "utf-8");
+  }
+  return new TextEncoder().encode(json);
+}
+
 export interface GenericSocket {
   binaryType: string;
   readyState: number;
@@ -165,7 +178,7 @@ export class UpstoxWsAdapter implements LiveMarketStreamProvider {
           },
         };
         try {
-          this.ws.send(JSON.stringify(unsubMsg));
+          this.ws.send(encodeBinaryPayload(unsubMsg));
         } catch {
           // Ignore send errors on unsubscribe
         }
@@ -333,7 +346,7 @@ export class UpstoxWsAdapter implements LiveMarketStreamProvider {
     };
 
     try {
-      this.ws.send(JSON.stringify(subMsg));
+      this.ws.send(encodeBinaryPayload(subMsg));
     } catch {
       // Ignored; onclose will handle reconnect if broken
     }

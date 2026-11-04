@@ -4,6 +4,7 @@ import {
   UPSTOX_WS_ADAPTER_ID,
   UPSTOX_INSTRUMENT_MAP,
   REVERSE_INSTRUMENT_MAP,
+  encodeBinaryPayload,
   type GenericSocket,
 } from "./upstox-ws-adapter.server";
 import { decodeUpstoxFeedResponse, type DecodedFeedResponse } from "./upstox-protobuf-wire-decoder";
@@ -171,7 +172,8 @@ function makeMarketFeedFrame(
 class MockUpstoxSocket implements GenericSocket {
   readyState = 0; // CONNECTING
   binaryType = "arraybuffer";
-  sent: string[] = [];
+  sent: (string | Uint8Array)[] = [];
+  sentRaw: (string | ArrayBuffer | Uint8Array)[] = [];
   closed = false;
 
   private _onopen: ((event: unknown) => void) | null = null;
@@ -195,8 +197,13 @@ class MockUpstoxSocket implements GenericSocket {
   onclose: ((event: { code: number; reason: unknown }) => void) | null = null;
 
   send(data: string | ArrayBuffer | Uint8Array): void {
+    this.sentRaw.push(data);
     if (typeof data === "string") {
       this.sent.push(data);
+    } else if (data instanceof Uint8Array) {
+      this.sent.push(data);
+    } else if (data instanceof ArrayBuffer) {
+      this.sent.push(new Uint8Array(data));
     }
   }
 
@@ -515,9 +522,14 @@ describe("Upstox V3 Market Data Streaming Integration", () => {
     await vi.waitFor(() => expect(socketInstances).toHaveLength(1));
     await vi.waitFor(() => expect(adapter.connectionSnapshot().state).toBe("CONNECTED"));
 
+    const decodeSentPayload = (item: string | Uint8Array) => {
+      const text = typeof item === "string" ? item : new TextDecoder().decode(item);
+      return JSON.parse(text) as { data: { instrumentKeys: string[] } };
+    };
+
     // Check sent subscription message
     await vi.waitFor(() => expect(socketInstances[0]!.sent.length).toBeGreaterThan(0));
-    const firstSub = JSON.parse(socketInstances[0]!.sent[0]!);
+    const firstSub = decodeSentPayload(socketInstances[0]!.sent[0]!);
     expect(firstSub.data.instrumentKeys).toContain("NSE_INDEX|Nifty 50");
     expect(firstSub.data.instrumentKeys).toContain("NSE_INDEX|Nifty Bank");
 
@@ -531,7 +543,7 @@ describe("Upstox V3 Market Data Streaming Integration", () => {
 
     // Verify re-subscription was sent on the new socket
     await vi.waitFor(() => expect(socketInstances[1]!.sent.length).toBeGreaterThan(0));
-    const secondSub = JSON.parse(socketInstances[1]!.sent[0]!);
+    const secondSub = decodeSentPayload(socketInstances[1]!.sent[0]!);
     expect(secondSub.data.instrumentKeys).toContain("NSE_INDEX|Nifty 50");
     expect(secondSub.data.instrumentKeys).toContain("NSE_INDEX|Nifty Bank");
 
@@ -692,6 +704,106 @@ describe("Upstox V3 Market Data Streaming Integration", () => {
       expect(() => createLiveMarketProvider("UNKNOWN_PROVIDER")).toThrow(
         "UNVERIFIED_LIVE_PROVIDER",
       );
+    });
+  });
+
+  // Binary WebSocket Subscription Wire Protocol (Regression Suite)
+  describe("Binary WebSocket Subscription Wire Protocol", () => {
+    it("dispatches subscription as a binary frame (Uint8Array / Buffer), never a text string", async () => {
+      const adapter = new UpstoxWsAdapter({
+        socketFactory: () => mockSocket,
+        nowMs: () => BASE_TIME,
+      });
+
+      adapter.subscribe("NIFTY50");
+      await vi.waitFor(() => expect(adapter.isConnected).toBe(true));
+      await vi.waitFor(() => expect(mockSocket.sentRaw.length).toBeGreaterThan(0));
+
+      const raw = mockSocket.sentRaw[0]!;
+      // Verify wire type is binary (Uint8Array or Buffer), NOT string
+      expect(typeof raw).not.toBe("string");
+      expect(raw instanceof Uint8Array || Buffer.isBuffer(raw)).toBe(true);
+
+      // Verify payload decodes to compliant JSON schema
+      const text = new TextDecoder().decode(raw as Uint8Array);
+      const parsed = JSON.parse(text);
+      expect(parsed.guid).toMatch(/^eb-sub-\d+$/);
+      expect(parsed.method).toBe("sub");
+      expect(parsed.data.mode).toBe("full");
+      expect(parsed.data.instrumentKeys).toEqual(["NSE_INDEX|Nifty 50"]);
+
+      adapter.close();
+    });
+
+    it("dispatches unsubscription as a binary frame (Uint8Array / Buffer)", async () => {
+      const adapter = new UpstoxWsAdapter({
+        socketFactory: () => mockSocket,
+        nowMs: () => BASE_TIME,
+      });
+
+      adapter.subscribe("BANKNIFTY");
+      await vi.waitFor(() => expect(adapter.isConnected).toBe(true));
+      await vi.waitFor(() => expect(mockSocket.sentRaw.length).toBe(1));
+
+      // Unsubscribe while connected
+      adapter.unsubscribe("BANKNIFTY");
+      await vi.waitFor(() => expect(mockSocket.sentRaw.length).toBe(2));
+
+      const unsubRaw = mockSocket.sentRaw[1]!;
+      expect(typeof unsubRaw).not.toBe("string");
+      expect(unsubRaw instanceof Uint8Array || Buffer.isBuffer(unsubRaw)).toBe(true);
+
+      const text = new TextDecoder().decode(unsubRaw as Uint8Array);
+      const parsed = JSON.parse(text);
+      expect(parsed.guid).toMatch(/^eb-unsub-\d+$/);
+      expect(parsed.method).toBe("unsub");
+      expect(parsed.data.mode).toBe("full");
+      expect(parsed.data.instrumentKeys).toEqual(["NSE_INDEX|Nifty Bank"]);
+
+      adapter.close();
+    });
+
+    it("subscribes multiple mapped instruments (NIFTY50, BANKNIFTY, INDIA_VIX) into a single binary frame", async () => {
+      const adapter = new UpstoxWsAdapter({
+        socketFactory: () => mockSocket,
+        nowMs: () => BASE_TIME,
+      });
+
+      adapter.subscribe("NIFTY50");
+      adapter.subscribe("BANKNIFTY");
+      adapter.subscribe("INDIA_VIX");
+
+      await vi.waitFor(() => expect(adapter.isConnected).toBe(true));
+      await vi.waitFor(() => expect(mockSocket.sentRaw.length).toBeGreaterThan(0));
+
+      const raw = mockSocket.sentRaw[0]!;
+      const text = new TextDecoder().decode(raw as Uint8Array);
+      const parsed = JSON.parse(text);
+
+      expect(parsed.method).toBe("sub");
+      expect(parsed.data.mode).toBe("full");
+      expect(parsed.data.instrumentKeys).toContain(UPSTOX_INSTRUMENT_MAP.NIFTY50);
+      expect(parsed.data.instrumentKeys).toContain(UPSTOX_INSTRUMENT_MAP.BANKNIFTY);
+      expect(parsed.data.instrumentKeys).toContain(UPSTOX_INSTRUMENT_MAP.INDIA_VIX);
+
+      adapter.close();
+    });
+
+    it("encodeBinaryPayload produces valid Uint8Array matching UTF-8 content", () => {
+      const sample = {
+        guid: "test",
+        method: "sub",
+        data: { mode: "full", instrumentKeys: ["k1"] },
+      };
+      const encoded = encodeBinaryPayload(sample);
+      expect(encoded instanceof Uint8Array).toBe(true);
+      const decoded = JSON.parse(new TextDecoder().decode(encoded));
+      expect(decoded).toEqual(sample);
+
+      // Verify string input handling
+      const strEncoded = encodeBinaryPayload('{"custom":"json"}');
+      expect(strEncoded instanceof Uint8Array).toBe(true);
+      expect(JSON.parse(new TextDecoder().decode(strEncoded))).toEqual({ custom: "json" });
     });
   });
 });
