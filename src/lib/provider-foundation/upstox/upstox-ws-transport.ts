@@ -6,7 +6,7 @@ import WebSocket from "ws";
 
 export interface UpstoxWebSocketTransport {
   connect(): void | Promise<void>;
-  send(data: string): boolean;
+  send(data: string | ArrayBuffer | Uint8Array): boolean;
   close(code?: number, reason?: string): void;
   terminate(): void;
   onOpen(handler: () => void): void;
@@ -76,7 +76,7 @@ export class NodeUpstoxWebSocketTransport implements UpstoxWebSocketTransport {
     });
   }
 
-  send(data: string): boolean {
+  send(data: string | ArrayBuffer | Uint8Array): boolean {
     if (this.socket?.readyState !== WebSocket.OPEN) return false;
     this.socket.send(data);
     return true;
