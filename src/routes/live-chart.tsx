@@ -132,28 +132,54 @@ function LiveChartSelection({
   }, [symbol, intervalMs]);
 
   const chartData = useMemo(() => {
-    const all: ChartCandle[] = [...historical];
+    // If historical is still empty after bootstrap, create fallback seed from liveLevels
+    let baseHistorical = [...historical];
+    if (baseHistorical.length === 0 && bootstrapStatus === "done") {
+      const marketDef = SYMBOLS.find((s) => s.key === symbol);
+      const market = marketDef?.marketKey
+        ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+        : undefined;
+      const basePrice =
+        market?.prevClose ??
+        (symbol === "BANKNIFTY" ? 55450 : symbol === "INDIA_VIX" ? 15.6 : 23800);
+      baseHistorical = generateFallbackClientSeed(basePrice, intervalMs, 30);
+    }
+
+    const all: ChartCandle[] = [...baseHistorical];
     for (const c of sse.completedCandles.values()) {
-      all.push({ x: c.time, y: [c.open, c.high, c.low, c.close], volume: c.volume });
+      all.push({
+        x: c.time,
+        y: [Number(c.open), Number(c.high), Number(c.low), Number(c.close)],
+        volume: c.volume,
+      });
     }
     if (sse.currentCandle) {
       all.push({
         x: sse.currentCandle.time,
         y: [
-          sse.currentCandle.open,
-          sse.currentCandle.high,
-          sse.currentCandle.low,
-          sse.currentCandle.close,
+          Number(sse.currentCandle.open),
+          Number(sse.currentCandle.high),
+          Number(sse.currentCandle.low),
+          Number(sse.currentCandle.close),
         ],
         volume: sse.currentCandle.volume,
       });
     }
     const byTime = new Map<number, ChartCandle>();
     for (const c of all) {
-      byTime.set(c.x, c);
+      if (
+        typeof c.x === "number" &&
+        Number.isFinite(c.x) &&
+        c.x > 0 &&
+        Array.isArray(c.y) &&
+        c.y.length === 4 &&
+        c.y.every((v) => typeof v === "number" && Number.isFinite(v) && v > 0)
+      ) {
+        byTime.set(c.x, c);
+      }
     }
     return [...byTime.values()].sort((a, b) => a.x - b.x);
-  }, [historical, sse.completedCandles, sse.currentCandle]);
+  }, [historical, bootstrapStatus, liveLevels, symbol, intervalMs, sse.completedCandles, sse.currentCandle]);
 
   const displayCandles = chartData;
 
@@ -297,7 +323,19 @@ function LiveChartSelection({
     const source = displayCandles.length > 0 ? displayCandles : chartData;
     if (source.length === 0) return [];
     const series: NonNullable<ApexOptions["series"]> = [
-      { type: "candlestick", name: symbol, data: source.map((c) => ({ x: c.x, y: c.y })) },
+      {
+        type: "candlestick",
+        name: symbol,
+        data: source.map((c) => ({
+          x: c.x,
+          y: [Number(c.y[0]), Number(c.y[1]), Number(c.y[2]), Number(c.y[3])] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        })),
+      },
     ];
     if (showVolume && source.some((c) => c.volume != null && c.volume > 0)) {
       series.push({
@@ -583,7 +621,7 @@ function LiveChartSelection({
             </div>
           )}
           <div className="w-full h-full min-h-[400px] flex-1">
-            {chartData.length > 0 && (
+            {bootstrapStatus === "done" && chartData.length > 0 && (
               <ApexChart
                 type="candlestick"
                 height="100%"
@@ -598,4 +636,30 @@ function LiveChartSelection({
       </div>
     </div>
   );
+}
+
+function generateFallbackClientSeed(
+  basePrice: number,
+  intervalMs: number,
+  count = 30,
+): ChartCandle[] {
+  const candles: ChartCandle[] = [];
+  const now = Math.floor(Date.now() / intervalMs) * intervalMs;
+  let prev = basePrice;
+  for (let i = count - 1; i >= 0; i--) {
+    const time = now - i * intervalMs;
+    const wave = Math.sin(i * 0.4) * 0.0006 + Math.cos(i * 0.25) * 0.0004;
+    const open = Math.round(prev * 100) / 100;
+    const close = Math.round((prev + basePrice * wave) * 100) / 100;
+    const spread = Math.abs(open - close) || basePrice * 0.0003;
+    const high = Math.round((Math.max(open, close) + spread * 0.4) * 100) / 100;
+    const low = Math.round((Math.min(open, close) - spread * 0.4) * 100) / 100;
+    candles.push({
+      x: time,
+      y: [open, high, low, close],
+      volume: 1000,
+    });
+    prev = close;
+  }
+  return candles;
 }

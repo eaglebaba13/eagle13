@@ -20,39 +20,93 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
   const chartRef = useRef<ApexCharts | null>(null);
   const [ready, setReady] = useState(false);
 
+  // Store latest props in refs to prevent stale closure during async apexcharts import
+  const latestPropsRef = useRef({ type, series, options, height });
+  latestPropsRef.current = { type, series, options, height };
+
   useEffect(() => {
     let disposed = false;
     (async () => {
       const mod = await import("apexcharts");
       const ApexCharts = mod.default;
       if (disposed || !ref.current) return;
+
+      const current = latestPropsRef.current;
       const chart = new ApexCharts(ref.current, {
-        ...options,
-        chart: { ...(options.chart ?? {}), type, height, background: "transparent" },
-        series,
-        theme: { mode: "dark", ...(options.theme ?? {}) },
+        ...current.options,
+        chart: {
+          ...(current.options.chart ?? {}),
+          type: current.type,
+          height: current.height,
+          background: "transparent",
+        },
+        series: current.series,
+        theme: { mode: "dark", ...(current.options.theme ?? {}) },
       });
-      chart.render();
+
+      await chart.render();
+
+      if (disposed) {
+        chart.destroy();
+        return;
+      }
+
       chartRef.current = chart;
       setReady(true);
+
+      // If props updated while async import/render was pending, immediately sync
+      const latest = latestPropsRef.current;
+      if (
+        JSON.stringify(latest.series) !== JSON.stringify(current.series) ||
+        JSON.stringify(latest.options) !== JSON.stringify(current.options)
+      ) {
+        chart.updateOptions(
+          {
+            ...latest.options,
+            chart: {
+              ...(latest.options.chart ?? {}),
+              type: latest.type,
+              height: latest.height,
+              background: "transparent",
+            },
+            series: latest.series,
+          },
+          true,
+          false,
+        );
+      }
     })();
+
     return () => {
       disposed = true;
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;
       }
+      setReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [type]);
 
   // Live updates without a full re-mount.
   useEffect(() => {
-    if (chartRef.current && ready) {
-      chartRef.current.updateOptions({ ...options, series }, false, true);
-    }
+    if (!chartRef.current || !ready) return;
+    chartRef.current.updateOptions(
+      {
+        ...options,
+        chart: {
+          ...(options.chart ?? {}),
+          type,
+          height,
+          background: "transparent",
+        },
+        series,
+      },
+      true,
+      false,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(series), JSON.stringify(options)]);
+  }, [ready, JSON.stringify(series), JSON.stringify(options), height]);
 
   const resolvedHeight = typeof height === "number" ? height : undefined;
 
