@@ -27,12 +27,17 @@ export class NodeWebSocketTransport implements WebSocketTransport {
     socket.on("unexpected-response", (_request, response) => {
       const code = response.statusCode;
       response.resume();
+      const isAuthError = code === 401 || code === 403 || code === 513;
       this.errorHandlers.forEach((h) =>
-        h(new Error(code === 401 || code === 403 ? "PROVIDER_AUTH_ERROR" : "PROVIDER_ERROR")),
+        h(new Error(isAuthError ? "PROVIDER_AUTH_ERROR" : "PROVIDER_ERROR")),
       );
       socket.terminate();
     });
-    socket.on("error", () => this.errorHandlers.forEach((h) => h(new Error("PROVIDER_ERROR"))));
+    socket.on("error", (err) => {
+      this.errorHandlers.forEach((h) =>
+        h(err instanceof Error ? err : new Error("PROVIDER_ERROR")),
+      );
+    });
     socket.on("close", (code) => this.closeHandlers.forEach((h) => h(code, "")));
   }
   send(data: string): boolean {

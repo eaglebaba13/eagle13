@@ -130,9 +130,14 @@ describe("P0.1 fail-closed market pipeline", () => {
     expect(callback).not.toHaveBeenCalled();
     adapter.close();
   });
-  it("uses the verified NIFTY mapping and rejects unresolved symbols", () => {
+  it("uses the verified NIFTY mapping and validates contract symbols", () => {
     expect(defaultWsMappingResolver("NIFTY50")?.wsToken).toBe("NIDX:26000");
-    for (const symbol of ["BANKNIFTY", "INDIA_VIX", "FINNIFTY"])
+    expect(defaultWsMappingResolver("BANKNIFTY")?.verified).toBe(false);
+    expect(defaultWsMappingResolver("INDIA_VIX")?.verified).toBe(false);
+    expect(validSelection("NIFTY50", 60000)).toBe(true);
+    expect(validSelection("BANKNIFTY", 60000)).toBe(true);
+    expect(validSelection("INDIA_VIX", 60000)).toBe(true);
+    for (const symbol of ["FINNIFTY", "GOLD", "UNKNOWN"])
       expect(validSelection(symbol, 60000)).toBe(false);
   });
   it("queues NIFTY before connect, parses the official envelope, and rejects missing timestamps", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LIVE_SYMBOLS = ["NIFTY50"] as const;
+export const LIVE_SYMBOLS = ["NIFTY50", "BANKNIFTY", "INDIA_VIX"] as const;
 export const LIVE_INTERVALS = [60000, 180000, 300000, 900000, 3600000, 86400000] as const;
 export const candleSchema = z
   .object({
