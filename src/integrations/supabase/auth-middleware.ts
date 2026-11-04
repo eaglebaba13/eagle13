@@ -1,4 +1,4 @@
-﻿// Auth middleware — graceful authentication.
+// Auth middleware — graceful authentication.
 // Unauthenticated requests pass through with null context.
 // Invalid tokens throw errors.
 // Protected server functions MUST call assertAuth() to reject unauthenticated access.
@@ -6,11 +6,13 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient, type SupabaseClient, type JwtPayload } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { GUEST_COOKIE_NAME, GUEST_TOKEN, GUEST_USER_ID } from "@/lib/guest-session";
 
 export interface AuthContext {
   supabase: SupabaseClient<Database> | null;
   userId: string | null;
   claims: JwtPayload | null;
+  isGuest?: boolean;
 }
 
 /** Narrow a verified authenticated context without changing nullable middleware behavior. */
@@ -28,8 +30,11 @@ function authContext(
   supabase: SupabaseClient<Database> | null,
   userId: string | null,
   claims: JwtPayload | null,
+  isGuest?: boolean,
 ): AuthContext {
-  return { supabase, userId, claims };
+  const ctx: AuthContext = { supabase, userId, claims };
+  if (isGuest) ctx.isGuest = true;
+  return ctx;
 }
 
 function isNewSupabaseApiKey(value: string): boolean {
@@ -61,10 +66,53 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
     const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+    const SUPABASE_PUBLISHABLE_KEY =
+      process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
 
     const request = getRequest();
     const authHeader = request?.headers?.get("authorization");
+    const cookieHeader = request?.headers?.get("cookie") ?? "";
+    const guestHeader = request?.headers?.get("x-guest-access");
+
+    // Check for guest research session
+    const isGuest =
+      authHeader === `Bearer ${GUEST_TOKEN}` ||
+      authHeader?.startsWith("Bearer guest-") ||
+      guestHeader === "true" ||
+      cookieHeader.includes(`${GUEST_COOKIE_NAME}=1`) ||
+      cookieHeader.includes(`${GUEST_COOKIE_NAME}=true`);
+
+    if (isGuest) {
+      const guestClaims: JwtPayload = {
+        sub: GUEST_USER_ID,
+        role: "authenticated",
+        aud: "authenticated",
+        app_metadata: { role: "guest", provider: "guest" },
+        user_metadata: { full_name: "Guest Researcher" },
+        exp: Math.floor(Date.now() / 1000) + 86400 * 30,
+      };
+
+      const guestSupabase =
+        SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
+          ? createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+              global: {
+                fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
+              },
+              auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+            })
+          : ({
+              auth: {
+                getClaims: async () => ({ data: { claims: guestClaims } }),
+                getUser: async () => ({ data: { user: { id: GUEST_USER_ID } } }),
+              },
+              from: () => ({ select: () => ({ data: [], error: null }) }),
+              rpc: async () => ({ data: null, error: null }),
+            } as unknown as SupabaseClient<Database>);
+
+      return next({
+        context: authContext(guestSupabase, GUEST_USER_ID, guestClaims, true),
+      });
+    }
 
     // No auth header — pass through without auth context.
     // Server functions that require auth should check for null context.

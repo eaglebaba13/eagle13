@@ -5,7 +5,7 @@
 // via Upstox, mock scenarios available in the Research panel.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getOptionChain,
@@ -81,12 +81,8 @@ function download(name: string, mime: string, body: string): void {
 }
 
 function OptionsChainPage() {
-  const [state, setState] = useState<Persisted>(() => ({
-    underlying: "NIFTY",
-    expiry: null,
-    atmMode: "ATM_10",
-  }));
-  const [atmMode, setAtmMode] = useState<AtmMode>("ATM_10");
+  const [state, setState] = useState<Persisted>(() => loadPersisted());
+  const [atmMode, setAtmMode] = useState<AtmMode>(() => loadPersisted().atmMode);
   const [result, setResult] = useState<GetOptionChainResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -94,12 +90,6 @@ function OptionsChainPage() {
   const [mockScenario, setMockScenario] = useState<string>("");
 
   const fetchChain = useServerFn(getOptionChain);
-
-  useEffect(() => {
-    const p = loadPersisted();
-    setState(p);
-    setAtmMode(p.atmMode);
-  }, []);
 
   const load = useCallback(
     async (opts: { useMock?: boolean; scenario?: string } = {}) => {
@@ -124,6 +114,33 @@ function OptionsChainPage() {
     },
     [fetchChain, state.underlying, state.expiry],
   );
+
+  // Auto-trigger "Fetch Live" on initial mount if strikes are at 0
+  const autoFetchedOnMount = useRef(false);
+  useEffect(() => {
+    if (!autoFetchedOnMount.current) {
+      autoFetchedOnMount.current = true;
+      void load();
+    }
+  }, [load]);
+
+  // Auto-refetch when underlying changes
+  const prevUnderlying = useRef(state.underlying);
+  useEffect(() => {
+    if (prevUnderlying.current !== state.underlying) {
+      prevUnderlying.current = state.underlying;
+      void load();
+    }
+  }, [state.underlying, load]);
+
+  // Auto-refetch when expiry changes
+  const prevExpiry = useRef(state.expiry);
+  useEffect(() => {
+    if (prevExpiry.current !== state.expiry) {
+      prevExpiry.current = state.expiry;
+      void load();
+    }
+  }, [state.expiry, load]);
 
   useEffect(() => {
     savePersisted({ ...state, atmMode });
@@ -317,6 +334,38 @@ function OptionsChainPage() {
             label="Quality"
             value={quality?.ok ? "OK" : quality ? `${quality.issues.length} issue(s)` : "—"}
           />
+        </div>
+      )}
+
+      {/* Loading state indicator during initial fetch */}
+      {loading && !snapshot && (
+        <div
+          style={{
+            padding: "24px 16px",
+            textAlign: "center",
+            border: "1px dashed var(--eb-line, #334155)",
+            borderRadius: 12,
+            marginTop: 16,
+            background: "var(--eb-card, #0f172a)",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              width: 20,
+              height: 20,
+              border: "2px solid var(--eb-accent, #f59e0b)",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500 }}>
+            Fetching live option chain for {state.underlying}…
+          </div>
+          <div style={{ marginTop: 2, fontSize: 11, opacity: 0.6 }}>
+            Connecting to {providerAlias} provider
+          </div>
         </div>
       )}
 

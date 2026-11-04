@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { highestRole, type AppRole } from "./roles";
 import { serializeProfile, type ProfileRow, type SerializedProfile } from "./profile";
 import { AuthContext, type AuthContextValue } from "./auth-context";
+import { isGuestSessionActive, clearGuestSession, GUEST_USER_ID } from "./guest-session";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -44,8 +45,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           void loadProfileAndRoles(s.user.id);
         }, 0);
       } else {
-        setProfile(null);
-        setRoles([]);
+        if (isGuestSessionActive()) {
+          setProfile({
+            id: GUEST_USER_ID,
+            displayName: "Guest Researcher",
+            email: "guest@eaglebaba.local",
+            primaryRole: "guest",
+            activePlan: "Guest Full Access",
+            memberSince: "Active",
+            isSuspended: false,
+            roles: ["guest"],
+          });
+          setRoles(["guest"]);
+        } else {
+          setProfile(null);
+          setRoles([]);
+        }
       }
     });
 
@@ -58,6 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (mounted) setLoading(false);
         });
       } else {
+        if (isGuestSessionActive()) {
+          setProfile({
+            id: GUEST_USER_ID,
+            displayName: "Guest Researcher",
+            email: "guest@eaglebaba.local",
+            primaryRole: "guest",
+            activePlan: "Guest Full Access",
+            memberSince: "Active",
+            isSuspended: false,
+            roles: ["guest"],
+          });
+          setRoles(["guest"]);
+        }
         setLoading(false);
       }
     });
@@ -70,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     // Phase 20.3A: session isolation — never leak previous user's state.
+    clearGuestSession();
     await supabase.auth.signOut();
     setProfile(null);
     setRoles([]);
@@ -107,15 +136,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const role = useMemo<AppRole>(() => highestRole(roles.length ? roles : ["free"]), [roles]);
+  const isGuest = !session?.user && profile?.id === GUEST_USER_ID;
+  const isAuthenticated = !!session?.user || isGuest;
 
   const value: AuthContextValue = {
     loading,
     session,
-    user: session?.user ?? null,
+    user: session?.user ?? (isGuest ? ({ id: GUEST_USER_ID, email: "guest@eaglebaba.local" } as never) : null),
     profile,
     roles,
     role,
-    isAuthenticated: !!session?.user,
+    isAuthenticated,
+    isGuest,
     signOut,
     refreshProfile,
     logAudit,

@@ -80,4 +80,43 @@ describe("Supabase auth middleware context contract", () => {
       } as unknown as AuthContext),
     ).not.toThrow();
   });
+
+  it("grants full research access for guest token and satisfies assertAuth", async () => {
+    vi.mocked(getRequest).mockReturnValue(
+      new Request("https://test-only.example.invalid", {
+        headers: { authorization: "Bearer guest-research-token" },
+      }),
+    );
+    const result = (await middleware({ next })) as AuthContext;
+    expect(result.userId).toBe("guest-researcher");
+    expect(result.claims?.sub).toBe("guest-researcher");
+    expect(result.claims?.role).toBe("authenticated");
+    expect(result.isGuest).toBe(true);
+    expect(result.supabase).toBeDefined();
+    expect(() => assertAuth(result)).not.toThrow();
+  });
+
+  it("grants full research access when guest cookie is present", async () => {
+    vi.mocked(getRequest).mockReturnValue(
+      new Request("https://test-only.example.invalid", {
+        headers: { cookie: "eb_guest_session=1; other=cookie" },
+      }),
+    );
+    const result = (await middleware({ next })) as AuthContext;
+    expect(result.userId).toBe("guest-researcher");
+    expect(result.isGuest).toBe(true);
+    expect(() => assertAuth(result)).not.toThrow();
+  });
+
+  it("grants full research access when x-guest-access header is present", async () => {
+    vi.mocked(getRequest).mockReturnValue(
+      new Request("https://test-only.example.invalid", {
+        headers: { "x-guest-access": "true" },
+      }),
+    );
+    const result = (await middleware({ next })) as AuthContext;
+    expect(result.userId).toBe("guest-researcher");
+    expect(result.isGuest).toBe(true);
+    expect(() => assertAuth(result)).not.toThrow();
+  });
 });

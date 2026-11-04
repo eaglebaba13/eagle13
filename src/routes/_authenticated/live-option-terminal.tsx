@@ -1,10 +1,12 @@
 // Phase 3A — Live Option Strategy Terminal (research-only, consumer module).
 // Never places a broker order. Never modifies canonical formulas.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, LogIn } from "lucide-react";
+import { Lock, LogIn, Sparkles } from "lucide-react";
+import { enableGuestSession } from "@/lib/guest-session";
+import { toast } from "sonner";
 import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/terminal.functions";
 import type { ScoredStrategy, CanonicalBias } from "@/lib/option-strategy-terminal";
 import { describeVixRegime } from "@/lib/option-strategy-terminal";
@@ -43,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/live-option-terminal")({
             <p className="mt-2 text-sm text-[var(--eb-muted)] leading-relaxed">
               The Live Option Strategy Terminal requires an authenticated session. Sign in to access your options research workstation.
             </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/auth"
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--eb-accent,#f59e0b)] px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
@@ -51,6 +53,18 @@ export const Route = createFileRoute("/_authenticated/live-option-terminal")({
                 <LogIn size={16} />
                 Sign In
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  enableGuestSession();
+                  toast.success("Guest full access enabled");
+                  window.location.reload();
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--eb-border)] px-4 py-2 text-sm font-medium text-[var(--eb-text)] bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <Sparkles size={16} className="text-[var(--eb-accent,#f59e0b)]" />
+                Continue as Guest
+              </button>
             </div>
           </div>
         ) : (
@@ -517,7 +531,7 @@ function LiveOptionTerminalPage() {
               <p className="mt-2 text-sm text-[var(--eb-muted)] leading-relaxed">
                 The Live Option Strategy Terminal integrates real-time Decision Engine, Combined PCR, GTI, Market Breadth, and Astro signals. Please sign in to access your options research workstation.
               </p>
-              <div className="mt-6 flex items-center justify-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   to="/auth"
                   className="inline-flex items-center gap-2 rounded-lg bg-[var(--eb-accent,#f59e0b)] px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
@@ -525,6 +539,18 @@ function LiveOptionTerminalPage() {
                   <LogIn size={16} />
                   Sign In
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    enableGuestSession();
+                    toast.success("Guest full access enabled");
+                    void refetch();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[var(--eb-border)] px-4 py-2 text-sm font-medium text-[var(--eb-text)] bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <Sparkles size={16} className="text-[var(--eb-accent,#f59e0b)]" />
+                  Continue as Guest
+                </button>
                 <button
                   type="button"
                   onClick={() => refetch()}

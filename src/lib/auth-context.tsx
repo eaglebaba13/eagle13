@@ -11,6 +11,7 @@ export interface AuthContextValue {
   roles: AppRole[];
   role: AppRole;
   isAuthenticated: boolean;
+  isGuest?: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   logAudit: (event: string, metadata?: Record<string, unknown>) => Promise<void>;
