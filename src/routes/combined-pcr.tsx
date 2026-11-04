@@ -163,88 +163,45 @@ function CombinedPcrPage() {
   }, [reading]);
 
   return (
-    <div
-      className="eb-page eb-content"
-      style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}
-    >
+    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
       {/* Research badge */}
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 0.6,
-          padding: "4px 10px",
-          borderRadius: 999,
-          background: "var(--eb-warn-bg)",
-          color: "var(--eb-warn-fg)",
-          border: "1px solid var(--eb-warn-border)",
-          marginBottom: 12,
-        }}
-      >
+      <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         RESEARCH ONLY · NO BUY / SELL SIGNAL
       </div>
 
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 700 }}>Combined PCR</h1>
-      <p style={{ margin: "0 0 20px", opacity: 0.7, fontSize: 14 }}>
+      <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50 mb-1">
+        Combined PCR — Derivatives Research
+      </h1>
+      <p className="text-xs sm:text-sm text-zinc-400 mb-4">
         Weighted OI + ΔOI research score across NIFTY and BANKNIFTY. SENSEX{" "}
-        <span style={{ color: "var(--eb-warn-fg)", fontWeight: 600 }}>COMING SOON</span>.
+        <span className="text-amber-400 font-semibold font-mono text-xs">COMING SOON</span>.
       </p>
 
       {/* Capability panel — replaces fake NO_TRADE metrics when unsupported */}
       {capabilityBlocking && capabilities && (
-        <div
-          style={{
-            padding: 14,
-            marginBottom: 16,
-            borderRadius: 10,
-            background: "var(--eb-warn-bg-soft)",
-            border: "1px solid var(--eb-warn-border-soft)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.6,
-              color: "var(--eb-warn-fg)",
-              marginBottom: 6,
-            }}
-          >
+        <div className="card-institutional p-4 mb-4 border-amber-500/40 bg-amber-500/5">
+          <div className="text-[11px] font-mono font-bold text-amber-400 mb-1.5">
             COMBINED PCR · {String(capabilityStatus ?? "UNAVAILABLE").replace(/_/g, " ")}
           </div>
-          <div style={{ fontSize: 13, marginBottom: 10 }}>
+          <div className="text-xs text-zinc-300 mb-3">
             Score not calculated — option data unavailable for one or more underlyings.
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 8,
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {Object.entries(capabilities).map(([u, cap]) =>
               cap ? (
                 <div
                   key={u}
-                  style={{
-                    padding: 10,
-                    borderRadius: 8,
-                    background: "var(--eb-tint)",
-                    border: "1px solid var(--eb-line)",
-                    fontSize: 12,
-                  }}
+                  className="card-institutional p-3 text-xs bg-zinc-950/60 border-zinc-800"
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                  <div className="font-bold text-zinc-100 mb-1">
                     {u} · {cap.status.replace(/_/g, " ")}
                   </div>
-                  <div style={{ opacity: 0.85, marginBottom: 4 }}>{cap.reason}</div>
+                  <div className="text-zinc-400 mb-1">{cap.reason}</div>
                   {cap.suggestedAction && (
-                    <div style={{ opacity: 0.7, marginBottom: 4 }}>Next: {cap.suggestedAction}</div>
+                    <div className="text-zinc-500 mb-1">Next: {cap.suggestedAction}</div>
                   )}
-                  <div style={{ opacity: 0.6, fontSize: 11 }}>
+                  <div className="text-[10px] font-mono text-zinc-500">
                     {cap.providerAlias} · stage {cap.failingStage ?? "—"} · observed{" "}
                     {cap.observedAt}
                     {cap.latencyMs != null ? ` · ${cap.latencyMs}ms` : ""}
@@ -256,7 +213,7 @@ function CombinedPcrPage() {
           <button
             onClick={() => void run()}
             disabled={loading}
-            style={{ ...buttonStyle, marginTop: 10 }}
+            className="pill-active px-3.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-zinc-700/80 transition-colors disabled:opacity-50 mt-3"
           >
             {loading ? "Retrying…" : "Retry"}
           </button>
@@ -272,23 +229,28 @@ function CombinedPcrPage() {
 
       {/* Header stats — hidden when capability blocks calculation to avoid fake zeros */}
       {!capabilityBlocking && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          <Stat label="Combined Score" value={fmt(reading?.combinedScore, 2)} />
-          <Stat label="Direction" value={reading?.direction ?? "—"} />
-          <Stat label="Research Signal" value={reading?.signalState ?? "—"} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-4">
+          <Stat
+            label="Combined Score"
+            value={fmt(reading?.combinedScore, 2)}
+            accent={reading?.combinedScore != null ? (reading.combinedScore > 1 ? "emerald" : reading.combinedScore < 0.9 ? "rose" : "amber") : undefined}
+          />
+          <Stat
+            label="Direction"
+            value={reading?.direction ?? "—"}
+            accent={reading?.direction?.includes("BULL") ? "emerald" : reading?.direction?.includes("BEAR") ? "rose" : undefined}
+          />
+          <Stat
+            label="Research Signal"
+            value={reading?.signalState ?? "—"}
+            accent={reading?.signalState?.includes("BULL") ? "emerald" : reading?.signalState?.includes("BEAR") ? "rose" : "cyan"}
+          />
           <Stat label="EMA Fast" value={fmt(reading?.emaFast, 2)} />
           <Stat label="EMA Slow" value={fmt(reading?.emaSlow, 2)} />
-          <Stat label="Slope" value={fmt(reading?.slope, 3)} />
+          <Stat label="Slope" value={fmt(reading?.slope, 3)} accent={reading?.slope != null && reading.slope > 0 ? "emerald" : "rose"} />
           <Stat label="Prev Slope" value={fmt(reading?.previousSlope, 3)} />
           <Stat label="Slope Δ" value={fmt(reading?.slopeChange, 3)} />
-          <Stat label="Confirmed" value={reading?.confirmedState ?? "—"} />
+          <Stat label="Confirmed" value={reading?.confirmedState ?? "—"} accent="cyan" />
           <Stat label="ATM Mode" value={atmMode} />
           <Stat
             label="Freshness"
@@ -298,25 +260,13 @@ function CombinedPcrPage() {
       )}
 
       {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          padding: 12,
-          borderRadius: 10,
-          background: "var(--eb-tint-soft)",
-          border: "1px solid var(--eb-hairline)",
-          marginBottom: 16,
-        }}
-      >
-        <label style={labelStyle}>
-          ATM
+      <div className="card-institutional p-3.5 flex flex-wrap gap-3 items-center mb-4 bg-zinc-900/60 border-zinc-800/80">
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">ATM</span>
           <select
             value={atmMode}
             onChange={(e) => setAtmMode(e.target.value as AtmMode)}
-            style={selectStyle}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
           >
             <option value="ATM">ATM</option>
             <option value="ATM_5">ATM ±5</option>
@@ -324,8 +274,8 @@ function CombinedPcrPage() {
             <option value="ATM_20">ATM ±20</option>
           </select>
         </label>
-        <label style={labelStyle}>
-          NIFTY %
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">NIFTY %</span>
           <input
             type="number"
             step={5}
@@ -336,11 +286,11 @@ function CombinedPcrPage() {
               const n = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
               setWeights({ NIFTY: n, BANKNIFTY: Math.max(0, 1 - n) });
             }}
-            style={{ ...selectStyle, width: 80 }}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 focus:outline-none focus:border-cyan-500 font-mono"
           />
         </label>
-        <label style={labelStyle}>
-          BANKNIFTY %
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">BANKNIFTY %</span>
           <input
             type="number"
             step={5}
@@ -351,62 +301,62 @@ function CombinedPcrPage() {
               const b = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
               setWeights({ NIFTY: Math.max(0, 1 - b), BANKNIFTY: b });
             }}
-            style={{ ...selectStyle, width: 80 }}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 focus:outline-none focus:border-cyan-500 font-mono"
           />
         </label>
-        <label style={{ ...labelStyle, flexDirection: "row", gap: 6 }}>
-          <input type="checkbox" checked={useMock} onChange={(e) => setUseMock(e.target.checked)} />
-          Mock
+        <label className="text-xs text-zinc-400 flex items-center gap-2 mt-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useMock}
+            onChange={(e) => setUseMock(e.target.checked)}
+            className="rounded border-zinc-700 bg-zinc-900 text-cyan-500 focus:ring-0"
+          />
+          <span>Mock</span>
         </label>
         {useMock && (
-          <select
-            value={mockScenario}
-            onChange={(e) => setMockScenario(e.target.value)}
-            style={selectStyle}
-          >
-            {["BULLISH", "BEARISH", "SIDEWAYS", "STALE", "MISSING_STRIKES", "PROVIDER_FAILURE"].map(
-              (s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ),
-            )}
-          </select>
+          <div className="flex flex-col gap-1">
+            <span className="metric-label">Scenario</span>
+            <select
+              value={mockScenario}
+              onChange={(e) => setMockScenario(e.target.value)}
+              className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs"
+            >
+              {["BULLISH", "BEARISH", "SIDEWAYS", "STALE", "MISSING_STRIKES", "PROVIDER_FAILURE"].map(
+                (s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
         )}
-        <button onClick={() => void run()} disabled={loading || !weightsValid} style={buttonStyle}>
+        <button
+          onClick={() => void run()}
+          disabled={loading || !weightsValid}
+          className="pill-active px-3.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-zinc-700/80 transition-colors disabled:opacity-50 mt-auto"
+        >
           {loading ? "Loading…" : "Refresh"}
         </button>
         {!weightsValid && (
-          <span style={{ fontSize: 12, color: "var(--eb-danger-fg)" }}>
+          <span className="text-xs text-rose-400 font-mono mt-auto">
             Weights must sum to 100%
           </span>
         )}
       </div>
 
       {/* Chart */}
-      <div style={{ marginBottom: 20 }}>
-        <Suspense fallback={<div style={{ fontSize: 12, opacity: 0.6 }}>Loading chart…</div>}>
+      <div className="card-institutional p-4 mb-4 border-zinc-800/80">
+        <Suspense fallback={<div className="text-xs text-zinc-500 p-4">Loading chart…</div>}>
           {reading && <CombinedPcrChart reading={reading} />}
         </Suspense>
       </div>
 
       {/* Warnings */}
       {reading && reading.warnings.length > 0 && (
-        <div
-          style={{
-            padding: 12,
-            marginBottom: 16,
-            borderRadius: 8,
-            background: "var(--eb-danger-bg)",
-            border: "1px solid var(--eb-danger-border)",
-          }}
-        >
-          <div
-            style={{ fontSize: 12, fontWeight: 700, color: "var(--eb-danger-fg)", marginBottom: 6 }}
-          >
-            Data quality
-          </div>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
+        <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+          <div className="font-bold font-mono mb-1">Data quality warnings:</div>
+          <ul className="list-disc pl-4 space-y-0.5 opacity-90">
             {reading.warnings.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
@@ -415,29 +365,22 @@ function CombinedPcrPage() {
       )}
 
       {error && (
-        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>
+        <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
           Error: {error}
         </div>
       )}
       {result && !result.ok && (
-        <div style={{ color: "var(--eb-danger-fg)", marginBottom: 16, fontSize: 13 }}>
+        <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
           Provider unavailable: {result.safeError ?? "unknown"}
         </div>
       )}
 
       {/* Instrument table */}
       {reading && (
-        <div
-          style={{
-            overflowX: "auto",
-            border: "1px solid var(--eb-hairline)",
-            borderRadius: 10,
-            marginBottom: 16,
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead style={{ background: "var(--eb-tint)", textAlign: "left" }}>
-              <tr>
+        <div className="table-responsive-container mb-4 border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-950/40 backdrop-blur-md">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/80 text-left">
                 {[
                   "Underlying",
                   "Raw OI PCR",
@@ -451,31 +394,31 @@ function CombinedPcrPage() {
                   "Expiry",
                   "Provider",
                 ].map((h) => (
-                  <th key={h} style={{ padding: "8px 10px", fontWeight: 600, opacity: 0.75 }}>
+                  <th key={h} className="px-3 py-2.5 font-mono text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-800/40 font-mono">
               {reading.instruments.map((i) => (
-                <tr key={i.underlying} style={{ borderTop: "1px solid var(--eb-tint-strong)" }}>
-                  <td style={cell}>{i.underlying}</td>
-                  <td style={cell}>{fmt(i.rawOiPcr, 3)}</td>
-                  <td style={cell}>{fmt(i.rawChangeOiPcr, 3)}</td>
-                  <td style={cell}>{fmt(i.normalizedOiPcr)}</td>
-                  <td style={cell}>{fmt(i.normalizedChangeOiPcr)}</td>
-                  <td style={cell}>{fmt(i.instrumentScore)}</td>
-                  <td style={cell}>{fmt(i.weight * 100, 1)}%</td>
-                  <td style={cell}>{i.strikeCount}</td>
-                  <td style={cell}>{i.atm ?? "—"}</td>
-                  <td style={cell}>{i.expiry ?? "—"}</td>
-                  <td style={cell}>{i.provider}</td>
+                <tr key={i.underlying} className="hover:bg-zinc-800/30 transition-colors">
+                  <td className="px-3 py-2 font-bold text-zinc-100">{i.underlying}</td>
+                  <td className="px-3 py-2 text-zinc-300">{fmt(i.rawOiPcr, 3)}</td>
+                  <td className="px-3 py-2 text-zinc-300">{fmt(i.rawChangeOiPcr, 3)}</td>
+                  <td className="px-3 py-2 text-zinc-300">{fmt(i.normalizedOiPcr)}</td>
+                  <td className="px-3 py-2 text-zinc-300">{fmt(i.normalizedChangeOiPcr)}</td>
+                  <td className="px-3 py-2 font-bold text-cyan-400">{fmt(i.instrumentScore)}</td>
+                  <td className="px-3 py-2 text-zinc-300">{fmt(i.weight * 100, 1)}%</td>
+                  <td className="px-3 py-2 text-zinc-400">{i.strikeCount}</td>
+                  <td className="px-3 py-2 text-amber-300">{i.atm ?? "—"}</td>
+                  <td className="px-3 py-2 text-zinc-400">{i.expiry ?? "—"}</td>
+                  <td className="px-3 py-2 text-zinc-400">{i.provider}</td>
                 </tr>
               ))}
-              <tr style={{ borderTop: "1px solid var(--eb-tint-strong)", opacity: 0.55 }}>
-                <td style={cell}>SENSEX</td>
-                <td style={cell} colSpan={10}>
+              <tr className="opacity-50 text-zinc-500">
+                <td className="px-3 py-2 font-bold">SENSEX</td>
+                <td className="px-3 py-2 font-mono" colSpan={10}>
                   COMING SOON
                 </td>
               </tr>
@@ -486,9 +429,9 @@ function CombinedPcrPage() {
 
       {/* Exports */}
       {reading && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+        <div className="flex gap-2 flex-wrap mb-4">
           <button
-            style={buttonStyle}
+            className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
             onClick={() =>
               download(`combined-pcr-${reading.runId}.csv`, "text/csv", readingToCsv(reading))
             }
@@ -496,7 +439,7 @@ function CombinedPcrPage() {
             Export CSV
           </button>
           <button
-            style={buttonStyle}
+            className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
             onClick={() =>
               download(
                 `combined-pcr-${reading.runId}.json`,
@@ -508,7 +451,7 @@ function CombinedPcrPage() {
             Export JSON
           </button>
           <button
-            style={buttonStyle}
+            className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
             onClick={() =>
               download(
                 `combined-pcr-bundle-${reading.runId}.json`,
@@ -532,51 +475,42 @@ function CombinedPcrPage() {
       )}
 
       {/* Research panel */}
-      <div style={{ border: "1px solid var(--eb-line)", borderRadius: 10, overflow: "hidden" }}>
+      <div className="card-institutional overflow-hidden border-zinc-800/80 mb-4">
         <button
           onClick={() => setShowResearch((v) => !v)}
-          style={{
-            width: "100%",
-            textAlign: "left",
-            padding: "10px 14px",
-            background: "var(--eb-tint)",
-            color: "inherit",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: 13,
-          }}
+          className="w-full text-left px-4 py-3 text-xs font-medium text-zinc-300 hover:text-cyan-300 transition-colors flex items-center justify-between"
         >
-          {showResearch ? "▼" : "▶"} Research Panel
+          <span>{showResearch ? "▼" : "▶"} Research Panel</span>
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Formula Diagnostics</span>
         </button>
         {showResearch && reading && (
-          <div style={{ padding: 14, fontSize: 12, lineHeight: 1.7 }}>
+          <div className="p-4 border-t border-zinc-800/60 text-xs text-zinc-300 space-y-2 bg-zinc-950/30">
             <div>
-              <b>Run ID:</b> {reading.runId}
+              <b className="text-zinc-400">Run ID:</b> {reading.runId}
             </div>
             <div>
-              <b>Formula:</b> {FORMULA_VERSION}
+              <b className="text-zinc-400">Formula:</b> {FORMULA_VERSION}
             </div>
             <div>
-              <b>Disclaimer:</b> {DISCLAIMER}
+              <b className="text-zinc-400">Disclaimer:</b> {DISCLAIMER}
             </div>
             <div>
-              <b>Confirmed:</b> {reading.confirmedState} · <b>Pending:</b> {reading.pendingState} ·{" "}
-              <b>Count:</b> {reading.confirmationCount}
+              <b className="text-zinc-400">Confirmed:</b> {reading.confirmedState} · <b className="text-zinc-400">Pending:</b> {reading.pendingState} ·{" "}
+              <b className="text-zinc-400">Count:</b> {reading.confirmationCount}
             </div>
             <div>
-              <b>Zero Cross:</b> {String(reading.zeroCross)}
+              <b className="text-zinc-400">Zero Cross:</b> {String(reading.zeroCross)}
             </div>
             <div>
-              <b>Snapshots:</b> {reading.instruments.map((i) => i.snapshotId).join(" | ")}
+              <b className="text-zinc-400">Snapshots:</b> {reading.instruments.map((i) => i.snapshotId).join(" | ")}
             </div>
             <div>
-              <b>Warnings:</b>{" "}
+              <b className="text-zinc-400">Warnings:</b>{" "}
               {reading.warnings.length === 0 ? "none" : reading.warnings.join("; ")}
             </div>
             <div>
-              <b>Provider Meta:</b>{" "}
-              <code style={{ fontSize: 11 }}>
+              <b className="text-zinc-400">Provider Meta:</b>{" "}
+              <code className="text-[11px] font-mono text-zinc-400">
                 {JSON.stringify(
                   result?.ok ? (result as { providerMeta: unknown }).providerMeta : {},
                 )}
@@ -588,25 +522,17 @@ function CombinedPcrPage() {
 
       {/* Persistent history + shadow validation */}
       {(persisted.length > 0 || shadowSamples.length > 0) && (
-        <div
-          style={{
-            marginTop: 16,
-            border: "1px solid var(--eb-line)",
-            borderRadius: 10,
-            padding: 12,
-            fontSize: 12,
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+        <div className="card-institutional p-4 border-zinc-800/80 text-xs text-zinc-300">
+          <div className="font-bold text-zinc-100 mb-1">
             History (persistent): {persisted.length} points · Shadow observations:{" "}
             {summarizeShadowObservations(shadowSamples).length}
           </div>
-          <div style={{ opacity: 0.7 }}>
+          <div className="text-zinc-400 mb-3">
             Persistent storage retains up to {historyRef.current?.capacity ?? 500} readings across
             reloads. Shadow validation is research-only — no BUY / SELL emitted.
           </div>
           <button
-            style={{ ...buttonStyle, marginTop: 8 }}
+            className="px-3 py-1.5 rounded-lg text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
             onClick={() => {
               historyRef.current?.clear();
               setPersisted([]);
@@ -621,47 +547,30 @@ function CombinedPcrPage() {
   );
 }
 
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  fontSize: 11,
-  gap: 4,
-  opacity: 0.85,
-};
-const selectStyle: React.CSSProperties = {
-  background: "var(--eb-tint-strong)",
-  border: "1px solid var(--eb-divider)",
-  color: "inherit",
-  padding: "5px 8px",
-  borderRadius: 6,
-  fontSize: 12,
-};
-const buttonStyle: React.CSSProperties = {
-  background: "var(--eb-warn-bg)",
-  border: "1px solid var(--eb-warn-border)",
-  color: "var(--eb-warn-fg)",
-  padding: "6px 12px",
-  borderRadius: 6,
-  fontSize: 12,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-const cell: React.CSSProperties = { padding: "6px 10px" };
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: "cyan" | "emerald" | "amber" | "rose";
+}) {
+  const accentColor =
+    accent === "cyan"
+      ? "text-cyan-400"
+      : accent === "emerald"
+      ? "text-emerald-400"
+      : accent === "amber"
+      ? "text-amber-400"
+      : accent === "rose"
+      ? "text-rose-400"
+      : "text-zinc-100";
 
-function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        padding: "8px 10px",
-        borderRadius: 8,
-        border: "1px solid var(--eb-hairline)",
-        background: "var(--eb-tint-soft)",
-      }}
-    >
-      <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    <div className="card-institutional p-3 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value mt-1.5 ${accentColor}`}>{value}</div>
     </div>
   );
 }

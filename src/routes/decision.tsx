@@ -63,32 +63,21 @@ export const Route = createFileRoute("/decision")({
 function DecisionPage() {
   const { data } = useSuspenseQuery(decisionQuery());
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, padding: "1rem" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+    <div className="eb-page eb-content min-h-screen text-zinc-100 p-4 sm:p-6 bg-[#070a0e]">
+      <div className="max-w-7xl mx-auto space-y-4">
         <Header snap={data} />
         <SummaryCards snap={data} />
         <CapabilitySummary snap={data} />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)",
-            gap: "1rem",
-          }}
-        >
-          <DecisionMatrix decision={data.decision} capabilities={data.capabilities} />
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <DecisionMatrix decision={data.decision} capabilities={data.capabilities} />
+          </div>
+          <div className="lg:col-span-1 flex flex-col gap-4">
             <ConfidenceGauge decision={data.decision} />
             <RiskMeter decision={data.decision} />
           </div>
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-            gap: "1rem",
-            marginTop: "1rem",
-          }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Checklist decision={data.decision} />
           <EvidencePanel decision={data.decision} />
         </div>
@@ -178,14 +167,7 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
   const confPct = Math.round(d.confidence);
   const confUnavailable = d.action === "WAIT" && confPct <= 1;
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: "0.75rem",
-        marginBottom: "1rem",
-      }}
-    >
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 mb-4">
       <Card label="Decision">
         <div style={{ fontSize: "1.4rem", fontWeight: 900, color: actionColor(d.action) }}>
           {humanAction(d.action)}
@@ -234,25 +216,9 @@ function SummaryCards({ snap }: { snap: DecisionSnapshot }) {
 
 function Card({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 10,
-        padding: "0.75rem 1rem",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.7rem",
-          letterSpacing: 0.6,
-          color: C.muted,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ marginTop: 4 }}>{children}</div>
+    <div className="card-institutional p-3.5 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }

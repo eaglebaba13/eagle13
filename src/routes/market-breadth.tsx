@@ -59,50 +59,31 @@ function fmt(v: number | null | undefined, d = 2): string {
 
 function BreadthCard({ title, s }: { title: string; s: MarketBreadthSnapshot | null }) {
   return (
-    <div
-      style={{
-        padding: 12,
-        borderRadius: 10,
-        border: "1px solid var(--eb-line)",
-        background: "var(--eb-tint-soft)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
-          opacity: 0.6,
-          marginBottom: 4,
-        }}
-      >
-        {title}
-      </div>
+    <div className="card-institutional p-3.5 flex flex-col justify-between">
+      <div className="metric-label">{title}</div>
       {!s || s.dataQuality === "FAILED" ? (
-        <div style={{ fontSize: 13, opacity: 0.6 }}>Unavailable</div>
+        <div className="text-xs text-zinc-500 mt-2">Unavailable</div>
       ) : (
-        <>
-          <div style={{ display: "flex", gap: 10, fontSize: 12, flexWrap: "wrap" }}>
-            <span style={{ color: "var(--eb-ok-fg)" }}>▲ {s.advances}</span>
-            <span style={{ color: "var(--eb-danger-fg)" }}>▼ {s.declines}</span>
-            <span style={{ opacity: 0.7 }}>= {s.unchanged}</span>
-            <span style={{ opacity: 0.5 }}>? {s.unavailable}</span>
+        <div className="space-y-2 mt-2">
+          <div className="flex gap-2.5 text-xs font-mono flex-wrap">
+            <span className="text-emerald-400 font-semibold">▲ {s.advances}</span>
+            <span className="text-rose-400 font-semibold">▼ {s.declines}</span>
+            <span className="text-zinc-400">= {s.unchanged}</span>
+            <span className="text-zinc-600">? {s.unavailable}</span>
           </div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>
-            Net: <b>{s.netBreadth}</b>
+          <div className="text-xs font-mono text-zinc-200">
+            Net: <b className={s.netBreadth != null && s.netBreadth > 0 ? "text-emerald-400" : s.netBreadth != null && s.netBreadth < 0 ? "text-rose-400" : "text-zinc-200"}>{s.netBreadth ?? "—"}</b>
             {s.weightedBreadth != null && (
               <>
-                {" "}
-                · Weighted: <b>{fmt(s.weightedBreadth, 3)}</b>
+                {" "}· Wtd: <b className="text-cyan-400">{fmt(s.weightedBreadth, 3)}</b>
               </>
             )}
           </div>
-          <div style={{ fontSize: 11, opacity: 0.55, marginTop: 2 }}>
-            Coverage {((s.constituentCoverage ?? 0) * 100).toFixed(0)}% · {s.dataQuality} ·{" "}
-            {s.freshness}
+          <div className="text-[10px] font-mono text-zinc-500">
+            Coverage {((s.constituentCoverage ?? 0) * 100).toFixed(0)}% · {s.dataQuality} · {s.freshness}
             {s.registryVersion && <> · {s.registryVersion}</>}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -196,33 +177,16 @@ function MarketBreadthPage() {
   };
 
   return (
-    <div
-      className="eb-page eb-content"
-      style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px" }}
-    >
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 0.6,
-          padding: "4px 10px",
-          borderRadius: 999,
-          background: "var(--eb-warn-bg)",
-          color: "var(--eb-warn-fg)",
-          border: "1px solid var(--eb-warn-border)",
-          marginBottom: 12,
-        }}
-      >
+    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+      <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         RESEARCH ONLY · NO BUY / SELL SIGNAL
       </div>
 
-      <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 700 }}>
+      <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50 mb-1">
         Market Breadth · GTI Research
       </h1>
-      <p style={{ margin: "0 0 20px", opacity: 0.7, fontSize: 14 }}>
+      <p className="text-xs sm:text-sm text-zinc-400 mb-4">
         Combined breadth, VIX regime, sector rotation and Combined PCR confirmation. SENSEX, MCX,
         Crypto and Global metals COMING SOON.
       </p>
@@ -244,19 +208,16 @@ function MarketBreadthPage() {
       )}
 
       {/* Header stats */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-          gap: 10,
-          marginBottom: 16,
-        }}
-      >
-        <Stat label="Research State" value={reading?.state ?? "—"} />
-        <Stat label="Confidence" value={reading ? `${reading.confidence}` : "—"} />
-        <Stat label="VIX Regime" value={reading?.vix.regime ?? "—"} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 mb-4">
+        <Stat
+          label="Research State"
+          value={reading?.state ?? "—"}
+          accent={reading?.state?.includes("BULL") ? "emerald" : reading?.state?.includes("BEAR") ? "rose" : "cyan"}
+        />
+        <Stat label="Confidence" value={reading ? `${reading.confidence}` : "—"} accent="cyan" />
+        <Stat label="VIX Regime" value={reading?.vix.regime ?? "—"} accent="amber" />
         <Stat label="PCR Confirm" value={reading?.pcr.confirmedState ?? "—"} />
-        <Stat label="Conflicts" value={reading ? `${reading.conflicts.length}` : "—"} />
+        <Stat label="Conflicts" value={reading ? `${reading.conflicts.length}` : "—"} accent={reading?.conflicts.length ? "rose" : undefined} />
         <Stat
           label="Broad Coverage"
           value={
@@ -268,34 +229,13 @@ function MarketBreadthPage() {
       </div>
 
       {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          alignItems: "center",
-          padding: 12,
-          borderRadius: 10,
-          background: "var(--eb-tint-soft)",
-          border: "1px solid var(--eb-hairline)",
-          marginBottom: 16,
-        }}
-      >
-        <label
-          style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}
-        >
-          Scenario
+      <div className="card-institutional p-3.5 flex flex-wrap gap-3 items-center mb-4 bg-zinc-900/60 border-zinc-800/80">
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Scenario</span>
           <select
             value={scenario}
             onChange={(e) => setScenario(e.target.value as MockScenario)}
-            style={{
-              background: "var(--eb-tint-strong)",
-              border: "1px solid var(--eb-divider)",
-              color: "inherit",
-              padding: "5px 8px",
-              borderRadius: 6,
-              fontSize: 12,
-            }}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500"
           >
             {["BULLISH", "BEARISH", "MIXED", "PARTIAL", "STALE"].map((s) => (
               <option key={s} value={s}>
@@ -304,63 +244,40 @@ function MarketBreadthPage() {
             ))}
           </select>
         </label>
-        <label
-          style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}
-        >
-          VIX
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">VIX</span>
           <input
             type="number"
             step={0.1}
             value={vix}
             onChange={(e) => setVix(e.target.value)}
             placeholder="—"
-            style={{
-              background: "var(--eb-tint-strong)",
-              border: "1px solid var(--eb-divider)",
-              color: "inherit",
-              padding: "5px 8px",
-              borderRadius: 6,
-              fontSize: 12,
-              width: 80,
-            }}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-cyan-500"
           />
         </label>
-        <label
-          style={{ fontSize: 11, opacity: 0.85, display: "flex", flexDirection: "column", gap: 4 }}
-        >
-          Prev VIX
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Prev VIX</span>
           <input
             type="number"
             step={0.1}
             value={previousVix}
             onChange={(e) => setPreviousVix(e.target.value)}
             placeholder="—"
-            style={{
-              background: "var(--eb-tint-strong)",
-              border: "1px solid var(--eb-divider)",
-              color: "inherit",
-              padding: "5px 8px",
-              borderRadius: 6,
-              fontSize: 12,
-              width: 80,
-            }}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-cyan-500"
           />
         </label>
-        <button onClick={() => void run()} disabled={loading} style={buttonStyle}>
+        <button
+          onClick={() => void run()}
+          disabled={loading}
+          className="pill-active px-3.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-zinc-700/80 transition-colors disabled:opacity-50 mt-auto"
+        >
           {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
 
       {/* Breadth cards */}
       {reading && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3 mb-4">
           <BreadthCard title="Broad NSE" s={reading.breadth.broad} />
           <BreadthCard title="NIFTY50" s={reading.breadth.nifty50} />
           <BreadthCard title="Top-Weighted" s={reading.breadth.topWeighted} />
@@ -502,20 +419,16 @@ function MarketBreadthPage() {
 
       {/* Persistent history + shadow */}
       {(persisted.length > 0 || samples.length > 0) && (
-        <div
-          style={{
-            marginTop: 16,
-            border: "1px solid var(--eb-line)",
-            borderRadius: 10,
-            padding: 12,
-            fontSize: 12,
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>
-            Persistent history: {persisted.length} · Shadow observations: {observations.length}
+        <div className="card-institutional p-4 border-zinc-800/80 text-xs text-zinc-300 mt-4">
+          <div className="font-bold text-zinc-100 mb-1">
+            Persistent History: {persisted.length} · Shadow observations: {observations.length}
+          </div>
+          <div className="text-zinc-400 mb-3">
+            Persistent storage retains up to {historyRef.current?.capacity ?? 500} readings across
+            reloads. Shadow validation is research-only — no BUY / SELL emitted.
           </div>
           <button
-            style={buttonStyle}
+            className="px-3 py-1.5 rounded-lg text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
             onClick={() => {
               historyRef.current?.clear();
               setPersisted([]);
@@ -530,20 +443,30 @@ function MarketBreadthPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: "cyan" | "emerald" | "amber" | "rose";
+}) {
+  const accentColor =
+    accent === "cyan"
+      ? "text-cyan-400"
+      : accent === "emerald"
+      ? "text-emerald-400"
+      : accent === "amber"
+      ? "text-amber-400"
+      : accent === "rose"
+      ? "text-rose-400"
+      : "text-zinc-100";
+
   return (
-    <div
-      style={{
-        padding: "8px 10px",
-        borderRadius: 8,
-        border: "1px solid var(--eb-hairline)",
-        background: "var(--eb-tint-soft)",
-      }}
-    >
-      <div style={{ fontSize: 10, letterSpacing: 0.4, opacity: 0.6, textTransform: "uppercase" }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    <div className="card-institutional p-3 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value mt-1.5 ${accentColor}`}>{value}</div>
     </div>
   );
 }

@@ -86,35 +86,41 @@ function InstitutionalFlowPage() {
   const bias = report?.summary?.bias ?? "UNAVAILABLE";
 
   return (
-    <div
-      className="eb-page eb-content"
-      style={{ maxWidth: 1240, margin: "0 auto", padding: "20px 16px" }}
-    >
-      <header style={{ marginBottom: 16 }}>
-        <div style={label}>DERIVATIVES · INSTITUTIONAL FLOW</div>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>Institutional Flow Dashboard</h1>
-        <p style={{ margin: "6px 0 0", opacity: 0.7, fontSize: 13 }}>
+    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+      <header className="mb-4">
+        <div className="text-[11px] font-mono font-bold tracking-wider text-cyan-400 mb-1 flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          DERIVATIVES · INSTITUTIONAL FLOW
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50">
+          Institutional Flow Dashboard
+        </h1>
+        <p className="mt-1 text-xs sm:text-sm text-zinc-400">
           Read-only derivatives analytics. Consumes canonical Option Chain, Combined PCR, Market
           Breadth, Decision and GTI. Never issues trade signals or orders.
         </p>
       </header>
 
-      <div style={toolbar}>
-        <label style={{ fontSize: 12 }}>
-          Underlying
+      <div className="card-institutional p-3.5 flex flex-wrap gap-3 items-end mb-4 bg-zinc-900/60 border-zinc-800/80">
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Underlying</span>
           <select
             value={underlying}
             onChange={(e) => setUnderlying(e.target.value as OptionUnderlying)}
-            style={selectStyle}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500"
           >
             <option value="NIFTY">NIFTY</option>
             <option value="BANKNIFTY">BANKNIFTY</option>
           </select>
         </label>
-        <button onClick={load} disabled={loading} style={btnPrimary}>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="pill-active px-3.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-zinc-700/80 transition-colors disabled:opacity-50"
+        >
           {loading ? "Refreshing…" : "Refresh"}
         </button>
-        <span style={{ fontSize: 11, opacity: 0.6 }}>
+        <span className="text-[11px] font-mono text-zinc-500 ml-auto self-center">
           {report
             ? `Generated ${new Date(report.generatedAt).toLocaleTimeString()} · ${providerAlias}`
             : ""}
@@ -125,7 +131,9 @@ function InstitutionalFlowPage() {
         isAuthErrorMessage(error) ? (
           <GuestUnlockCard resourceName="Institutional Flow" onRetry={load} />
         ) : (
-          <div style={errorBox}>Institutional Flow error: {error}</div>
+          <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
+            Institutional Flow error: {error}
+          </div>
         )
       )}
 
@@ -138,15 +146,19 @@ function InstitutionalFlowPage() {
 
       {report && (
         <>
-          <div style={cardsGrid}>
-            <Card label="Spot" value={spot ?? "—"} />
-            <Card label="ATM Strike" value={report.oi.atmStrike ?? "—"} />
-            <Card label="Max Pain" value={report.maxPain.currentMaxPain ?? "—"} />
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3 mb-4">
+            <Card label="Spot" value={spot ?? "—"} accent="cyan" />
+            <Card label="ATM Strike" value={report.oi.atmStrike ?? "—"} accent="amber" />
+            <Card label="Max Pain" value={report.maxPain.currentMaxPain ?? "—"} accent="emerald" />
             <Card label="Gamma Wall" value={report.gamma.gammaWallStrike ?? "—"} />
             <Card label="Gamma Flip" value={report.gamma.gammaFlipStrike ?? "—"} />
             <Card label="Highest Call OI" value={report.oi.highestCallOiStrike ?? "—"} />
             <Card label="Highest Put OI" value={report.oi.highestPutOiStrike ?? "—"} />
-            <Card label="Positioning" value={bias.replace(/_/g, " ")} />
+            <Card
+              label="Positioning"
+              value={bias.replace(/_/g, " ")}
+              accent={bias.includes("BULL") ? "emerald" : bias.includes("BEAR") ? "rose" : "amber"}
+            />
           </div>
 
           <Section title="Executive Summary">
@@ -164,7 +176,7 @@ function InstitutionalFlowPage() {
           </Section>
 
           <Section title="Build-Up Analysis">
-            <div style={grid2}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               <MiniStat label="Call side" value={report.buildUp.callSide.replace(/_/g, " ")} />
               <MiniStat label="Put side" value={report.buildUp.putSide.replace(/_/g, " ")} />
               <MiniStat label="Overall" value={report.buildUp.overall.replace(/_/g, " ")} />
@@ -172,13 +184,13 @@ function InstitutionalFlowPage() {
               <MiniStat label="ΣΔCall OI" value={fmt(report.buildUp.totalCallChangeOi)} />
               <MiniStat label="ΣΔPut OI" value={fmt(report.buildUp.totalPutChangeOi)} />
             </div>
-            <p style={{ margin: "8px 0 0", fontSize: 11, opacity: 0.7 }}>
+            <p className="mt-2 text-xs text-zinc-400">
               {report.buildUp.rationale}
             </p>
           </Section>
 
           <Section title="Max Pain">
-            <div style={grid2}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <MiniStat label="Current" value={report.maxPain.currentMaxPain ?? "—"} />
               <MiniStat label="Nearest strike" value={report.maxPain.nearestMaxPain ?? "—"} />
               <MiniStat label="Δ from spot" value={fmt(report.maxPain.distanceFromSpot)} />
@@ -194,7 +206,7 @@ function InstitutionalFlowPage() {
           </Section>
 
           <Section title="Gamma">
-            <div style={grid2}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               <MiniStat label="Exposure" value={fmt(report.gamma.gammaExposure)} />
               <MiniStat label="Positive Γ" value={fmt(report.gamma.positiveGamma)} />
               <MiniStat label="Negative Γ" value={fmt(report.gamma.negativeGamma)} />
@@ -202,14 +214,14 @@ function InstitutionalFlowPage() {
               <MiniStat label="Flip" value={report.gamma.gammaFlipStrike ?? "—"} />
               <MiniStat label="Availability" value={report.gamma.availability} />
             </div>
-            <p style={{ margin: "8px 0 0", fontSize: 11, opacity: 0.7 }}>{report.gamma.reason}</p>
+            <p className="mt-2 text-xs text-zinc-400">{report.gamma.reason}</p>
           </Section>
 
           <Section title="Sector Flow">
-            <div style={{ overflowX: "auto" }}>
-              <table style={tbl}>
+            <div className="table-responsive-container border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-950/40">
+              <table className="w-full border-collapse text-xs">
                 <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <tr className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/80">
                     <Th>Sector</Th>
                     <Th>Advances</Th>
                     <Th>Declines</Th>
@@ -218,9 +230,9 @@ function InstitutionalFlowPage() {
                     <Th>Bias</Th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-zinc-800/40 font-mono">
                   {report.sectorFlow.rows.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={r.id} className="hover:bg-zinc-800/30 transition-colors">
                       <Td>{r.name}</Td>
                       <Td>{r.advances ?? "—"}</Td>
                       <Td>{r.declines ?? "—"}</Td>
@@ -237,7 +249,7 @@ function InstitutionalFlowPage() {
           </Section>
 
           <Section title="Market Internals">
-            <div style={grid2}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
               <MiniStat label="Advances" value={report.internals.advances ?? "—"} />
               <MiniStat label="Declines" value={report.internals.declines ?? "—"} />
               <MiniStat label="A/D ratio" value={fmt(report.internals.advanceDeclineRatio)} />
@@ -253,42 +265,31 @@ function InstitutionalFlowPage() {
           </Section>
 
           <Section title="OI Heatmap">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))",
-                gap: 4,
-              }}
-            >
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-1.5">
               {report.heatmap.cells.map((c) => (
                 <div
                   key={c.strike}
                   title={`Strike ${c.strike} · OI ${c.totalOi ?? "—"}`}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: 6,
-                    textAlign: "center",
-                    background: `rgba(107,211,255,${(c.intensity * 0.6).toFixed(2)})`,
-                    border: c.isAtm
-                      ? "1px solid #6bd3ff"
+                  className={`p-2 rounded-lg text-center font-mono text-[11px] transition-transform hover:scale-105 ${
+                    c.isAtm
+                      ? "border border-cyan-400 bg-cyan-950/40 text-cyan-200"
                       : c.isMaxPain
-                        ? "1px dashed #ffcf6b"
-                        : "1px solid rgba(255,255,255,0.05)",
-                    fontSize: 11,
-                  }}
+                      ? "border border-amber-400/80 border-dashed bg-amber-950/30 text-amber-200"
+                      : "border border-zinc-800/80 bg-zinc-900/40 text-zinc-300"
+                  }`}
                 >
-                  <div style={{ fontWeight: 600 }}>{c.strike}</div>
-                  <div style={{ opacity: 0.75 }}>{fmt(c.totalOi)}</div>
+                  <div className="font-bold">{c.strike}</div>
+                  <div className="text-[10px] opacity-75">{fmt(c.totalOi)}</div>
                 </div>
               ))}
             </div>
           </Section>
 
           <Section title="OI Analysis (per-strike)">
-            <div style={{ overflowX: "auto" }}>
-              <table style={tbl}>
+            <div className="table-responsive-container border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-950/40">
+              <table className="w-full border-collapse text-xs">
                 <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <tr className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/80">
                     <Th>Call OI</Th>
                     <Th>Call ΔOI</Th>
                     <Th center>Strike</Th>
@@ -296,15 +297,17 @@ function InstitutionalFlowPage() {
                     <Th>Put OI</Th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-zinc-800/40 font-mono">
                   {report.oi.rows.map((r) => (
                     <tr
                       key={r.strike}
-                      style={{ background: r.isAtm ? "rgba(107,211,255,0.09)" : "transparent" }}
+                      className={`hover:bg-zinc-800/30 transition-colors ${
+                        r.isAtm ? "bg-cyan-950/25 border-y border-cyan-500/30 text-cyan-200" : ""
+                      }`}
                     >
                       <Td>{fmt(r.callOi)}</Td>
                       <Td>{fmt(r.callChangeOi)}</Td>
-                      <Td center bold>
+                      <Td center bold className={r.isAtm ? "text-cyan-300 font-extrabold" : "text-zinc-100"}>
                         {r.strike}
                       </Td>
                       <Td>{fmt(r.putChangeOi)}</Td>
@@ -323,43 +326,38 @@ function InstitutionalFlowPage() {
   );
 }
 
-function Card({ label, value }: { label: string; value: string | number }) {
+function Card({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: "cyan" | "emerald" | "amber" | "rose";
+}) {
+  const accentColor =
+    accent === "cyan"
+      ? "text-cyan-400"
+      : accent === "emerald"
+      ? "text-emerald-400"
+      : accent === "amber"
+      ? "text-amber-400"
+      : accent === "rose"
+      ? "text-rose-400"
+      : "text-zinc-100";
+
   return (
-    <div
-      style={{
-        padding: 10,
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 10,
-        background: "rgba(255,255,255,0.03)",
-      }}
-    >
-      <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{value}</div>
+    <div className="card-institutional p-3 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value mt-1.5 ${accentColor}`}>{value}</div>
     </div>
   );
 }
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section
-      style={{
-        marginTop: 18,
-        padding: 14,
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 12,
-        background: "rgba(255,255,255,0.02)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: 0.6,
-          color: "#6bd3ff",
-          fontWeight: 700,
-          marginBottom: 10,
-        }}
-      >
+    <section className="card-institutional p-4 mb-4 border-zinc-800/80 bg-zinc-900/40">
+      <div className="metric-label text-cyan-400 mb-3 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
         {title.toUpperCase()}
       </div>
       {children}
@@ -368,21 +366,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div style={{ padding: 8, background: "rgba(0,0,0,0.25)", borderRadius: 8 }}>
-      <div style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    <div className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-lg">
+      <div className="metric-label">{label}</div>
+      <div className="text-xs sm:text-sm font-bold font-mono text-zinc-100 mt-1">{value}</div>
     </div>
   );
 }
 function Th({ children, center }: { children: React.ReactNode; center?: boolean }) {
   return (
     <th
-      style={{
-        padding: "8px 10px",
-        textAlign: center ? "center" : "right",
-        fontWeight: 600,
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
+      className={`px-3 py-2.5 font-mono text-[11px] font-semibold text-zinc-400 uppercase tracking-wider ${
+        center ? "text-center" : "text-right"
+      }`}
     >
       {children}
     </th>
@@ -392,19 +387,18 @@ function Td({
   children,
   center,
   bold,
+  className = "",
 }: {
   children: React.ReactNode;
   center?: boolean;
   bold?: boolean;
+  className?: string;
 }) {
   return (
     <td
-      style={{
-        padding: "6px 10px",
-        textAlign: center ? "center" : "right",
-        fontWeight: bold ? 700 : 400,
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
-      }}
+      className={`px-3 py-2 font-mono text-xs ${
+        center ? "text-center" : "text-right"
+      } ${bold ? "font-bold text-zinc-100" : "text-zinc-300"} ${className}`}
     >
       {children}
     </td>

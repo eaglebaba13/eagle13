@@ -77,7 +77,7 @@ function StrategyAnalyticsPage() {
         {STRATEGY_VALIDATION_DISCLAIMER}
       </div>
 
-      <nav className="flex flex-wrap gap-2 border-b border-border/60 pb-2 text-xs">
+      <nav className="flex flex-wrap gap-2 border-b border-zinc-800/80 pb-2 text-xs">
         {(
           [
             ["overview", "Overview"],
@@ -93,10 +93,10 @@ function StrategyAnalyticsPage() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`rounded-md border px-3 py-1 ${
+            className={`rounded-lg px-3 py-1.5 transition-colors font-medium ${
               tab === id
-                ? "border-primary/60 bg-primary/10 text-primary"
-                : "border-border/60 text-muted-foreground"
+                ? "pill-active"
+                : "pill-inactive"
             }`}
           >
             {label}
@@ -281,9 +281,9 @@ function ReportView({
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-border/60 bg-background/50 p-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <div className="mt-2">{children}</div>
+    <div className="card-institutional p-4 border-zinc-800/80 bg-zinc-900/40">
+      <h2 className="metric-label text-cyan-400 mb-2">{title}</h2>
+      <div>{children}</div>
     </div>
   );
 }
@@ -295,29 +295,31 @@ function Table({
   head: readonly string[];
   rows: readonly (readonly (string | number)[])[];
 }) {
-  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No rows.</p>;
+  if (rows.length === 0) return <p className="text-xs text-zinc-500">No rows.</p>;
   return (
-    <table className="w-full border-collapse text-xs">
-      <thead>
-        <tr className="text-left text-muted-foreground">
-          {head.map((h) => (
-            <th key={h} className="border-b border-border/60 py-1 pr-3 font-medium">
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, i) => (
-          <tr key={i} className="text-foreground">
-            {r.map((c, j) => (
-              <td key={j} className="border-b border-border/40 py-1 pr-3">
-                {c}
-              </td>
+    <div className="table-responsive-container">
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr className="text-left text-zinc-400 font-mono text-[11px]">
+            {head.map((h) => (
+              <th key={h} className="border-b border-zinc-800/80 py-2 pr-3 font-semibold uppercase tracking-wider">
+                {h}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-zinc-800/40 font-mono">
+          {rows.map((r, i) => (
+            <tr key={i} className="hover:bg-zinc-800/30 transition-colors text-zinc-200">
+              {r.map((c, j) => (
+                <td key={j} className="py-2 pr-3">
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

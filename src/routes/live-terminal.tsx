@@ -326,6 +326,7 @@ function LiveTerminal() {
 
   return (
     <div
+      className="overflow-x-hidden"
       style={{
         background: C.bg,
         minHeight: "100vh",

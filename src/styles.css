@@ -224,13 +224,23 @@ body {
  * glass-morphism surfaces and soft gold-gradient borders.
  * ====================================================================== */
 :root {
+  /* Canonical Institutional Cyber-Obsidian Tokens */
+  --eb-bg-obsidian: #070a0e;
+  --eb-surface-glass: rgba(24, 24, 27, 0.4);
+  --eb-border-obsidian: rgba(39, 39, 42, 0.8);
+  --eb-border-hover: rgba(63, 63, 70, 0.8);
+  --eb-cyan: #22d3ee;
+  --eb-emerald: #34d399;
+  --eb-amber: #fbbf24;
+  --eb-violet: #c084fc;
+
   /* Premium institutional charcoal — Bloomberg/TradingView inspired.
    * Deep neutral grey, never pure black; layered for elevation. */
-  --eb-bg: #17181c;
-  --eb-bg2: #1d1f24;
-  --eb-bg3: #24272d;
-  --eb-card: #1f2228;
-  --eb-border: #2f333b;
+  --eb-bg: #070a0e;
+  --eb-bg2: #0d1117;
+  --eb-bg3: #161b22;
+  --eb-card: rgba(24, 24, 27, 0.45);
+  --eb-border: rgba(39, 39, 42, 0.8);
   /* Signature luxury gold */
   --eb-accent: #d4af37;
   --eb-accent2: #b8860b;
@@ -273,6 +283,84 @@ body {
   --eb-mono: "JetBrains Mono", ui-monospace, monospace;
   --eb-head: "Space Grotesk", system-ui, sans-serif;
   --eb-body: "Inter", system-ui, sans-serif;
+}
+
+/* =========================================================================
+ * Institutional Cyber-Obsidian Utility Classes
+ * ====================================================================== */
+.card-institutional {
+  background-color: rgba(24, 24, 27, 0.4);
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-institutional:hover {
+  border-color: rgba(63, 63, 70, 0.8);
+}
+
+.pill-active {
+  background-color: rgb(39, 39, 42);
+  color: rgb(34, 211, 238);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  font-weight: 600;
+}
+
+.pill-inactive {
+  color: rgb(161, 161, 170);
+  background-color: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.pill-inactive:hover {
+  color: rgb(228, 228, 231);
+  background-color: rgba(39, 39, 42, 0.5);
+}
+
+.metric-label {
+  font-family: var(--eb-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(161, 161, 170);
+}
+@media (min-width: 640px) {
+  .metric-label {
+    font-size: 11px;
+  }
+}
+
+.metric-value {
+  font-family: var(--eb-body);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(244, 244, 245);
+}
+@media (min-width: 640px) {
+  .metric-value {
+    font-size: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .metric-value {
+    font-size: 1.125rem;
+  }
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 63, 70, 0.6) transparent;
+}
+.table-responsive-container::-webkit-scrollbar {
+  height: 6px;
+}
+.table-responsive-container::-webkit-scrollbar-thumb {
+  background: rgba(63, 63, 70, 0.6);
+  border-radius: 9999px;
 }
 
 /* --------------------------------------------------------------------------

@@ -36,7 +36,7 @@ function AppShellHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 hidden items-center gap-3 border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:flex"
+      className="sticky top-0 z-30 hidden items-center gap-3 border-b border-zinc-800/80 bg-[#070a0e]/90 px-4 py-2.5 backdrop-blur-md md:flex"
       aria-label="Page header"
     >
       <button
@@ -98,15 +98,17 @@ function AppShellHeader() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full bg-background text-foreground">
+    <div className="flex min-h-screen w-full bg-[#070a0e] text-zinc-100 overflow-x-hidden">
+      {/* Ambient Cyber-Obsidian background glow */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-15%,rgba(34,211,238,0.04),transparent)] pointer-events-none z-0" />
       {/* Sidebar: desktop only (lg+). Tablet + mobile use MobileNav drawer. */}
-      <div className="hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
+      <div className="relative z-10 hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
         <AppSidebar />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-x-hidden">
         <AppShellHeader />
         <LiveMarketTickerTape />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

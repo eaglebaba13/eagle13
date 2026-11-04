@@ -258,7 +258,7 @@ function BacktestPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, padding: "18px 16px 96px" }}>
+    <div className="overflow-x-hidden" style={{ minHeight: "100vh", background: C.bg, color: C.text, padding: "18px 16px 96px" }}>
       <header
         style={{
           display: "flex",

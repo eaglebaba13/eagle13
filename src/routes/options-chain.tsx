@@ -176,35 +176,25 @@ function OptionsChainPage() {
     : false;
 
   return (
-    <div
-      className="eb-page eb-content"
-      style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 16px" }}
-    >
-      <header style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: 11,
-            letterSpacing: 0.6,
-            fontWeight: 700,
-            color: "var(--eb-blue)",
-            marginBottom: 6,
-          }}
-        >
+    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+      <header className="mb-4">
+        <div className="text-[11px] font-mono font-bold tracking-wider text-cyan-400 mb-1 flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           MARKET · OPTIONS CHAIN
         </div>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50">
           Live Option Chain — NIFTY & BANKNIFTY
         </h1>
-        <p style={{ margin: "6px 0 0", opacity: 0.7, fontSize: 13 }}>
+        <p className="mt-1 text-xs sm:text-sm text-zinc-400">
           Read-only snapshot foundation. No signals emitted at this stage. Combined PCR, Max Pain
           and OI Build-up will consume this snapshot in later phases.
         </p>
       </header>
 
       {/* Toolbar */}
-      <div style={toolbarStyle}>
-        <label style={{ fontSize: 12 }}>
-          Underlying
+      <div className="card-institutional p-3.5 flex flex-wrap gap-3 items-end mb-4 bg-zinc-900/60 border-zinc-800/80">
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Underlying</span>
           <select
             value={state.underlying}
             onChange={(e) =>
@@ -214,18 +204,18 @@ function OptionsChainPage() {
                 expiry: null,
               }))
             }
-            style={selectStyle}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
           >
             <option value="NIFTY">NIFTY</option>
             <option value="BANKNIFTY">BANKNIFTY</option>
           </select>
         </label>
-        <label style={{ fontSize: 12 }}>
-          Expiry
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Expiry</span>
           <select
             value={state.expiry ?? ""}
             onChange={(e) => setState((s) => ({ ...s, expiry: e.target.value || null }))}
-            style={selectStyle}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
           >
             <option value="">— current weekly —</option>
             {expiries.all.map((e) => (
@@ -235,12 +225,12 @@ function OptionsChainPage() {
             ))}
           </select>
         </label>
-        <label style={{ fontSize: 12 }}>
-          Strike filter
+        <label className="text-xs text-zinc-400 flex flex-col gap-1">
+          <span className="metric-label">Strike filter</span>
           <select
             value={atmMode}
             onChange={(e) => setAtmMode(e.target.value as AtmMode)}
-            style={selectStyle}
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
           >
             <option value="ATM">ATM</option>
             <option value="ATM_5">ATM ± 5</option>
@@ -248,18 +238,22 @@ function OptionsChainPage() {
             <option value="ATM_20">ATM ± 20</option>
           </select>
         </label>
-        <button onClick={() => load()} disabled={loading} style={btnPrimary}>
+        <button
+          onClick={() => load()}
+          disabled={loading}
+          className="pill-active px-3.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-zinc-700/80 transition-colors disabled:opacity-50"
+        >
           {loading ? "Loading…" : "Fetch Live"}
         </button>
         <button
           onClick={() => load({ useMock: true, scenario: mockScenario || "SIDEWAYS" })}
           disabled={loading}
-          style={btnSecondary}
+          className="px-3.5 py-1.5 rounded-lg text-xs text-zinc-300 bg-zinc-800/60 border border-zinc-700/60 hover:bg-zinc-700/60 transition-colors cursor-pointer disabled:opacity-50"
         >
           Fetch Mock
         </button>
         {snapshot && (
-          <>
+          <div className="flex items-center gap-1.5 ml-auto">
             <button
               onClick={() =>
                 download(
@@ -268,7 +262,7 @@ function OptionsChainPage() {
                   snapshotToCsv(snapshot),
                 )
               }
-              style={btnGhost}
+              className="px-2.5 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
             >
               CSV
             </button>
@@ -280,7 +274,7 @@ function OptionsChainPage() {
                   snapshotToJson(snapshot),
                 )
               }
-              style={btnGhost}
+              className="px-2.5 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
             >
               JSON
             </button>
@@ -293,12 +287,12 @@ function OptionsChainPage() {
                     JSON.stringify(buildResearchBundle(snapshot, quality), null, 2),
                   )
                 }
-                style={btnGhost}
+                className="px-2.5 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors"
               >
-                Research Bundle
+                Bundle
               </button>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -320,9 +314,9 @@ function OptionsChainPage() {
 
       {/* Header cards */}
       {!showBlocking && (
-        <div style={cardsGridStyle}>
-          <Card label="Spot" value={snapshot?.spotPrice ?? "—"} />
-          <Card label="ATM" value={atm?.atm ?? "—"} />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3 mb-4">
+          <Card label="Spot" value={snapshot?.spotPrice ?? "—"} accent="cyan" />
+          <Card label="ATM" value={atm?.atm ?? "—"} accent="emerald" />
           <Card label="Expiry" value={snapshot?.expiry ?? "—"} />
           <Card label="Total Strikes" value={snapshot?.strikes.length ?? 0} />
           <Card label="Filtered" value={filtered?.included.length ?? 0} />
@@ -334,6 +328,7 @@ function OptionsChainPage() {
           <Card
             label="Quality"
             value={quality?.ok ? "OK" : quality ? `${quality.issues.length} issue(s)` : "—"}
+            accent={quality?.ok ? "emerald" : "amber"}
           />
         </div>
       )}
@@ -348,7 +343,7 @@ function OptionsChainPage() {
 
       {/* Chart */}
       {filtered && filtered.included.length > 0 && (
-        <Suspense fallback={<div style={{ padding: 16, opacity: 0.6 }}>Loading chart…</div>}>
+        <Suspense fallback={<div className="p-4 text-xs text-zinc-500">Loading chart…</div>}>
           <OptionChainChart
             strikes={filtered.included}
             spot={snapshot?.spotPrice ?? null}
@@ -359,17 +354,10 @@ function OptionsChainPage() {
 
       {/* Strike table */}
       {metrics.length > 0 && (
-        <div
-          style={{
-            overflowX: "auto",
-            marginTop: 16,
-            border: "1px solid var(--eb-line)",
-            borderRadius: 12,
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <div className="table-responsive-container mt-4 border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-950/40 backdrop-blur-md">
+          <table className="w-full border-collapse text-xs">
             <thead>
-              <tr style={{ background: "var(--eb-tint)" }}>
+              <tr className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/80">
                 <Th>Call OI</Th>
                 <Th>Call ΔOI</Th>
                 <Th>Call Vol</Th>
@@ -381,19 +369,21 @@ function OptionsChainPage() {
                 <Th>Put OI</Th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-800/40">
               {metrics.map((m) => {
                 const isAtm = m.strike === atm?.atm;
                 return (
                   <tr
                     key={m.strike}
-                    style={{ background: isAtm ? "var(--eb-atm-tint)" : "transparent" }}
+                    className={`transition-colors hover:bg-zinc-800/30 ${
+                      isAtm ? "bg-cyan-950/25 border-y border-cyan-500/30 text-cyan-200" : ""
+                    }`}
                   >
                     <Td>{fmt(m.callOi)}</Td>
                     <Td>{fmt(m.callChangeOi)}</Td>
                     <Td>{fmt(m.callVolume)}</Td>
                     <Td>{fmt(m.callIv)}</Td>
-                    <Td center bold>
+                    <Td center bold className={isAtm ? "text-cyan-300 font-extrabold" : "text-zinc-100"}>
                       {m.strike}
                     </Td>
                     <Td>{fmt(m.putIv)}</Td>
@@ -409,23 +399,23 @@ function OptionsChainPage() {
       )}
 
       {/* Research panel */}
-      <div style={{ marginTop: 20, border: "1px solid var(--eb-line)", borderRadius: 12 }}>
+      <div className="card-institutional mt-5 overflow-hidden border-zinc-800/80">
         <button
           onClick={() => setShowResearch((s) => !s)}
-          style={{ ...btnGhost, width: "100%", textAlign: "left", padding: "10px 14px" }}
+          className="w-full text-left px-4 py-3 text-xs font-medium text-zinc-300 hover:text-cyan-300 transition-colors flex items-center justify-between"
         >
-          {showResearch ? "▼" : "▶"} Research Panel{" "}
-          {snapshot ? `(${snapshot.strikes.length} strikes)` : ""}
+          <span>{showResearch ? "▼" : "▶"} Research Panel {snapshot ? `(${snapshot.strikes.length} strikes)` : ""}</span>
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Diagnostics</span>
         </button>
         {showResearch && (
-          <div style={{ padding: 14, fontSize: 12, lineHeight: 1.55 }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}>
-              <label>
-                Mock scenario
+          <div className="p-4 border-t border-zinc-800/60 text-xs text-zinc-300 space-y-3 bg-zinc-950/30">
+            <div className="flex gap-3 items-center mb-2">
+              <label className="text-zinc-400 text-xs flex items-center gap-2">
+                <span>Mock scenario:</span>
                 <select
                   value={mockScenario}
                   onChange={(e) => setMockScenario(e.target.value)}
-                  style={selectStyle}
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-200 rounded px-2 py-1 text-xs"
                 >
                   {[
                     "",
@@ -465,7 +455,7 @@ function OptionsChainPage() {
         )}
       </div>
 
-      <p style={{ marginTop: 20, fontSize: 11, opacity: 0.5 }}>
+      <p className="mt-5 text-[11px] text-zinc-500 font-mono">
         Foundation only. No CE/PE signals, no Decision Engine wiring, no order paths.
       </p>
     </div>
@@ -540,32 +530,39 @@ const cardsGridStyle: React.CSSProperties = {
   marginBottom: 14,
 };
 
-function Card({ label, value }: { label: string; value: string | number }) {
+function Card({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: "cyan" | "emerald" | "amber" | "rose";
+}) {
+  const accentColor =
+    accent === "cyan"
+      ? "text-cyan-400"
+      : accent === "emerald"
+      ? "text-emerald-400"
+      : accent === "amber"
+      ? "text-amber-400"
+      : accent === "rose"
+      ? "text-rose-400"
+      : "text-zinc-100";
+
   return (
-    <div
-      style={{
-        padding: 10,
-        border: "1px solid var(--eb-line)",
-        borderRadius: 10,
-        background: "var(--eb-tint)",
-      }}
-    >
-      <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{value}</div>
+    <div className="card-institutional p-3 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value mt-1.5 ${accentColor}`}>{value}</div>
     </div>
   );
 }
 function Th({ children, center }: { children: React.ReactNode; center?: boolean }) {
   return (
     <th
-      style={{
-        padding: "8px 10px",
-        textAlign: center ? "center" : "right",
-        fontWeight: 600,
-        borderBottom: "1px solid var(--eb-line)",
-      }}
+      className={`px-3 py-2.5 font-mono text-[11px] font-semibold text-zinc-400 uppercase tracking-wider ${
+        center ? "text-center" : "text-right"
+      }`}
     >
       {children}
     </th>
@@ -575,19 +572,18 @@ function Td({
   children,
   center,
   bold,
+  className = "",
 }: {
   children: React.ReactNode;
   center?: boolean;
   bold?: boolean;
+  className?: string;
 }) {
   return (
     <td
-      style={{
-        padding: "6px 10px",
-        textAlign: center ? "center" : "right",
-        fontWeight: bold ? 700 : 400,
-        borderBottom: "1px solid var(--eb-tint)",
-      }}
+      className={`px-3 py-2 font-mono text-xs ${
+        center ? "text-center" : "text-right"
+      } ${bold ? "font-bold text-zinc-100" : "text-zinc-300"} ${className}`}
     >
       {children}
     </td>
