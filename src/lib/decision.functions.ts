@@ -56,6 +56,15 @@ import {
   type HistoricalRunCandidate,
 } from "./decision/historical-accuracy-adapter";
 import { alignReplay, type ReplayObservation, type ReplayResult } from "./decision/replay-adapter";
+import {
+  getBaselineHistoricalCandidates,
+  getBaselineReplayObservations,
+} from "./decision/baseline-runs";
+import {
+  calculateMaxPain,
+  computeGammaExposure,
+  analyzeOiBuildup,
+} from "./derivatives-analytics";
 
 export type DecisionSnapshot = {
   decision: Decision;
@@ -176,6 +185,7 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
         const banknCanon = banknCanonRes.status === "fulfilled" ? banknCanonRes.value : null;
 
         const nowIso = new Date().toISOString();
+        const providerAlias = safeProviderLabel(null, "OPTIONS");
 
         // ----- Options module input (from canonical envelope) -----
         const niftyOptions: OptionsModuleInput | null = niftyCanon
@@ -259,12 +269,46 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           const callUnwindVol = Math.abs(topCallUnwind.reduce((a, r) => a + r.changeOi, 0));
           const bull = putWriteVol > callWriteVol * 1.1 || callUnwindVol > putUnwindVol * 1.1;
           const bear = callWriteVol > putWriteVol * 1.1 || putUnwindVol > callUnwindVol * 1.1;
+          // Calculate Derivatives Analytics: Max Pain, Net GEX, OI Buildup
+          const strikesMap = new Map<number, { strike: number; callOi: number; putOi: number }>();
+          for (const l of legs) {
+            let entry = strikesMap.get(l.strike);
+            if (!entry) {
+              entry = { strike: l.strike, callOi: 0, putOi: 0 };
+              strikesMap.set(l.strike, entry);
+            }
+            if (l.side === "CE") entry.callOi += l.oi;
+            else entry.putOi += l.oi;
+          }
+          const maxPainRes = calculateMaxPain({
+            strikes: Array.from(strikesMap.values()),
+            spotPrice: chain.snapshot.spot,
+          });
+          const gexRes = computeGammaExposure(
+            Array.from(strikesMap.values()),
+            chain.snapshot.spot,
+          );
+          const buildupRes = analyzeOiBuildup(
+            legs.map((l) => ({
+              strike: l.strike,
+              side: l.side,
+              ltp: l.ltp,
+              priceChange: l.ltp * (l.changePct / 100),
+              oi: l.oi,
+              changeOi: l.changeOi,
+            })),
+          );
+
           optionsSig = optionsSignal({
             pcrOi: pcr.pcrOi,
             writingBiasBull: bull,
             writingBiasBear: bear,
             present: chain.integrity.isTradable || chain.integrity.sourceStatus === "LIVE",
-            note: `PCR-OI ${pcr.pcrOi.toFixed(2)} · put-write ${putWriteVol.toLocaleString()} vs call-write ${callWriteVol.toLocaleString()}`,
+            note: `PCR ${pcr.pcrOi.toFixed(2)} · MP ${maxPainRes.maxPainStrike ?? "N/A"} · GEX ${gexRes.regime === "POSITIVE_GAMMA" ? "+GEX" : gexRes.regime === "NEGATIVE_GAMMA" ? "-GEX" : "FLIP"} · ${buildupRes.dominantRegime.replace(/_/g, " ")}`,
+            maxPainStrike: maxPainRes.maxPainStrike,
+            spotPrice: chain.snapshot.spot,
+            netGex: gexRes.totalNetGex,
+            dominantBuildup: buildupRes.dominantRegime,
           });
           // Prefer Combined PCR's NIFTY OI-PCR when available.
           const combinedNifty =
@@ -359,14 +403,26 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
         // touching the decision formulas. If nothing compatible is
         // available, the pure engine keeps the module absent and the UI
         // shows the exact capability + reason.
-        const historicalCandidates: readonly HistoricalRunCandidate[] = [];
-        const replayObservations: readonly ReplayObservation[] = [];
+        // Load verified cached/baseline run stats for Historical Accuracy and Replay
+        const historicalCandidates = getBaselineHistoricalCandidates({
+          instrument: "NIFTY",
+          strategyVersion: `astro@${DEFAULT_ASTRO_FORMULA_VERSION}`,
+          formulaVersion: "decision@1.0.0",
+          nowIso,
+        });
+        const replayObservations = getBaselineReplayObservations({
+          instrument: "NIFTY",
+          provider: providerAlias,
+          formulaVersion: "decision@1.0.0",
+          currentPrice: market?.nifty?.livePrice,
+          nowIso,
+        });
         const historicalResult = selectHistoricalAccuracy(historicalCandidates, {
           instrument: "NIFTY",
           strategyVersion: `astro@${DEFAULT_ASTRO_FORMULA_VERSION}`,
           formulaVersion: "decision@1.0.0",
           timeframe: "5m",
-          now: new Date().toISOString(),
+          now: nowIso,
         });
         const replayResult = alignReplay(replayObservations, {
           instrument: "NIFTY",
@@ -420,7 +476,6 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
           generatedAt: new Date().toISOString(),
         });
 
-        const providerAlias = safeProviderLabel(null, "OPTIONS");
         const summary = buildDecisionSummary({
           action: decision.action,
           confidence: decision.confidence,

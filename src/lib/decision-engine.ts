@@ -516,24 +516,48 @@ export function optionsSignal(inp: {
   writingBiasBear: boolean;
   present: boolean;
   note?: string;
+  maxPainStrike?: number | null;
+  spotPrice?: number | null;
+  netGex?: number | null;
+  dominantBuildup?: string | null;
 }): ModuleSignal {
   if (!inp.present || inp.pcrOi == null) {
     return absent("options", 0.2);
   }
   // Put writing (bull) vs call writing (bear) is the dominant driver.
   let score = 0;
-  if (inp.writingBiasBull) score += 0.5;
-  if (inp.writingBiasBear) score -= 0.5;
+  if (inp.writingBiasBull) score += 0.4;
+  if (inp.writingBiasBear) score -= 0.4;
   // PCR-OI: >1.1 bullish, <0.85 bearish (matches existing thresholds).
-  if (inp.pcrOi >= 1.1) score += 0.3;
-  else if (inp.pcrOi <= 0.85) score -= 0.3;
+  if (inp.pcrOi >= 1.1) score += 0.25;
+  else if (inp.pcrOi <= 0.85) score -= 0.25;
+
+  // Max Pain magnet pull
+  if (inp.maxPainStrike != null && inp.spotPrice != null && inp.spotPrice > 0) {
+    const diffPct = ((inp.maxPainStrike - inp.spotPrice) / inp.spotPrice) * 100;
+    if (diffPct > 0.4) score += 0.15;
+    else if (diffPct < -0.4) score -= 0.15;
+  }
+
+  // Net GEX dealer stabilization / acceleration
+  if (inp.netGex != null && Number.isFinite(inp.netGex)) {
+    if (inp.netGex > 0) score += 0.1;
+    else if (inp.netGex < 0) score -= 0.1;
+  }
+
+  // OI Buildup
+  if (inp.dominantBuildup === "LONG_BUILDUP") score += 0.1;
+  else if (inp.dominantBuildup === "SHORT_BUILDUP") score -= 0.1;
+  else if (inp.dominantBuildup === "SHORT_COVERING") score += 0.05;
+  else if (inp.dominantBuildup === "LONG_UNWINDING") score -= 0.05;
+
   score = clamp(score, -1, 1);
   return {
     key: "options",
     label: "Options",
     bias: biasFromScore(score),
     score,
-    confidence: 0.8,
+    confidence: 0.85,
     weight: 0.2,
     present: true,
     note: inp.note ?? `PCR-OI ${inp.pcrOi.toFixed(2)}`,

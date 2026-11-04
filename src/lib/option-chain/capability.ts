@@ -198,7 +198,8 @@ export function evaluateOptionChainCapability(
         suggestedAction: "Review data-quality issues in the Research Panel.",
       };
     }
-    if (q.issues.length > 0) {
+    const hasPartialSnapshot = q.issues.some((i) => i.code === "PARTIAL_SNAPSHOT");
+    if (hasPartialSnapshot || snap.dataQuality === "PARTIAL") {
       const codes = q.issues.map((i) => i.code).join(", ");
       const first = q.issues[0]?.detail ?? "";
       return {
@@ -227,7 +228,10 @@ export function evaluateOptionChainCapability(
     ...b,
     status: "SUPPORTED",
     retryable: false,
-    reason: "Live option chain available.",
+    reason:
+      q && q.issues.length > 0
+        ? `Live option chain supported (${q.issues.length} non-critical warning(s))`
+        : "Live option chain available.",
     failingStage: null,
     suggestedAction: "",
   };

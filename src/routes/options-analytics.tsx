@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ApexChart } from "@/components/ApexChart";
+import type { ApexOptions } from "apexcharts";
+import {
+  calculateMaxPain,
+  computeGammaExposure,
+  analyzeOiBuildup,
+  type MaxPainResult,
+  type GammaExposureResult,
+  type AggregateBuildupResult,
+} from "@/lib/derivatives-analytics";
 
 import { useHydrated } from "@/hooks/use-hydrated";
 import { getOptionsChain, type OptionsSymbol } from "@/lib/options-chain.functions";
@@ -239,10 +249,48 @@ function OptionsAnalyticsPage() {
 
     const focus = confirmFocus(focusHistory.current);
 
+    // Derivatives Analytics: Max Pain, Net GEX, OI Buildup
+    const strikesMap = new Map<number, { strike: number; callOi: number; putOi: number }>();
+    for (const l of snapshot.legs) {
+      let entry = strikesMap.get(l.strike);
+      if (!entry) {
+        entry = { strike: l.strike, callOi: 0, putOi: 0 };
+        strikesMap.set(l.strike, entry);
+      }
+      if (l.side === "CE") entry.callOi += l.oi;
+      else entry.putOi += l.oi;
+    }
+
+    const maxPainData = calculateMaxPain({
+      strikes: Array.from(strikesMap.values()),
+      spotPrice: snapshot.spot,
+    });
+
+    const gexData = computeGammaExposure(
+      Array.from(strikesMap.values()),
+      snapshot.spot,
+      3,
+    );
+
+    const buildupData = analyzeOiBuildup(
+      snapshot.legs.map((l) => ({
+        strike: l.strike,
+        side: l.side,
+        ltp: l.ltp,
+        priceChange: l.ltp * (l.changePct / 100),
+        oi: l.oi,
+        changeOi: l.changeOi,
+        volume: l.volume,
+      })),
+    );
+
     return {
       atm,
       pcr,
       mp,
+      maxPainData,
+      gexData,
+      buildupData,
       levelsWithConfluence,
       callWritingRows,
       putWritingRows,
@@ -413,8 +461,8 @@ function OptionsAnalyticsPage() {
               : "WAIT";
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1rem" }}>
+    <div className="min-h-screen bg-[#070a0e] text-zinc-100 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900/40 via-transparent to-transparent">
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
         {isDemo && <DemoBanner />}
         <SourceBar
           sourceStatus={sourceStatus}
@@ -553,16 +601,8 @@ function OptionsAnalyticsPage() {
         )}
 
         {/* Controls */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.5rem",
-            marginBottom: "1rem",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", gap: "0.25rem" }}>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 p-1 bg-zinc-900/60 border border-zinc-800 rounded-lg">
             {(["NIFTY", "BANKNIFTY"] as OptionsSymbol[]).map((s) => (
               <button
                 key={s}
@@ -570,38 +610,28 @@ function OptionsAnalyticsPage() {
                   setSymbol(s);
                   setExpiry(undefined);
                 }}
-                style={{
-                  padding: "0.4rem 0.75rem",
-                  border: `1px solid ${symbol === s ? C.gold : C.border}`,
-                  background: symbol === s ? "rgba(255,180,0,0.1)" : "transparent",
-                  color: C.text,
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                }}
+                className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-all ${
+                  symbol === s ? "pill-active" : "pill-inactive"
+                }`}
               >
                 {s === "NIFTY" ? "NIFTY 50" : "BANK NIFTY"}
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
+          <div className="flex items-center gap-1.5 flex-wrap">
             {expiries.map((e) => (
               <button
                 key={e.expiry}
                 onClick={() => setExpiry(e.expiry)}
-                style={{
-                  padding: "0.4rem 0.6rem",
-                  border: `1px solid ${e.expiry === selectedExpiry ? C.blue : C.border}`,
-                  background: e.expiry === selectedExpiry ? "rgba(70,130,255,0.1)" : "transparent",
-                  color: C.text,
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: "0.8rem",
-                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all ${
+                  e.expiry === selectedExpiry
+                    ? "bg-zinc-800 text-cyan-300 border border-cyan-500/50"
+                    : "bg-zinc-900/40 text-zinc-400 border border-zinc-800 hover:text-zinc-200"
+                }`}
                 title={e.category}
               >
                 {e.expiry} · {e.daysToExpiry}d ·{" "}
-                <span style={{ color: C.muted }}>{e.category.replace("_", " ")}</span>
+                <span className="text-zinc-500">{e.category.replace("_", " ")}</span>
               </button>
             ))}
           </div>
@@ -609,6 +639,9 @@ function OptionsAnalyticsPage() {
 
         {!analytics ? null : (
           <>
+            {/* Max Pain Strike Highlight Badge */}
+            <MaxPainSection data={analytics.maxPainData} />
+
             {/* Summary cards */}
             <div
               style={{
@@ -890,6 +923,12 @@ function OptionsAnalyticsPage() {
               />
             </div>
 
+            {/* Dealer Gamma Exposure (GEX) Profile */}
+            <GexProfileSection data={analytics.gexData} spot={snapshot.spot} />
+
+            {/* Institutional OI Build-up & Sentiment Breakdown */}
+            <OiBuildupSection data={analytics.buildupData} />
+
             {/* Option chain table */}
             <div style={{ marginBottom: "1rem" }}>
               <div
@@ -1082,37 +1121,26 @@ function Card({
   label: string;
   value: string | number;
   sub?: string;
-  tone?: "green" | "red";
+  tone?: "green" | "red" | "cyan" | "gold";
 }) {
+  const toneColor =
+    tone === "green"
+      ? "text-emerald-400"
+      : tone === "red"
+        ? "text-rose-400"
+        : tone === "cyan"
+          ? "text-cyan-400"
+          : tone === "gold"
+            ? "text-amber-400"
+            : "text-zinc-100";
+
   return (
-    <div
-      style={{
-        padding: "0.6rem 0.75rem",
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 8,
-      }}
-    >
-      <div
-        style={{
-          color: C.muted,
-          fontSize: "0.7rem",
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: "1.05rem",
-          fontWeight: 700,
-          color: tone === "green" ? C.green : tone === "red" ? C.red : C.text,
-        }}
-      >
+    <div className="card-institutional p-3 sm:p-4 flex flex-col justify-between">
+      <div className="metric-label">{label}</div>
+      <div className={`metric-value text-base sm:text-lg font-mono ${toneColor} mt-1`}>
         {value}
       </div>
-      {sub && <div style={{ color: C.muted, fontSize: "0.75rem" }}>{sub}</div>}
+      {sub && <div className="text-xs text-zinc-400 font-mono mt-0.5 truncate">{sub}</div>}
     </div>
   );
 }
@@ -1126,46 +1154,359 @@ function MatrixPanel({
   rows: { strike: number; changeOi: number; oi: number; distance: number }[];
   tone: "green" | "red";
 }) {
+  const isGreen = tone === "green";
   return (
-    <div
-      style={{
-        padding: "0.6rem 0.75rem",
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 8,
-      }}
-    >
-      <div style={{ fontWeight: 700, marginBottom: 6, color: tone === "green" ? C.green : C.red }}>
-        {title}
+    <div className="card-institutional p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-semibold text-xs sm:text-sm text-zinc-200">{title}</span>
+        <span
+          className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+            isGreen
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+          }`}
+        >
+          {isGreen ? "BULLISH" : "BEARISH"}
+        </span>
       </div>
       {rows.length === 0 ? (
-        <div style={{ color: C.muted, fontSize: "0.8rem" }}>No signal in current snapshot.</div>
+        <div className="text-zinc-500 text-xs py-2">No signal in current snapshot.</div>
       ) : (
-        <table style={{ width: "100%", fontSize: "0.78rem" }}>
+        <table className="w-full text-xs font-mono">
           <tbody>
             {rows.map((r) => (
-              <tr key={r.strike}>
-                <td style={{ padding: "2px 0", fontWeight: 600 }}>
-                  {r.strike.toLocaleString("en-IN")}
+              <tr key={r.strike} className="border-t border-zinc-800/60 hover:bg-zinc-800/30">
+                <td className="py-1 font-semibold text-zinc-200">{fmt(r.strike)}</td>
+                <td className={`py-1 text-right ${isGreen ? "text-emerald-400" : "text-rose-400"}`}>
+                  +{fmt(r.changeOi)}
                 </td>
-                <td
-                  style={{
-                    padding: "2px 0",
-                    textAlign: "right",
-                    color: r.changeOi >= 0 ? C.green : C.red,
-                  }}
-                >
-                  {r.changeOi >= 0 ? "+" : ""}
-                  {r.changeOi.toLocaleString("en-IN")}
-                </td>
-                <td style={{ padding: "2px 0", textAlign: "right", color: C.muted }}>
-                  OI {r.oi.toLocaleString("en-IN")}
-                </td>
+                <td className="py-1 text-right text-zinc-400">{fmt(r.oi)}</td>
+                <td className="py-1 text-right text-zinc-500 text-[10px]">{fmt(r.distance, 1)} pts</td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+    </div>
+  );
+}
+
+function MaxPainSection({ data }: { data: MaxPainResult }) {
+  if (!data.maxPainStrike) return null;
+  const isAbove = data.bias === "ABOVE_SPOT";
+  const isBelow = data.bias === "BELOW_SPOT";
+  const badgeColor = isAbove
+    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+    : isBelow
+      ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+      : "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+
+  return (
+    <div className="card-institutional p-4 border-l-4 border-l-cyan-500 flex flex-wrap items-center justify-between gap-4 mb-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-mono font-bold text-lg">
+          MP
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-zinc-200">Max Pain Strike:</span>
+            <span className="text-xl font-bold font-mono text-cyan-300">{fmt(data.maxPainStrike)}</span>
+            <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${badgeColor}`}>
+              {data.bias.replace(/_/g, " ")}
+            </span>
+          </div>
+          <div className="text-xs text-zinc-400 mt-0.5">
+            Spot: <span className="font-mono text-zinc-300">{data.spotPrice ? fmt(data.spotPrice, 2) : "—"}</span>
+            {data.distanceFromSpot != null && (
+              <span className="ml-2 font-mono">
+                Distance:{" "}
+                <strong className={isAbove ? "text-emerald-400" : isBelow ? "text-rose-400" : "text-zinc-200"}>
+                  {data.distanceFromSpot >= 0 ? `+${fmt(data.distanceFromSpot, 1)}` : fmt(data.distanceFromSpot, 1)} pts
+                  ({data.distanceFromSpotPct != null ? `${data.distanceFromSpotPct >= 0 ? "+" : ""}${data.distanceFromSpotPct.toFixed(2)}%` : ""})
+                </strong>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="text-xs text-zinc-400 max-w-md text-right sm:text-left">
+        {isAbove
+          ? "Max Pain is above current spot — option writers collectively benefit from upward gravitational pull towards expiration."
+          : isBelow
+            ? "Max Pain is below current spot — option writers collectively benefit from downward drag towards expiration."
+            : "Current spot is pinned precisely at the Max Pain strike — minimum payout loss exposure for option sellers."}
+      </div>
+    </div>
+  );
+}
+
+function GexProfileSection({ data, spot }: { data: GammaExposureResult; spot: number }) {
+  if (!data || data.strikes.length === 0) return null;
+
+  const step = data.strikes.length > 1 ? data.strikes[1].strike - data.strikes[0].strike : 50;
+  const filtered = data.strikes.filter((s) => Math.abs(s.strike - spot) <= step * 8);
+  const displayStrikes = filtered.length >= 6 ? filtered : data.strikes.slice(0, 16);
+
+  const categories = displayStrikes.map((s) => s.strike.toString());
+  const callGexSeries = displayStrikes.map((s) => Math.round(s.callGex / 1000));
+  const putGexSeries = displayStrikes.map((s) => Math.round(s.putGex / 1000));
+
+  const isPos = data.regime === "POSITIVE_GAMMA";
+  const isNeg = data.regime === "NEGATIVE_GAMMA";
+
+  const chartOptions: ApexOptions = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      toolbar: { show: false },
+      background: "transparent",
+      animations: { enabled: true },
+    },
+    colors: ["#34d399", "#f43f5e"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "55%",
+        borderRadius: 2,
+      },
+    },
+    dataLabels: { enabled: false },
+    stroke: { width: 0 },
+    grid: {
+      borderColor: "rgba(255, 255, 255, 0.08)",
+      strokeDashArray: 3,
+      xaxis: { lines: { show: false } },
+    },
+    xaxis: {
+      categories,
+      labels: {
+        style: { colors: "#a1a1aa", fontSize: "10px", fontFamily: "monospace" },
+        rotate: -45,
+      },
+      axisBorder: { color: "rgba(255, 255, 255, 0.1)" },
+    },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => `${val >= 0 ? "+" : ""}${val.toLocaleString()}K`,
+        style: { colors: "#a1a1aa", fontSize: "10px", fontFamily: "monospace" },
+      },
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "right",
+      labels: { colors: "#d4d4d8" },
+      fontFamily: "monospace",
+    },
+    tooltip: {
+      theme: "dark",
+      y: {
+        formatter: (val: number) => `${val >= 0 ? "+" : ""}${val.toLocaleString()}K GEX`,
+      },
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: 0,
+          borderColor: "rgba(255,255,255,0.2)",
+          strokeDashArray: 2,
+        },
+      ],
+      ...(data.zeroGammaFlipLevel
+        ? {
+            xaxis: [
+              {
+                x: data.zeroGammaFlipLevel.toString(),
+                borderColor: "#fbbf24",
+                strokeDashArray: 4,
+                label: {
+                  text: `Flip: ${data.zeroGammaFlipLevel}`,
+                  style: { color: "#000", background: "#fbbf24", fontSize: "10px", fontWeight: "bold" },
+                },
+              },
+            ],
+          }
+        : {}),
+    },
+  };
+
+  const series = [
+    { name: "Dealer Call GEX (+)", data: callGexSeries },
+    { name: "Dealer Put GEX (-)", data: putGexSeries },
+  ];
+
+  return (
+    <div className="card-institutional p-4 sm:p-5 space-y-4 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div>
+          <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+            <span>Dealer Gamma Exposure (GEX) Profile</span>
+            <span
+              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                isPos
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : isNeg
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+              }`}
+            >
+              {data.regime.replace(/_/g, " ")}
+            </span>
+          </h3>
+          <p className="text-xs text-zinc-400 mt-0.5">{data.marketImpact}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+          <div className="bg-zinc-800/60 border border-zinc-700/60 px-2.5 py-1 rounded">
+            <span className="text-zinc-400">Net GEX: </span>
+            <strong className={data.totalNetGex >= 0 ? "text-emerald-400" : "text-rose-400"}>
+              {(data.totalNetGex / 1_000_000).toFixed(2)}M
+            </strong>
+          </div>
+          {data.zeroGammaFlipLevel && (
+            <div className="bg-zinc-800/60 border border-amber-500/40 px-2.5 py-1 rounded">
+              <span className="text-zinc-400">Flip Level: </span>
+              <strong className="text-amber-400">{data.zeroGammaFlipLevel}</strong>
+            </div>
+          )}
+          {data.gammaWallStrike && (
+            <div className="bg-zinc-800/60 border border-cyan-500/40 px-2.5 py-1 rounded">
+              <span className="text-zinc-400">Gamma Wall: </span>
+              <strong className="text-cyan-400">{data.gammaWallStrike}</strong>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="h-[280px] sm:h-[320px] w-full">
+        <ApexChart type="bar" series={series} options={chartOptions} height="100%" />
+      </div>
+    </div>
+  );
+}
+
+function OiBuildupSection({ data }: { data: AggregateBuildupResult }) {
+  const [filterText, setFilterText] = useState("");
+  const filtered = useMemo(() => {
+    if (!filterText) return data.strikeBreakdown.slice(0, 16);
+    return data.strikeBreakdown.filter((s) => s.strike.toString().includes(filterText));
+  }, [data.strikeBreakdown, filterText]);
+
+  const isBull = data.institutionalSentiment === "BULLISH";
+  const isBear = data.institutionalSentiment === "BEARISH";
+
+  return (
+    <div className="card-institutional p-4 sm:p-5 space-y-4 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+        <div>
+          <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+            <span>Institutional Open Interest Build-Up</span>
+            <span
+              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                isBull
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : isBear
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                    : "bg-zinc-800 border-zinc-700 text-zinc-300"
+              }`}
+            >
+              {data.institutionalSentiment}
+            </span>
+          </h3>
+          <p className="text-xs text-zinc-400 mt-0.5">{data.summaryText}</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            Long Buildup: {data.counts.longBuildup}
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400">
+            Short Buildup: {data.counts.shortBuildup}
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            Short Covering: {data.counts.shortCovering}
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            Long Unwinding: {data.counts.longUnwinding}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <input
+          type="search"
+          placeholder="Filter build-up strike…"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500/60 font-mono"
+        />
+        <span className="text-xs text-zinc-500 font-mono">Showing {filtered.length} strikes</span>
+      </div>
+
+      <div className="overflow-x-auto border border-zinc-800/80 rounded-lg">
+        <table className="w-full text-xs font-mono text-left">
+          <thead className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800">
+            <tr>
+              <th className="p-2 text-left">Strike</th>
+              <th className="p-2 text-center">Side</th>
+              <th className="p-2 text-right">LTP</th>
+              <th className="p-2 text-right">Price Δ</th>
+              <th className="p-2 text-right">Total OI</th>
+              <th className="p-2 text-right">OI Δ</th>
+              <th className="p-2 text-center">Buildup Regime</th>
+              <th className="p-2 text-center">Sentiment</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/40">
+            {filtered.map((row, idx) => {
+              const regimeBadge =
+                row.regime === "LONG_BUILDUP"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : row.regime === "SHORT_BUILDUP"
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                    : row.regime === "SHORT_COVERING"
+                      ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                      : row.regime === "LONG_UNWINDING"
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                        : "bg-zinc-800 border-zinc-700 text-zinc-400";
+
+              const sentimentBadge =
+                row.sentiment === "BULLISH"
+                  ? "text-emerald-400 bg-emerald-500/10"
+                  : row.sentiment === "BEARISH"
+                    ? "text-rose-400 bg-rose-500/10"
+                    : "text-zinc-400 bg-zinc-800";
+
+              return (
+                <tr key={`${row.strike}-${row.side}-${idx}`} className="hover:bg-zinc-800/20">
+                  <td className="p-2 font-bold text-zinc-200">{fmt(row.strike)}</td>
+                  <td className="p-2 text-center">
+                    <span className={row.side === "CE" ? "text-cyan-400 font-bold" : "text-amber-400 font-bold"}>
+                      {row.side}
+                    </span>
+                  </td>
+                  <td className="p-2 text-right text-zinc-200">{fmt(row.ltp, 2)}</td>
+                  <td className={`p-2 text-right ${row.priceChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                    {row.priceChange >= 0 ? `+${fmt(row.priceChange, 2)}` : fmt(row.priceChange, 2)}
+                  </td>
+                  <td className="p-2 text-right text-zinc-300">{fmt(row.oi)}</td>
+                  <td className={`p-2 text-right font-semibold ${row.changeOi >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                    {row.changeOi >= 0 ? `+${fmt(row.changeOi)}` : fmt(row.changeOi)}
+                  </td>
+                  <td className="p-2 text-center">
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${regimeBadge}`}>
+                      {row.regime.replace(/_/g, " ")}
+                    </span>
+                  </td>
+                  <td className="p-2 text-center">
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${sentimentBadge}`}>
+                      {row.sentiment}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
