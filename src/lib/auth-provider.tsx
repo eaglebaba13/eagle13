@@ -50,11 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: GUEST_USER_ID,
             displayName: "Guest Researcher",
             email: "guest@eaglebaba.local",
-            primaryRole: "guest",
-            activePlan: "Guest Full Access",
-            memberSince: "Active",
-            isSuspended: false,
-            roles: ["guest"],
+            avatarUrl: null,
+            timezone: "Asia/Kolkata",
+            country: "IN",
+            currency: "INR",
+            preferredBroker: null,
+            preferredInstrument: "NIFTY",
+            language: "en",
+            theme: "dark",
+            role: "guest",
           });
           setRoles(["guest"]);
         } else {
@@ -78,11 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: GUEST_USER_ID,
             displayName: "Guest Researcher",
             email: "guest@eaglebaba.local",
-            primaryRole: "guest",
-            activePlan: "Guest Full Access",
-            memberSince: "Active",
-            isSuspended: false,
-            roles: ["guest"],
+            avatarUrl: null,
+            timezone: "Asia/Kolkata",
+            country: "IN",
+            currency: "INR",
+            preferredBroker: null,
+            preferredInstrument: "NIFTY",
+            language: "en",
+            theme: "dark",
+            role: "guest",
           });
           setRoles(["guest"]);
         }

@@ -84,12 +84,16 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
 
     if (isGuest) {
       const guestClaims: JwtPayload = {
+        iss: "supabase",
         sub: GUEST_USER_ID,
         role: "authenticated",
         aud: "authenticated",
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 86400 * 30,
+        aal: "aal1",
+        session_id: "guest-session",
         app_metadata: { role: "guest", provider: "guest" },
         user_metadata: { full_name: "Guest Researcher" },
-        exp: Math.floor(Date.now() / 1000) + 86400 * 30,
       };
 
       const guestSupabase =

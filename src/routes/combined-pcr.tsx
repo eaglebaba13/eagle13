@@ -33,6 +33,7 @@ import {
   type ShadowSample,
 } from "@/lib/combined-pcr/shadow-validation";
 import { callBounded } from "@/lib/bounded-server-call";
+import { TableSkeleton, MetricCardSkeleton } from "@/components/ui/table-skeleton";
 
 export const Route = createFileRoute("/combined-pcr")({
   head: () => ({
@@ -259,6 +260,13 @@ function CombinedPcrPage() {
           >
             {loading ? "Retrying…" : "Retry"}
           </button>
+        </div>
+      )}
+
+      {loading && !reading && (
+        <div className="mb-4 space-y-4 animate-in fade-in duration-300">
+          <MetricCardSkeleton count={4} />
+          <TableSkeleton rows={8} cols={6} title="Aggregated Combined PCR Matrix" />
         </div>
       )}
 

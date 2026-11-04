@@ -10,6 +10,8 @@ import {
   type AnalyticsReport,
 } from "@/lib/strategy-validation";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+
 export const Route = createFileRoute("/_authenticated/strategy-analytics")({
   head: () => ({
     meta: [
@@ -23,6 +25,26 @@ export const Route = createFileRoute("/_authenticated/strategy-analytics")({
     ],
   }),
   component: StrategyAnalyticsPage,
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Strategy Analytics"
+          description="Access to Strategy Analytics requires an active research session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Strategy Analytics unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
+      </div>
+    );
+  },
 });
 
 function StrategyAnalyticsPage() {

@@ -10,6 +10,8 @@ import { answerPreset } from "@/lib/ai-market-assistant/assistant";
 import type { AssistantBias, AssistantConfidence } from "@/lib/ai-market-assistant/types";
 import { callBounded } from "@/lib/bounded-server-call";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+
 export const Route = createFileRoute("/_authenticated/ai-market-assistant")({
   head: () => ({
     meta: [
@@ -23,6 +25,26 @@ export const Route = createFileRoute("/_authenticated/ai-market-assistant")({
     ],
   }),
   component: AiMarketAssistantPage,
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="AI Market Assistant"
+          description="Access to the AI Market Assistant requires an active research session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Assistant unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
+      </div>
+    );
+  },
 });
 
 const BIAS_COLOR: Record<AssistantBias, string> = {
@@ -82,12 +104,19 @@ function AiMarketAssistantPage() {
         <div className="text-sm text-[var(--eb-muted)]">Loading canonical context…</div>
       )}
       {error && (
-        <div className="rounded-md border border-[var(--eb-warn,#eab308)] p-3 text-sm text-[var(--eb-warn,#eab308)]">
-          Assistant unavailable.{" "}
-          <button onClick={() => refetch()} className="underline">
-            Retry
-          </button>
-        </div>
+        isAuthErrorMessage(error) ? (
+          <GuestUnlockCard
+            resourceName="AI Market Assistant"
+            onRetry={() => refetch()}
+          />
+        ) : (
+          <div className="rounded-md border border-[var(--eb-warn,#eab308)] p-3 text-sm text-[var(--eb-warn,#eab308)]">
+            Assistant unavailable.{" "}
+            <button onClick={() => refetch()} className="underline">
+              Retry
+            </button>
+          </div>
+        )
       )}
 
       {res && (

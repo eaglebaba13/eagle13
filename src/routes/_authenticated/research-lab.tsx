@@ -4,6 +4,8 @@
 import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router";
 import { RESEARCH_LAB_DISCLAIMER } from "@/lib/research-lab";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+
 export const Route = createFileRoute("/_authenticated/research-lab")({
   head: () => ({
     meta: [
@@ -17,6 +19,26 @@ export const Route = createFileRoute("/_authenticated/research-lab")({
     ],
   }),
   component: ResearchLabLayout,
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Research Lab"
+          description="Access to Research Lab validation and signal runs requires an active session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Research Lab unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
+      </div>
+    );
+  },
 });
 
 const tabs = [

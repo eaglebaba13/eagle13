@@ -11,6 +11,8 @@ import {
   listStrategiesFn,
 } from "@/lib/backtest-lab/backtest-lab.functions";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+
 export const Route = createFileRoute("/_authenticated/backtest-lab")({
   head: () => ({
     meta: [
@@ -24,6 +26,26 @@ export const Route = createFileRoute("/_authenticated/backtest-lab")({
     ],
   }),
   component: BacktestLabPage,
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Backtest Lab"
+          description="Access to the Backtest Lab and quantitative strategy execution requires an active session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Backtest Lab unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
+      </div>
+    );
+  },
 });
 
 function BacktestLabPage() {

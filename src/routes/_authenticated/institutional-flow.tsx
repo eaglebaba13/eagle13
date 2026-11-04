@@ -12,6 +12,9 @@ import type { OptionUnderlying } from "@/lib/option-chain/types";
 import { safeProviderLabel } from "@/lib/provider-labels";
 import { callBounded } from "@/lib/bounded-server-call";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+import { TableSkeleton, MetricCardSkeleton } from "@/components/ui/table-skeleton";
+
 export const Route = createFileRoute("/_authenticated/institutional-flow")({
   head: () => ({
     meta: [
@@ -26,6 +29,26 @@ export const Route = createFileRoute("/_authenticated/institutional-flow")({
     ],
   }),
   component: InstitutionalFlowPage,
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Institutional Flow"
+          description="Access to derivatives positioning and Institutional Flow analytics requires an active research session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Institutional Flow unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
+      </div>
+    );
+  },
 });
 
 function InstitutionalFlowPage() {
@@ -98,7 +121,20 @@ function InstitutionalFlowPage() {
         </span>
       </div>
 
-      {error && <div style={errorBox}>Institutional Flow error: {error}</div>}
+      {error && (
+        isAuthErrorMessage(error) ? (
+          <GuestUnlockCard resourceName="Institutional Flow" onRetry={load} />
+        ) : (
+          <div style={errorBox}>Institutional Flow error: {error}</div>
+        )
+      )}
+
+      {loading && !report && (
+        <div className="space-y-4 my-4 animate-in fade-in duration-300">
+          <MetricCardSkeleton count={8} />
+          <TableSkeleton rows={8} cols={6} title={`Institutional Derivatives Flow — ${underlying}`} />
+        </div>
+      )}
 
       {report && (
         <>

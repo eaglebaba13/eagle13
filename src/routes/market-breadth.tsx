@@ -24,6 +24,7 @@ import {
   type GtiShadowSample,
 } from "@/lib/market-breadth/shadow-validation";
 import { callBounded } from "@/lib/bounded-server-call";
+import { TableSkeleton, MetricCardSkeleton } from "@/components/ui/table-skeleton";
 
 export const Route = createFileRoute("/market-breadth")({
   head: () => ({
@@ -233,6 +234,13 @@ function MarketBreadthPage() {
           vixMeta={vixMeta}
           pcrMeta={pcrMeta}
         />
+      )}
+
+      {loading && !reading && (
+        <div className="mb-4 space-y-4 animate-in fade-in duration-300">
+          <MetricCardSkeleton count={4} />
+          <TableSkeleton rows={8} cols={5} title="Live Market Breadth & Sector Matrix" />
+        </div>
       )}
 
       {/* Header stats */}

@@ -23,6 +23,7 @@ import {
   type OptionChainCapability,
 } from "@/lib/option-chain/capability";
 import { safeProviderLabel } from "@/lib/provider-labels";
+import { TableSkeleton, MetricCardSkeleton } from "@/components/ui/table-skeleton";
 
 export const Route = createFileRoute("/options-chain")({
   head: () => ({
@@ -339,33 +340,9 @@ function OptionsChainPage() {
 
       {/* Loading state indicator during initial fetch */}
       {loading && !snapshot && (
-        <div
-          style={{
-            padding: "24px 16px",
-            textAlign: "center",
-            border: "1px dashed var(--eb-line, #334155)",
-            borderRadius: 12,
-            marginTop: 16,
-            background: "var(--eb-card, #0f172a)",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              width: 20,
-              height: 20,
-              border: "2px solid var(--eb-accent, #f59e0b)",
-              borderTopColor: "transparent",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-            }}
-          />
-          <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500 }}>
-            Fetching live option chain for {state.underlying}…
-          </div>
-          <div style={{ marginTop: 2, fontSize: 11, opacity: 0.6 }}>
-            Connecting to {providerAlias} provider
-          </div>
+        <div className="mt-4 space-y-4 animate-in fade-in duration-300">
+          <MetricCardSkeleton count={4} />
+          <TableSkeleton rows={10} cols={8} title={`Live Option Chain — ${state.underlying}`} />
         </div>
       )}
 

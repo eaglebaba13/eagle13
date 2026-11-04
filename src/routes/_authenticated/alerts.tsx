@@ -19,6 +19,8 @@ import { allAlertTypes } from "@/lib/smart-alerts/subscriptions";
 import { ALERT_DISCLAIMER, type AlertPriority, type AlertType } from "@/lib/smart-alerts/types";
 import { callBounded } from "@/lib/bounded-server-call";
 
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+
 export const Route = createFileRoute("/_authenticated/alerts")({
   component: AlertCenterPage,
   head: () => ({
@@ -31,26 +33,22 @@ export const Route = createFileRoute("/_authenticated/alerts")({
     ],
   }),
   errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Alert Center"
+          description="Personalized research alerts and signal notifications require an active session. Sign in or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
     const msg = (error as Error).message || "";
-    const isAuth = msg.includes("Unauthorized") || msg.includes("authorization header");
     return (
-      <div className="p-6 text-sm" style={{ color: isAuth ? "var(--eb-muted)" : "var(--eb-bear)" }}>
-        {isAuth ? (
-          <div>
-            <p className="font-medium mb-2" style={{ color: "var(--eb-text)" }}>
-              Alert Center requires authentication
-            </p>
-            <p>Sign in to view your personalized research alerts.</p>
-            <p className="mt-2 text-xs opacity-60">Research alerts are user-scoped for privacy.</p>
-          </div>
-        ) : (
-          <div>
-            <p>Alert Center unavailable: {msg}</p>
-            <button onClick={reset} className="mt-2 rounded border border-border/60 px-2 py-1">
-              Retry
-            </button>
-          </div>
-        )}
+      <div className="p-6 text-sm text-[var(--eb-bear)]">
+        <p>Alert Center unavailable: {msg}</p>
+        <button onClick={reset} className="mt-2 rounded border border-border/60 px-3 py-1.5 text-xs text-[var(--eb-text)]">
+          Retry
+        </button>
       </div>
     );
   },

@@ -22,6 +22,8 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { buildBreadcrumbs } from "@/components/app-shell.utils";
 import { useHydrated } from "@/hooks/use-hydrated";
 
+import { LiveMarketTickerTape } from "@/components/market/LiveMarketTickerTape";
+
 function AppShellHeader() {
   const router = useRouter();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -103,6 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <AppShellHeader />
+        <LiveMarketTickerTape />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>

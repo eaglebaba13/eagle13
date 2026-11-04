@@ -38,6 +38,7 @@ import {
   RuntimeReadinessStripFallback,
 } from "@/components/runtime-readiness/RuntimeReadinessStrip";
 import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
+import { AstroRegimeHeroCarousel } from "@/components/dashboard/AstroRegimeHeroCarousel";
 
 const GtiSummaryCard = lazy(() =>
   import("@/components/dashboard/GtiSummaryCard").then((m) => ({ default: m.GtiSummaryCard })),
@@ -306,6 +307,10 @@ function Dashboard() {
 
       <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
         <DashboardRuntimeStrip />
+        <AstroRegimeHeroCarousel
+          niftySpot={data.nifty?.livePrice}
+          bankNiftySpot={data.banknifty?.livePrice}
+        />
         <div
           style={{
             display: "flex",

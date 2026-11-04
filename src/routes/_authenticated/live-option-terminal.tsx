@@ -4,9 +4,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, LogIn, Sparkles } from "lucide-react";
-import { enableGuestSession } from "@/lib/guest-session";
-import { toast } from "sonner";
+import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/terminal.functions";
 import type { ScoredStrategy, CanonicalBias } from "@/lib/option-strategy-terminal";
 import { describeVixRegime } from "@/lib/option-strategy-terminal";
@@ -26,52 +24,22 @@ export const Route = createFileRoute("/_authenticated/live-option-terminal")({
     ],
   }),
   component: LiveOptionTerminalPage,
-  errorComponent: ({ error }) => {
+  errorComponent: ({ error, reset }) => {
+    if (isAuthErrorMessage(error)) {
+      return (
+        <GuestUnlockCard
+          resourceName="Live Option Strategy Terminal"
+          description="The Live Option Strategy Terminal requires an authenticated session. Sign in to access your options research workstation or continue with guest full access."
+          onRetry={reset}
+        />
+      );
+    }
     const msg = (error as Error).message || "";
-    const isAuth =
-      msg.includes("Unauthorized") ||
-      msg.includes("Authentication required") ||
-      msg.includes("authorization header");
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-6 bg-[var(--eb-bg)]">
-        {isAuth ? (
-          <div className="rounded-xl border border-[var(--eb-border)] bg-[var(--eb-card)] p-8 text-center max-w-md w-full shadow-lg">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--eb-accent,#f59e0b)]/10 text-[var(--eb-accent,#f59e0b)] mb-4">
-              <Lock size={22} />
-            </div>
-            <h2 className="text-lg font-semibold text-[var(--eb-text)]">
-              Authentication Required
-            </h2>
-            <p className="mt-2 text-sm text-[var(--eb-muted)] leading-relaxed">
-              The Live Option Strategy Terminal requires an authenticated session. Sign in to access your options research workstation.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/auth"
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--eb-accent,#f59e0b)] px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
-              >
-                <LogIn size={16} />
-                Sign In
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  enableGuestSession();
-                  toast.success("Guest full access enabled");
-                  window.location.reload();
-                }}
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--eb-border)] px-4 py-2 text-sm font-medium text-[var(--eb-text)] bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <Sparkles size={16} className="text-[var(--eb-accent,#f59e0b)]" />
-                Continue as Guest
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-[var(--eb-bear)]/40 bg-[var(--eb-card)] p-4 text-sm text-[var(--eb-bear)]">
-            <p>Unable to load terminal: {msg}</p>
-          </div>
-        )}
+      <div className="min-h-[50vh] flex items-center justify-center p-6">
+        <div className="rounded-xl border border-[var(--eb-bear)]/40 bg-[var(--eb-card)] p-4 text-sm text-[var(--eb-bear)]">
+          <p>Unable to load terminal: {msg}</p>
+        </div>
       </div>
     );
   },
@@ -512,60 +480,12 @@ function LiveOptionTerminalPage() {
         </div>
       )}
 
-      {error && (() => {
-        const msg = (error as Error).message || "";
-        const isAuth =
-          msg.includes("Unauthorized") ||
-          msg.includes("Authentication required") ||
-          msg.includes("authorization header");
-
-        if (isAuth) {
-          return (
-            <div className="rounded-xl border border-[var(--eb-border)] bg-[var(--eb-card)] p-8 text-center max-w-xl mx-auto my-6 shadow-lg">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--eb-accent,#f59e0b)]/10 text-[var(--eb-accent,#f59e0b)] mb-4">
-                <Lock size={22} />
-              </div>
-              <h2 className="text-lg font-semibold text-[var(--eb-text)]">
-                Authentication Required
-              </h2>
-              <p className="mt-2 text-sm text-[var(--eb-muted)] leading-relaxed">
-                The Live Option Strategy Terminal integrates real-time Decision Engine, Combined PCR, GTI, Market Breadth, and Astro signals. Please sign in to access your options research workstation.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  to="/auth"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[var(--eb-accent,#f59e0b)] px-4 py-2 text-sm font-semibold text-black transition-opacity hover:opacity-90"
-                >
-                  <LogIn size={16} />
-                  Sign In
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    enableGuestSession();
-                    toast.success("Guest full access enabled");
-                    void refetch();
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[var(--eb-border)] px-4 py-2 text-sm font-medium text-[var(--eb-text)] bg-white/5 hover:bg-white/10 transition-colors"
-                >
-                  <Sparkles size={16} className="text-[var(--eb-accent,#f59e0b)]" />
-                  Continue as Guest
-                </button>
-                <button
-                  type="button"
-                  onClick={() => refetch()}
-                  className="inline-flex items-center justify-center rounded-lg border border-[var(--eb-border)] px-4 py-2 text-sm font-medium text-[var(--eb-muted)] hover:text-[var(--eb-text)] hover:bg-white/5 transition-colors"
-                >
-                  Retry Connection
-                </button>
-              </div>
-            </div>
-          );
-        }
-
-        return (
+      {error && (
+        isAuthErrorMessage(error) ? (
+          <GuestUnlockCard resourceName="Live Option Strategy Terminal" onRetry={() => refetch()} />
+        ) : (
           <div className="rounded-lg border border-[var(--eb-bear)]/40 bg-[var(--eb-card)] p-4 text-sm text-[var(--eb-bear)]">
-            Unable to load terminal: {msg}
+            Unable to load terminal: {(error as Error).message || String(error)}
             <button
               className="ml-3 rounded border border-[var(--eb-border)] px-2 py-0.5 text-xs text-[var(--eb-text)]"
               onClick={() => refetch()}
@@ -573,8 +493,8 @@ function LiveOptionTerminalPage() {
               Retry
             </button>
           </div>
-        );
-      })()}
+        )
+      )}
 
       {data && (
         <>
