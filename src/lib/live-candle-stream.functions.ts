@@ -60,20 +60,42 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
       readonly volume: number | null;
     }[] = [];
     try {
-      const { buildIndstocksProviderAdapter } =
-        await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
-      const adapter = buildIndstocksProviderAdapter();
-      if (adapter.fetchHistorical) {
-        const tf = intervalToTimeframe(intervalMs);
-        const limit = intervalToLimit(intervalMs);
-        const result = await adapter.fetchHistorical(
-          symbol as QuoteSymbol,
-          tf,
-          limit,
-          new Date().toISOString(),
-        );
-        if (result.ok) historical = result.data.candles;
-        else return { error: "PROVIDER_ERROR", series: [], status: null };
+      const { getActiveLiveMarketProvider } = await import("./live-market-provider.server");
+      const provider = getActiveLiveMarketProvider();
+      const tf = intervalToTimeframe(intervalMs);
+      const limit = intervalToLimit(intervalMs);
+      const nowIso = new Date().toISOString();
+
+      if (provider === "UPSTOX") {
+        const { buildUpstoxProviderAdapter } =
+          await import("./provider-foundation/upstox/upstox-historical.adapter.server");
+        const adapter = buildUpstoxProviderAdapter();
+        if (adapter.fetchHistorical) {
+          const result = await adapter.fetchHistorical(
+            symbol as QuoteSymbol,
+            tf,
+            limit,
+            nowIso,
+          );
+          if (result.ok) {
+            historical = result.data.candles;
+          }
+        }
+      } else {
+        const { buildIndstocksProviderAdapter } =
+          await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
+        const adapter = buildIndstocksProviderAdapter();
+        if (adapter.fetchHistorical) {
+          const result = await adapter.fetchHistorical(
+            symbol as QuoteSymbol,
+            tf,
+            limit,
+            nowIso,
+          );
+          if (result.ok) {
+            historical = result.data.candles;
+          }
+        }
       }
     } catch {
       /* historical unavailable — continue with live only */

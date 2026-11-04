@@ -52,17 +52,22 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
       chartRef.current.updateOptions({ ...options, series }, false, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(series), JSON.stringify(options.labels)]);
+  }, [JSON.stringify(series), JSON.stringify(options)]);
 
   const resolvedHeight = typeof height === "number" ? height : undefined;
 
   return (
-    <div style={{ height, minHeight: resolvedHeight ?? 260 }}>
-      <div ref={ref} />
+    <div className="w-full h-full relative" style={{ height, minHeight: resolvedHeight ?? 260 }}>
+      <div
+        ref={ref}
+        className="w-full h-full"
+        style={{ height: "100%", width: "100%", minHeight: resolvedHeight ?? 260 }}
+      />
       {!ready ? (
         <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{
-            height: resolvedHeight ?? 260,
+            minHeight: resolvedHeight ?? 260,
             display: "grid",
             placeItems: "center",
             color: "var(--eb-muted)",

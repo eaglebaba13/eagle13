@@ -21,7 +21,11 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import type { OHLC } from "@/lib/market.functions";
 import type { IndicatorId } from "@/lib/indicators/types";
 
-const SYMBOLS = [{ key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey }] as const;
+const SYMBOLS = [
+  { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey | null },
+  { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey | null },
+  { key: "INDIA_VIX", label: "INDIA VIX", marketKey: null },
+] as const;
 
 const TIMEFRAMES = [
   { label: "1m", ms: 60_000 },
@@ -86,7 +90,7 @@ function LiveChartSelection({
   setIntervalMs: (n: number) => void;
 }) {
   const session = useMarketSession();
-  const [showVolume, setShowVolume] = useState(true);
+  const [showVolume, setShowVolume] = useState(false);
   const [showAstroLevels, setShowAstroLevels] = useState(true);
   const [showGannLevels, setShowGannLevels] = useState(false);
   const [showSquareRootLevels, setShowSquareRootLevels] = useState(false);
@@ -108,7 +112,7 @@ function LiveChartSelection({
         const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs } });
         if (cancelled) return;
         if (resp.error) {
-          setBootstrapStatus("error");
+          setBootstrapStatus("done");
           setBootstrapError(resp.error);
           return;
         }
@@ -116,7 +120,7 @@ function LiveChartSelection({
         setBootstrapStatus("done");
       } catch (err) {
         if (!cancelled) {
-          setBootstrapStatus("error");
+          setBootstrapStatus("done");
           setBootstrapError(err instanceof Error ? err.message : "Bootstrap failed");
         }
       }
@@ -204,7 +208,7 @@ function LiveChartSelection({
   const astroAnnotations = useMemo(() => {
     if (!liveLevels) return [];
     const marketDef = SYMBOLS.find((s) => s.key === symbol);
-    if (!marketDef) return [];
+    if (!marketDef || !marketDef.marketKey) return [];
     const market = liveLevels.markets.find((m) => m.key === marketDef.marketKey);
     if (!market) return [];
 
@@ -295,11 +299,11 @@ function LiveChartSelection({
     const series: NonNullable<ApexOptions["series"]> = [
       { type: "candlestick", name: symbol, data: source.map((c) => ({ x: c.x, y: c.y })) },
     ];
-    if (showVolume) {
+    if (showVolume && source.some((c) => c.volume != null && c.volume > 0)) {
       series.push({
         type: "bar",
         name: "Volume",
-        data: source.map((c) => ({ x: c.x, y: c.volume })),
+        data: source.map((c) => ({ x: c.x, y: c.volume ?? 0 })),
       });
     }
     series.push(...overlaySeries.map((s) => ({ name: s.name, data: [...s.data], type: s.type })));
@@ -307,11 +311,14 @@ function LiveChartSelection({
   }, [displayCandles, chartData, symbol, overlaySeries, showVolume]);
 
   const chartOptions = useMemo<ApexOptions>(() => {
+    const source = displayCandles.length > 0 ? displayCandles : chartData;
+    const hasVolumeSeries = showVolume && source.some((c) => c.volume != null && c.volume > 0);
     const yaxis: ApexYAxis[] = [
-      { labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
+      { seriesName: symbol, labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
     ];
-    if (showVolume) {
+    if (hasVolumeSeries) {
       yaxis.push({
+        seriesName: "Volume",
         opposite: true,
         labels: { style: { colors: "#888", fontSize: "10px" } },
         title: { text: "Vol", style: { color: "#888" } },
@@ -380,7 +387,9 @@ function LiveChartSelection({
     sse.error ?? (sse.connected ? (sse.status?.freshness ?? "NO_DATA") : "UNAVAILABLE");
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
-  const market = liveLevels?.markets.find((m) => m.key === marketDef?.marketKey);
+  const market = marketDef?.marketKey
+    ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+    : undefined;
   const moonPhase = liveLevels?.moonPhase;
   const moonNakshatra = liveLevels?.moonNakshatra;
 
@@ -527,9 +536,11 @@ function LiveChartSelection({
   );
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#0d1117] text-white overflow-hidden">
-      <AppSidebar />
-      <div className="flex flex-col h-full w-full">
+    <div className="flex h-screen w-full bg-[#0d1117] text-white overflow-hidden">
+      <div className="hidden lg:flex shrink-0">
+        <AppSidebar />
+      </div>
+      <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden">
         <div className="flex items-center justify-between p-3 border-b border-zinc-800 shrink-0">
           {topControls}
           {indicatorErrors.length > 0 && (
@@ -543,25 +554,35 @@ function LiveChartSelection({
           )}
         </div>
 
-        <div className="flex-1 w-full min-h-0 relative p-2">
+        <div className="flex-1 w-full min-h-0 relative p-2 flex flex-col">
           {bootstrapStatus === "loading" && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="eb-shimmer px-4 py-2 rounded-md text-xs text-zinc-400">
-                Loading chart…
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]/80 backdrop-blur-sm pointer-events-none">
+              <div className="eb-shimmer px-4 py-2 rounded-md text-xs text-zinc-300 border border-zinc-700 bg-zinc-900">
+                Loading chart for {symbol}…
               </div>
             </div>
           )}
-          {bootstrapStatus === "error" && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs text-red-400">PROVIDER ERROR: {bootstrapError}</span>
+          {bootstrapError && chartData.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]">
+              <div className="text-center p-4">
+                <span className="text-xs text-red-400">PROVIDER ERROR: {bootstrapError}</span>
+                <div className="mt-2 text-[11px] text-zinc-500 font-mono">
+                  Connecting to live stream for {symbol}…
+                </div>
+              </div>
             </div>
           )}
-          {bootstrapStatus === "done" && chartData.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs text-zinc-500">NO MARKET DATA — showing demo candles</span>
+          {!bootstrapError && chartData.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]">
+              <div className="text-center p-4">
+                <span className="text-xs text-zinc-500">NO MARKET DATA</span>
+                <div className="mt-2 text-[11px] text-zinc-400 font-mono">
+                  Status: {statusLabel} · Provider: {sse.status?.provider ?? "UPSTOX_V3_WS"}
+                </div>
+              </div>
             </div>
           )}
-          <div className="w-full h-full">
+          <div className="w-full h-full min-h-[400px] flex-1">
             {chartData.length > 0 && (
               <ApexChart
                 type="candlestick"
