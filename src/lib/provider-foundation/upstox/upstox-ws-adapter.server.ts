@@ -30,6 +30,7 @@ export const UPSTOX_INSTRUMENT_MAP: Readonly<Record<string, string>> = Object.fr
   BANKNIFTY: "NSE_INDEX|Nifty Bank",
   FINNIFTY: "NSE_INDEX|Nifty Fin Service",
   INDIA_VIX: "NSE_INDEX|India VIX",
+  SENSEX: "BSE_INDEX|SENSEX",
   GOLD: "MCX_FO|GOLD",
   SILVER: "MCX_FO|SILVER",
 });
@@ -39,6 +40,9 @@ export const REVERSE_INSTRUMENT_MAP: Readonly<Record<string, QuoteSymbol>> = Obj
   "NSE_INDEX|Nifty Bank": "BANKNIFTY",
   "NSE_INDEX|Nifty Fin Service": "FINNIFTY",
   "NSE_INDEX|India VIX": "INDIA_VIX",
+  "BSE_INDEX|SENSEX": "SENSEX",
+  "BSE_INDEX|Sensex": "SENSEX",
+  "BSE_INDEX|1": "SENSEX",
   "MCX_FO|GOLD": "GOLD",
   "MCX_FO|SILVER": "SILVER",
 });

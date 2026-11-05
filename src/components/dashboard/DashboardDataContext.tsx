@@ -14,6 +14,7 @@ import type { ProviderStatus } from "@/lib/data-freshness";
 export type DashboardMarketData = {
   nifty: IndexQuote;
   banknifty: IndexQuote;
+  sensex?: IndexQuote | null;
   vix: IndexQuote | null;
   btc: IndexQuote | null;
   gold: IndexQuote | null;
@@ -21,7 +22,7 @@ export type DashboardMarketData = {
   goldSilverRatio: number | null;
 };
 
-export type DashboardTabKey = "nifty" | "banknifty" | "btc" | "gold";
+export type DashboardTabKey = "nifty" | "banknifty" | "sensex" | "btc" | "gold";
 
 export type DashboardContextValue = {
   data: DashboardMarketData;

@@ -24,6 +24,7 @@ import type { IndicatorId } from "@/lib/indicators/types";
 const SYMBOLS = [
   { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey | null },
   { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey | null },
+  { key: "SENSEX", label: "SENSEX", marketKey: "SENSEX" as MarketKey | null },
   { key: "INDIA_VIX", label: "INDIA VIX", marketKey: null },
 ] as const;
 

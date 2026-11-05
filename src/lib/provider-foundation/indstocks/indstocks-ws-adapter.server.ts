@@ -28,6 +28,7 @@ export function defaultWsMappingResolver(symbol: QuoteSymbol | string): WsInstru
     // BANKNIFTY and INDIA VIX: WebSocket tokens not verified from provider instrument source
     BANKNIFTY: { symbol: "BANKNIFTY", wsToken: "", verified: false },
     INDIA_VIX: { symbol: "INDIA_VIX", wsToken: "", verified: false },
+    SENSEX: { symbol: "SENSEX", wsToken: "BIDX:1", verified: false },
   };
   return VERIFIED[symbol] ?? null;
 }

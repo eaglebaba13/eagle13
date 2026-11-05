@@ -3,7 +3,7 @@
 
 import { UnsupportedInstrumentError } from "./gann-intraday.types";
 
-export type InstrumentSymbol = "NIFTY50" | "BANKNIFTY";
+export type InstrumentSymbol = "NIFTY50" | "BANKNIFTY" | "SENSEX";
 
 export type InstrumentPolicy = {
   symbol: InstrumentSymbol;
@@ -39,6 +39,15 @@ export const INSTRUMENT_POLICIES: Record<InstrumentSymbol, InstrumentPolicy> = {
     maximumEntryDeviation: 30,
     stopLossPoints: 101,
     targetPoints: 101,
+  },
+  SENSEX: {
+    symbol: "SENSEX",
+    safeDistance: 350,
+    clusterTolerancePoints: 15,
+    exact360TolerancePoints: 25,
+    maximumEntryDeviation: 35,
+    stopLossPoints: 125,
+    targetPoints: 125,
   },
 };
 

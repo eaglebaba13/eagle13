@@ -15,6 +15,7 @@ export interface TickerItemData {
 export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
   const { state: niftyState } = useLiveCandleSSE("NIFTY50", 60000);
   const { state: bankNiftyState } = useLiveCandleSSE("BANKNIFTY", 60000);
+  const { state: sensexState } = useLiveCandleSSE("SENSEX", 60000);
   const { state: vixState } = useLiveCandleSSE("INDIA_VIX", 60000);
 
   // Derive live or baseline quotes
@@ -28,9 +29,15 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
   const bankChange = bankLtp - bankOpen;
   const bankChangePct = (bankChange / bankOpen) * 100;
 
+  const sensexLtp = sensexState.currentCandle?.close ?? sensexState.status?.lastLtp ?? 80234.0;
+  const sensexOpen = sensexState.currentCandle?.open ?? 80100.0;
+  const sensexChange = sensexLtp - sensexOpen;
+  const sensexChangePct = (sensexChange / sensexOpen) * 100;
+
   const vixVal = vixState.currentCandle?.close ?? vixState.status?.lastLtp ?? 13.72;
 
-  const isStreaming = niftyState.connected || bankNiftyState.connected || vixState.connected;
+  const isStreaming =
+    niftyState.connected || bankNiftyState.connected || sensexState.connected || vixState.connected;
 
   const items: TickerItemData[] = useMemo(
     () => [
@@ -49,6 +56,14 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
         change: bankChange,
         changePct: bankChangePct,
         isPositive: bankChange >= 0,
+      },
+      {
+        symbol: "BSE SENSEX",
+        name: "BSE Benchmark",
+        ltp: sensexLtp,
+        change: sensexChange,
+        changePct: sensexChangePct,
+        isPositive: sensexChange >= 0,
       },
       {
         symbol: "INDIA VIX",
@@ -96,7 +111,18 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
         isPositive: true,
       },
     ],
-    [niftyLtp, niftyChange, niftyChangePct, bankLtp, bankChange, bankChangePct, vixVal]
+    [
+      niftyLtp,
+      niftyChange,
+      niftyChangePct,
+      bankLtp,
+      bankChange,
+      bankChangePct,
+      sensexLtp,
+      sensexChange,
+      sensexChangePct,
+      vixVal,
+    ],
   );
 
   return (

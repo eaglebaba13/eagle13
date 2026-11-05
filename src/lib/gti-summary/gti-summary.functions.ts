@@ -100,6 +100,7 @@ export const getGtiSummary = createServerFn({ method: "POST" }).handler(
     const optionCapabilities: Record<OptionUnderlying, string> = {
       NIFTY: "UNKNOWN",
       BANKNIFTY: "UNKNOWN",
+      SENSEX: "UNKNOWN",
     };
     try {
       // Canonical option-chain path (Phase 2F): reuse the shared snapshot

@@ -54,7 +54,8 @@ function loadPersisted(): Persisted {
     if (!raw) return { underlying: "NIFTY", expiry: null, atmMode: "ATM_10" };
     const p = JSON.parse(raw) as Partial<Persisted>;
     return {
-      underlying: p.underlying === "BANKNIFTY" ? "BANKNIFTY" : "NIFTY",
+      underlying:
+        p.underlying === "BANKNIFTY" ? "BANKNIFTY" : p.underlying === "SENSEX" ? "SENSEX" : "NIFTY",
       expiry: typeof p.expiry === "string" ? p.expiry : null,
       atmMode: (p.atmMode as AtmMode) ?? "ATM_10",
     };
@@ -208,6 +209,7 @@ function OptionsChainPage() {
           >
             <option value="NIFTY">NIFTY</option>
             <option value="BANKNIFTY">BANKNIFTY</option>
+            <option value="SENSEX">SENSEX</option>
           </select>
         </label>
         <label className="text-xs text-zinc-400 flex flex-col gap-1">

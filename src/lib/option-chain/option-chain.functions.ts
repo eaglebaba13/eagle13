@@ -15,7 +15,7 @@ export interface GetOptionChainInput {
 function validate(input: unknown): GetOptionChainInput {
   const i = (input ?? {}) as Partial<GetOptionChainInput>;
   const u = i.underlying;
-  if (u !== "NIFTY" && u !== "BANKNIFTY") throw new Error("unsupported underlying");
+  if (u !== "NIFTY" && u !== "BANKNIFTY" && u !== "SENSEX") throw new Error("unsupported underlying");
   return {
     underlying: u,
     expiry: typeof i.expiry === "string" ? i.expiry : undefined,

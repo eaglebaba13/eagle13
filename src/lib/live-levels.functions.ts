@@ -32,7 +32,7 @@ function todayIst(): string {
   return new Date(Date.now() + 19800 * 1000).toISOString().slice(0, 10);
 }
 
-export type MarketKey = "NIFTY" | "BANKNIFTY" | "FINNIFTY" | "GOLD" | "SILVER" | "BTC";
+export type MarketKey = "NIFTY" | "BANKNIFTY" | "FINNIFTY" | "SENSEX" | "GOLD" | "SILVER" | "BTC";
 
 type MarketDef = {
   key: MarketKey;
@@ -47,6 +47,7 @@ const MARKETS: MarketDef[] = [
   { key: "NIFTY", symbol: "^NSEI", name: "NIFTY 50", currency: "₹" },
   { key: "BANKNIFTY", symbol: "^NSEBANK", name: "BANK NIFTY", currency: "₹" },
   { key: "FINNIFTY", symbol: "^NSEFINNIFTY", name: "FIN NIFTY", currency: "₹" },
+  { key: "SENSEX", symbol: "^BSESN", name: "BSE SENSEX", currency: "₹" },
   { key: "GOLD", symbol: "GC=F", name: "GOLD", currency: "$" },
   { key: "SILVER", symbol: "SI=F", name: "SILVER", currency: "$" },
   { key: "BTC", symbol: "BTC-USD", name: "BITCOIN", currency: "$", crypto: true },

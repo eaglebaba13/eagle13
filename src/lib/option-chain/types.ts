@@ -4,14 +4,13 @@
 // explicit `null`. Consumed by every downstream option module
 // (Combined PCR, Max Pain, Sentiment, OI Build-up, etc.).
 
-export type OptionUnderlying = "NIFTY" | "BANKNIFTY";
+export type OptionUnderlying = "NIFTY" | "BANKNIFTY" | "SENSEX";
 
-/** NIFTY / BANKNIFTY are the only ACTIVE option-chain markets this stage. */
-export const SUPPORTED_OPTION_UNDERLYINGS = ["NIFTY", "BANKNIFTY"] as const;
+/** Active option-chain markets. */
+export const SUPPORTED_OPTION_UNDERLYINGS = ["NIFTY", "BANKNIFTY", "SENSEX"] as const;
 
 /** COMING LATER — surfaced by the registry but not fetched. */
 export const COMING_LATER_OPTION_UNDERLYINGS = [
-  "SENSEX",
   "FINNIFTY",
   "MIDCPNIFTY",
   "MCX",

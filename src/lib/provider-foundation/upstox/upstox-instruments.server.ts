@@ -61,14 +61,27 @@ const FALLBACK_MASTER: Readonly<Record<string, UpstoxInstrument>> = {
     expiry: null,
     timezone: "Asia/Kolkata",
   },
+  SENSEX: {
+    instrumentKey: "BSE_INDEX|SENSEX",
+    exchange: "BSE",
+    segment: "INDEX",
+    tradingSymbol: "SENSEX",
+    name: "BSE SENSEX",
+    instrumentType: "INDEX",
+    lotSize: null,
+    tickSize: null,
+    expiry: null,
+    timezone: "Asia/Kolkata",
+  },
 };
 
-export type UpstoxSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "INDIA_VIX";
+export type UpstoxSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "INDIA_VIX" | "SENSEX";
 
 export const UPSTOX_SUPPORTED_SYMBOLS: readonly UpstoxSupportedSymbol[] = [
   "NIFTY50",
   "BANKNIFTY",
   "INDIA_VIX",
+  "SENSEX",
 ];
 
 export function isUpstoxSupported(sym: string): sym is UpstoxSupportedSymbol {

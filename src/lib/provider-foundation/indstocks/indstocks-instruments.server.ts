@@ -48,6 +48,15 @@ const FALLBACK_MASTER: Readonly<Record<string, IndstocksInstrument>> = {
     instrumentType: "INDEX",
     timezone: "Asia/Kolkata",
   },
+  SENSEX: {
+    scripCode: "BSE_1",
+    exchange: "BSE",
+    segment: "INDEX",
+    tradingSymbol: "SENSEX",
+    name: "BSE SENSEX",
+    instrumentType: "INDEX",
+    timezone: "Asia/Kolkata",
+  },
 };
 
 export type IndstocksSupportedSymbol = "NIFTY50" | "BANKNIFTY" | "INDIA_VIX";

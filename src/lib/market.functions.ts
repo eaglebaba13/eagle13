@@ -119,6 +119,7 @@ async function fetchIndex(symbol: string): Promise<IndexQuote> {
 export type MarketDataResponse = {
   nifty: IndexQuote;
   banknifty: IndexQuote;
+  sensex?: IndexQuote | null;
   vix: IndexQuote | null;
   btc: IndexQuote | null;
   gold: IndexQuote | null;
@@ -135,31 +136,35 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
   return cached<MarketDataResponse>(
     "market-data",
     async () => {
-      // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX.
+      // Phase 36.3 — Upstox is canonical for NIFTY / BANKNIFTY / INDIA VIX / SENSEX.
       // Yahoo is called only when the Upstox path fails, so successful
       // Upstox responses do NOT trigger a background Yahoo request. Gold
       // and Silver remain on Yahoo as the retained historical/commodity
       // provider (no Upstox spot equivalent — see provider-routing-matrix).
       const { fetchUpstoxIndexQuote } = await import("./upstox-market-data.server");
       const nowIso = new Date().toISOString();
-      const [uxNifty, uxBank, uxVix] = await Promise.all([
+      const [uxNifty, uxBank, uxVix, uxSensex] = await Promise.all([
         fetchUpstoxIndexQuote("NIFTY50", nowIso).catch(() => null),
         fetchUpstoxIndexQuote("BANKNIFTY", nowIso).catch(() => null),
         fetchUpstoxIndexQuote("INDIA_VIX", nowIso).catch(() => null),
+        fetchUpstoxIndexQuote("SENSEX", nowIso).catch(() => null),
       ]);
 
       const upstoxNiftyQuote = uxNifty && uxNifty.ok ? uxNifty.quote : null;
       const upstoxBankQuote = uxBank && uxBank.ok ? uxBank.quote : null;
       const upstoxVixQuote = uxVix && uxVix.ok ? uxVix.quote : null;
+      const upstoxSensexQuote = uxSensex && uxSensex.ok ? uxSensex.quote : null;
 
       // Lazy Yahoo fallback — only when the primary Upstox path failed.
       const needsNifty = upstoxNiftyQuote == null;
       const needsBank = upstoxBankQuote == null;
       const needsVix = upstoxVixQuote == null;
-      const [yNifty, yBank, yVix, goldR, silverR] = await Promise.all([
+      const needsSensex = upstoxSensexQuote == null;
+      const [yNifty, yBank, yVix, ySensex, goldR, silverR] = await Promise.all([
         needsNifty ? fetchIndex("^NSEI").catch((e) => e as Error) : Promise.resolve(null),
         needsBank ? fetchIndex("^NSEBANK").catch((e) => e as Error) : Promise.resolve(null),
         needsVix ? fetchIndex("^INDIAVIX").catch(() => null) : Promise.resolve(null),
+        needsSensex ? fetchIndex("^BSESN").catch(() => null) : Promise.resolve(null),
         fetchIndex("GC=F").catch(() => null),
         fetchIndex("SI=F").catch(() => null),
       ]);
@@ -168,6 +173,7 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
 
       const nifty = upstoxNiftyQuote ?? yahooNifty ?? yahooBank ?? null;
       const banknifty = upstoxBankQuote ?? yahooBank ?? yahooNifty ?? null;
+      const sensex: IndexQuote | null = upstoxSensexQuote ?? ySensex ?? null;
       const vix: IndexQuote | null = upstoxVixQuote ?? yVix ?? null;
       const btc: IndexQuote | null = null;
       const gold: IndexQuote | null = goldR;

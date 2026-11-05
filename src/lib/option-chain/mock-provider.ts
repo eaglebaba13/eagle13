@@ -16,8 +16,8 @@ export type MockScenario =
   | "PROVIDER_FAILURE"
   | "PAUSED";
 
-const SPOTS: Record<OptionUnderlying, number> = { NIFTY: 24_500, BANKNIFTY: 52_000 };
-const STEP: Record<OptionUnderlying, number> = { NIFTY: 50, BANKNIFTY: 100 };
+const SPOTS: Record<OptionUnderlying, number> = { NIFTY: 24_500, BANKNIFTY: 52_000, SENSEX: 80_000 };
+const STEP: Record<OptionUnderlying, number> = { NIFTY: 50, BANKNIFTY: 100, SENSEX: 100 };
 
 function isoDaysFromNow(days: number, nowMs: number): string {
   const d = new Date(nowMs + days * 86_400_000);

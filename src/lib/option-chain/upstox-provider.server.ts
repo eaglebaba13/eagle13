@@ -19,6 +19,7 @@ import { makeStrike, type OptionChainSnapshot, type OptionUnderlying } from "./t
 const INSTRUMENT_KEYS: Record<OptionUnderlying, string> = {
   NIFTY: "NSE_INDEX|Nifty 50",
   BANKNIFTY: "NSE_INDEX|Nifty Bank",
+  SENSEX: "BSE_INDEX|SENSEX",
 };
 
 type UpstoxRow = {

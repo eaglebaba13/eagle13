@@ -18,6 +18,7 @@ export type QuoteSymbol =
   | "NIFTY50"
   | "BANKNIFTY"
   | "FINNIFTY"
+  | "SENSEX"
   | "INDIA_VIX"
   | "GOLD"
   | "SILVER"

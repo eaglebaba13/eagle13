@@ -109,7 +109,7 @@ function Dashboard() {
   const { data, dataUpdatedAt, isFetching, isStale, error, refetch } =
     useSuspenseQuery(marketQuery());
   const clock = useIstClock();
-  type TabKey = "nifty" | "banknifty" | "btc" | "gold";
+  type TabKey = "nifty" | "banknifty" | "sensex" | "btc" | "gold";
 
   const [prefs, setPrefs] = useState<DashboardPreferences>(DEFAULT_PREFERENCES);
   useEffect(() => {
@@ -147,6 +147,15 @@ function Dashboard() {
         safeBand: 300,
       },
     ];
+    if (data.sensex)
+      list.push({
+        key: "sensex",
+        label: "BSE SENSEX",
+        badge: "BSE",
+        quote: data.sensex,
+        accent: "#38bdf8",
+        safeBand: 350,
+      });
     if (data.btc)
       list.push({
         key: "btc",
@@ -166,7 +175,7 @@ function Dashboard() {
         safeBand: 15,
       });
     return list;
-  }, [data.nifty, data.banknifty, data.btc, data.gold]);
+  }, [data.nifty, data.banknifty, data.sensex, data.btc, data.gold]);
 
   const [tab, setTab] = useState<DashboardTabKey>("nifty");
   const active = tabs.find((t) => t.key === tab) ?? tabs[0];
@@ -642,6 +651,7 @@ function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?:
 function LiveTicker({
   nifty,
   banknifty,
+  sensex,
   vix,
   btc,
   gold,
@@ -649,6 +659,7 @@ function LiveTicker({
 }: {
   nifty: IndexQuote;
   banknifty: IndexQuote;
+  sensex?: IndexQuote | null;
   vix: IndexQuote | null;
   btc: IndexQuote | null;
   gold: IndexQuote | null;
@@ -658,6 +669,7 @@ function LiveTicker({
     { label: "NIFTY 50", q: nifty, color: "var(--eb-accent)" },
     { label: "BANKNIFTY", q: banknifty, color: "var(--eb-bn)" },
   ];
+  if (sensex) items.push({ label: "BSE SENSEX", q: sensex, color: "#38bdf8" });
   if (vix) items.push({ label: "INDIA VIX", q: vix, color: "var(--eb-neutral)", invert: true });
   if (gold) items.push({ label: "GOLD", q: gold, color: "var(--eb-accent)" });
   if (silver) items.push({ label: "SILVER", q: silver, color: "var(--eb-muted)" });

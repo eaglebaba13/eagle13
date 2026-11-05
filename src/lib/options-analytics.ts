@@ -22,7 +22,7 @@ export type OptionLeg = {
 };
 
 export type OptionChainSnapshot = {
-  symbol: "NIFTY" | "BANKNIFTY";
+  symbol: "NIFTY" | "BANKNIFTY" | "SENSEX";
   spot: number;
   expiry: string; // ISO date
   fetchedAt: string; // ISO timestamp
@@ -320,9 +320,9 @@ export function nearestAstroLevel(
   return { level: best, distance: bestD, strength: confluenceBand(bestD, tolerance) };
 }
 
-/** BANK NIFTY moves ~4× wider than NIFTY — scale tolerance accordingly. */
-export function confluenceTolerance(symbol: "NIFTY" | "BANKNIFTY"): number {
-  return symbol === "BANKNIFTY" ? 20 : 5;
+/** BANK NIFTY and SENSEX move wider than NIFTY — scale tolerance accordingly. */
+export function confluenceTolerance(symbol: "NIFTY" | "BANKNIFTY" | "SENSEX"): number {
+  return symbol === "BANKNIFTY" ? 20 : symbol === "SENSEX" ? 25 : 5;
 }
 
 /* ----------------------- Recommendation -------------------------- */

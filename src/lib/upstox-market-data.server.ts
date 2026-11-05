@@ -11,12 +11,17 @@ import type { DataQualityStatus } from "./data-freshness";
 import { mapUpstoxToIndexQuote } from "./upstox-quote-mapper";
 import type { IndexQuote } from "./market.functions";
 
-export type UpstoxIndexSymbol = Extract<QuoteSymbol, "NIFTY50" | "BANKNIFTY" | "INDIA_VIX">;
+export type UpstoxIndexSymbol = Extract<
+  QuoteSymbol,
+  "NIFTY50" | "BANKNIFTY" | "FINNIFTY" | "INDIA_VIX" | "SENSEX"
+>;
 
 const NAME_BY_SYMBOL: Record<UpstoxIndexSymbol, { name: string; label: string }> = {
   NIFTY50: { name: "NIFTY 50", label: "^NSEI" },
   BANKNIFTY: { name: "BANK NIFTY", label: "^NSEBANK" },
+  FINNIFTY: { name: "FIN NIFTY", label: "^NSEFINNIFTY" },
   INDIA_VIX: { name: "INDIA VIX", label: "^INDIAVIX" },
+  SENSEX: { name: "BSE SENSEX", label: "^BSESN" },
 };
 
 export interface UpstoxIndexQuoteResult {

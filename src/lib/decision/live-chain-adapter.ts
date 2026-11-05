@@ -40,7 +40,7 @@ export type LiveChainAdapterResult = {
   safeError: string | null;
 };
 
-const STEPS: Record<OptionUnderlying, number> = { NIFTY: 50, BANKNIFTY: 100 };
+const STEPS: Record<OptionUnderlying, number> = { NIFTY: 50, BANKNIFTY: 100, SENSEX: 100 };
 const MIN_ATM_COVERAGE = 5;
 
 /** Map upstream provider status → capability when the fetch failed. */

@@ -140,6 +140,7 @@ const SESSION_COLOR: Record<string, string> = {
 const MARKET_ORDER: { key: MarketKey; label: string }[] = [
   { key: "NIFTY", label: "NIFTY 50" },
   { key: "BANKNIFTY", label: "BANK NIFTY" },
+  { key: "SENSEX", label: "BSE SENSEX" },
   { key: "GOLD", label: "GOLD" },
   { key: "SILVER", label: "SILVER" },
   { key: "BTC", label: "BTC" },
