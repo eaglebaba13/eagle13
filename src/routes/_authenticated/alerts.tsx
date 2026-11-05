@@ -3,7 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BellRing, CheckCheck, X, RefreshCw, Search as SearchIcon } from "lucide-react";
+import { BellRing, CheckCheck, X, RefreshCw, Search as SearchIcon, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   getSmartAlertEvents,
@@ -13,9 +13,11 @@ import {
   markSmartAlertDismissed,
   markAllSmartAlertsRead,
   runSmartAlerts,
+  sendTelegramTestPing,
   type PersistedAlertEventRow,
   type PersistedSubscriptionRow,
   type SmartAlertRunResult,
+  type TelegramTestPingResult,
 } from "@/lib/smart-alerts/persistence.functions";
 import { allAlertTypes, defaultSubscription } from "@/lib/smart-alerts/subscriptions";
 import { ALERT_DISCLAIMER, type AlertPriority, type AlertType } from "@/lib/smart-alerts/types";
@@ -112,6 +114,23 @@ function AlertCenterPage() {
   const readFn = useServerFn(markSmartAlertRead);
   const dismissFn = useServerFn(markSmartAlertDismissed);
   const readAllFn = useServerFn(markAllSmartAlertsRead);
+  const pingFn = useServerFn(sendTelegramTestPing);
+
+  const [pingStatus, setPingStatus] = useState<TelegramTestPingResult | null>(null);
+
+  const testPingMut = useMutation({
+    mutationFn: async () => {
+      setPingStatus(null);
+      return await pingFn();
+    },
+    onSuccess: (data) => {
+      setPingStatus(data);
+      qc.invalidateQueries({ queryKey: ["alert-deliveries"] });
+    },
+    onError: (err: Error) => {
+      setPingStatus({ ok: false, message: err.message, error: err.message });
+    },
+  });
 
   const [tab, setTab] = useState<"unread" | "all" | "dismissed">("unread");
   const [priorityFilter, setPriorityFilter] = useState<AlertPriority | "ALL">("ALL");
@@ -206,9 +225,9 @@ function AlertCenterPage() {
   });
 
   const run = useMutation({
-    mutationFn: async (): Promise<SmartAlertRunResult> => {
+    mutationFn: async (vars?: { data?: { telegramEnabled?: boolean } }): Promise<SmartAlertRunResult> => {
       try {
-        return await runFn();
+        return await runFn(vars ?? { data: {} });
       } catch {
         return {
           emittedIds: (events.data ?? []).map((e) => e.id),
@@ -244,7 +263,10 @@ function AlertCenterPage() {
         };
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["smart-alerts"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["smart-alerts"] });
+      qc.invalidateQueries({ queryKey: ["alert-deliveries"] });
+    },
   });
 
   const toggleType = useMutation({
@@ -387,7 +409,11 @@ function AlertCenterPage() {
         </div>
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => run.mutate()}
+            onClick={() =>
+              run.mutate({
+                data: { telegramEnabled: subscription.data?.telegramEnabled ?? true },
+              })
+            }
             disabled={run.isPending}
             className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all shadow-[0_0_12px_rgba(245,158,11,0.1)] disabled:opacity-50"
           >
@@ -549,7 +575,13 @@ function AlertCenterPage() {
                 type="checkbox"
                 checked={subscription.data?.telegramEnabled === true}
                 disabled={toggleTelegram.isPending}
-                onChange={(ev) => toggleTelegram.mutate(ev.target.checked)}
+                onChange={(ev) => {
+                  const on = ev.target.checked;
+                  toggleTelegram.mutate(on);
+                  if (on) {
+                    run.mutate({ data: { telegramEnabled: true } });
+                  }
+                }}
                 aria-describedby="telegram-delivery-note"
                 className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 accent-amber-400 cursor-pointer"
               />
@@ -557,6 +589,44 @@ function AlertCenterPage() {
             <p id="telegram-delivery-note" className="mt-1.5 text-[11px] text-zinc-400">
               Opt in to dispatch eligible research alerts to the shared operator Telegram destination. Evaluation runs via <em>Evaluate now</em> or automated heartbeat.
             </p>
+
+            <div className="mt-3 pt-3 border-t border-zinc-800/80 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => testPingMut.mutate()}
+                disabled={testPingMut.isPending}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/60 transition-all shadow-[0_0_12px_rgba(245,158,11,0.1)] disabled:opacity-50 cursor-pointer"
+              >
+                <Send size={13} className={testPingMut.isPending ? "animate-pulse" : ""} />
+                {testPingMut.isPending ? "Dispatching Telegram Ping…" : "Send Test Telegram Ping"}
+              </button>
+              {pingStatus && (
+                <div
+                  className={`p-2.5 rounded-lg text-[11px] font-mono border leading-tight ${
+                    pingStatus.ok
+                      ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300"
+                      : "bg-rose-500/10 border-rose-500/40 text-rose-300"
+                  }`}
+                >
+                  {pingStatus.message}
+                </div>
+              )}
+              <a
+                href="/telegram-log"
+                className="text-[11px] text-amber-400/80 hover:text-amber-300 underline font-mono flex items-center justify-end gap-1 mt-1"
+              >
+                View Telegram Delivery Log →
+              </a>
+            </div>
+
+            {(run.error || (run.data?.persistenceFailed && run.data?.persistenceError)) && (
+              <p
+                role="alert"
+                className="mt-2 text-xs text-rose-400 border border-rose-500/30 bg-rose-500/10 p-2.5 rounded-lg font-mono leading-relaxed"
+              >
+                {run.data?.persistenceError ?? "Alert evaluation failed."} Verify delivery history before retrying.
+              </p>
+            )}
           </div>
 
           <div className="pt-2 border-t border-zinc-800/80">

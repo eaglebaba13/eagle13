@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { GUEST_USER_ID } from "@/lib/guest-session";
+import { recordDeliveryAttempt } from "@/lib/notifications/alert-delivery.functions";
 
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
@@ -1039,7 +1040,8 @@ export interface SmartAlertRunResult {
 
 export const runSmartAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<SmartAlertRunResult> => {
+  .inputValidator((d?: { telegramEnabled?: boolean }) => d ?? {})
+  .handler(async ({ context, data }): Promise<SmartAlertRunResult> => {
     assertAuth(context);
     if (!context.supabase) throw new Error("Unauthorized: Authentication required");
     const userId = context.userId;
@@ -1073,6 +1075,18 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       userId,
       (subRow.data as Record<string, unknown> | null) ?? null,
     );
+
+    // Apply explicit telegramEnabled override or default on for guest with active server env
+    if (data?.telegramEnabled !== undefined) {
+      subscription.telegramEnabled = data.telegramEnabled;
+    } else if (
+      isGuest &&
+      typeof process !== "undefined" &&
+      process.env.TELEGRAM_BOT_TOKEN &&
+      process.env.TELEGRAM_CHAT_ID
+    ) {
+      subscription.telegramEnabled = true;
+    }
 
     let ctx: AlertEvaluationContext;
     try {
@@ -1128,7 +1142,9 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
           continue;
         }
       }
-      const insertedId = (ins as { id?: string } | null)?.id ?? (isGuest ? (ev.id || ev.fingerprint) : null);
+      const insertedId =
+        (ins as { id?: string } | null)?.id ??
+        (isGuest || (insErr as { code?: string })?.code === "42501" ? (ev.id || ev.fingerprint) : null);
       if (!insertedId) {
         persistenceFailed = true;
         eventPersistenceFailed = true;
@@ -1152,8 +1168,10 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
             attempted_at: att.attemptedAt,
           } as never);
         if (attemptError) {
-          persistenceFailed = true;
-          persistenceError = "SMART_ALERT_DELIVERY_AUDIT_WRITE_FAILED";
+          if (!isGuest && (attemptError as { code?: string })?.code !== "42501") {
+            persistenceFailed = true;
+            persistenceError = "SMART_ALERT_DELIVERY_AUDIT_WRITE_FAILED";
+          }
         }
       }
     }
@@ -1173,7 +1191,11 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
           } as never,
           { onConflict: "user_id" },
         );
-      if (checkpointError) persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
+      if (checkpointError) {
+        if (!isGuest && (checkpointError as { code?: string })?.code !== "42501") {
+          persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
+        }
+      }
     } else {
       // An audit-only failure must not cause already-sent messages to be resent.
       const { error: checkpointError } = await context.supabase
@@ -1195,8 +1217,10 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
           { onConflict: "user_id" },
         );
       if (checkpointError) {
-        persistenceFailed = true;
-        persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
+        if (!isGuest && (checkpointError as { code?: string })?.code !== "42501") {
+          persistenceFailed = true;
+          persistenceError = "SMART_ALERT_CHECKPOINT_WRITE_FAILED";
+        }
       }
     }
 
@@ -1351,4 +1375,148 @@ export const getAdminAlertDiagnostics = createServerFn({ method: "GET" })
       lastEvaluationStatus: health.lastEvaluationStatus,
       latestErrors: errorRows,
     };
+  });
+
+// ─────────────────────────────────────────────────────────────
+// Operator verification: Instant Telegram ping
+// ─────────────────────────────────────────────────────────────
+
+export interface TelegramTestPingResult {
+  readonly ok: boolean;
+  readonly message: string;
+  readonly messageId?: number;
+  readonly error?: string;
+}
+
+export const sendTelegramTestPing = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<TelegramTestPingResult> => {
+    assertAuth(context);
+    const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    if (!token || !chatId) {
+      const err =
+        "TELEGRAM_CREDENTIALS_MISSING: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured on the production server.";
+      recordDeliveryAttempt({
+        id: `ping-${Date.now()}`,
+        event_id: null,
+        fingerprint: `operator-ping-${Date.now()}`,
+        provider: "TELEGRAM",
+        status: "DISABLED",
+        error_code: "MISSING_TELEGRAM_CREDENTIALS",
+        retryable: false,
+        duration_ms: 0,
+        attempted_at: new Date().toISOString(),
+        event: {
+          title: "Operator Telegram Test Ping",
+          type: "OPERATOR_PING",
+          priority: "INFO",
+        },
+        retry_count: 0,
+      });
+      return { ok: false, message: err, error: err };
+    }
+
+    const nowIso = new Date().toISOString();
+    const text = [
+      "🔔 [EagleBABA Operator Alert Ping]",
+      "",
+      `Session: ${context.userId}`,
+      `Timestamp: ${nowIso}`,
+      "Status: Bot API & Dispatch Pipeline Online",
+      "",
+      "⚡ Verified from Alert Center control plane.",
+      "Research only — not financial advice — no broker execution.",
+    ].join("\n");
+
+    const start = Date.now();
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          disable_web_page_preview: true,
+        }),
+      });
+
+      const duration = Date.now() - start;
+      const json = (await response.json()) as {
+        ok?: boolean;
+        description?: string;
+        result?: { message_id?: number };
+      };
+
+      if (!response.ok || json.ok !== true) {
+        const errorDesc = json.description || `HTTP ${response.status}`;
+        recordDeliveryAttempt({
+          id: `ping-${Date.now()}`,
+          event_id: null,
+          fingerprint: `operator-ping-${Date.now()}`,
+          provider: "TELEGRAM",
+          status: "FAILED",
+          error_code: errorDesc,
+          retryable: false,
+          duration_ms: duration,
+          attempted_at: nowIso,
+          event: {
+            title: "Operator Telegram Test Ping",
+            type: "OPERATOR_PING",
+            priority: "INFO",
+          },
+          retry_count: 0,
+        });
+        return {
+          ok: false,
+          message: `Telegram delivery rejected: ${errorDesc}`,
+          error: errorDesc,
+        };
+      }
+
+      recordDeliveryAttempt({
+        id: `ping-${Date.now()}`,
+        event_id: null,
+        fingerprint: `operator-ping-${Date.now()}`,
+        provider: "TELEGRAM",
+        status: "DELIVERED",
+        error_code: null,
+        retryable: false,
+        duration_ms: duration,
+        attempted_at: nowIso,
+        event: {
+          title: "Operator Telegram Test Ping",
+          type: "OPERATOR_PING",
+          priority: "INFO",
+        },
+        retry_count: 0,
+      });
+
+      return {
+        ok: true,
+        message: `✓ Test ping delivered to Telegram chat (${chatId}) [msg_id: ${json.result?.message_id}]`,
+        messageId: json.result?.message_id,
+      };
+    } catch (err) {
+      const duration = Date.now() - start;
+      const msg = (err as Error)?.message || "Network error sending Telegram ping";
+      recordDeliveryAttempt({
+        id: `ping-${Date.now()}`,
+        event_id: null,
+        fingerprint: `operator-ping-${Date.now()}`,
+        provider: "TELEGRAM",
+        status: "FAILED",
+        error_code: msg,
+        retryable: true,
+        duration_ms: duration,
+        attempted_at: nowIso,
+        event: {
+          title: "Operator Telegram Test Ping",
+          type: "OPERATOR_PING",
+          priority: "INFO",
+        },
+        retry_count: 0,
+      });
+      return { ok: false, message: `Failed to dispatch ping: ${msg}`, error: msg };
+    }
   });

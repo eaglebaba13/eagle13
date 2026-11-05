@@ -8,6 +8,7 @@ import type {
   AlertSubscription,
 } from "./types";
 import type { AlertDeliveryProvider } from "./delivery";
+import { recordDeliveryAttempt } from "../notifications/alert-delivery.functions";
 
 export type TelegramDeliveryStatus =
   "DELIVERED" | "FAILED" | "DISABLED" | "RETRYABLE_FAILURE" | "CONFIGURATION_ERROR";
@@ -189,6 +190,23 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
 
     const env = getTelegramEnv();
     if (!env) {
+      recordDeliveryAttempt({
+        id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        event_id: event.id,
+        fingerprint: event.fingerprint,
+        provider: "TELEGRAM",
+        status: "DISABLED",
+        error_code: "MISSING_TELEGRAM_CREDENTIALS",
+        retryable: false,
+        duration_ms: 0,
+        attempted_at: nowIso,
+        event: {
+          title: event.title,
+          type: event.type,
+          priority: event.priority,
+        },
+        retry_count: 0,
+      });
       return {
         provider: "TELEGRAM",
         attemptedAt: nowIso,
@@ -199,18 +217,41 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
       };
     }
 
+    const start = Date.now();
     const result = await sendTelegramMessage(event);
+    const duration = Date.now() - start;
+
+    const deliveryStatus =
+      result.status === "DELIVERED"
+        ? "DELIVERED"
+        : result.status === "CONFIGURATION_ERROR"
+          ? "DISABLED"
+          : result.status === "RETRYABLE_FAILURE"
+            ? "RETRY"
+            : "FAILED";
+
+    recordDeliveryAttempt({
+      id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      event_id: event.id,
+      fingerprint: event.fingerprint,
+      provider: "TELEGRAM",
+      status: deliveryStatus,
+      error_code: result.errorCode,
+      retryable: result.status === "RETRYABLE_FAILURE",
+      duration_ms: duration,
+      attempted_at: nowIso,
+      event: {
+        title: event.title,
+        type: event.type,
+        priority: event.priority,
+      },
+      retry_count: 0,
+    });
+
     return {
       provider: "TELEGRAM",
       attemptedAt: nowIso,
-      status:
-        result.status === "DELIVERED"
-          ? "DELIVERED"
-          : result.status === "CONFIGURATION_ERROR"
-            ? "DISABLED"
-            : result.status === "RETRYABLE_FAILURE"
-              ? "RETRY"
-              : "FAILED",
+      status: deliveryStatus,
       errorCode: result.errorCode,
       retryable: result.status === "RETRYABLE_FAILURE",
       fingerprint: event.fingerprint,
