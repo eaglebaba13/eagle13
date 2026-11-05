@@ -70,11 +70,22 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
         const upstoxMod = await import("./provider-foundation/upstox/upstox-historical.adapter.server");
         const buildUpstox =
           upstoxMod.buildUpstoxProviderAdapter ??
-          (upstoxMod as { default?: { buildUpstoxProviderAdapter?: () => { fetchHistorical?: Function } } })
+          (upstoxMod as { default?: { buildUpstoxProviderAdapter?: () => { fetchHistorical?: Function; fetchIntraday?: Function } } })
             .default?.buildUpstoxProviderAdapter;
         if (typeof buildUpstox === "function") {
           const adapter = buildUpstox();
-          if (adapter.fetchHistorical) {
+          // For intraday timeframes (1m-1h), fetch today's active session candles first
+          if (intervalMs < 86_400_000 && adapter.fetchIntraday) {
+            const intradayResult = await adapter.fetchIntraday(
+              symbol as QuoteSymbol,
+              tf,
+              nowIso,
+            );
+            if (intradayResult.ok && intradayResult.data.candles.length > 0) {
+              historical = intradayResult.data.candles;
+            }
+          }
+          if (historical.length === 0 && adapter.fetchHistorical) {
             const result = await adapter.fetchHistorical(
               symbol as QuoteSymbol,
               tf,

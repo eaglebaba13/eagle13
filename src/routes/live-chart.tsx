@@ -185,7 +185,21 @@ function LiveChartSelection({
         byTime.set(c.x, c);
       }
     }
-    return [...byTime.values()].sort((a, b) => a.x - b.x);
+    const sorted = [...byTime.values()].sort((a, b) => a.x - b.x);
+
+    // Intraday timescale filtering: filter visible candles to current trading day
+    if (intervalMs < 86_400_000 && sorted.length > 0) {
+      const todayStr = new Date().toDateString();
+      const todayCandles = sorted.filter((c) => new Date(c.x).toDateString() === todayStr);
+      if (todayCandles.length > 0) {
+        return todayCandles;
+      }
+      // If before market open today, focus on single latest trading session day
+      const lastDayStr = new Date(sorted[sorted.length - 1].x).toDateString();
+      return sorted.filter((c) => new Date(c.x).toDateString() === lastDayStr);
+    }
+
+    return sorted;
   }, [historical, bootstrapStatus, liveLevels, symbol, intervalMs, sse.completedCandles, sse.currentCandle, sse.status?.lastLtp]);
 
   const displayCandles = chartData;
@@ -238,18 +252,36 @@ function LiveChartSelection({
     [indicatorResults],
   );
 
+  const marketDef = SYMBOLS.find((s) => s.key === symbol);
+  const market = marketDef?.marketKey
+    ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+    : undefined;
+  const currentLtp = sse.status?.lastLtp ?? market?.livePrice ?? market?.prevClose;
+  const moonPhase = liveLevels?.moonPhase;
+  const moonNakshatra = liveLevels?.moonNakshatra;
+
+  const isConnected = sse.connected && sse.status?.connectionState === "CONNECTED";
+  const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
+
+  const statusColor = isLive
+    ? "text-emerald-400"
+    : sse.status?.freshness === "STALE"
+      ? "text-amber-400"
+      : "text-zinc-400";
+  const statusLabel = isLive
+    ? "LIVE"
+    : sse.status?.freshness === "STALE"
+      ? "STALE"
+      : sse.error && !isConnected
+        ? sse.error
+        : isConnected
+          ? "CONNECTED"
+          : "RECONNECTING";
+
   const astroAnnotations = useMemo(() => {
-    if (!liveLevels) return [];
-    const marketDef = SYMBOLS.find((s) => s.key === symbol);
-    if (!marketDef || !marketDef.marketKey) return [];
-    const market = liveLevels.markets.find((m) => m.key === marketDef.marketKey);
-    if (!market) return [];
+    if (!liveLevels || !market) return [];
 
-    const activeLtp =
-      sse.status?.lastLtp ??
-      market.livePrice ??
-      market.prevClose;
-
+    const activeLtp = currentLtp ?? market.livePrice ?? market.prevClose;
     const cycles = computeCycles(market.prevClose);
     const rawAnnotations: {
       y: number;
@@ -266,13 +298,13 @@ function LiveChartSelection({
       rawAnnotations.push(
         {
           y: r1,
-          borderColor: "#22c55e",
-          label: { text: `${p.planet} R1`, style: { color: "#22c55e", background: "transparent" } },
+          borderColor: "#10b981",
+          label: { text: `${p.planet} R1`, style: { color: "#10b981", background: "transparent" } },
         },
         {
           y: r2,
-          borderColor: "#22c55e",
-          label: { text: `${p.planet} R2`, style: { color: "#22c55e", background: "transparent" } },
+          borderColor: "#10b981",
+          label: { text: `${p.planet} R2`, style: { color: "#10b981", background: "transparent" } },
         },
         {
           y: s1,
@@ -328,7 +360,7 @@ function LiveChartSelection({
       }
     }
 
-    // Filter distant lines that are >3% away from active LTP to prevent price scale blowout
+    // Filter distant lines that are >3% away from active LTP to prevent clutter
     const maxDistancePct = 0.03;
     return rawAnnotations.filter((a) => {
       if (!Number.isFinite(a.y) || a.y <= 0) return false;
@@ -336,7 +368,7 @@ function LiveChartSelection({
       const distance = Math.abs(a.y - activeLtp) / activeLtp;
       return distance <= maxDistancePct;
     });
-  }, [showAstroLevels, showGannLevels, showSquareRootLevels, liveLevels, symbol, sse.status?.lastLtp]);
+  }, [showAstroLevels, showGannLevels, showSquareRootLevels, liveLevels, market, currentLtp]);
 
   const chartSeries = useMemo(() => {
     const source = displayCandles.length > 0 ? displayCandles : chartData;
@@ -371,37 +403,37 @@ function LiveChartSelection({
     const source = displayCandles.length > 0 ? displayCandles : chartData;
     const hasVolumeSeries = showVolume && source.some((c) => c.volume != null && c.volume > 0);
 
-    // Compute active candlestick bounds to prioritize active price action
-    const visibleLows = source.map((c) => c.y[2]).filter((v) => Number.isFinite(v) && v > 0);
-    const visibleHighs = source.map((c) => c.y[1]).filter((v) => Number.isFinite(v) && v > 0);
-    const candleMin = visibleLows.length > 0 ? Math.min(...visibleLows) : undefined;
-    const candleMax = visibleHighs.length > 0 ? Math.max(...visibleHighs) : undefined;
+    // Hard clamp yaxis.min and yaxis.max strictly to the active candlestick session
+    const lows = source.map((c) => c.y[2]).filter((v) => Number.isFinite(v) && v > 0);
+    const highs = source.map((c) => c.y[1]).filter((v) => Number.isFinite(v) && v > 0);
+    const sessionLow = lows.length > 0 ? Math.min(...lows) : null;
+    const sessionHigh = highs.length > 0 ? Math.max(...highs) : null;
+    const sessionRange = sessionHigh != null && sessionLow != null ? sessionHigh - sessionLow : 0;
+    const activePrice = currentLtp ?? (source.length > 0 ? source[source.length - 1].y[3] : 24400);
+
+    let yaxisMin: number;
+    let yaxisMax: number;
+
+    if (sessionLow != null && sessionHigh != null && sessionRange > 1) {
+      yaxisMin = Math.floor((sessionLow - sessionRange * 0.05) * 100) / 100;
+      yaxisMax = Math.ceil((sessionHigh + sessionRange * 0.05) * 100) / 100;
+    } else {
+      // If sessionHigh === sessionLow or range is negligible, fallback to LTP * 0.998 and LTP * 1.002
+      yaxisMin = Math.floor(activePrice * 0.998 * 100) / 100;
+      yaxisMax = Math.ceil(activePrice * 1.002 * 100) / 100;
+    }
 
     const yaxis: ApexYAxis[] = [
       {
         seriesName: symbol,
+        min: yaxisMin,
+        max: yaxisMax,
+        forceNiceScale: false,
         labels: {
           style: { colors: "#a1a1aa", fontSize: "11px", fontFamily: "var(--eb-mono, monospace)" },
           formatter: (val: number) => (typeof val === "number" && Number.isFinite(val) ? val.toFixed(2) : ""),
         },
         tooltip: { enabled: true },
-        forceNiceScale: true,
-        min: (dataMin: number) => {
-          if (candleMin != null && Number.isFinite(candleMin)) {
-            const range = (candleMax ?? candleMin) - candleMin;
-            const pad = Math.max(range * 0.08, candleMin * 0.001);
-            return Math.floor(Math.min(dataMin, candleMin - pad));
-          }
-          return Math.floor(dataMin * 0.999);
-        },
-        max: (dataMax: number) => {
-          if (candleMax != null && Number.isFinite(candleMax)) {
-            const range = candleMax - (candleMin ?? candleMax);
-            const pad = Math.max(range * 0.08, candleMax * 0.001);
-            return Math.ceil(Math.max(dataMax, candleMax + pad));
-          }
-          return Math.ceil(dataMax * 1.001);
-        },
       },
     ];
     if (hasVolumeSeries) {
@@ -415,6 +447,34 @@ function LiveChartSelection({
         title: { text: "Vol", style: { color: "#71717a" } },
       });
     }
+
+    // TimeScale Auto-Focus to Today's Active Session (09:15 AM to current time)
+    let xaxisMin: number | undefined;
+    let xaxisMax: number | undefined;
+
+    if (intervalMs < 86_400_000) {
+      const now = new Date();
+      const istDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now);
+      const sessionStartMs = Date.parse(`${istDateStr}T09:15:00+05:30`);
+
+      if (source.length > 0) {
+        xaxisMin = Number.isFinite(sessionStartMs) ? Math.min(source[0].x, sessionStartMs) : source[0].x;
+        const lastCandleTime = source[source.length - 1].x;
+        xaxisMax = Math.max(lastCandleTime + intervalMs * 3, Date.now() + intervalMs * 2);
+      } else if (Number.isFinite(sessionStartMs)) {
+        xaxisMin = sessionStartMs;
+        xaxisMax = Math.max(sessionStartMs + intervalMs * 30, Date.now() + intervalMs * 2);
+      }
+    } else if (source.length > 0) {
+      xaxisMin = source[0].x;
+      xaxisMax = source[source.length - 1].x + intervalMs;
+    }
+
     return {
       chart: {
         type: "candlestick" as const,
@@ -439,18 +499,18 @@ function LiveChartSelection({
       title: { text: undefined },
       xaxis: {
         type: "datetime" as const,
+        min: xaxisMin,
+        max: xaxisMax,
         labels: {
           style: { colors: "#a1a1aa", fontSize: "10px", fontFamily: "var(--eb-mono, monospace)" },
           datetimeUTC: false,
         },
         tooltip: { enabled: false },
-        min: source.length > 0 ? source[0].x : undefined,
-        max: source.length > 0 ? source[source.length - 1].x + intervalMs : undefined,
       },
       yaxis,
       plotOptions: {
         candlestick: {
-          colors: { upward: "#10b981", downward: "#f43f5e" },
+          colors: { upward: "#10b981", downward: "#ef4444" },
           wick: { useFillColor: true },
         },
       },
@@ -462,6 +522,8 @@ function LiveChartSelection({
         yaxis: astroAnnotations.map((a) => ({
           y: a.y,
           borderColor: a.borderColor,
+          strokeDashArray: 2,
+          opacity: 0.8,
           label: a.label
             ? {
                 text: a.label.text,
@@ -476,33 +538,7 @@ function LiveChartSelection({
       },
       dataLabels: { enabled: false },
     };
-  }, [overlaySeries, astroAnnotations, showVolume, displayCandles, chartData, symbol, intervalMs]);
-
-  const isConnected = sse.connected && sse.status?.connectionState === "CONNECTED";
-  const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
-
-  const statusColor = isLive
-    ? "text-emerald-400"
-    : sse.status?.freshness === "STALE"
-      ? "text-amber-400"
-      : "text-zinc-400";
-  const statusLabel = isLive
-    ? "LIVE"
-    : sse.status?.freshness === "STALE"
-      ? "STALE"
-      : sse.error && !isConnected
-        ? sse.error
-        : isConnected
-          ? "CONNECTED"
-          : "RECONNECTING";
-
-  const marketDef = SYMBOLS.find((s) => s.key === symbol);
-  const market = marketDef?.marketKey
-    ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
-    : undefined;
-  const currentLtp = sse.status?.lastLtp ?? market?.livePrice;
-  const moonPhase = liveLevels?.moonPhase;
-  const moonNakshatra = liveLevels?.moonNakshatra;
+  }, [overlaySeries, astroAnnotations, showVolume, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
   const topControls = (
     <div className="flex items-center gap-2 flex-wrap">

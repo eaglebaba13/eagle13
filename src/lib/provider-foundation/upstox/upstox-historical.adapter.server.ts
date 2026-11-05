@@ -638,6 +638,7 @@ export function buildUpstoxProviderAdapter(opts: UpstoxAdapterOptions = {}): Pro
     freshness: DEFAULT_FRESHNESS.HISTORICAL,
     fetchQuote: (symbol, nowIso) => impl.fetchQuote(symbol, nowIso),
     fetchHistorical: (symbol, tf, limit, nowIso) => impl.fetchHistorical(symbol, tf, limit, nowIso),
+    fetchIntraday: (symbol, tf, nowIso) => impl.fetchIntraday(symbol, tf, nowIso),
   };
 }
 
