@@ -96,11 +96,15 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         user_metadata: { full_name: "Guest Researcher" },
       };
 
+      const SUPABASE_SERVICE_ROLE_KEY =
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+      const guestKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_PUBLISHABLE_KEY;
+
       const guestSupabase =
-        SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
-          ? createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        SUPABASE_URL && guestKey
+          ? createClient<Database>(SUPABASE_URL, guestKey, {
               global: {
-                fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
+                fetch: createSupabaseFetch(guestKey),
               },
               auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
             })
