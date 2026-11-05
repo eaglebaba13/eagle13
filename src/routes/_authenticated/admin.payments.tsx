@@ -48,13 +48,15 @@ function AdminPaymentsPage() {
     }
   };
 
+  const isAdmin = role === "admin" || role === "superadmin";
+
   useEffect(() => {
-    if (role !== "admin") return;
+    if (!isAdmin) return;
     void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, filter]);
+  }, [isAdmin, filter]);
 
-  if (role !== "admin") {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background px-4 py-8">
         <div className="mx-auto max-w-2xl rounded-xl border border-red-500/40 bg-red-500/[0.06] p-6 text-sm text-red-300">

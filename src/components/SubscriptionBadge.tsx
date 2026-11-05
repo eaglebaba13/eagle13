@@ -11,6 +11,7 @@ export function SubscriptionBadge() {
 
   if (loading || !ctx) return null;
 
+  const isSuperadmin = ctx.role === "superadmin";
   const isAdmin = ctx.role === "admin";
   const planId = effective.planId;
   const isTrial = effective.isTrial;
@@ -18,9 +19,12 @@ export function SubscriptionBadge() {
 
   let label: string;
   let tone: string;
-  if (isAdmin) {
+  if (isSuperadmin) {
+    label = "SUPERADMIN";
+    tone = "border-amber-400/50 bg-amber-400/15 text-amber-300 font-bold";
+  } else if (isAdmin) {
     label = "ADMIN";
-    tone = "border-purple-500/40 bg-purple-500/10 text-purple-500";
+    tone = "border-purple-500/40 bg-purple-500/10 text-purple-400 font-bold";
   } else if (planId === "free") {
     label = "FREE";
     tone = "border-border bg-muted/40 text-muted-foreground";

@@ -159,14 +159,14 @@ function PlanCard({
         ) : (
           <div className="space-y-2">
             <Link
-              to={isAuthenticated ? "/payment-status" : "/auth"}
-              search={isAuthenticated ? { plan: id as "pro" | "professional", cycle } : undefined}
-              className="block w-full rounded-md bg-amber-400/90 hover:bg-amber-400 py-2 text-center text-sm font-semibold text-slate-900"
+              to="/pricing/manual-checkout"
+              search={{ plan: id === "professional" ? "professional" : "pro", cycle }}
+              className="block w-full rounded-md bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 py-2 text-center text-sm font-semibold text-slate-950 shadow-md shadow-amber-500/20"
             >
-              Pay via UPI QR
+              Subscribe Now
             </Link>
             <p className="text-[10px] text-center text-muted-foreground">
-              Manual verification · typical approval within 24 hours · no auto activation.
+              Instant Razorpay or Direct UPI QR Checkout.
             </p>
           </div>
         )}

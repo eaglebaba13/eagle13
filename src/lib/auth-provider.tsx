@@ -1,4 +1,4 @@
-import type { Session } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { highestRole, type AppRole } from "./roles";
@@ -13,18 +13,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const lastEvent = useRef<string | null>(null);
 
-  const loadProfileAndRoles = useCallback(async (userId: string) => {
+  const loadProfileAndRoles = useCallback(async (userId: string, targetUser?: User | null) => {
     const [profileRes, rolesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
     const rolesList = (rolesRes.data ?? []).map((r) => r.role as AppRole);
+
+    // Also include role from user metadata if present
+    const metaRole = (targetUser?.user_metadata?.role) as AppRole | undefined;
+    if (metaRole && !rolesList.includes(metaRole)) {
+      rolesList.push(metaRole);
+    }
+
     setRoles(rolesList);
     const primary = highestRole(rolesList.length ? rolesList : ["free"]);
     if (profileRes.data) {
       setProfile(serializeProfile(profileRes.data as ProfileRow, primary));
     } else {
-      setProfile(null);
+      const email = targetUser?.email || "";
+      const name =
+        (targetUser?.user_metadata?.full_name as string) ||
+        (targetUser?.user_metadata?.name as string) ||
+        email.split("@")[0] ||
+        "Trader";
+      const avatar =
+        (targetUser?.user_metadata?.avatar_url as string) ||
+        (targetUser?.user_metadata?.picture as string) ||
+        null;
+
+      setProfile({
+        id: userId,
+        email,
+        displayName: name,
+        avatarUrl: avatar,
+        timezone: "Asia/Kolkata",
+        country: "IN",
+        currency: "INR",
+        preferredBroker: null,
+        preferredInstrument: "NIFTY",
+        language: "en",
+        theme: "dark",
+        role: primary,
+      });
     }
   }, []);
 
@@ -42,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Defer the profile fetch — never call supabase from inside the callback.
         setTimeout(() => {
           if (!mounted) return;
-          void loadProfileAndRoles(s.user.id);
+          void loadProfileAndRoles(s.user.id, s.user);
         }, 0);
       } else {
         if (isGuestSessionActive()) {
@@ -73,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setSession(data.session);
       if (data.session?.user) {
-        void loadProfileAndRoles(data.session.user.id).finally(() => {
+        void loadProfileAndRoles(data.session.user.id, data.session.user).finally(() => {
           if (mounted) setLoading(false);
         });
       } else {
@@ -112,9 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
     setSession(null);
     if (typeof window !== "undefined") {
-      // Clear user-scoped ephemeral caches. We deliberately keep the raw
-      // eaglebaba.* legacy scopes so re-signing-in with the same user still
-      // sees the migration assistant.
       try {
         sessionStorage.clear();
       } catch {
@@ -124,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (session?.user) await loadProfileAndRoles(session.user.id);
+    if (session?.user) await loadProfileAndRoles(session.user.id, session.user);
   }, [session, loadProfileAndRoles]);
 
   const logAudit = useCallback(

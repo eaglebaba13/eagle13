@@ -38,6 +38,7 @@ import { Route as AbsoluteIntradayValidationRouteImport } from './routes/absolut
 import { Route as AbsoluteIntradayRouteImport } from './routes/absolute-intraday'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PricingManualCheckoutRouteImport } from './routes/pricing.manual-checkout'
 import { Route as DevDiagnosticsRouteImport } from './routes/dev.diagnostics'
 import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-fixture-capture'
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedResearchLabInstitutionalFlowRouteImport } from '.
 import { Route as AuthenticatedResearchLabGannGapRouteImport } from './routes/_authenticated/research-lab.gann-gap'
 import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_authenticated/research-lab.alerts'
 import { Route as AuthenticatedAdminWidgetsRouteImport } from './routes/_authenticated/admin.widgets'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_authenticated/admin.tradingview'
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
@@ -74,6 +76,7 @@ import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authenticated/admin.readiness'
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
+import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
 import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
@@ -229,6 +232,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PricingManualCheckoutRoute = PricingManualCheckoutRouteImport.update({
+  id: '/manual-checkout',
+  path: '/manual-checkout',
+  getParentRoute: () => PricingRoute,
 } as any)
 const DevDiagnosticsRoute = DevDiagnosticsRouteImport.update({
   id: '/dev/diagnostics',
@@ -393,6 +401,11 @@ const AuthenticatedAdminWidgetsRoute =
     path: '/admin/widgets',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminTradingviewRoute =
   AuthenticatedAdminTradingviewRouteImport.update({
     id: '/admin/tradingview',
@@ -435,6 +448,11 @@ const AuthenticatedAdminProvidersRoute =
     path: '/admin/providers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
+  id: '/admin/plans',
+  path: '/admin/plans',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminPaymentsRoute =
   AuthenticatedAdminPaymentsRouteImport.update({
     id: '/admin/payments',
@@ -518,7 +536,7 @@ export interface FileRoutesByFullPath {
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
-  '/pricing': typeof PricingRoute
+  '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
@@ -548,6 +566,7 @@ export interface FileRoutesByFullPath {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
+  '/pricing/manual-checkout': typeof PricingManualCheckoutRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -555,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
@@ -562,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
@@ -594,7 +615,7 @@ export interface FileRoutesByTo {
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
-  '/pricing': typeof PricingRoute
+  '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
@@ -624,6 +645,7 @@ export interface FileRoutesByTo {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
+  '/pricing/manual-checkout': typeof PricingManualCheckoutRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -631,6 +653,7 @@ export interface FileRoutesByTo {
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
@@ -638,6 +661,7 @@ export interface FileRoutesByTo {
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
@@ -672,7 +696,7 @@ export interface FileRoutesById {
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
   '/options-chain': typeof OptionsChainRoute
-  '/pricing': typeof PricingRoute
+  '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
   '/risk': typeof RiskRoute
@@ -702,6 +726,7 @@ export interface FileRoutesById {
   '/dev/astro-audit': typeof DevAstroAuditRoute
   '/dev/astro-fixture-capture': typeof DevAstroFixtureCaptureRoute
   '/dev/diagnostics': typeof DevDiagnosticsRoute
+  '/pricing/manual-checkout': typeof PricingManualCheckoutRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
@@ -709,6 +734,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/readiness': typeof AuthenticatedAdminReadinessRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
@@ -716,6 +742,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
   '/_authenticated/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
   '/_authenticated/research-lab/alerts': typeof AuthenticatedResearchLabAlertsRoute
   '/_authenticated/research-lab/gann-gap': typeof AuthenticatedResearchLabGannGapRoute
@@ -780,6 +807,7 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
+    | '/pricing/manual-checkout'
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
@@ -787,6 +815,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
     | '/admin/payments'
+    | '/admin/plans'
     | '/admin/providers'
     | '/admin/readiness'
     | '/admin/referrals'
@@ -794,6 +823,7 @@ export interface FileRouteTypes {
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/admin/tradingview'
+    | '/admin/users'
     | '/admin/widgets'
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
@@ -856,6 +886,7 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
+    | '/pricing/manual-checkout'
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
@@ -863,6 +894,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
     | '/admin/payments'
+    | '/admin/plans'
     | '/admin/providers'
     | '/admin/readiness'
     | '/admin/referrals'
@@ -870,6 +902,7 @@ export interface FileRouteTypes {
     | '/admin/staging-validation'
     | '/admin/system-status'
     | '/admin/tradingview'
+    | '/admin/users'
     | '/admin/widgets'
     | '/research-lab/alerts'
     | '/research-lab/gann-gap'
@@ -933,6 +966,7 @@ export interface FileRouteTypes {
     | '/dev/astro-audit'
     | '/dev/astro-fixture-capture'
     | '/dev/diagnostics'
+    | '/pricing/manual-checkout'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/coindcx'
@@ -940,6 +974,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/institutional-flow'
     | '/_authenticated/admin/launch-readiness'
     | '/_authenticated/admin/payments'
+    | '/_authenticated/admin/plans'
     | '/_authenticated/admin/providers'
     | '/_authenticated/admin/readiness'
     | '/_authenticated/admin/referrals'
@@ -947,6 +982,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
     | '/_authenticated/admin/tradingview'
+    | '/_authenticated/admin/users'
     | '/_authenticated/admin/widgets'
     | '/_authenticated/research-lab/alerts'
     | '/_authenticated/research-lab/gann-gap'
@@ -981,7 +1017,7 @@ export interface RootRouteChildren {
   OptionStrategyRoute: typeof OptionStrategyRoute
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
   OptionsChainRoute: typeof OptionsChainRoute
-  PricingRoute: typeof PricingRoute
+  PricingRoute: typeof PricingRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ReleaseNotesRoute: typeof ReleaseNotesRoute
   RiskRoute: typeof RiskRoute
@@ -1201,6 +1237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing/manual-checkout': {
+      id: '/pricing/manual-checkout'
+      path: '/manual-checkout'
+      fullPath: '/pricing/manual-checkout'
+      preLoaderRoute: typeof PricingManualCheckoutRouteImport
+      parentRoute: typeof PricingRoute
+    }
     '/dev/diagnostics': {
       id: '/dev/diagnostics'
       path: '/dev/diagnostics'
@@ -1404,6 +1447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWidgetsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/tradingview': {
       id: '/_authenticated/admin/tradingview'
       path: '/admin/tradingview'
@@ -1451,6 +1501,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/providers'
       fullPath: '/admin/providers'
       preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/plans': {
+      id: '/_authenticated/admin/plans'
+      path: '/admin/plans'
+      fullPath: '/admin/plans'
+      preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/payments': {
@@ -1591,6 +1648,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminInstitutionalFlowRoute: typeof AuthenticatedAdminInstitutionalFlowRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
+  AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminReadinessRoute: typeof AuthenticatedAdminReadinessRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
@@ -1598,6 +1656,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
   AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
   AuthenticatedAdminTradingviewRoute: typeof AuthenticatedAdminTradingviewRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminWidgetsRoute: typeof AuthenticatedAdminWidgetsRoute
 }
 
@@ -1631,6 +1690,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminLaunchReadinessRoute:
     AuthenticatedAdminLaunchReadinessRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
+  AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
   AuthenticatedAdminReadinessRoute: AuthenticatedAdminReadinessRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
@@ -1639,6 +1699,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminStagingValidationRoute,
   AuthenticatedAdminSystemStatusRoute: AuthenticatedAdminSystemStatusRoute,
   AuthenticatedAdminTradingviewRoute: AuthenticatedAdminTradingviewRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminWidgetsRoute: AuthenticatedAdminWidgetsRoute,
 }
 
@@ -1655,6 +1716,17 @@ const CryptoRouteChildren: CryptoRouteChildren = {
 
 const CryptoRouteWithChildren =
   CryptoRoute._addFileChildren(CryptoRouteChildren)
+
+interface PricingRouteChildren {
+  PricingManualCheckoutRoute: typeof PricingManualCheckoutRoute
+}
+
+const PricingRouteChildren: PricingRouteChildren = {
+  PricingManualCheckoutRoute: PricingManualCheckoutRoute,
+}
+
+const PricingRouteWithChildren =
+  PricingRoute._addFileChildren(PricingRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1679,7 +1751,7 @@ const rootRouteChildren: RootRouteChildren = {
   OptionStrategyRoute: OptionStrategyRoute,
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
   OptionsChainRoute: OptionsChainRoute,
-  PricingRoute: PricingRoute,
+  PricingRoute: PricingRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ReleaseNotesRoute: ReleaseNotesRoute,
   RiskRoute: RiskRoute,

@@ -4,15 +4,28 @@
  * `hasPermission(role, "some.capability")` so gating can evolve without a
  * refactor.
  */
-export const ROLES = ["admin", "enterprise", "professional", "pro", "free", "guest"] as const;
+export const ROLES = [
+  "superadmin",
+  "admin",
+  "moderator",
+  "enterprise",
+  "professional",
+  "pro",
+  "user",
+  "free",
+  "guest",
+] as const;
 
 export type AppRole = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<AppRole, string> = {
+  superadmin: "Superadmin",
   admin: "Admin",
+  moderator: "Moderator",
   enterprise: "Enterprise",
   professional: "Professional",
   pro: "Pro",
+  user: "User",
   free: "Free",
   guest: "Guest",
 };
@@ -23,11 +36,14 @@ export const ROLE_LABELS: Record<AppRole, string> = {
  */
 export const ROLE_RANK: Record<AppRole, number> = {
   guest: 0,
+  user: 1,
   free: 1,
   pro: 2,
   professional: 3,
   enterprise: 4,
+  moderator: 4,
   admin: 5,
+  superadmin: 6,
 };
 
 export type Capability =
@@ -44,7 +60,11 @@ export type Capability =
   | "write.layout"
   | "write.settings"
   | "cloud.sync"
-  | "admin.console";
+  | "admin.console"
+  | "admin.users"
+  | "admin.plans"
+  | "admin.payments"
+  | "superadmin.roles";
 
 const MIN_ROLE: Record<Capability, AppRole> = {
   "read.dashboard": "guest",
@@ -61,6 +81,10 @@ const MIN_ROLE: Record<Capability, AppRole> = {
   "write.settings": "free",
   "cloud.sync": "free",
   "admin.console": "admin",
+  "admin.users": "admin",
+  "admin.plans": "admin",
+  "admin.payments": "admin",
+  "superadmin.roles": "superadmin",
 };
 
 export function hasPermission(role: AppRole | null | undefined, cap: Capability): boolean {
@@ -74,10 +98,13 @@ export function highestRole(roles: readonly AppRole[]): AppRole {
 }
 
 export const PLAN_FOR_ROLE: Record<AppRole, string> = {
+  superadmin: "Enterprise",
   admin: "Enterprise",
+  moderator: "Professional",
   enterprise: "Enterprise",
   professional: "Professional",
   pro: "Pro",
+  user: "Free",
   free: "Free",
   guest: "Guest",
 };
