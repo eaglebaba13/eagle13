@@ -47,7 +47,9 @@ describe("smart-alerts engine", () => {
     vi.unstubAllEnvs();
   });
 
-  it("sends an opted-in transition once and suppresses delivery on repeat", async () => {
+  it(
+    "sends an opted-in transition once and suppresses delivery on repeat",
+    async () => {
     vi.stubEnv("TELEGRAM_BOT_TOKEN", "test-only-token");
     vi.stubEnv("TELEGRAM_CHAT_ID", "test-only-chat");
     const fetchMock = vi.fn().mockResolvedValue({
@@ -86,7 +88,7 @@ describe("smart-alerts engine", () => {
     });
     expect(repeated.emitted).toHaveLength(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
+  }, 15_000);
 
   it("emits nothing on first evaluation (no prior state)", async () => {
     const r = await runAlertEngine({

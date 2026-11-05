@@ -824,11 +824,7 @@ export const updateSmartAlertSubscription = createServerFn({ method: "POST" })
           error.code === "42501" ||
           error.message?.includes("permission denied")
         ) {
-          return {
-            ...row,
-            instruments: Array.isArray(row.instruments) ? [...row.instruments] : [],
-            updatedAt: new Date().toISOString(),
-          };
+          return mapSubscriptionRow(context.userId, row as unknown as Record<string, unknown>);
         }
         throw new Error(error.message);
       }
@@ -839,11 +835,7 @@ export const updateSmartAlertSubscription = createServerFn({ method: "POST" })
         (context as { isGuest?: boolean }).isGuest ||
         (err as Error)?.message?.includes("permission denied")
       ) {
-        return {
-          ...row,
-          instruments: Array.isArray(row.instruments) ? [...row.instruments] : [],
-          updatedAt: new Date().toISOString(),
-        };
+        return mapSubscriptionRow(context.userId, row as unknown as Record<string, unknown>);
       }
       throw err;
     }
@@ -1077,16 +1069,18 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     );
 
     // Apply explicit telegramEnabled override or default on for guest with active server env
-    if (data?.telegramEnabled !== undefined) {
-      subscription.telegramEnabled = data.telegramEnabled;
-    } else if (
-      isGuest &&
-      typeof process !== "undefined" &&
-      process.env.TELEGRAM_BOT_TOKEN &&
-      process.env.TELEGRAM_CHAT_ID
-    ) {
-      subscription.telegramEnabled = true;
-    }
+    const effectiveSubscription: AlertSubscription = {
+      ...subscription,
+      telegramEnabled:
+        data?.telegramEnabled !== undefined
+          ? data.telegramEnabled
+          : isGuest &&
+              typeof process !== "undefined" &&
+              !!process.env.TELEGRAM_BOT_TOKEN &&
+              !!process.env.TELEGRAM_CHAT_ID
+            ? true
+            : subscription.telegramEnabled,
+    };
 
     let ctx: AlertEvaluationContext;
     try {
@@ -1104,7 +1098,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       throw err;
     }
 
-    const out = await runAlertEngine({ context: ctx, checkpoint, subscription });
+    const out = await runAlertEngine({ context: ctx, checkpoint, subscription: effectiveSubscription });
 
     // Persist events (idempotent via unique (user_id, fingerprint) constraint).
     // Track event failures without advancing the checkpoint. The unique key

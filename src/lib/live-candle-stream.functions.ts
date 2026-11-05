@@ -70,7 +70,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
         const upstoxMod = await import("./provider-foundation/upstox/upstox-historical.adapter.server");
         const buildUpstox =
           upstoxMod.buildUpstoxProviderAdapter ??
-          (upstoxMod as { default?: { buildUpstoxProviderAdapter?: () => { fetchHistorical?: Function; fetchIntraday?: Function } } })
+          (upstoxMod as { default?: { buildUpstoxProviderAdapter?: () => { fetchHistorical?: (...args: unknown[]) => unknown; fetchIntraday?: (...args: unknown[]) => unknown } } })
             .default?.buildUpstoxProviderAdapter;
         if (typeof buildUpstox === "function") {
           const adapter = buildUpstox();
@@ -101,7 +101,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
         const indMod = await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
         const buildInd =
           indMod.buildIndstocksProviderAdapter ??
-          (indMod as { default?: { buildIndstocksProviderAdapter?: () => { fetchHistorical?: Function } } })
+          (indMod as { default?: { buildIndstocksProviderAdapter?: () => { fetchHistorical?: (...args: unknown[]) => unknown } } })
             .default?.buildIndstocksProviderAdapter;
         if (typeof buildInd === "function") {
           const adapter = buildInd();
