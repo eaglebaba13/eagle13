@@ -132,16 +132,23 @@ function LiveChartSelection({
   }, [symbol, intervalMs]);
 
   const chartData = useMemo(() => {
-    // If historical is still empty after bootstrap, create fallback seed from liveLevels
-    let baseHistorical = [...historical];
-    if (baseHistorical.length === 0 && bootstrapStatus === "done") {
+    const hasLiveCandles = sse.completedCandles.size > 0 || sse.currentCandle != null;
+    const hasHistorical = historical.length > 0;
+
+    // If historical is still empty after bootstrap and no live candles arrived yet, create fallback seed from liveLevels
+    let baseHistorical: ChartCandle[] = [];
+    if (hasHistorical) {
+      baseHistorical = [...historical];
+    } else if (!hasLiveCandles && bootstrapStatus === "done") {
       const marketDef = SYMBOLS.find((s) => s.key === symbol);
       const market = marketDef?.marketKey
         ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
         : undefined;
       const basePrice =
+        sse.status?.lastLtp ??
+        market?.livePrice ??
         market?.prevClose ??
-        (symbol === "BANKNIFTY" ? 55450 : symbol === "INDIA_VIX" ? 15.6 : 23800);
+        (symbol === "BANKNIFTY" ? 57100 : symbol === "INDIA_VIX" ? 15.25 : 24400);
       baseHistorical = generateFallbackClientSeed(basePrice, intervalMs, 30);
     }
 
@@ -179,7 +186,7 @@ function LiveChartSelection({
       }
     }
     return [...byTime.values()].sort((a, b) => a.x - b.x);
-  }, [historical, bootstrapStatus, liveLevels, symbol, intervalMs, sse.completedCandles, sse.currentCandle]);
+  }, [historical, bootstrapStatus, liveLevels, symbol, intervalMs, sse.completedCandles, sse.currentCandle, sse.status?.lastLtp]);
 
   const displayCandles = chartData;
 
@@ -238,8 +245,13 @@ function LiveChartSelection({
     const market = liveLevels.markets.find((m) => m.key === marketDef.marketKey);
     if (!market) return [];
 
+    const activeLtp =
+      sse.status?.lastLtp ??
+      market.livePrice ??
+      market.prevClose;
+
     const cycles = computeCycles(market.prevClose);
-    const annotations: {
+    const rawAnnotations: {
       y: number;
       borderColor: string;
       label?: { text: string; style: { color: string; background: string } };
@@ -251,7 +263,7 @@ function LiveChartSelection({
       const r2 = levels.r2;
       const s1 = levels.s1;
       const s2 = levels.s2;
-      annotations.push(
+      rawAnnotations.push(
         {
           y: r1,
           borderColor: "#22c55e",
@@ -286,7 +298,7 @@ function LiveChartSelection({
       100,
     );
     if (showGannLevels) {
-      annotations.push(
+      rawAnnotations.push(
         {
           y: gann.gannUp,
           borderColor: "#eab308",
@@ -301,7 +313,7 @@ function LiveChartSelection({
     }
     if (showSquareRootLevels) {
       for (const c of gann.gannCycle) {
-        annotations.push(
+        rawAnnotations.push(
           {
             y: c.up,
             borderColor: "#3b82f6",
@@ -316,8 +328,15 @@ function LiveChartSelection({
       }
     }
 
-    return annotations;
-  }, [showAstroLevels, showGannLevels, showSquareRootLevels, liveLevels, symbol]);
+    // Filter distant lines that are >3% away from active LTP to prevent price scale blowout
+    const maxDistancePct = 0.03;
+    return rawAnnotations.filter((a) => {
+      if (!Number.isFinite(a.y) || a.y <= 0) return false;
+      if (!activeLtp || activeLtp <= 0) return true;
+      const distance = Math.abs(a.y - activeLtp) / activeLtp;
+      return distance <= maxDistancePct;
+    });
+  }, [showAstroLevels, showGannLevels, showSquareRootLevels, liveLevels, symbol, sse.status?.lastLtp]);
 
   const chartSeries = useMemo(() => {
     const source = displayCandles.length > 0 ? displayCandles : chartData;
@@ -351,15 +370,49 @@ function LiveChartSelection({
   const chartOptions = useMemo<ApexOptions>(() => {
     const source = displayCandles.length > 0 ? displayCandles : chartData;
     const hasVolumeSeries = showVolume && source.some((c) => c.volume != null && c.volume > 0);
+
+    // Compute active candlestick bounds to prioritize active price action
+    const visibleLows = source.map((c) => c.y[2]).filter((v) => Number.isFinite(v) && v > 0);
+    const visibleHighs = source.map((c) => c.y[1]).filter((v) => Number.isFinite(v) && v > 0);
+    const candleMin = visibleLows.length > 0 ? Math.min(...visibleLows) : undefined;
+    const candleMax = visibleHighs.length > 0 ? Math.max(...visibleHighs) : undefined;
+
     const yaxis: ApexYAxis[] = [
-      { seriesName: symbol, labels: { style: { colors: "#888", fontSize: "10px" } }, tooltip: { enabled: true } },
+      {
+        seriesName: symbol,
+        labels: {
+          style: { colors: "#a1a1aa", fontSize: "11px", fontFamily: "var(--eb-mono, monospace)" },
+          formatter: (val: number) => (typeof val === "number" && Number.isFinite(val) ? val.toFixed(2) : ""),
+        },
+        tooltip: { enabled: true },
+        forceNiceScale: true,
+        min: (dataMin: number) => {
+          if (candleMin != null && Number.isFinite(candleMin)) {
+            const range = (candleMax ?? candleMin) - candleMin;
+            const pad = Math.max(range * 0.08, candleMin * 0.001);
+            return Math.floor(Math.min(dataMin, candleMin - pad));
+          }
+          return Math.floor(dataMin * 0.999);
+        },
+        max: (dataMax: number) => {
+          if (candleMax != null && Number.isFinite(candleMax)) {
+            const range = candleMax - (candleMin ?? candleMax);
+            const pad = Math.max(range * 0.08, candleMax * 0.001);
+            return Math.ceil(Math.max(dataMax, candleMax + pad));
+          }
+          return Math.ceil(dataMax * 1.001);
+        },
+      },
     ];
     if (hasVolumeSeries) {
       yaxis.push({
         seriesName: "Volume",
         opposite: true,
-        labels: { style: { colors: "#888", fontSize: "10px" } },
-        title: { text: "Vol", style: { color: "#888" } },
+        labels: {
+          style: { colors: "#71717a", fontSize: "10px", fontFamily: "var(--eb-mono, monospace)" },
+          formatter: (val: number) => (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`),
+        },
+        title: { text: "Vol", style: { color: "#71717a" } },
       });
     }
     return {
@@ -368,6 +421,7 @@ function LiveChartSelection({
         background: "transparent",
         toolbar: {
           show: true,
+          autoSelected: "pan",
           tools: {
             download: false,
             selection: true,
@@ -383,17 +437,26 @@ function LiveChartSelection({
         height: "100%",
       },
       title: { text: undefined },
-      xaxis: { type: "datetime" as const, labels: { style: { colors: "#888", fontSize: "10px" } } },
+      xaxis: {
+        type: "datetime" as const,
+        labels: {
+          style: { colors: "#a1a1aa", fontSize: "10px", fontFamily: "var(--eb-mono, monospace)" },
+          datetimeUTC: false,
+        },
+        tooltip: { enabled: false },
+        min: source.length > 0 ? source[0].x : undefined,
+        max: source.length > 0 ? source[source.length - 1].x + intervalMs : undefined,
+      },
       yaxis,
       plotOptions: {
         candlestick: {
-          colors: { upward: "#22c55e", downward: "#ef4444" },
+          colors: { upward: "#10b981", downward: "#f43f5e" },
           wick: { useFillColor: true },
         },
       },
       colors: overlaySeries.length > 0 ? getOverlaySeriesColors(overlaySeries) : undefined,
       stroke: { width: overlaySeries.length > 0 ? [1, ...overlaySeries.map(() => 2)] : undefined },
-      grid: { borderColor: "#333", strokeDashArray: 3 },
+      grid: { borderColor: "rgba(39, 39, 42, 0.6)", strokeDashArray: 3 },
       tooltip: { theme: "dark" as const },
       annotations: {
         yaxis: astroAnnotations.map((a) => ({
@@ -413,21 +476,31 @@ function LiveChartSelection({
       },
       dataLabels: { enabled: false },
     };
-  }, [overlaySeries, astroAnnotations, showVolume]);
+  }, [overlaySeries, astroAnnotations, showVolume, displayCandles, chartData, symbol, intervalMs]);
 
-  const statusColor =
-    sse.status?.freshness === "LIVE"
-      ? "text-green-500"
-      : sse.status?.freshness === "STALE"
-        ? "text-amber-500"
-        : "text-zinc-400";
-  const statusLabel =
-    sse.error ?? (sse.connected ? (sse.status?.freshness ?? "NO_DATA") : "UNAVAILABLE");
+  const isConnected = sse.connected && sse.status?.connectionState === "CONNECTED";
+  const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
+
+  const statusColor = isLive
+    ? "text-emerald-400"
+    : sse.status?.freshness === "STALE"
+      ? "text-amber-400"
+      : "text-zinc-400";
+  const statusLabel = isLive
+    ? "LIVE"
+    : sse.status?.freshness === "STALE"
+      ? "STALE"
+      : sse.error && !isConnected
+        ? sse.error
+        : isConnected
+          ? "CONNECTED"
+          : "RECONNECTING";
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
   const market = marketDef?.marketKey
     ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
     : undefined;
+  const currentLtp = sse.status?.lastLtp ?? market?.livePrice;
   const moonPhase = liveLevels?.moonPhase;
   const moonNakshatra = liveLevels?.moonNakshatra;
 
@@ -438,44 +511,43 @@ function LiveChartSelection({
           <button
             key={s.key}
             onClick={() => setSymbol(s.key)}
-            className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-            style={{
-              border: symbol === s.key ? "1px solid #22c55e" : "1px solid #3f3f46",
-              background: symbol === s.key ? "#22c55e" : "transparent",
-              color: symbol === s.key ? "#000" : "#e4e4e7",
-            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition-all ${
+              symbol === s.key
+                ? "bg-cyan-500 text-black border border-cyan-400 shadow-[0_0_15px_-3px_rgba(34,211,238,0.4)]"
+                : "text-zinc-400 hover:text-zinc-200 border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60"
+            }`}
           >
             {s.label}
           </button>
         ))}
       </div>
 
-      <div className="h-4 w-px bg-zinc-700" />
+      <div className="h-4 w-px bg-zinc-800" />
 
       <div className="flex items-center gap-1">
         {TIMEFRAMES.map((tf) => (
           <button
             key={tf.ms}
             onClick={() => setIntervalMs(tf.ms)}
-            className="px-2 py-1.5 rounded-md text-xs font-medium transition-colors"
-            style={{
-              border: intervalMs === tf.ms ? "1px solid #22c55e" : "1px solid #3f3f46",
-              background: intervalMs === tf.ms ? "#22c55e" : "transparent",
-              color: intervalMs === tf.ms ? "#000" : "#e4e4e7",
-            }}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
+              intervalMs === tf.ms
+                ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/40 shadow-[0_0_12px_-4px_rgba(34,211,238,0.3)]"
+                : "text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-800/60"
+            }`}
           >
             {tf.label}
           </button>
         ))}
       </div>
 
-      <div className="h-4 w-px bg-zinc-700" />
+      <div className="h-4 w-px bg-zinc-800" />
 
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
+      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
         <input
           type="checkbox"
           checked={showVolume}
           onChange={(e) => setShowVolume(e.target.checked)}
+          className="accent-cyan-500"
         />
         Volume
       </label>
@@ -496,19 +568,20 @@ function LiveChartSelection({
           setShowGannLevels(v === "gann");
           setShowSquareRootLevels(v === "sqrt");
         }}
-        className="px-2 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs"
+        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-cyan-500/40 transition-colors"
       >
         <option value="none">Overlays: None</option>
-        <option value="astro">Astro Levels</option>
+        <option value="astro">Astro Levels (±3% Filtered)</option>
         <option value="gann">Gann Square of 9</option>
         <option value="sqrt">Square Root Levels</option>
       </select>
 
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none">
+      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
         <input
           type="checkbox"
           checked={showMoonPhase}
           onChange={(e) => setShowMoonPhase(e.target.checked)}
+          className="accent-cyan-500"
         />
         Moon Phase
       </label>
@@ -532,7 +605,7 @@ function LiveChartSelection({
               })),
           );
         }}
-        className="px-2 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs"
+        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-cyan-500/40 transition-colors"
       >
         <option value="none">Indicators: None</option>
         {listIndicators().map((def) => (
@@ -545,28 +618,49 @@ function LiveChartSelection({
   );
 
   const bottomStatus = (
-    <div className="shrink-0 px-3 py-1.5 border-t border-zinc-800 text-xs flex items-center justify-between bg-[#0b0e14]">
+    <div className="shrink-0 px-4 py-2 border-t border-zinc-800/80 text-xs flex items-center justify-between bg-[#070a0e]/95 backdrop-blur-md">
       <div className="flex items-center gap-3">
-        <span className="font-mono text-zinc-400">MARKET {session.isOpen ? "OPEN" : "CLOSED"}</span>
-        <span className={`font-mono ${statusColor}`}>● {statusLabel}</span>
-        <span className="font-mono text-zinc-400">{sse.status?.provider ?? "UNAVAILABLE"}</span>
-        <span className="font-mono text-zinc-400">
-          {sse.status?.lastTick ?? "NO TICK"} ? {sse.status?.quality ?? "UNKNOWN"} ? Levels: Yahoo
+        <span className="font-mono text-zinc-500">MARKET {session.isOpen ? "OPEN" : "CLOSED"}</span>
+        <span
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
+            isLive
+              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+              : sse.status?.freshness === "STALE"
+                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                : "bg-zinc-800/60 text-zinc-400 border border-zinc-700/40"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              isLive
+                ? "bg-emerald-400 animate-pulse"
+                : sse.status?.freshness === "STALE"
+                  ? "bg-amber-400"
+                  : "bg-zinc-500"
+            }`}
+          />
+          {statusLabel}
         </span>
-        {sse.status?.lastLtp != null && (
-          <span className="font-mono text-zinc-300">LTP: {sse.status.lastLtp.toFixed(2)}</span>
+        <span className="font-mono text-zinc-500">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
+        <span className="font-mono text-zinc-500">
+          {sse.status?.lastTick ? new Date(sse.status.lastTick).toLocaleTimeString() : "WAITING TICK"} · {sse.status?.quality ?? "OK"} · Levels: Live
+        </span>
+        {currentLtp != null && (
+          <span className="font-mono text-cyan-400 font-semibold">LTP: {currentLtp.toFixed(2)}</span>
         )}
       </div>
       <div className="flex items-center gap-3">
         {market && (
           <span className="font-mono text-zinc-400">
             {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg:{" "}
-            {market.changePct.toFixed(2)}%
+            <span className={market.changePct >= 0 ? "text-emerald-400" : "text-rose-400"}>
+              {market.changePct >= 0 ? "+" : ""}{market.changePct.toFixed(2)}%
+            </span>
           </span>
         )}
         {showMoonPhase && moonPhase && (
-          <span className="text-zinc-300">
-            {moonPhase.phaseName} | {moonNakshatra}
+          <span className="text-zinc-400 font-mono text-[11px]">
+            {moonPhase.phaseName} · {moonNakshatra}
           </span>
         )}
       </div>
@@ -574,7 +668,7 @@ function LiveChartSelection({
   );
 
   return (
-    <div className="flex h-screen w-full bg-[#0d1117] text-white overflow-hidden">
+    <div className="flex h-screen w-full bg-[#070a0e] text-white overflow-hidden">
       <div className="hidden lg:flex shrink-0">
         <AppSidebar />
       </div>
@@ -592,16 +686,16 @@ function LiveChartSelection({
           )}
         </div>
 
-        <div className="flex-1 w-full min-h-0 relative p-2 flex flex-col">
+        <div className="flex-1 w-full min-h-0 relative p-2 flex flex-col bg-[#070a0e]">
           {bootstrapStatus === "loading" && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]/80 backdrop-blur-sm pointer-events-none">
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#070a0e]/80 backdrop-blur-sm pointer-events-none">
               <div className="eb-shimmer px-4 py-2 rounded-md text-xs text-zinc-300 border border-zinc-700 bg-zinc-900">
                 Loading chart for {symbol}…
               </div>
             </div>
           )}
           {bootstrapError && chartData.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]">
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#070a0e]">
               <div className="text-center p-4">
                 <span className="text-xs text-red-400">PROVIDER ERROR: {bootstrapError}</span>
                 <div className="mt-2 text-[11px] text-zinc-500 font-mono">
@@ -611,7 +705,7 @@ function LiveChartSelection({
             </div>
           )}
           {!bootstrapError && chartData.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0d1117]">
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#070a0e]">
               <div className="text-center p-4">
                 <span className="text-xs text-zinc-500">NO MARKET DATA</span>
                 <div className="mt-2 text-[11px] text-zinc-400 font-mono">

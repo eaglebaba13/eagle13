@@ -27,11 +27,12 @@ export function emptyLiveState(): LiveSSEState {
 export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): LiveSSEState {
   if (event.type === "error") return { ...state, error: event.message };
   if (event.type === "status") {
+    const isConnected = event.connectionState === "CONNECTED";
     const c = event.currentCandle;
     return {
       ...state,
       status: event,
-      error: event.error,
+      error: isConnected ? null : event.error,
       currentCandle:
         c && event.lastTick
           ? {

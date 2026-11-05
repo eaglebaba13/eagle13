@@ -895,10 +895,10 @@ a {
   box-shadow: 0 0 20px -6px color-mix(in srgb, var(--eb-electric) 45%, transparent);
 }
 .eb-sb-item.is-active {
-  color: var(--eb-accent);
-  background: color-mix(in srgb, var(--eb-accent) 12%, transparent);
-  border-color: color-mix(in srgb, var(--eb-accent) 40%, var(--eb-border));
-  box-shadow: 0 0 22px -8px color-mix(in srgb, var(--eb-accent) 55%, transparent);
+  color: #22d3ee;
+  background: rgba(24, 24, 27, 0.6);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 20px -6px rgba(34, 211, 238, 0.25);
 }
 .eb-sb-active {
   position: absolute;
@@ -907,8 +907,8 @@ a {
   bottom: 22%;
   width: 3px;
   border-radius: 3px;
-  background: var(--eb-gold-grad);
-  box-shadow: var(--eb-shadow-gold);
+  background: linear-gradient(180deg, #22d3ee 0%, #06b6d4 100%);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
 }
 
 /* ------------------------- Right information panel ----------------------- */
@@ -1173,10 +1173,10 @@ a {
     background: color-mix(in srgb, var(--eb-accent) 10%, transparent);
   }
   .eb-drawer-item.is-active {
-    color: var(--eb-accent);
-    background: color-mix(in srgb, var(--eb-accent) 12%, transparent);
-    border-color: color-mix(in srgb, var(--eb-accent) 40%, var(--eb-border));
-    box-shadow: 0 0 22px -8px color-mix(in srgb, var(--eb-accent) 55%, transparent);
+    color: #22d3ee;
+    background: rgba(24, 24, 27, 0.6);
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 0 20px -6px rgba(34, 211, 238, 0.25);
   }
   .eb-drawer-dot {
     position: absolute;
@@ -1185,7 +1185,8 @@ a {
     bottom: 26%;
     width: 3px;
     border-radius: 3px;
-    background: var(--eb-gold-grad);
+    background: linear-gradient(180deg, #22d3ee 0%, #06b6d4 100%);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
   }
 
   /* ---- Bottom navigation ---- */
@@ -1233,8 +1234,8 @@ a {
     white-space: nowrap;
   }
   .eb-mbn-item.is-active {
-    color: var(--eb-accent);
-    background: color-mix(in srgb, var(--eb-accent) 14%, transparent);
+    color: #22d3ee;
+    background: rgba(6, 182, 212, 0.12);
   }
 
   /* Keep page content clear of the fixed bottom navigation. */

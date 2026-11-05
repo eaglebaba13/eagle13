@@ -76,7 +76,10 @@ export function createLiveCandleSSE(
           lastTick: snap.lastTick?.timestamp ?? null,
           lastLtp: snap.lastTick?.ltp ?? null,
           completedCount: snap.completedCandleCount,
-          error: snap.telemetry.staleReason,
+          error:
+            snap.connectionState === "CONNECTED" && snap.telemetry.status === "LIVE"
+              ? null
+              : snap.telemetry.staleReason,
           currentCandle: c
             ? {
                 time: c.bucketMs,

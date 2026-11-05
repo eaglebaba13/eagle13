@@ -54,7 +54,7 @@ export function AppSidebar() {
                 {active ? <span className="eb-sb-active" aria-hidden /> : null}
               </>
             );
-            const cls = `eb-sb-item${active ? " is-active" : ""}`;
+            const cls = `eb-sb-item${active ? " is-active text-cyan-400 border-cyan-500/40 bg-zinc-900/60 shadow-[0_0_20px_-6px_rgba(34,211,238,0.25)]" : ""}`;
             return it.to ? (
               <Link key={it.id} to={it.to} className={cls} title={it.label}>
                 {content}
