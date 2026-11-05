@@ -206,6 +206,11 @@ export interface ProviderAdapter {
     limit: number,
     nowIso: string,
   ): Promise<ProviderResult<HistoricalSeries>>;
+  fetchIntraday?(
+    symbol: QuoteSymbol | string,
+    timeframe: Timeframe,
+    nowIso: string,
+  ): Promise<ProviderResult<HistoricalSeries>>;
   fetchOptionsChain?(
     underlying: string,
     expiry: string,

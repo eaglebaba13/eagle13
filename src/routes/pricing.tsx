@@ -32,7 +32,7 @@ function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <header className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
             Institutional trading intelligence

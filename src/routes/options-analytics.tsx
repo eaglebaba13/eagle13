@@ -462,7 +462,7 @@ function OptionsAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#070a0e] text-zinc-100 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900/40 via-transparent to-transparent">
-      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         {isDemo && <DemoBanner />}
         <SourceBar
           sourceStatus={sourceStatus}

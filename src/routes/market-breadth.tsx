@@ -177,7 +177,7 @@ function MarketBreadthPage() {
   };
 
   return (
-    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
       <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-3">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         RESEARCH ONLY · NO BUY / SELL SIGNAL
@@ -235,7 +235,7 @@ function MarketBreadthPage() {
           <select
             value={scenario}
             onChange={(e) => setScenario(e.target.value as MockScenario)}
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500/50"
           >
             {["BULLISH", "BEARISH", "MIXED", "PARTIAL", "STALE"].map((s) => (
               <option key={s} value={s}>
@@ -252,7 +252,7 @@ function MarketBreadthPage() {
             value={vix}
             onChange={(e) => setVix(e.target.value)}
             placeholder="—"
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-cyan-500"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-amber-500/50"
           />
         </label>
         <label className="text-xs text-zinc-400 flex flex-col gap-1">
@@ -263,7 +263,7 @@ function MarketBreadthPage() {
             value={previousVix}
             onChange={(e) => setPreviousVix(e.target.value)}
             placeholder="—"
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-cyan-500"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 font-mono focus:outline-none focus:border-amber-500/50"
           />
         </label>
         <button

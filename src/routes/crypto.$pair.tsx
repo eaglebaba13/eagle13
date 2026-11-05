@@ -38,7 +38,7 @@ function CryptoPairPage() {
     first != null && last != null && first !== 0 ? ((last - first) / first) * 100 : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <Link

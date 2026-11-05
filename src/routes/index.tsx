@@ -305,7 +305,7 @@ function Dashboard() {
         ))}
       </div>
 
-      <main className="eb-main" style={{ padding: "16px 18px", maxWidth: 1280, margin: "0 auto" }}>
+      <main className="eb-main w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <DashboardRuntimeStrip />
         <AstroRegimeHeroCarousel
           niftySpot={data.nifty?.livePrice}

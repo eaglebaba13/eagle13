@@ -86,10 +86,10 @@ function InstitutionalFlowPage() {
   const bias = report?.summary?.bias ?? "UNAVAILABLE";
 
   return (
-    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
       <header className="mb-4">
-        <div className="text-[11px] font-mono font-bold tracking-wider text-cyan-400 mb-1 flex items-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+        <div className="text-[11px] font-mono font-bold tracking-wider text-amber-400 mb-1 flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
           DERIVATIVES · INSTITUTIONAL FLOW
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50">

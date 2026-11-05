@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/admin/research-lab")({
 
 function AdminResearchLabPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-3 p-4 md:p-6">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
       <header>
         <h1 className="text-lg font-semibold text-foreground">Research Lab · Admin diagnostics</h1>
         <p className="text-xs text-muted-foreground">

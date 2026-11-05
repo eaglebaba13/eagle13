@@ -163,7 +163,7 @@ function CombinedPcrPage() {
   }, [reading]);
 
   return (
-    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
       {/* Research badge */}
       <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-3">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />

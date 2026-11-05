@@ -231,15 +231,7 @@ function OptionStrategyTerminal() {
         @media (max-width:820px){ .os-hide-sb{ display:none; } }
       `}</style>
 
-      <div
-        style={{
-          maxWidth: 1520,
-          margin: "0 auto",
-          padding: "18px 16px 64px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden relative z-1">
         {/* Header */}
         <div
           style={{

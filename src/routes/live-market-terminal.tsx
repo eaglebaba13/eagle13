@@ -166,16 +166,7 @@ function TerminalSkeleton() {
     <div
       style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}
     >
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          alignItems: "flex-start",
-          padding: "16px 20px 60px",
-          maxWidth: 1560,
-          margin: "0 auto",
-        }}
-      >
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex gap-4 items-start overflow-x-hidden">
         <AppSidebar />
         <main style={{ flex: 1, minWidth: 0 }}>
           <div
@@ -753,16 +744,7 @@ function LiveMarketTerminal() {
     <div
       style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "var(--eb-body)" }}
     >
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          alignItems: "flex-start",
-          padding: isMobile ? "12px 12px 96px" : "16px 20px 60px",
-          maxWidth: 1560,
-          margin: "0 auto",
-        }}
-      >
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex gap-4 items-start overflow-x-hidden">
         <AppSidebar />
         <main style={{ flex: 1, minWidth: 0 }}>
           {/* ============================ HEADER ============================ */}

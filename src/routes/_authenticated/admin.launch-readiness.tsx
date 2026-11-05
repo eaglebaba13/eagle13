@@ -125,7 +125,7 @@ function LaunchReadinessPage() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Launch Readiness</h1>

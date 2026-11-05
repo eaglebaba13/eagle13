@@ -99,7 +99,7 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-5xl px-4 py-8 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 overflow-x-hidden">
         <aside className="rounded-xl border border-border bg-card p-3 h-fit sticky top-4">
           <h1 className="px-2 pb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Settings

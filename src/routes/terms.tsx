@@ -23,11 +23,12 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   return (
-    <article className="mx-auto max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Terms of Use</h1>
-        <p className="text-muted-foreground">Last updated: v1.0-RC1.</p>
-      </header>
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
+      <article className="max-w-4xl space-y-6 text-sm leading-relaxed">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Terms of Use</h1>
+          <p className="text-muted-foreground">Last updated: v1.0-RC1.</p>
+        </header>
       <section className="space-y-2">
         <h2 className="text-lg font-medium">Research platform</h2>
         <p>
@@ -62,5 +63,6 @@ function TermsPage() {
         </p>
       </section>
     </article>
+  </div>
   );
 }

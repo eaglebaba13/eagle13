@@ -614,7 +614,7 @@ function MarketReplayPage() {
       : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, padding: "18px 16px 96px" }}>
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden" style={{ minHeight: "100vh", background: C.bg, color: C.text }}>
       <header
         style={{
           display: "flex",

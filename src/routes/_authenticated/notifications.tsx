@@ -73,7 +73,7 @@ function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-semibold">Notifications</h1>

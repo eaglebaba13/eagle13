@@ -42,7 +42,7 @@ function ReferralsPage() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">Referral rewards</h1>

@@ -27,10 +27,8 @@ export const Route = createFileRoute("/absolute-intraday-validation")({
 function ValidationPage() {
   return (
     <div
+      className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden"
       style={{
-        padding: "24px 16px",
-        maxWidth: 1100,
-        margin: "0 auto",
         background: "var(--eb-bg)",
         color: "var(--eb-text)",
         minHeight: "100vh",

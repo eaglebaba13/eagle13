@@ -63,8 +63,8 @@ export const Route = createFileRoute("/decision")({
 function DecisionPage() {
   const { data } = useSuspenseQuery(decisionQuery());
   return (
-    <div className="eb-page eb-content min-h-screen text-zinc-100 p-4 sm:p-6 bg-[#070a0e]">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen text-zinc-100 bg-[#070a0e]">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <Header snap={data} />
         <SummaryCards snap={data} />
         <CapabilitySummary snap={data} />
@@ -333,54 +333,56 @@ function DecisionMatrix({
       }}
     >
       <SectionTitle>Decision Matrix</SectionTitle>
-      <table style={{ width: "100%", fontSize: "0.85rem", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ color: C.muted, textAlign: "left" }}>
-            <th style={th}>Module</th>
-            <th style={th}>Bias</th>
-            <th style={{ ...th, textAlign: "right" }}>Score</th>
-            <th style={{ ...th, textAlign: "right" }}>Weight</th>
-            <th style={{ ...th, textAlign: "right" }}>Contribution</th>
-            <th style={th}>Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          {decision.contributions.map((c) => {
-            const cap = c.present ? null : capFor(c.key);
-            return (
-              <tr key={c.key} style={{ borderTop: `1px solid ${C.border}` }}>
-                <td style={td}>
-                  <strong>{c.label}</strong>
-                </td>
-                <td
-                  style={{ ...td, color: c.present ? biasColor(c.bias) : C.muted, fontWeight: 700 }}
-                >
-                  {c.present ? c.bias : (cap?.label ?? "MISSING")}
-                </td>
-                <td style={{ ...td, textAlign: "right" }}>
-                  {c.present ? c.signedScore.toFixed(2) : "—"}
-                </td>
-                <td style={{ ...td, textAlign: "right" }}>
-                  {(c.effectiveWeight * 100).toFixed(0)}%
-                </td>
-                <td
-                  style={{
-                    ...td,
-                    textAlign: "right",
-                    color: c.contribution >= 0 ? C.green : C.red,
-                  }}
-                >
-                  {c.contribution >= 0 ? "+" : ""}
-                  {(c.contribution * 100).toFixed(1)}
-                </td>
-                <td style={{ ...td, color: C.muted }}>
-                  {c.present ? c.note : (cap?.hint ?? c.note)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="table-responsive-container">
+        <table style={{ width: "100%", fontSize: "0.85rem", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ color: C.muted, textAlign: "left" }}>
+              <th style={th}>Module</th>
+              <th style={th}>Bias</th>
+              <th style={{ ...th, textAlign: "right" }}>Score</th>
+              <th style={{ ...th, textAlign: "right" }}>Weight</th>
+              <th style={{ ...th, textAlign: "right" }}>Contribution</th>
+              <th style={th}>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {decision.contributions.map((c) => {
+              const cap = c.present ? null : capFor(c.key);
+              return (
+                <tr key={c.key} style={{ borderTop: `1px solid ${C.border}` }}>
+                  <td style={td}>
+                    <strong>{c.label}</strong>
+                  </td>
+                  <td
+                    style={{ ...td, color: c.present ? biasColor(c.bias) : C.muted, fontWeight: 700 }}
+                  >
+                    {c.present ? c.bias : (cap?.label ?? "MISSING")}
+                  </td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    {c.present ? c.signedScore.toFixed(2) : "—"}
+                  </td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    {(c.effectiveWeight * 100).toFixed(0)}%
+                  </td>
+                  <td
+                    style={{
+                      ...td,
+                      textAlign: "right",
+                      color: c.contribution >= 0 ? C.green : C.red,
+                    }}
+                  >
+                    {c.contribution >= 0 ? "+" : ""}
+                    {(c.contribution * 100).toFixed(1)}
+                  </td>
+                  <td style={{ ...td, color: C.muted }}>
+                    {c.present ? c.note : (cap?.hint ?? c.note)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {decision.conflicts.length > 0 && (
         <div style={{ marginTop: "0.6rem", fontSize: "0.8rem", color: C.red }}>
           Conflicts: {decision.conflicts.map((c) => c.reason).join(" · ")}

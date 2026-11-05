@@ -549,7 +549,7 @@ function LiveChartSelection({
             onClick={() => setSymbol(s.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition-all ${
               symbol === s.key
-                ? "bg-cyan-500 text-black border border-cyan-400 shadow-[0_0_15px_-3px_rgba(34,211,238,0.4)]"
+                ? "bg-amber-500 text-black border border-amber-400 shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)]"
                 : "text-zinc-400 hover:text-zinc-200 border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60"
             }`}
           >
@@ -567,7 +567,7 @@ function LiveChartSelection({
             onClick={() => setIntervalMs(tf.ms)}
             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
               intervalMs === tf.ms
-                ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/40 shadow-[0_0_12px_-4px_rgba(34,211,238,0.3)]"
+                ? "bg-amber-500/15 text-amber-400 border border-amber-500/40 shadow-[0_0_12px_-4px_rgba(245,158,11,0.3)]"
                 : "text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-800/60"
             }`}
           >
@@ -583,7 +583,7 @@ function LiveChartSelection({
           type="checkbox"
           checked={showVolume}
           onChange={(e) => setShowVolume(e.target.checked)}
-          className="accent-cyan-500"
+          className="accent-amber-500"
         />
         Volume
       </label>
@@ -604,7 +604,7 @@ function LiveChartSelection({
           setShowGannLevels(v === "gann");
           setShowSquareRootLevels(v === "sqrt");
         }}
-        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-cyan-500/40 transition-colors"
+        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-amber-500/40 transition-colors"
       >
         <option value="none">Overlays: None</option>
         <option value="astro">Astro Levels (±3% Filtered)</option>
@@ -617,7 +617,7 @@ function LiveChartSelection({
           type="checkbox"
           checked={showMoonPhase}
           onChange={(e) => setShowMoonPhase(e.target.checked)}
-          className="accent-cyan-500"
+          className="accent-amber-500"
         />
         Moon Phase
       </label>
@@ -641,7 +641,7 @@ function LiveChartSelection({
               })),
           );
         }}
-        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-cyan-500/40 transition-colors"
+        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-amber-500/40 transition-colors"
       >
         <option value="none">Indicators: None</option>
         {listIndicators().map((def) => (
@@ -682,7 +682,7 @@ function LiveChartSelection({
           {sse.status?.lastTick ? new Date(sse.status.lastTick).toLocaleTimeString() : "WAITING TICK"} · {sse.status?.quality ?? "OK"} · Levels: Live
         </span>
         {currentLtp != null && (
-          <span className="font-mono text-cyan-400 font-semibold">LTP: {currentLtp.toFixed(2)}</span>
+          <span className="font-mono text-amber-400 font-semibold">LTP: {currentLtp.toFixed(2)}</span>
         )}
       </div>
       <div className="flex items-center gap-3">

@@ -549,15 +549,7 @@ function AstroDashboard() {
         .astro-mono { font-family:var(--eb-mono, ui-monospace, monospace); }
       `}</style>
 
-      <div
-        style={{
-          maxWidth: 1480,
-          margin: "0 auto",
-          padding: "18px 16px 40px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden relative z-1">
         {/* Header */}
         <div
           style={{
@@ -936,7 +928,7 @@ function AstroDashboard() {
                   {num(data.cycles.lower)}
                 </span>
               </div>
-              <div style={{ overflowX: "auto" }}>
+              <div className="table-responsive-container">
                 <table className="astro-table">
                   <thead>
                     <tr>

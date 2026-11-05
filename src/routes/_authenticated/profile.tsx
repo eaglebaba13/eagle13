@@ -69,7 +69,7 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <header className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-semibold text-primary">
             {initials(profile?.displayName ?? "U")}

@@ -61,7 +61,7 @@ function BacktestLabPage() {
   const diag = useQuery({ queryKey: ["backtest-lab", "diagnostics"], queryFn: () => fetchDiag() });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
       <header>
         <div className="text-xs uppercase tracking-wide text-muted-foreground">
           BACKTEST LAB · STRATEGY RESEARCH

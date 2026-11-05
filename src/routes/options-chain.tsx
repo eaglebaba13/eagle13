@@ -176,10 +176,10 @@ function OptionsChainPage() {
     : false;
 
   return (
-    <div className="eb-page eb-content max-w-7xl mx-auto px-4 py-5 text-zinc-100">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
       <header className="mb-4">
-        <div className="text-[11px] font-mono font-bold tracking-wider text-cyan-400 mb-1 flex items-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+        <div className="text-[11px] font-mono font-bold tracking-wider text-amber-400 mb-1 flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
           MARKET · OPTIONS CHAIN
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-50">
@@ -204,7 +204,7 @@ function OptionsChainPage() {
                 expiry: null,
               }))
             }
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
           >
             <option value="NIFTY">NIFTY</option>
             <option value="BANKNIFTY">BANKNIFTY</option>
@@ -215,7 +215,7 @@ function OptionsChainPage() {
           <select
             value={state.expiry ?? ""}
             onChange={(e) => setState((s) => ({ ...s, expiry: e.target.value || null }))}
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
           >
             <option value="">— current weekly —</option>
             {expiries.all.map((e) => (
@@ -230,7 +230,7 @@ function OptionsChainPage() {
           <select
             value={atmMode}
             onChange={(e) => setAtmMode(e.target.value as AtmMode)}
-            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+            className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500/50 transition-colors"
           >
             <option value="ATM">ATM</option>
             <option value="ATM_5">ATM ± 5</option>
@@ -376,14 +376,14 @@ function OptionsChainPage() {
                   <tr
                     key={m.strike}
                     className={`transition-colors hover:bg-zinc-800/30 ${
-                      isAtm ? "bg-cyan-950/25 border-y border-cyan-500/30 text-cyan-200" : ""
+                      isAtm ? "bg-amber-950/25 border-y border-amber-500/30 text-amber-200" : ""
                     }`}
                   >
                     <Td>{fmt(m.callOi)}</Td>
                     <Td>{fmt(m.callChangeOi)}</Td>
                     <Td>{fmt(m.callVolume)}</Td>
                     <Td>{fmt(m.callIv)}</Td>
-                    <Td center bold className={isAtm ? "text-cyan-300 font-extrabold" : "text-zinc-100"}>
+                    <Td center bold className={isAtm ? "text-amber-300 font-extrabold" : "text-zinc-100"}>
                       {m.strike}
                     </Td>
                     <Td>{fmt(m.putIv)}</Td>

@@ -23,40 +23,42 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyPage() {
   return (
-    <article className="mx-auto max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
-        <p className="text-muted-foreground">Last updated: v1.0-RC1.</p>
-      </header>
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">What we store</h2>
-        <p>
-          Account identity supplied at sign-in, saved dashboard layouts, watchlists, alert
-          subscriptions, journal entries, and diagnostic events required to operate the platform.
-        </p>
-      </section>
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">What we do not store</h2>
-        <p>
-          We do not store brokerage credentials in the client, and EagleBABA does not execute live
-          orders. Payment verification is manual UPI at this time; we do not store card numbers or
-          bank details.
-        </p>
-      </section>
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Data sharing</h2>
-        <p>
-          Market-data providers (Upstox, CoinDCX public endpoints) receive the market symbols
-          required to serve requests. No user identity is forwarded to those providers.
-        </p>
-      </section>
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Retention &amp; deletion</h2>
-        <p>
-          Account deletion removes user-owned rows (layouts, alerts, journal, run history) under
-          RLS. Aggregate, non-identifying diagnostics may be retained for reliability.
-        </p>
-      </section>
-    </article>
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
+      <article className="max-w-4xl space-y-6 text-sm leading-relaxed">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
+          <p className="text-muted-foreground">Last updated: v1.0-RC1.</p>
+        </header>
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium">What we store</h2>
+          <p>
+            Account identity supplied at sign-in, saved dashboard layouts, watchlists, alert
+            subscriptions, journal entries, and diagnostic events required to operate the platform.
+          </p>
+        </section>
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium">What we do not store</h2>
+          <p>
+            We do not store brokerage credentials in the client, and EagleBABA does not execute live
+            orders. Payment verification is manual UPI at this time; we do not store card numbers or
+            bank details.
+          </p>
+        </section>
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium">Data sharing</h2>
+          <p>
+            Market-data providers (Upstox, CoinDCX public endpoints) receive the market symbols
+            required to serve requests. No user identity is forwarded to those providers.
+          </p>
+        </section>
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium">Retention &amp; deletion</h2>
+          <p>
+            Account deletion removes user-owned rows (layouts, alerts, journal, run history) under
+            RLS. Aggregate, non-identifying diagnostics may be retained for reliability.
+          </p>
+        </section>
+      </article>
+    </div>
   );
 }

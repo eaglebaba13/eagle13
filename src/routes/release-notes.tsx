@@ -16,29 +16,31 @@ export const Route = createFileRoute("/release-notes")({
 
 function ReleaseNotesPage() {
   return (
-    <article className="mx-auto max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed">
-      <h1 className="text-2xl font-semibold tracking-tight">Release Notes</h1>
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">v1.0-RC1 — Release Candidate</h2>
-        <ul className="list-disc space-y-1 pl-6">
-          <li>Application shell, sidebar, breadcrumbs and responsive drawer</li>
-          <li>
-            Provider label sanitization and live data wiring for Options, PCR, Decision Engine
-          </li>
-          <li>Gann Square next-day gap outlook with outcome tracking</li>
-          <li>Professional Option Strategy Terminal (VIX-aware, deterministic)</li>
-          <li>AI Market Assistant (template-based, guardrailed)</li>
-          <li>Smart Alert Engine with persistence and admin readiness</li>
-          <li>Institutional Flow dashboard (OI / max-pain / GEX)</li>
-          <li>Research Lab and Backtest Lab (research-only)</li>
-          <li>CoinDCX market-data integration (execution disabled)</li>
-          <li>Release checklist, legal pages, health &amp; environment validators</li>
-        </ul>
-        <p className="text-muted-foreground">
-          Live order execution remains disabled by platform flags. Billing is manual UPI
-          verification.
-        </p>
-      </section>
-    </article>
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
+      <article className="max-w-4xl space-y-6 text-sm leading-relaxed">
+        <h1 className="text-2xl font-semibold tracking-tight">Release Notes</h1>
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium">v1.0-RC1 — Release Candidate</h2>
+          <ul className="list-disc space-y-1 pl-6">
+            <li>Application shell, sidebar, breadcrumbs and responsive drawer</li>
+            <li>
+              Provider label sanitization and live data wiring for Options, PCR, Decision Engine
+            </li>
+            <li>Gann Square next-day gap outlook with outcome tracking</li>
+            <li>Professional Option Strategy Terminal (VIX-aware, deterministic)</li>
+            <li>AI Market Assistant (template-based, guardrailed)</li>
+            <li>Smart Alert Engine with persistence and admin readiness</li>
+            <li>Institutional Flow dashboard (OI / max-pain / GEX)</li>
+            <li>Research Lab and Backtest Lab (research-only)</li>
+            <li>CoinDCX market-data integration (execution disabled)</li>
+            <li>Release checklist, legal pages, health &amp; environment validators</li>
+          </ul>
+          <p className="text-muted-foreground">
+            Live order execution remains disabled by platform flags. Billing is manual UPI
+            verification.
+          </p>
+        </section>
+      </article>
+    </div>
   );
 }

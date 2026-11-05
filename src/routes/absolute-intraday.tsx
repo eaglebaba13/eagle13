@@ -183,7 +183,7 @@ function AbsoluteIntradayPage() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <div
           style={{
             background: "rgba(255,190,0,0.12)",

@@ -96,15 +96,7 @@ function NewsPage() {
       }}
     >
       <div className="eb-space-bg" aria-hidden />
-      <div
-        style={{
-          maxWidth: 1080,
-          margin: "0 auto",
-          padding: "20px 16px 48px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden relative z-1">
         {/* Header */}
         <div
           style={{

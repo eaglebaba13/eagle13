@@ -99,8 +99,8 @@ function AppShellHeader() {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-[#070a0e] text-zinc-100 overflow-x-hidden">
-      {/* Ambient Cyber-Obsidian background glow */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-15%,rgba(34,211,238,0.04),transparent)] pointer-events-none z-0" />
+      {/* Ambient Luxury Obsidian-Gold background glow */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-15%,rgba(245,158,11,0.03),transparent)] pointer-events-none z-0" />
       {/* Sidebar: desktop only (lg+). Tablet + mobile use MobileNav drawer. */}
       <div className="relative z-10 hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
         <AppSidebar />
