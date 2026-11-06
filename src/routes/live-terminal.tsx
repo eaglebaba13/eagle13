@@ -16,7 +16,7 @@ import { ApexChart } from "@/components/ApexChart";
 import { useMarketSession } from "@/hooks/use-market-session";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Bell, X, MapPin, Download, Printer, FileSpreadsheet, FileText, Radio } from "lucide-react";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { FormulaBadge } from "@/components/FormulaBadge";
 import {
@@ -350,7 +350,7 @@ function LiveTerminal() {
         @media (max-width:820px){ .lt-drawer{ width:100% !important; } }
       `}</style>
 
-      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden relative z-1">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 pt-4 pb-28 md:pb-8 flex flex-col gap-4 overflow-x-hidden relative z-1">
         {/* Header */}
         <div
           style={{
@@ -363,19 +363,9 @@ function LiveTerminal() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <img
-              src={logoUrl}
-              alt="EagleBABA logo"
-              width={52}
-              height={52}
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 12,
-                objectFit: "cover",
-                transform: "scaleX(-1)",
-                boxShadow: "0 0 16px rgba(212,175,55,0.35)",
-              }}
+            <EagleLogo
+              size={52}
+              className="w-[52px] h-[52px] rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)]"
             />
             <div>
               <h1

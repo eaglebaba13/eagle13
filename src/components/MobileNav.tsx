@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { Menu as MenuIcon, X } from "lucide-react";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { mobileBottomNav, mobileDrawerNav, type NavItem } from "@/lib/navigation";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -80,7 +80,7 @@ export function MobileNav() {
   return (
     <>
       {/* Sticky mobile top bar: hamburger beside the EagleBABA logo */}
-      <header className="eb-mtopbar eb-glass" role="banner">
+      <header className="eb-mtopbar eb-glass block md:hidden" role="banner">
         <button
           ref={triggerRef}
           type="button"
@@ -93,7 +93,7 @@ export function MobileNav() {
           <MenuIcon size={22} />
         </button>
         <Link to="/" className="eb-mtopbar-brand" aria-label="EagleBABA home">
-          <img src={logoUrl} alt="EagleBABA logo" width={30} height={30} className="transform scale-x-[-1]" />
+          <EagleLogo size={30} className="rounded-lg object-cover" />
           <span>EagleBABA</span>
         </Link>
         <div className="eb-mtopbar-actions">
@@ -134,7 +134,7 @@ export function MobileNav() {
             >
               <div className="eb-drawer-head">
                 <div className="eb-drawer-brand">
-                  <img src={logoUrl} alt="EagleBABA logo" width={34} height={34} className="transform scale-x-[-1]" />
+                  <EagleLogo size={34} className="rounded-lg object-cover" />
                   <div>
                     <div className="eb-drawer-title">EagleBABA</div>
                     <div className="eb-drawer-sub">Astro Trading Terminal</div>
@@ -187,7 +187,7 @@ export function MobileNav() {
       </AnimatePresence>
 
       {/* Bottom navigation */}
-      <nav className="eb-mbottomnav eb-glass" aria-label="Quick navigation">
+      <nav className="eb-mbottomnav eb-glass fixed bottom-3 inset-x-0 mx-auto z-40 block md:hidden max-w-sm" aria-label="Quick navigation">
         {mobileBottomNav().map((it) => {
           const Icon = it.icon;
           const active = it.to ? path === it.to : false;

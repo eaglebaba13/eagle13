@@ -47,7 +47,9 @@ function AdminTelegramPage() {
   const listLogs = useServerFn(listTelegramDeliveryLogsAdmin);
 
   const isSuperadmin =
-    role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAccess = isSuperadmin || hasPermission(role, "admin.console");
 
   const [activeTab, setActiveTab] = useState<"channels" | "logs">("channels");

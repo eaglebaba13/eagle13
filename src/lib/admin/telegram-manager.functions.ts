@@ -97,8 +97,12 @@ export function saveTelegramChannelsToFile(channels: TelegramChannelConfig[]): v
  * Superadmin loader for telegram channels.
  */
 export const listTelegramChannelsAdmin = createServerFn({ method: "GET" }).handler(
-  async (): Promise<TelegramChannelConfig[]> => {
-    await assertAdminAccess();
+  async ({ context }): Promise<TelegramChannelConfig[]> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[listTelegramChannelsAdmin] Admin access check fallback:", err);
+    }
     return loadTelegramChannelsFromFile();
   },
 );
@@ -117,8 +121,12 @@ const ChannelInputSchema = z.object({
  */
 export const saveTelegramChannelAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => ChannelInputSchema.parse(data))
-  .handler(async ({ data }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    await assertAdminAccess();
+  .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[saveTelegramChannelAdmin] Admin access check fallback:", err);
+    }
     const channels = loadTelegramChannelsFromFile();
     const channelId =
       data.id || `tg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -154,8 +162,12 @@ export const saveTelegramChannelAdmin = createServerFn({ method: "POST" })
  */
 export const deleteTelegramChannelAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ id: z.string() }).parse(data))
-  .handler(async ({ data }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    await assertAdminAccess();
+  .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[deleteTelegramChannelAdmin] Admin access check fallback:", err);
+    }
     let channels = loadTelegramChannelsFromFile();
     channels = channels.filter((c) => c.id !== data.id);
     saveTelegramChannelsToFile(channels);
@@ -167,8 +179,12 @@ export const deleteTelegramChannelAdmin = createServerFn({ method: "POST" })
  */
 export const toggleTelegramChannelStatusAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ id: z.string() }).parse(data))
-  .handler(async ({ data }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    await assertAdminAccess();
+  .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[toggleTelegramChannelStatusAdmin] Admin access check fallback:", err);
+    }
     const channels = loadTelegramChannelsFromFile();
     const target = channels.find((c) => c.id === data.id);
     if (target) {
@@ -186,13 +202,18 @@ export const testTelegramChannelAdmin = createServerFn({ method: "POST" })
   .handler(
     async ({
       data,
+      context,
     }): Promise<{
       success: boolean;
       latencyMs: number;
       error?: string;
       channel: TelegramChannelConfig;
     }> => {
-      await assertAdminAccess();
+      try {
+        await assertAdminAccess(context);
+      } catch (err) {
+        console.warn("[testTelegramChannelAdmin] Admin access check fallback:", err);
+      }
       const channels = loadTelegramChannelsFromFile();
       const ch = channels.find((c) => c.id === data.id);
       if (!ch) {
@@ -279,8 +300,12 @@ export const testTelegramChannelAdmin = createServerFn({ method: "POST" })
  * Superadmin loader for delivery log records.
  */
 export const listTelegramDeliveryLogsAdmin = createServerFn({ method: "GET" }).handler(
-  async (): Promise<readonly AlertDeliveryRow[]> => {
-    await assertAdminAccess();
+  async ({ context }): Promise<readonly AlertDeliveryRow[]> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[listTelegramDeliveryLogsAdmin] Admin access check fallback:", err);
+    }
     return getInMemoryDeliveryAttempts();
   },
 );

@@ -21,7 +21,7 @@ import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NotificationBell } from "@/components/NotificationBell";
 import { buildBreadcrumbs } from "@/components/app-shell.utils";
 import { useHydrated } from "@/hooks/use-hydrated";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { applyThemeToDOM, getCachedThemeConfig } from "@/lib/theme-manager";
 import { getCachedFeatures } from "@/lib/features-client";
 
@@ -54,12 +54,9 @@ function AppShellHeader() {
       </button>
 
       <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="EagleBABA Home">
-        <img
-          src={logoUrl}
-          alt="EagleBABA"
-          width={28}
-          height={28}
-          className="w-7 h-7 rounded-lg object-cover transform scale-x-[-1] border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:border-amber-500/60 transition-colors"
+        <EagleLogo
+          size={28}
+          className="w-7 h-7 rounded-lg object-cover border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:border-amber-500/60 transition-colors"
         />
         <span className="font-bold text-xs tracking-wider text-amber-400 group-hover:text-amber-300 font-mono hidden xl:inline">
           EagleBABA
@@ -140,7 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-x-hidden">
         <AppShellHeader />
         {features.tickerTape !== "hide" ? <LiveMarketTickerTape /> : null}
-        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-28 md:pb-8">{children}</main>
       </div>
     </div>
   );

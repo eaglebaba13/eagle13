@@ -17,7 +17,7 @@ import { useMarketSession } from "@/hooks/use-market-session";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { orbStyle as orbStyleFor } from "@/lib/planet-style";
 import { deriveTithi, sunTimes } from "@/lib/panchang";
@@ -487,16 +487,13 @@ function AstroDashboard() {
     <div className="min-h-screen bg-[#070a0e] text-zinc-100 font-sans selection:bg-amber-500/20 selection:text-amber-200">
       <div className="eb-space-bg" aria-hidden="true" />
 
-      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden relative z-1">
+      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 pt-4 pb-28 md:pb-8 flex flex-col gap-4 overflow-x-hidden relative z-1">
         {/* Header */}
         <header className="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-zinc-800/80">
           <div className="flex items-center gap-3.5">
-            <img
-              src={logoUrl}
-              alt="EagleBABA logo"
-              width={48}
-              height={48}
-              className="w-12 h-12 rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)] ring-1 ring-amber-500/30 transform scale-x-[-1]"
+            <EagleLogo
+              size={48}
+              className="w-12 h-12 rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)] ring-1 ring-amber-500/30"
             />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">

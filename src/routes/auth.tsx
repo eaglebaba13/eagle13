@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { enableGuestSession } from "@/lib/guest-session";
 import { toast } from "sonner";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { Info } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
@@ -112,7 +112,7 @@ function AuthPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <img src={logoUrl} alt="EagleBABA" className="h-10 w-10 transform scale-x-[-1]" />
+          <EagleLogo size={40} className="h-10 w-10 rounded-lg object-cover" />
           <div>
             <h1 className="text-lg font-semibold">EagleBABA</h1>
             <p className="text-xs text-muted-foreground">Astro Research Terminal</p>

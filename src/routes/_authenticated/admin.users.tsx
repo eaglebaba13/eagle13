@@ -47,7 +47,10 @@ function AdminUsersPage() {
   const createUser = useServerFn(createUserAdmin);
   const deleteUser = useServerFn(deleteUserAdmin);
 
-  const isSuperadmin = role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+  const isSuperadmin =
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAdminAccess = hasPermission(role, "admin.console") || isSuperadmin;
 
   // Data & Pagination State

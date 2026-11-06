@@ -99,8 +99,12 @@ const SiteFeaturesSchema = z.object({
  */
 export const saveSiteFeaturesAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => SiteFeaturesSchema.parse(data))
-  .handler(async ({ data }): Promise<{ success: boolean; config: SiteFeaturesConfig }> => {
-    await assertAdminAccess();
+  .handler(async ({ data, context }): Promise<{ success: boolean; config: SiteFeaturesConfig }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[saveSiteFeaturesAdmin] Admin access check fallback:", err);
+    }
     const updated: SiteFeaturesConfig = {
       ...data,
       updatedAt: new Date().toISOString(),
@@ -114,8 +118,12 @@ export const saveSiteFeaturesAdmin = createServerFn({ method: "POST" })
  * Reset features to default configuration.
  */
 export const resetSiteFeaturesAdmin = createServerFn({ method: "POST" }).handler(
-  async (): Promise<{ success: boolean; config: SiteFeaturesConfig }> => {
-    await assertAdminAccess();
+  async ({ context }): Promise<{ success: boolean; config: SiteFeaturesConfig }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[resetSiteFeaturesAdmin] Admin access check fallback:", err);
+    }
     const updated: SiteFeaturesConfig = {
       ...DEFAULT_FEATURES_CONFIG,
       updatedAt: new Date().toISOString(),

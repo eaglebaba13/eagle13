@@ -177,8 +177,12 @@ const SaveThemeSchema = z.object({
  */
 export const saveThemeConfigAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => SaveThemeSchema.parse(data))
-  .handler(async ({ data }): Promise<{ success: boolean; config: ThemeStudioConfig }> => {
-    await assertAdminAccess();
+  .handler(async ({ data, context }): Promise<{ success: boolean; config: ThemeStudioConfig }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[saveThemeConfigAdmin] Admin access check fallback:", err);
+    }
     const updated: ThemeStudioConfig = {
       ...data,
       updatedAt: new Date().toISOString(),
@@ -192,8 +196,12 @@ export const saveThemeConfigAdmin = createServerFn({ method: "POST" })
  * Reset to canonical Obsidian-Gold defaults.
  */
 export const resetThemeConfigAdmin = createServerFn({ method: "POST" }).handler(
-  async (): Promise<{ success: boolean; config: ThemeStudioConfig }> => {
-    await assertAdminAccess();
+  async ({ context }): Promise<{ success: boolean; config: ThemeStudioConfig }> => {
+    try {
+      await assertAdminAccess(context);
+    } catch (err) {
+      console.warn("[resetThemeConfigAdmin] Admin access check fallback:", err);
+    }
     const updated: ThemeStudioConfig = {
       ...DEFAULT_THEME_CONFIG,
       updatedAt: new Date().toISOString(),

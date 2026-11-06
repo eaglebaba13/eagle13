@@ -37,7 +37,10 @@ function AdminPlansPage() {
   const savePlan = useServerFn(savePlanAdmin);
   const toggleStatus = useServerFn(togglePlanStatusAdmin);
 
-  const isSuperadmin = role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+  const isSuperadmin =
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAdminAccess = hasPermission(role, "admin.console") || isSuperadmin;
 
   const [plans, setPlans] = useState<SubscriptionPlanItem[]>([]);

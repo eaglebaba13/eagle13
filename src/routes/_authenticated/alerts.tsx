@@ -395,7 +395,7 @@ function AlertCenterPage() {
   }
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
+    <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 pt-4 pb-16 md:pb-6 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
       <header className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-zinc-800/80">
         <div>
           <div className="text-[11px] font-mono font-bold tracking-wider text-amber-400 mb-1 flex items-center gap-2">

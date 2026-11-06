@@ -38,7 +38,9 @@ function AdminThemeStudioPage() {
   const resetTheme = useServerFn(resetThemeConfigAdmin);
 
   const isSuperadmin =
-    role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAccess = isSuperadmin || hasPermission(role, "admin.console");
 
   const [config, setConfig] = useState<ThemeStudioConfig>(DEFAULT_THEME_CONFIG);

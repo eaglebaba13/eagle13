@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { desktopNav, mobileBottomNav, type NavItem } from "@/lib/navigation";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 
 type Item = NavItem;
 
@@ -34,12 +34,9 @@ export function AppSidebar() {
       <div className="eb-sidebar-inner eb-glass">
         <div className="flex items-center justify-between px-2.5 py-2 mb-1 border-b border-zinc-800/60">
           <Link to="/" className="flex items-center gap-2 min-w-0" aria-label="EagleBABA Home">
-            <img
-              src={logoUrl}
-              alt="EagleBABA"
-              width={28}
-              height={28}
-              className="w-7 h-7 rounded-lg object-cover transform scale-x-[-1] border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] shrink-0"
+            <EagleLogo
+              size={28}
+              className="w-7 h-7 rounded-lg object-cover border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] shrink-0"
             />
             {!collapsed ? (
               <span className="font-bold text-xs tracking-wider text-amber-400 font-mono truncate">

@@ -7,7 +7,7 @@ import {
   getNavigationConfigAdmin,
   saveNavigationConfigAdmin,
   resetNavigationConfigAdmin,
-  type MergedNavItem,
+  type SerializableNavItem,
 } from "@/lib/admin/navigation-manager.functions";
 import {
   Menu,
@@ -24,12 +24,57 @@ import {
   AlertCircle,
   Tag,
   Search,
+  LayoutDashboard,
+  Orbit,
+  Radio,
+  Activity,
+  BarChart3,
+  TrendingUp,
+  Brain,
+  History,
+  PlayCircle,
+  Layers,
+  Target,
+  Bell,
+  Users,
+  CreditCard,
+  Palette,
+  Sliders,
+  Send,
+  ShieldCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/navigation")({
   head: () => ({ meta: [{ title: "Navigation Manager · Superadmin Console — EagleBABA" }] }),
   component: AdminNavigationPage,
 });
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+  LayoutDashboard,
+  Orbit,
+  Radio,
+  Activity,
+  BarChart3,
+  TrendingUp,
+  Brain,
+  History,
+  PlayCircle,
+  Layers,
+  Target,
+  Bell,
+  Users,
+  CreditCard,
+  Palette,
+  Sliders,
+  Send,
+  ShieldCheck,
+  Menu,
+};
+
+function renderNavIcon(name: string, size = 14) {
+  const IconComponent = ICON_MAP[name] || LayoutDashboard;
+  return <IconComponent size={size} />;
+}
 
 function AdminNavigationPage() {
   const { role, user: currentAuthUser } = useAuth();
@@ -38,10 +83,12 @@ function AdminNavigationPage() {
   const resetNav = useServerFn(resetNavigationConfigAdmin);
 
   const isSuperadmin =
-    role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAccess = isSuperadmin || hasPermission(role, "admin.console");
 
-  const [items, setItems] = useState<MergedNavItem[]>([]);
+  const [items, setItems] = useState<SerializableNavItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -102,7 +149,7 @@ function AdminNavigationPage() {
     setItems([...newItems]);
   };
 
-  const handleUpdate = (id: string, updates: Partial<MergedNavItem>) => {
+  const handleUpdate = (id: string, updates: Partial<SerializableNavItem>) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
     );
@@ -278,7 +325,6 @@ function AdminNavigationPage() {
             </thead>
             <tbody className="divide-y divide-zinc-800/60 font-mono">
               {filteredItems.map((item, index) => {
-                const Icon = item.icon;
                 return (
                   <tr
                     key={item.id}
@@ -312,7 +358,7 @@ function AdminNavigationPage() {
                     <td className="py-2.5 px-4 font-sans">
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 rounded-md bg-zinc-800/60 border border-zinc-700/60 text-amber-400 shrink-0">
-                          <Icon size={14} />
+                          {renderNavIcon(item.iconName)}
                         </div>
                         <div className="min-w-0">
                           <div className="font-semibold text-zinc-100 flex items-center gap-2">
@@ -380,7 +426,7 @@ function AdminNavigationPage() {
                         value={item.minRole ?? "guest"}
                         onChange={(e) =>
                           handleUpdate(item.id, {
-                            minRole: e.target.value as MergedNavItem["minRole"],
+                            minRole: e.target.value as SerializableNavItem["minRole"],
                           })
                         }
                         className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs outline-none focus:border-amber-500/40"

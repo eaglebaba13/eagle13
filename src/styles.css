@@ -1313,6 +1313,13 @@ a {
   }
 }
 
+@media (min-width: 768px) {
+  .eb-mbottomnav,
+  .eb-mtopbar {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .eb-drawer,
   .eb-drawer-backdrop {

@@ -11,7 +11,7 @@ import { NewsCenter } from "@/components/NewsPopup";
 import { newsQuery } from "@/lib/news.functions";
 import { fiiDiiQuery } from "@/lib/fiidii.functions";
 import { seasonalityQuery } from "@/lib/seasonality.functions";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 import { useIstClock } from "@/hooks/use-scheduler";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import {
@@ -552,19 +552,9 @@ function Header({
           gap: 12,
         }}
       >
-        <img
-          src={logoUrl}
-          alt="EagleBABA logo"
-          width={44}
-          height={44}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            objectFit: "cover",
-            boxShadow: "0 0 16px rgba(212,175,55,0.35)",
-            transform: "scaleX(-1)",
-          }}
+        <EagleLogo
+          size={44}
+          className="w-11 h-11 rounded-[10px] object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)]"
         />
         <span>
           EAGLE<span style={{ color: "var(--eb-accent2)" }}>BABA</span>

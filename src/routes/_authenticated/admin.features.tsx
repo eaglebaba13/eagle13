@@ -41,7 +41,9 @@ function AdminFeaturesPage() {
   const resetFeatures = useServerFn(resetSiteFeaturesAdmin);
 
   const isSuperadmin =
-    role === "superadmin" || currentAuthUser?.email === "lwillshivansh@gmail.com";
+    role === "superadmin" ||
+    currentAuthUser?.email === "lwillshivansh@gmail.com" ||
+    currentAuthUser?.email === "dheerajnarula13@gmail.com";
   const hasAccess = isSuperadmin || hasPermission(role, "admin.console");
 
   const [features, setFeatures] = useState<SiteFeaturesConfig>(DEFAULT_FEATURES_CONFIG);

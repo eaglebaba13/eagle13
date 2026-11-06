@@ -197,14 +197,19 @@ export async function sendTelegramMessage(
   });
 
   const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
-  let lastResult: TelegramSendResult = { status: "DELIVERED", errorCode: null };
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
   const env = getTelegramEnv();
+  let dispatchedCount = 0;
 
   for (const channel of targets) {
     const token = channel.botToken || env?.token || "";
     const chatId = channel.chatId || env?.chatId || "";
     if (!token || !chatId) continue;
 
+    dispatchedCount++;
     const start = Date.now();
     const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
     const duration = Date.now() - start;
@@ -215,6 +220,10 @@ export async function sendTelegramMessage(
     channel.lastError = res.errorCode;
 
     lastResult = res;
+  }
+
+  if (dispatchedCount === 0) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
   }
 
   saveTelegramChannelsToFile(channels);

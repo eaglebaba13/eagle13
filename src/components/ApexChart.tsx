@@ -8,6 +8,7 @@ type ApexChartProps = {
   series: ApexOptions["series"];
   options: ApexOptions;
   height?: number | string;
+  width?: number | string;
 };
 
 /**
@@ -15,14 +16,14 @@ type ApexChartProps = {
  * imported and rendered on the client after mount. Pure presentation — no
  * data logic lives here.
  */
-function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) {
+function ApexChartImpl({ type, series, options, height = 260, width = "100%" }: ApexChartProps) {
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ApexCharts | null>(null);
   const [ready, setReady] = useState(false);
 
   // Store latest props in refs to prevent stale closure during async apexcharts import
-  const latestPropsRef = useRef({ type, series, options, height });
-  latestPropsRef.current = { type, series, options, height };
+  const latestPropsRef = useRef({ type, series, options, height, width });
+  latestPropsRef.current = { type, series, options, height, width };
 
   useEffect(() => {
     let disposed = false;
@@ -38,6 +39,7 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
           ...(current.options.chart ?? {}),
           type: current.type,
           height: current.height,
+          width: current.width,
           background: "transparent",
         },
         series: current.series,
@@ -67,6 +69,7 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
               ...(latest.options.chart ?? {}),
               type: latest.type,
               height: latest.height,
+              width: latest.width,
               background: "transparent",
             },
             series: latest.series,
@@ -98,6 +101,7 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
           ...(options.chart ?? {}),
           type,
           height,
+          width,
           background: "transparent",
         },
         series,
@@ -106,7 +110,7 @@ function ApexChartImpl({ type, series, options, height = 260 }: ApexChartProps) 
       false,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, JSON.stringify(series), JSON.stringify(options), height]);
+  }, [ready, JSON.stringify(series), JSON.stringify(options), height, width]);
 
   const resolvedHeight = typeof height === "number" ? height : undefined;
 
@@ -146,6 +150,7 @@ export const ApexChart = memo(
   (a, b) =>
     a.type === b.type &&
     a.height === b.height &&
+    a.width === b.width &&
     JSON.stringify(a.series) === JSON.stringify(b.series) &&
     JSON.stringify(a.options) === JSON.stringify(b.options),
 );

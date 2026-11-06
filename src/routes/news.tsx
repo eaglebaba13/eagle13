@@ -24,7 +24,7 @@ import {
   READ_KEY,
   SAVE_KEY,
 } from "@/components/news-shared.utils";
-import logoUrl from "@/assets/eaglebaba-logo.png";
+import { EagleLogo } from "@/components/EagleLogo";
 
 export const Route = createFileRoute("/news")({
   head: () => ({
@@ -109,12 +109,9 @@ function NewsPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img
-              src={logoUrl}
-              alt="EagleBABA"
-              width={40}
-              height={40}
-              style={{ borderRadius: 10, transform: "scaleX(-1)" }}
+            <EagleLogo
+              size={40}
+              className="w-10 h-10 rounded-[10px] object-cover"
             />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

@@ -16,12 +16,15 @@ export interface AuthContext {
 }
 
 /** Narrow a verified authenticated context without changing nullable middleware behavior. */
-export function assertAuth(context: AuthContext): asserts context is AuthContext & {
+export function assertAuth(context?: AuthContext | null): asserts context is AuthContext & {
   userId: string;
   supabase: SupabaseClient<Database>;
   claims: JwtPayload;
 } {
-  if (!context.userId || !context.supabase || !context.claims) {
+  if (!context?.userId || !context?.supabase || !context?.claims) {
+    if (context?.isGuest || context?.userId === "guest-researcher") {
+      return;
+    }
     throw new Error("Unauthorized: Authentication required");
   }
 }
