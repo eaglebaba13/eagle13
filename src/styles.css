@@ -283,6 +283,16 @@ body {
   --eb-mono: "JetBrains Mono", ui-monospace, monospace;
   --eb-head: "Space Grotesk", system-ui, sans-serif;
   --eb-body: "Inter", system-ui, sans-serif;
+
+  /* Live Theme Studio Dynamic Variables */
+  --eb-base-bg: #070a0e;
+  --eb-card-surface: rgba(24, 24, 27, 0.5);
+  --eb-border-tint: rgba(245, 158, 11, 0.25);
+  --eb-border-hover: rgba(245, 158, 11, 0.45);
+  --eb-glow-color: rgba(245, 158, 11, 0.25);
+  --eb-accent-color: #f59e0b;
+  --eb-active-pill: rgba(245, 158, 11, 0.15);
+  --eb-text-accent: #fbbf24;
 }
 
 /* =========================================================================
@@ -290,8 +300,8 @@ body {
  * ====================================================================== */
 .card-institutional,
 .card-luxury-gold {
-  background-color: rgba(24, 24, 27, 0.4);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background-color: var(--eb-card-surface, rgba(24, 24, 27, 0.5));
+  border: 1px solid var(--eb-border-tint, rgba(245, 158, 11, 0.25));
   border-radius: 0.75rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -299,16 +309,16 @@ body {
 }
 .card-institutional:hover,
 .card-luxury-gold:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 0 16px -4px rgba(245, 158, 11, 0.15);
+  border-color: var(--eb-border-hover, rgba(245, 158, 11, 0.45));
+  box-shadow: 0 0 16px -4px var(--eb-glow-color, rgba(245, 158, 11, 0.25));
 }
 
 .pill-active {
-  background-color: rgba(245, 158, 11, 0.12);
-  color: rgb(251, 191, 36);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background-color: var(--eb-active-pill, rgba(245, 158, 11, 0.15));
+  color: var(--eb-text-accent, rgb(251, 191, 36));
+  border: 1px solid var(--eb-border-hover, rgba(245, 158, 11, 0.4));
   font-weight: 600;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 12px var(--eb-glow-color, rgba(245, 158, 11, 0.15));
 }
 
 .pill-inactive {
@@ -321,6 +331,14 @@ body {
   color: rgb(251, 191, 36);
   background-color: rgba(245, 158, 11, 0.08);
   border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Global Eagle Logo Direction — face right (flip horizontally) */
+img[src*="eaglebaba-logo"],
+.eb-logo-eagle,
+.eb-eagle-logo {
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
 }
 
 .table-responsive-container {

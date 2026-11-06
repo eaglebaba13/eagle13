@@ -1,0 +1,8 @@
+{
+  "tickerTape": "show",
+  "heroCarousel": "show",
+  "astroReversalWindow": "show",
+  "decisionIntelligence": "public",
+  "liveCandlesSse": "public",
+  "optionChainHeatmap": "public"
+}

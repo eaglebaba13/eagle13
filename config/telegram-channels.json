@@ -1,0 +1,18 @@
+[
+  {
+    "id": "ch-test-1",
+    "title": "VIP Crypto & Index Alerts",
+    "chatId": "-10099887766",
+    "alertFilter": "gann",
+    "status": "active",
+    "createdAt": "2026-11-06T05:47:57.161Z"
+  },
+  {
+    "id": "ch-test-2",
+    "title": "Astro Harmonics Broadcast",
+    "chatId": "-10011223344",
+    "alertFilter": "astro",
+    "status": "paused",
+    "createdAt": "2026-11-06T05:47:57.162Z"
+  }
+]

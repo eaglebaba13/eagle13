@@ -305,7 +305,7 @@ function Card({
 }) {
   return (
     <div
-      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 hover:border-amber-500/40 transition-colors rounded-xl p-4 ${className || ""}`}
+      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-colors rounded-xl p-4 ${className || ""}`}
       style={style}
     >
       {children}
@@ -328,7 +328,7 @@ function Stat({
 }) {
   return (
     <div
-      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 hover:border-amber-500/40 transition-colors rounded-xl p-3 sm:p-3.5 flex flex-col justify-between ${className || ""}`}
+      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-colors rounded-xl p-3 sm:p-3.5 flex flex-col justify-between ${className || ""}`}
     >
       <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 truncate">
         {label}
@@ -496,7 +496,7 @@ function AstroDashboard() {
               alt="EagleBABA logo"
               width={48}
               height={48}
-              className="w-12 h-12 rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)] ring-1 ring-amber-500/30"
+              className="w-12 h-12 rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)] ring-1 ring-amber-500/30 transform scale-x-[-1]"
             />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
@@ -548,14 +548,14 @@ function AstroDashboard() {
               </div>
             ) : null}
 
-            {/* Top Metric Band: 5 columns */}
+            {/* Top Metric Band: 6 columns */}
             <section
               id="signals"
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3"
             >
               {/* Card 1: Signal */}
               <div
-                className={`card-institutional bg-gradient-to-br ${signalBgClass} border rounded-xl p-3 sm:p-4 flex flex-col justify-between`}
+                className={`card-institutional bg-gradient-to-br ${signalBgClass} border border-amber-500/30 rounded-xl p-3 sm:p-4 flex flex-col justify-between`}
               >
                 <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
                   Active Signal
@@ -606,7 +606,14 @@ function AstroDashboard() {
                 sub={`${data.bullCount} bull · ${data.bearCount} bear nakshatra`}
               />
 
-              {/* Card 5: Days to Moon Phase */}
+              {/* Card 5: Moon Sign & Nakshatra */}
+              <Stat
+                label="Moon Astro"
+                value={<span className="text-zinc-100 font-mono text-base sm:text-lg">{data.moonSign}</span>}
+                sub={`${data.moonNakshatra} · ${data.moonDegree.toFixed(1)}°`}
+              />
+
+              {/* Card 6: Days to Moon Phase */}
               <Stat
                 label={`Next Phase (${data.moonPhase.daysToNewMoon <= data.moonPhase.daysToFullMoon ? "New Moon" : "Full Moon"})`}
                 value={

@@ -373,6 +373,7 @@ function LiveTerminal() {
                 height: 52,
                 borderRadius: 12,
                 objectFit: "cover",
+                transform: "scaleX(-1)",
                 boxShadow: "0 0 16px rgba(212,175,55,0.35)",
               }}
             />

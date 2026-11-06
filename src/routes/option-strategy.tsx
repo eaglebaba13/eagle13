@@ -255,6 +255,7 @@ function OptionStrategyTerminal() {
                 borderRadius: 12,
                 objectFit: "cover",
                 boxShadow: "0 0 16px rgba(212,175,55,0.35)",
+                transform: "scaleX(-1)",
               }}
             />
             <div>

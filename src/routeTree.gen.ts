@@ -70,6 +70,8 @@ import { Route as AuthenticatedResearchLabAlertsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminWidgetsRouteImport } from './routes/_authenticated/admin.widgets'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminTradingviewRouteImport } from './routes/_authenticated/admin.tradingview'
+import { Route as AuthenticatedAdminThemeRouteImport } from './routes/_authenticated/admin.theme'
+import { Route as AuthenticatedAdminTelegramRouteImport } from './routes/_authenticated/admin.telegram'
 import { Route as AuthenticatedAdminSystemStatusRouteImport } from './routes/_authenticated/admin.system-status'
 import { Route as AuthenticatedAdminStagingValidationRouteImport } from './routes/_authenticated/admin.staging-validation'
 import { Route as AuthenticatedAdminResearchLabRouteImport } from './routes/_authenticated/admin.research-lab'
@@ -78,9 +80,11 @@ import { Route as AuthenticatedAdminReadinessRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin.payments'
+import { Route as AuthenticatedAdminNavigationRouteImport } from './routes/_authenticated/admin.navigation'
 import { Route as AuthenticatedAdminLaunchReadinessRouteImport } from './routes/_authenticated/admin.launch-readiness'
 import { Route as AuthenticatedAdminInstitutionalFlowRouteImport } from './routes/_authenticated/admin.institutional-flow'
 import { Route as AuthenticatedAdminGannGapRouteImport } from './routes/_authenticated/admin.gann-gap'
+import { Route as AuthenticatedAdminFeaturesRouteImport } from './routes/_authenticated/admin.features'
 import { Route as AuthenticatedAdminCoindcxRouteImport } from './routes/_authenticated/admin.coindcx'
 import { Route as AuthenticatedAdminBetaReadinessRouteImport } from './routes/_authenticated/admin.beta-readiness'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
@@ -412,6 +416,17 @@ const AuthenticatedAdminTradingviewRoute =
     path: '/admin/tradingview',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminThemeRoute = AuthenticatedAdminThemeRouteImport.update({
+  id: '/admin/theme',
+  path: '/admin/theme',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminTelegramRoute =
+  AuthenticatedAdminTelegramRouteImport.update({
+    id: '/admin/telegram',
+    path: '/admin/telegram',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminSystemStatusRoute =
   AuthenticatedAdminSystemStatusRouteImport.update({
     id: '/admin/system-status',
@@ -459,6 +474,12 @@ const AuthenticatedAdminPaymentsRoute =
     path: '/admin/payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminNavigationRoute =
+  AuthenticatedAdminNavigationRouteImport.update({
+    id: '/admin/navigation',
+    path: '/admin/navigation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminLaunchReadinessRoute =
   AuthenticatedAdminLaunchReadinessRouteImport.update({
     id: '/admin/launch-readiness',
@@ -475,6 +496,12 @@ const AuthenticatedAdminGannGapRoute =
   AuthenticatedAdminGannGapRouteImport.update({
     id: '/admin/gann-gap',
     path: '/admin/gann-gap',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminFeaturesRoute =
+  AuthenticatedAdminFeaturesRouteImport.update({
+    id: '/admin/features',
+    path: '/admin/features',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminCoindcxRoute =
@@ -570,9 +597,11 @@ export interface FileRoutesByFullPath {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
+  '/admin/features': typeof AuthenticatedAdminFeaturesRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
+  '/admin/navigation': typeof AuthenticatedAdminNavigationRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -581,6 +610,8 @@ export interface FileRoutesByFullPath {
   '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/admin/telegram': typeof AuthenticatedAdminTelegramRoute
+  '/admin/theme': typeof AuthenticatedAdminThemeRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
@@ -649,9 +680,11 @@ export interface FileRoutesByTo {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
+  '/admin/features': typeof AuthenticatedAdminFeaturesRoute
   '/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
+  '/admin/navigation': typeof AuthenticatedAdminNavigationRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -660,6 +693,8 @@ export interface FileRoutesByTo {
   '/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/admin/telegram': typeof AuthenticatedAdminTelegramRoute
+  '/admin/theme': typeof AuthenticatedAdminThemeRoute
   '/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
@@ -730,9 +765,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/beta-readiness': typeof AuthenticatedAdminBetaReadinessRoute
   '/_authenticated/admin/coindcx': typeof AuthenticatedAdminCoindcxRoute
+  '/_authenticated/admin/features': typeof AuthenticatedAdminFeaturesRoute
   '/_authenticated/admin/gann-gap': typeof AuthenticatedAdminGannGapRoute
   '/_authenticated/admin/institutional-flow': typeof AuthenticatedAdminInstitutionalFlowRoute
   '/_authenticated/admin/launch-readiness': typeof AuthenticatedAdminLaunchReadinessRoute
+  '/_authenticated/admin/navigation': typeof AuthenticatedAdminNavigationRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
@@ -741,6 +778,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/research-lab': typeof AuthenticatedAdminResearchLabRoute
   '/_authenticated/admin/staging-validation': typeof AuthenticatedAdminStagingValidationRoute
   '/_authenticated/admin/system-status': typeof AuthenticatedAdminSystemStatusRoute
+  '/_authenticated/admin/telegram': typeof AuthenticatedAdminTelegramRoute
+  '/_authenticated/admin/theme': typeof AuthenticatedAdminThemeRoute
   '/_authenticated/admin/tradingview': typeof AuthenticatedAdminTradingviewRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/widgets': typeof AuthenticatedAdminWidgetsRoute
@@ -811,9 +850,11 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
+    | '/admin/features'
     | '/admin/gann-gap'
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
+    | '/admin/navigation'
     | '/admin/payments'
     | '/admin/plans'
     | '/admin/providers'
@@ -822,6 +863,8 @@ export interface FileRouteTypes {
     | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
+    | '/admin/telegram'
+    | '/admin/theme'
     | '/admin/tradingview'
     | '/admin/users'
     | '/admin/widgets'
@@ -890,9 +933,11 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/beta-readiness'
     | '/admin/coindcx'
+    | '/admin/features'
     | '/admin/gann-gap'
     | '/admin/institutional-flow'
     | '/admin/launch-readiness'
+    | '/admin/navigation'
     | '/admin/payments'
     | '/admin/plans'
     | '/admin/providers'
@@ -901,6 +946,8 @@ export interface FileRouteTypes {
     | '/admin/research-lab'
     | '/admin/staging-validation'
     | '/admin/system-status'
+    | '/admin/telegram'
+    | '/admin/theme'
     | '/admin/tradingview'
     | '/admin/users'
     | '/admin/widgets'
@@ -970,9 +1017,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/beta-readiness'
     | '/_authenticated/admin/coindcx'
+    | '/_authenticated/admin/features'
     | '/_authenticated/admin/gann-gap'
     | '/_authenticated/admin/institutional-flow'
     | '/_authenticated/admin/launch-readiness'
+    | '/_authenticated/admin/navigation'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/providers'
@@ -981,6 +1030,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/research-lab'
     | '/_authenticated/admin/staging-validation'
     | '/_authenticated/admin/system-status'
+    | '/_authenticated/admin/telegram'
+    | '/_authenticated/admin/theme'
     | '/_authenticated/admin/tradingview'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/widgets'
@@ -1461,6 +1512,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTradingviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/theme': {
+      id: '/_authenticated/admin/theme'
+      path: '/admin/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AuthenticatedAdminThemeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/telegram': {
+      id: '/_authenticated/admin/telegram'
+      path: '/admin/telegram'
+      fullPath: '/admin/telegram'
+      preLoaderRoute: typeof AuthenticatedAdminTelegramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/system-status': {
       id: '/_authenticated/admin/system-status'
       path: '/admin/system-status'
@@ -1517,6 +1582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/navigation': {
+      id: '/_authenticated/admin/navigation'
+      path: '/admin/navigation'
+      fullPath: '/admin/navigation'
+      preLoaderRoute: typeof AuthenticatedAdminNavigationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/launch-readiness': {
       id: '/_authenticated/admin/launch-readiness'
       path: '/admin/launch-readiness'
@@ -1536,6 +1608,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/gann-gap'
       fullPath: '/admin/gann-gap'
       preLoaderRoute: typeof AuthenticatedAdminGannGapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/features': {
+      id: '/_authenticated/admin/features'
+      path: '/admin/features'
+      fullPath: '/admin/features'
+      preLoaderRoute: typeof AuthenticatedAdminFeaturesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/coindcx': {
@@ -1644,9 +1723,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminCoindcxRoute: typeof AuthenticatedAdminCoindcxRoute
+  AuthenticatedAdminFeaturesRoute: typeof AuthenticatedAdminFeaturesRoute
   AuthenticatedAdminGannGapRoute: typeof AuthenticatedAdminGannGapRoute
   AuthenticatedAdminInstitutionalFlowRoute: typeof AuthenticatedAdminInstitutionalFlowRoute
   AuthenticatedAdminLaunchReadinessRoute: typeof AuthenticatedAdminLaunchReadinessRoute
+  AuthenticatedAdminNavigationRoute: typeof AuthenticatedAdminNavigationRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
@@ -1655,6 +1736,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminResearchLabRoute: typeof AuthenticatedAdminResearchLabRoute
   AuthenticatedAdminStagingValidationRoute: typeof AuthenticatedAdminStagingValidationRoute
   AuthenticatedAdminSystemStatusRoute: typeof AuthenticatedAdminSystemStatusRoute
+  AuthenticatedAdminTelegramRoute: typeof AuthenticatedAdminTelegramRoute
+  AuthenticatedAdminThemeRoute: typeof AuthenticatedAdminThemeRoute
   AuthenticatedAdminTradingviewRoute: typeof AuthenticatedAdminTradingviewRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminWidgetsRoute: typeof AuthenticatedAdminWidgetsRoute
@@ -1684,11 +1767,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminCoindcxRoute: AuthenticatedAdminCoindcxRoute,
+  AuthenticatedAdminFeaturesRoute: AuthenticatedAdminFeaturesRoute,
   AuthenticatedAdminGannGapRoute: AuthenticatedAdminGannGapRoute,
   AuthenticatedAdminInstitutionalFlowRoute:
     AuthenticatedAdminInstitutionalFlowRoute,
   AuthenticatedAdminLaunchReadinessRoute:
     AuthenticatedAdminLaunchReadinessRoute,
+  AuthenticatedAdminNavigationRoute: AuthenticatedAdminNavigationRoute,
   AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
@@ -1698,6 +1783,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminStagingValidationRoute:
     AuthenticatedAdminStagingValidationRoute,
   AuthenticatedAdminSystemStatusRoute: AuthenticatedAdminSystemStatusRoute,
+  AuthenticatedAdminTelegramRoute: AuthenticatedAdminTelegramRoute,
+  AuthenticatedAdminThemeRoute: AuthenticatedAdminThemeRoute,
   AuthenticatedAdminTradingviewRoute: AuthenticatedAdminTradingviewRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminWidgetsRoute: AuthenticatedAdminWidgetsRoute,

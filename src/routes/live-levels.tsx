@@ -44,15 +44,15 @@ import {
 } from "@/lib/engine-version";
 
 const C = {
-  bg: "var(--eb-bg)",
-  card: "var(--eb-card)",
-  border: "var(--eb-border)",
-  green: "var(--eb-bull)",
-  red: "var(--eb-bear)",
-  gold: "var(--eb-accent)",
-  blue: "var(--eb-blue)",
-  text: "var(--eb-text)",
-  muted: "var(--eb-muted)",
+  bg: "#070a0e",
+  card: "rgba(24, 24, 27, 0.5)",
+  border: "rgba(39, 39, 42, 0.8)",
+  green: "#10b981",
+  red: "#f43f5e",
+  gold: "#f59e0b",
+  blue: "#38bdf8",
+  text: "#f4f4f5",
+  muted: "#a1a1aa",
 };
 
 const REFRESH_MS = 60_000;
@@ -423,6 +423,7 @@ function LiveLevelsTerminal() {
                 borderRadius: 12,
                 objectFit: "cover",
                 boxShadow: "0 0 16px rgba(212,175,55,0.35)",
+                transform: "scaleX(-1)",
               }}
             />
             <div>
@@ -573,11 +574,7 @@ function LiveLevelsTerminal() {
 
             {/* Summary bar */}
             <div
-              className="ll-grid"
-              style={{
-                gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-                marginBottom: 14,
-              }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 mb-4"
             >
               <Stat
                 label="Instrument"
@@ -1114,8 +1111,8 @@ function Card({
 }) {
   return (
     <div
-      className={`eb-card eb-glass${className ? ` ${className}` : ""}`}
-      style={{ borderRadius: 16, padding: 16, ...style }}
+      className={`card-institutional bg-zinc-900/50 border border-amber-500/20 backdrop-blur-md rounded-xl p-4 transition-colors hover:border-amber-500/40 ${className ? ` ${className}` : ""}`}
+      style={style}
     >
       {children}
     </div>
@@ -1125,19 +1122,11 @@ function Card({
 function SectionHead({ title, note, bare }: { title: string; note?: string; bare?: boolean }) {
   return (
     <div
-      style={{
-        padding: bare ? "0 0 10px" : "12px 16px",
-        borderBottom: bare ? "none" : `1px solid ${C.border}`,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 10,
-        flexWrap: "wrap",
-      }}
+      className={`flex justify-between items-center gap-2 flex-wrap ${bare ? "pb-2" : "p-3 border-b border-zinc-800/80"}`}
     >
-      <span style={{ fontWeight: 700, letterSpacing: 1, fontSize: 13 }}>{title}</span>
+      <span className="font-bold text-xs uppercase tracking-wider text-zinc-200 font-mono">{title}</span>
       {note ? (
-        <span className="ll-mono" style={{ fontSize: 11, color: C.muted }}>
+        <span className="ll-mono text-[11px] text-zinc-400">
           {note}
         </span>
       ) : null}
@@ -1157,22 +1146,23 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <Card style={{ padding: 14 }}>
-      <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+    <div className="card-institutional bg-zinc-900/50 border border-amber-500/20 backdrop-blur-md rounded-xl p-3 sm:p-3.5 flex flex-col justify-between transition-colors hover:border-amber-500/40">
+      <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider truncate">
         {label}
       </div>
       <div
-        style={{ fontSize: 20, fontWeight: 800, color: color ?? C.text, marginTop: 4 }}
+        className="text-lg sm:text-xl font-bold font-mono text-zinc-100 mt-1"
+        style={color ? { color } : undefined}
         suppressHydrationWarning
       >
         {value}
       </div>
       {sub ? (
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }} suppressHydrationWarning>
+        <div className="text-[11px] font-mono text-zinc-400 mt-1 truncate" suppressHydrationWarning title={sub}>
           {sub}
         </div>
       ) : null}
-    </Card>
+    </div>
   );
 }
 

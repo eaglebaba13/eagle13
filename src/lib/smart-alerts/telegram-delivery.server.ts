@@ -9,6 +9,10 @@ import type {
 } from "./types";
 import type { AlertDeliveryProvider } from "./delivery";
 import { recordDeliveryAttempt } from "../notifications/alert-delivery.functions";
+import {
+  loadTelegramChannelsFromFile,
+  saveTelegramChannelsToFile,
+} from "../admin/telegram-manager.functions";
 
 export type TelegramDeliveryStatus =
   "DELIVERED" | "FAILED" | "DISABLED" | "RETRYABLE_FAILURE" | "CONFIGURATION_ERROR";
@@ -79,15 +83,12 @@ type TelegramSendResult = { status: TelegramDeliveryStatus; errorCode: string | 
 
 type TelegramParseMode = "Markdown" | "HTML";
 
-// Server-side Bot API transport shared by Smart Alerts and operator milestones.
-// Credentials are read from process.env only, never logged, and never included
-// in returned error codes. Callers own their own message formatting.
-async function postTelegramMessage(
+async function postTelegramMessageToDestination(
+  dest: { token: string; chatId: string },
   text: string,
   parseMode?: TelegramParseMode,
 ): Promise<TelegramSendResult> {
-  const env = getTelegramEnv();
-  if (!env) {
+  if (!dest.token || !dest.chatId) {
     return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
   }
   if (text.length === 0 || text.length > 4096) {
@@ -97,11 +98,11 @@ async function postTelegramMessage(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const response = await fetch(`https://api.telegram.org/bot${env.token}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${dest.token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: env.chatId,
+        chat_id: dest.chatId,
         text,
         ...(parseMode ? { parse_mode: parseMode } : {}),
         disable_web_page_preview: true,
@@ -159,11 +160,65 @@ async function postTelegramMessage(
   }
 }
 
+// Server-side Bot API transport shared by Smart Alerts and operator milestones.
+// Credentials are read from process.env only, never logged, and never included
+// in returned error codes. Callers own their own message formatting.
+async function postTelegramMessage(
+  text: string,
+  parseMode?: TelegramParseMode,
+): Promise<TelegramSendResult> {
+  const env = getTelegramEnv();
+  if (!env) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+  return postTelegramMessageToDestination(env, text, parseMode);
+}
+
 export async function sendTelegramMessage(
   event: AlertEvent,
 ): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
-  // Plain text prevents user/provider strings from becoming Telegram markup.
-  return postTelegramMessage(formatTelegramMessage(event));
+  const formatted = formatTelegramMessage(event);
+  const channels = loadTelegramChannelsFromFile();
+  const activeChannels = channels.filter((c) => c.status === "active");
+
+  if (activeChannels.length === 0) {
+    return postTelegramMessage(formatted);
+  }
+
+  // Filter channels matching event type
+  const matchingChannels = activeChannels.filter((c) => {
+    if (c.alertFilter === "all") return true;
+    const typeUpper = (event.type || "").toUpperCase();
+    if (c.alertFilter === "gann") return typeUpper.includes("GANN") || typeUpper.includes("LEVEL");
+    if (c.alertFilter === "astro") return typeUpper.includes("ASTRO") || typeUpper.includes("CYCLE");
+    if (c.alertFilter === "decision") return typeUpper.includes("DECISION") || typeUpper.includes("SIGNAL");
+    if (c.alertFilter === "vix") return (event.instrument || "").toUpperCase().includes("VIX") || typeUpper.includes("VIX");
+    return true;
+  });
+
+  const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
+  let lastResult: TelegramSendResult = { status: "DELIVERED", errorCode: null };
+  const env = getTelegramEnv();
+
+  for (const channel of targets) {
+    const token = channel.botToken || env?.token || "";
+    const chatId = channel.chatId || env?.chatId || "";
+    if (!token || !chatId) continue;
+
+    const start = Date.now();
+    const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
+    const duration = Date.now() - start;
+
+    channel.lastDispatchAt = new Date().toISOString();
+    channel.lastLatencyMs = duration;
+    channel.lastStatus = res.status === "DELIVERED" ? "DELIVERED" : "FAILED";
+    channel.lastError = res.errorCode;
+
+    lastResult = res;
+  }
+
+  saveTelegramChannelsToFile(channels);
+  return lastResult;
 }
 
 export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {

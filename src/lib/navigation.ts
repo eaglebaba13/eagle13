@@ -17,6 +17,10 @@ import {
   TrendingUp,
   Users,
   CreditCard,
+  Palette,
+  Menu,
+  Sliders,
+  Send,
 } from "lucide-react";
 
 export type NavStatus = "LIVE" | "RESEARCH" | "PROVIDER_PENDING" | "COMING_SOON" | "INTERNAL";
@@ -36,6 +40,8 @@ export type NavItem = {
   mobileVisible: boolean;
   mobileBottom?: boolean;
   bottomOrder?: number;
+  minRole?: "guest" | "user" | "pro" | "admin" | "superadmin";
+  badge?: string;
 };
 
 export const NAV_REGISTRY: NavItem[] = [
@@ -351,20 +357,95 @@ export const NAV_REGISTRY: NavItem[] = [
     desktopVisible: true,
     mobileVisible: false,
   },
+  {
+    id: "admin-theme",
+    label: "Theme Studio",
+    icon: Palette,
+    to: "/admin/theme",
+    section: "SYSTEM",
+    order: 460,
+    status: "INTERNAL",
+    desktopVisible: true,
+    mobileVisible: false,
+  },
+  {
+    id: "admin-navigation",
+    label: "Navigation Manager",
+    icon: Menu,
+    to: "/admin/navigation",
+    section: "SYSTEM",
+    order: 470,
+    status: "INTERNAL",
+    desktopVisible: true,
+    mobileVisible: false,
+  },
+  {
+    id: "admin-features",
+    label: "Site Features",
+    icon: Sliders,
+    to: "/admin/features",
+    section: "SYSTEM",
+    order: 480,
+    status: "INTERNAL",
+    desktopVisible: true,
+    mobileVisible: false,
+  },
+  {
+    id: "admin-telegram",
+    label: "Telegram Channels",
+    icon: Send,
+    to: "/admin/telegram",
+    section: "SYSTEM",
+    order: 490,
+    status: "INTERNAL",
+    desktopVisible: true,
+    mobileVisible: false,
+  },
 ];
 
+function getCachedOverrides(): Record<string, Partial<NavItem>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem("eb_nav_overrides");
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+
+function mergeWithOverrides(items: NavItem[]): NavItem[] {
+  const overrides = getCachedOverrides();
+  if (!overrides || Object.keys(overrides).length === 0) return items;
+  return items.map((it) => {
+    const ov = overrides[it.id];
+    if (!ov) return it;
+    return {
+      ...it,
+      label: ov.label ?? it.label,
+      order: ov.order !== undefined ? ov.order : it.order,
+      desktopVisible: ov.desktopVisible !== undefined ? ov.desktopVisible : it.desktopVisible,
+      mobileVisible: ov.mobileVisible !== undefined ? ov.mobileVisible : it.mobileVisible,
+      minRole: ov.minRole ?? it.minRole,
+      badge: ov.badge !== undefined ? ov.badge : it.badge,
+    };
+  });
+}
+
 export function desktopNav(): NavItem[] {
-  return NAV_REGISTRY.filter((it) => it.desktopVisible).sort((a, b) => a.order - b.order);
+  return mergeWithOverrides(NAV_REGISTRY)
+    .filter((it) => it.desktopVisible)
+    .sort((a, b) => a.order - b.order);
 }
 
 export function mobileDrawerNav(): NavItem[] {
-  return NAV_REGISTRY.filter((it) => it.mobileVisible).sort((a, b) => a.order - b.order);
+  return mergeWithOverrides(NAV_REGISTRY)
+    .filter((it) => it.mobileVisible)
+    .sort((a, b) => a.order - b.order);
 }
 
 export function mobileBottomNav(): NavItem[] {
-  return NAV_REGISTRY.filter((it) => it.mobileBottom && it.mobileVisible).sort(
-    (a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999),
-  );
+  return mergeWithOverrides(NAV_REGISTRY)
+    .filter((it) => it.mobileBottom && it.mobileVisible)
+    .sort((a, b) => (a.bottomOrder ?? 999) - (b.bottomOrder ?? 999));
 }
 
 // Backward-compatible exports (personal terminal — all items visible)

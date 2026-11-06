@@ -114,7 +114,7 @@ function NewsPage() {
               alt="EagleBABA"
               width={40}
               height={40}
-              style={{ borderRadius: 10 }}
+              style={{ borderRadius: 10, transform: "scaleX(-1)" }}
             />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

@@ -39,6 +39,7 @@ import {
 } from "@/components/runtime-readiness/RuntimeReadinessStrip";
 import { useRuntimeReadinessQuery } from "@/lib/runtime-readiness/use-runtime-readiness";
 import { AstroRegimeHeroCarousel } from "@/components/dashboard/AstroRegimeHeroCarousel";
+import { getCachedFeatures } from "@/lib/features-client";
 
 const GtiSummaryCard = lazy(() =>
   import("@/components/dashboard/GtiSummaryCard").then((m) => ({ default: m.GtiSummaryCard })),
@@ -316,10 +317,12 @@ function Dashboard() {
 
       <main className="eb-main w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <DashboardRuntimeStrip />
-        <AstroRegimeHeroCarousel
-          niftySpot={data.nifty?.livePrice}
-          bankNiftySpot={data.banknifty?.livePrice}
-        />
+        {getCachedFeatures().heroCarousel !== "hide" ? (
+          <AstroRegimeHeroCarousel
+            niftySpot={data.nifty?.livePrice}
+            bankNiftySpot={data.banknifty?.livePrice}
+          />
+        ) : null}
         <div
           style={{
             display: "flex",
@@ -560,6 +563,7 @@ function Header({
             borderRadius: 10,
             objectFit: "cover",
             boxShadow: "0 0 16px rgba(212,175,55,0.35)",
+            transform: "scaleX(-1)",
           }}
         />
         <span>

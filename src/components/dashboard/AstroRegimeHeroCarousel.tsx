@@ -14,6 +14,7 @@ import {
   Pause,
   Play,
 } from "lucide-react";
+import { getCachedFeatures } from "@/lib/features-client";
 
 export interface AstroRegimeHeroCarouselProps {
   niftySpot?: number;
@@ -161,17 +162,19 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 </span>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-zinc-900/60 p-3.5 backdrop-blur-sm">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
-                  Key Time Reversal Window
-                </span>
-                <p className="mt-1 text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
-                  <Clock size={14} className="text-amber-400" /> 13:45 — 14:15 IST
-                </p>
-                <span className="mt-1 inline-block text-[11px] text-amber-400 font-medium">
-                  Lunar Ingress to MC
-                </span>
-              </div>
+              {getCachedFeatures().astroReversalWindow !== "hide" ? (
+                <div className="rounded-xl border border-white/5 bg-zinc-900/60 p-3.5 backdrop-blur-sm">
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
+                    Key Time Reversal Window
+                  </span>
+                  <p className="mt-1 text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
+                    <Clock size={14} className="text-amber-400" /> 13:45 — 14:15 IST
+                  </p>
+                  <span className="mt-1 inline-block text-[11px] text-amber-400 font-medium">
+                    Lunar Ingress to MC
+                  </span>
+                </div>
+              ) : null}
 
               <div className="rounded-xl border border-white/5 bg-zinc-900/60 p-3.5 backdrop-blur-sm">
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">

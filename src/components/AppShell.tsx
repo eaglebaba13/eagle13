@@ -12,7 +12,7 @@
 
 import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -21,6 +21,9 @@ import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NotificationBell } from "@/components/NotificationBell";
 import { buildBreadcrumbs } from "@/components/app-shell.utils";
 import { useHydrated } from "@/hooks/use-hydrated";
+import logoUrl from "@/assets/eaglebaba-logo.png";
+import { applyThemeToDOM, getCachedThemeConfig } from "@/lib/theme-manager";
+import { getCachedFeatures } from "@/lib/features-client";
 
 import { LiveMarketTickerTape } from "@/components/market/LiveMarketTickerTape";
 
@@ -49,6 +52,19 @@ function AppShellHeader() {
       >
         <ChevronLeft size={16} />
       </button>
+
+      <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="EagleBABA Home">
+        <img
+          src={logoUrl}
+          alt="EagleBABA"
+          width={28}
+          height={28}
+          className="w-7 h-7 rounded-lg object-cover transform scale-x-[-1] border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:border-amber-500/60 transition-colors"
+        />
+        <span className="font-bold text-xs tracking-wider text-amber-400 group-hover:text-amber-300 font-mono hidden xl:inline">
+          EagleBABA
+        </span>
+      </Link>
 
       <nav aria-label="Breadcrumb" className="min-w-0 flex-1 overflow-hidden">
         <ol className="flex min-w-0 items-center gap-1 truncate text-sm">
@@ -97,17 +113,33 @@ function AppShellHeader() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const features = getCachedFeatures();
+
+  useEffect(() => {
+    // Apply cached or default theme immediately on mount
+    applyThemeToDOM(getCachedThemeConfig());
+  }, []);
+
   return (
-    <div className="flex min-h-screen w-full bg-[#070a0e] text-zinc-100 overflow-x-hidden">
-      {/* Ambient Luxury Obsidian-Gold background glow */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-15%,rgba(245,158,11,0.03),transparent)] pointer-events-none z-0" />
+    <div
+      className="flex min-h-screen w-full text-zinc-100 overflow-x-hidden"
+      style={{ backgroundColor: "var(--eb-base-bg, #070a0e)" }}
+    >
+      {/* Ambient background glow */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% -15%, var(--eb-glow-color, rgba(245,158,11,0.03)), transparent)",
+        }}
+      />
       {/* Sidebar: desktop only (lg+). Tablet + mobile use MobileNav drawer. */}
       <div className="relative z-10 hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
         <AppSidebar />
       </div>
       <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-x-hidden">
         <AppShellHeader />
-        <LiveMarketTickerTape />
+        {features.tickerTape !== "hide" ? <LiveMarketTickerTape /> : null}
         <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>

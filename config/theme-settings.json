@@ -1,0 +1,12 @@
+{
+  "baseBackground": "#070a0e",
+  "cardSurface": "#18181b",
+  "cardTransparency": 0.5,
+  "borderTint": "rgba(245, 158, 11, 0.25)",
+  "glowIntensity": 0.25,
+  "glowColor": "rgba(245, 158, 11, 0.25)",
+  "accentColor": "#f59e0b",
+  "activePillColor": "rgba(245, 158, 11, 0.15)",
+  "textAccentColor": "#fbbf24",
+  "preset": "obsidian-gold"
+}
