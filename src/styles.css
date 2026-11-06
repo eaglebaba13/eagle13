@@ -1258,22 +1258,25 @@ a {
     box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
   }
 
-  /* ---- Bottom navigation ---- */
+  /* ---- Bottom navigation (100% Solid & Opaque Obsidian Gold) ---- */
   .eb-mbottomnav {
     position: fixed;
     left: 50%;
-    bottom: 10px;
+    bottom: 12px;
     transform: translateX(-50%);
     width: calc(100% - 18px);
-    max-width: 480px;
+    max-width: 420px;
     z-index: 800;
     display: flex;
     justify-content: space-between;
-    gap: 2px;
-    padding: 6px;
+    gap: 3px;
+    padding: 5px;
     padding-bottom: max(6px, env(safe-area-inset-bottom));
     border-radius: 20px;
-    box-shadow: var(--eb-shadow-lg);
+    background: #0b0f17 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.95), 0 0 15px rgba(245, 158, 11, 0.1) !important;
+    backdrop-filter: blur(20px);
   }
   .eb-mbn-item {
     flex: 1 1 0;
@@ -1285,26 +1288,39 @@ a {
     gap: 3px;
     min-height: 48px;
     padding: 6px 2px;
-    border: none;
+    border: 1px solid transparent;
     background: transparent;
     border-radius: 14px;
-    color: var(--eb-muted);
+    color: #a1a1aa;
     text-decoration: none;
     cursor: pointer;
     font-family: var(--eb-mono);
-    font-size: 9.5px;
+    font-size: 10px;
+    font-weight: 500;
     letter-spacing: 0.2px;
-    transition: color 0.18s ease, background 0.18s ease;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .eb-mbn-item:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.05);
   }
   .eb-mbn-item > span {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 500;
   }
   .eb-mbn-item.is-active {
-    color: #22d3ee;
-    background: rgba(6, 182, 212, 0.12);
+    color: #fcd34d !important;
+    background: rgba(245, 158, 11, 0.2) !important;
+    border: 1px solid rgba(245, 158, 11, 0.5) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+  }
+  .eb-mbn-item.is-active > span {
+    font-weight: 600 !important;
+    color: #fcd34d !important;
   }
 
   /* Keep page content clear of the fixed bottom navigation. */
@@ -1346,11 +1362,14 @@ a {
     display: flex;
     justify-content: space-between;
     align-items: stretch;
-    gap: 2px;
-    padding: 6px;
+    gap: 3px;
+    padding: 5px;
     border-radius: 20px;
-    box-shadow: var(--eb-shadow-lg);
-    z-index: 70;
+    background: #0b0f17 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.95), 0 0 15px rgba(245, 158, 11, 0.1) !important;
+    backdrop-filter: blur(20px);
+    z-index: 800;
     /* keep clear of the iOS home indicator */
     padding-bottom: max(6px, env(safe-area-inset-bottom));
   }
@@ -1364,22 +1383,36 @@ a {
     gap: 3px;
     padding: 6px 2px;
     border-radius: 14px;
-    color: var(--eb-muted);
+    color: #a1a1aa;
     text-decoration: none;
     font-family: var(--eb-mono);
-    font-size: 9.5px;
+    font-size: 10px;
+    font-weight: 500;
     letter-spacing: 0.2px;
-    transition: color 0.18s ease, background 0.18s ease;
+    border: 1px solid transparent;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .eb-bn-item:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.05);
   }
   .eb-bn-item > span {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 500;
   }
   .eb-bn-item.is-active {
-    color: var(--eb-accent);
-    background: color-mix(in srgb, var(--eb-accent) 14%, transparent);
+    color: #fcd34d !important;
+    background: rgba(245, 158, 11, 0.2) !important;
+    border: 1px solid rgba(245, 158, 11, 0.5) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+  }
+  .eb-bn-item.is-active > span {
+    font-weight: 600 !important;
+    color: #fcd34d !important;
   }
 }
 

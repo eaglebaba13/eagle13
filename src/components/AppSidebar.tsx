@@ -99,7 +99,11 @@ export function MobileBottomNav() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const items = mobileBottomNav();
   return (
-    <nav className="eb-bottomnav eb-glass" aria-label="Primary">
+    <nav
+      className="eb-bottomnav fixed bottom-3 inset-x-0 mx-auto z-50 block lg:hidden max-w-sm bg-[#0b0f17] border border-amber-500/35 rounded-[20px] shadow-[0_10px_35px_rgba(0,0,0,0.95)] shadow-amber-500/10 backdrop-blur-xl"
+      style={{ backgroundColor: "#0b0f17", opacity: 1 }}
+      aria-label="Primary"
+    >
       {items.map((it) => {
         const Icon = it.icon;
         const active = path === it.to;
@@ -107,11 +111,17 @@ export function MobileBottomNav() {
           <Link
             key={it.id}
             to={it.to!}
-            className={`eb-bn-item${active ? " is-active" : ""}`}
+            className={`eb-bn-item${
+              active
+                ? " is-active bg-amber-500/20 border border-amber-500/50 text-amber-300 font-semibold"
+                : " text-zinc-400 font-medium hover:text-zinc-200"
+            }`}
             aria-current={active ? "page" : undefined}
           >
-            <Icon size={20} />
-            <span>{it.label}</span>
+            <Icon size={20} className={active ? "text-amber-300" : "text-zinc-400"} />
+            <span className={active ? "text-amber-300 font-semibold" : "text-zinc-400 font-medium"}>
+              {it.label}
+            </span>
           </Link>
         );
       })}

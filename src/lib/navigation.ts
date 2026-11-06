@@ -30,7 +30,7 @@ export type NavSection = "CORE" | "ANALYTICS" | "ALERTS" | "INTELLIGENCE" | "SYS
 export type NavItem = {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   to?: string;
   href?: string;
   section: NavSection;
