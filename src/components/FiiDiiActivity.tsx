@@ -125,7 +125,7 @@ export function FiiDiiActivity() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-mono text-sm sm:text-base font-bold text-zinc-100 tracking-wider">
-                FII &amp; DII INSTITUTIONAL FLOWS
+                {"FII & DII INSTITUTIONAL FLOWS"}
               </h3>
               <span
                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
@@ -146,7 +146,7 @@ export function FiiDiiActivity() {
               <Calendar className="w-3 h-3 text-zinc-500" />
               <span>Session: {data.date || "Latest"}</span>
               <span className="text-zinc-600">•</span>
-              <span>{isFetching ? "↻ Refreshing…" : "₹ Crore Cash &amp; F&amp;O OI"}</span>
+              <span>{isFetching ? "↻ Refreshing…" : "₹ Crore Cash · F&O OI"}</span>
             </div>
           </div>
         </div>
@@ -241,7 +241,7 @@ export function FiiDiiActivity() {
           <div className="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2">
             <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-amber-300/90">
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              F&amp;O Derivatives (OI)
+              {"F&O Derivatives (OI)"}
             </span>
             <span className="text-[10px] text-zinc-500">NSE Contracts</span>
           </div>
