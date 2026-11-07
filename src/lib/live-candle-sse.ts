@@ -8,6 +8,10 @@ import {
 } from "./live-candle-contract";
 import type { QuoteSymbol } from "./provider-foundation/types";
 import type { AggregationIntervalMs } from "./provider-foundation/indstocks/candle-aggregator";
+import {
+  getCoindcxSocketStream,
+  isCoindcxSymbol,
+} from "./brokers/coindcx/coindcx-socket.server";
 
 // Status ticks update age/freshness only; market data remains provider-driven.
 export function createLiveCandleSSE(
@@ -17,7 +21,8 @@ export function createLiveCandleSSE(
   mgr: LiveMarketStreamManager = getLiveMarketStream(),
 ): Response {
   const isGc1 = symbol === "GC1!" && LIVE_INTERVALS.some((i) => i === intervalMs);
-  if (!validSelection(symbol, intervalMs) && !isGc1)
+  const isCoindcx = isCoindcxSymbol(symbol);
+  if (!validSelection(symbol, intervalMs) && !isGc1 && !isCoindcx)
     return Response.json({ error: "UNVERIFIED_SYMBOL_OR_INTERVAL" }, { status: 400 });
   let closed = false;
   let subscribed = false;
@@ -31,7 +36,13 @@ export function createLiveCandleSSE(
     if (timer) clearInterval(timer);
     if (pingTimer) clearInterval(pingTimer);
     removeListener?.();
-    if (subscribed) mgr.unsubscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+    if (subscribed) {
+      if (isCoindcx) {
+        getCoindcxSocketStream().unsubscribe(symbol, intervalMs as AggregationIntervalMs);
+      } else {
+        mgr.unsubscribe(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+      }
+    }
     signal?.removeEventListener("abort", cleanup);
     closeController?.();
   };
@@ -67,6 +78,26 @@ export function createLiveCandleSSE(
           cleanup();
         }
       }, 15000);
+
+      // CoinDCX 24/7 Crypto and Tokenized Commodity Streaming
+      if (isCoindcx) {
+        const coindcxStream = getCoindcxSocketStream();
+        coindcxStream.connect();
+        subscribed = coindcxStream.subscribe(symbol, intervalMs as AggregationIntervalMs);
+        if (!subscribed) {
+          send({ type: "error", symbol, intervalMs, message: "UNAVAILABLE" });
+          cleanup();
+          return;
+        }
+        send(coindcxStream.getStatusEvent(symbol, intervalMs));
+        removeListener = coindcxStream.onCandleUpdate(
+          symbol,
+          intervalMs as AggregationIntervalMs,
+          send,
+        );
+        timer = setInterval(() => send(coindcxStream.getStatusEvent(symbol, intervalMs)), 5000);
+        return;
+      }
 
       // Dedicated synthetic live stream for COMEX Gold (GC1!)
       if (isGc1) {

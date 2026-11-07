@@ -26,7 +26,15 @@ export type QuoteSymbol =
   | "BTC"
   | "CRUDEOIL"
   | "NATURAL_GAS"
-  | "USDINR";
+  | "USDINR"
+  | "GC1!"
+  | "XAUUSDT"
+  | "XAGUSDT"
+  | "BTCUSDT"
+  | "BTCINR"
+  | "ETHINR"
+  | "ETHUSDT"
+  | "ETCUSDT";
 
 export const ALL_QUOTE_SYMBOLS: readonly QuoteSymbol[] = [
   "NIFTY50",

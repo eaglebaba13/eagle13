@@ -43,6 +43,37 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     const symbol = data.symbol;
     const intervalMs = data.intervalMs ?? 60_000;
 
+    const { isCoindcxSymbol } = await import("./brokers/coindcx/coindcx-socket.server");
+
+    if (isCoindcxSymbol(symbol)) {
+      const { fetchCoindcxHistoricalCandles } = await import(
+        "./brokers/coindcx/coindcx-historical.server"
+      );
+      const { getCoindcxSocketStream } = await import(
+        "./brokers/coindcx/coindcx-socket.server"
+      );
+      const series = await fetchCoindcxHistoricalCandles({ symbol, intervalMs });
+      const coindcxStream = getCoindcxSocketStream();
+      const statusEvent = coindcxStream.getStatusEvent(symbol, intervalMs);
+
+      return {
+        error: null,
+        series,
+        status: {
+          symbol,
+          connectionState: statusEvent.connectionState,
+          provider: "COINDCX",
+          freshness: statusEvent.freshness,
+          lastTick: statusEvent.lastTick,
+          lastLtp:
+            statusEvent.lastLtp ?? (series.length > 0 ? series[series.length - 1].y[3] : null),
+          currentCandle: statusEvent.currentCandle,
+          completedCount: series.length,
+          historicalCount: series.length,
+        },
+      };
+    }
+
     if (!validSelection(symbol, intervalMs)) {
       if (symbol === "GC1!") {
         const series = generateFallbackSeed("GC1!", intervalMs, 2742.5);

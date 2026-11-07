@@ -26,15 +26,44 @@ import {
   getDefaultBinSize,
   type OrderFlowCandle,
   type VolumeProfileResult,
+  type OrderFlowSymbol,
 } from "@/lib/orderflow/volume-profile-engine";
 
-const SYMBOLS = [
-  { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey | null },
-  { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey | null },
-  { key: "SENSEX", label: "SENSEX", marketKey: "SENSEX" as MarketKey | null },
-  { key: "GC1!", label: "COMEX GOLD (GC1!)", marketKey: "GOLD" as MarketKey | null },
-  { key: "INDIA_VIX", label: "INDIA VIX", marketKey: null },
-] as const;
+export type AssetCategory = "equities" | "commodities" | "crypto";
+
+export interface CategorizedInstrument {
+  readonly key: string;
+  readonly label: string;
+  readonly category: AssetCategory;
+  readonly marketKey: MarketKey | null;
+  readonly currency: "INR" | "USD" | "USDT";
+  readonly defaultPrice: number;
+}
+
+export const CATEGORIES: { readonly id: AssetCategory; readonly label: string }[] = [
+  { id: "equities", label: "Equities" },
+  { id: "commodities", label: "Commodities" },
+  { id: "crypto", label: "Crypto 24/7" },
+];
+
+export const SYMBOLS: readonly CategorizedInstrument[] = [
+  // Indian Equities
+  { key: "NIFTY50", label: "NIFTY 50", category: "equities", marketKey: "NIFTY", currency: "INR", defaultPrice: 24400 },
+  { key: "BANKNIFTY", label: "BANK NIFTY", category: "equities", marketKey: "BANKNIFTY", currency: "INR", defaultPrice: 57100 },
+  { key: "SENSEX", label: "BSE SENSEX", category: "equities", marketKey: "SENSEX", currency: "INR", defaultPrice: 80200 },
+  { key: "INDIA_VIX", label: "INDIA VIX", category: "equities", marketKey: null, currency: "INR", defaultPrice: 15.25 },
+
+  // Global Commodities
+  { key: "GC1!", label: "COMEX GOLD (GC1!)", category: "commodities", marketKey: "GOLD", currency: "USD", defaultPrice: 2742.50 },
+  { key: "XAUUSDT", label: "XAU/USDT (Gold Spot)", category: "commodities", marketKey: "GOLD", currency: "USDT", defaultPrice: 2740.00 },
+  { key: "XAGUSDT", label: "XAG/USDT (Silver Spot)", category: "commodities", marketKey: null, currency: "USDT", defaultPrice: 31.80 },
+
+  // 24/7 Crypto
+  { key: "BTCUSDT", label: "BTC/USDT", category: "crypto", marketKey: null, currency: "USDT", defaultPrice: 76000 },
+  { key: "BTCINR", label: "BTC/INR", category: "crypto", marketKey: null, currency: "INR", defaultPrice: 7570000 },
+  { key: "ETHINR", label: "ETH/INR", category: "crypto", marketKey: null, currency: "INR", defaultPrice: 224000 },
+  { key: "ETCUSDT", label: "ETC/USDT", category: "crypto", marketKey: null, currency: "USDT", defaultPrice: 6.95 },
+];
 
 const TIMEFRAMES = [
   { label: "1m", ms: 60_000 },
@@ -123,14 +152,14 @@ function LiveChartSelection({
         const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs } });
         if (cancelled) return;
         if (resp.error || !resp.series || resp.series.length === 0) {
-          const marketDef = SYMBOLS.find((s) => s.key === symbol);
-          const market = marketDef?.marketKey
-            ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+          const instDef = SYMBOLS.find((s) => s.key === symbol);
+          const market = instDef?.marketKey
+            ? liveLevels?.markets.find((m) => m.key === instDef.marketKey)
             : undefined;
           const basePrice =
-            symbol === "GC1!"
-              ? (market?.livePrice && market.livePrice > 0 ? market.livePrice : 2742.50)
-              : (market?.livePrice ?? market?.prevClose ?? (symbol === "BANKNIFTY" ? 57100 : symbol === "SENSEX" ? 80200 : symbol === "INDIA_VIX" ? 15.25 : 24400));
+            market?.livePrice && market.livePrice > 0
+              ? market.livePrice
+              : (market?.prevClose ?? instDef?.defaultPrice ?? 24400);
           const synthetic = generateFallbackClientSeed(basePrice, intervalMs, 40);
           setHistorical(synthetic);
           setBootstrapStatus("done");
@@ -141,14 +170,14 @@ function LiveChartSelection({
         setBootstrapStatus("done");
       } catch (err) {
         if (!cancelled) {
-          const marketDef = SYMBOLS.find((s) => s.key === symbol);
-          const market = marketDef?.marketKey
-            ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+          const instDef = SYMBOLS.find((s) => s.key === symbol);
+          const market = instDef?.marketKey
+            ? liveLevels?.markets.find((m) => m.key === instDef.marketKey)
             : undefined;
           const basePrice =
-            symbol === "GC1!"
-              ? (market?.livePrice && market.livePrice > 0 ? market.livePrice : 2742.50)
-              : (market?.livePrice ?? market?.prevClose ?? (symbol === "BANKNIFTY" ? 57100 : symbol === "SENSEX" ? 80200 : symbol === "INDIA_VIX" ? 15.25 : 24400));
+            market?.livePrice && market.livePrice > 0
+              ? market.livePrice
+              : (market?.prevClose ?? instDef?.defaultPrice ?? 24400);
           const synthetic = generateFallbackClientSeed(basePrice, intervalMs, 40);
           setHistorical(synthetic);
           setBootstrapStatus("done");
@@ -171,15 +200,15 @@ function LiveChartSelection({
     if (hasHistorical) {
       baseHistorical = [...historical];
     } else {
-      const marketDef = SYMBOLS.find((s) => s.key === symbol);
-      const market = marketDef?.marketKey
-        ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
+      const instDef = SYMBOLS.find((s) => s.key === symbol);
+      const market = instDef?.marketKey
+        ? liveLevels?.markets.find((m) => m.key === instDef.marketKey)
         : undefined;
       const basePrice =
         sse.status?.lastLtp ??
         market?.livePrice ??
         market?.prevClose ??
-        (symbol === "GC1!" ? 2742.50 : symbol === "BANKNIFTY" ? 57100 : symbol === "SENSEX" ? 80200 : symbol === "INDIA_VIX" ? 15.25 : 24400);
+        (instDef?.defaultPrice ?? 24400);
       baseHistorical = generateFallbackClientSeed(basePrice, intervalMs, 40);
     }
 
@@ -323,7 +352,7 @@ function LiveChartSelection({
       close: c.y[3],
       volume: c.volume ?? 1000,
     }));
-    const sym = (symbol === "GC1!" ? "GC1!" : symbol === "BANKNIFTY" ? "BANKNIFTY" : symbol === "SENSEX" ? "SENSEX" : "NIFTY50");
+    const sym = (symbol as OrderFlowSymbol);
     return computeVolumeProfile(ofCandles, {
       symbol: sym,
       binSize: getDefaultBinSize(sym),
@@ -558,7 +587,10 @@ function LiveChartSelection({
     let xaxisMin: number | undefined;
     let xaxisMax: number | undefined;
 
-    if (symbol === "GC1!") {
+    const activeInstrument = SYMBOLS.find((s) => s.key === symbol) ?? SYMBOLS[0];
+    const is24x7OrCommodity = activeInstrument.category === "crypto" || activeInstrument.category === "commodities";
+
+    if (is24x7OrCommodity) {
       if (source.length > 0) {
         xaxisMin = source[0].x;
         xaxisMax = Math.max(source[source.length - 1].x + intervalMs * 3, Date.now() + intervalMs * 2);
@@ -733,13 +765,44 @@ function LiveChartSelection({
     };
   }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
+  const activeInstrument = SYMBOLS.find((s) => s.key === symbol) ?? SYMBOLS[0];
+  const selectedCategory = activeInstrument.category;
+  const categoryInstruments = useMemo(
+    () => SYMBOLS.filter((s) => s.category === selectedCategory),
+    [selectedCategory],
+  );
+  const handleCategoryChange = (cat: AssetCategory) => {
+    if (cat === selectedCategory) return;
+    const first = SYMBOLS.find((s) => s.category === cat);
+    if (first) {
+      setSymbol(first.key);
+    }
+  };
+
   const topControls = (
     <div className="w-full flex flex-wrap items-center justify-between gap-2.5 px-3 sm:px-4 py-2.5 bg-zinc-950/90 border-b border-amber-500/20 backdrop-blur-md">
-      {/* Left: Instruments & Timeframes */}
+      {/* Left: Categories, Instruments & Timeframes */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Category Selector Tabs */}
+        <div className="flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-zinc-800/80">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryChange(cat.id)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
+                selectedCategory === cat.id
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-[0_0_10px_-2px_rgba(245,158,11,0.3)] font-bold"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         {/* Instrument Pills */}
         <div className="flex items-center gap-1 bg-zinc-900/60 p-1 rounded-xl border border-zinc-800/80">
-          {SYMBOLS.map((s) => (
+          {categoryInstruments.map((s) => (
             <button
               key={s.key}
               onClick={() => setSymbol(s.key)}
@@ -934,7 +997,13 @@ function LiveChartSelection({
         {currentLtp != null && (
           <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-mono">
             <span className="text-zinc-400">LTP:</span>
-            <span className="text-amber-300 font-bold">{currentLtp.toFixed(2)}</span>
+            <span className="text-amber-300 font-bold">
+              {activeInstrument.currency === "INR" ? "₹" : "$"}
+              {currentLtp.toLocaleString("en-US", {
+                minimumFractionDigits: currentLtp < 10 ? 4 : 2,
+                maximumFractionDigits: currentLtp < 10 ? 4 : 2,
+              })}
+            </span>
           </div>
         )}
       </div>
@@ -944,16 +1013,43 @@ function LiveChartSelection({
   const bottomStatus = (
     <div className="shrink-0 px-4 py-2 border-t border-zinc-800/80 text-xs flex flex-wrap items-center justify-between gap-2 bg-[#070a0e]/95 backdrop-blur-md">
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="font-mono text-zinc-500">MARKET {session.isOpen ? "OPEN" : "CLOSED"}</span>
-        <span className="font-mono text-zinc-500">PROVIDER: {sse.status?.provider ?? (symbol === "GC1!" ? "COMEX_STREAM" : "UPSTOX_V3_WS")}</span>
+        <span className="font-mono text-zinc-500">
+          MARKET{" "}
+          {activeInstrument.category === "crypto"
+            ? "24/7 OPEN"
+            : session.isOpen
+              ? "OPEN"
+              : "CLOSED"}
+        </span>
+        <span className="font-mono text-zinc-500">
+          PROVIDER:{" "}
+          {sse.status?.provider ??
+            (activeInstrument.category === "crypto"
+              ? "COINDCX"
+              : symbol === "GC1!"
+                ? "COMEX_STREAM"
+                : "UPSTOX_V3_WS")}
+        </span>
         <span className="font-mono text-zinc-500">
           {sse.status?.lastTick ? new Date(sse.status.lastTick).toLocaleTimeString() : "WAITING TICK"} · {sse.status?.quality ?? "OK"} · Levels: Live
         </span>
         {currentLtp != null && (
-          <span className="font-mono text-amber-400 font-semibold">LTP: {currentLtp.toFixed(2)}</span>
+          <span className="font-mono text-amber-400 font-semibold">
+            LTP: {activeInstrument.currency === "INR" ? "₹" : "$"}
+            {currentLtp.toLocaleString("en-US", {
+              minimumFractionDigits: currentLtp < 10 ? 4 : 2,
+              maximumFractionDigits: currentLtp < 10 ? 4 : 2,
+            })}
+          </span>
         )}
         {showVwap && latestVwap != null && (
-          <span className="font-mono text-cyan-400 font-semibold">VWAP: {latestVwap.toFixed(2)}</span>
+          <span className="font-mono text-cyan-400 font-semibold">
+            VWAP: {activeInstrument.currency === "INR" ? "₹" : "$"}
+            {latestVwap.toLocaleString("en-US", {
+              minimumFractionDigits: latestVwap < 10 ? 4 : 2,
+              maximumFractionDigits: latestVwap < 10 ? 4 : 2,
+            })}
+          </span>
         )}
       </div>
       <div className="flex items-center gap-3 flex-wrap">
@@ -1120,19 +1216,21 @@ function generateFallbackClientSeed(
   const candles: ChartCandle[] = [];
   const now = Math.floor(Date.now() / intervalMs) * intervalMs;
   let prev = basePrice;
-  const isGold = basePrice < 5000;
+  const isCommodity = basePrice < 5000;
   for (let i = count - 1; i >= 0; i--) {
     const time = now - i * intervalMs;
-    const wave = Math.sin(i * 0.4) * (isGold ? 0.001 : 0.0006) + Math.cos(i * 0.25) * (isGold ? 0.0006 : 0.0004);
+    const wave =
+      Math.sin(i * 0.4) * (isCommodity ? 0.001 : 0.0006) +
+      Math.cos(i * 0.25) * (isCommodity ? 0.0006 : 0.0004);
     const open = Math.round(prev * 100) / 100;
     const close = Math.round((prev + basePrice * wave) * 100) / 100;
-    const spread = Math.abs(open - close) || (isGold ? 0.40 : basePrice * 0.0003);
+    const spread = Math.abs(open - close) || Math.max(0.01, basePrice * 0.0004);
     const high = Math.round((Math.max(open, close) + spread * 0.45) * 100) / 100;
     const low = Math.round((Math.min(open, close) - spread * 0.45) * 100) / 100;
     candles.push({
       x: time,
       y: [open, high, low, close],
-      volume: isGold ? 150 + ((i % 7) * 25) : 1000,
+      volume: isCommodity ? 150 + ((i % 7) * 25) : 1000,
     });
     prev = close;
   }

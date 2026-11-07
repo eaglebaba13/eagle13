@@ -1,7 +1,20 @@
 // Institutional Fixed Range Volume Profile (FRVP) & Order Flow Quantitative Engine
 // High-performance discretization, Value Area (70%), POC, HVN/LVN, and Shape Classification.
 
-export type OrderFlowSymbol = "NIFTY50" | "BANKNIFTY" | "SENSEX" | "GC1!" | "XAUUSD" | "GOLD";
+export type OrderFlowSymbol =
+  | "NIFTY50"
+  | "BANKNIFTY"
+  | "SENSEX"
+  | "GC1!"
+  | "XAUUSD"
+  | "GOLD"
+  | "XAUUSDT"
+  | "XAGUSDT"
+  | "BTCUSDT"
+  | "BTCINR"
+  | "ETHINR"
+  | "ETHUSDT"
+  | "ETCUSDT";
 
 export interface OrderFlowCandle {
   readonly time: number; // UTC ms timestamp
@@ -87,7 +100,20 @@ export function getDefaultBinSize(symbol: OrderFlowSymbol): number {
     case "GC1!":
     case "XAUUSD":
     case "GOLD":
+    case "XAUUSDT":
       return 0.5;
+    case "XAGUSDT":
+      return 0.05;
+    case "BTCUSDT":
+      return 50.0;
+    case "BTCINR":
+      return 5000.0;
+    case "ETHINR":
+      return 200.0;
+    case "ETHUSDT":
+      return 5.0;
+    case "ETCUSDT":
+      return 0.05;
     default:
       return 5.0;
   }
