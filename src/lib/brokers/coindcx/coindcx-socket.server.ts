@@ -237,6 +237,9 @@ export class CoindcxSocketStream {
           this.joinChannel(pair.channelName);
         }
       }
+
+      // Immediately notify active listeners that we are connected
+      this.broadcastStatus();
       return;
     }
 
@@ -563,12 +566,27 @@ export class CoindcxSocketStream {
     };
   }
 
+  private broadcastStatus(): void {
+    for (const [aggKey, listeners] of this.listeners.entries()) {
+      const [symbol, intervalStr] = aggKey.split(":");
+      const intervalMs = Number(intervalStr);
+      if (!symbol || !Number.isFinite(intervalMs)) continue;
+      const statusEvent = this.getStatusEvent(symbol, intervalMs);
+      for (const listener of listeners) {
+        try {
+          listener(statusEvent);
+        } catch {
+          // Ignore
+        }
+      }
+    }
+  }
+
   getStatusEvent(symbol: string, intervalMs: number): LiveStatusEvent {
     const pair = resolveCoindcxPair(symbol);
-    const canonical = pair?.canonicalSymbol ?? symbol;
     const snap = this.getSnapshot(symbol, intervalMs as AggregationIntervalMs);
     const c = snap.currentCandle;
-    const isLive = snap.connectionState === "CONNECTED";
+    const isConnected = snap.connectionState === "CONNECTED";
     const lastLtp = snap.lastTick?.ltp ?? pair?.defaultPrice ?? null;
 
     return {
@@ -577,12 +595,16 @@ export class CoindcxSocketStream {
       intervalMs,
       provider: "COINDCX",
       connectionState: snap.connectionState,
-      freshness: isLive ? "LIVE" : "UNAVAILABLE",
+      freshness: isConnected
+        ? "LIVE"
+        : snap.connectionState === "CONNECTING"
+          ? "NO_DATA"
+          : "UNAVAILABLE",
       quality: snap.lastTick?.quality ?? "OK",
       lastTick: snap.lastTick?.timestamp ?? new Date().toISOString(),
       lastLtp,
       completedCount: snap.completedCandleCount,
-      error: isLive ? null : "COINDCX_DISCONNECTED",
+      error: snap.connectionState === "FAILED" ? "COINDCX_FAILED" : null,
       currentCandle: c
         ? {
             time: c.bucketMs,
