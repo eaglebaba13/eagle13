@@ -20,11 +20,18 @@ import type { ActiveIndicator } from "@/lib/indicators/ui-state";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import type { OHLC } from "@/lib/market.functions";
 import type { IndicatorId } from "@/lib/indicators/types";
+import {
+  computeVolumeProfile,
+  getDefaultBinSize,
+  type OrderFlowCandle,
+  type VolumeProfileResult,
+} from "@/lib/orderflow/volume-profile-engine";
 
 const SYMBOLS = [
   { key: "NIFTY50", label: "NIFTY 50", marketKey: "NIFTY" as MarketKey | null },
   { key: "BANKNIFTY", label: "BANK NIFTY", marketKey: "BANKNIFTY" as MarketKey | null },
   { key: "SENSEX", label: "SENSEX", marketKey: "SENSEX" as MarketKey | null },
+  { key: "GC1!", label: "COMEX GOLD (GC1!)", marketKey: "GOLD" as MarketKey | null },
   { key: "INDIA_VIX", label: "INDIA VIX", marketKey: null },
 ] as const;
 
@@ -92,6 +99,7 @@ function LiveChartSelection({
 }) {
   const session = useMarketSession();
   const [showVolume, setShowVolume] = useState(false);
+  const [showVolumeProfile, setShowVolumeProfile] = useState(true);
   const [showAstroLevels, setShowAstroLevels] = useState(true);
   const [showGannLevels, setShowGannLevels] = useState(false);
   const [showSquareRootLevels, setShowSquareRootLevels] = useState(false);
@@ -252,6 +260,23 @@ function LiveChartSelection({
     () => indicatorsToChartSeries(indicatorResults),
     [indicatorResults],
   );
+
+  const volumeProfile = useMemo<VolumeProfileResult | null>(() => {
+    if (!showVolumeProfile || displayCandles.length === 0) return null;
+    const ofCandles: OrderFlowCandle[] = displayCandles.map((c) => ({
+      time: c.x,
+      open: c.y[0],
+      high: c.y[1],
+      low: c.y[2],
+      close: c.y[3],
+      volume: c.volume ?? 1000,
+    }));
+    const sym = (symbol === "GC1!" ? "GC1!" : symbol === "BANKNIFTY" ? "BANKNIFTY" : symbol === "SENSEX" ? "SENSEX" : "NIFTY50");
+    return computeVolumeProfile(ofCandles, {
+      symbol: sym,
+      binSize: getDefaultBinSize(sym),
+    });
+  }, [showVolumeProfile, displayCandles, symbol]);
 
   const marketDef = SYMBOLS.find((s) => s.key === symbol);
   const market = marketDef?.marketKey
@@ -476,6 +501,78 @@ function LiveChartSelection({
       xaxisMax = source[source.length - 1].x + intervalMs;
     }
 
+    const astroYaxis = astroAnnotations.map((a) => ({
+      y: a.y,
+      borderColor: a.borderColor,
+      strokeDashArray: 2,
+      opacity: 0.8,
+      label: a.label
+        ? {
+            text: a.label.text,
+            style: {
+              ...a.label.style,
+              fontSize: "10px",
+              background: a.label.style.background,
+            },
+          }
+        : undefined,
+    }));
+
+    const frvpYaxis = showVolumeProfile && volumeProfile ? [
+      {
+        y: volumeProfile.poc,
+        borderColor: "#f59e0b",
+        strokeDashArray: 0,
+        opacity: 1,
+        label: {
+          text: `POC ${volumeProfile.poc.toFixed(1)} [${volumeProfile.shapeLabel}]`,
+          style: { color: "#000", background: "#f59e0b", fontWeight: "bold", fontSize: "10px" },
+        },
+      },
+      {
+        y: volumeProfile.vah,
+        borderColor: "#94a3b8",
+        strokeDashArray: 4,
+        opacity: 0.85,
+        label: {
+          text: `VAH (70%): ${volumeProfile.vah.toFixed(1)}`,
+          style: { color: "#fff", background: "#334155", fontSize: "9px" },
+        },
+      },
+      {
+        y: volumeProfile.val,
+        borderColor: "#94a3b8",
+        strokeDashArray: 4,
+        opacity: 0.85,
+        label: {
+          text: `VAL (70%): ${volumeProfile.val.toFixed(1)}`,
+          style: { color: "#fff", background: "#334155", fontSize: "9px" },
+        },
+      },
+      ...volumeProfile.lvns.map((lvn) => ({
+        y: lvn.price,
+        borderColor: "#06b6d4",
+        strokeDashArray: 3,
+        opacity: 0.85,
+        label: {
+          text: `LVN Breakout: ${lvn.price.toFixed(1)}`,
+          style: { color: "#000", background: "#06b6d4", fontSize: "9px" },
+        },
+      })),
+      ...volumeProfile.hvns
+        .filter((h) => Math.abs(h.price - volumeProfile.poc) > volumeProfile.binSize)
+        .map((hvn) => ({
+          y: hvn.price,
+          borderColor: "#10b981",
+          strokeDashArray: 2,
+          opacity: 0.85,
+          label: {
+            text: `HVN Magnet: ${hvn.price.toFixed(1)}`,
+            style: { color: "#fff", background: "#065f46", fontSize: "9px" },
+          },
+        })),
+    ] : [];
+
     return {
       chart: {
         type: "candlestick" as const,
@@ -520,26 +617,11 @@ function LiveChartSelection({
       grid: { borderColor: "rgba(39, 39, 42, 0.6)", strokeDashArray: 3 },
       tooltip: { theme: "dark" as const },
       annotations: {
-        yaxis: astroAnnotations.map((a) => ({
-          y: a.y,
-          borderColor: a.borderColor,
-          strokeDashArray: 2,
-          opacity: 0.8,
-          label: a.label
-            ? {
-                text: a.label.text,
-                style: {
-                  ...a.label.style,
-                  fontSize: "10px",
-                  background: a.label.style.background,
-                },
-              }
-            : undefined,
-        })),
+        yaxis: [...astroYaxis, ...frvpYaxis],
       },
       dataLabels: { enabled: false },
     };
-  }, [overlaySeries, astroAnnotations, showVolume, displayCandles, chartData, symbol, intervalMs, currentLtp]);
+  }, [overlaySeries, astroAnnotations, showVolume, showVolumeProfile, volumeProfile, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
   const topControls = (
     <div className="flex items-center gap-2 flex-wrap">
@@ -587,6 +669,16 @@ function LiveChartSelection({
           className="accent-amber-500"
         />
         Volume
+      </label>
+
+      <label className="flex items-center gap-1.5 text-xs text-amber-300 font-semibold cursor-pointer select-none px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:border-amber-500/70 transition-all shadow-[0_0_10px_-3px_rgba(245,158,11,0.25)]">
+        <input
+          type="checkbox"
+          checked={showVolumeProfile}
+          onChange={(e) => setShowVolumeProfile(e.target.checked)}
+          className="accent-amber-500"
+        />
+        <span>Volume Profile (FRVP)</span>
       </label>
 
       <select
@@ -751,19 +843,85 @@ function LiveChartSelection({
               </div>
             </div>
           )}
-          <div className="w-full h-full min-h-[400px] flex-1">
+          <div className="w-full h-full min-h-[400px] flex-1 relative">
             {bootstrapStatus === "done" && chartData.length > 0 && (
-              <ApexChart
-                type="candlestick"
-                height="100%"
-                series={chartSeries}
-                options={chartOptions}
-              />
+              <>
+                <ApexChart
+                  type="candlestick"
+                  height="100%"
+                  series={chartSeries}
+                  options={chartOptions}
+                />
+                {showVolumeProfile && volumeProfile && (
+                  <VolumeProfileHistogramOverlay
+                    profile={volumeProfile}
+                    currentPrice={currentLtp}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
 
         {bottomStatus}
+      </div>
+    </div>
+  );
+}
+
+function VolumeProfileHistogramOverlay({
+  profile,
+  currentPrice,
+}: {
+  profile: VolumeProfileResult;
+  currentPrice?: number | null;
+}) {
+  if (!profile || profile.bins.length === 0 || profile.totalVolume <= 0) return null;
+
+  const maxBinVol = profile.pocVolume > 0 ? profile.pocVolume : 1;
+  const binsToRender = profile.bins.slice(-40);
+
+  return (
+    <div className="absolute right-12 top-4 bottom-14 w-28 sm:w-36 pointer-events-none z-10 flex flex-col justify-between py-2 border-l border-amber-500/25 bg-zinc-950/50 backdrop-blur-xs rounded-r-xl shadow-lg">
+      <div className="flex items-center justify-between px-2 text-[9px] font-mono border-b border-zinc-800/80 pb-1">
+        <span className="text-amber-400 font-bold">FRVP {profile.shapeLabel.split(" ")[0]}</span>
+        <span className="text-zinc-400">{profile.valueAreaPercentage}% VA</span>
+      </div>
+      <div className="flex-1 flex flex-col-reverse justify-around px-1.5 overflow-hidden">
+        {binsToRender.map((b) => {
+          const widthPct = Math.min(100, (b.volume / maxBinVol) * 100);
+          const isAtPoc = b.isPOC;
+          const isInVA = b.price >= profile.val && b.price <= profile.vah;
+          const isAtHvn = b.isHVN && !b.isPOC;
+          const isAtLvn = b.isLVN;
+
+          let barColor = isInVA ? "rgba(245, 158, 11, 0.45)" : "rgba(113, 113, 122, 0.35)";
+          if (isAtPoc) barColor = "#f59e0b";
+          else if (isAtHvn) barColor = "rgba(16, 185, 129, 0.65)";
+          else if (isAtLvn) barColor = "rgba(6, 182, 212, 0.65)";
+
+          return (
+            <div key={b.price} className="flex items-center h-1.5 gap-1">
+              <div
+                className="h-full rounded-xs transition-all duration-300"
+                style={{
+                  width: `${widthPct}%`,
+                  backgroundColor: barColor,
+                  boxShadow: isAtPoc ? "0 0 6px rgba(245, 158, 11, 0.7)" : undefined,
+                }}
+              />
+              {isAtPoc && (
+                <span className="text-[8px] font-mono font-bold text-amber-300 -ml-1">
+                  POC
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between px-2 text-[8px] font-mono border-t border-zinc-800/80 pt-1 text-zinc-400">
+        <span>VAL {profile.val.toFixed(0)}</span>
+        <span>VAH {profile.vah.toFixed(0)}</span>
       </div>
     </div>
   );

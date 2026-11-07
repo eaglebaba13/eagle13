@@ -1514,3 +1514,15 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
       return { ok: false, message: `Failed to dispatch ping: ${msg}`, error: msg };
     }
   });
+
+export const dispatchVolumeProfileAlert = createServerFn({ method: "POST" })
+  .inputValidator((signal: any) => signal)
+  .handler(async ({ data }) => {
+    try {
+      const { sendVolumeProfileTelegramAlert } = await import("./telegram-delivery.server");
+      const res = await sendVolumeProfileTelegramAlert(data);
+      return { ok: res.status === "DELIVERED", status: res.status, errorCode: res.errorCode };
+    } catch (err) {
+      return { ok: false, status: "FAILED", errorCode: (err as Error)?.message || "Unknown error" };
+    }
+  });

@@ -13,6 +13,7 @@ import {
 } from "@/lib/live-levels.functions";
 import { buildLevelBoard, computeSignal, type SignalKind } from "@/lib/astro-levels";
 import { LiveMarketChart } from "@/components/LiveMarketChart";
+import { InstitutionalResearchDeck } from "@/components/dashboard/InstitutionalResearchDeck";
 import {
   fmtClock,
   fmtDur,
@@ -1049,6 +1050,22 @@ function LiveMarketTerminal() {
               </div>
             </Panel>
           </div>
+
+          <div style={{ height: 16 }} />
+
+          {/* ==================== INSTITUTIONAL RESEARCH DECK (VOLUME PROFILE & ORDER FLOW) =================== */}
+          <InstitutionalResearchDeck
+            activeSymbol={
+              tab === "BANKNIFTY"
+                ? "BANKNIFTY"
+                : tab === "SENSEX"
+                  ? "SENSEX"
+                  : tab === "GOLD"
+                    ? "GC1!"
+                    : "NIFTY50"
+            }
+            livePrice={activeMarket?.livePrice}
+          />
 
           <div style={{ height: 16 }} />
 
