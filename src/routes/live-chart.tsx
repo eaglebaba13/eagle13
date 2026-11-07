@@ -344,7 +344,7 @@ function LiveChartSelection({
   const moonPhase = liveLevels?.moonPhase;
   const moonNakshatra = liveLevels?.moonNakshatra;
 
-  const isConnected = sse.connected && sse.status?.connectionState === "CONNECTED";
+  const isConnected = sse.connected || sse.status?.connectionState === "CONNECTED";
   const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
 
   const statusColor = isLive
@@ -353,14 +353,14 @@ function LiveChartSelection({
       ? "text-amber-400"
       : "text-zinc-400";
   const statusLabel = isLive
-    ? "LIVE"
-    : sse.status?.freshness === "STALE"
-      ? "STALE"
-      : sse.error && !isConnected
-        ? sse.error
-        : isConnected
-          ? "CONNECTED"
-          : "RECONNECTING";
+    ? "CONNECTED • STREAMING"
+    : isConnected
+      ? "CONNECTED"
+      : sse.status?.freshness === "STALE"
+        ? "STALE"
+        : sse.error === "RECONNECTING"
+          ? "RECONNECTING…"
+          : sse.error || "RECONNECTING…";
 
   const astroAnnotations = useMemo(() => {
     if (!liveLevels || !market) return [];
@@ -476,7 +476,15 @@ function LiveChartSelection({
       series.push({
         type: "bar",
         name: "Volume",
-        data: source.map((c) => ({ x: c.x, y: c.volume ?? 0 })),
+        data: source.map((c) => {
+          const isBullish = c.y[3] >= c.y[0];
+          return {
+            x: c.x,
+            y: c.volume ?? 0,
+            fillColor: isBullish ? "rgba(16, 185, 129, 0.5)" : "rgba(244, 63, 94, 0.5)",
+            strokeColor: isBullish ? "#10b981" : "#f43f5e",
+          };
+        }),
       });
     }
     if (showVwap && vwapResult) {
@@ -519,6 +527,7 @@ function LiveChartSelection({
       yaxisMax = Math.ceil(activePrice * 1.002 * 100) / 100;
     }
 
+    const maxVol = Math.max(...source.map((c) => c.volume ?? 0), 1);
     const yaxis: ApexYAxis[] = [
       {
         seriesName: symbol,
@@ -536,11 +545,12 @@ function LiveChartSelection({
       yaxis.push({
         seriesName: "Volume",
         opposite: true,
+        show: false,
+        min: 0,
+        max: maxVol > 0 ? maxVol * 5.5 : 1000,
         labels: {
-          style: { colors: "#71717a", fontSize: "10px", fontFamily: "var(--eb-mono, monospace)" },
-          formatter: (val: number) => (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`),
+          show: false,
         },
-        title: { text: "Vol", style: { color: "#71717a" } },
       });
     }
 
@@ -707,6 +717,10 @@ function LiveChartSelection({
           colors: { upward: "#10b981", downward: "#ef4444" },
           wick: { useFillColor: true },
         },
+        bar: {
+          columnWidth: "75%",
+          borderRadius: 1,
+        },
       },
       colors: seriesColors,
       stroke: { width: strokeWidths, dashArray: strokeDashes },
@@ -720,180 +734,218 @@ function LiveChartSelection({
   }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
   const topControls = (
-    <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-1">
-        {SYMBOLS.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setSymbol(s.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition-all ${
-              symbol === s.key
-                ? "bg-amber-500 text-black border border-amber-400 shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)]"
-                : "text-zinc-400 hover:text-zinc-200 border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="h-4 w-px bg-zinc-800" />
-
-      <div className="flex items-center gap-1">
-        {TIMEFRAMES.map((tf) => (
-          <button
-            key={tf.ms}
-            onClick={() => setIntervalMs(tf.ms)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
-              intervalMs === tf.ms
-                ? "bg-amber-500/15 text-amber-400 border border-amber-500/40 shadow-[0_0_12px_-4px_rgba(245,158,11,0.3)]"
-                : "text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-800/60"
-            }`}
-          >
-            {tf.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="h-4 w-px bg-zinc-800" />
-
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
-        <input
-          type="checkbox"
-          checked={showVolume}
-          onChange={(e) => setShowVolume(e.target.checked)}
-          className="accent-amber-500"
-        />
-        Volume
-      </label>
-
-      <label className="flex items-center gap-1.5 text-xs text-amber-300 font-semibold cursor-pointer select-none px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:border-amber-500/70 transition-all shadow-[0_0_10px_-3px_rgba(245,158,11,0.25)]">
-        <input
-          type="checkbox"
-          checked={showVolumeProfile}
-          onChange={(e) => setShowVolumeProfile(e.target.checked)}
-          className="accent-amber-500"
-        />
-        <span>Volume Profile (FRVP)</span>
-      </label>
-
-      <label className="flex items-center gap-1.5 text-xs text-cyan-300 font-semibold cursor-pointer select-none px-2.5 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:border-cyan-500/70 transition-all shadow-[0_0_10px_-3px_rgba(6,182,212,0.25)]">
-        <input
-          type="checkbox"
-          checked={showVwap}
-          onChange={(e) => setShowVwap(e.target.checked)}
-          className="accent-cyan-500"
-        />
-        <span>VWAP</span>
-      </label>
-
-      {showVwap && latestVwap != null && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-xs font-mono select-none">
-          <span className="w-2 h-0.5 bg-[#06b6d4] inline-block rounded-full" />
-          <span className="text-cyan-400 font-semibold">VWAP:</span>
-          <span className="text-zinc-100 font-bold">{latestVwap.toFixed(2)}</span>
-          {vwapDiff != null && (
-            <span
-              className={`text-[11px] font-semibold ${
-                vwapDiff.diff >= 0 ? "text-emerald-400" : "text-rose-400"
+    <div className="w-full flex flex-wrap items-center justify-between gap-2.5 px-3 sm:px-4 py-2.5 bg-zinc-950/90 border-b border-amber-500/20 backdrop-blur-md">
+      {/* Left: Instruments & Timeframes */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Instrument Pills */}
+        <div className="flex items-center gap-1 bg-zinc-900/60 p-1 rounded-xl border border-zinc-800/80">
+          {SYMBOLS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSymbol(s.key)}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
+                symbol === s.key
+                  ? "bg-amber-500 text-black border border-amber-400 shadow-[0_0_12px_-2px_rgba(245,158,11,0.5)] font-bold"
+                  : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
               }`}
             >
-              ({vwapDiff.diff >= 0 ? "+" : ""}{vwapDiff.diff.toFixed(2)} / {vwapDiff.diff >= 0 ? "+" : ""}{vwapDiff.diffPct.toFixed(2)}%)
-            </span>
-          )}
+              {s.label}
+            </button>
+          ))}
         </div>
-      )}
 
-      <select
-        value={
-          showAstroLevels
-            ? "astro"
-            : showGannLevels
-              ? "gann"
-              : showSquareRootLevels
-                ? "sqrt"
-                : "none"
-        }
-        onChange={(e) => {
-          const v = e.target.value;
-          setShowAstroLevels(v === "astro");
-          setShowGannLevels(v === "gann");
-          setShowSquareRootLevels(v === "sqrt");
-        }}
-        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-amber-500/40 transition-colors"
-      >
-        <option value="none">Overlays: None</option>
-        <option value="astro">Astro Levels (±3% Filtered)</option>
-        <option value="gann">Gann Square of 9</option>
-        <option value="sqrt">Square Root Levels</option>
-      </select>
+        {/* Timeframe Pills */}
+        <div className="flex items-center gap-1 bg-zinc-900/60 p-1 rounded-xl border border-zinc-800/80">
+          {TIMEFRAMES.map((tf) => (
+            <button
+              key={tf.ms}
+              onClick={() => setIntervalMs(tf.ms)}
+              className={`px-2 py-1 rounded-lg text-xs font-medium font-mono transition-all ${
+                intervalMs === tf.ms
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-[0_0_10px_-2px_rgba(245,158,11,0.3)] font-bold"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
+              }`}
+            >
+              {tf.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <label className="flex items-center gap-1.5 text-xs text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
-        <input
-          type="checkbox"
-          checked={showMoonPhase}
-          onChange={(e) => setShowMoonPhase(e.target.checked)}
-          className="accent-amber-500"
-        />
-        Moon Phase
-      </label>
+      {/* Middle: Indicator Toggles */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {/* Volume Toggle */}
+        <label className={`flex items-center gap-1.5 text-xs font-mono cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-all ${
+          showVolume
+            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 shadow-[0_0_10px_-3px_rgba(16,185,129,0.25)] font-semibold"
+            : "border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+        }`}>
+          <input
+            type="checkbox"
+            checked={showVolume}
+            onChange={(e) => setShowVolume(e.target.checked)}
+            className="accent-emerald-500"
+          />
+          <span>Volume</span>
+        </label>
 
-      <select
-        value={activeIndicators.map((i) => `${i.id}:${i.enabled}`).join(",") || "none"}
-        onChange={(e) => {
-          const val = e.target.value;
-          if (val === "none") {
-            setActiveIndicators([]);
-            return;
+        {/* FRVP Toggle */}
+        <label className={`flex items-center gap-1.5 text-xs font-mono cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-all ${
+          showVolumeProfile
+            ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-[0_0_10px_-3px_rgba(245,158,11,0.25)] font-semibold"
+            : "border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+        }`}>
+          <input
+            type="checkbox"
+            checked={showVolumeProfile}
+            onChange={(e) => setShowVolumeProfile(e.target.checked)}
+            className="accent-amber-500"
+          />
+          <span>FRVP</span>
+        </label>
+
+        {/* VWAP Toggle */}
+        <label className={`flex items-center gap-1.5 text-xs font-mono cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-all ${
+          showVwap
+            ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300 shadow-[0_0_10px_-3px_rgba(6,182,212,0.25)] font-semibold"
+            : "border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+        }`}>
+          <input
+            type="checkbox"
+            checked={showVwap}
+            onChange={(e) => setShowVwap(e.target.checked)}
+            className="accent-cyan-500"
+          />
+          <span>VWAP</span>
+        </label>
+
+        {/* VWAP Live Pill */}
+        {showVwap && latestVwap != null && (
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-xs font-mono select-none">
+            <span className="w-1.5 h-1.5 bg-[#06b6d4] rounded-full animate-pulse" />
+            <span className="text-cyan-400 font-semibold">VWAP:</span>
+            <span className="text-zinc-100 font-bold">{latestVwap.toFixed(2)}</span>
+            {vwapDiff != null && (
+              <span
+                className={`text-[11px] font-semibold ${
+                  vwapDiff.diff >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}
+              >
+                ({vwapDiff.diff >= 0 ? "+" : ""}{vwapDiff.diff.toFixed(2)})
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Overlays Selector */}
+        <select
+          value={
+            showAstroLevels
+              ? "astro"
+              : showGannLevels
+                ? "gann"
+                : showSquareRootLevels
+                  ? "sqrt"
+                  : "none"
           }
-          const ids = val.split(",").map((part) => part.split(":")[0]);
-          setActiveIndicators(
-            listIndicators()
-              .filter((def) => ids.includes(def.id))
-              .map((def) => ({
-                id: def.id as IndicatorId,
-                enabled: true,
-                params: Object.fromEntries(def.params.map((p) => [p.key, p.default])),
-              })),
-          );
-        }}
-        className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-200 text-xs hover:border-zinc-700 focus:outline-none focus:border-amber-500/40 transition-colors"
-      >
-        <option value="none">Indicators: None</option>
-        {listIndicators().map((def) => (
-          <option key={def.id} value={`${def.id}:true`}>
-            {def.name}
-          </option>
-        ))}
-      </select>
+          onChange={(e) => {
+            const v = e.target.value;
+            setShowAstroLevels(v === "astro");
+            setShowGannLevels(v === "gann");
+            setShowSquareRootLevels(v === "sqrt");
+          }}
+          className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-200 text-xs font-mono hover:border-amber-500/40 focus:outline-none transition-colors"
+        >
+          <option value="none">Overlays: None</option>
+          <option value="astro">Astro Levels (±3%)</option>
+          <option value="gann">Gann Square of 9</option>
+          <option value="sqrt">Square Root Levels</option>
+        </select>
+
+        {/* Moon Phase Toggle */}
+        <label className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
+          <input
+            type="checkbox"
+            checked={showMoonPhase}
+            onChange={(e) => setShowMoonPhase(e.target.checked)}
+            className="accent-amber-500"
+          />
+          <span>Moon</span>
+        </label>
+
+        {/* Technical Indicators Selector */}
+        <select
+          value={activeIndicators.map((i) => `${i.id}:${i.enabled}`).join(",") || "none"}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "none") {
+              setActiveIndicators([]);
+              return;
+            }
+            const ids = val.split(",").map((part) => part.split(":")[0]);
+            setActiveIndicators(
+              listIndicators()
+                .filter((def) => ids.includes(def.id))
+                .map((def) => ({
+                  id: def.id as IndicatorId,
+                  enabled: true,
+                  params: Object.fromEntries(def.params.map((p) => [p.key, p.default])),
+                })),
+            );
+          }}
+          className="hidden lg:block px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-200 text-xs font-mono hover:border-amber-500/40 focus:outline-none transition-colors"
+        >
+          <option value="none">Indicators: None</option>
+          {listIndicators().map((def) => (
+            <option key={def.id} value={`${def.id}:true`}>
+              {def.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Right: Real-time Live Streaming Status Badge */}
+      <div className="flex items-center gap-2">
+        <div
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-mono font-bold tracking-wider transition-all ${
+            isLive
+              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+              : sse.status?.freshness === "STALE"
+                ? "bg-amber-500/15 text-amber-400 border border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                : isConnected
+                  ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/40"
+                  : "bg-rose-500/15 text-rose-400 border border-rose-500/40 animate-pulse"
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isLive
+                ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]"
+                : sse.status?.freshness === "STALE"
+                  ? "bg-amber-400"
+                  : isConnected
+                    ? "bg-cyan-400"
+                    : "bg-rose-400"
+            }`}
+          />
+          <span>{statusLabel}</span>
+        </div>
+
+        {currentLtp != null && (
+          <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-mono">
+            <span className="text-zinc-400">LTP:</span>
+            <span className="text-amber-300 font-bold">{currentLtp.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 
   const bottomStatus = (
-    <div className="shrink-0 px-4 py-2 border-t border-zinc-800/80 text-xs flex items-center justify-between bg-[#070a0e]/95 backdrop-blur-md">
-      <div className="flex items-center gap-3">
+    <div className="shrink-0 px-4 py-2 border-t border-zinc-800/80 text-xs flex flex-wrap items-center justify-between gap-2 bg-[#070a0e]/95 backdrop-blur-md">
+      <div className="flex items-center gap-3 flex-wrap">
         <span className="font-mono text-zinc-500">MARKET {session.isOpen ? "OPEN" : "CLOSED"}</span>
-        <span
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
-            isLive
-              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-              : sse.status?.freshness === "STALE"
-                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                : "bg-zinc-800/60 text-zinc-400 border border-zinc-700/40"
-          }`}
-        >
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isLive
-                ? "bg-emerald-400 animate-pulse"
-                : sse.status?.freshness === "STALE"
-                  ? "bg-amber-400"
-                  : "bg-zinc-500"
-            }`}
-          />
-          {statusLabel}
-        </span>
-        <span className="font-mono text-zinc-500">{sse.status?.provider ?? "UPSTOX_V3_WS"}</span>
+        <span className="font-mono text-zinc-500">PROVIDER: {sse.status?.provider ?? (symbol === "GC1!" ? "COMEX_STREAM" : "UPSTOX_V3_WS")}</span>
         <span className="font-mono text-zinc-500">
           {sse.status?.lastTick ? new Date(sse.status.lastTick).toLocaleTimeString() : "WAITING TICK"} · {sse.status?.quality ?? "OK"} · Levels: Live
         </span>
@@ -904,7 +956,7 @@ function LiveChartSelection({
           <span className="font-mono text-cyan-400 font-semibold">VWAP: {latestVwap.toFixed(2)}</span>
         )}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {market && (
           <span className="font-mono text-zinc-400">
             {marketDef?.label} | Prev: {market.prevClose.toFixed(2)} | Chg:{" "}
@@ -928,12 +980,12 @@ function LiveChartSelection({
         <AppSidebar />
       </div>
       <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden">
-        <div className="flex items-center justify-between p-3 border-b border-zinc-800 shrink-0">
+        <div className="w-full shrink-0">
           {topControls}
           {indicatorErrors.length > 0 && (
-            <div className="flex items-center gap-2 ml-2">
+            <div className="flex items-center gap-2 px-4 py-1 bg-amber-950/20 border-b border-amber-500/20">
               {indicatorErrors.map((err) => (
-                <span key={err.indicatorId} className="text-[10px] text-amber-500 font-mono">
+                <span key={err.indicatorId} className="text-[10px] text-amber-400 font-mono">
                   {err.indicatorId}: {err.message}
                 </span>
               ))}
@@ -970,7 +1022,7 @@ function LiveChartSelection({
               <div className="text-center p-4">
                 <span className="text-xs text-zinc-500">NO MARKET DATA</span>
                 <div className="mt-2 text-[11px] text-zinc-400 font-mono">
-                  Status: {statusLabel} · Provider: {sse.status?.provider ?? "UPSTOX_V3_WS"}
+                  Status: {statusLabel} · Provider: {sse.status?.provider ?? (symbol === "GC1!" ? "COMEX_STREAM" : "UPSTOX_V3_WS")}
                 </div>
               </div>
             </div>
@@ -1014,12 +1066,12 @@ function VolumeProfileHistogramOverlay({
   const binsToRender = profile.bins.slice(-40);
 
   return (
-    <div className="absolute right-12 top-4 bottom-14 w-28 sm:w-36 pointer-events-none z-10 flex flex-col justify-between py-2 border-l border-amber-500/25 bg-zinc-950/50 backdrop-blur-xs rounded-r-xl shadow-lg">
-      <div className="flex items-center justify-between px-2 text-[9px] font-mono border-b border-zinc-800/80 pb-1">
-        <span className="text-amber-400 font-bold">FRVP {profile.shapeLabel.split(" ")[0]}</span>
-        <span className="text-zinc-400">{profile.valueAreaPercentage}% VA</span>
+    <div className="absolute right-16 sm:right-20 top-4 bottom-16 w-32 sm:w-40 pointer-events-none z-10 flex flex-col justify-between py-2.5 px-2 border border-amber-500/30 bg-zinc-950/80 backdrop-blur-md rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.85)]">
+      <div className="flex items-center justify-between text-[9px] font-mono border-b border-zinc-800/80 pb-1.5 mb-1">
+        <span className="text-amber-400 font-bold tracking-wider">FRVP {profile.shapeLabel.split(" ")[0]}</span>
+        <span className="text-zinc-400 bg-zinc-900 px-1 py-0.5 rounded border border-zinc-800">{profile.valueAreaPercentage}% VA</span>
       </div>
-      <div className="flex-1 flex flex-col-reverse justify-around px-1.5 overflow-hidden">
+      <div className="flex-1 flex flex-col-reverse justify-around overflow-hidden gap-[1px]">
         {binsToRender.map((b) => {
           const widthPct = Math.min(100, (b.volume / maxBinVol) * 100);
           const isAtPoc = b.isPOC;
@@ -1027,10 +1079,10 @@ function VolumeProfileHistogramOverlay({
           const isAtHvn = b.isHVN && !b.isPOC;
           const isAtLvn = b.isLVN;
 
-          let barColor = isInVA ? "rgba(245, 158, 11, 0.45)" : "rgba(113, 113, 122, 0.35)";
+          let barColor = isInVA ? "rgba(245, 158, 11, 0.4)" : "rgba(113, 113, 122, 0.25)";
           if (isAtPoc) barColor = "#f59e0b";
-          else if (isAtHvn) barColor = "rgba(16, 185, 129, 0.65)";
-          else if (isAtLvn) barColor = "rgba(6, 182, 212, 0.65)";
+          else if (isAtHvn) barColor = "rgba(16, 185, 129, 0.55)";
+          else if (isAtLvn) barColor = "rgba(6, 182, 212, 0.55)";
 
           return (
             <div key={b.price} className="flex items-center h-1.5 gap-1">
@@ -1039,11 +1091,11 @@ function VolumeProfileHistogramOverlay({
                 style={{
                   width: `${widthPct}%`,
                   backgroundColor: barColor,
-                  boxShadow: isAtPoc ? "0 0 6px rgba(245, 158, 11, 0.7)" : undefined,
+                  boxShadow: isAtPoc ? "0 0 8px rgba(245, 158, 11, 0.8)" : undefined,
                 }}
               />
               {isAtPoc && (
-                <span className="text-[8px] font-mono font-bold text-amber-300 -ml-1">
+                <span className="text-[8px] font-mono font-bold text-amber-300 shrink-0">
                   POC
                 </span>
               )}
@@ -1051,9 +1103,10 @@ function VolumeProfileHistogramOverlay({
           );
         })}
       </div>
-      <div className="flex items-center justify-between px-2 text-[8px] font-mono border-t border-zinc-800/80 pt-1 text-zinc-400">
-        <span>VAL {profile.val.toFixed(0)}</span>
-        <span>VAH {profile.vah.toFixed(0)}</span>
+      <div className="flex items-center justify-between text-[8px] font-mono border-t border-zinc-800/80 pt-1.5 mt-1 text-zinc-400">
+        <span className="text-zinc-400">VAL <strong className="text-zinc-200">{profile.val.toFixed(0)}</strong></span>
+        <span className="text-amber-400">POC <strong className="text-amber-300">{profile.poc.toFixed(0)}</strong></span>
+        <span className="text-zinc-400">VAH <strong className="text-zinc-200">{profile.vah.toFixed(0)}</strong></span>
       </div>
     </div>
   );

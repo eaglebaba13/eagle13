@@ -91,10 +91,14 @@ export function useLiveCandleSSE(symbol: string, intervalMs = 60000) {
       );
       es = source;
       source.onopen = () => {
-        if (!disposed && es === source) update((s) => ({ ...s, connected: true }));
+        if (!disposed && es === source) {
+          attempts = 0;
+          update((s) => ({ ...s, connected: true, error: null }));
+        }
       };
       source.onmessage = (message) => {
         if (disposed || es !== source) return;
+        attempts = 0;
         try {
           const parsed: unknown = JSON.parse(message.data);
           const event = parseLiveEvent(parsed, symbol, intervalMs);
@@ -110,16 +114,50 @@ export function useLiveCandleSSE(symbol: string, intervalMs = 60000) {
         update((s) => ({
           ...s,
           connected: false,
-          error: attempts >= 5 ? "UNAVAILABLE" : "RECONNECTING",
+          error: "RECONNECTING",
         }));
-        if (attempts < 5) timer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 30000));
+        // Resilient exponential backoff reconnect: cap delay at 10s and continuously retry
+        const delay = Math.min(1000 * 2 ** attempts, 10000);
+        attempts++;
+        timer = setTimeout(connect, delay);
       };
     };
     connect();
+
+    const handleOnline = () => {
+      if (!disposed && typeof window !== "undefined") {
+        if (!es || es.readyState === 2) {
+          if (timer) clearTimeout(timer);
+          attempts = 0;
+          connect();
+        }
+      }
+    };
+    const handleVisibility = () => {
+      if (!disposed && typeof document !== "undefined" && document.visibilityState === "visible") {
+        if (!es || es.readyState === 2) {
+          if (timer) clearTimeout(timer);
+          attempts = 0;
+          connect();
+        }
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", handleOnline);
+    }
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
     return () => {
       disposed = true;
       es?.close();
       if (timer) clearTimeout(timer);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", handleOnline);
+      }
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
     };
   }, [symbol, intervalMs, key, retry]);
   return { state: stored.key === key ? stored.state : emptyLiveState(), reconnect };
