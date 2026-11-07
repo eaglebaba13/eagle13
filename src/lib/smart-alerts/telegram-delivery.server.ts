@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import type { AlertDeliveryProvider } from "./delivery";
 import type { VolumeProfileSignal } from "../orderflow/volume-profile-signals";
+import type { VWAPExecutionSignal } from "../orderflow/vwap-signals";
 import { recordDeliveryAttempt } from "../notifications/alert-delivery.functions";
 import {
   loadTelegramChannelsFromFile,
@@ -439,6 +440,62 @@ export async function sendVolumeProfileTelegramAlert(
   signal: VolumeProfileSignal
 ): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
   const formatted = formatVolumeProfileTelegramAlert(signal);
+  const channels = loadTelegramChannelsFromFile();
+  const activeChannels = channels.filter((c) => c.status === "active");
+
+  if (activeChannels.length === 0) {
+    return postTelegramMessage(formatted);
+  }
+
+  const matchingChannels = activeChannels.filter((c) => {
+    if (c.alertFilter === "all" || c.alertFilter === "decision") return true;
+    return false;
+  });
+
+  const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
+  const env = getTelegramEnv();
+  let dispatchedCount = 0;
+
+  for (const channel of targets) {
+    const token = channel.botToken || env?.token || "";
+    const chatId = channel.chatId || env?.chatId || "";
+    if (!token || !chatId) continue;
+
+    dispatchedCount++;
+    const start = Date.now();
+    const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
+    const duration = Date.now() - start;
+
+    channel.lastDispatchAt = new Date().toISOString();
+    channel.lastLatencyMs = duration;
+    channel.lastStatus = res.status === "DELIVERED" ? "DELIVERED" : "FAILED";
+    channel.lastError = res.errorCode;
+
+    lastResult = res;
+  }
+
+  if (dispatchedCount === 0) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+
+  saveTelegramChannelsToFile(channels);
+  return lastResult;
+}
+
+export { formatVWAPTelegramAlert } from "../orderflow/vwap-signals";
+import { formatVWAPTelegramAlert } from "../orderflow/vwap-signals";
+
+/**
+ * Dispatch an institutional VWAP execution alert to connected Telegram channels.
+ */
+export async function sendVWAPTelegramAlert(
+  signal: VWAPExecutionSignal
+): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
+  const formatted = formatVWAPTelegramAlert(signal);
   const channels = loadTelegramChannelsFromFile();
   const activeChannels = channels.filter((c) => c.status === "active");
 

@@ -30,7 +30,7 @@ export interface IndicatorSeriesConfig {
 const INDICATOR_COLORS: Record<string, string> = {
   sma: "#f59e0b", // amber
   ema: "#3b82f6", // blue
-  vwap: "#a855f7", // purple
+  vwap: "#06b6d4", // cyber cyan
   upper: "#6b7280", // gray (bollinger)
   middle: "#f59e0b", // amber (bollinger)
   lower: "#6b7280", // gray (bollinger)

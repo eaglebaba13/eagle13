@@ -1526,3 +1526,15 @@ export const dispatchVolumeProfileAlert = createServerFn({ method: "POST" })
       return { ok: false, status: "FAILED", errorCode: (err as Error)?.message || "Unknown error" };
     }
   });
+
+export const dispatchVWAPAlert = createServerFn({ method: "POST" })
+  .inputValidator((signal: any) => signal)
+  .handler(async ({ data }) => {
+    try {
+      const { sendVWAPTelegramAlert } = await import("./telegram-delivery.server");
+      const res = await sendVWAPTelegramAlert(data);
+      return { ok: res.status === "DELIVERED", status: res.status, errorCode: res.errorCode };
+    } catch (err) {
+      return { ok: false, status: "FAILED", errorCode: (err as Error)?.message || "Unknown error" };
+    }
+  });
