@@ -44,6 +44,7 @@ import { Route as DevAstroFixtureCaptureRouteImport } from './routes/dev.astro-f
 import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
 import { Route as ApiLiveCandlesRouteImport } from './routes/api/live-candles'
+import { Route as ApiFiiDiiRouteImport } from './routes/api/fii-dii'
 import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
 import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
 import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
@@ -265,6 +266,11 @@ const CryptoPairRoute = CryptoPairRouteImport.update({
 const ApiLiveCandlesRoute = ApiLiveCandlesRouteImport.update({
   id: '/api/live-candles',
   path: '/api/live-candles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFiiDiiRoute = ApiFiiDiiRouteImport.update({
+  id: '/api/fii-dii',
+  path: '/api/fii-dii',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTelegramLogRoute =
@@ -588,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
@@ -671,6 +678,7 @@ export interface FileRoutesByTo {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
@@ -756,6 +764,7 @@ export interface FileRoutesById {
   '/_authenticated/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/_authenticated/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
   '/dev/astro-audit': typeof DevAstroAuditRoute
@@ -841,6 +850,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
@@ -924,6 +934,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
@@ -1008,6 +1019,7 @@ export interface FileRouteTypes {
     | '/_authenticated/signal-history'
     | '/_authenticated/strategy-analytics'
     | '/_authenticated/telegram-log'
+    | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
     | '/dev/astro-audit'
@@ -1075,6 +1087,7 @@ export interface RootRouteChildren {
   SignalAccuracyRoute: typeof SignalAccuracyRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
+  ApiFiiDiiRoute: typeof ApiFiiDiiRoute
   ApiLiveCandlesRoute: typeof ApiLiveCandlesRoute
   DevAstroAuditRoute: typeof DevAstroAuditRoute
   DevAstroFixtureCaptureRoute: typeof DevAstroFixtureCaptureRoute
@@ -1328,6 +1341,13 @@ declare module '@tanstack/react-router' {
       path: '/api/live-candles'
       fullPath: '/api/live-candles'
       preLoaderRoute: typeof ApiLiveCandlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fii-dii': {
+      id: '/api/fii-dii'
+      path: '/api/fii-dii'
+      fullPath: '/api/fii-dii'
+      preLoaderRoute: typeof ApiFiiDiiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/telegram-log': {
@@ -1845,6 +1865,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignalAccuracyRoute: SignalAccuracyRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
+  ApiFiiDiiRoute: ApiFiiDiiRoute,
   ApiLiveCandlesRoute: ApiLiveCandlesRoute,
   DevAstroAuditRoute: DevAstroAuditRoute,
   DevAstroFixtureCaptureRoute: DevAstroFixtureCaptureRoute,

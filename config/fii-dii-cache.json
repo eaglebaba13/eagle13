@@ -1,0 +1,251 @@
+{
+  "date": "2026-11-06",
+  "fii": {
+    "buy": 30455.63,
+    "sell": 16705.81,
+    "net": 13749.82
+  },
+  "dii": {
+    "buy": 18084.32,
+    "sell": 24053.02,
+    "net": -5968.7
+  },
+  "fno": {
+    "fiiIndexFuturesNet": -100416,
+    "fiiIndexOptionsNet": -577365,
+    "sentiment": "BEARISH"
+  },
+  "status": "EOD_CONFIRMED",
+  "history": [
+    {
+      "date": "2026-11-06",
+      "label": "06 Nov",
+      "fiiCash": 13749.82,
+      "diiCash": -5968.7,
+      "fiiFuture": -100416,
+      "fii": {
+        "buy": 30455.63,
+        "sell": 16705.81,
+        "net": 13749.82
+      },
+      "dii": {
+        "buy": 18084.32,
+        "sell": 24053.02,
+        "net": -5968.7
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -100416,
+        "fiiIndexOptionsNet": -577365,
+        "sentiment": "BEARISH"
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "label": "05 Nov",
+      "fiiCash": -3665.4,
+      "diiCash": 3200.2,
+      "fiiFuture": -137438,
+      "fii": {
+        "buy": 14230.1,
+        "sell": 17895.5,
+        "net": -3665.4
+      },
+      "dii": {
+        "buy": 15410.2,
+        "sell": 12210,
+        "net": 3200.2
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -137438,
+        "fiiIndexOptionsNet": -579833,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "04 Nov",
+      "fiiCash": -3349.7,
+      "diiCash": 2940.2,
+      "fiiFuture": -185979,
+      "fii": {
+        "buy": 13100.5,
+        "sell": 16450.2,
+        "net": -3349.7
+      },
+      "dii": {
+        "buy": 14890.3,
+        "sell": 11950.1,
+        "net": 2940.2
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -185979,
+        "fiiIndexOptionsNet": -643064,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-11-03",
+      "label": "03 Nov",
+      "fiiCash": -3439.4,
+      "diiCash": 3190.4,
+      "fiiFuture": -202757,
+      "fii": {
+        "buy": 12450.8,
+        "sell": 15890.2,
+        "net": -3439.4
+      },
+      "dii": {
+        "buy": 14210.5,
+        "sell": 11020.1,
+        "net": 3190.4
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -202757,
+        "fiiIndexOptionsNet": -628156,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-31",
+      "label": "31 Oct",
+      "fiiCash": 430.1,
+      "diiCash": 570,
+      "fiiFuture": -210500,
+      "fii": {
+        "buy": 5410.2,
+        "sell": 4980.1,
+        "net": 430.1
+      },
+      "dii": {
+        "buy": 4890,
+        "sell": 4320,
+        "net": 570
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -210500,
+        "fiiIndexOptionsNet": -580000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-30",
+      "label": "30 Oct",
+      "fiiCash": -3030,
+      "diiCash": 2730,
+      "fiiFuture": -215000,
+      "fii": {
+        "buy": 11890,
+        "sell": 14920,
+        "net": -3030
+      },
+      "dii": {
+        "buy": 13540,
+        "sell": 10810,
+        "net": 2730
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -215000,
+        "fiiIndexOptionsNet": -590000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-29",
+      "label": "29 Oct",
+      "fiiCash": -2890.5,
+      "diiCash": 2610.1,
+      "fiiFuture": -221000,
+      "fii": {
+        "buy": 12200,
+        "sell": 15090.5,
+        "net": -2890.5
+      },
+      "dii": {
+        "buy": 14100,
+        "sell": 11489.9,
+        "net": 2610.1
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -221000,
+        "fiiIndexOptionsNet": -605000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-28",
+      "label": "28 Oct",
+      "fiiCash": -2140,
+      "diiCash": 2290,
+      "fiiFuture": -224000,
+      "fii": {
+        "buy": 11500,
+        "sell": 13640,
+        "net": -2140
+      },
+      "dii": {
+        "buy": 13200,
+        "sell": 10910,
+        "net": 2290
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -224000,
+        "fiiIndexOptionsNet": -610000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-25",
+      "label": "25 Oct",
+      "fiiCash": -3050.2,
+      "diiCash": 2840.4,
+      "fiiFuture": -228000,
+      "fii": {
+        "buy": 12800,
+        "sell": 15850.2,
+        "net": -3050.2
+      },
+      "dii": {
+        "buy": 14600,
+        "sell": 11759.6,
+        "net": 2840.4
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -228000,
+        "fiiIndexOptionsNet": -615000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    },
+    {
+      "date": "2026-10-24",
+      "label": "24 Oct",
+      "fiiCash": -5060,
+      "diiCash": 4380,
+      "fiiFuture": -235000,
+      "fii": {
+        "buy": 13400,
+        "sell": 18460,
+        "net": -5060
+      },
+      "dii": {
+        "buy": 16200,
+        "sell": 11820,
+        "net": 4380
+      },
+      "fno": {
+        "fiiIndexFuturesNet": -235000,
+        "fiiIndexOptionsNet": -625000,
+        "sentiment": "BEARISH"
+      },
+      "status": "EOD_CONFIRMED"
+    }
+  ],
+  "lastUpdated": "2026-11-07T11:12:32.033Z"
+}
