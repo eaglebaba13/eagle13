@@ -13,27 +13,52 @@ import {
   ArrowUpRight,
   Pause,
   Play,
+  Radar,
 } from "lucide-react";
 import { getCachedFeatures } from "@/lib/features-client";
+import { IctUnicornRadarView } from "@/components/dashboard/IctUnicornRadarView";
 
 export interface AstroRegimeHeroCarouselProps {
   niftySpot?: number;
   bankNiftySpot?: number;
 }
 
+export type DeckTabId = "astro" | "smc" | "derivatives" | "unicorn";
+
+export interface DeckTabConfig {
+  readonly id: DeckTabId;
+  readonly label: string;
+  readonly icon: React.ComponentType<{ size?: number; className?: string }>;
+}
+
+export const DECK_TABS: readonly DeckTabConfig[] = [
+  { id: "astro", label: "Astro Harmonics", icon: Sparkles },
+  { id: "smc", label: "SMC Order Flow", icon: Layers },
+  { id: "derivatives", label: "Derivatives & GEX", icon: BarChart3 },
+  { id: "unicorn", label: "🦄 ICT Unicorn Radar & SMT", icon: Radar },
+];
+
 export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
   niftySpot = 23960.6,
   bankNiftySpot = 55913.6,
 }: AstroRegimeHeroCarouselProps) {
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState<DeckTabId>("astro");
   const [isPaused, setIsPaused] = useState(false);
 
   const nextSlide = useCallback(() => {
-    setActiveSlide((prev) => (prev + 1) % 3);
+    setActiveTab((prev) => {
+      const idx = DECK_TABS.findIndex((t) => t.id === prev);
+      const nextIdx = (idx + 1) % DECK_TABS.length;
+      return DECK_TABS[nextIdx].id;
+    });
   }, []);
 
   const prevSlide = useCallback(() => {
-    setActiveSlide((prev) => (prev - 1 + 3) % 3);
+    setActiveTab((prev) => {
+      const idx = DECK_TABS.findIndex((t) => t.id === prev);
+      const prevIdx = (idx - 1 + DECK_TABS.length) % DECK_TABS.length;
+      return DECK_TABS[prevIdx].id;
+    });
   }, []);
 
   useEffect(() => {
@@ -50,14 +75,17 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
       className="relative mb-5 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/85 p-5 md:p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/30"
     >
       {/* Dynamic Background Glow Ambient Elements */}
-      {activeSlide === 0 && (
+      {activeTab === "astro" && (
         <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-purple-500/15 blur-3xl pointer-events-none transition-all duration-1000" />
       )}
-      {activeSlide === 1 && (
+      {activeTab === "smc" && (
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none transition-all duration-1000" />
       )}
-      {activeSlide === 2 && (
+      {activeTab === "derivatives" && (
         <div className="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none transition-all duration-1000" />
+      )}
+      {activeTab === "unicorn" && (
+        <div className="absolute -top-24 right-1/4 h-64 w-64 rounded-full bg-amber-500/15 blur-3xl pointer-events-none transition-all duration-1000" />
       )}
 
       {/* Top Bar: Slide Tabs & Manual Navigation */}
@@ -82,27 +110,40 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
         </div>
 
         {/* Tab Selector Buttons */}
-        <div className="flex items-center gap-1.5">
-          {[
-            { id: 0, label: "Astro Harmonics", icon: Sparkles },
-            { id: 1, label: "SMC Order Flow", icon: Layers },
-            { id: 2, label: "Derivatives & GEX", icon: BarChart3 },
-          ].map((tab) => {
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {DECK_TABS.map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeSlide === tab.id;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveSlide(tab.id)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
                   isActive
                     ? "bg-white/10 text-zinc-100 border border-white/20 shadow-sm"
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
                 }`}
               >
-                <Icon size={13} className={isActive ? "text-cyan-400" : "text-zinc-500"} />
+                <Icon
+                  size={13}
+                  className={
+                    isActive
+                      ? tab.id === "unicorn"
+                        ? "text-amber-400"
+                        : "text-cyan-400"
+                      : "text-zinc-500"
+                  }
+                />
                 <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">
+                  {tab.id === "unicorn" ? "Unicorn" : tab.label.split(" ")[0]}
+                </span>
+                {tab.id === "unicorn" && (
+                  <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] rounded-full border border-amber-500/40 font-bold ml-0.5">
+                    LIVE
+                  </span>
+                )}
               </button>
             );
           })}
@@ -131,7 +172,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
       {/* Slide Content Deck */}
       <div className="pt-4">
         {/* SLIDE 0: ASTRO CYCLE HARMONICS */}
-        {activeSlide === 0 && (
+        {activeTab === "astro" && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -200,7 +241,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
         )}
 
         {/* SLIDE 1: INSTITUTIONAL SMART MONEY REGIME */}
-        {activeSlide === 1 && (
+        {activeTab === "smc" && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -267,7 +308,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
         )}
 
         {/* SLIDE 2: DERIVATIVES SENTIMENT & GEX */}
-        {activeSlide === 2 && (
+        {activeTab === "derivatives" && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -330,18 +371,25 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
             </div>
           </div>
         )}
+
+        {/* SLIDE 3: 🦄 ICT UNICORN RADAR & SMT DIVERGENCE */}
+        {activeTab === "unicorn" && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <IctUnicornRadarView />
+          </div>
+        )}
       </div>
 
       {/* Slide Indicators Progress Dots */}
       <div className="mt-4 flex items-center justify-center gap-1.5">
-        {[0, 1, 2].map((idx) => (
+        {DECK_TABS.map((tab) => (
           <button
-            key={idx}
+            key={tab.id}
             type="button"
-            onClick={() => setActiveSlide(idx)}
-            aria-label={`Go to slide ${idx + 1}`}
+            onClick={() => setActiveTab(tab.id)}
+            aria-label={`Go to ${tab.label}`}
             className={`h-1.5 rounded-full transition-all duration-300 ${
-              activeSlide === idx ? "w-8 bg-cyan-400" : "w-2 bg-white/20 hover:bg-white/40"
+              activeTab === tab.id ? "w-8 bg-cyan-400" : "w-2 bg-white/20 hover:bg-white/40"
             }`}
           />
         ))}
@@ -349,3 +397,5 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
     </section>
   );
 });
+
+export { AstroRegimeHeroCarousel as InstitutionalResearchDeck };

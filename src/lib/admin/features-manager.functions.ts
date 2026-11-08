@@ -16,6 +16,7 @@ export interface SiteFeaturesConfig {
   decisionIntelligence: "public" | "pro_only" | "hidden";
   liveCandlesSse: "public" | "pro_only";
   optionChainHeatmap: "public" | "pro_only";
+  unicornRadar?: "public" | "pro_only" | "hidden";
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -27,6 +28,7 @@ export const DEFAULT_FEATURES_CONFIG: SiteFeaturesConfig = {
   decisionIntelligence: "public",
   liveCandlesSse: "public",
   optionChainHeatmap: "public",
+  unicornRadar: "public",
 };
 
 let inMemoryFeatures: SiteFeaturesConfig = { ...DEFAULT_FEATURES_CONFIG };
@@ -92,6 +94,7 @@ const SiteFeaturesSchema = z.object({
   decisionIntelligence: z.enum(["public", "pro_only", "hidden"]),
   liveCandlesSse: z.enum(["public", "pro_only"]),
   optionChainHeatmap: z.enum(["public", "pro_only"]),
+  unicornRadar: z.enum(["public", "pro_only", "hidden"]).optional().default("public"),
 });
 
 /**

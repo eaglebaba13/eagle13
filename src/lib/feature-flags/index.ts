@@ -97,6 +97,13 @@ export const FEATURE_FLAG_REGISTRY: readonly FeatureFlagDefinition[] = [
     minPlan: "pro",
     description: "Gann Square next-day gap outlook (research-only)",
   },
+  {
+    id: "unicorn.radar",
+    capability: "signal.accuracy",
+    enabled: true,
+    minPlan: "free",
+    description: "ICT Unicorn Multi-Asset Radar & SMT Divergence Engine",
+  },
 ];
 
 export const FEATURE_FLAG_VERSION = "feature-flags@1.0.0";

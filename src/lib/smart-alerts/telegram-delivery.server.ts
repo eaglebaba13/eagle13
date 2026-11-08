@@ -542,10 +542,11 @@ export async function sendVWAPTelegramAlert(
   return lastResult;
 }
 
-export {
+import {
   formatUnicornTelegramAlert,
   type UnicornSetup,
 } from "../orderflow/unicorn-scanner.server";
+export { formatUnicornTelegramAlert, type UnicornSetup };
 
 /**
  * Dispatch an institutional ICT Unicorn execution alert to connected Telegram channels.
@@ -600,10 +601,11 @@ export async function sendUnicornTelegramAlert(
   return lastResult;
 }
 
-export {
+import {
   formatSMTTelegramAlert,
   type SMTDivergence,
 } from "../orderflow/smt-divergence.server";
+export { formatSMTTelegramAlert, type SMTDivergence };
 
 /**
  * Dispatch an institutional SMT Divergence alert to connected Telegram channels.

@@ -4,5 +4,6 @@
   "astroReversalWindow": "show",
   "decisionIntelligence": "public",
   "liveCandlesSse": "public",
-  "optionChainHeatmap": "public"
+  "optionChainHeatmap": "public",
+  "unicornRadar": "public"
 }

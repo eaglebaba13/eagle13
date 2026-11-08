@@ -27,6 +27,7 @@ import {
   EyeOff,
   Lock,
   Globe,
+  Radar,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/features")({
@@ -495,6 +496,55 @@ function AdminFeaturesPage() {
               <Lock size={13} />
               <span>Pro Only</span>
             </button>
+          </div>
+        </div>
+
+        {/* 7. ICT Unicorn Multi-Asset Radar & SMT Scanner */}
+        <div className="card-institutional p-5 flex flex-col justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Radar size={18} />
+                <h3 className="text-sm font-bold text-zinc-100 font-sans">
+                  ICT Unicorn Multi-Asset Radar & SMT Scanner
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-amber-400 border border-zinc-700">
+                {(features.unicornRadar ?? "public").replace("_", " ").toUpperCase()}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Institutional ICT Unicorn Scanner and real-time SMT Divergence Engine across Indices,
+              Sectors, F&O Equities, ETFs, and Commodities/Crypto.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 pt-3 border-t border-zinc-800/60">
+            {(
+              [
+                { val: "public", label: "Public", icon: Globe },
+                { val: "pro_only", label: "Pro Only", icon: Lock },
+                { val: "hidden", label: "Hidden", icon: EyeOff },
+              ] as const
+            ).map((opt) => {
+              const Icon = opt.icon;
+              const isSel = (features.unicornRadar ?? "public") === opt.val;
+              return (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => handleUpdate("unicornRadar", opt.val)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono font-semibold flex items-center justify-center gap-1 transition-colors ${
+                    isSel
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  <Icon size={12} />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
