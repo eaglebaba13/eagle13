@@ -28,6 +28,10 @@ import {
   type VolumeProfileResult,
   type OrderFlowSymbol,
 } from "@/lib/orderflow/volume-profile-engine";
+import {
+  calculateSessionLiquidity,
+  type SessionLiquidityLevels,
+} from "@/lib/orderflow/session-liquidity";
 
 export type AssetCategory = "equities" | "commodities" | "crypto";
 
@@ -131,6 +135,7 @@ function LiveChartSelection({
   const [showVolume, setShowVolume] = useState(false);
   const [showVwap, setShowVwap] = useState(true);
   const [showVolumeProfile, setShowVolumeProfile] = useState(true);
+  const [showLiquidity, setShowLiquidity] = useState(true);
   const [showAstroLevels, setShowAstroLevels] = useState(true);
   const [showGannLevels, setShowGannLevels] = useState(false);
   const [showSquareRootLevels, setShowSquareRootLevels] = useState(false);
@@ -364,6 +369,19 @@ function LiveChartSelection({
     ? liveLevels?.markets.find((m) => m.key === marketDef.marketKey)
     : undefined;
   const currentLtp = sse.status?.lastLtp ?? market?.livePrice ?? market?.prevClose;
+
+  const sessionLiquidity = useMemo<SessionLiquidityLevels | null>(() => {
+    if (!showLiquidity || displayCandles.length === 0) return null;
+    const ofCandles: OrderFlowCandle[] = displayCandles.map((c) => ({
+      time: c.x,
+      open: c.y[0],
+      high: c.y[1],
+      low: c.y[2],
+      close: c.y[3],
+      volume: c.volume ?? 1000,
+    }));
+    return calculateSessionLiquidity(ofCandles, symbol, currentLtp);
+  }, [showLiquidity, displayCandles, symbol, currentLtp]);
   const vwapDiff = useMemo(() => {
     if (latestVwap == null || currentLtp == null) return null;
     const diff = currentLtp - latestVwap;
@@ -711,6 +729,52 @@ function LiveChartSelection({
         })),
     ] : [];
 
+    const liquidityYaxis =
+      showLiquidity && sessionLiquidity
+        ? [
+            {
+              y: sessionLiquidity.pdh,
+              borderColor: "#f59e0b",
+              strokeDashArray: 4,
+              opacity: 0.95,
+              label: {
+                text: `PDH ${sessionLiquidity.pdh.toLocaleString("en-IN")}`,
+                style: { color: "#09090b", background: "#f59e0b", fontWeight: "bold", fontSize: "10px" },
+              },
+            },
+            {
+              y: sessionLiquidity.pdl,
+              borderColor: "#f59e0b",
+              strokeDashArray: 4,
+              opacity: 0.95,
+              label: {
+                text: `PDL ${sessionLiquidity.pdl.toLocaleString("en-IN")}`,
+                style: { color: "#09090b", background: "#f59e0b", fontWeight: "bold", fontSize: "10px" },
+              },
+            },
+            {
+              y: sessionLiquidity.pwh,
+              borderColor: "#a855f7",
+              strokeDashArray: 5,
+              opacity: 0.9,
+              label: {
+                text: `PWH ${sessionLiquidity.pwh.toLocaleString("en-IN")}`,
+                style: { color: "#ffffff", background: "#a855f7", fontWeight: "bold", fontSize: "10px" },
+              },
+            },
+            {
+              y: sessionLiquidity.pwl,
+              borderColor: "#a855f7",
+              strokeDashArray: 5,
+              opacity: 0.9,
+              label: {
+                text: `PWL ${sessionLiquidity.pwl.toLocaleString("en-IN")}`,
+                style: { color: "#ffffff", background: "#a855f7", fontWeight: "bold", fontSize: "10px" },
+              },
+            },
+          ]
+        : [];
+
     return {
       chart: {
         type: "candlestick" as const,
@@ -759,11 +823,11 @@ function LiveChartSelection({
       grid: { borderColor: "rgba(39, 39, 42, 0.6)", strokeDashArray: 3 },
       tooltip: { theme: "dark" as const },
       annotations: {
-        yaxis: [...astroYaxis, ...frvpYaxis],
+        yaxis: [...astroYaxis, ...frvpYaxis, ...liquidityYaxis],
       },
       dataLabels: { enabled: false },
     };
-  }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, displayCandles, chartData, symbol, intervalMs, currentLtp]);
+  }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, showLiquidity, sessionLiquidity, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
   const activeInstrument = SYMBOLS.find((s) => s.key === symbol) ?? SYMBOLS[0];
   const selectedCategory = activeInstrument.category;
@@ -880,6 +944,21 @@ function LiveChartSelection({
             className="accent-cyan-500"
           />
           <span>VWAP</span>
+        </label>
+
+        {/* Session Liquidity (PDH/PDL) Toggle */}
+        <label className={`flex items-center gap-1.5 text-xs font-mono cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-all ${
+          showLiquidity
+            ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-[0_0_10px_-3px_rgba(245,158,11,0.25)] font-semibold"
+            : "border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+        }`}>
+          <input
+            type="checkbox"
+            checked={showLiquidity}
+            onChange={(e) => setShowLiquidity(e.target.checked)}
+            className="accent-amber-500"
+          />
+          <span>Liquidity (PDH/PDL)</span>
         </label>
 
         {/* VWAP Live Pill */}
@@ -1049,6 +1128,24 @@ function LiveChartSelection({
               minimumFractionDigits: latestVwap < 10 ? 4 : 2,
               maximumFractionDigits: latestVwap < 10 ? 4 : 2,
             })}
+          </span>
+        )}
+        {showLiquidity && sessionLiquidity && (
+          <span className="font-mono text-xs flex items-center gap-1.5 flex-wrap">
+            <span className="text-amber-400 font-semibold">PDH:</span>
+            <span className="text-zinc-200">{sessionLiquidity.pdh.toLocaleString("en-IN")}</span>
+            <span className={`text-[10px] ${sessionLiquidity.distanceToPdh.percent >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              ({sessionLiquidity.distanceToPdh.percent >= 0 ? "+" : ""}{sessionLiquidity.distanceToPdh.percent}%)
+            </span>
+            <span className="text-zinc-600">·</span>
+            <span className="text-amber-400 font-semibold">PDL:</span>
+            <span className="text-zinc-200">{sessionLiquidity.pdl.toLocaleString("en-IN")}</span>
+            <span className={`text-[10px] ${sessionLiquidity.distanceToPdl.percent >= 0 ? "text-rose-400" : "text-emerald-400"}`}>
+              ({sessionLiquidity.distanceToPdl.percent >= 0 ? "-" : "+"}{Math.abs(sessionLiquidity.distanceToPdl.percent)}%)
+            </span>
+            <span className="text-zinc-600">·</span>
+            <span className="text-purple-400 font-semibold">PWH:</span>
+            <span className="text-zinc-300">{sessionLiquidity.pwh.toLocaleString("en-IN")}</span>
           </span>
         )}
       </div>

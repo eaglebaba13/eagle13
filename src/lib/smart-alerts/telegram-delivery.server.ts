@@ -541,3 +541,119 @@ export async function sendVWAPTelegramAlert(
   saveTelegramChannelsToFile(channels);
   return lastResult;
 }
+
+export {
+  formatUnicornTelegramAlert,
+  type UnicornSetup,
+} from "../orderflow/unicorn-scanner.server";
+
+/**
+ * Dispatch an institutional ICT Unicorn execution alert to connected Telegram channels.
+ */
+export async function sendUnicornTelegramAlert(
+  setup: UnicornSetup
+): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
+  const formatted = formatUnicornTelegramAlert(setup);
+  const channels = loadTelegramChannelsFromFile();
+  const activeChannels = channels.filter((c) => c.status === "active");
+
+  if (activeChannels.length === 0) {
+    return postTelegramMessage(formatted);
+  }
+
+  const matchingChannels = activeChannels.filter((c) => {
+    if (c.alertFilter === "all" || c.alertFilter === "decision") return true;
+    return false;
+  });
+
+  const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
+  const env = getTelegramEnv();
+  let dispatchedCount = 0;
+
+  for (const channel of targets) {
+    const token = channel.botToken || env?.token || "";
+    const chatId = channel.chatId || env?.chatId || "";
+    if (!token || !chatId) continue;
+
+    dispatchedCount++;
+    const start = Date.now();
+    const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
+    const duration = Date.now() - start;
+
+    channel.lastDispatchAt = new Date().toISOString();
+    channel.lastLatencyMs = duration;
+    channel.lastStatus = res.status === "DELIVERED" ? "DELIVERED" : "FAILED";
+    channel.lastError = res.errorCode;
+
+    lastResult = res;
+  }
+
+  if (dispatchedCount === 0) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+
+  saveTelegramChannelsToFile(channels);
+  return lastResult;
+}
+
+export {
+  formatSMTTelegramAlert,
+  type SMTDivergence,
+} from "../orderflow/smt-divergence.server";
+
+/**
+ * Dispatch an institutional SMT Divergence alert to connected Telegram channels.
+ */
+export async function sendSMTTelegramAlert(
+  divergence: SMTDivergence
+): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
+  const formatted = formatSMTTelegramAlert(divergence);
+  const channels = loadTelegramChannelsFromFile();
+  const activeChannels = channels.filter((c) => c.status === "active");
+
+  if (activeChannels.length === 0) {
+    return postTelegramMessage(formatted);
+  }
+
+  const matchingChannels = activeChannels.filter((c) => {
+    if (c.alertFilter === "all" || c.alertFilter === "decision") return true;
+    return false;
+  });
+
+  const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
+  const env = getTelegramEnv();
+  let dispatchedCount = 0;
+
+  for (const channel of targets) {
+    const token = channel.botToken || env?.token || "";
+    const chatId = channel.chatId || env?.chatId || "";
+    if (!token || !chatId) continue;
+
+    dispatchedCount++;
+    const start = Date.now();
+    const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
+    const duration = Date.now() - start;
+
+    channel.lastDispatchAt = new Date().toISOString();
+    channel.lastLatencyMs = duration;
+    channel.lastStatus = res.status === "DELIVERED" ? "DELIVERED" : "FAILED";
+    channel.lastError = res.errorCode;
+
+    lastResult = res;
+  }
+
+  if (dispatchedCount === 0) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+
+  saveTelegramChannelsToFile(channels);
+  return lastResult;
+}
