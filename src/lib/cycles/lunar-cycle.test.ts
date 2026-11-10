@@ -163,8 +163,8 @@ describe("ChronoWheel Quantitative Screener & F&O Universe (Phase 36.4)", () => 
     );
   });
 
-  it("executes full ChronoWheel scan and correctly filters by direction, sector, and search query", () => {
-    const scanResult = executeChronoWheelScan({
+  it("executes full ChronoWheel scan and correctly filters by direction, sector, and search query", async () => {
+    const scanResult = await executeChronoWheelScan({
       startDate: "2026-11-10",
       endDate: "2026-11-13",
       lookbackYears: 10,
@@ -179,7 +179,7 @@ describe("ChronoWheel Quantitative Screener & F&O Universe (Phase 36.4)", () => 
     );
 
     // Test Sector Filter
-    const bankingScan = executeChronoWheelScan({
+    const bankingScan = await executeChronoWheelScan({
       startDate: "2026-11-10",
       endDate: "2026-11-13",
       lookbackYears: 10,
@@ -189,7 +189,7 @@ describe("ChronoWheel Quantitative Screener & F&O Universe (Phase 36.4)", () => 
     expect(bankingScan.results.length).toBeGreaterThan(5);
 
     // Test Search Filter
-    const searchScan = executeChronoWheelScan({
+    const searchScan = await executeChronoWheelScan({
       startDate: "2026-11-10",
       endDate: "2026-11-13",
       lookbackYears: 10,

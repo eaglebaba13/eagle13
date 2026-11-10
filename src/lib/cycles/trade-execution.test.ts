@@ -3,8 +3,14 @@ import { describe, it, expect } from "vitest";
 import {
   evaluateInstrumentCyclePerformance,
   getInstrumentLotSize,
+  FO_UNIVERSE,
   type FOInstrument,
 } from "./cycle-performance.server";
+import {
+  sliceWindowFromRealCandles,
+  type InstrumentMarketData,
+  type RealCandle,
+} from "./market-data-adapter.server";
 import type { HistoricalLunarWindow } from "./lunar-cycle-engine.server";
 import {
   generateDeterministicAIResponse,
@@ -80,7 +86,77 @@ describe("ChronoWheel Algorithmic Trade Execution Engine", () => {
     expect(getInstrumentLotSize("RELIANCE")).toBe(250);
     expect(getInstrumentLotSize("HDFCBANK")).toBe(550);
     expect(getInstrumentLotSize("TCS")).toBe(175);
+    expect(getInstrumentLotSize("AUBANK")).toBe(500); // Official NSE F&O contract lot size
     expect(getInstrumentLotSize("UNKNOWN_EQUITY", 1000)).toBeGreaterThan(0);
+  });
+
+  it("binds AUBANK to real baseline price ₹929.00 and generates realistic trade plan", () => {
+    const aubank = FO_UNIVERSE.find((i) => i.symbol === "AUBANK");
+    expect(aubank).toBeDefined();
+    expect(aubank!.defaultPrice).toBe(929.0);
+
+    const perf = evaluateInstrumentCyclePerformance(aubank!, mockWindows);
+    expect(perf.currentPrice).toBe(929.0);
+    expect(perf.executionPlan.entryPrice).toBe(929.0);
+    expect(perf.executionPlan.lotSize).toBe(500);
+    expect(perf.executionPlan.capitalRequirementPerLot).toBe(Math.round(929.0 * 500 * 0.20));
+
+    // Entry trigger zone buffer is 0.25% (around 926.68 - 931.32)
+    expect(perf.executionPlan.entryTriggerZone.min).toBeLessThanOrEqual(929.0);
+    expect(perf.executionPlan.entryTriggerZone.max).toBeGreaterThanOrEqual(929.0);
+    expect(perf.executionPlan.entryTriggerZone.max - perf.executionPlan.entryTriggerZone.min).toBeCloseTo(929 * 0.005, 1);
+  });
+
+  it("slices real historical candles and validates exact Open, Close, High, Low, and returns", () => {
+    const mockRealCandles: RealCandle[] = [
+      {
+        date: "2024-11-01",
+        timestamp: 1730419200000,
+        open: 617.9,
+        high: 621.0,
+        low: 615.65,
+        close: 617.35,
+        volume: 1250000,
+      },
+      {
+        date: "2024-11-04",
+        timestamp: 1730678400000,
+        open: 619.95,
+        high: 628.4,
+        low: 616.4,
+        close: 625.45,
+        volume: 1560000,
+      },
+    ];
+
+    const sliced = sliceWindowFromRealCandles(mockRealCandles, "2024-11-01", "2024-11-04", 929.0);
+    expect(sliced.hasRealData).toBe(true);
+    expect(sliced.startPrice).toBe(617.9);
+    expect(sliced.endPrice).toBe(625.45);
+    expect(sliced.windowHigh).toBe(628.4);
+    expect(sliced.windowLow).toBe(615.65);
+    expect(sliced.returnPct).toBeCloseTo(1.22, 2);
+    expect(sliced.tradingSessions).toBe(2);
+
+    // Ingest into evaluateInstrumentCyclePerformance via marketData
+    const mockMarketData: InstrumentMarketData = {
+      symbol: "AUBANK",
+      marketSymbol: "AUBANK.NS",
+      ltp: 929.0,
+      candles: mockRealCandles,
+      fetchedAt: Date.now(),
+      dataSource: "YAHOO_FINANCE",
+    };
+
+    const aubank = FO_UNIVERSE.find((i) => i.symbol === "AUBANK")!;
+    const perfWithRealData = evaluateInstrumentCyclePerformance(aubank, mockWindows, mockMarketData);
+
+    expect(perfWithRealData.currentPrice).toBe(929.0);
+    const win2024 = perfWithRealData.yearlyBreakdown.find((y) => y.year === 2024);
+    expect(win2024).toBeDefined();
+    expect(win2024!.startPrice).toBe(617.9);
+    expect(win2024!.endPrice).toBe(625.45);
+    expect(win2024!.returnPct).toBeCloseTo(1.22, 2);
   });
 
   it("generates exact execution levels (Entry, SL, TP1, TP2, TP3, R:R) for bullish bias", () => {

@@ -81,7 +81,7 @@ export const getChronoWheelScan = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ChronoWheelScanResult> => {
     // Dynamic import ensures .server file is strictly isolated to server runtime
     const { executeChronoWheelScan } = await import("./cycle-performance.server");
-    return executeChronoWheelScan(data);
+    return await executeChronoWheelScan(data);
   });
 
 export const chronoWheelQuery = (filter: ChronoWheelScanFilter) =>

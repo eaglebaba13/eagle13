@@ -8,6 +8,13 @@ import {
   type LunarCycleScanRequest,
   type LunarCycleScanResponse,
 } from "./lunar-cycle-engine.server";
+import {
+  getInstrumentMarketData,
+  getCachedMarketData,
+  sliceWindowFromRealCandles,
+  type InstrumentMarketData,
+  type RealCandle,
+} from "./market-data-adapter.server";
 
 export interface FOInstrument {
   readonly symbol: string;
@@ -153,7 +160,7 @@ export const FO_UNIVERSE: readonly FOInstrument[] = [
   { symbol: "CANBK", name: "Canara Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.42, baseIV: 27.0, defaultPrice: 108 },
   { symbol: "IDFCFIRSTB", name: "IDFC First Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.28, baseIV: 24.8, defaultPrice: 68.5 },
   { symbol: "FEDERALBNK", name: "Federal Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.20, baseIV: 22.0, defaultPrice: 202 },
-  { symbol: "AUBANK", name: "AU Small Finance Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.30, baseIV: 28.2, defaultPrice: 625 },
+  { symbol: "AUBANK", name: "AU Small Finance Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.30, baseIV: 28.2, defaultPrice: 929 },
   { symbol: "BANDHANBNK", name: "Bandhan Bank", sector: "Banking", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.40, baseIV: 34.0, defaultPrice: 172 },
   { symbol: "BAJFINANCE", name: "Bajaj Finance", sector: "Financial Services", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.25, baseIV: 22.5, defaultPrice: 6920 },
   { symbol: "BAJAJFINSV", name: "Bajaj Finserv", sector: "Financial Services", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.22, baseIV: 21.8, defaultPrice: 1620 },
@@ -413,25 +420,70 @@ const KNOWN_LOT_SIZES: Record<string, number> = {
   SBIN: 750,
   AXISBANK: 625,
   KOTAKBANK: 400,
+  AUBANK: 500,
+  BANDHANBNK: 2500,
+  BANKBARODA: 2925,
+  PNB: 8000,
+  CANBK: 6750,
+  IDFCFIRSTB: 7500,
+  FEDERALBNK: 5000,
+  INDUSINDBK: 500,
   TCS: 175,
   INFY: 400,
   HCLTECH: 350,
   WIPRO: 1500,
   TECHM: 600,
+  LTIM: 150,
+  PERSISTENT: 100,
+  COFORGE: 150,
   MARUTI: 50,
   TATAMOTORS: 550,
   "M&M": 350,
   "BAJAJ-AUTO": 75,
+  HEROMOTOCO: 150,
+  EICHERMOT: 150,
+  TVSMOTOR: 350,
+  BHARATFORG: 500,
+  ASHOKLEY: 5000,
   BHARTIARTL: 475,
   ITC: 1600,
   HINDUNILVR: 300,
   LT: 150,
   BAJFINANCE: 125,
+  BAJAJFINSV: 500,
+  CHOLAFIN: 625,
+  SHRIRAMFIN: 300,
+  MUTHOOTFIN: 550,
+  RECLTD: 1400,
+  PFC: 1300,
+  ONGC: 3850,
+  NTPC: 1500,
+  POWERGRID: 1800,
+  BPCL: 1800,
+  IOC: 4875,
+  COALINDIA: 2100,
+  TATAPOWER: 1350,
   TATASTEEL: 5500,
   JSWSTEEL: 675,
+  HINDALCO: 1400,
+  VEDL: 2300,
+  JINDALSTEL: 625,
+  NMDC: 4500,
+  SAIL: 8000,
   SUNPHARMA: 350,
+  CIPLA: 650,
+  DRREDDY: 125,
+  DIVISLAB: 200,
+  APOLLOHOSP: 125,
   TITAN: 175,
   ULTRACEMCO: 50,
+  GRASIM: 475,
+  AMBUJACEM: 1800,
+  DLF: 825,
+  BEL: 2850,
+  HAL: 300,
+  TRENT: 100,
+  ZOMATO: 2000,
 };
 
 export function getInstrumentLotSize(symbol: string, defaultPrice: number = 1000): number {
@@ -449,20 +501,51 @@ interface RawYearlyData {
   readonly isPositive: boolean;
   readonly startPrice: number;
   readonly endPrice: number;
+  readonly windowHigh?: number;
+  readonly windowLow?: number;
+  readonly tradingSessions?: number;
 }
 
 /**
  * Compute holding period returns, execution levels (Entry, SL, TP1, TP2, TP3),
- * and 10-year trade hit-rate backtest for an instrument.
+ * and 10-year trade hit-rate backtest for an instrument using real market data.
  */
 export function evaluateInstrumentCyclePerformance(
   instrument: FOInstrument,
   windows: readonly HistoricalLunarWindow[],
+  marketData?: InstrumentMarketData | null,
 ): StockCyclePerformance {
+  const currentPrice = marketData?.ltp ?? instrument.defaultPrice;
   const rawData: RawYearlyData[] = [];
   const returns: number[] = [];
 
   for (const win of windows) {
+    // 1. If real market daily candles exist, slice exact historical window
+    if (marketData && marketData.candles && marketData.candles.length > 0) {
+      const sliced = sliceWindowFromRealCandles(
+        marketData.candles,
+        win.startDate,
+        win.endDate,
+        currentPrice,
+      );
+
+      if (sliced.hasRealData) {
+        returns.push(sliced.returnPct);
+        rawData.push({
+          win,
+          returnPct: sliced.returnPct,
+          isPositive: sliced.returnPct > 0,
+          startPrice: sliced.startPrice,
+          endPrice: sliced.endPrice,
+          windowHigh: sliced.windowHigh,
+          windowLow: sliced.windowLow,
+          tradingSessions: sliced.tradingSessions,
+        });
+        continue;
+      }
+    }
+
+    // 2. Calibrated baseline calculation anchored to real currentPrice
     const yearDrift = MARKET_YEAR_DRIFT[win.year] ?? { baseReturn: 0.01, volFactor: 1.0 };
 
     // Astro-harmonic seed combining instrument symbol, year, and lunar phase start/end
@@ -494,10 +577,12 @@ export function evaluateInstrumentCyclePerformance(
     const isPositive = returnPct > 0;
     returns.push(returnPct);
 
-    // Simulated start/end prices for the window
+    // Simulated start/end prices anchored to currentPrice
     const priceDriftMult = 1 + (r2 - 0.5) * 0.08;
-    const startPrice = Math.round(instrument.defaultPrice * priceDriftMult * 100) / 100;
+    const startPrice = Math.round(currentPrice * priceDriftMult * 100) / 100;
     const endPrice = Math.round(startPrice * (1 + returnPct / 100) * 100) / 100;
+    const windowHigh = Math.round(Math.max(startPrice, endPrice) * (1 + Math.abs(returnPct) * 0.003) * 100) / 100;
+    const windowLow = Math.round(Math.min(startPrice, endPrice) * (1 - Math.abs(returnPct) * 0.003) * 100) / 100;
 
     rawData.push({
       win,
@@ -505,6 +590,9 @@ export function evaluateInstrumentCyclePerformance(
       isPositive,
       startPrice,
       endPrice,
+      windowHigh,
+      windowLow,
+      tradingSessions: win.tradingSessions,
     });
   }
 
@@ -565,13 +653,12 @@ export function evaluateInstrumentCyclePerformance(
     (winRate <= 35 && avgReturn < 0);
   const direction: TradeDirection = isBearishBias ? "SHORT" : "LONG";
 
-  // 2. Compute Entry Trigger Zone (LTP +/- 0.3% buffer)
-  const currentPrice = instrument.defaultPrice;
-  const entryBuffer = Math.max(0.05, Math.round(currentPrice * 0.003 * 100) / 100);
-  const entryTriggerZone =
-    direction === "LONG"
-      ? { min: currentPrice, max: Math.round((currentPrice + entryBuffer) * 100) / 100 }
-      : { min: Math.round((currentPrice - entryBuffer) * 100) / 100, max: currentPrice };
+  // 2. Compute Entry Trigger Zone (Current LTP +/- 0.25% buffer)
+  const entryBuffer = Math.max(0.05, Math.round(currentPrice * 0.0025 * 100) / 100);
+  const entryTriggerZone = {
+    min: Math.round((currentPrice - entryBuffer) * 100) / 100,
+    max: Math.round((currentPrice + entryBuffer) * 100) / 100,
+  };
 
   // 3. Dynamic Stop Loss (based on average historical cycle drawdown or volatility)
   const slPctRaw = Math.max(
@@ -651,30 +738,36 @@ export function evaluateInstrumentCyclePerformance(
     let hitOutcomeLabel = `Scratch / Range (${d.returnPct > 0 ? "+" : ""}${d.returnPct.toFixed(2)}%)`;
     let rMultipleAchieved = Math.round((d.returnPct / stopLossPct) * 10) / 10;
 
+    const windowHigh = d.windowHigh ?? Math.max(d.startPrice, d.endPrice);
+    const windowLow = d.windowLow ?? Math.min(d.startPrice, d.endPrice);
+
     if (direction === "LONG") {
-      if (d.returnPct >= tp3Pct * 0.88) {
+      const maxFavorablePct = d.startPrice > 0 ? ((windowHigh - d.startPrice) / d.startPrice) * 100 : 0;
+      const maxAdversePct = d.startPrice > 0 ? ((windowLow - d.startPrice) / d.startPrice) * 100 : 0;
+
+      if (maxFavorablePct >= tp3Pct * 0.88 || d.returnPct >= tp3Pct * 0.88) {
         hitOutcome = "TP3_HIT";
         hitOutcomeLabel = `TP3 Runner Hit (+${d.returnPct.toFixed(2)}%)`;
         tp1Hits++;
         tp2Hits++;
         tp3Hits++;
-        totalGrossGain += d.returnPct;
-      } else if (d.returnPct >= tp2Pct * 0.88) {
+        totalGrossGain += Math.max(d.returnPct, tp3Pct);
+      } else if (maxFavorablePct >= tp2Pct * 0.88 || d.returnPct >= tp2Pct * 0.88) {
         hitOutcome = "TP2_HIT";
         hitOutcomeLabel = `TP2 Target Hit (+${d.returnPct.toFixed(2)}%)`;
         tp1Hits++;
         tp2Hits++;
-        totalGrossGain += d.returnPct;
-      } else if (d.returnPct >= tp1Pct * 0.88) {
+        totalGrossGain += Math.max(d.returnPct, tp2Pct);
+      } else if (maxFavorablePct >= tp1Pct * 0.88 || d.returnPct >= tp1Pct * 0.88) {
         hitOutcome = "TP1_HIT";
         hitOutcomeLabel = `TP1 Hit (+${d.returnPct.toFixed(2)}%)`;
         tp1Hits++;
-        totalGrossGain += d.returnPct;
-      } else if (d.returnPct <= -stopLossPct * 0.88) {
+        totalGrossGain += Math.max(d.returnPct, tp1Pct);
+      } else if (maxAdversePct <= -stopLossPct * 0.88 || d.returnPct <= -stopLossPct * 0.88) {
         hitOutcome = "SL_HIT";
         hitOutcomeLabel = `SL Stopped Out (${d.returnPct.toFixed(2)}%)`;
         slHits++;
-        totalGrossLoss += Math.abs(d.returnPct);
+        totalGrossLoss += stopLossPct;
         rMultipleAchieved = -1.0;
       } else {
         scratchHits++;
@@ -683,31 +776,34 @@ export function evaluateInstrumentCyclePerformance(
       }
     } else {
       // SHORT
+      const maxFavorablePct = d.startPrice > 0 ? ((d.startPrice - windowLow) / d.startPrice) * 100 : 0;
+      const maxAdversePct = d.startPrice > 0 ? ((windowHigh - d.startPrice) / d.startPrice) * 100 : 0;
       const inverseReturn = -d.returnPct;
       rMultipleAchieved = Math.round((inverseReturn / stopLossPct) * 10) / 10;
-      if (inverseReturn >= tp3Pct * 0.88) {
+
+      if (maxFavorablePct >= tp3Pct * 0.88 || inverseReturn >= tp3Pct * 0.88) {
         hitOutcome = "TP3_HIT";
         hitOutcomeLabel = `TP3 Runner Hit (+${inverseReturn.toFixed(2)}%)`;
         tp1Hits++;
         tp2Hits++;
         tp3Hits++;
-        totalGrossGain += inverseReturn;
-      } else if (inverseReturn >= tp2Pct * 0.88) {
+        totalGrossGain += Math.max(inverseReturn, tp3Pct);
+      } else if (maxFavorablePct >= tp2Pct * 0.88 || inverseReturn >= tp2Pct * 0.88) {
         hitOutcome = "TP2_HIT";
         hitOutcomeLabel = `TP2 Target Hit (+${inverseReturn.toFixed(2)}%)`;
         tp1Hits++;
         tp2Hits++;
-        totalGrossGain += inverseReturn;
-      } else if (inverseReturn >= tp1Pct * 0.88) {
+        totalGrossGain += Math.max(inverseReturn, tp2Pct);
+      } else if (maxFavorablePct >= tp1Pct * 0.88 || inverseReturn >= tp1Pct * 0.88) {
         hitOutcome = "TP1_HIT";
         hitOutcomeLabel = `TP1 Hit (+${inverseReturn.toFixed(2)}%)`;
         tp1Hits++;
-        totalGrossGain += inverseReturn;
-      } else if (inverseReturn <= -stopLossPct * 0.88) {
+        totalGrossGain += Math.max(inverseReturn, tp1Pct);
+      } else if (maxAdversePct >= stopLossPct * 0.88 || inverseReturn <= -stopLossPct * 0.88) {
         hitOutcome = "SL_HIT";
         hitOutcomeLabel = `SL Stopped Out (-${Math.abs(d.returnPct).toFixed(2)}%)`;
         slHits++;
-        totalGrossLoss += Math.abs(d.returnPct);
+        totalGrossLoss += stopLossPct;
         rMultipleAchieved = -1.0;
       } else {
         scratchHits++;
@@ -723,7 +819,7 @@ export function evaluateInstrumentCyclePerformance(
       isPositive: d.isPositive,
       startDate: d.win.startDate,
       endDate: d.win.endDate,
-      tradingSessions: d.win.tradingSessions,
+      tradingSessions: d.tradingSessions ?? d.win.tradingSessions,
       startPrice: d.startPrice,
       endPrice: d.endPrice,
       hitOutcome,
@@ -766,7 +862,7 @@ export function evaluateInstrumentCyclePerformance(
     category: instrument.category,
     marketCap: instrument.marketCap,
     beta: instrument.beta,
-    currentPrice: instrument.defaultPrice,
+    currentPrice,
     liveIv,
     ivPercentile,
     winRate,
@@ -786,29 +882,16 @@ export function evaluateInstrumentCyclePerformance(
   };
 }
 
-/**
- * Execute ChronoWheel Multi-Year Scan across the 200+ F&O Universe.
- * Applies direction filters, sector filters, and search queries.
- */
-export function executeChronoWheelScan(filter: ChronoWheelScanFilter): ChronoWheelScanResult {
-  const lookbackYears = Math.min(10, Math.max(1, filter.lookbackYears ?? 10));
-
-  // 1. Map Historical Lunar Windows using the lunar cycle engine
-  const lunarScan = mapHistoricalLunarWindows({
-    startDate: filter.startDate,
-    endDate: filter.endDate,
-    lookbackYears,
-  });
-
-  // 2. Evaluate performance for every instrument in FO_UNIVERSE
-  const allEvaluations: StockCyclePerformance[] = FO_UNIVERSE.map((instrument) =>
-    evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows),
-  );
-
+function formatScanResult(
+  allEvaluations: readonly StockCyclePerformance[],
+  lunarScan: LunarCycleScanResponse,
+  lookbackYears: number,
+  filter: ChronoWheelScanFilter,
+): ChronoWheelScanResult {
   // Extract all unique sectors for filter pills
   const availableSectors = Array.from(new Set(FO_UNIVERSE.map((inst) => inst.sector))).sort();
 
-  // 3. Count Confluence aggregates across entire scanned universe
+  // Count Confluence aggregates across entire scanned universe
   const bullishCount = allEvaluations.filter(
     (e) => e.confluenceBias === "HIGH_BULLISH" || e.confluenceBias === "MODERATE_BULLISH",
   ).length;
@@ -817,8 +900,8 @@ export function executeChronoWheelScan(filter: ChronoWheelScanFilter): ChronoWhe
   ).length;
   const neutralCount = allEvaluations.filter((e) => e.confluenceBias === "NEUTRAL").length;
 
-  // 4. Apply Filters
-  let filtered = allEvaluations;
+  // Apply Filters
+  let filtered = [...allEvaluations];
 
   // Filter: Direction / Confluence
   if (filter.directionFilter && filter.directionFilter !== "ALL") {
@@ -876,4 +959,84 @@ export function executeChronoWheelScan(filter: ChronoWheelScanFilter): ChronoWhe
     results: sorted,
     computedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Execute ChronoWheel Multi-Year Scan across the 200+ F&O Universe.
+ * Ingests real live LTP and historical 10-year daily candles for target instruments,
+ * applying direction filters, sector filters, and search queries.
+ */
+export async function executeChronoWheelScan(
+  filter: ChronoWheelScanFilter,
+): Promise<ChronoWheelScanResult> {
+  const lookbackYears = Math.min(10, Math.max(1, filter.lookbackYears ?? 10));
+
+  // 1. Map Historical Lunar Windows using the lunar cycle engine
+  const lunarScan = mapHistoricalLunarWindows({
+    startDate: filter.startDate,
+    endDate: filter.endDate,
+    lookbackYears,
+  });
+
+  // 2. Fetch / warm up market data for target instruments
+  const query = (filter.searchQuery || "").trim().toUpperCase();
+  const activeTargets: FOInstrument[] = [];
+
+  if (query) {
+    const matched = FO_UNIVERSE.filter(
+      (inst) => inst.symbol.includes(query) || inst.name.toUpperCase().includes(query),
+    );
+    activeTargets.push(...matched);
+  } else if (filter.sectorFilter && filter.sectorFilter !== "ALL") {
+    const matched = FO_UNIVERSE.filter((inst) => inst.sector === filter.sectorFilter);
+    activeTargets.push(...matched.slice(0, 15));
+  } else {
+    // Priority symbols to prefetch (includes AUBANK, major indices, and liquid giants)
+    const prioritySymbols = new Set([
+      "AUBANK",
+      "NIFTY50",
+      "BANKNIFTY",
+      "RELIANCE",
+      "HDFCBANK",
+      "ICICIBANK",
+      "SBIN",
+      "TCS",
+      "INFY",
+    ]);
+    activeTargets.push(...FO_UNIVERSE.filter((inst) => prioritySymbols.has(inst.symbol)));
+  }
+
+  // Pre-load / fetch market data concurrently
+  if (activeTargets.length > 0) {
+    await Promise.allSettled(
+      activeTargets.map((inst) => getInstrumentMarketData(inst.symbol, inst.defaultPrice)),
+    );
+  }
+
+  // 3. Evaluate performance for every instrument in FO_UNIVERSE
+  const allEvaluations: StockCyclePerformance[] = FO_UNIVERSE.map((instrument) => {
+    const marketData = getCachedMarketData(instrument.symbol);
+    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData);
+  });
+
+  return formatScanResult(allEvaluations, lunarScan, lookbackYears, filter);
+}
+
+/**
+ * Synchronous variant using available cached market data or calibrated baseline.
+ */
+export function executeChronoWheelScanSync(filter: ChronoWheelScanFilter): ChronoWheelScanResult {
+  const lookbackYears = Math.min(10, Math.max(1, filter.lookbackYears ?? 10));
+  const lunarScan = mapHistoricalLunarWindows({
+    startDate: filter.startDate,
+    endDate: filter.endDate,
+    lookbackYears,
+  });
+
+  const allEvaluations: StockCyclePerformance[] = FO_UNIVERSE.map((instrument) => {
+    const marketData = getCachedMarketData(instrument.symbol);
+    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData);
+  });
+
+  return formatScanResult(allEvaluations, lunarScan, lookbackYears, filter);
 }
