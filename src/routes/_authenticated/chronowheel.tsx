@@ -14,6 +14,8 @@ import {
   type ConfluenceBias,
 } from "@/lib/cycles/chronowheel.functions";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+import { ChronoWheelGuideModal } from "@/components/cycles/ChronoWheelGuideModal";
+import { ChronoWheelAIBot } from "@/components/cycles/ChronoWheelAIBot";
 import {
   Orbit,
   Sparkles,
@@ -38,6 +40,12 @@ import {
   Moon,
   Sun,
   ShieldAlert,
+  BookOpen,
+  Bot,
+  Target,
+  Shield,
+  Calculator,
+  Percent,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/chronowheel")({
@@ -117,6 +125,15 @@ function ChronoWheelPage() {
   // Expanded UI states
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
   const [showHistoricalWindows, setShowHistoricalWindows] = useState<boolean>(false);
+
+  // Beginner Guide & AI Assistant Modals
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
+  const [showAIBot, setShowAIBot] = useState<boolean>(false);
+  const [aiStockContext, setAiStockContext] = useState<StockCyclePerformance | null>(null);
+
+  // Interactive Position Sizing Calculator state
+  const [calculatorCapital, setCalculatorCapital] = useState<number>(100000);
+  const [calculatorRiskPct, setCalculatorRiskPct] = useState<number>(2.0);
 
   // TanStack Query for ChronoWheel Scan
   const scanQueryPayload: ChronoWheelScanFilter = useMemo(
@@ -272,6 +289,27 @@ function ChronoWheelPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-xs font-semibold text-amber-300 transition-all shadow-sm shadow-amber-500/10"
+              title="Open Beginner Trading Guide & Checklist"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>How to Trade Cycles</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setAiStockContext(null);
+                setShowAIBot(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-xs font-semibold text-purple-300 transition-all"
+              title="Open AI Trade Assistant"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Ask AI Assistant</span>
+            </button>
+
             <button
               onClick={() => refetch()}
               disabled={isFetching}
@@ -872,6 +910,18 @@ function ChronoWheelPage() {
 
                           {/* 5. 1-Click Navigation Actions */}
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                setAiStockContext(stock);
+                                setShowAIBot(true);
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-xs font-mono text-purple-300 hover:text-purple-200 transition-colors flex items-center gap-1 shadow-xs"
+                              title="Ask AI Assistant to analyze this stock"
+                            >
+                              <Sparkles className="w-3 h-3 text-purple-400" />
+                              <span>AI</span>
+                            </button>
+
                             <Link
                               to="/live-chart"
                               search={{ symbol: stock.symbol }}
@@ -894,7 +944,7 @@ function ChronoWheelPage() {
                             <button
                               onClick={() => setExpandedStock(isExpanded ? null : stock.symbol)}
                               className="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                              title="Expand/Collapse Yearly Breakdown"
+                              title="Expand/Collapse Yearly Breakdown & Position Calculator"
                             >
                               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </button>
@@ -903,62 +953,365 @@ function ChronoWheelPage() {
                       </div>
                     </div>
 
-                    {/* Expandable Year-by-Year Historical Breakdown */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 pt-2 border-t border-zinc-800/80 bg-black/40">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                          <div className="text-xs font-mono text-zinc-300 font-semibold flex items-center gap-2">
-                            <Clock className="w-3.5 h-3.5 text-amber-400" />
-                            <span>10-Year Synodic Lunar Window Breakdown for {stock.symbol}</span>
+                    {/* Algorithmic Execution Sub-Bar (Entry, SL, TP1, TP2, TP3, R:R) */}
+                    {stock.executionPlan && (
+                      <div className="px-3 sm:px-4 py-2 border-t border-zinc-800/70 bg-zinc-950/50 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-zinc-500 uppercase">Direction:</span>
+                            <span
+                              className={`font-bold px-1.5 py-0.5 rounded text-[11px] ${
+                                stock.executionPlan.direction === "LONG"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/35"
+                                  : "bg-rose-500/20 text-rose-400 border border-rose-500/35"
+                              }`}
+                            >
+                              {stock.executionPlan.direction}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs font-mono text-zinc-400">
-                            <span>Volatility: <span className="text-zinc-200">{stock.volatility.toFixed(2)}%</span></span>
-                            <span>•</span>
-                            <span>Max Drawdown: <span className="text-rose-400">{stock.maxDrawdown.toFixed(2)}%</span></span>
-                            <span>•</span>
-                            <span>Median Return: <span className={stock.medianReturn >= 0 ? "text-emerald-400" : "text-rose-400"}>{stock.medianReturn > 0 ? "+" : ""}{stock.medianReturn.toFixed(2)}%</span></span>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-zinc-500 uppercase">Entry Zone:</span>
+                            <span className="text-white font-bold">
+                              ₹{stock.executionPlan.entryTriggerZone.min.toFixed(2)} - ₹{stock.executionPlan.entryTriggerZone.max.toFixed(2)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-rose-400/80 uppercase">Hard SL:</span>
+                            <span className="text-rose-400 font-bold">
+                              ₹{stock.executionPlan.stopLoss.toFixed(2)} (-{stock.executionPlan.stopLossPct}%)
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-emerald-400/80 uppercase">TP1 (+1.5R):</span>
+                            <span className="text-emerald-300 font-semibold">
+                              ₹{stock.executionPlan.tp1.toFixed(2)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-emerald-400 uppercase font-bold">TP2 (+2.5R):</span>
+                            <span className="text-emerald-400 font-bold">
+                              ₹{stock.executionPlan.tp2.toFixed(2)} (+{stock.executionPlan.tp2Pct}%)
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-zinc-500 uppercase">TP3 (+4.0R):</span>
+                            <span className="text-zinc-300">
+                              ₹{stock.executionPlan.tp3.toFixed(2)}
+                            </span>
                           </div>
                         </div>
 
-                        {/* Detailed Yearly Performance Table */}
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs font-mono border-collapse">
-                            <thead>
-                              <tr className="border-b border-zinc-800 text-zinc-400 uppercase text-[10px] tracking-wider">
-                                <th className="pb-2">Year</th>
-                                <th className="pb-2">Relative</th>
-                                <th className="pb-2">Historical Window</th>
-                                <th className="pb-2">Sessions</th>
-                                <th className="pb-2">Simulated Open</th>
-                                <th className="pb-2">Simulated Close</th>
-                                <th className="pb-2 text-right">Holding Return</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-800/40">
-                              {stock.yearlyBreakdown.map((yb) => (
-                                <tr key={yb.year} className="hover:bg-zinc-900/50">
-                                  <td className="py-1.5 font-bold text-white">{yb.year}</td>
-                                  <td className="py-1.5 text-zinc-400">{yb.relativeYear}</td>
-                                  <td className="py-1.5 text-zinc-300">{yb.startDate} ➔ {yb.endDate}</td>
-                                  <td className="py-1.5 text-zinc-400">{yb.tradingSessions}</td>
-                                  <td className="py-1.5 text-zinc-400">₹{yb.startPrice.toLocaleString("en-IN")}</td>
-                                  <td className="py-1.5 text-zinc-400">₹{yb.endPrice.toLocaleString("en-IN")}</td>
-                                  <td
-                                    className={`py-1.5 text-right font-bold ${
-                                      yb.returnPct > 0
-                                        ? "text-emerald-400"
-                                        : yb.returnPct < 0
-                                        ? "text-rose-400"
-                                        : "text-zinc-400"
-                                    }`}
-                                  >
-                                    {yb.returnPct > 0 ? "+" : ""}
-                                    {yb.returnPct.toFixed(2)}%
-                                  </td>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-purple-400 uppercase font-bold">R:R:</span>
+                          <span className="px-2 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-300 font-bold text-[11px]">
+                            {stock.executionPlan.riskRewardRatio}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 font-mono">
+                            Lot: {stock.executionPlan.lotSize}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Expandable Year-by-Year Historical Breakdown & Position Sizing Engine */}
+                    {isExpanded && (
+                      <div className="px-4 pb-5 pt-3 border-t border-zinc-800/80 bg-black/45 space-y-4">
+                        {/* 1. 10-Year Trade Hit-Rate Backtest Summary Ribbon */}
+                        {stock.hitRateSummary && (
+                          <div className="p-3 rounded-xl bg-[#0d0f16] border border-amber-500/25 space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="text-xs font-mono text-amber-300 font-bold flex items-center gap-1.5">
+                                <Target className="w-3.5 h-3.5 text-amber-400" />
+                                <span>10-Year Trade Hit-Rate Backtest Validation ({stock.symbol})</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs font-mono">
+                                <span className="text-zinc-400">Profit Factor:</span>
+                                <span className="font-bold text-emerald-400">{stock.hitRateSummary.profitFactor}</span>
+                                <span className="text-zinc-600">•</span>
+                                <span className="text-zinc-400">Expectancy:</span>
+                                <span className="font-bold text-amber-300">
+                                  {stock.hitRateSummary.expectancyRatio > 0 ? "+" : ""}
+                                  {stock.hitRateSummary.expectancyRatio}R
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                              <div className="p-2 rounded-lg bg-zinc-950/80 border border-emerald-500/30">
+                                <div className="text-[10px] text-emerald-400 uppercase">TP1 (+1.5R) Hit Rate</div>
+                                <div className="text-sm font-bold text-white mt-0.5">
+                                  {stock.hitRateSummary.tp1Hits}/{stock.totalWindows}{" "}
+                                  <span className="text-emerald-400">({stock.hitRateSummary.tp1HitRate}%)</span>
+                                </div>
+                              </div>
+
+                              <div className="p-2 rounded-lg bg-zinc-950/80 border border-emerald-500/40 shadow-xs">
+                                <div className="text-[10px] text-emerald-300 uppercase font-bold">TP2 (+2.5R) Hit Rate</div>
+                                <div className="text-sm font-bold text-white mt-0.5">
+                                  {stock.hitRateSummary.tp2Hits}/{stock.totalWindows}{" "}
+                                  <span className="text-emerald-300">({stock.hitRateSummary.tp2HitRate}%)</span>
+                                </div>
+                              </div>
+
+                              <div className="p-2 rounded-lg bg-zinc-950/80 border border-purple-500/30">
+                                <div className="text-[10px] text-purple-400 uppercase">TP3 (+4.0R) Runners</div>
+                                <div className="text-sm font-bold text-white mt-0.5">
+                                  {stock.hitRateSummary.tp3Hits}/{stock.totalWindows}{" "}
+                                  <span className="text-purple-300">({stock.hitRateSummary.tp3HitRate}%)</span>
+                                </div>
+                              </div>
+
+                              <div className="p-2 rounded-lg bg-zinc-950/80 border border-rose-500/30">
+                                <div className="text-[10px] text-rose-400 uppercase">Historical SL Rate</div>
+                                <div className="text-sm font-bold text-white mt-0.5">
+                                  {stock.hitRateSummary.slHits}/{stock.totalWindows}{" "}
+                                  <span className="text-rose-400">({stock.hitRateSummary.slHitRate}%)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 2. Interactive Invariant Position Sizing Calculator Widget */}
+                        {stock.executionPlan && (() => {
+                          const exec = stock.executionPlan;
+                          const riskAmount = Math.round(calculatorCapital * (calculatorRiskPct / 100));
+                          const riskPerShare = Math.max(0.1, exec.riskPerShare);
+                          const shares = Math.max(1, Math.floor(riskAmount / riskPerShare));
+                          const lots = Math.floor(shares / exec.lotSize);
+                          const cashCost = Math.round(shares * stock.currentPrice);
+                          const foMargin = lots > 0 ? lots * exec.capitalRequirementPerLot : cashCost;
+
+                          return (
+                            <div className="p-3.5 rounded-xl bg-[#0b0d14] border border-zinc-800 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
+                                <div className="flex items-center gap-2">
+                                  <Calculator className="w-4 h-4 text-purple-400" />
+                                  <span className="text-xs font-mono font-bold text-white">
+                                    Position Sizing & Capital Allocation ({stock.symbol})
+                                  </span>
+                                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                    INVARIANT RISK
+                                  </span>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    setAiStockContext(stock);
+                                    setShowAIBot(true);
+                                  }}
+                                  className="text-xs font-mono text-purple-300 hover:text-purple-200 flex items-center gap-1 transition-colors"
+                                >
+                                  <Sparkles className="w-3 h-3 text-purple-400" />
+                                  <span>Verify with AI Bot</span>
+                                </button>
+                              </div>
+
+                              {/* Controls */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                                <div>
+                                  <label className="text-[11px] text-zinc-400 block mb-1">
+                                    Trading Capital (₹):
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      value={calculatorCapital}
+                                      onChange={(e) => setCalculatorCapital(Math.max(1000, Number(e.target.value)))}
+                                      className="bg-zinc-950 border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs w-32 focus:border-purple-500/60 outline-none"
+                                    />
+                                    <div className="flex items-center gap-1">
+                                      {[50000, 100000, 200000, 500000].map((amt) => (
+                                        <button
+                                          key={amt}
+                                          onClick={() => setCalculatorCapital(amt)}
+                                          className={`px-1.5 py-1 rounded text-[10px] ${
+                                            calculatorCapital === amt
+                                              ? "bg-purple-500 text-white font-bold"
+                                              : "bg-zinc-900 text-zinc-400 hover:text-white"
+                                          }`}
+                                        >
+                                          ₹{amt >= 100000 ? `${amt / 100000}L` : `${amt / 1000}k`}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="text-[11px] text-zinc-400 block mb-1">
+                                    Risk Tolerance Per Trade (%):
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      value={calculatorRiskPct}
+                                      onChange={(e) => setCalculatorRiskPct(Math.max(0.5, Math.min(10, Number(e.target.value))))}
+                                      className="bg-zinc-950 border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-amber-400 font-bold font-mono text-xs w-20 focus:border-amber-500/60 outline-none"
+                                    />
+                                    <div className="flex items-center gap-1">
+                                      {[1.0, 1.5, 2.0, 3.0].map((r) => (
+                                        <button
+                                          key={r}
+                                          onClick={() => setCalculatorRiskPct(r)}
+                                          className={`px-2 py-1 rounded text-[10px] ${
+                                            calculatorRiskPct === r
+                                              ? "bg-amber-500 text-black font-bold"
+                                              : "bg-zinc-900 text-zinc-400 hover:text-white"
+                                          }`}
+                                        >
+                                          {r}%
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Calculated Sizing Outputs */}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono pt-1">
+                                <div className="p-2 rounded bg-zinc-950 border border-zinc-800/80">
+                                  <div className="text-[10px] text-zinc-500 uppercase">Risk Budget</div>
+                                  <div className="text-white font-bold mt-0.5">
+                                    ₹{riskAmount.toLocaleString("en-IN")}
+                                  </div>
+                                  <div className="text-[10px] text-zinc-500 mt-0.5">
+                                    ₹{riskPerShare.toFixed(2)}/share
+                                  </div>
+                                </div>
+
+                                <div className="p-2 rounded bg-zinc-950 border border-zinc-800/80">
+                                  <div className="text-[10px] text-zinc-500 uppercase">Max Cash Shares</div>
+                                  <div className="text-amber-300 font-bold mt-0.5">
+                                    {shares} Shares
+                                  </div>
+                                  <div className="text-[10px] text-zinc-500 mt-0.5">
+                                    Value: ₹{cashCost.toLocaleString("en-IN")}
+                                  </div>
+                                </div>
+
+                                <div className="p-2 rounded bg-zinc-950 border border-purple-500/30">
+                                  <div className="text-[10px] text-purple-400 uppercase">F&O Contract Lots</div>
+                                  <div className="text-purple-300 font-bold mt-0.5">
+                                    {lots > 0 ? `${lots} Lot(s)` : "0 (Cash Only)"}
+                                  </div>
+                                  <div className="text-[10px] text-zinc-500 mt-0.5">
+                                    Margin: ₹{foMargin.toLocaleString("en-IN")}
+                                  </div>
+                                </div>
+
+                                <div className="p-2 rounded bg-zinc-950 border border-emerald-500/30">
+                                  <div className="text-[10px] text-emerald-400 uppercase">Payoff at TP2 (+2.5R)</div>
+                                  <div className="text-emerald-400 font-bold mt-0.5">
+                                    +₹{Math.round(riskAmount * 2.5).toLocaleString("en-IN")}
+                                  </div>
+                                  <div className="text-[10px] text-rose-400 mt-0.5">
+                                    If SL Hit: -₹{riskAmount.toLocaleString("en-IN")}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 3. Detailed Yearly Performance Table */}
+                        <div className="space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="text-xs font-mono text-zinc-300 font-semibold flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5 text-amber-400" />
+                              <span>10-Year Synodic Window Historical Breakdown</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs font-mono text-zinc-400">
+                              <span>Volatility: <span className="text-zinc-200">{stock.volatility.toFixed(2)}%</span></span>
+                              <span>•</span>
+                              <span>Max Drawdown: <span className="text-rose-400">{stock.maxDrawdown.toFixed(2)}%</span></span>
+                              <span>•</span>
+                              <span>Median: <span className={stock.medianReturn >= 0 ? "text-emerald-400" : "text-rose-400"}>{stock.medianReturn > 0 ? "+" : ""}{stock.medianReturn.toFixed(2)}%</span></span>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs font-mono border-collapse">
+                              <thead>
+                                <tr className="border-b border-zinc-800 text-zinc-400 uppercase text-[10px] tracking-wider">
+                                  <th className="pb-2">Year</th>
+                                  <th className="pb-2">Relative</th>
+                                  <th className="pb-2">Historical Window</th>
+                                  <th className="pb-2">Sessions</th>
+                                  <th className="pb-2">Simulated Open</th>
+                                  <th className="pb-2">Simulated Close</th>
+                                  <th className="pb-2 text-right">Holding Return</th>
+                                  <th className="pb-2 text-center">Execution Outcome</th>
+                                  <th className="pb-2 text-right">R-Multiple</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody className="divide-y divide-zinc-800/40">
+                                {stock.yearlyBreakdown.map((yb) => (
+                                  <tr key={yb.year} className="hover:bg-zinc-900/50">
+                                    <td className="py-1.5 font-bold text-white">{yb.year}</td>
+                                    <td className="py-1.5 text-zinc-400">{yb.relativeYear}</td>
+                                    <td className="py-1.5 text-zinc-300">{yb.startDate} ➔ {yb.endDate}</td>
+                                    <td className="py-1.5 text-zinc-400">{yb.tradingSessions}</td>
+                                    <td className="py-1.5 text-zinc-400">₹{yb.startPrice.toLocaleString("en-IN")}</td>
+                                    <td className="py-1.5 text-zinc-400">₹{yb.endPrice.toLocaleString("en-IN")}</td>
+                                    <td
+                                      className={`py-1.5 text-right font-bold ${
+                                        yb.returnPct > 0
+                                          ? "text-emerald-400"
+                                          : yb.returnPct < 0
+                                          ? "text-rose-400"
+                                          : "text-zinc-400"
+                                      }`}
+                                    >
+                                      {yb.returnPct > 0 ? "+" : ""}
+                                      {yb.returnPct.toFixed(2)}%
+                                    </td>
+                                    <td className="py-1.5 text-center">
+                                      {yb.hitOutcome === "TP3_HIT" ? (
+                                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-[10px]">
+                                          🏆 TP3 HIT
+                                        </span>
+                                      ) : yb.hitOutcome === "TP2_HIT" ? (
+                                        <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30 text-[10px]">
+                                          🎯 TP2 HIT
+                                        </span>
+                                      ) : yb.hitOutcome === "TP1_HIT" ? (
+                                        <span className="px-2 py-0.5 rounded bg-lime-500/15 text-lime-300 border border-lime-500/25 text-[10px]">
+                                          ✓ TP1 HIT
+                                        </span>
+                                      ) : yb.hitOutcome === "SL_HIT" ? (
+                                        <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 text-[10px]">
+                                          ✕ SL HIT
+                                        </span>
+                                      ) : (
+                                        <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50 text-[10px]">
+                                          ~ SCRATCH
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td
+                                      className={`py-1.5 text-right font-mono font-bold ${
+                                        (yb.rMultipleAchieved ?? 0) > 0
+                                          ? "text-emerald-400"
+                                          : (yb.rMultipleAchieved ?? 0) < 0
+                                          ? "text-rose-400"
+                                          : "text-zinc-400"
+                                      }`}
+                                    >
+                                      {(yb.rMultipleAchieved ?? 0) > 0 ? "+" : ""}
+                                      {(yb.rMultipleAchieved ?? 0).toFixed(1)}R
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -968,6 +1321,45 @@ function ChronoWheelPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* 6. MODALS & SLIDE-OVER ASSISTANTS */}
+      <ChronoWheelGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
+
+      <ChronoWheelAIBot
+        isOpen={showAIBot}
+        onClose={() => setShowAIBot(false)}
+        activeStock={aiStockContext}
+        cycleContext={
+          scanResult
+            ? {
+                startDate: scanResult.referenceWindow.startDate,
+                endDate: scanResult.referenceWindow.endDate,
+                tithi: scanResult.referenceWindow.startPhase.tithiName,
+                phaseAngle: scanResult.referenceWindow.startPhase.phaseAngle,
+                phaseName: scanResult.referenceWindow.startPhase.phaseName,
+                lookbackYears: scanResult.lookbackYears,
+              }
+            : undefined
+        }
+        onClearStock={() => setAiStockContext(null)}
+      />
+
+      {/* 7. FLOATING AI ASSISTANT TRIGGER PILL */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => {
+            setAiStockContext(null);
+            setShowAIBot(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-black font-bold text-xs shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all transform hover:scale-105 select-none"
+        >
+          <Sparkles className="w-4 h-4 text-black animate-pulse" />
+          <span>Ask AI Assistant</span>
+        </button>
       </div>
     </div>
   );

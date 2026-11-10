@@ -10,12 +10,20 @@ import type {
   YearWindowPerformance,
   ConfluenceBias,
   FOInstrument,
+  TradeDirection,
+  TradeHitOutcome,
+  TradeExecutionPlan,
+  ExecutionHitRateSummary,
 } from "./cycle-performance.server";
 import type {
   HistoricalLunarWindow,
   LunarPhaseDetails,
   LunarCycleScanResponse,
 } from "./lunar-cycle-engine.server";
+import type {
+  ChronoWheelAIRequest,
+  ChronoWheelAIResponse,
+} from "./chronowheel-ai.server";
 
 export type {
   ChronoWheelScanFilter,
@@ -24,9 +32,15 @@ export type {
   YearWindowPerformance,
   ConfluenceBias,
   FOInstrument,
+  TradeDirection,
+  TradeHitOutcome,
+  TradeExecutionPlan,
+  ExecutionHitRateSummary,
   HistoricalLunarWindow,
   LunarPhaseDetails,
   LunarCycleScanResponse,
+  ChronoWheelAIRequest,
+  ChronoWheelAIResponse,
 };
 
 function validateScanInput(input: unknown): ChronoWheelScanFilter {
@@ -85,4 +99,22 @@ export const chronoWheelQuery = (filter: ChronoWheelScanFilter) =>
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+  });
+
+function validateAIInput(input: unknown): ChronoWheelAIRequest {
+  const i = (input ?? {}) as Partial<ChronoWheelAIRequest>;
+  const query = typeof i.query === "string" && i.query.trim().length > 0 ? i.query.trim() : "Analyze this cycle setup";
+  return {
+    query,
+    stockContext: i.stockContext,
+    cycleContext: i.cycleContext,
+    accountContext: i.accountContext,
+  };
+}
+
+export const queryChronoWheelAIFn = createServerFn({ method: "POST" })
+  .validator(validateAIInput)
+  .handler(async ({ data }): Promise<ChronoWheelAIResponse> => {
+    const { queryChronoWheelAI } = await import("./chronowheel-ai.server");
+    return queryChronoWheelAI(data);
   });

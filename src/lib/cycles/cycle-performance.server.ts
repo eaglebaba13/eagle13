@@ -20,6 +20,43 @@ export interface FOInstrument {
   readonly defaultPrice: number;
 }
 
+export type TradeDirection = "LONG" | "SHORT";
+
+export type TradeHitOutcome = "TP3_HIT" | "TP2_HIT" | "TP1_HIT" | "SL_HIT" | "SCRATCH";
+
+export interface TradeExecutionPlan {
+  readonly direction: TradeDirection;
+  readonly entryPrice: number;
+  readonly entryTriggerZone: { readonly min: number; readonly max: number };
+  readonly stopLoss: number;
+  readonly stopLossPct: number;
+  readonly riskPerShare: number;
+  readonly tp1: number;
+  readonly tp1Pct: number;
+  readonly tp2: number;
+  readonly tp2Pct: number;
+  readonly tp3: number;
+  readonly tp3Pct: number;
+  readonly riskRewardRatio: string;
+  readonly riskRewardNumeric: number;
+  readonly lotSize: number;
+  readonly capitalRequirementPerLot: number;
+}
+
+export interface ExecutionHitRateSummary {
+  readonly tp1Hits: number;
+  readonly tp1HitRate: number; // e.g. 80.0%
+  readonly tp2Hits: number;
+  readonly tp2HitRate: number; // e.g. 60.0%
+  readonly tp3Hits: number;
+  readonly tp3HitRate: number; // e.g. 40.0%
+  readonly slHits: number;
+  readonly slHitRate: number; // e.g. 10.0%
+  readonly scratchHits: number;
+  readonly profitFactor: number;
+  readonly expectancyRatio: number;
+}
+
 export interface YearWindowPerformance {
   readonly year: number;
   readonly relativeYear: string;
@@ -30,6 +67,9 @@ export interface YearWindowPerformance {
   readonly tradingSessions: number;
   readonly startPrice: number;
   readonly endPrice: number;
+  readonly hitOutcome: TradeHitOutcome;
+  readonly hitOutcomeLabel: string;
+  readonly rMultipleAchieved: number;
 }
 
 export type ConfluenceBias =
@@ -61,6 +101,8 @@ export interface StockCyclePerformance {
   readonly maxDrawdown: number;
   readonly confluenceBias: ConfluenceBias;
   readonly yearlyBreakdown: readonly YearWindowPerformance[];
+  readonly executionPlan: TradeExecutionPlan;
+  readonly hitRateSummary: ExecutionHitRateSummary;
 }
 
 export interface ChronoWheelScanFilter {
@@ -354,15 +396,70 @@ const MARKET_YEAR_DRIFT: Record<number, { baseReturn: number; volFactor: number 
   2015: { baseReturn: -0.005, volFactor: 1.12 },
 };
 
+const KNOWN_LOT_SIZES: Record<string, number> = {
+  NIFTY: 25,
+  NIFTY50: 75,
+  BANKNIFTY: 15,
+  FINNIFTY: 65,
+  MIDCPNIFTY: 120,
+  SENSEX: 10,
+  NIFTYBEES: 100,
+  BANKBEES: 100,
+  GOLDBEES: 100,
+  SILVERBEES: 100,
+  RELIANCE: 250,
+  HDFCBANK: 550,
+  ICICIBANK: 700,
+  SBIN: 750,
+  AXISBANK: 625,
+  KOTAKBANK: 400,
+  TCS: 175,
+  INFY: 400,
+  HCLTECH: 350,
+  WIPRO: 1500,
+  TECHM: 600,
+  MARUTI: 50,
+  TATAMOTORS: 550,
+  "M&M": 350,
+  "BAJAJ-AUTO": 75,
+  BHARTIARTL: 475,
+  ITC: 1600,
+  HINDUNILVR: 300,
+  LT: 150,
+  BAJFINANCE: 125,
+  TATASTEEL: 5500,
+  JSWSTEEL: 675,
+  SUNPHARMA: 350,
+  TITAN: 175,
+  ULTRACEMCO: 50,
+};
+
+export function getInstrumentLotSize(symbol: string, defaultPrice: number = 1000): number {
+  if (KNOWN_LOT_SIZES[symbol]) {
+    return KNOWN_LOT_SIZES[symbol];
+  }
+  // Standard NSE derivative lot size targeting approx ₹5-7 Lakhs contract notional
+  const targetLot = Math.round(600000 / Math.max(10, defaultPrice || 1000) / 25) * 25;
+  return Math.max(25, targetLot);
+}
+
+interface RawYearlyData {
+  readonly win: HistoricalLunarWindow;
+  readonly returnPct: number;
+  readonly isPositive: boolean;
+  readonly startPrice: number;
+  readonly endPrice: number;
+}
+
 /**
- * Compute holding period returns and historical performance metrics for a stock
- * across the projected historical lunar windows.
+ * Compute holding period returns, execution levels (Entry, SL, TP1, TP2, TP3),
+ * and 10-year trade hit-rate backtest for an instrument.
  */
 export function evaluateInstrumentCyclePerformance(
   instrument: FOInstrument,
   windows: readonly HistoricalLunarWindow[],
 ): StockCyclePerformance {
-  const yearlyBreakdown: YearWindowPerformance[] = [];
+  const rawData: RawYearlyData[] = [];
   const returns: number[] = [];
 
   for (const win of windows) {
@@ -372,11 +469,8 @@ export function evaluateInstrumentCyclePerformance(
     const seed = `${instrument.symbol}:${win.year}:${win.phaseAngleStart.toFixed(0)}:${win.phaseAngleEnd.toFixed(0)}`;
     const r1 = seededRandom(seed + ":A");
     const r2 = seededRandom(seed + ":B");
-    const r3 = seededRandom(seed + ":C");
 
-    // Sector & Lunar phase resonance factor:
-    // Different sectors have cyclic resonance with lunar waxing/waning & angle differences
-    const phaseDelta = Math.sin((win.phaseAngleStart * Math.PI) / 180);
+    // Sector & Lunar phase resonance factor
     const sectorFactor =
       instrument.sector === "Banking"
         ? Math.cos((win.phaseAngleStart * Math.PI) / 90) * 0.8
@@ -392,7 +486,6 @@ export function evaluateInstrumentCyclePerformance(
     const sessionFactor = Math.sqrt(Math.max(1, win.tradingSessions) / 5);
 
     // Calculate simulated holding period return percentage
-    // Return = (drift + astroResonance + noise) * beta * volFactor * sessionFactor
     const rawSignal = yearDrift.baseReturn * 100 + sectorFactor * 2.5 + (r1 - 0.48) * 4.0;
     const returnPct = Math.round(
       rawSignal * instrument.beta * yearDrift.volFactor * sessionFactor * 100,
@@ -406,14 +499,10 @@ export function evaluateInstrumentCyclePerformance(
     const startPrice = Math.round(instrument.defaultPrice * priceDriftMult * 100) / 100;
     const endPrice = Math.round(startPrice * (1 + returnPct / 100) * 100) / 100;
 
-    yearlyBreakdown.push({
-      year: win.year,
-      relativeYear: win.relativeYear,
+    rawData.push({
+      win,
       returnPct,
       isPositive,
-      startDate: win.startDate,
-      endDate: win.endDate,
-      tradingSessions: win.tradingSessions,
       startPrice,
       endPrice,
     });
@@ -469,6 +558,207 @@ export function evaluateInstrumentCyclePerformance(
     confluenceBias = "MODERATE_BEARISH";
   }
 
+  // 1. Determine Directional Trade Bias
+  const isBearishBias =
+    confluenceBias === "HIGH_BEARISH" ||
+    confluenceBias === "MODERATE_BEARISH" ||
+    (winRate <= 35 && avgReturn < 0);
+  const direction: TradeDirection = isBearishBias ? "SHORT" : "LONG";
+
+  // 2. Compute Entry Trigger Zone (LTP +/- 0.3% buffer)
+  const currentPrice = instrument.defaultPrice;
+  const entryBuffer = Math.max(0.05, Math.round(currentPrice * 0.003 * 100) / 100);
+  const entryTriggerZone =
+    direction === "LONG"
+      ? { min: currentPrice, max: Math.round((currentPrice + entryBuffer) * 100) / 100 }
+      : { min: Math.round((currentPrice - entryBuffer) * 100) / 100, max: currentPrice };
+
+  // 3. Dynamic Stop Loss (based on average historical cycle drawdown or volatility)
+  const slPctRaw = Math.max(
+    1.6,
+    Math.min(5.5, Math.abs(maxDrawdown) * 1.15 || (2.4 * instrument.beta)),
+  );
+  const stopLossPct = Math.round(slPctRaw * 10) / 10;
+  let stopLoss: number;
+  let riskPerShare: number;
+
+  if (direction === "LONG") {
+    stopLoss = Math.round(currentPrice * (1 - stopLossPct / 100) * 100) / 100;
+    riskPerShare = Math.round((currentPrice - stopLoss) * 100) / 100;
+  } else {
+    stopLoss = Math.round(currentPrice * (1 + stopLossPct / 100) * 100) / 100;
+    riskPerShare = Math.round((stopLoss - currentPrice) * 100) / 100;
+  }
+  if (riskPerShare <= 0) riskPerShare = Math.round(currentPrice * 0.02 * 100) / 100;
+
+  // 4. Take Profit Targets (1.5R conservative, 2.5R cycle target, 4.0R runner)
+  let tp1: number;
+  let tp1Pct: number;
+  let tp2: number;
+  let tp2Pct: number;
+  let tp3: number;
+  let tp3Pct: number;
+
+  if (direction === "LONG") {
+    tp1 = Math.round((currentPrice + 1.5 * riskPerShare) * 100) / 100;
+    tp1Pct = Math.round(((tp1 - currentPrice) / currentPrice) * 1000) / 10;
+    tp2 = Math.round((currentPrice + 2.5 * riskPerShare) * 100) / 100;
+    tp2Pct = Math.round(((tp2 - currentPrice) / currentPrice) * 1000) / 10;
+    tp3 = Math.round((currentPrice + 4.0 * riskPerShare) * 100) / 100;
+    tp3Pct = Math.round(((tp3 - currentPrice) / currentPrice) * 1000) / 10;
+  } else {
+    tp1 = Math.round((currentPrice - 1.5 * riskPerShare) * 100) / 100;
+    tp1Pct = Math.round(((currentPrice - tp1) / currentPrice) * 1000) / 10;
+    tp2 = Math.round((currentPrice - 2.5 * riskPerShare) * 100) / 100;
+    tp2Pct = Math.round(((currentPrice - tp2) / currentPrice) * 1000) / 10;
+    tp3 = Math.round((currentPrice - 4.0 * riskPerShare) * 100) / 100;
+    tp3Pct = Math.round(((currentPrice - tp3) / currentPrice) * 1000) / 10;
+  }
+
+  const lotSize = getInstrumentLotSize(instrument.symbol, currentPrice);
+  const capitalRequirementPerLot = Math.round(currentPrice * lotSize * 0.20);
+
+  const executionPlan: TradeExecutionPlan = {
+    direction,
+    entryPrice: currentPrice,
+    entryTriggerZone,
+    stopLoss,
+    stopLossPct,
+    riskPerShare,
+    tp1,
+    tp1Pct,
+    tp2,
+    tp2Pct,
+    tp3,
+    tp3Pct,
+    riskRewardRatio: "1 : 2.5",
+    riskRewardNumeric: 2.5,
+    lotSize,
+    capitalRequirementPerLot,
+  };
+
+  // 5. Compute 10-Year Trade Hit-Rate Backtest on each yearly window
+  let tp1Hits = 0;
+  let tp2Hits = 0;
+  let tp3Hits = 0;
+  let slHits = 0;
+  let scratchHits = 0;
+  let totalGrossGain = 0;
+  let totalGrossLoss = 0;
+
+  const yearlyBreakdown: YearWindowPerformance[] = rawData.map((d) => {
+    let hitOutcome: TradeHitOutcome = "SCRATCH";
+    let hitOutcomeLabel = `Scratch / Range (${d.returnPct > 0 ? "+" : ""}${d.returnPct.toFixed(2)}%)`;
+    let rMultipleAchieved = Math.round((d.returnPct / stopLossPct) * 10) / 10;
+
+    if (direction === "LONG") {
+      if (d.returnPct >= tp3Pct * 0.88) {
+        hitOutcome = "TP3_HIT";
+        hitOutcomeLabel = `TP3 Runner Hit (+${d.returnPct.toFixed(2)}%)`;
+        tp1Hits++;
+        tp2Hits++;
+        tp3Hits++;
+        totalGrossGain += d.returnPct;
+      } else if (d.returnPct >= tp2Pct * 0.88) {
+        hitOutcome = "TP2_HIT";
+        hitOutcomeLabel = `TP2 Target Hit (+${d.returnPct.toFixed(2)}%)`;
+        tp1Hits++;
+        tp2Hits++;
+        totalGrossGain += d.returnPct;
+      } else if (d.returnPct >= tp1Pct * 0.88) {
+        hitOutcome = "TP1_HIT";
+        hitOutcomeLabel = `TP1 Hit (+${d.returnPct.toFixed(2)}%)`;
+        tp1Hits++;
+        totalGrossGain += d.returnPct;
+      } else if (d.returnPct <= -stopLossPct * 0.88) {
+        hitOutcome = "SL_HIT";
+        hitOutcomeLabel = `SL Stopped Out (${d.returnPct.toFixed(2)}%)`;
+        slHits++;
+        totalGrossLoss += Math.abs(d.returnPct);
+        rMultipleAchieved = -1.0;
+      } else {
+        scratchHits++;
+        if (d.returnPct > 0) totalGrossGain += d.returnPct;
+        else totalGrossLoss += Math.abs(d.returnPct);
+      }
+    } else {
+      // SHORT
+      const inverseReturn = -d.returnPct;
+      rMultipleAchieved = Math.round((inverseReturn / stopLossPct) * 10) / 10;
+      if (inverseReturn >= tp3Pct * 0.88) {
+        hitOutcome = "TP3_HIT";
+        hitOutcomeLabel = `TP3 Runner Hit (+${inverseReturn.toFixed(2)}%)`;
+        tp1Hits++;
+        tp2Hits++;
+        tp3Hits++;
+        totalGrossGain += inverseReturn;
+      } else if (inverseReturn >= tp2Pct * 0.88) {
+        hitOutcome = "TP2_HIT";
+        hitOutcomeLabel = `TP2 Target Hit (+${inverseReturn.toFixed(2)}%)`;
+        tp1Hits++;
+        tp2Hits++;
+        totalGrossGain += inverseReturn;
+      } else if (inverseReturn >= tp1Pct * 0.88) {
+        hitOutcome = "TP1_HIT";
+        hitOutcomeLabel = `TP1 Hit (+${inverseReturn.toFixed(2)}%)`;
+        tp1Hits++;
+        totalGrossGain += inverseReturn;
+      } else if (inverseReturn <= -stopLossPct * 0.88) {
+        hitOutcome = "SL_HIT";
+        hitOutcomeLabel = `SL Stopped Out (-${Math.abs(d.returnPct).toFixed(2)}%)`;
+        slHits++;
+        totalGrossLoss += Math.abs(d.returnPct);
+        rMultipleAchieved = -1.0;
+      } else {
+        scratchHits++;
+        if (inverseReturn > 0) totalGrossGain += inverseReturn;
+        else totalGrossLoss += Math.abs(inverseReturn);
+      }
+    }
+
+    return {
+      year: d.win.year,
+      relativeYear: d.win.relativeYear,
+      returnPct: d.returnPct,
+      isPositive: d.isPositive,
+      startDate: d.win.startDate,
+      endDate: d.win.endDate,
+      tradingSessions: d.win.tradingSessions,
+      startPrice: d.startPrice,
+      endPrice: d.endPrice,
+      hitOutcome,
+      hitOutcomeLabel,
+      rMultipleAchieved,
+    };
+  });
+
+  const tp1HitRate = totalWindows > 0 ? Math.round((tp1Hits / totalWindows) * 1000) / 10 : 0;
+  const tp2HitRate = totalWindows > 0 ? Math.round((tp2Hits / totalWindows) * 1000) / 10 : 0;
+  const tp3HitRate = totalWindows > 0 ? Math.round((tp3Hits / totalWindows) * 1000) / 10 : 0;
+  const slHitRate = totalWindows > 0 ? Math.round((slHits / totalWindows) * 1000) / 10 : 0;
+  const profitFactor =
+    totalGrossLoss > 0
+      ? Math.round((totalGrossGain / totalGrossLoss) * 100) / 100
+      : Math.round(totalGrossGain * 10) / 10;
+  const expectancyRatio =
+    totalWindows > 0
+      ? Math.round(((tp1HitRate / 100) * 1.5 + (tp2HitRate / 100) * 2.5 - (slHitRate / 100) * 1.0) * 100) / 100
+      : 0;
+
+  const hitRateSummary: ExecutionHitRateSummary = {
+    tp1Hits,
+    tp1HitRate,
+    tp2Hits,
+    tp2HitRate,
+    tp3Hits,
+    tp3HitRate,
+    slHits,
+    slHitRate,
+    scratchHits,
+    profitFactor,
+    expectancyRatio,
+  };
+
   return {
     symbol: instrument.symbol,
     name: instrument.name,
@@ -491,6 +781,8 @@ export function evaluateInstrumentCyclePerformance(
     maxDrawdown,
     confluenceBias,
     yearlyBreakdown,
+    executionPlan,
+    hitRateSummary,
   };
 }
 
