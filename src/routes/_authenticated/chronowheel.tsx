@@ -765,7 +765,7 @@ function ChronoWheelPage() {
                         {/* 1. Symbol, Name, Sector & Beta */}
                         <div className="flex items-start sm:items-center gap-3">
                           <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-base sm:text-lg font-black font-mono tracking-tight text-white hover:text-amber-400 transition-colors">
                                 {stock.symbol}
                               </span>
@@ -775,6 +775,26 @@ function ChronoWheelPage() {
                               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/60 text-zinc-400">
                                 {stock.marketCap}
                               </span>
+
+                              {/* Explicit High-Visibility Live LTP Badge */}
+                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold shadow-xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                <span>LTP: ₹{stock.currentPrice.toFixed(2)}</span>
+                                <span className="text-[10px] text-emerald-400 font-semibold">• LIVE</span>
+                              </div>
+
+                              {stock.dayChangePct !== undefined && (
+                                <span
+                                  className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                                    stock.dayChangePct >= 0
+                                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                                  }`}
+                                >
+                                  {stock.dayChangePct >= 0 ? "+" : ""}
+                                  {stock.dayChangePct.toFixed(2)}%
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
                               <span className="truncate max-w-[200px] sm:max-w-none">{stock.name}</span>
@@ -957,6 +977,14 @@ function ChronoWheelPage() {
                     {stock.executionPlan && (
                       <div className="px-3 sm:px-4 py-2 border-t border-zinc-800/70 bg-zinc-950/50 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                          {/* Current Market Price (LTP) Anchor */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-zinc-400 uppercase font-semibold">Current LTP:</span>
+                            <span className="text-cyan-300 font-bold bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-500/35">
+                              ₹{stock.currentPrice.toFixed(2)}
+                            </span>
+                          </div>
+
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] text-zinc-500 uppercase">Direction:</span>
                             <span

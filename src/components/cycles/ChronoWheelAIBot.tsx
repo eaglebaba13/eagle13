@@ -78,12 +78,19 @@ export function ChronoWheelAIBot({
 
     if (activeStock) {
       const exec = activeStock.executionPlan;
+      const ltpStr = `₹${activeStock.currentPrice.toFixed(2)}`;
+      const changeStr =
+        activeStock.dayChangePct !== undefined
+          ? ` (${activeStock.dayChangePct >= 0 ? "+" : ""}${activeStock.dayChangePct.toFixed(2)}%)`
+          : "";
+
       setMessages([
         {
           id: "welcome-stock",
           sender: "assistant",
           text: `### 🦅 ChronoWheel Quant AI: Ready to analyze **${activeStock.symbol}** (${activeStock.name})
 
+- **Live Market LTP:** **${ltpStr}**${changeStr} • \`${activeStock.isLive ? "🟢 LIVE FEED" : "CALIBRATED EOD"}\`
 - **10-Year Synodic Win Rate:** **${activeStock.winRate}%** (${activeStock.avgReturn > 0 ? "+" : ""}${activeStock.avgReturn.toFixed(2)}% Avg)
 - **Institutional Bias:** \`${activeStock.confluenceBias}\`
 - **Execution Zone:** Entry **₹${exec?.entryPrice.toFixed(2)}** • SL **₹${exec?.stopLoss.toFixed(2)}** • TP2 **₹${exec?.tp2.toFixed(2)}** (R:R ${exec?.riskRewardRatio})
@@ -277,6 +284,15 @@ Max Risk: ${plan.maxRiskAmount}`;
               <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/25">
                 {activeStock.symbol}
               </span>
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>₹{activeStock.currentPrice.toFixed(2)}</span>
+                {activeStock.dayChangePct !== undefined && (
+                  <span className={activeStock.dayChangePct >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                    {activeStock.dayChangePct >= 0 ? "+" : ""}{activeStock.dayChangePct.toFixed(2)}%
+                  </span>
+                )}
+              </div>
               <span className="text-zinc-500 truncate text-[11px] hidden sm:inline">
                 ({activeStock.confluenceBias} • {activeStock.winRate}%)
               </span>
@@ -445,6 +461,14 @@ Max Risk: ${plan.maxRiskAmount}`;
 
         {/* Quick Action Chips */}
         <div className="p-2 border-t border-zinc-800/80 bg-zinc-950/70 overflow-x-auto flex items-center gap-1.5 scrollbar-none">
+          <button
+            onClick={() => handleSendMessage(`Check live LTP price and execution zone for ${activeStock?.symbol ?? "this stock"}`)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/50 hover:bg-cyan-900/50 border border-cyan-500/40 text-[11px] font-mono text-cyan-300 hover:text-cyan-200 whitespace-nowrap transition-colors shadow-xs"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Check Live LTP</span>
+          </button>
+
           <button
             onClick={() => handleSendMessage("Generate trade plan with entry, stop loss, and targets")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-[11px] font-mono text-amber-300 whitespace-nowrap transition-colors"

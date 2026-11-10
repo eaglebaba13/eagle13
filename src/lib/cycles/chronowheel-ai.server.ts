@@ -12,6 +12,9 @@ export interface ChronoWheelAIRequest {
     readonly category: string;
     readonly beta?: number;
     readonly currentPrice: number;
+    readonly prevClose?: number;
+    readonly dayChangePct?: number;
+    readonly isLive?: boolean;
     readonly winRate: number;
     readonly avgReturn: number;
     readonly volatility?: number;
@@ -127,6 +130,61 @@ Welcome to the **ChronoWheel Quantitative AI Assistant**. I analyze Moon-Sun syn
   const shares = exec ? Math.max(1, Math.floor(riskAmount / Math.max(0.1, exec.riskPerShare))) : 10;
   const lots = exec ? Math.max(0, Math.floor(shares / exec.lotSize)) : 0;
   const marginRequired = exec && lots > 0 ? lots * exec.capitalRequirementPerLot : shares * stock.currentPrice;
+
+  // Question 0: Real-time Live LTP & Quote Check
+  if (
+    q.includes("ltp") ||
+    q.includes("current price") ||
+    q.includes("market price") ||
+    q.includes("live price") ||
+    q === "price" ||
+    q.includes("what is the price") ||
+    q.includes("quote")
+  ) {
+    const changeStr =
+      stock.dayChangePct !== undefined
+        ? `${stock.dayChangePct >= 0 ? "+" : ""}${stock.dayChangePct.toFixed(2)}%`
+        : "N/A";
+
+    return {
+      answer: `### 💹 Real-Time Market Quote: **${stock.symbol}** (${stock.name})
+
+- **Current Live Market Price (LTP):** **₹${stock.currentPrice.toFixed(2)}**
+- **Session Day Change:** **${changeStr}**
+- **Feed Status:** \`${stock.isLive ? "🟢 LIVE MARKET FEED ACTIVE" : "CALIBRATED DAILY EOD"}\`
+- **Sector / Benchmark:** ${stock.sector} • **Beta:** ${stock.beta?.toFixed(2) ?? "1.00"}
+
+---
+
+#### 🎯 Real-Time Execution Anchors
+All ChronoWheel algorithmic parameters are calculated in direct mathematical resonance with this live LTP:
+- **Entry Trigger Zone (±0.25%):** **₹${exec?.entryTriggerZone.min.toFixed(2)} ➔ ₹${exec?.entryTriggerZone.max.toFixed(2)}**
+- **Hard Stop Loss:** **₹${exec?.stopLoss.toFixed(2)}** (\`-${exec?.stopLossPct}%\` • Risk per share: ₹${exec?.riskPerShare.toFixed(2)})
+- **Target 1 (+1.5R):** **₹${exec?.tp1.toFixed(2)}** (\`+${exec?.tp1Pct}%\`)
+- **Target 2 (+2.5R Cycle Target):** **₹${exec?.tp2.toFixed(2)}** (\`+${exec?.tp2Pct}%\`)
+- **Target 3 (+4.0R Runner):** **₹${exec?.tp3.toFixed(2)}** (\`+${exec?.tp3Pct}%\`)
+- **NSE Lot Size:** **${exec?.lotSize ?? 100} units** (Margin / lot: ₹${exec?.capitalRequirementPerLot.toLocaleString("en-IN")})`,
+      bullets: [
+        `Live LTP: ₹${stock.currentPrice.toFixed(2)} (${changeStr})`,
+        `Entry Buffer: ₹${exec?.entryTriggerZone.min.toFixed(2)} - ₹${exec?.entryTriggerZone.max.toFixed(2)}`,
+        `Stop Loss: ₹${exec?.stopLoss.toFixed(2)} (-${exec?.stopLossPct}%)`,
+        `Target 2: ₹${exec?.tp2.toFixed(2)} (+${exec?.tp2Pct}%)`,
+      ],
+      structuredTradePlan: {
+        direction: exec?.direction ?? "LONG",
+        entry: `₹${exec?.entryPrice.toFixed(2)}`,
+        sl: `₹${exec?.stopLoss.toFixed(2)}`,
+        tp1: `₹${exec?.tp1.toFixed(2)}`,
+        tp2: `₹${exec?.tp2.toFixed(2)}`,
+        tp3: `₹${exec?.tp3.toFixed(2)}`,
+        riskReward: exec?.riskRewardRatio ?? "1 : 2.5",
+        recommendedPosition: lots > 0 ? `${lots} F&O Lot(s)` : `${shares} Shares`,
+        maxRiskAmount: `₹${riskAmount.toLocaleString("en-IN")}`,
+      },
+      timestamp: new Date().toISOString(),
+      modelUsed: "EagleBABA Real-Time Market Quote Engine",
+    };
+  }
 
   // Question 1: Trade Plan Generation
   if (
@@ -370,7 +428,7 @@ export async function queryChronoWheelAI(
       const promptContext = `
 You are the EagleBABA Quantitative Lunar & Gann Trading Specialist.
 The user is analyzing stock: ${stock?.symbol ?? "None"} (${stock?.name ?? "General Universe"}).
-Sector: ${stock?.sector ?? "N/A"}, Current Price: ₹${stock?.currentPrice ?? "N/A"}.
+Sector: ${stock?.sector ?? "N/A"}, Live Market LTP: ₹${stock?.currentPrice ?? "N/A"} (${stock?.dayChangePct !== undefined ? (stock.dayChangePct >= 0 ? "+" : "") + stock.dayChangePct.toFixed(2) + "%" : "Live"}).
 10-Year Lunar Cycle Win Rate: ${stock?.winRate ?? "N/A"}%, Confluence Bias: ${stock?.confluenceBias ?? "N/A"}, Avg Return: ${stock?.avgReturn ?? "N/A"}%.
 Active Cycle Window: ${cycle?.startDate} to ${cycle?.endDate}, Tithi: ${cycle?.tithi}, Phase Angle: ${cycle?.phaseAngle}°.
 Execution Plan: Direction ${exec?.direction}, Entry ₹${exec?.entryPrice}, Hard SL ₹${exec?.stopLoss} (${exec?.stopLossPct}%), TP1 ₹${exec?.tp1}, TP2 ₹${exec?.tp2}, TP3 ₹${exec?.tp3}, R:R ${exec?.riskRewardRatio}, Lot Size ${exec?.lotSize}.

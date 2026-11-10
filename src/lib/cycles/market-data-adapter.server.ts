@@ -20,6 +20,7 @@ export interface InstrumentMarketData {
   readonly ltp: number;
   readonly prevClose?: number;
   readonly changePct?: number;
+  readonly isLive?: boolean;
   readonly candles: readonly RealCandle[];
   readonly fetchedAt: number;
   readonly dataSource: "UPSTOX" | "YAHOO_FINANCE" | "CALIBRATED_FALLBACK";
@@ -57,37 +58,171 @@ export function getCachedMarketData(symbol: string): InstrumentMarketData | null
   return cached;
 }
 
+const KNOWN_SYMBOL_OVERRIDES: Record<string, string> = {
+  NIFTY: "^NSEI",
+  NIFTY50: "^NSEI",
+  BANKNIFTY: "^NSEBANK",
+  FINNIFTY: "NIFTY_FIN_SERVICE.NS",
+  MIDCPNIFTY: "NIFTY_MID_SELECT.NS",
+  SENSEX: "^BSESN",
+  NIFTYBEES: "NIFTYBEES.NS",
+  BANKBEES: "BANKBEES.NS",
+  GOLDBEES: "GOLDBEES.NS",
+  SILVERBEES: "SILVERBEES.NS",
+  "L&TFH": "LTF.NS",
+  LTFH: "LTF.NS",
+  MPHTASIS: "MPHASIS.NS",
+  BIRLASOFT: "BSOFT.NS",
+  AMARAJABAT: "ARE&M.NS",
+  IPCLAB: "IPCALAB.NS",
+  "MCDOWELL-N": "UNITDSPR.NS",
+  GMRINFRA: "GMRP&UI.NS",
+  HPCL: "HINDPETRO.NS",
+  ZOMATO: "ETERNAL.NS",
+};
+
 /**
  * Maps clean F&O tickers to standardized market symbols for quotes and daily charts.
  */
 export function mapToMarketSymbol(symbol: string): string {
   const clean = symbol.trim().toUpperCase();
-  switch (clean) {
-    case "NIFTY":
-    case "NIFTY50":
-      return "^NSEI";
-    case "BANKNIFTY":
-      return "^NSEBANK";
-    case "FINNIFTY":
-      return "NIFTY_FIN_SERVICE.NS";
-    case "MIDCPNIFTY":
-      return "NIFTY_MID_SELECT.NS";
-    case "SENSEX":
-      return "^BSESN";
-    case "NIFTYBEES":
-      return "NIFTYBEES.NS";
-    case "BANKBEES":
-      return "BANKBEES.NS";
-    case "GOLDBEES":
-      return "GOLDBEES.NS";
-    case "SILVERBEES":
-      return "SILVERBEES.NS";
-    default:
-      if (clean.endsWith(".NS") || clean.endsWith(".BO") || clean.startsWith("^")) {
-        return clean;
-      }
-      return `${clean}.NS`;
+  if (KNOWN_SYMBOL_OVERRIDES[clean]) {
+    return KNOWN_SYMBOL_OVERRIDES[clean];
   }
+  if (clean.endsWith(".NS") || clean.endsWith(".BO") || clean.startsWith("^")) {
+    return clean;
+  }
+  return `${clean}.NS`;
+}
+
+export interface LiveQuoteResult {
+  readonly ltp: number;
+  readonly prevClose?: number;
+  readonly changePct?: number;
+}
+
+/**
+ * Fetch real-time live LTP and day change % from Yahoo Finance chart feed (range=2d).
+ * Fast, lightweight (~100-200ms) and crumb-free.
+ */
+export async function fetchRealLiveQuote(
+  symbol: string,
+  timeoutMs = 4000,
+): Promise<LiveQuoteResult | null> {
+  const marketSymbol = mapToMarketSymbol(symbol);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(marketSymbol)}?interval=1d&range=2d`;
+
+  return new Promise((resolve) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "application/json",
+        },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          return resolve(null);
+        }
+
+        let raw = "";
+        res.setEncoding("utf8");
+        res.on("data", (chunk) => {
+          raw += chunk;
+        });
+        res.on("end", () => {
+          try {
+            const parsed = JSON.parse(raw);
+            const meta = parsed?.chart?.result?.[0]?.meta;
+            if (!meta) return resolve(null);
+
+            const ltp =
+              typeof meta.regularMarketPrice === "number" && meta.regularMarketPrice > 0
+                ? Math.round(meta.regularMarketPrice * 100) / 100
+                : null;
+            if (ltp === null) return resolve(null);
+
+            const prevClose =
+              typeof meta.chartPreviousClose === "number" && meta.chartPreviousClose > 0
+                ? Math.round(meta.chartPreviousClose * 100) / 100
+                : ltp;
+
+            const changePct =
+              prevClose > 0
+                ? Math.round(((ltp - prevClose) / prevClose) * 10000) / 100
+                : 0;
+
+            resolve({ ltp, prevClose, changePct });
+          } catch {
+            resolve(null);
+          }
+        });
+      },
+    );
+
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(null);
+    });
+  });
+}
+
+/**
+ * Fetch live quotes in concurrent chunks, populating MARKET_DATA_CACHE.
+ */
+export async function fetchLiveQuotesBatch(
+  symbols: readonly string[],
+  chunkSize = 20,
+): Promise<Map<string, LiveQuoteResult>> {
+  const resultMap = new Map<string, LiveQuoteResult>();
+  const toFetch: string[] = [];
+
+  for (const sym of symbols) {
+    const upper = sym.trim().toUpperCase();
+    const cached = getCachedMarketData(upper);
+    if (cached && cached.ltp > 0) {
+      resultMap.set(upper, {
+        ltp: cached.ltp,
+        prevClose: cached.prevClose,
+        changePct: cached.changePct,
+      });
+    } else {
+      toFetch.push(upper);
+    }
+  }
+
+  if (toFetch.length === 0) return resultMap;
+
+  for (let i = 0; i < toFetch.length; i += chunkSize) {
+    const chunk = toFetch.slice(i, i + chunkSize);
+    const chunkPromises = chunk.map(async (sym) => {
+      const quote = await fetchRealLiveQuote(sym);
+      if (quote) {
+        resultMap.set(sym, quote);
+        const existing = getCachedMarketData(sym);
+        setCachedMarketData(sym, {
+          symbol: sym,
+          marketSymbol: mapToMarketSymbol(sym),
+          ltp: quote.ltp,
+          prevClose: quote.prevClose,
+          changePct: quote.changePct,
+          isLive: true,
+          candles: existing?.candles ?? [],
+          fetchedAt: Date.now(),
+          dataSource: "YAHOO_FINANCE",
+        });
+      }
+    });
+
+    await Promise.allSettled(chunkPromises);
+  }
+
+  return resultMap;
 }
 
 /**
@@ -183,6 +318,7 @@ export async function fetchYahooFinanceCandles(
               ltp,
               prevClose,
               changePct,
+              isLive: true,
               candles,
               fetchedAt: Date.now(),
               dataSource: "YAHOO_FINANCE",
@@ -216,15 +352,36 @@ export async function getInstrumentMarketData(
   const cached = getCachedMarketData(symbol);
   if (cached) return cached;
 
-  // Attempt fetch via Yahoo Finance
+  // Attempt fetch via Yahoo Finance 10y candles + LTP
   const liveData = await fetchYahooFinanceCandles(symbol);
   if (liveData) return liveData;
+
+  // Secondary attempt: quick live quote (2d range)
+  const quickQuote = await fetchRealLiveQuote(symbol);
+  if (quickQuote && quickQuote.ltp > 0) {
+    const quoteData: InstrumentMarketData = {
+      symbol: symbol.toUpperCase(),
+      marketSymbol: mapToMarketSymbol(symbol),
+      ltp: quickQuote.ltp,
+      prevClose: quickQuote.prevClose,
+      changePct: quickQuote.changePct,
+      isLive: true,
+      candles: [],
+      fetchedAt: Date.now(),
+      dataSource: "YAHOO_FINANCE",
+    };
+    setCachedMarketData(symbol, quoteData);
+    return quoteData;
+  }
 
   // Fallback to calibrated baseline with real default price
   const fallback: InstrumentMarketData = {
     symbol: symbol.toUpperCase(),
     marketSymbol: mapToMarketSymbol(symbol),
     ltp: defaultPrice,
+    prevClose: defaultPrice,
+    changePct: 0,
+    isLive: false,
     candles: [],
     fetchedAt: Date.now(),
     dataSource: "CALIBRATED_FALLBACK",

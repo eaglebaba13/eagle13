@@ -318,4 +318,81 @@ describe("ChronoWheel Algorithmic Trade Execution Engine", () => {
     expect(aiRes.answer).toContain("20 Shares");
     expect(aiRes.answer).toContain("₹2,000");
   });
+
+  it("binds PNB to calibrated real market price ₹132.17 and includes live LTP and day change", () => {
+    const pnb = FO_UNIVERSE.find((i) => i.symbol === "PNB");
+    expect(pnb).toBeDefined();
+    expect(pnb!.defaultPrice).toBe(132.17);
+
+    const mockLivePnbData: InstrumentMarketData = {
+      symbol: "PNB",
+      marketSymbol: "PNB.NS",
+      ltp: 132.17,
+      prevClose: 126.55,
+      changePct: 4.44,
+      isLive: true,
+      candles: [],
+      fetchedAt: Date.now(),
+      dataSource: "YAHOO_FINANCE",
+    };
+
+    const perf = evaluateInstrumentCyclePerformance(pnb!, mockWindows, mockLivePnbData);
+    expect(perf.currentPrice).toBe(132.17);
+    expect(perf.prevClose).toBe(126.55);
+    expect(perf.dayChangePct).toBe(4.44);
+    expect(perf.isLive).toBe(true);
+
+    // Entry Zone buffer around 132.17 (+-0.25%)
+    expect(perf.executionPlan.entryPrice).toBe(132.17);
+    expect(perf.executionPlan.entryTriggerZone.min).toBeLessThanOrEqual(132.17);
+    expect(perf.executionPlan.entryTriggerZone.max).toBeGreaterThanOrEqual(132.17);
+  });
+
+  it("answers 'check what is LTP price' explicitly with live LTP and anchored trade levels in AI assistant", () => {
+    const request: ChronoWheelAIRequest = {
+      query: "check what is LTP price for PNB",
+      stockContext: {
+        symbol: "PNB",
+        name: "Punjab National Bank",
+        sector: "Banking",
+        category: "FO_EQUITY",
+        currentPrice: 132.17,
+        prevClose: 126.55,
+        dayChangePct: 4.44,
+        isLive: true,
+        winRate: 80,
+        avgReturn: 3.2,
+        confluenceBias: "HIGH_BULLISH",
+        liveIv: 28.5,
+        ivPercentile: 45,
+        executionPlan: {
+          direction: "LONG",
+          entryPrice: 132.17,
+          entryTriggerZone: { min: 131.84, max: 132.50 },
+          stopLoss: 128.87,
+          stopLossPct: 2.5,
+          riskPerShare: 3.3,
+          tp1: 137.12,
+          tp1Pct: 3.75,
+          tp2: 140.42,
+          tp2Pct: 6.25,
+          tp3: 145.37,
+          tp3Pct: 10.0,
+          riskRewardRatio: "1 : 2.5",
+          lotSize: 4500,
+          capitalRequirementPerLot: 118953,
+        },
+      },
+    };
+
+    const aiRes = generateDeterministicAIResponse(request);
+
+    expect(aiRes.answer).toContain("PNB");
+    expect(aiRes.answer).toContain("₹132.17");
+    expect(aiRes.answer).toContain("+4.44%");
+    expect(aiRes.answer).toContain("Real-Time Market Quote");
+    expect(aiRes.answer).toContain("131.84");
+    expect(aiRes.answer).toContain("140.42");
+    expect(aiRes.modelUsed).toContain("Real-Time Market Quote Engine");
+  });
 });
