@@ -108,6 +108,10 @@ export function IctUnicornRadarView({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {smtDivergences.map((smt) => {
             const isBullish = smt.type === "BULLISH_SMT";
+            const smtCurr =
+              smt.pairId === "GOLD_VS_SILVER"
+                ? "$"
+                : smt.asset1.currency ?? "₹";
             return (
               <div
                 key={smt.id}
@@ -140,7 +144,7 @@ export function IctUnicornRadarView({
                     <div className="flex justify-between items-center text-zinc-300">
                       <span>{smt.asset1.name}:</span>
                       <span className="font-bold text-amber-300">
-                        {smt.asset1.swingType} (₹{smt.asset1.swingBPrice.toLocaleString()})
+                        {smt.asset1.swingType} ({smtCurr}{smt.asset1.swingBPrice.toLocaleString()})
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-300">
@@ -150,7 +154,7 @@ export function IctUnicornRadarView({
                           isBullish ? "text-emerald-400" : "text-rose-400"
                         }`}
                       >
-                        {smt.asset2.swingType} (₹{smt.asset2.swingBPrice.toLocaleString()})
+                        {smt.asset2.swingType} ({smtCurr}{smt.asset2.swingBPrice.toLocaleString()})
                       </span>
                     </div>
                   </div>
@@ -234,6 +238,8 @@ export function IctUnicornRadarView({
               <tbody className="divide-y divide-zinc-800/60">
                 {filteredRadarSetups.map((setup) => {
                   const isBullish = setup.direction === "BULLISH";
+                  const curr =
+                    setup.currency ?? (setup.category === "COMMODITY_CRYPTO" ? "$" : "₹");
                   return (
                     <tr
                       key={setup.id}
@@ -248,9 +254,9 @@ export function IctUnicornRadarView({
                             {setup.timeframe}
                           </span>
                         </div>
-                        <span className="text-[10px] text-zinc-500">
-                          {setup.symbol} · {setup.category}
-                        </span>
+                        <div className="text-[10px] text-zinc-400 font-medium">
+                          {setup.symbol} · LTP: {curr}{setup.currentPrice.toLocaleString()}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <span
@@ -263,20 +269,20 @@ export function IctUnicornRadarView({
                           {setup.direction}
                         </span>
                         <div className="text-[10px] text-zinc-400 mt-0.5">
-                          {setup.sweepType} @ {setup.sweepLevel.toLocaleString()}
+                          {setup.sweepType} @ {curr}{setup.sweepLevel.toLocaleString()}
                         </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="text-amber-300 font-bold">
-                          {setup.triggerZone.low.toLocaleString()} – {setup.triggerZone.high.toLocaleString()}
+                          {curr}{setup.triggerZone.low.toLocaleString()} – {curr}{setup.triggerZone.high.toLocaleString()}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-rose-400">
-                        {setup.invalidationSL.toLocaleString()}
+                      <td className="py-2.5 px-3 text-rose-400 font-medium">
+                        {curr}{setup.invalidationSL.toLocaleString()}
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="text-emerald-400 font-bold">
-                          {setup.targetPrice.toLocaleString()}
+                          {curr}{setup.targetPrice.toLocaleString()}
                         </span>
                         <span className="text-[10px] text-zinc-500 ml-1">
                           (1:{setup.riskRewardRatio.toFixed(1)} RR)

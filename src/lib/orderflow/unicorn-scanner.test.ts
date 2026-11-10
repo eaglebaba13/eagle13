@@ -160,7 +160,7 @@ describe("ICT Unicorn Multi-Asset Setup Detection & Alerting", () => {
     expect(gold?.currency).toBe("$");
   });
 
-  it("retrieves curated active radar setups across asset classes", async () => {
+  it("retrieves curated active radar setups across asset classes with calibrated market prices", async () => {
     const radar = await getUnicornRadarSignals(true);
     expect(radar.length).toBeGreaterThan(0);
 
@@ -168,13 +168,27 @@ describe("ICT Unicorn Multi-Asset Setup Detection & Alerting", () => {
     expect(niftySetup).toBeDefined();
     expect(niftySetup?.direction).toBe("BULLISH");
     expect(niftySetup?.status).toBe("Retest Ready");
+    expect(niftySetup?.currentPrice).toBeGreaterThan(24000);
+    expect(niftySetup?.currency).toBe("₹");
 
     const goldSetup = radar.find((r) => r.symbol === "GC1!");
     expect(goldSetup).toBeDefined();
     expect(goldSetup?.category).toBe("COMMODITY_CRYPTO");
+    expect(goldSetup?.currency).toBe("$");
+    expect(goldSetup?.currentPrice).toBeGreaterThan(3500); // Gold at ~$4,033+
 
     const btcSetup = radar.find((r) => r.symbol === "BTCUSDT");
     expect(btcSetup).toBeDefined();
     expect(btcSetup?.status).toBe("Triggered");
+    expect(btcSetup?.currency).toBe("$");
+    expect(btcSetup?.currentPrice).toBeGreaterThan(60000); // BTC at ~$72,800+
+
+    const relianceSetup = radar.find((r) => r.symbol === "RELIANCE");
+    expect(relianceSetup).toBeDefined();
+    expect(relianceSetup?.currentPrice).toBeLessThan(2000); // Post 1:1 bonus (~₹1,324)
+
+    const pnbSetup = radar.find((r) => r.symbol === "PNB");
+    expect(pnbSetup).toBeDefined();
+    expect(pnbSetup?.currentPrice).toBeGreaterThan(120); // PNB at ~₹132
   });
 });

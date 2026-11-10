@@ -44,10 +44,10 @@ interface InstrumentOption {
 }
 
 const INSTRUMENTS: readonly InstrumentOption[] = [
-  { id: "NIFTY50", label: "NIFTY 50", defaultPrice: 24520, tickSize: 5.0, currency: "₹" },
-  { id: "BANKNIFTY", label: "BANK NIFTY", defaultPrice: 52400, tickSize: 10.0, currency: "₹" },
-  { id: "SENSEX", label: "BSE SENSEX", defaultPrice: 80250, tickSize: 10.0, currency: "₹" },
-  { id: "GC1!", label: "COMEX GOLD (GC1!)", defaultPrice: 2742.5, tickSize: 0.5, currency: "$" },
+  { id: "NIFTY50", label: "NIFTY 50", defaultPrice: 25044.65, tickSize: 5.0, currency: "₹" },
+  { id: "BANKNIFTY", label: "BANK NIFTY", defaultPrice: 59741.25, tickSize: 10.0, currency: "₹" },
+  { id: "SENSEX", label: "BSE SENSEX", defaultPrice: 81106.65, tickSize: 10.0, currency: "₹" },
+  { id: "GC1!", label: "COMEX GOLD (GC1!)", defaultPrice: 4033.7, tickSize: 0.5, currency: "$" },
 ];
 
 interface InstitutionalResearchDeckProps {

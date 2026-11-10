@@ -127,16 +127,23 @@ describe("Institutional SMT Divergence Engine", () => {
     expect(formatted).toContain("• Confidence: 96%");
   });
 
-  it("retrieves active SMT signals from curated feed", async () => {
+  it("retrieves active SMT signals from curated feed with calibrated real prices", async () => {
     const signals = await getSMTDivergenceSignals(true);
     expect(signals.length).toBeGreaterThanOrEqual(2);
 
     const niftyBankNifty = signals.find((s) => s.pairId === "NIFTY_VS_BANKNIFTY");
     expect(niftyBankNifty).toBeDefined();
     expect(niftyBankNifty?.type).toBe("BULLISH_SMT");
+    expect(niftyBankNifty?.asset1.currency).toBe("₹");
+    expect(niftyBankNifty?.asset1.swingBPrice).toBeGreaterThan(24000);
+    expect(niftyBankNifty?.asset2.swingBPrice).toBeGreaterThan(50000);
 
     const goldSilver = signals.find((s) => s.pairId === "GOLD_VS_SILVER");
     expect(goldSilver).toBeDefined();
     expect(goldSilver?.type).toBe("BEARISH_SMT");
+    expect(goldSilver?.asset1.currency).toBe("$");
+    expect(goldSilver?.asset2.currency).toBe("$");
+    expect(goldSilver?.asset1.swingBPrice).toBeGreaterThan(3500); // Gold at ~$4,033+
+    expect(goldSilver?.asset2.swingBPrice).toBeGreaterThan(45);   // Silver at ~$51+
   });
 });

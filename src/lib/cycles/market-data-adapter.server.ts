@@ -3,6 +3,7 @@
 // with browser headers, in-memory caching, and historical window slicing.
 
 import https from "node:https";
+import { getLiveMarketStream } from "../live-market-stream.server";
 
 export interface RealCandle {
   readonly date: string; // "YYYY-MM-DD"
@@ -79,6 +80,26 @@ const KNOWN_SYMBOL_OVERRIDES: Record<string, string> = {
   GMRINFRA: "GMRP&UI.NS",
   HPCL: "HINDPETRO.NS",
   ZOMATO: "ETERNAL.NS",
+  // Commodities & Spot Metals
+  "GC1!": "GC=F",
+  GOLD: "GC=F",
+  "SI1!": "SI=F",
+  SILVER: "SI=F",
+  XAUUSDT: "GC=F",
+  XAGUSDT: "SI=F",
+  // Crypto
+  BTCUSDT: "BTC-USD",
+  ETHUSDT: "ETH-USD",
+  "BTC-USD": "BTC-USD",
+  "ETH-USD": "ETH-USD",
+  // NSE Sectors
+  NIFTY_IT: "^CNXIT",
+  NIFTY_AUTO: "^CNXAUTO",
+  NIFTY_PHARMA: "^CNXPHARMA",
+  NIFTY_METAL: "^CNXMETAL",
+  NIFTY_FMCG: "^CNXFMCG",
+  NIFTY_ENERGY: "^CNXENERGY",
+  NIFTY_PSUBANK: "^CNXPSUBANK",
 };
 
 /**
@@ -109,6 +130,25 @@ export async function fetchRealLiveQuote(
   symbol: string,
   timeoutMs = 4000,
 ): Promise<LiveQuoteResult | null> {
+  const clean = symbol.trim().toUpperCase();
+
+  // 1. Check in-process Upstox V3 live WebSocket tick cache if running
+  try {
+    const stream = getLiveMarketStream();
+    const snap = stream.getSnapshot(clean as any);
+    if (snap?.lastTick?.ltp && snap.lastTick.ltp > 0) {
+      const ltp = Math.round(snap.lastTick.ltp * 100) / 100;
+      const prevClose = snap.currentCandle?.open ?? ltp;
+      const changePct =
+        prevClose > 0
+          ? Math.round(((ltp - prevClose) / prevClose) * 10000) / 100
+          : 0;
+      return { ltp, prevClose, changePct };
+    }
+  } catch {
+    // Fall through to external feed
+  }
+
   const marketSymbol = mapToMarketSymbol(symbol);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(marketSymbol)}?interval=1d&range=2d`;
 

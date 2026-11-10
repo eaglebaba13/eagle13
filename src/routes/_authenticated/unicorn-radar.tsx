@@ -12,6 +12,7 @@ import {
   type UnicornSetup,
   type SMTDivergence,
 } from "@/lib/orderflow/unicorn.functions";
+import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
 import { getAudioNotificationManager } from "@/lib/audio-notifications";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 import {
@@ -147,6 +148,25 @@ function UnicornRadarPage() {
 
   const fetchUnicorn = useServerFn(getUnicornRadar);
   const fetchSMT = useServerFn(getSMTDivergence);
+
+  // Real-time Live SSE streaming ticks
+  const { state: niftySse } = useLiveCandleSSE("NIFTY50", 60000);
+  const { state: bankNiftySse } = useLiveCandleSSE("BANKNIFTY", 60000);
+  const { state: sensexSse } = useLiveCandleSSE("SENSEX", 60000);
+  const { state: goldSse } = useLiveCandleSSE("GC1!", 60000);
+
+  const livePrices = useMemo(() => {
+    const map = new Map<string, number>();
+    const n = niftySse.currentCandle?.close ?? niftySse.status?.lastLtp;
+    if (n && n > 0) map.set("NIFTY50", n);
+    const b = bankNiftySse.currentCandle?.close ?? bankNiftySse.status?.lastLtp;
+    if (b && b > 0) map.set("BANKNIFTY", b);
+    const s = sensexSse.currentCandle?.close ?? sensexSse.status?.lastLtp;
+    if (s && s > 0) map.set("SENSEX", s);
+    const g = goldSse.currentCandle?.close ?? goldSse.status?.lastLtp;
+    if (g && g > 0) map.set("GC1!", g);
+    return map;
+  }, [niftySse, bankNiftySse, sensexSse, goldSse]);
 
   const {
     data: setups = [],
@@ -392,6 +412,14 @@ function UnicornRadarPage() {
             const isBullish = activeSMT?.type === "BULLISH_SMT";
             const isBearish = activeSMT?.type === "BEARISH_SMT";
             const isDivergent = !!activeSMT;
+            const pairCurr =
+              pair.id === "GOLD_VS_SILVER"
+                ? "$"
+                : activeSMT?.asset1.currency ?? "₹";
+            const a1Price = livePrices.get(pair.asset1Symbol) ?? activeSMT?.asset1.swingBPrice;
+            const a2Price = livePrices.get(pair.asset2Symbol) ?? activeSMT?.asset2.swingBPrice;
+            const isA1Live = livePrices.has(pair.asset1Symbol);
+            const isA2Live = livePrices.has(pair.asset2Symbol);
 
             return (
               <div
@@ -399,9 +427,9 @@ function UnicornRadarPage() {
                 className={`rounded-xl border p-4 flex flex-col justify-between transition-all ${
                   isDivergent
                     ? isBullish
-                      ? "border-emerald-500/40 bg-zinc-900/80 shadow-[0_0_20px_rgba(16,185,129,0.12)] hover:border-emerald-500/60"
-                      : "border-rose-500/40 bg-zinc-900/80 shadow-[0_0_20px_rgba(244,63,94,0.12)] hover:border-rose-500/60"
-                    : "border-zinc-800/90 bg-zinc-900/40 hover:border-zinc-700"
+                    ? "border-emerald-500/40 bg-zinc-900/80 shadow-[0_0_20px_rgba(16,185,129,0.12)] hover:border-emerald-500/60"
+                    : "border-rose-500/40 bg-zinc-900/80 shadow-[0_0_20px_rgba(244,63,94,0.12)] hover:border-rose-500/60"
+                  : "border-zinc-800/90 bg-zinc-900/40 hover:border-zinc-700"
                 }`}
               >
                 <div>
@@ -439,8 +467,18 @@ function UnicornRadarPage() {
                     <div className="flex justify-between items-center text-zinc-300">
                       <span className="text-zinc-400">{pair.asset1Name}:</span>
                       {activeSMT ? (
-                        <span className="font-bold text-amber-300">
-                          {activeSMT.asset1.swingType} (₹{activeSMT.asset1.swingBPrice.toLocaleString()})
+                        <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                          <span>{activeSMT.asset1.swingType}</span>
+                          <span>
+                            ({pairCurr}
+                            {a1Price?.toLocaleString(undefined, { maximumFractionDigits: 2 })})
+                          </span>
+                          {isA1Live && (
+                            <span
+                              className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"
+                              title="Live WebSocket Stream"
+                            />
+                          )}
                         </span>
                       ) : (
                         <span className="text-zinc-500 font-medium">In Sync / Neutral</span>
@@ -449,8 +487,22 @@ function UnicornRadarPage() {
                     <div className="flex justify-between items-center text-zinc-300">
                       <span className="text-zinc-400">{pair.asset2Name}:</span>
                       {activeSMT ? (
-                        <span className={`font-bold ${isBullish ? "text-emerald-400" : "text-rose-400"}`}>
-                          {activeSMT.asset2.swingType} (₹{activeSMT.asset2.swingBPrice.toLocaleString()})
+                        <span
+                          className={`font-bold flex items-center gap-1.5 ${
+                            isBullish ? "text-emerald-400" : "text-rose-400"
+                          }`}
+                        >
+                          <span>{activeSMT.asset2.swingType}</span>
+                          <span>
+                            ({pairCurr}
+                            {a2Price?.toLocaleString(undefined, { maximumFractionDigits: 2 })})
+                          </span>
+                          {isA2Live && (
+                            <span
+                              className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"
+                              title="Live WebSocket Stream"
+                            />
+                          )}
                         </span>
                       ) : (
                         <span className="text-zinc-500 font-medium">In Sync / Neutral</span>
@@ -686,8 +738,12 @@ function UnicornRadarPage() {
               <tbody className="divide-y divide-zinc-800/60">
                 {filteredSetups.map((setup) => {
                   const isBullish = setup.direction === "BULLISH";
-                  const distPts = setup.currentPrice - setup.triggerZone.low;
-                  const distPct = ((setup.currentPrice - setup.triggerZone.low) / setup.currentPrice) * 100;
+                  const curr =
+                    setup.currency ?? (setup.category === "COMMODITY_CRYPTO" ? "$" : "₹");
+                  const liveLtp = livePrices.get(setup.symbol) ?? setup.currentPrice;
+                  const isLive = livePrices.has(setup.symbol);
+                  const distPts = liveLtp - setup.triggerZone.low;
+                  const distPct = ((liveLtp - setup.triggerZone.low) / liveLtp) * 100;
 
                   return (
                     <tr
@@ -707,8 +763,19 @@ function UnicornRadarPage() {
                         <div className="text-[11px] text-zinc-300 mt-0.5 truncate max-w-[180px]">
                           {setup.displayName}
                         </div>
-                        <div className="text-[10px] text-zinc-400 font-bold">
-                          LTP: ₹{setup.currentPrice.toLocaleString()}
+                        <div className="text-[10px] text-zinc-300 font-bold flex items-center gap-1.5 mt-0.5">
+                          <span>
+                            LTP: {curr}
+                            {liveLtp.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-mono border border-emerald-500/30">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full bg-emerald-400 ${
+                                isLive ? "animate-pulse" : ""
+                              }`}
+                            />
+                            LIVE
+                          </span>
                         </div>
                       </td>
 
@@ -738,8 +805,8 @@ function UnicornRadarPage() {
                         <div className="font-bold text-zinc-200">
                           {setup.sweepType}
                         </div>
-                        <div className="text-[11px] text-amber-400">
-                          @{setup.sweepLevel.toLocaleString()}
+                        <div className="text-[11px] text-amber-400 font-medium">
+                          @{curr}{setup.sweepLevel.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-zinc-500">
                           Wick Rejection Confirmed
@@ -749,17 +816,17 @@ function UnicornRadarPage() {
                       {/* 5. Displacement & MSS */}
                       <td className="py-3 px-3">
                         <div className="text-zinc-200">
-                          MSS: <strong className="text-amber-300">{setup.mssLevel.toLocaleString()}</strong>
+                          MSS: <strong className="text-amber-300">{curr}{setup.mssLevel.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
                         </div>
                         <div className="text-[10px] text-zinc-400 mt-0.5">
-                          Breaker: [{setup.breakerZone.low.toLocaleString()} – {setup.breakerZone.high.toLocaleString()}]
+                          Breaker: [{curr}{setup.breakerZone.low.toLocaleString(undefined, { maximumFractionDigits: 2 })} – {curr}{setup.breakerZone.high.toLocaleString(undefined, { maximumFractionDigits: 2 })}]
                         </div>
                       </td>
 
                       {/* 6. FVG / Trigger Zone */}
                       <td className="py-3 px-3">
                         <div className="text-amber-300 font-bold">
-                          {setup.triggerZone.low.toLocaleString()} – {setup.triggerZone.high.toLocaleString()}
+                          {curr}{setup.triggerZone.low.toLocaleString(undefined, { maximumFractionDigits: 2 })} – {curr}{setup.triggerZone.high.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-zinc-400 mt-0.5">
                           {distPts >= 0 ? `+${distPts.toFixed(1)} pts` : `${distPts.toFixed(1)} pts`} (
@@ -770,7 +837,7 @@ function UnicornRadarPage() {
                       {/* 7. Invalidation / Stop Loss */}
                       <td className="py-3 px-3">
                         <span className="text-rose-400 font-bold">
-                          {setup.invalidationSL.toLocaleString()}
+                          {curr}{setup.invalidationSL.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </span>
                         <div className="text-[10px] text-zinc-500">Structural Invalidation</div>
                       </td>
@@ -778,7 +845,7 @@ function UnicornRadarPage() {
                       {/* 8. Target (ERL) */}
                       <td className="py-3 px-3">
                         <span className="text-emerald-400 font-bold">
-                          {setup.targetPrice.toLocaleString()}
+                          {curr}{setup.targetPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </span>
                         <div className="text-[10px] text-zinc-400">
                           1:{setup.riskRewardRatio.toFixed(1)} RR · {setup.confidenceScore}% Confl
