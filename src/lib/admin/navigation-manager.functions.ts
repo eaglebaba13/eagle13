@@ -46,6 +46,7 @@ const ICON_NAME_BY_ID: Record<string, string> = {
   "live-terminal": "Radio",
   "live-market-terminal": "Activity",
   "live-chart": "BarChart3",
+  "unicorn-radar": "Radar",
   "level-terminal": "TrendingUp",
   decision: "Brain",
   backtest: "History",

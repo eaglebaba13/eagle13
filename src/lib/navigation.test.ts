@@ -58,6 +58,17 @@ describe("Phase 24B · navigation filtering (personal terminal)", () => {
     expect(d.length).toBeGreaterThan(0);
     expect(d).toContain("dashboard");
     expect(d).toContain("astro-levels");
+    expect(d).toContain("unicorn-radar");
+  });
+
+  it("registers unicorn-radar standalone route in CORE section with LIVE status", () => {
+    const unicorn = NAV_REGISTRY.find((n) => n.id === "unicorn-radar");
+    expect(unicorn).toBeDefined();
+    expect(unicorn?.to).toBe("/unicorn-radar");
+    expect(unicorn?.status).toBe("LIVE");
+    expect(unicorn?.section).toBe("CORE");
+    expect(unicorn?.order).toBe(42);
+    expect(unicorn?.badge).toBe("LIVE");
   });
 
   it("resolveMobileDrawerNav returns all mobile-visible items", () => {

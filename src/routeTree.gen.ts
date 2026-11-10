@@ -45,6 +45,7 @@ import { Route as DevAstroAuditRouteImport } from './routes/dev.astro-audit'
 import { Route as CryptoPairRouteImport } from './routes/crypto.$pair'
 import { Route as ApiLiveCandlesRouteImport } from './routes/api/live-candles'
 import { Route as ApiFiiDiiRouteImport } from './routes/api/fii-dii'
+import { Route as AuthenticatedUnicornRadarRouteImport } from './routes/_authenticated/unicorn-radar'
 import { Route as AuthenticatedTelegramLogRouteImport } from './routes/_authenticated/telegram-log'
 import { Route as AuthenticatedStrategyAnalyticsRouteImport } from './routes/_authenticated/strategy-analytics'
 import { Route as AuthenticatedSignalHistoryRouteImport } from './routes/_authenticated/signal-history'
@@ -273,6 +274,12 @@ const ApiFiiDiiRoute = ApiFiiDiiRouteImport.update({
   path: '/api/fii-dii',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedUnicornRadarRoute =
+  AuthenticatedUnicornRadarRouteImport.update({
+    id: '/unicorn-radar',
+    path: '/unicorn-radar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTelegramLogRoute =
   AuthenticatedTelegramLogRouteImport.update({
     id: '/telegram-log',
@@ -594,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/unicorn-radar': typeof AuthenticatedUnicornRadarRoute
   '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
@@ -678,6 +686,7 @@ export interface FileRoutesByTo {
   '/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/unicorn-radar': typeof AuthenticatedUnicornRadarRoute
   '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
@@ -764,6 +773,7 @@ export interface FileRoutesById {
   '/_authenticated/signal-history': typeof AuthenticatedSignalHistoryRoute
   '/_authenticated/strategy-analytics': typeof AuthenticatedStrategyAnalyticsRoute
   '/_authenticated/telegram-log': typeof AuthenticatedTelegramLogRoute
+  '/_authenticated/unicorn-radar': typeof AuthenticatedUnicornRadarRoute
   '/api/fii-dii': typeof ApiFiiDiiRoute
   '/api/live-candles': typeof ApiLiveCandlesRoute
   '/crypto/$pair': typeof CryptoPairRoute
@@ -850,6 +860,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/unicorn-radar'
     | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
@@ -934,6 +945,7 @@ export interface FileRouteTypes {
     | '/signal-history'
     | '/strategy-analytics'
     | '/telegram-log'
+    | '/unicorn-radar'
     | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
@@ -1019,6 +1031,7 @@ export interface FileRouteTypes {
     | '/_authenticated/signal-history'
     | '/_authenticated/strategy-analytics'
     | '/_authenticated/telegram-log'
+    | '/_authenticated/unicorn-radar'
     | '/api/fii-dii'
     | '/api/live-candles'
     | '/crypto/$pair'
@@ -1349,6 +1362,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/fii-dii'
       preLoaderRoute: typeof ApiFiiDiiRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/unicorn-radar': {
+      id: '/_authenticated/unicorn-radar'
+      path: '/unicorn-radar'
+      fullPath: '/unicorn-radar'
+      preLoaderRoute: typeof AuthenticatedUnicornRadarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/telegram-log': {
       id: '/_authenticated/telegram-log'
@@ -1740,6 +1760,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSignalHistoryRoute: typeof AuthenticatedSignalHistoryRoute
   AuthenticatedStrategyAnalyticsRoute: typeof AuthenticatedStrategyAnalyticsRoute
   AuthenticatedTelegramLogRoute: typeof AuthenticatedTelegramLogRoute
+  AuthenticatedUnicornRadarRoute: typeof AuthenticatedUnicornRadarRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBetaReadinessRoute: typeof AuthenticatedAdminBetaReadinessRoute
   AuthenticatedAdminCoindcxRoute: typeof AuthenticatedAdminCoindcxRoute
@@ -1784,6 +1805,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSignalHistoryRoute: AuthenticatedSignalHistoryRoute,
   AuthenticatedStrategyAnalyticsRoute: AuthenticatedStrategyAnalyticsRoute,
   AuthenticatedTelegramLogRoute: AuthenticatedTelegramLogRoute,
+  AuthenticatedUnicornRadarRoute: AuthenticatedUnicornRadarRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBetaReadinessRoute: AuthenticatedAdminBetaReadinessRoute,
   AuthenticatedAdminCoindcxRoute: AuthenticatedAdminCoindcxRoute,

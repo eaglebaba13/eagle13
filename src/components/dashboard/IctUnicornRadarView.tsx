@@ -70,13 +70,22 @@ export function IctUnicornRadarView({
             Liquidity Sweeps · Displacement MSS · Breaker Blocks · FVG Discount/Premium Retests · SMT Divergence
           </p>
         </div>
-        <Link
-          to="/live-chart"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-mono font-semibold transition-all shrink-0 self-start sm:self-auto shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-        >
-          <span>Open Live Chart</span>
-          <ArrowUpRight size={14} />
-        </Link>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            to="/unicorn-radar"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold border border-amber-400 text-xs font-mono transition-all shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+          >
+            <span>Open Standalone Radar</span>
+            <ExternalLink size={13} />
+          </Link>
+          <Link
+            to="/live-chart"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-mono font-semibold transition-all shrink-0"
+          >
+            <span>Live Chart</span>
+            <ArrowUpRight size={14} />
+          </Link>
+        </div>
       </div>
 
       {/* 1. SMT Divergence Correlation Monitor */}

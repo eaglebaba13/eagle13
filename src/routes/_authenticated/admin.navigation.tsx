@@ -42,6 +42,7 @@ import {
   Sliders,
   Send,
   ShieldCheck,
+  Radar,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/navigation")({
@@ -68,6 +69,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
   Sliders,
   Send,
   ShieldCheck,
+  Radar,
   Menu,
 };
 

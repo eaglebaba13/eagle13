@@ -108,7 +108,16 @@ interface ChartCandle {
 }
 
 function LiveChartPage() {
-  const [symbol, setSymbol] = useState<string>("NIFTY50");
+  const initialSymbol = useMemo(() => {
+    if (typeof window === "undefined") return "NIFTY50";
+    const querySym = new URLSearchParams(window.location.search).get("symbol");
+    if (!querySym) return "NIFTY50";
+    const found = SYMBOLS.find(
+      (s) => s.key.toLowerCase() === querySym.toLowerCase() || s.key === querySym,
+    );
+    return found ? found.key : querySym;
+  }, []);
+  const [symbol, setSymbol] = useState<string>(initialSymbol);
   const [intervalMs, setIntervalMs] = useState<number>(60_000);
   return (
     <LiveChartSelection
