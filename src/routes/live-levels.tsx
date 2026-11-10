@@ -112,9 +112,10 @@ export const Route = createFileRoute("/live-levels")({
 
 // Tolerance scales with instrument price so gold/silver/btc get sensible bands.
 function tolFor(price: number): number {
-  if (price >= 20000) return Math.max(50, price * 0.0015); // BTC
-  if (price >= 2000) return 8; // gold / bank nifty
-  if (price >= 100) return 5; // silver-ish
+  if (price >= 20000) return Math.max(50, price * 0.0015); // BTC (~$100 on $72k)
+  if (price >= 2000) return 8; // Gold (~$4,030) / Bank Nifty / Nifty
+  if (price >= 20 && price < 100) return Math.round(price * 0.007 * 100) / 100; // COMEX Silver (~$0.35 on $51.30)
+  if (price >= 100) return 5; // Mid-priced equities/commodities
   return 2;
 }
 

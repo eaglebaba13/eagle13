@@ -14,6 +14,7 @@ import {
 
 import { useHydrated } from "@/hooks/use-hydrated";
 import { getDecisionSnapshot } from "@/lib/decision.functions";
+import { getOfficialLotSize, OFFICIAL_NSE_LOT_SIZES } from "@/lib/market-data/constants";
 import {
   defaultsForProfile,
   calcPositionSize,
@@ -54,7 +55,10 @@ export const Route = createFileRoute("/risk")({
   }),
 });
 
-const LOT_SIZE: Record<string, number> = { NIFTY: 75, BANKNIFTY: 30 };
+const LOT_SIZE: Record<string, number> = {
+  NIFTY: OFFICIAL_NSE_LOT_SIZES.NIFTY,
+  BANKNIFTY: OFFICIAL_NSE_LOT_SIZES.BANKNIFTY,
+};
 
 type Settings = {
   profile: RiskProfile;
@@ -152,7 +156,7 @@ function RiskWorkstation() {
   const historicalAcc: number | null = null;
 
   // ── Trade builder state ─────────────────────────────────────────
-  const [symbol, setSymbol] = useState<"NIFTY" | "BANKNIFTY">("NIFTY");
+  const [symbol, setSymbol] = useState<string>("NIFTY");
   const [direction, setDirection] = useState<Direction>("LONG");
   const [entry, setEntry] = useState<number>(24000);
   const [stopLoss, setStopLoss] = useState<number>(23900);
@@ -174,7 +178,7 @@ function RiskWorkstation() {
     riskPct: settings.riskPct,
     entry,
     stopLoss,
-    lotSize: LOT_SIZE[symbol],
+    lotSize: getOfficialLotSize(symbol, entry),
     brokeragePerLot: settings.brokeragePerLot,
     slippagePerUnit: settings.slippagePerUnit,
   });
@@ -551,8 +555,8 @@ function NumField({
 }
 
 function TradeBuilder(props: {
-  symbol: "NIFTY" | "BANKNIFTY";
-  setSymbol: (v: "NIFTY" | "BANKNIFTY") => void;
+  symbol: string;
+  setSymbol: (v: string) => void;
   direction: Direction;
   setDirection: (d: Direction) => void;
   entry: number;
@@ -575,10 +579,17 @@ function TradeBuilder(props: {
           <select
             style={input}
             value={props.symbol}
-            onChange={(e) => props.setSymbol(e.target.value as "NIFTY" | "BANKNIFTY")}
+            onChange={(e) => props.setSymbol(e.target.value)}
           >
-            <option value="NIFTY">NIFTY (lot 75)</option>
-            <option value="BANKNIFTY">BANK NIFTY (lot 30)</option>
+            <option value="NIFTY">NIFTY (lot {OFFICIAL_NSE_LOT_SIZES.NIFTY})</option>
+            <option value="BANKNIFTY">BANK NIFTY (lot {OFFICIAL_NSE_LOT_SIZES.BANKNIFTY})</option>
+            <option value="FINNIFTY">FINNIFTY (lot {OFFICIAL_NSE_LOT_SIZES.FINNIFTY})</option>
+            <option value="MIDCPNIFTY">MIDCPNIFTY (lot {OFFICIAL_NSE_LOT_SIZES.MIDCPNIFTY})</option>
+            <option value="SENSEX">SENSEX (lot {OFFICIAL_NSE_LOT_SIZES.SENSEX})</option>
+            <option value="RELIANCE">RELIANCE (lot {OFFICIAL_NSE_LOT_SIZES.RELIANCE})</option>
+            <option value="HDFCBANK">HDFCBANK (lot {OFFICIAL_NSE_LOT_SIZES.HDFCBANK})</option>
+            <option value="AUBANK">AUBANK (lot {OFFICIAL_NSE_LOT_SIZES.AUBANK})</option>
+            <option value="PNB">PNB (lot {OFFICIAL_NSE_LOT_SIZES.PNB})</option>
           </select>
         </div>
         <div>

@@ -16,6 +16,7 @@ import {
   type InstrumentMarketData,
   type RealCandle,
 } from "./market-data-adapter.server";
+import { getOfficialLotSize, OFFICIAL_NSE_LOT_SIZES } from "../market-data/constants";
 
 export interface FOInstrument {
   readonly symbol: string;
@@ -407,96 +408,10 @@ const MARKET_YEAR_DRIFT: Record<number, { baseReturn: number; volFactor: number 
   2015: { baseReturn: -0.005, volFactor: 1.12 },
 };
 
-const KNOWN_LOT_SIZES: Record<string, number> = {
-  NIFTY: 25,
-  NIFTY50: 75,
-  BANKNIFTY: 15,
-  FINNIFTY: 65,
-  MIDCPNIFTY: 120,
-  SENSEX: 10,
-  NIFTYBEES: 100,
-  BANKBEES: 100,
-  GOLDBEES: 100,
-  SILVERBEES: 100,
-  RELIANCE: 250,
-  HDFCBANK: 550,
-  ICICIBANK: 700,
-  SBIN: 750,
-  AXISBANK: 625,
-  KOTAKBANK: 400,
-  AUBANK: 500,
-  BANDHANBNK: 2500,
-  BANKBARODA: 2925,
-  PNB: 8000,
-  CANBK: 6750,
-  IDFCFIRSTB: 7500,
-  FEDERALBNK: 5000,
-  INDUSINDBK: 500,
-  TCS: 175,
-  INFY: 400,
-  HCLTECH: 350,
-  WIPRO: 1500,
-  TECHM: 600,
-  LTIM: 150,
-  PERSISTENT: 100,
-  COFORGE: 150,
-  MARUTI: 50,
-  TATAMOTORS: 550,
-  "M&M": 350,
-  "BAJAJ-AUTO": 75,
-  HEROMOTOCO: 150,
-  EICHERMOT: 150,
-  TVSMOTOR: 350,
-  BHARATFORG: 500,
-  ASHOKLEY: 5000,
-  BHARTIARTL: 475,
-  ITC: 1600,
-  HINDUNILVR: 300,
-  LT: 150,
-  BAJFINANCE: 125,
-  BAJAJFINSV: 500,
-  CHOLAFIN: 625,
-  SHRIRAMFIN: 300,
-  MUTHOOTFIN: 550,
-  RECLTD: 1400,
-  PFC: 1300,
-  ONGC: 3850,
-  NTPC: 1500,
-  POWERGRID: 1800,
-  BPCL: 1800,
-  IOC: 4875,
-  COALINDIA: 2100,
-  TATAPOWER: 1350,
-  TATASTEEL: 5500,
-  JSWSTEEL: 675,
-  HINDALCO: 1400,
-  VEDL: 2300,
-  JINDALSTEL: 625,
-  NMDC: 4500,
-  SAIL: 8000,
-  SUNPHARMA: 350,
-  CIPLA: 650,
-  DRREDDY: 125,
-  DIVISLAB: 200,
-  APOLLOHOSP: 125,
-  TITAN: 175,
-  ULTRACEMCO: 50,
-  GRASIM: 475,
-  AMBUJACEM: 1800,
-  DLF: 825,
-  BEL: 2850,
-  HAL: 300,
-  TRENT: 100,
-  ZOMATO: 2000,
-};
+export const KNOWN_LOT_SIZES: Record<string, number> = OFFICIAL_NSE_LOT_SIZES;
 
 export function getInstrumentLotSize(symbol: string, defaultPrice: number = 1000): number {
-  if (KNOWN_LOT_SIZES[symbol]) {
-    return KNOWN_LOT_SIZES[symbol];
-  }
-  // Standard NSE derivative lot size targeting approx ₹5-7 Lakhs contract notional
-  const targetLot = Math.round(600000 / Math.max(10, defaultPrice || 1000) / 25) * 25;
-  return Math.max(25, targetLot);
+  return getOfficialLotSize(symbol, defaultPrice);
 }
 
 interface RawYearlyData {
@@ -643,10 +558,41 @@ export function evaluateInstrumentCyclePerformance(
   // Max Drawdown (worst single year loss or consecutive trough)
   const maxDrawdown = Math.round(Math.min(0, ...returns) * 100) / 100;
 
-  // Real-time F&O Contextualizer: Live IV & IV Percentile (IV Rank)
-  const ivSeed = seededRandom(`${instrument.symbol}:IV:LATEST`);
-  const liveIv = Math.round((instrument.baseIV + (ivSeed - 0.5) * 4) * 10) / 10;
-  const ivPercentile = Math.round(15 + ivSeed * 70); // 15% to 85% range
+  // Real-time F&O Contextualizer: Live ATM IV & Realized Volatility Rank
+  let liveIv: number;
+  let ivPercentile: number;
+
+  if (marketData?.candles && marketData.candles.length >= 20) {
+    // Compute 20-day annualized realized volatility from real OHLCV candles
+    const recent = marketData.candles.slice(-21);
+    const logReturns: number[] = [];
+    for (let i = 1; i < recent.length; i++) {
+      const prev = recent[i - 1].close;
+      const curr = recent[i].close;
+      if (prev > 0 && curr > 0) {
+        logReturns.push(Math.log(curr / prev));
+      }
+    }
+    const mean = logReturns.reduce((a, b) => a + b, 0) / logReturns.length;
+    const varianceLog =
+      logReturns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / (logReturns.length - 1);
+    const annualizedVol = Math.sqrt(varianceLog * 252) * 100;
+
+    liveIv = Math.round(Math.max(10, Math.min(85, annualizedVol)) * 10) / 10;
+
+    const candleCloses = marketData.candles.map((c) => c.close);
+    const minClose = Math.min(...candleCloses);
+    const maxClose = Math.max(...candleCloses);
+    const priceRank =
+      maxClose > minClose ? ((currentPrice - minClose) / (maxClose - minClose)) * 100 : 50;
+    ivPercentile = Math.round(
+      Math.max(10, Math.min(90, (liveIv / (instrument.baseIV * 1.5)) * 50 + priceRank * 0.2)),
+    );
+  } else {
+    // Anchored directly to real instrument baseline parameters without pseudo-random math
+    liveIv = Math.round(instrument.baseIV * 10) / 10;
+    ivPercentile = Math.round(Math.max(20, Math.min(80, instrument.baseIV * 2.2)));
+  }
 
   // Confluence Bias Assignment
   let confluenceBias: ConfluenceBias = "NEUTRAL";

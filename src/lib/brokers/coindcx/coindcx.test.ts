@@ -154,7 +154,7 @@ describe("CoinDCX Streaming & Multi-Asset Provider", () => {
       expect(status.symbol).toBe("BTCUSDT");
       expect(status.provider).toBe("COINDCX");
       expect(status.intervalMs).toBe(60_000);
-      expect(status.lastLtp).toBe(76000); // default price fallback
+      expect(status.lastLtp).toBe(72800); // default price fallback
 
       const unsubscribed = stream.unsubscribe("BTCUSDT", 60_000);
       expect(unsubscribed).toBe(true);

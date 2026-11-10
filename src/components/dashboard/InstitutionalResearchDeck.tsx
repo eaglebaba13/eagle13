@@ -70,43 +70,13 @@ export function InstitutionalResearchDeck({
   const currentInstrument = INSTRUMENTS.find((i) => i.id === selectedSymbol) ?? INSTRUMENTS[0];
   const spotPrice = livePrice != null && selectedSymbol === activeSymbol ? livePrice : currentInstrument.defaultPrice;
 
-  // Generate synthetic candles if real candle stream is not yet hydrated
+  // Hydrate Volume Profile strictly from real candle stream (never fabricate fake candles)
   const effectiveCandles: readonly OrderFlowCandle[] = useMemo(() => {
-    if (candles && candles.length > 5 && selectedSymbol === activeSymbol) {
+    if (candles && candles.length > 0 && selectedSymbol === activeSymbol) {
       return candles;
     }
-
-    // High-fidelity fallback intraday session candles (09:15 to current)
-    const seed: OrderFlowCandle[] = [];
-    const basePrice = currentInstrument.defaultPrice;
-    const now = Date.now();
-    const tick = currentInstrument.tickSize;
-
-    // Simulate 45 5-minute intraday candles
-    let currentOpen = basePrice - tick * 12;
-    for (let i = 0; i < 45; i++) {
-      const isTopCluster = i > 25;
-      const drift = isTopCluster ? tick * 0.8 : tick * 0.2;
-      const open = currentOpen;
-      const high = open + Math.abs(Math.sin(i * 0.4)) * tick * 4 + tick;
-      const low = open - Math.abs(Math.cos(i * 0.3)) * tick * 3;
-      const close = (open + high + low) / 3;
-      currentOpen = close + drift;
-
-      // Heavy volume at the highs to demonstrate P-shape/acceptance
-      const volume = isTopCluster ? 8500 + (i % 5) * 1200 : 1800 + (i % 7) * 400;
-
-      seed.push({
-        time: now - (45 - i) * 300_000,
-        open: Math.round(open * 100) / 100,
-        high: Math.round(high * 100) / 100,
-        low: Math.round(low * 100) / 100,
-        close: Math.round(close * 100) / 100,
-        volume,
-      });
-    }
-    return seed;
-  }, [candles, selectedSymbol, activeSymbol, currentInstrument]);
+    return [];
+  }, [candles, selectedSymbol, activeSymbol]);
 
   // Compute Volume Profile (FRVP)
   const profile: VolumeProfileResult = useMemo(() => {

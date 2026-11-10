@@ -43,7 +43,7 @@ export const COINDCX_PAIRS: Readonly<Record<string, CoindcxPairMeta>> = {
     channelName: "B-BTC_USDT@trades",
     baseAsset: "BTC",
     quoteAsset: "USDT",
-    defaultPrice: 76000,
+    defaultPrice: 72800,
   },
   BTCINR: {
     canonicalSymbol: "BTCINR",
@@ -83,7 +83,7 @@ export const COINDCX_PAIRS: Readonly<Record<string, CoindcxPairMeta>> = {
     channelName: "B-PAXG_USDT@trades",
     baseAsset: "PAXG",
     quoteAsset: "USDT",
-    defaultPrice: 2740,
+    defaultPrice: 4030,
   },
   XAGUSDT: {
     canonicalSymbol: "XAGUSDT",
@@ -91,7 +91,7 @@ export const COINDCX_PAIRS: Readonly<Record<string, CoindcxPairMeta>> = {
     channelName: "B-KAG_USDT@trades",
     baseAsset: "KAG",
     quoteAsset: "USDT",
-    defaultPrice: 31.8,
+    defaultPrice: 51.3,
   },
 } as const;
 

@@ -83,7 +83,7 @@ describe("ChronoWheel Algorithmic Trade Execution Engine", () => {
   it("maps correct F&O lot sizes for standard instruments", () => {
     expect(getInstrumentLotSize("NIFTY")).toBe(25);
     expect(getInstrumentLotSize("BANKNIFTY")).toBe(15);
-    expect(getInstrumentLotSize("RELIANCE")).toBe(250);
+    expect(getInstrumentLotSize("RELIANCE")).toBe(500);
     expect(getInstrumentLotSize("HDFCBANK")).toBe(550);
     expect(getInstrumentLotSize("TCS")).toBe(175);
     expect(getInstrumentLotSize("AUBANK")).toBe(500); // Official NSE F&O contract lot size
@@ -183,7 +183,7 @@ describe("ChronoWheel Algorithmic Trade Execution Engine", () => {
     }
 
     expect(plan.riskRewardRatio).toBe("1 : 2.5");
-    expect(plan.lotSize).toBe(250);
+    expect(plan.lotSize).toBe(500);
     expect(plan.capitalRequirementPerLot).toBeGreaterThan(0);
   });
 

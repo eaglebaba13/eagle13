@@ -37,7 +37,9 @@ export function intervalMsToCoindcxInterval(intervalMs: number): {
   return { fetchInterval: "1d", targetIntervalMs: 86_400_000, shouldAggregate: false };
 }
 
-function generateSyntheticCryptoSeed(
+const COINDCX_CANDLE_CACHE = new Map<string, readonly HistoricalCandleItem[]>();
+
+function generateBaselineCandles(
   symbol: string,
   intervalMs: number,
   basePrice: number,
@@ -47,27 +49,13 @@ function generateSyntheticCryptoSeed(
   const alignedNow = Math.floor(now / intervalMs) * intervalMs;
   const series: HistoricalCandleItem[] = [];
 
-  let current = basePrice;
-  const isHighValue = basePrice > 10000;
-  const volatility = isHighValue ? 150 : basePrice > 100 ? 5 : basePrice > 10 ? 0.2 : 0.02;
-
   for (let i = count - 1; i >= 0; i--) {
     const time = alignedNow - i * intervalMs;
-    const delta1 = (Math.sin(i * 0.4) + Math.cos(i * 0.15)) * volatility;
-    const delta2 = (Math.cos(i * 0.3) - Math.sin(i * 0.25)) * (volatility * 0.5);
-
-    const open = Math.round((current + delta1) * 100) / 100;
-    const close = Math.round((open + delta2) * 100) / 100;
-    const high = Math.round((Math.max(open, close) + Math.abs(delta1) * 0.4) * 100) / 100;
-    const low = Math.round((Math.min(open, close) - Math.abs(delta2) * 0.4) * 100) / 100;
-    const volume = Math.round(50 + Math.abs(Math.sin(i * 0.7)) * 250);
-
     series.push({
       x: time,
-      y: [open, high, low, close],
-      volume,
+      y: [basePrice, basePrice, basePrice, basePrice],
+      volume: 0,
     });
-    current = close;
   }
   return series;
 }
@@ -83,9 +71,13 @@ export async function fetchCoindcxHistoricalCandles(input: {
     return [];
   }
 
-  // If pair has no active orderbook on CoinDCX (e.g. XAGUSDT), synthesize realistic spot seed
+  const cacheKey = `${pairMeta.canonicalSymbol}:${input.intervalMs}`;
+
+  // If pair has no active orderbook on CoinDCX (e.g. XAGUSDT), serve cached or calibrated spot baseline
   if (pairMeta.canonicalSymbol === "XAGUSDT") {
-    return generateSyntheticCryptoSeed("XAGUSDT", input.intervalMs, pairMeta.defaultPrice, 50);
+    const cached = COINDCX_CANDLE_CACHE.get(cacheKey);
+    if (cached && cached.length > 0) return cached;
+    return generateBaselineCandles("XAGUSDT", input.intervalMs, pairMeta.defaultPrice, 50);
   }
 
   const { fetchInterval, targetIntervalMs, shouldAggregate } = intervalMsToCoindcxInterval(
@@ -105,7 +97,9 @@ export async function fetchCoindcxHistoricalCandles(input: {
     });
 
     if (!res.ok) {
-      return generateSyntheticCryptoSeed(
+      const cached = COINDCX_CANDLE_CACHE.get(cacheKey);
+      if (cached && cached.length > 0) return cached;
+      return generateBaselineCandles(
         pairMeta.canonicalSymbol,
         input.intervalMs,
         pairMeta.defaultPrice,
@@ -115,7 +109,9 @@ export async function fetchCoindcxHistoricalCandles(input: {
 
     const raw = await res.json();
     if (!Array.isArray(raw) || raw.length === 0) {
-      return generateSyntheticCryptoSeed(
+      const cached = COINDCX_CANDLE_CACHE.get(cacheKey);
+      if (cached && cached.length > 0) return cached;
+      return generateBaselineCandles(
         pairMeta.canonicalSymbol,
         input.intervalMs,
         pairMeta.defaultPrice,
@@ -165,13 +161,17 @@ export async function fetchCoindcxHistoricalCandles(input: {
     parsed.sort((a, b) => a.time - b.time);
 
     if (parsed.length === 0) {
-      return generateSyntheticCryptoSeed(
+      const cached = COINDCX_CANDLE_CACHE.get(cacheKey);
+      if (cached && cached.length > 0) return cached;
+      return generateBaselineCandles(
         pairMeta.canonicalSymbol,
         input.intervalMs,
         pairMeta.defaultPrice,
         50,
       );
     }
+
+    let finalSeries: HistoricalCandleItem[];
 
     // If aggregation is needed (e.g. 1m -> 3m or 5m)
     if (shouldAggregate) {
@@ -209,16 +209,23 @@ export async function fetchCoindcxHistoricalCandles(input: {
         });
       }
       aggregated.sort((a, b) => a.x - b.x);
-      return aggregated;
+      finalSeries = aggregated;
+    } else {
+      finalSeries = parsed.map((p) => ({
+        x: p.time,
+        y: [p.open, p.high, p.low, p.close],
+        volume: p.volume,
+      }));
     }
 
-    return parsed.map((p) => ({
-      x: p.time,
-      y: [p.open, p.high, p.low, p.close],
-      volume: p.volume,
-    }));
+    if (finalSeries.length > 0) {
+      COINDCX_CANDLE_CACHE.set(cacheKey, finalSeries);
+    }
+    return finalSeries;
   } catch {
-    return generateSyntheticCryptoSeed(
+    const cached = COINDCX_CANDLE_CACHE.get(cacheKey);
+    if (cached && cached.length > 0) return cached;
+    return generateBaselineCandles(
       pairMeta.canonicalSymbol,
       input.intervalMs,
       pairMeta.defaultPrice,

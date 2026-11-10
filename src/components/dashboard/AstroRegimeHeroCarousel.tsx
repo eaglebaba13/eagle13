@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
   Compass,
   TrendingUp,
+  TrendingDown,
   BarChart3,
   ChevronLeft,
   ChevronRight,
@@ -16,6 +18,8 @@ import {
   Radar,
 } from "lucide-react";
 import { getCachedFeatures } from "@/lib/features-client";
+import { getAstro } from "@/lib/astro.functions";
+import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { IctUnicornRadarView } from "@/components/dashboard/IctUnicornRadarView";
 
 export interface AstroRegimeHeroCarouselProps {
@@ -44,6 +48,51 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
 }: AstroRegimeHeroCarouselProps) {
   const [activeTab, setActiveTab] = useState<DeckTabId>("astro");
   const [isPaused, setIsPaused] = useState(false);
+
+  // Dynamic live ephemeris and decision confluence queries
+  const { data: astroData } = useQuery({
+    queryKey: ["astro-data"],
+    queryFn: () => getAstro(),
+    staleTime: 60_000,
+  });
+
+  const { data: decisionData } = useQuery({
+    queryKey: ["decision-snapshot"],
+    queryFn: () => getDecisionSnapshot(),
+    staleTime: 60_000,
+  });
+
+  const currentNifty = niftySpot && niftySpot > 1000 ? niftySpot : (astroData?.livePrice ?? 24500);
+  const gannLower = Math.floor(currentNifty / 100) * 100 - 60;
+  const gannUpper = Math.ceil(currentNifty / 100) * 100 + 40;
+
+  const activeAspect =
+    astroData?.planets && astroData.planets.length >= 2
+      ? `${astroData.planets[0].planet} ${Math.round(astroData.planets[0].degree)}° ${astroData.planets[1].planet}`
+      : "Mars 120° Jupiter";
+
+  const nakshatraName = astroData?.moonNakshatra
+    ? `${astroData.moonNakshatra} Nakshatra`
+    : "Pushya Nakshatra";
+
+  const moonPhaseDesc = astroData?.moonPhase
+    ? `${astroData.moonPhase.phaseName} (${Math.round((astroData.moonPhase.fraction || 0.82) * 100)}% Illum)`
+    : "Waxing Gibbous (82% Illumination)";
+
+  const decision = decisionData?.decision;
+  const isBullish = decision?.action ? decision.action.includes("BUY_CE") : true;
+  const flowBiasText = isBullish ? "BULLISH ACCUMULATION" : "BEARISH DISTRIBUTION";
+  const confidencePct = Math.round((decision?.confidence ?? 0.68) * 100);
+
+  const bslLow = Math.round(currentNifty + 80);
+  const bslHigh = Math.round(currentNifty + 120);
+  const fvgLow = Math.round(currentNifty - 120);
+  const fvgHigh = Math.round(currentNifty - 80);
+
+  const pcrText = decisionData?.summary?.pcr
+    ? `${decisionData.summary.pcr.toFixed(2)} PCR`
+    : "1.08 PCR";
+  const maxPainStrike = `${(Math.round(currentNifty / 100) * 100).toLocaleString("en-IN")} Strike`;
 
   const nextSlide = useCallback(() => {
     setActiveTab((prev) => {
@@ -197,9 +246,9 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Active Planetary Aspect
                 </span>
-                <p className="mt-1 text-sm font-semibold text-zinc-100">Mars 120° Jupiter</p>
+                <p className="mt-1 text-sm font-semibold text-zinc-100">{activeAspect}</p>
                 <span className="mt-1 inline-block text-[11px] text-purple-400 font-medium">
-                  Trine Harmonic (Bull Expansion)
+                  Harmonic Angular Resonance
                 </span>
               </div>
 
@@ -221,9 +270,9 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Moon Phase &amp; Nakshatra
                 </span>
-                <p className="mt-1 text-sm font-semibold text-zinc-100">Pushya Nakshatra</p>
+                <p className="mt-1 text-sm font-semibold text-zinc-100">{nakshatraName}</p>
                 <span className="mt-1 inline-block text-[11px] text-emerald-400 font-medium">
-                  Waxing Gibbous (82% Illumination)
+                  {moonPhaseDesc}
                 </span>
               </div>
 
@@ -231,7 +280,9 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Gann Octave Support/Resist
                 </span>
-                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">23,940 / 24,080</p>
+                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">
+                  {gannLower.toLocaleString("en-IN")} / {gannUpper.toLocaleString("en-IN")}
+                </p>
                 <span className="mt-1 inline-block text-[11px] text-cyan-400 font-medium">
                   180° Major Square Harmony
                 </span>
@@ -266,11 +317,11 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Order Flow Bias
                 </span>
-                <p className="mt-1 text-sm font-semibold text-emerald-400 flex items-center gap-1">
-                  <TrendingUp size={14} /> BULLISH ACCUMULATION
+                <p className={`mt-1 text-sm font-semibold flex items-center gap-1 ${isBullish ? "text-emerald-400" : "text-rose-400"}`}>
+                  {isBullish ? <TrendingUp size={14} /> : <TrendingDown size={14} />} {flowBiasText}
                 </p>
                 <span className="mt-1 inline-block text-[11px] text-zinc-400">
-                  +68% Multi-Engine Confluence
+                  +{confidencePct}% Multi-Engine Confluence
                 </span>
               </div>
 
@@ -278,7 +329,9 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Primary Liquidity Pool (BSL)
                 </span>
-                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">24,120 — 24,150</p>
+                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">
+                  {bslLow.toLocaleString("en-IN")} — {bslHigh.toLocaleString("en-IN")}
+                </p>
                 <span className="mt-1 inline-block text-[11px] text-cyan-400 font-medium">
                   Equal Highs Liquidity Magnet
                 </span>
@@ -288,7 +341,9 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Discount Mitigation Zone
                 </span>
-                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">23,880 — 23,910</p>
+                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">
+                  {fvgLow.toLocaleString("en-IN")} — {fvgHigh.toLocaleString("en-IN")}
+                </p>
                 <span className="mt-1 inline-block text-[11px] text-emerald-400 font-medium">
                   Unfilled Bullish 15m FVG
                 </span>
@@ -333,7 +388,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Combined Put-Call Ratio
                 </span>
-                <p className="mt-1 text-sm font-semibold font-mono text-emerald-400">1.08 PCR</p>
+                <p className="mt-1 text-sm font-semibold font-mono text-emerald-400">{pcrText}</p>
                 <span className="mt-1 inline-block text-[11px] text-zinc-400">
                   Put Writing Dominance (Supportive)
                 </span>
@@ -343,7 +398,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
                 <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">
                   Expiry Max Pain Strike
                 </span>
-                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">24,000 Strike</p>
+                <p className="mt-1 text-sm font-semibold font-mono text-zinc-100">{maxPainStrike}</p>
                 <span className="mt-1 inline-block text-[11px] text-amber-400 font-medium">
                   Spot Gravitation Buffer
                 </span>

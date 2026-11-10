@@ -9,7 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getMarketData } from "../market.functions";
 import { computeCombinedPcr } from "../combined-pcr/combined-pcr";
 import { DEFAULT_COMBINED_PCR_WEIGHTS } from "../combined-pcr/types";
-import { buildMockBreadthBundle } from "../market-breadth/mock-provider";
+import { getRealBreadthBundle } from "../market-breadth/real-breadth-engine.server";
 import { evaluateVixRegime } from "../market-breadth/vix-regime";
 import { adaptPcrConfirmation } from "../market-breadth/pcr-confirmation";
 import { classifyGti } from "../market-breadth/gti-classifier";
@@ -133,7 +133,7 @@ export const getGtiSummary = createServerFn({ method: "POST" }).handler(
     }
 
     // ── 3. Breadth + VIX regime + GTI classify ───────────────
-    const bundle = buildMockBreadthBundle({ scenario: "MIXED" });
+    const bundle = await getRealBreadthBundle();
     const vix = evaluateVixRegime({
       currentVix: vixValue,
       previousVix: null,

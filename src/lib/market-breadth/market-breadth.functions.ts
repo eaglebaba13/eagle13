@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { buildMockBreadthBundle, type MockScenario } from "./mock-provider";
+import { getRealBreadthBundle } from "./real-breadth-engine.server";
 import { evaluateVixRegime } from "./vix-regime";
 import { adaptPcrConfirmation } from "./pcr-confirmation";
 import { classifyGti } from "./gti-classifier";
@@ -56,9 +57,8 @@ export const getMarketBreadth = createServerFn({ method: "POST" })
     const startedAt = new Date().toISOString();
     const t0 = Date.now();
     try {
-      const bundle = buildMockBreadthBundle({
-        scenario: data.mockScenario ?? "MIXED",
-        broadUniverseSize: data.broadUniverseSize,
+      const bundle = await getRealBreadthBundle({
+        mockScenario: data.mockScenario,
       });
 
       // â”€â”€ Canonical live inputs (India VIX + Combined PCR) â”€â”€â”€â”€â”€
@@ -155,11 +155,9 @@ export const getMarketBreadth = createServerFn({ method: "POST" })
         runId: data.runId ?? newRunId(),
       });
 
-      // NIFTY50 constituents come from the deterministic mock provider
-      // (no live per-symbol resolver wired in production); label the
-      // breadth source as RESEARCH_DEMO so consumers never display it
-      // as LIVE. VIX + PCR are live where possible.
-      const breadthSource: MarketBreadthSourceKind = "RESEARCH_DEMO";
+      // Breadth source is labeled LIVE when hydrated from active Upstox/NSE quotes,
+      // or RESEARCH_DEMO / EOD_CACHED when upstream quotes are unavailable.
+      const breadthSource: MarketBreadthSourceKind = bundle.isLive ? "LIVE" : "RESEARCH_DEMO";
       const providerAlias = safeProviderLabel("BREADTH");
       const capability: MarketBreadthCapability = evaluateMarketBreadthCapability({
         nowIso: new Date().toISOString(),

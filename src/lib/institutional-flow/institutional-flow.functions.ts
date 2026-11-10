@@ -58,10 +58,10 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       /* pcr optional */
     }
 
-    // Breadth bundle â€” canonical research bundle (Phase 2 policy).
-    const { buildMockBreadthBundle } = await import("../market-breadth/mock-provider");
+    // Breadth bundle — live advance/decline and sector breadth.
+    const { getRealBreadthBundle } = await import("../market-breadth/real-breadth-engine.server");
     const { SECTOR_REGISTRY_VERSION } = await import("../market-breadth/sector-registry");
-    const bundle = buildMockBreadthBundle({ scenario: "MIXED" });
+    const bundle = await getRealBreadthBundle();
 
     // Underlying price change â€” reuse getMarketData quote if present.
     let underlyingPriceChange: number | null = null;
