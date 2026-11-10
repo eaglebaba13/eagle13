@@ -121,6 +121,18 @@ export const NAV_REGISTRY: NavItem[] = [
     badge: "LIVE",
   },
   {
+    id: "chronowheel",
+    label: "ChronoWheel (GCD)",
+    icon: Orbit,
+    to: "/chronowheel",
+    section: "CORE",
+    order: 43,
+    status: "LIVE",
+    desktopVisible: true,
+    mobileVisible: true,
+    badge: "QUANT",
+  },
+  {
     id: "level-terminal",
     label: "Level Terminal",
     icon: TrendingUp,

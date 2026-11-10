@@ -59,6 +59,7 @@ describe("Phase 24B · navigation filtering (personal terminal)", () => {
     expect(d).toContain("dashboard");
     expect(d).toContain("astro-levels");
     expect(d).toContain("unicorn-radar");
+    expect(d).toContain("chronowheel");
   });
 
   it("registers unicorn-radar standalone route in CORE section with LIVE status", () => {
@@ -69,6 +70,16 @@ describe("Phase 24B · navigation filtering (personal terminal)", () => {
     expect(unicorn?.section).toBe("CORE");
     expect(unicorn?.order).toBe(42);
     expect(unicorn?.badge).toBe("LIVE");
+  });
+
+  it("registers chronowheel standalone route in CORE section with LIVE status and QUANT badge", () => {
+    const cw = NAV_REGISTRY.find((n) => n.id === "chronowheel");
+    expect(cw).toBeDefined();
+    expect(cw?.to).toBe("/chronowheel");
+    expect(cw?.status).toBe("LIVE");
+    expect(cw?.section).toBe("CORE");
+    expect(cw?.order).toBe(43);
+    expect(cw?.badge).toBe("QUANT");
   });
 
   it("resolveMobileDrawerNav returns all mobile-visible items", () => {

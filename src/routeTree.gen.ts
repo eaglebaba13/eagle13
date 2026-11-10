@@ -60,6 +60,7 @@ import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_a
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalIntelligenceRouteImport } from './routes/_authenticated/institutional-intelligence'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
+import { Route as AuthenticatedChronowheelRouteImport } from './routes/_authenticated/chronowheel'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBacktestLabRouteImport } from './routes/_authenticated/backtest-lab'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
@@ -360,6 +361,12 @@ const AuthenticatedInstitutionalFlowRoute =
     path: '/institutional-flow',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedChronowheelRoute =
+  AuthenticatedChronowheelRouteImport.update({
+    id: '/chronowheel',
+    path: '/chronowheel',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -587,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/alerts': typeof AuthenticatedAlertsRoute
   '/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/chronowheel': typeof AuthenticatedChronowheelRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -672,6 +680,7 @@ export interface FileRoutesByTo {
   '/alerts': typeof AuthenticatedAlertsRoute
   '/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/chronowheel': typeof AuthenticatedChronowheelRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -759,6 +768,7 @@ export interface FileRoutesById {
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/backtest-lab': typeof AuthenticatedBacktestLabRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/chronowheel': typeof AuthenticatedChronowheelRoute
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
@@ -846,6 +856,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/backtest-lab'
     | '/billing'
+    | '/chronowheel'
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
@@ -931,6 +942,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/backtest-lab'
     | '/billing'
+    | '/chronowheel'
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
@@ -1017,6 +1029,7 @@ export interface FileRouteTypes {
     | '/_authenticated/alerts'
     | '/_authenticated/backtest-lab'
     | '/_authenticated/billing'
+    | '/_authenticated/chronowheel'
     | '/_authenticated/institutional-flow'
     | '/_authenticated/institutional-intelligence'
     | '/_authenticated/license'
@@ -1468,6 +1481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInstitutionalFlowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/chronowheel': {
+      id: '/_authenticated/chronowheel'
+      path: '/chronowheel'
+      fullPath: '/chronowheel'
+      preLoaderRoute: typeof AuthenticatedChronowheelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/billing': {
       id: '/_authenticated/billing'
       path: '/billing'
@@ -1746,6 +1766,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedBacktestLabRoute: typeof AuthenticatedBacktestLabRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedChronowheelRoute: typeof AuthenticatedChronowheelRoute
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedInstitutionalIntelligenceRoute: typeof AuthenticatedInstitutionalIntelligenceRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
@@ -1789,6 +1810,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedBacktestLabRoute: AuthenticatedBacktestLabRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedChronowheelRoute: AuthenticatedChronowheelRoute,
   AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedInstitutionalIntelligenceRoute:
     AuthenticatedInstitutionalIntelligenceRoute,

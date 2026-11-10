@@ -47,6 +47,7 @@ const ICON_NAME_BY_ID: Record<string, string> = {
   "live-market-terminal": "Activity",
   "live-chart": "BarChart3",
   "unicorn-radar": "Radar",
+  chronowheel: "Orbit",
   "level-terminal": "TrendingUp",
   decision: "Brain",
   backtest: "History",
