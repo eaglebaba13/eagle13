@@ -1,13 +1,28 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
+import { isGuestSessionActive } from "@/lib/guest-session";
 
 /**
  * Route group for authenticated/research pages.
- * If any child route throws an unauthorized or authentication error,
- * render the institutional 1-click Guest Unlock Card.
+ * Enforces Zero-Trust auth gating: unauthorized or unauthenticated requests to
+ * protected research paths redirect immediately to /login without leaking
+ * pre-rendered HTML or API payloads.
  */
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      const isGuest = isGuestSessionActive();
+      const hasSupabaseToken = Object.keys(window.localStorage).some(
+        (k) => k.startsWith("sb-") && k.endsWith("-auth-token"),
+      );
+      if (!isGuest && !hasSupabaseToken) {
+        throw redirect({
+          to: "/auth",
+        });
+      }
+    }
+  },
   component: () => <Outlet />,
   errorComponent: ({ error, reset }) => {
     if (isAuthErrorMessage(error)) {

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useHydrated } from "@/hooks/use-hydrated";
+import { isGuestSessionActive } from "@/lib/guest-session";
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getOfficialLotSize, OFFICIAL_NSE_LOT_SIZES } from "@/lib/market-data/constants";
 import {
@@ -36,6 +37,20 @@ import {
 } from "@/lib/risk-engine";
 
 export const Route = createFileRoute("/risk")({
+  ssr: false,
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      const isGuest = isGuestSessionActive();
+      const hasSupabaseToken = Object.keys(window.localStorage).some(
+        (k) => k.startsWith("sb-") && k.endsWith("-auth-token"),
+      );
+      if (!isGuest && !hasSupabaseToken) {
+        throw redirect({
+          to: "/auth",
+        });
+      }
+    }
+  },
   component: RiskPage,
   head: () => ({
     meta: [

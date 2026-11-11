@@ -26,8 +26,8 @@ export function enableGuestSession(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(GUEST_COOKIE_NAME, "true");
-    // 30 days expiry
-    document.cookie = `${GUEST_COOKIE_NAME}=1; Path=/; Max-Age=2592000; SameSite=Lax`;
+    // 30 days expiry with zero-trust SameSite=Strict and Secure flags
+    document.cookie = `${GUEST_COOKIE_NAME}=1; Path=/; Max-Age=2592000; SameSite=Strict; Secure`;
   } catch {
     /* ignore */
   }
@@ -37,7 +37,7 @@ export function clearGuestSession(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(GUEST_COOKIE_NAME);
-    document.cookie = `${GUEST_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+    document.cookie = `${GUEST_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure`;
   } catch {
     /* ignore */
   }
