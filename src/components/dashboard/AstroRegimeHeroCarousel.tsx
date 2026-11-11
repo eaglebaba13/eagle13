@@ -42,6 +42,24 @@ export const DECK_TABS: readonly DeckTabConfig[] = [
   { id: "unicorn", label: "🦄 ICT Unicorn Radar & SMT", icon: Radar },
 ];
 
+/**
+ * Safe institutional PCR formatter.
+ * Handles numbers, numeric strings, and DecisionSummary PCR objects ({ pcrOi: number, ... }).
+ * Never throws TypeError: .toFixed is not a function.
+ */
+export const formatPcr = (val: unknown, fallback: string = "1.00"): string => {
+  if (val == null) return fallback;
+  let candidate: unknown = val;
+  if (typeof candidate === "object" && candidate !== null) {
+    if (Object.prototype.hasOwnProperty.call(candidate, "pcrOi")) {
+      candidate = (candidate as { pcrOi?: unknown }).pcrOi;
+    }
+  }
+  if (candidate == null) return fallback;
+  const num = typeof candidate === "number" ? candidate : Number(candidate);
+  return isNaN(num) || !isFinite(num) || num <= 0 ? fallback : num.toFixed(2);
+};
+
 export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
   niftySpot = 23960.6,
   bankNiftySpot = 55913.6,
@@ -76,7 +94,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
     : "Pushya Nakshatra";
 
   const moonPhaseDesc = astroData?.moonPhase
-    ? `${astroData.moonPhase.phaseName} (${Math.round((astroData.moonPhase.fraction || 0.82) * 100)}% Illum)`
+    ? `${astroData.moonPhase.phaseName} (${Math.round(astroData.moonPhase.illumination || 82)}% Illum)`
     : "Waxing Gibbous (82% Illumination)";
 
   const decision = decisionData?.decision;
@@ -89,9 +107,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
   const fvgLow = Math.round(currentNifty - 120);
   const fvgHigh = Math.round(currentNifty - 80);
 
-  const pcrText = decisionData?.summary?.pcr
-    ? `${decisionData.summary.pcr.toFixed(2)} PCR`
-    : "1.08 PCR";
+  const pcrText = `${formatPcr(decisionData?.summary?.pcr, "1.08")} PCR`;
   const maxPainStrike = `${(Math.round(currentNifty / 100) * 100).toLocaleString("en-IN")} Strike`;
 
   const nextSlide = useCallback(() => {

@@ -17,7 +17,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { useIstClock } from "@/hooks/use-scheduler";
-import { inrPrice } from "@/lib/format";
+import { inrPrice, formatPcr } from "@/lib/format";
 import {
   Volume2,
   VolumeX,
@@ -429,9 +429,9 @@ function OptionStrategyTerminal() {
               />
               <Stat
                 label="PCR"
-                value={<span className="os-mono">{oc.pcr.toFixed(2)}</span>}
-                color={oc.pcr >= 1 ? C.green : C.red}
-                sub={oc.source === "UPSTOX" ? "live chain" : "derived"}
+                value={<span className="os-mono">{formatPcr(oc?.pcr)}</span>}
+                color={oc && oc.pcr != null && Number(oc.pcr) >= 1 ? C.green : C.red}
+                sub={oc?.source === "UPSTOX" ? "live chain" : "derived"}
               />
               <Stat
                 label="Market Breadth"
@@ -665,8 +665,8 @@ function OptionStrategyTerminal() {
               >
                 <MiniStat
                   label="PCR"
-                  value={oc.pcr.toFixed(2)}
-                  color={oc.pcr >= 1 ? C.green : C.red}
+                  value={formatPcr(oc?.pcr)}
+                  color={oc && oc.pcr != null && Number(oc.pcr) >= 1 ? C.green : C.red}
                 />
                 <MiniStat label="Total Call OI" value={oc.totalCallOI.toLocaleString("en-IN")} />
                 <MiniStat label="Total Put OI" value={oc.totalPutOI.toLocaleString("en-IN")} />

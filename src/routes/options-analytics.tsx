@@ -45,6 +45,7 @@ import {
 } from "@/lib/options-integrity";
 import { nseSession } from "@/lib/terminal-clock";
 import { downloadBlob } from "@/lib/download";
+import { formatPcr } from "@/lib/format";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -666,10 +667,10 @@ function OptionsAnalyticsPage() {
               />
               <Card
                 label="PCR OI"
-                value={analytics.pcr.pcrOi.toFixed(2)}
+                value={formatPcr(analytics.pcr.pcrOi)}
                 sub={interpretPcr(analytics.pcr.pcrOi)}
               />
-              <Card label="PCR Volume" value={analytics.pcr.pcrVolume.toFixed(2)} />
+              <Card label="PCR Volume" value={formatPcr(analytics.pcr.pcrVolume)} />
               <Card label="Total Call OI" value={fmt(analytics.pcr.totalCallOi)} />
               <Card label="Total Put OI" value={fmt(analytics.pcr.totalPutOi)} />
               <Card

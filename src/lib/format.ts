@@ -20,3 +20,22 @@ export function usdLike(n: number): string {
 /** Two-decimal Indian-grouped number used by dashboard widget cards. */
 export const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * Safe institutional PCR formatter.
+ * Handles numbers, numeric strings, and DecisionSummary PCR objects ({ pcrOi: number, ... }).
+ * Never throws TypeError: .toFixed is not a function.
+ */
+export function formatPcr(val: unknown, fallback: string = "1.00"): string {
+  if (val == null) return fallback;
+  let candidate: unknown = val;
+  if (typeof candidate === "object" && candidate !== null) {
+    if (Object.prototype.hasOwnProperty.call(candidate, "pcrOi")) {
+      candidate = (candidate as { pcrOi?: unknown }).pcrOi;
+    }
+  }
+  if (candidate == null) return fallback;
+  const num = typeof candidate === "number" ? candidate : Number(candidate);
+  return isNaN(num) || !isFinite(num) || num <= 0 ? fallback : num.toFixed(2);
+}
+
