@@ -44,7 +44,7 @@ function AppShellHeader() {
     >
       <button
         type="button"
-        onClick={() => (canGoBack ? router.history.back() : router.navigate({ to: "/" }))}
+        onClick={() => (canGoBack ? router.history.back() : router.navigate({ to: "/dashboard" }))}
         disabled={canGoBack ? false : true}
         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Go back"

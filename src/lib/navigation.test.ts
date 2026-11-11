@@ -13,7 +13,7 @@ describe("Phase 24A · shared navigation registry", () => {
   it("registry contains a canonical Dashboard route", () => {
     const dash = NAV_REGISTRY.find((n) => n.id === "dashboard");
     expect(dash).toBeDefined();
-    expect(dash?.to).toBe("/");
+    expect(dash?.to).toBe("/dashboard");
   });
 
   it("ids are unique", () => {

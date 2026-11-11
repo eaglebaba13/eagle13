@@ -51,7 +51,7 @@ export const NAV_REGISTRY: NavItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    to: "/",
+    to: "/dashboard",
     section: "CORE",
     order: 10,
     status: "LIVE",

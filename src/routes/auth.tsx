@@ -34,7 +34,7 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      void navigate({ to: "/" });
+      void navigate({ to: "/dashboard" });
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -42,7 +42,7 @@ function AuthPage() {
     enableGuestSession();
     toast.success("Welcome! Research workstation unlocked with guest full access.");
     router.invalidate();
-    void navigate({ to: "/" });
+    void navigate({ to: "/dashboard" });
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -53,7 +53,7 @@ function AuthPage() {
 
     try {
       if (mode === "signup") {
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${window.location.origin}/dashboard`;
         const { error, data } = await supabase.auth.signUp({
           email: cleanEmail,
           password,
@@ -69,7 +69,7 @@ function AuthPage() {
         if (data.session) {
           toast.success("Account created and signed in!");
           router.invalidate();
-          void navigate({ to: "/" });
+          void navigate({ to: "/dashboard" });
         } else {
           toast.success("Account created — check your inbox to confirm your email.");
           setMode("signin");
@@ -97,7 +97,7 @@ function AuthPage() {
         }
         toast.success("Welcome back!");
         router.invalidate();
-        void navigate({ to: "/" });
+        void navigate({ to: "/dashboard" });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Authentication failed";

@@ -17,6 +17,11 @@ export function MobileNav() {
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
+  // Suppress workstation mobile nav on public landing page and auth flows
+  if (path === "/" || path === "/auth" || path?.startsWith("/auth/")) {
+    return null;
+  }
+
   // Lock body scroll + ESC to close + focus trap while the drawer is open.
   useEffect(() => {
     if (!open) return;

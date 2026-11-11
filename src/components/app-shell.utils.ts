@@ -8,6 +8,7 @@ import { NAV_REGISTRY } from "@/lib/navigation";
 // these so we don't double-render the sidebar or break bespoke grid layouts.
 const SELF_SHELLED_ROUTES: readonly string[] = [
   "/",
+  "/dashboard",
   "/astro",
   "/live-terminal",
   "/live-market-terminal",
