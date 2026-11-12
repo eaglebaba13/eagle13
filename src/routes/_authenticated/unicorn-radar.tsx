@@ -12,6 +12,7 @@ import {
   type UnicornSetup,
   type SMTDivergence,
 } from "@/lib/orderflow/unicorn.functions";
+import { foBanStatusQuery } from "@/lib/market-data/fo-ban.functions";
 import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
 import { getAudioNotificationManager } from "@/lib/audio-notifications";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
@@ -129,6 +130,7 @@ function UnicornRadarPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [countdown, setCountdown] = useState(30);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { data: banReport } = useQuery(foBanStatusQuery());
 
   // Audio manager init
   useEffect(() => {
@@ -752,13 +754,39 @@ function UnicornRadarPage() {
                     >
                       {/* 1. Instrument */}
                       <td className="py-3 px-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-amber-300 text-sm">
                             {setup.symbol}
                           </span>
                           <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono border border-zinc-700">
                             {setup.category}
                           </span>
+                          {(() => {
+                            const banInfo = banReport?.allMap?.[setup.symbol.toUpperCase()];
+                            if (!banInfo) return null;
+                            if (banInfo.status === "IN_BAN") {
+                              return (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-950/90 text-rose-300 font-mono border border-rose-500/50 font-bold animate-pulse">
+                                  🚫 BAN ({banInfo.mwplPercent.toFixed(0)}%)
+                                </span>
+                              );
+                            }
+                            if (banInfo.status === "UPCOMING_BAN") {
+                              return (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-950/90 text-amber-300 font-mono border border-amber-500/50 font-bold">
+                                  ⚠️ NEAR BAN ({banInfo.mwplPercent.toFixed(0)}%)
+                                </span>
+                              );
+                            }
+                            if (banInfo.status === "RECENTLY_UNBANNED") {
+                              return (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/90 text-emerald-300 font-mono border border-emerald-500/50 font-bold">
+                                  ✅ UNBANNED
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         <div className="text-[11px] text-zinc-300 mt-0.5 truncate max-w-[180px]">
                           {setup.displayName}

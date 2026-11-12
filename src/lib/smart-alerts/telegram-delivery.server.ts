@@ -659,3 +659,117 @@ export async function sendSMTTelegramAlert(
   saveTelegramChannelsToFile(channels);
   return lastResult;
 }
+
+import type { FoBanReport } from "../market-data/fo-ban-tracker.server";
+
+/**
+ * Format an institutional NSE F&O Ban & MWPL Telegram Alert
+ */
+export function formatFoBanTelegramAlert(report: FoBanReport): string {
+  const lines: string[] = [];
+  lines.push("🚫 [NSE F&O BAN & MWPL REPORT]");
+  lines.push(`📅 Trade Date: ${report.tradeDate} | Feed: ${report.source}`);
+  lines.push("");
+
+  // 1. IN BAN
+  if (report.inBan.length > 0) {
+    lines.push(`🔴 CURRENTLY IN F&O BAN (${report.inBan.length}):`);
+    for (const item of report.inBan) {
+      lines.push(
+        `• ${item.symbol}: ${item.mwplPercent.toFixed(1)}% MWPL (Day ${item.daysInBan || 1} in Ban) | LTP: ₹${item.currentLtp.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+      );
+    }
+    lines.push("⚠️ (Fresh derivative positions strictly prohibited by NSE. Only squaring off permitted.)");
+  } else {
+    lines.push("🟢 CURRENTLY IN F&O BAN (0): None (All F&O stocks open for fresh positions)");
+  }
+  lines.push("");
+
+  // 2. UPCOMING BAN
+  if (report.upcomingBan.length > 0) {
+    lines.push(`⚠️ UPCOMING BAN WATCHLIST (>80% MWPL) (${report.upcomingBan.length}):`);
+    for (const item of report.upcomingBan.slice(0, 10)) {
+      const distStr = item.distanceToBan !== undefined ? ` (${item.distanceToBan.toFixed(1)}% to Ban)` : "";
+      lines.push(
+        `• ${item.symbol}: ${item.mwplPercent.toFixed(1)}% MWPL${distStr} | LTP: ₹${item.currentLtp.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+      );
+    }
+    if (report.upcomingBan.length > 10) {
+      lines.push(`  ... and ${report.upcomingBan.length - 10} more upcoming stocks.`);
+    }
+  } else {
+    lines.push("ℹ️ UPCOMING BAN WATCHLIST (>80% MWPL): None");
+  }
+  lines.push("");
+
+  // 3. RECENTLY UNBANNED
+  if (report.recentlyUnbanned.length > 0) {
+    lines.push(`✅ RECENTLY UNBANNED TODAY (${report.recentlyUnbanned.length}):`);
+    for (const item of report.recentlyUnbanned) {
+      const banDaysStr = item.previousBanDays ? ` (Was in ban ${item.previousBanDays} days)` : "";
+      lines.push(
+        `• ${item.symbol}: ${item.mwplPercent.toFixed(1)}% MWPL${banDaysStr} — Fresh Entry Eligible | LTP: ₹${item.currentLtp.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+      );
+    }
+  } else {
+    lines.push("ℹ️ RECENTLY UNBANNED TODAY: None");
+  }
+  lines.push("");
+
+  lines.push(`📊 Total F&O Tracked: ${report.totalFoTracked} | Powered by EagleBABA Real-Time Derivatives Engine`);
+  lines.push("Disclaimer: Educational & Research quantitative tool. Not financial advice.");
+  return lines.join("\n");
+}
+
+/**
+ * Dispatch an institutional NSE F&O Ban & MWPL alert to connected Telegram channels.
+ */
+export async function sendFoBanTelegramAlert(
+  report: FoBanReport
+): Promise<{ status: TelegramDeliveryStatus; errorCode: string | null }> {
+  const formatted = formatFoBanTelegramAlert(report);
+  const channels = loadTelegramChannelsFromFile();
+  const activeChannels = channels.filter((c) => c.status === "active");
+
+  if (activeChannels.length === 0) {
+    return postTelegramMessage(formatted);
+  }
+
+  const matchingChannels = activeChannels.filter((c) => {
+    if (c.alertFilter === "all" || c.alertFilter === "decision") return true;
+    return false;
+  });
+
+  const targets = matchingChannels.length > 0 ? matchingChannels : activeChannels;
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
+  const env = getTelegramEnv();
+  let dispatchedCount = 0;
+
+  for (const channel of targets) {
+    const token = channel.botToken || env?.token || "";
+    const chatId = channel.chatId || env?.chatId || "";
+    if (!token || !chatId) continue;
+
+    dispatchedCount++;
+    const start = Date.now();
+    const res = await postTelegramMessageToDestination({ token, chatId }, formatted);
+    const duration = Date.now() - start;
+
+    channel.lastDispatchAt = new Date().toISOString();
+    channel.lastLatencyMs = duration;
+    channel.lastStatus = res.status === "DELIVERED" ? "DELIVERED" : "FAILED";
+    channel.lastError = res.errorCode;
+
+    lastResult = res;
+  }
+
+  if (dispatchedCount === 0) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+
+  saveTelegramChannelsToFile(channels);
+  return lastResult;
+}

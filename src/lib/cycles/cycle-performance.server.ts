@@ -17,6 +17,11 @@ import {
   type RealCandle,
 } from "./market-data-adapter.server";
 import { getOfficialLotSize, OFFICIAL_NSE_LOT_SIZES } from "../market-data/constants";
+import {
+  getFoBanTrackerReport,
+  loadFoBanPersistedState,
+  type FoBanStatus,
+} from "../market-data/fo-ban-tracker.server";
 
 export interface FOInstrument {
   readonly symbol: string;
@@ -115,6 +120,9 @@ export interface StockCyclePerformance {
   readonly yearlyBreakdown: readonly YearWindowPerformance[];
   readonly executionPlan: TradeExecutionPlan;
   readonly hitRateSummary: ExecutionHitRateSummary;
+  readonly foBanStatus?: FoBanStatus;
+  readonly mwplPercent?: number;
+  readonly daysInBan?: number;
 }
 
 export interface ChronoWheelScanFilter {
@@ -125,6 +133,7 @@ export interface ChronoWheelScanFilter {
   readonly sectorFilter?: string; // "ALL" or specific sector
   readonly searchQuery?: string;
   readonly minWinRate?: number;
+  readonly hideBanStocks?: boolean;
 }
 
 export interface ChronoWheelScanResult {
@@ -323,6 +332,7 @@ export const FO_UNIVERSE: readonly FOInstrument[] = [
   { symbol: "BDL", name: "Bharat Dynamics", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.48, baseIV: 37.5, defaultPrice: 1109.65 },
   { symbol: "MAZDOCK", name: "Mazagon Dock Shipbuilders", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.55, baseIV: 42.0, defaultPrice: 1878 },
   { symbol: "COCHINSHIP", name: "Cochin Shipyard", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.62, baseIV: 44.5, defaultPrice: 1290 },
+  { symbol: "KAYNES", name: "Kaynes Technology India", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Mid Cap", beta: 1.45, baseIV: 34.0, defaultPrice: 5450 },
   { symbol: "GMRINFRA", name: "GMR Airports Infrastructure", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.38, baseIV: 33.0, defaultPrice: 93.12 },
   { symbol: "ADANIPORTS", name: "Adani Ports & SEZ", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.25, baseIV: 26.0, defaultPrice: 1942.7 },
   { symbol: "ADANIENT", name: "Adani Enterprises", sector: "Capital Goods & Infra", category: "FO_EQUITY", marketCap: "Large Cap", beta: 1.65, baseIV: 38.0, defaultPrice: 2706.3 },
@@ -433,6 +443,7 @@ export function evaluateInstrumentCyclePerformance(
   instrument: FOInstrument,
   windows: readonly HistoricalLunarWindow[],
   marketData?: InstrumentMarketData | null,
+  banInfo?: { status: FoBanStatus; mwplPercent: number; daysInBan: number } | null,
 ): StockCyclePerformance {
   const currentPrice = marketData?.ltp ?? instrument.defaultPrice;
   const prevClose = marketData?.prevClose ?? currentPrice;
@@ -842,6 +853,9 @@ export function evaluateInstrumentCyclePerformance(
     yearlyBreakdown,
     executionPlan,
     hitRateSummary,
+    foBanStatus: banInfo?.status ?? "NORMAL",
+    mwplPercent: banInfo?.mwplPercent,
+    daysInBan: banInfo?.daysInBan,
   };
 }
 
@@ -899,6 +913,11 @@ function formatScanResult(
   // Filter: Min Win Rate
   if (filter.minWinRate !== undefined && filter.minWinRate > 0) {
     filtered = filtered.filter((e) => e.winRate >= filter.minWinRate!);
+  }
+
+  // Filter: Hide F&O Ban Stocks
+  if (filter.hideBanStocks) {
+    filtered = filtered.filter((e) => e.foBanStatus !== "IN_BAN");
   }
 
   // Default Sort: High Win Rate descending, then highest Avg Return
@@ -973,10 +992,14 @@ export async function executeChronoWheelScan(
     }
   }
 
-  // 3. Evaluate performance for every instrument in FO_UNIVERSE
+  // 3. Fetch current live F&O Ban & MWPL state
+  const banReport = await getFoBanTrackerReport();
+
+  // 4. Evaluate performance for every instrument in FO_UNIVERSE
   const allEvaluations: StockCyclePerformance[] = FO_UNIVERSE.map((instrument) => {
     const marketData = getCachedMarketData(instrument.symbol);
-    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData);
+    const banInfo = banReport.allMap[instrument.symbol.toUpperCase()] ?? null;
+    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData, banInfo);
   });
 
   return formatScanResult(allEvaluations, lunarScan, lookbackYears, filter);
@@ -993,9 +1016,14 @@ export function executeChronoWheelScanSync(filter: ChronoWheelScanFilter): Chron
     lookbackYears,
   });
 
+  const persisted = loadFoBanPersistedState();
   const allEvaluations: StockCyclePerformance[] = FO_UNIVERSE.map((instrument) => {
     const marketData = getCachedMarketData(instrument.symbol);
-    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData);
+    const prev = persisted.history[instrument.symbol.toUpperCase()];
+    const banInfo = prev
+      ? { status: prev.lastStatus, mwplPercent: prev.lastMwplPercent, daysInBan: prev.daysInBan }
+      : null;
+    return evaluateInstrumentCyclePerformance(instrument, lunarScan.historicalWindows, marketData, banInfo);
   });
 
   return formatScanResult(allEvaluations, lunarScan, lookbackYears, filter);

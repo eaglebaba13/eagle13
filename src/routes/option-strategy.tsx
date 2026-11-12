@@ -1,9 +1,10 @@
 type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { foBanStatusQuery, type FoBanReport } from "@/lib/market-data/fo-ban.functions";
 
 import {
   getOptionStrategy,
@@ -122,6 +123,7 @@ function beep(freq = 880) {
 
 function OptionStrategyTerminal() {
   const { data, isFetching, dataUpdatedAt } = useSuspenseQuery(strategyQuery());
+  const { data: banReport } = useQuery(foBanStatusQuery());
   const clock = useIstClock();
   const [mounted, setMounted] = useState(false);
   const [sound, setSound] = useState(false);
@@ -644,7 +646,7 @@ function OptionStrategyTerminal() {
             </div>
 
             {/* Top-10 auto-sorting weightage monitor + heatmap */}
-            <Top10Widget stocks={data.top10} />
+            <Top10Widget stocks={data.top10} banReport={banReport} />
 
             {/* Sector strength */}
             <SectorStrengthWidget sectors={data.sectors} />
@@ -1218,7 +1220,7 @@ function AnimatedChange({ value }: { value: number }) {
   );
 }
 
-function Top10Widget({ stocks }: { stocks: TopStock[] }) {
+function Top10Widget({ stocks, banReport }: { stocks: TopStock[]; banReport?: FoBanReport }) {
   const [mode, setMode] = useState<SortMode>("change");
   useEffect(() => {
     const saved =
@@ -1307,7 +1309,50 @@ function Top10Widget({ stocks }: { stocks: TopStock[] }) {
                     #{i + 1}
                   </span>
                   <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                    <span style={{ fontWeight: 700 }}>{t.name}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700 }}>{t.name}</span>
+                      {(() => {
+                        const banInfo = banReport?.allMap?.[t.symbol.toUpperCase()];
+                        if (!banInfo) return null;
+                        if (banInfo.status === "IN_BAN") {
+                          return (
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                fontFamily: "var(--eb-mono, monospace)",
+                                padding: "1px 5px",
+                                borderRadius: "4px",
+                                background: "rgba(225, 29, 72, 0.2)",
+                                color: "#fda4af",
+                                border: "1px solid rgba(244, 63, 94, 0.5)",
+                              }}
+                            >
+                              🚫 BAN ({banInfo.mwplPercent}%)
+                            </span>
+                          );
+                        }
+                        if (banInfo.status === "UPCOMING_BAN") {
+                          return (
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                fontFamily: "var(--eb-mono, monospace)",
+                                padding: "1px 5px",
+                                borderRadius: "4px",
+                                background: "rgba(245, 158, 11, 0.2)",
+                                color: "#fcd34d",
+                                border: "1px solid rgba(245, 158, 11, 0.5)",
+                              }}
+                            >
+                              ⚠️ NEAR BAN ({banInfo.mwplPercent}%)
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                     {isTop ? (
                       <span
                         className="os10-badge"

@@ -82,6 +82,16 @@ describe("Phase 24B · navigation filtering (personal terminal)", () => {
     expect(cw?.badge).toBe("QUANT");
   });
 
+  it("registers fo-ban-list standalone route in CORE section with LIVE status and NSE badge", () => {
+    const fno = NAV_REGISTRY.find((n) => n.id === "fo-ban-list");
+    expect(fno).toBeDefined();
+    expect(fno?.to).toBe("/fo-ban-list");
+    expect(fno?.status).toBe("LIVE");
+    expect(fno?.section).toBe("CORE");
+    expect(fno?.order).toBe(44);
+    expect(fno?.badge).toBe("NSE");
+  });
+
   it("resolveMobileDrawerNav returns all mobile-visible items", () => {
     const m = resolveMobileDrawerNav().map((i) => i.id);
     expect(m.length).toBeGreaterThan(0);

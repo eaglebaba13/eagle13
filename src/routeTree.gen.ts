@@ -60,6 +60,7 @@ import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_a
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalIntelligenceRouteImport } from './routes/_authenticated/institutional-intelligence'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
+import { Route as AuthenticatedFoBanListRouteImport } from './routes/_authenticated/fo-ban-list'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChronowheelRouteImport } from './routes/_authenticated/chronowheel'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -362,6 +363,11 @@ const AuthenticatedInstitutionalFlowRoute =
     path: '/institutional-flow',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFoBanListRoute = AuthenticatedFoBanListRouteImport.update({
+  id: '/fo-ban-list',
+  path: '/fo-ban-list',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -602,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof AuthenticatedBillingRoute
   '/chronowheel': typeof AuthenticatedChronowheelRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fo-ban-list': typeof AuthenticatedFoBanListRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -689,6 +696,7 @@ export interface FileRoutesByTo {
   '/billing': typeof AuthenticatedBillingRoute
   '/chronowheel': typeof AuthenticatedChronowheelRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fo-ban-list': typeof AuthenticatedFoBanListRoute
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
@@ -778,6 +786,7 @@ export interface FileRoutesById {
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/chronowheel': typeof AuthenticatedChronowheelRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/fo-ban-list': typeof AuthenticatedFoBanListRoute
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
@@ -867,6 +876,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/chronowheel'
     | '/dashboard'
+    | '/fo-ban-list'
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
@@ -954,6 +964,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/chronowheel'
     | '/dashboard'
+    | '/fo-ban-list'
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
@@ -1042,6 +1053,7 @@ export interface FileRouteTypes {
     | '/_authenticated/billing'
     | '/_authenticated/chronowheel'
     | '/_authenticated/dashboard'
+    | '/_authenticated/fo-ban-list'
     | '/_authenticated/institutional-flow'
     | '/_authenticated/institutional-intelligence'
     | '/_authenticated/license'
@@ -1493,6 +1505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInstitutionalFlowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/fo-ban-list': {
+      id: '/_authenticated/fo-ban-list'
+      path: '/fo-ban-list'
+      fullPath: '/fo-ban-list'
+      preLoaderRoute: typeof AuthenticatedFoBanListRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -1787,6 +1806,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedChronowheelRoute: typeof AuthenticatedChronowheelRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFoBanListRoute: typeof AuthenticatedFoBanListRoute
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedInstitutionalIntelligenceRoute: typeof AuthenticatedInstitutionalIntelligenceRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
@@ -1832,6 +1852,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedChronowheelRoute: AuthenticatedChronowheelRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFoBanListRoute: AuthenticatedFoBanListRoute,
   AuthenticatedInstitutionalFlowRoute: AuthenticatedInstitutionalFlowRoute,
   AuthenticatedInstitutionalIntelligenceRoute:
     AuthenticatedInstitutionalIntelligenceRoute,

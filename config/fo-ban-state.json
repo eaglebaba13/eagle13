@@ -1,0 +1,1027 @@
+{
+  "tradeDate": "12-NOV-2026",
+  "lastRun": "2026-11-12T07:42:19.539Z",
+  "history": {
+    "KAYNES": {
+      "daysInBan": 4,
+      "lastStatus": "IN_BAN",
+      "lastMwplPercent": 97.8
+    },
+    "HINDCOPPER": {
+      "daysInBan": 0,
+      "lastStatus": "UPCOMING_BAN",
+      "lastMwplPercent": 94.2
+    },
+    "SAIL": {
+      "daysInBan": 0,
+      "lastStatus": "UPCOMING_BAN",
+      "lastMwplPercent": 88.4
+    },
+    "NATIONALUM": {
+      "daysInBan": 0,
+      "lastStatus": "UPCOMING_BAN",
+      "lastMwplPercent": 85.1
+    },
+    "IDEA": {
+      "daysInBan": 0,
+      "lastStatus": "UPCOMING_BAN",
+      "lastMwplPercent": 83.5
+    },
+    "MANAPPURAM": {
+      "daysInBan": 0,
+      "lastStatus": "UPCOMING_BAN",
+      "lastMwplPercent": 82.2
+    },
+    "DELTACORP": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 74.2,
+      "previousBanDays": 4
+    },
+    "PNB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 68.5
+    },
+    "CANBK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 64
+    },
+    "BANDHANBNK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 62.1
+    },
+    "TATASTEEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 55.4
+    },
+    "VEDL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 54.2
+    },
+    "ZEEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 72.8
+    },
+    "BHEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 71.5
+    },
+    "GMRINFRA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 79.1
+    },
+    "ABCAPITAL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 67.2
+    },
+    "NMDC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 58
+    },
+    "RECLTD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 48.5
+    },
+    "PFC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 46.2
+    },
+    "AUBANK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 42
+    },
+    "RELIANCE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 24.5
+    },
+    "HDFCBANK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 32
+    },
+    "ICICIBANK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 28.4
+    },
+    "SBIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 36.8
+    },
+    "TCS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 18.2
+    },
+    "INFY": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 22.1
+    },
+    "AXISBANK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "KOTAKBANK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "INDUSINDBK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BANKBARODA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "IDFCFIRSTB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "FEDERALBNK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BAJFINANCE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BAJAJFINSV": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CHOLAFIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MUTHOOTFIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SHRIRAMFIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SBILIFE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HDFCLIFE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ICICIPRULI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ICICIGI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SBICARD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "M&MFIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "L&TFH": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "POONAWALLA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LICHSGFIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CANFINHOME": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HCLTECH": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "WIPRO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TECHM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LTIM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PERSISTENT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "COFORGE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MPHTASIS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "OFSS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LTTS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TATAELXSI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "KPITTECH": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CYIENT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BIRLASOFT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MARUTI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TATAMOTORS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "M&M": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BAJAJ-AUTO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "EICHERMOT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HEROMOTOCO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TVSMOTOR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BHARATFORG": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BOSCHLTD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MOTHERSON": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BALKRISIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MRF": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "APOLLOTYRE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "EXIDEIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "AMARAJABAT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ASHOKLEY": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ESCORTS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SONACOMS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TIINDIA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ONGC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NTPC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "POWERGRID": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BPCL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "IOC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HPCL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GAIL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "COALINDIA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TATAPOWER": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ADANIGREEN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ADANIPOWER": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "IGL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MGL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GUJGASLTD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PETRONET": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "OIL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NHPC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SJVN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TORNTPOWER": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CESC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "JSWSTEEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HINDALCO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "JINDALSTEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HINDZINC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "APLAPOLLO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "JSL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SUNPHARMA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DRREDDY": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CIPLA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "APOLLOHOSP": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DIVISLAB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LUPIN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "AUROPHARMA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BIOCON": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TORNTPHARM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ALKEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ZYDUSLIFE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GLENMARK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GRANULES": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "IPCLAB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LAURUSLABS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ABBOTINDIA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SYNGENE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "METROPOLIS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LALPATHLAB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MAXHEALTH": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "FORTIS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ITC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HINDUNILVR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NESTLEIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BRITANNIA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TATACONSUM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DABUR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GODREJCP": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MARICO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "COLPAL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TITAN": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HAVELLS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "VOLTAS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DIXON": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "VBL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BATAINDIA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CROMPTON": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "WHIRLPOOL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "RADICO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "UBL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MCDOWELL-N": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "LT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "HAL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SIEMENS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ABB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CUMMINSIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "POLYCAB": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "KEI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ASTRAL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SUPREMEIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "THERMAX": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BDL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "MAZDOCK": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "COCHINSHIP": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ADANIPORTS": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ADANIENT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ULTRACEMCO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "AMBUJACEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ACC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SHREECEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GRASIM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DALBHARAT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DLF": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GODREJPROP": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "OBEROIRLTY": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PRESTIGE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PHOENIXLTD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BRIGADE": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SOBHA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "RAMCOCEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PIDILITIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SRF": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TATACHEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DEEPAKNTR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PIIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NAVINFLUOR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "UPL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "COROMANDEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "GNFC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CHAMBLFERT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ATUL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "FLUOROCHEM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "AARTIIND": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "BHARTIARTL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "TRENT": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "INDHOTEL": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "JUBLFOOD": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DEVYANI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "ZOMATO": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NAUKRI": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PVRINOX": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "CONCOR": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "IRCTC": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "SUNTV": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "DELHIVERY": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "NYKAA": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    },
+    "PAYTM": {
+      "daysInBan": 0,
+      "lastStatus": "NORMAL",
+      "lastMwplPercent": 25
+    }
+  }
+}

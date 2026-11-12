@@ -103,6 +103,8 @@ export const OFFICIAL_NSE_LOT_SIZES: Readonly<Record<string, number>> = {
   ZOMATO: 2000,
   NYKAA: 1875,
   PAYTM: 650,
+  KAYNES: 250,
+  HINDCOPPER: 1750,
 };
 
 /**

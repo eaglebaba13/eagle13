@@ -119,6 +119,7 @@ function ChronoWheelPage() {
   >("ALL");
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [hideBanStocks, setHideBanStocks] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"winRate" | "avgReturn" | "ivPercentile" | "beta">("winRate");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
@@ -144,8 +145,9 @@ function ChronoWheelPage() {
       directionFilter,
       sectorFilter,
       searchQuery,
+      hideBanStocks,
     }),
-    [startDate, endDate, lookbackYears, directionFilter, sectorFilter, searchQuery],
+    [startDate, endDate, lookbackYears, directionFilter, sectorFilter, searchQuery, hideBanStocks],
   );
 
   const {
@@ -163,6 +165,7 @@ function ChronoWheelPage() {
       directionFilter,
       sectorFilter,
       searchQuery,
+      hideBanStocks,
     ],
     queryFn: () => getChronoWheelScan({ data: scanQueryPayload }),
     staleTime: 60_000,
@@ -172,7 +175,10 @@ function ChronoWheelPage() {
   // Client-side sorting on received scan results
   const sortedStocks = useMemo(() => {
     if (!scanResult?.results) return [];
-    const list = [...scanResult.results];
+    let list = [...scanResult.results];
+    if (hideBanStocks) {
+      list = list.filter((s) => s.foBanStatus !== "IN_BAN");
+    }
     list.sort((a, b) => {
       let diff = 0;
       if (sortBy === "winRate") {
@@ -691,6 +697,21 @@ function ChronoWheelPage() {
               >
                 {sortOrder === "desc" ? "↓ DESC" : "↑ ASC"}
               </button>
+
+              {/* Quick Filter: Hide F&O Ban Stocks */}
+              <button
+                type="button"
+                onClick={() => setHideBanStocks((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                  hideBanStocks
+                    ? "bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.25)]"
+                    : "bg-zinc-900 border-zinc-700/80 text-zinc-300 hover:text-white hover:border-zinc-600"
+                }`}
+                title="Hide stocks currently in official NSE F&O Ban (>= 95% MWPL)"
+              >
+                <span>🚫</span>
+                <span>{hideBanStocks ? "Ban Hidden" : "Hide Ban"}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -782,6 +803,23 @@ function ChronoWheelPage() {
                                 <span>LTP: ₹{stock.currentPrice.toFixed(2)}</span>
                                 <span className="text-[10px] text-emerald-400 font-semibold">• LIVE</span>
                               </div>
+
+                              {/* Live F&O Ban / MWPL Status Badge */}
+                              {stock.foBanStatus === "IN_BAN" && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/60 text-rose-300 font-mono text-[11px] font-bold shadow-xs animate-pulse">
+                                  <span>🚫 F&O BAN ({stock.mwplPercent ? `${stock.mwplPercent.toFixed(1)}% MWPL` : "IN BAN"})</span>
+                                </span>
+                              )}
+                              {stock.foBanStatus === "UPCOMING_BAN" && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/60 text-amber-300 font-mono text-[11px] font-bold shadow-xs">
+                                  <span>⚠️ NEAR BAN ({stock.mwplPercent ? `${stock.mwplPercent.toFixed(1)}% MWPL` : ">80% MWPL"})</span>
+                                </span>
+                              )}
+                              {stock.foBanStatus === "RECENTLY_UNBANNED" && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 font-mono text-[11px] font-bold shadow-xs">
+                                  <span>✅ UNBANNED TODAY</span>
+                                </span>
+                              )}
 
                               {stock.dayChangePct !== undefined && (
                                 <span
