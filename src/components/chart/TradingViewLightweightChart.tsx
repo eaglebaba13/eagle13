@@ -86,7 +86,7 @@ export function TradingViewLightweightChart({
   activeTool,
   onFinishDrawingTool,
   isMagnet,
-  drawings,
+  drawings = [],
   onSaveDrawings,
   showVolume,
   showVwap,
@@ -286,7 +286,7 @@ export function TradingViewLightweightChart({
       wickUpColor: "#10B981",
       wickDownColor: "#EF4444",
       priceLineColor: "#E5B869",
-      autoscaleInfoProvider: ((original) => {
+      autoscaleInfoProvider: ((original: () => any) => {
         const res = original();
         if (!res || !res.priceRange) return null;
         return {
@@ -1021,10 +1021,11 @@ export function TradingViewLightweightChart({
           })()}
 
         {/* 3. Persistent User Drawings */}
-        {drawings.map((d) => {
-          if (!d.points || d.points.length === 0) return null;
+        {(drawings || []).map((d) => {
+          if (!d || !d.points || d.points.length === 0) return null;
           const coords: { x: number; y: number }[] = [];
           for (const pt of d.points) {
+            if (!pt || !Number.isFinite(pt.price) || !Number.isFinite(pt.time)) continue;
             const c = getCoordinates(pt);
             if (c) coords.push(c);
           }
@@ -1096,6 +1097,7 @@ export function TradingViewLightweightChart({
           }
 
           if (d.type === "fibonacci") {
+            if (!d.points[0] || !d.points[1] || !Number.isFinite(d.points[0].price) || !Number.isFinite(d.points[1].price)) return null;
             const priceLow = Math.min(d.points[0].price, d.points[1].price);
             const priceHigh = Math.max(d.points[0].price, d.points[1].price);
             const diff = priceHigh - priceLow;
@@ -1136,6 +1138,7 @@ export function TradingViewLightweightChart({
           }
 
           if (d.type === "riskRewardLong" || d.type === "riskRewardShort") {
+            if (!d.points[0] || !d.points[1]) return null;
             const isLong = d.type === "riskRewardLong";
             const x = Math.min(c1.x, c2.x);
             const w = Math.abs(c2.x - c1.x) || 120;
@@ -1180,6 +1183,7 @@ export function TradingViewLightweightChart({
           }
 
           if (d.type === "ruler") {
+            if (!d.points[0] || !d.points[1] || !Number.isFinite(d.points[0].price) || !Number.isFinite(d.points[1].price)) return null;
             const pDiff = d.points[1].price - d.points[0].price;
             const pPct = d.points[0].price > 0 ? (pDiff / d.points[0].price) * 100 : 0;
             return (

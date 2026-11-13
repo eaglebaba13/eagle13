@@ -35,9 +35,9 @@ export const UNIVERSAL_INSTRUMENTS: readonly UniversalInstrument[] = [
   { key: "SILVERBEES", symbol: "SILVERBEES", name: "Nippon India Silver ETF", sector: "Indices & ETFs", category: "ETF", currency: "INR", defaultPrice: 176.32, lotSize: 100, tickSize: 0.01 },
 
   // --- 2. Commodities (Global & Spot) ---
-  { key: "GC1!", symbol: "GC1!", name: "COMEX GOLD (GC1!)", sector: "Commodities", category: "COMMODITY", currency: "USD", defaultPrice: 2742.50, lotSize: 100, tickSize: 0.10 },
-  { key: "XAUUSDT", symbol: "XAUUSDT", name: "XAU/USDT (Gold Spot)", sector: "Commodities", category: "COMMODITY", currency: "USDT", defaultPrice: 2740.00, lotSize: 1, tickSize: 0.01 },
-  { key: "XAGUSDT", symbol: "XAGUSDT", name: "XAG/USDT (Silver Spot)", sector: "Commodities", category: "COMMODITY", currency: "USDT", defaultPrice: 31.80, lotSize: 1, tickSize: 0.001 },
+  { key: "GC1!", symbol: "GC1!", name: "COMEX GOLD (GC1!)", sector: "Commodities", category: "COMMODITY", currency: "USD", defaultPrice: 3891.50, lotSize: 100, tickSize: 0.10 },
+  { key: "XAUUSDT", symbol: "XAUUSDT", name: "XAU/USDT (Gold Spot)", sector: "Commodities", category: "COMMODITY", currency: "USDT", defaultPrice: 3890.00, lotSize: 1, tickSize: 0.01 },
+  { key: "XAGUSDT", symbol: "XAGUSDT", name: "XAG/USDT (Silver Spot)", sector: "Commodities", category: "COMMODITY", currency: "USDT", defaultPrice: 32.80, lotSize: 1, tickSize: 0.001 },
   { key: "CL1!", symbol: "CL1!", name: "CRUDE OIL (CL1!)", sector: "Commodities", category: "COMMODITY", currency: "USD", defaultPrice: 71.45, lotSize: 100, tickSize: 0.01 },
   { key: "SI1!", symbol: "SI1!", name: "COMEX SILVER (SI1!)", sector: "Commodities", category: "COMMODITY", currency: "USD", defaultPrice: 32.55, lotSize: 5000, tickSize: 0.005 },
   { key: "NG1!", symbol: "NG1!", name: "NATURAL GAS (NG1!)", sector: "Commodities", category: "COMMODITY", currency: "USD", defaultPrice: 2.85, lotSize: 10000, tickSize: 0.001 },

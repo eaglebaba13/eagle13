@@ -104,15 +104,23 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
     // did not pin one explicitly.
     let resolvedExpiry = req.expiry ?? null;
     let expiryResolutionError: string | null = null;
+    let fetchedExpiries: readonly string[] = [];
     if (!resolvedExpiry) {
       try {
         const expiries = await this.listExpiries(req.underlying);
+        fetchedExpiries = expiries;
         resolvedExpiry = pickNearestExpiry(expiries);
         if (!resolvedExpiry) {
           expiryResolutionError = "no upcoming expiries returned by provider";
         }
       } catch (e) {
         expiryResolutionError = `expiry resolution failed: ${(e as Error).message}`;
+      }
+    } else {
+      try {
+        fetchedExpiries = await this.listExpiries(req.underlying);
+      } catch {
+        fetchedExpiries = [resolvedExpiry];
       }
     }
     if (!resolvedExpiry) {
@@ -195,7 +203,7 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
       timestamp: fetchedAt,
       provider: this.id,
       expiry,
-      availableExpiries: [],
+      availableExpiries: fetchedExpiries.length > 0 ? [...fetchedExpiries] : (expiry ? [expiry] : []),
       marketSession: "UNKNOWN",
       dataQuality: strikes.length >= 5 ? "OK" : "PARTIAL",
       strikes,

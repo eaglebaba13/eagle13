@@ -7,6 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Diagnostic, temporary audit, and test scripts
+check-*.cjs
+check_*.cjs
+check-*.mjs
+check_*.mjs
+test-*.cjs
+test_*.cjs
+audit_*.cjs
+audit_*.mjs
+
+
 node_modules
 dist
 dist-ssr

@@ -76,7 +76,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
 
     if (!validSelection(symbol, intervalMs)) {
       if (symbol === "GC1!") {
-        const series = generateFallbackSeed("GC1!", intervalMs, 2742.5);
+        const series = generateFallbackSeed("GC1!", intervalMs, 3891.5);
         return {
           error: null,
           series,
@@ -86,7 +86,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
             provider: "COMEX_SYNTHETIC",
             freshness: "LIVE",
             lastTick: new Date().toISOString(),
-            lastLtp: 2742.5,
+            lastLtp: 3891.5,
             currentCandle: null,
             completedCount: series.length,
             historicalCount: series.length,
@@ -274,7 +274,7 @@ function generateFallbackSeed(
           : symbol === "SENSEX"
             ? 80200
             : symbol === "GC1!"
-              ? 2742.5
+              ? 3891.5
               : 23800;
 
   const count = 30;

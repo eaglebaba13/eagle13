@@ -733,13 +733,14 @@ function LiveChartSelection({
   // Filtered Watchlist Instruments
   const filteredWatchlist = useMemo(() => {
     return UNIVERSAL_INSTRUMENTS.filter((inst) => {
+      if (!inst) return false;
       if (watchlistCategory !== "ALL" && inst.category !== watchlistCategory) return false;
       if (watchlistSearch.trim()) {
-        const q = watchlistSearch.toLowerCase();
+        const q = watchlistSearch.toLowerCase().trim();
         return (
-          inst.symbol.toLowerCase().includes(q) ||
-          inst.name.toLowerCase().includes(q) ||
-          inst.sector.toLowerCase().includes(q)
+          (inst.symbol?.toLowerCase() ?? "").includes(q) ||
+          (inst.name?.toLowerCase() ?? "").includes(q) ||
+          (inst.sector?.toLowerCase() ?? "").includes(q)
         );
       }
       return true;
@@ -1221,8 +1222,10 @@ function LiveChartSelection({
                   {/* Instrument List */}
                   <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                     {filteredWatchlist.slice(0, 100).map((inst) => {
+                      if (!inst || !inst.key) return null;
                       const isCurrent = inst.key === symbol;
                       const instSym = inst.currency === "INR" ? "₹" : "$";
+                      const priceVal = typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice) ? inst.defaultPrice : 0;
                       return (
                         <div
                           key={inst.key}
@@ -1233,18 +1236,18 @@ function LiveChartSelection({
                         >
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono font-bold text-xs text-zinc-100">{inst.symbol}</span>
+                              <span className="font-mono font-bold text-xs text-zinc-100">{inst.symbol ?? ""}</span>
                               <span className="text-[9px] font-mono text-zinc-500 px-1 py-0.2 bg-zinc-900 rounded border border-white/5">
-                                {inst.category}
+                                {inst.category ?? ""}
                               </span>
                             </div>
-                            <div className="text-[10px] text-zinc-500 truncate max-w-[140px]">{inst.name}</div>
+                            <div className="text-[10px] text-zinc-500 truncate max-w-[140px]">{inst.name ?? ""}</div>
                           </div>
                           <div className="text-right font-mono">
                             <div className="text-xs font-bold text-zinc-200">
                               {instSym}
-                              {(inst?.defaultPrice ?? 0).toLocaleString("en-IN", {
-                                maximumFractionDigits: (inst?.defaultPrice ?? 0) < 10 ? 4 : 2,
+                              {priceVal.toLocaleString("en-IN", {
+                                maximumFractionDigits: priceVal < 10 ? 4 : 2,
                               })}
                             </div>
                             <div className="text-[10px] text-emerald-400 font-semibold">+0.45%</div>
@@ -1278,38 +1281,42 @@ function LiveChartSelection({
                         No active price alerts set.
                       </div>
                     ) : (
-                      priceAlerts.map((alt) => (
-                        <div key={alt.id} className="p-2.5 rounded-lg bg-zinc-900/40 border border-white/5 mb-1.5">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-amber-300">
-                              <span>{alt.symbol}</span>
-                              <span
-                                className={`text-[9px] px-1 py-0.5 rounded ${
-                                  alt.condition === "ABOVE"
-                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                                }`}
+                      priceAlerts.map((alt) => {
+                        if (!alt || !alt.id) return null;
+                        const tgt = typeof alt.targetPrice === "number" && Number.isFinite(alt.targetPrice) ? alt.targetPrice : 0;
+                        return (
+                          <div key={alt.id} className="p-2.5 rounded-lg bg-zinc-900/40 border border-white/5 mb-1.5">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-amber-300">
+                                <span>{alt.symbol ?? ""}</span>
+                                <span
+                                  className={`text-[9px] px-1 py-0.5 rounded ${
+                                    alt.condition === "ABOVE"
+                                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                      : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                  }`}
+                                >
+                                  {alt.condition === "ABOVE" ? "≥ CROSS ABOVE" : "≤ CROSS BELOW"}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAlert(alt.id)}
+                                className="text-zinc-500 hover:text-rose-400 p-0.5 cursor-pointer"
+                                title="Delete Alert"
                               >
-                                {alt.condition === "ABOVE" ? "≥ CROSS ABOVE" : "≤ CROSS BELOW"}
-                              </span>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAlert(alt.id)}
-                              className="text-zinc-500 hover:text-rose-400 p-0.5 cursor-pointer"
-                              title="Delete Alert"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="font-mono text-sm font-bold text-zinc-100">
+                              {currencySymbol}
+                              {tgt.toLocaleString("en-IN")}
+                            </div>
+                            <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{alt.note ?? ""}</div>
+                            <div className="text-[9px] text-zinc-600 font-mono mt-1">{alt.createdAt ?? ""}</div>
                           </div>
-                          <div className="font-mono text-sm font-bold text-zinc-100">
-                            {currencySymbol}
-                            {alt.targetPrice.toLocaleString("en-IN")}
-                          </div>
-                          <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{alt.note}</div>
-                          <div className="text-[9px] text-zinc-600 font-mono mt-1">{alt.createdAt}</div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

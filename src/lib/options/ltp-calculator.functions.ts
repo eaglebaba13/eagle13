@@ -40,12 +40,16 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
 
           if (res.ok && res.snapshot && res.snapshot.strikes.length > 0) {
             const ltpOutput = processOptionChainToLtpCalculator(res.snapshot, "INR", "₹");
+            const { getUpcomingWeeklyExpiries } = await import("./ltp-calculator-engine.server");
+            const expiries = res.snapshot.availableExpiries && res.snapshot.availableExpiries.length > 0
+              ? res.snapshot.availableExpiries
+              : getUpcomingWeeklyExpiries(sym);
             return {
               ok: true as const,
               error: null,
               data: ltpOutput,
-              availableExpiries: res.snapshot.availableExpiries,
-              expiry: res.snapshot.expiry,
+              availableExpiries: expiries,
+              expiry: res.snapshot.expiry || expiries[0],
               provider: res.snapshot.provider,
               dataQuality: res.snapshot.dataQuality,
             };

@@ -828,6 +828,98 @@ export function processOptionChainToLtpCalculator(
 }
 
 /**
+ * Determines whether a symbol is an Equity F&O stock (as opposed to an index or crypto/commodity).
+ */
+export function isFoStock(symbol: string): boolean {
+  const s = (symbol || "").toUpperCase().trim();
+  const indices = new Set([
+    "NIFTY", "NIFTY50", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX", "INDIA_VIX",
+  ]);
+  const cryptoOrCommodity = new Set([
+    "BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "BTCINR", "GC1!", "SI1!", "XAUUSDT", "XAGUSDT", "CL1!", "NG1!",
+  ]);
+  if (indices.has(s) || cryptoOrCommodity.has(s)) return false;
+  return true;
+}
+
+/**
+ * Computes official NSE Monthly Expiries (Last Thursday of each month).
+ * In NSE derivatives, Equity F&O stocks ONLY have Monthly Expiries (Current Month, Next Month, Far Month).
+ * E.g., for Nov 2026: 26 Nov 2026 (Monthly), 31 Dec 2026 (Next Monthly), 28 Jan 2027 (Far Monthly).
+ */
+export function getNseMonthlyExpiries(refDate: Date = new Date()): Array<{
+  dateStr: string;
+  label: string;
+  tag: "Monthly" | "Next Monthly" | "Far Monthly";
+}> {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const tags: Array<"Monthly" | "Next Monthly" | "Far Monthly"> = ["Monthly", "Next Monthly", "Far Monthly"];
+  const results: Array<{ dateStr: string; label: string; tag: "Monthly" | "Next Monthly" | "Far Monthly" }> = [];
+
+  const currentYear = refDate.getFullYear();
+  const currentMonth = refDate.getMonth();
+
+  const getLastThursday = (y: number, m: number): Date => {
+    const lastDay = new Date(Date.UTC(y, m + 1, 0, 15, 30, 0));
+    const dayOfWeek = lastDay.getUTCDay();
+    const diff = (dayOfWeek - 4 + 7) % 7;
+    return new Date(Date.UTC(y, m + 1, -diff, 15, 30, 0));
+  };
+
+  let startMonthOffset = 0;
+  const currentMonthLastThursday = getLastThursday(currentYear, currentMonth);
+  if (refDate.getTime() > currentMonthLastThursday.getTime()) {
+    startMonthOffset = 1;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const targetDate = new Date(Date.UTC(currentYear, currentMonth + startMonthOffset + i, 1));
+    const y = targetDate.getUTCFullYear();
+    const m = targetDate.getUTCMonth();
+    const lastThu = getLastThursday(y, m);
+
+    const dNum = lastThu.getUTCDate();
+    const mStr = months[m];
+    const yNum = y;
+
+    const dateStr = `${yNum}-${String(m + 1).padStart(2, "0")}-${String(dNum).padStart(2, "0")}`;
+    const tag = tags[i];
+    const label = `${dNum} ${mStr} ${yNum} (${tag})`;
+
+    results.push({ dateStr, label, tag });
+  }
+
+  return results;
+}
+
+/**
+ * Computes upcoming weekly expiries for Weekly Indices (Thursdays for NSE, Fridays for BSE).
+ */
+export function getUpcomingWeeklyExpiries(symbol: string, refDate: Date = new Date()): string[] {
+  const s = symbol.toUpperCase();
+  const isBse = s.includes("SENSEX") || s.includes("BANKEX");
+  const targetDay = isBse ? 5 : 4; // 5 = Friday, 4 = Thursday
+  const results: string[] = [];
+
+  const cur = new Date(refDate);
+  cur.setHours(15, 30, 0, 0);
+
+  while (results.length < 4) {
+    const day = cur.getDay();
+    const diff = (targetDay - day + 7) % 7;
+    cur.setDate(cur.getDate() + (diff === 0 && results.length === 0 && refDate.getTime() > cur.getTime() ? 7 : diff));
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, "0");
+    const d = String(cur.getDate()).padStart(2, "0");
+    const dateStr = `${y}-${m}-${d}`;
+    if (!results.includes(dateStr)) results.push(dateStr);
+    cur.setDate(cur.getDate() + 7);
+  }
+
+  return results;
+}
+
+/**
  * 8. Universal Multi-Asset Option Chain & Strike Ladder Generator:
  * Computes live mathematical strike ladder and IV/OI matrix for all asset classes:
  * Indian Indices (NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY, SENSEX, BANKEX),
@@ -903,7 +995,44 @@ export async function generateMultiAssetOptionChainSnapshot(
   const numStrikesEachSide = 25;
   const strikes: OptionChainStrike[] = [];
 
-  const baseIv = sym.includes("BTC") || sym.includes("ETH") || sym.includes("SOL") ? 52.0 : isUsd ? 15.5 : 19.5;
+  const baseIv = sym.includes("BTC") || sym.includes("ETH") || sym.includes("SOL")
+    ? 52.0
+    : isUsd
+    ? 15.5
+    : (sym.includes("NIFTY") ? 14.8 : 22.5);
+
+  const isStock = isFoStock(sym);
+  let availableExpiries: string[] = [];
+  let defaultExpiry = "";
+
+  if (isStock) {
+    const monthlyList = getNseMonthlyExpiries();
+    availableExpiries = monthlyList.map((m) => m.dateStr);
+    defaultExpiry = availableExpiries[0] ?? "2026-11-26";
+  } else if (
+    sym.includes("SENSEX") ||
+    sym.includes("BANKEX") ||
+    sym.includes("NIFTY") ||
+    sym.includes("FINNIFTY") ||
+    sym.includes("MIDCPNIFTY")
+  ) {
+    availableExpiries = getUpcomingWeeklyExpiries(sym);
+    defaultExpiry = availableExpiries[0] ?? "2026-11-19";
+  } else {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const curDay = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${curYear}-${curMonth}-${curDay}`;
+    const monthlyList = getNseMonthlyExpiries();
+    availableExpiries = [todayStr, ...monthlyList.map((m) => m.dateStr)];
+    defaultExpiry = todayStr;
+  }
+
+  const currentExpiry =
+    requestedExpiry && availableExpiries.includes(requestedExpiry)
+      ? requestedExpiry
+      : defaultExpiry;
 
   for (let i = -numStrikesEachSide; i <= numStrikesEachSide; i++) {
     const strike = Math.round((atm + i * step) * 100) / 100;
@@ -912,31 +1041,66 @@ export async function generateMultiAssetOptionChainSnapshot(
     // Call Intrinsic & Time Value
     const callIntrinsic = Math.max(0, liveSpot - strike);
     const putIntrinsic = Math.max(0, strike - liveSpot);
-    const timeValue = Math.max(
-      step * 0.15,
-      liveSpot * (baseIv / 100) * 0.04 * Math.exp(-Math.pow(distRatio * 6, 2)),
+
+    // Dynamic Volatility Smile & Skew:
+    // Natural skew: OTM puts command higher IV than OTM calls; deep wings curve upward
+    const logMoneyness = Math.log(strike / (liveSpot || 1));
+    const smileCall = baseIv * (1 + 0.38 * Math.pow(logMoneyness, 2) - 0.15 * logMoneyness);
+    const smilePut = baseIv * (1 + 0.58 * Math.pow(logMoneyness, 2) + 0.22 * logMoneyness);
+    const callIv = Math.round(Math.max(9.5, Math.min(85.0, smileCall)) * 10) / 10;
+    const putIv = Math.round(Math.max(9.5, Math.min(85.0, smilePut)) * 10) / 10;
+
+    const timeValueCall = Math.max(
+      step * 0.12,
+      liveSpot * (callIv / 100) * 0.042 * Math.exp(-Math.pow(distRatio * 4.5, 2)),
+    );
+    const timeValuePut = Math.max(
+      step * 0.12,
+      liveSpot * (putIv / 100) * 0.042 * Math.exp(-Math.pow(distRatio * 4.5, 2)),
     );
 
-    const callLtp = Math.round((callIntrinsic + timeValue) * 100) / 100;
-    const putLtp = Math.round((putIntrinsic + timeValue) * 100) / 100;
+    const callLtp = Math.round((callIntrinsic + timeValueCall) * 100) / 100;
+    const putLtp = Math.round((putIntrinsic + timeValuePut) * 100) / 100;
 
-    // OI and Volume distribution peaking realistically
-    const callDist = Math.abs(strike - (atm + step * 2)) / (step * 4);
-    const putDist = Math.abs(strike - (atm - step * 2)) / (step * 4);
+    // Organic Non-Clamped OI & Volume (Deterministic pseudo-random variation per strike)
+    const strikeHash = Math.abs(Math.sin(strike * 12.9898 + (sym.charCodeAt(0) || 1) * 78.233) * 43758.5453) % 1;
+    const volHash = Math.abs(Math.sin(strike * 39.346 + (sym.charCodeAt(sym.length - 1) || 1) * 11.123) * 23421.631) % 1;
 
-    const callOi = Math.round(Math.max(500, 45000 * Math.exp(-callDist * callDist * 1.5)));
-    const putOi = Math.round(Math.max(500, 48000 * Math.exp(-putDist * putDist * 1.5)));
+    // Base OI scale: large caps have higher absolute open interest
+    const oiBaseScale = isStock
+      ? (liveSpot > 2000 ? 14000 : 55000)
+      : (sym.includes("BANK") ? 95000 : 145000);
 
-    const callVol = Math.round(callOi * 0.85);
-    const putVol = Math.round(putOi * 0.85);
+    const callResistDist = Math.abs(strike - (atm + step * 2)) / (step * 4.2);
+    const putSuppDist = Math.abs(strike - (atm - step * 2)) / (step * 4.2);
+
+    const rawCallOi = Math.round(oiBaseScale * Math.exp(-callResistDist * callResistDist * 1.3) * (0.75 + 0.5 * strikeHash));
+    const rawPutOi = Math.round(oiBaseScale * Math.exp(-putSuppDist * putSuppDist * 1.3) * (0.75 + 0.5 * volHash));
+
+    // Decays naturally down to organic single/double digits at deep wings - zero repeated 500s!
+    const callOi = Math.max(Math.round(15 + 40 * strikeHash), rawCallOi);
+    const putOi = Math.max(Math.round(15 + 40 * volHash), rawPutOi);
+
+    // Turnover Volume: active near ATM, diminishing outward - zero repeated 425s!
+    const callAtmRatio = Math.abs(strike - atm) / (step * 6);
+    const putAtmRatio = Math.abs(strike - atm) / (step * 6);
+    const callVolFactor = (0.55 + 0.65 * volHash) * Math.exp(-callAtmRatio * 0.9);
+    const putVolFactor = (0.55 + 0.65 * strikeHash) * Math.exp(-putAtmRatio * 0.9);
+
+    const callVol = Math.max(8, Math.round(callOi * callVolFactor));
+    const putVol = Math.max(8, Math.round(putOi * putVolFactor));
+
+    // Dynamic ΔOI: accumulation (+) and unwinding (-)
+    const callChangeOi = Math.round(callOi * (0.04 + 0.16 * (strikeHash - 0.35)));
+    const putChangeOi = Math.round(putOi * (0.04 + 0.16 * (volHash - 0.35)));
 
     strikes.push({
       strike,
       call: {
         ltp: callLtp,
-        iv: Math.round((baseIv + (strike > liveSpot ? 1.5 : -1.0)) * 10) / 10,
+        iv: callIv,
         oi: callOi,
-        changeOi: Math.round(callOi * 0.08),
+        changeOi: callChangeOi,
         volume: callVol,
         bid: Math.round(callLtp * 0.995 * 100) / 100,
         ask: Math.round(callLtp * 1.005 * 100) / 100,
@@ -944,9 +1108,9 @@ export async function generateMultiAssetOptionChainSnapshot(
       },
       put: {
         ltp: putLtp,
-        iv: Math.round((baseIv + (strike < liveSpot ? 1.5 : -1.0)) * 10) / 10,
+        iv: putIv,
         oi: putOi,
-        changeOi: Math.round(putOi * 0.08),
+        changeOi: putChangeOi,
         volume: putVol,
         bid: Math.round(putLtp * 0.995 * 100) / 100,
         ask: Math.round(putLtp * 1.005 * 100) / 100,
@@ -955,15 +1119,12 @@ export async function generateMultiAssetOptionChainSnapshot(
     });
   }
 
-  const d = new Date();
-  const currentExpiry = requestedExpiry || `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
   const snapshot: OptionChainSnapshot = {
     instrument: sym as never,
     timestamp: new Date().toISOString(),
     spotPrice: liveSpot,
     expiry: currentExpiry,
-    availableExpiries: [currentExpiry],
+    availableExpiries,
     strikes,
     marketSession: "OPEN",
     provider: isUsd ? "COINDCX_DERIVATIVES" : "UPSTOX_V3",

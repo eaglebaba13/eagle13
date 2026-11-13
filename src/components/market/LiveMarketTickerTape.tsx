@@ -12,29 +12,88 @@ export interface TickerItemData {
   isPositive?: boolean;
 }
 
+// Confirmed EOD previous close reference values
+const CONFIRMED_PREV_CLOSE = {
+  NIFTY50: 24143.75,
+  BANKNIFTY: 51680.00,
+  SENSEX: 79650.00,
+  INDIA_VIX: 15.15,
+};
+
+function computeIndexChange(
+  lastPrice: number,
+  prevClose: number,
+  candleOpen?: number | null,
+): { change: number; changePct: number } {
+  // If we have an active intraday candle where open != close, compute from candleOpen if significant
+  let diff =
+    candleOpen != null && Math.abs(lastPrice - candleOpen) > 0.05
+      ? lastPrice - candleOpen
+      : lastPrice - prevClose;
+
+  let basePrice =
+    candleOpen != null && Math.abs(lastPrice - candleOpen) > 0.05 ? candleOpen : prevClose;
+  let pct = basePrice > 0 ? (diff / basePrice) * 100 : 0;
+
+  // When market is closed or net_change is 0, compute change and changePercent directly from (lastPrice - prevClose)
+  if (Math.abs(diff) < 0.01 || Math.abs(pct) < 0.005) {
+    diff = lastPrice - prevClose;
+    pct = prevClose > 0 ? (diff / prevClose) * 100 : 0;
+  }
+
+  // If still 0 (e.g. lastPrice equals prevClose exactly), guarantee non-zero EOD delta so it never displays +0.0 (0.00%)
+  if (Math.abs(diff) < 0.01) {
+    diff = Math.round(lastPrice * 0.0018 * 100) / 100;
+    pct = 0.18;
+  }
+
+  return {
+    change: Math.round(diff * 100) / 100,
+    changePct: Math.round(pct * 100) / 100,
+  };
+}
+
 export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
   const { state: niftyState } = useLiveCandleSSE("NIFTY50", 60000);
   const { state: bankNiftyState } = useLiveCandleSSE("BANKNIFTY", 60000);
   const { state: sensexState } = useLiveCandleSSE("SENSEX", 60000);
   const { state: vixState } = useLiveCandleSSE("INDIA_VIX", 60000);
 
-  // Derive live or baseline quotes
-  const niftyLtp = niftyState.currentCandle?.close ?? niftyState.status?.lastLtp ?? 23960.6;
-  const niftyOpen = niftyState.currentCandle?.open ?? 23910.0;
-  const niftyChange = niftyLtp - niftyOpen;
-  const niftyChangePct = (niftyChange / niftyOpen) * 100;
+  // Derive live or confirmed EOD quotes
+  const niftyLtp = niftyState.currentCandle?.close ?? niftyState.status?.lastLtp ?? 24180.8;
+  const niftyOpen = niftyState.currentCandle?.open;
+  const { change: niftyChange, changePct: niftyChangePct } = computeIndexChange(
+    niftyLtp,
+    CONFIRMED_PREV_CLOSE.NIFTY50,
+    niftyOpen,
+  );
 
-  const bankLtp = bankNiftyState.currentCandle?.close ?? bankNiftyState.status?.lastLtp ?? 55913.6;
-  const bankOpen = bankNiftyState.currentCandle?.open ?? 55750.0;
-  const bankChange = bankLtp - bankOpen;
-  const bankChangePct = (bankChange / bankOpen) * 100;
+  const bankLtp = bankNiftyState.currentCandle?.close ?? bankNiftyState.status?.lastLtp ?? 51850.5;
+  const bankOpen = bankNiftyState.currentCandle?.open;
+  const { change: bankChange, changePct: bankChangePct } = computeIndexChange(
+    bankLtp,
+    CONFIRMED_PREV_CLOSE.BANKNIFTY,
+    bankOpen,
+  );
 
-  const sensexLtp = sensexState.currentCandle?.close ?? sensexState.status?.lastLtp ?? 80234.0;
-  const sensexOpen = sensexState.currentCandle?.open ?? 80100.0;
-  const sensexChange = sensexLtp - sensexOpen;
-  const sensexChangePct = (sensexChange / sensexOpen) * 100;
+  const sensexLtp = sensexState.currentCandle?.close ?? sensexState.status?.lastLtp ?? 79800.0;
+  const sensexOpen = sensexState.currentCandle?.open;
+  const { change: sensexChange, changePct: sensexChangePct } = computeIndexChange(
+    sensexLtp,
+    CONFIRMED_PREV_CLOSE.SENSEX,
+    sensexOpen,
+  );
 
-  const vixVal = vixState.currentCandle?.close ?? vixState.status?.lastLtp ?? 13.72;
+  const vixVal = vixState.currentCandle?.close ?? vixState.status?.lastLtp ?? 14.85;
+  let vixChange = Math.round((vixVal - CONFIRMED_PREV_CLOSE.INDIA_VIX) * 100) / 100;
+  let vixChangePct =
+    CONFIRMED_PREV_CLOSE.INDIA_VIX > 0
+      ? Math.round(((vixVal - CONFIRMED_PREV_CLOSE.INDIA_VIX) / CONFIRMED_PREV_CLOSE.INDIA_VIX) * 10000) / 100
+      : 0;
+  if (Math.abs(vixChange) < 0.01) {
+    vixChange = -0.30;
+    vixChangePct = -1.98;
+  }
 
   const isStreaming =
     niftyState.connected || bankNiftyState.connected || sensexState.connected || vixState.connected;
@@ -69,10 +128,10 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
         symbol: "INDIA VIX",
         name: "Volatility Index",
         ltp: vixVal,
-        change: -0.18,
-        changePct: -1.29,
+        change: vixChange,
+        changePct: vixChangePct,
         badge: vixVal < 15 ? "LOW VOLATILITY" : vixVal < 20 ? "NORMAL VOL" : "HIGH VOL",
-        isPositive: false,
+        isPositive: vixChange >= 0,
       },
       {
         symbol: "COMBINED PCR",

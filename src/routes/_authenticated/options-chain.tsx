@@ -78,6 +78,34 @@ function LtpCalculatorPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
+  const isFoStock = useMemo(() => {
+    const sym = (underlying || "").toUpperCase();
+    const indexSet = new Set(["NIFTY", "NIFTY50", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX", "INDIA_VIX"]);
+    const cryptoOrCommodity = new Set(["BTCUSDT", "ETHUSDT", "SOLUSDT", "GC1!", "SI1!"]);
+    return !indexSet.has(sym) && !cryptoOrCommodity.has(sym);
+  }, [underlying]);
+
+  const formatExpiryDisplay = useCallback(
+    (exp: string, idx: number) => {
+      if (!isFoStock) return exp;
+      try {
+        const parts = exp.split("-");
+        if (parts.length === 3) {
+          const y = parts[0];
+          const mIdx = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const tag = idx === 0 ? "Monthly" : idx === 1 ? "Next Monthly" : "Far Monthly";
+          return `${d} ${months[mIdx]} ${y} (${tag})`;
+        }
+      } catch {
+        // ignore
+      }
+      return exp;
+    },
+    [isFoStock],
+  );
+
   const fetchLtpFn = useServerFn(getLtpCalculatorData);
   const fetchBlastFn = useServerFn(getLtpBlastStocks);
   const fetchFourLineFn = useServerFn(getStockFourLineData);
@@ -425,10 +453,12 @@ function LtpCalculatorPage() {
                     onChange={(e) => setExpiry(e.target.value)}
                     className="px-2.5 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 text-xs font-mono focus:outline-none focus:border-amber-500"
                   >
-                    <option value="">Current Weekly Expiry</option>
-                    {availableExpiries.map((exp) => (
+                    <option value="">
+                      {isFoStock ? "Current Monthly Expiry" : "Current Weekly Expiry"}
+                    </option>
+                    {availableExpiries.map((exp, idx) => (
                       <option key={exp} value={exp}>
-                        {exp}
+                        {formatExpiryDisplay(exp, idx)}
                       </option>
                     ))}
                   </select>
