@@ -1,6 +1,6 @@
 import { useMarketSession } from "@/hooks/use-market-session";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Component, type ErrorInfo, type ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -78,7 +78,31 @@ const levelsQuery = () =>
   });
 
 export const Route = createFileRoute("/live-chart")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(levelsQuery()),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(levelsQuery());
+    } catch {
+      return null;
+    }
+  },
+  errorComponent: ({ error, reset }) => (
+    <div className="flex h-screen w-full items-center justify-center bg-[#08090C] text-white p-6 select-none font-mono">
+      <div className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-amber-500/30 bg-zinc-950/90 text-center max-w-md shadow-2xl">
+        <div className="text-amber-400 font-bold text-sm tracking-wide">
+          ⚡ Live Chart Workstation
+        </div>
+        <p className="text-xs text-zinc-400">
+          {error instanceof Error ? error.message : "Temporary stream synchronization error."}
+        </p>
+        <button
+          onClick={reset}
+          className="mt-2 px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 cursor-pointer transition-colors"
+        >
+          Reconnect Workstation
+        </button>
+      </div>
+    </div>
+  ),
   component: LiveChartPage,
   head: () => ({
     meta: [
@@ -106,6 +130,50 @@ interface PriceAlertItem {
   readonly note: string;
   readonly createdAt: string;
   readonly active: boolean;
+}
+
+class ChartCanvasErrorBoundary extends Component<
+  { children: ReactNode; onReset?: () => void },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode; onReset?: () => void }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[ChartCanvasErrorBoundary] Caught render error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#08090C] text-zinc-300 p-6 select-none font-mono">
+          <div className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-amber-500/25 bg-zinc-950/90 text-center max-w-sm shadow-2xl">
+            <span className="text-xs font-bold text-amber-400">CHART WORKSTATION RECOVERING</span>
+            <span className="text-[11px] text-zinc-400">
+              {this.state.error?.message?.slice(0, 100) ?? "Synchronizing canvas context…"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                this.props.onReset?.();
+              }}
+              className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 cursor-pointer transition-colors"
+            >
+              Reload Chart Canvas
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function LiveChartPage() {
@@ -254,7 +322,7 @@ function LiveChartSelection({
   const [isChartScrolled, setIsChartScrolled] = useState(false);
 
   // Data Queries
-  const { data: liveLevels } = useSuspenseQuery(levelsQuery());
+  const { data: liveLevels } = useQuery(levelsQuery());
   const { state: sse } = useLiveCandleSSE(symbol, intervalMs);
 
   const [historical, setHistorical] = useState<readonly ChartCandle[]>([]);
@@ -1041,35 +1109,37 @@ function LiveChartSelection({
 
           {/* Interactive TradingView Lightweight Chart */}
           <div className="flex-1 h-full min-w-0 relative">
-            <TradingViewLightweightChart
-              symbol={symbol}
-              intervalMs={intervalMs}
-              candles={lightweightCandles}
-              liveCandle={liveCandleData}
-              activeTool={activeTool}
-              onFinishDrawingTool={() => setActiveTool("cursor")}
-              isMagnet={isMagnet}
-              drawings={drawings}
-              onSaveDrawings={handleSaveDrawings}
-              showVolume={showVolume}
-              showVwap={showVwap}
-              showLtpLevels={showLtpLevels}
-              showAstroLevels={showAstroLevels}
-              showLiquidity={showLiquidity}
-              showIctUnicorn={showIctUnicorn}
-              showOiProfile={showOiProfile}
-              ltpLevels={ltpLevels}
-              astroLevels={astroLevels}
-              liquidityLevels={sessionLiquidity}
-              unicornSetup={unicornSetup}
-              fvgs={fvgs}
-              oiProfile={oiProfile}
-              onCrosshairMove={setHudData}
-              onFitContentRef={fitContentRef}
-              onIsScrolledChange={setIsChartScrolled}
-              currencySymbol={currencySymbol}
-              priceScaleMode={priceScaleMode}
-            />
+            <ChartCanvasErrorBoundary onReset={() => fitContentRef.current?.()}>
+              <TradingViewLightweightChart
+                symbol={symbol}
+                intervalMs={intervalMs}
+                candles={lightweightCandles}
+                liveCandle={liveCandleData}
+                activeTool={activeTool}
+                onFinishDrawingTool={() => setActiveTool("cursor")}
+                isMagnet={isMagnet}
+                drawings={drawings}
+                onSaveDrawings={handleSaveDrawings}
+                showVolume={showVolume}
+                showVwap={showVwap}
+                showLtpLevels={showLtpLevels}
+                showAstroLevels={showAstroLevels}
+                showLiquidity={showLiquidity}
+                showIctUnicorn={showIctUnicorn}
+                showOiProfile={showOiProfile}
+                ltpLevels={ltpLevels}
+                astroLevels={astroLevels}
+                liquidityLevels={sessionLiquidity}
+                unicornSetup={unicornSetup}
+                fvgs={fvgs}
+                oiProfile={oiProfile}
+                onCrosshairMove={setHudData}
+                onFitContentRef={fitContentRef}
+                onIsScrolledChange={setIsChartScrolled}
+                currencySymbol={currencySymbol}
+                priceScaleMode={priceScaleMode}
+              />
+            </ChartCanvasErrorBoundary>
           </div>
 
           {/* Right Collapsible Dock (Live Watchlist & Active Alerts) */}
@@ -1173,8 +1243,8 @@ function LiveChartSelection({
                           <div className="text-right font-mono">
                             <div className="text-xs font-bold text-zinc-200">
                               {instSym}
-                              {inst.defaultPrice.toLocaleString("en-IN", {
-                                maximumFractionDigits: inst.defaultPrice < 10 ? 4 : 2,
+                              {(inst?.defaultPrice ?? 0).toLocaleString("en-IN", {
+                                maximumFractionDigits: (inst?.defaultPrice ?? 0) < 10 ? 4 : 2,
                               })}
                             </div>
                             <div className="text-[10px] text-emerald-400 font-semibold">+0.45%</div>

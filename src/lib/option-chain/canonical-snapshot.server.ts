@@ -37,10 +37,7 @@ export async function fetchCanonicalOptionChain(
   const { computeAtm } = await import("./atm-engine");
   const { getSnapshotHistory } = await import("./snapshot-history");
 
-  let provider: {
-    fetchSnapshot(req: { underlying: OptionUnderlying; expiry?: string }): Promise<import("./provider").FetchSnapshotResult>;
-    meta: import("./provider").OptionChainProviderMeta;
-  };
+  let provider: import("./provider").OptionChainProvider;
 
   if (process.env.NODE_ENV === "test" && input.useMock) {
     const { MockOptionChainProvider } = await import("./mock-provider");

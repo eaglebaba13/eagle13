@@ -150,6 +150,11 @@ export function TradingViewLightweightChart({
       month: "short",
     });
 
+    const istYearFormatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+    });
+
     const istDateTimeFormatter = new Intl.DateTimeFormat("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
@@ -163,22 +168,29 @@ export function TradingViewLightweightChart({
       localization: {
         locale: "en-IN",
         dateFormat: "dd MMM yyyy",
-        priceFormatter: (p: number) =>
-          `${currencySymbol}${p.toLocaleString("en-IN", {
+        priceFormatter: (p: number) => {
+          if (!Number.isFinite(p)) return "";
+          return `${currencySymbol}${p.toLocaleString("en-IN", {
             maximumFractionDigits: p < 10 ? 4 : 2,
-          })}`,
+          })}`;
+        },
         timeFormatter: (time: Time) => {
-          let date: Date;
-          if (typeof time === "number") {
-            date = new Date(time * 1000);
-          } else if (typeof time === "string") {
-            date = new Date(time);
-          } else if (typeof time === "object" && "year" in time) {
-            date = new Date(time.year, time.month - 1, time.day);
-          } else {
+          try {
+            let date: Date;
+            if (typeof time === "number") {
+              date = new Date(time > 1e11 ? time : time * 1000);
+            } else if (typeof time === "string") {
+              date = new Date(time);
+            } else if (typeof time === "object" && time !== null && "year" in time) {
+              date = new Date(time.year, time.month - 1, time.day);
+            } else {
+              return "";
+            }
+            if (isNaN(date.getTime())) return "";
+            return `${istDateTimeFormatter.format(date)} IST`;
+          } catch {
             return "";
           }
-          return `${istDateTimeFormatter.format(date)} IST`;
         },
       },
       layout: {
@@ -214,28 +226,33 @@ export function TradingViewLightweightChart({
         barSpacing: 9,
         minBarSpacing: 2,
         tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
-          let date: Date;
-          if (typeof time === "number") {
-            date = new Date(time * 1000);
-          } else if (typeof time === "string") {
-            date = new Date(time);
-          } else if (typeof time === "object" && "year" in time) {
-            date = new Date(time.year, time.month - 1, time.day);
-          } else {
-            return null;
-          }
+          try {
+            let date: Date;
+            if (typeof time === "number") {
+              date = new Date(time > 1e11 ? time : time * 1000);
+            } else if (typeof time === "string") {
+              date = new Date(time);
+            } else if (typeof time === "object" && time !== null && "year" in time) {
+              date = new Date(time.year, time.month - 1, time.day);
+            } else {
+              return null;
+            }
+            if (isNaN(date.getTime())) return null;
 
-          switch (tickMarkType) {
-            case TickMarkType.Year:
-              return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", year: "numeric" }).format(date);
-            case TickMarkType.Month:
-              return istDateFormatter.format(date);
-            case TickMarkType.DayOfMonth:
-              return istDateFormatter.format(date);
-            case TickMarkType.Time:
-            case TickMarkType.TimeWithSeconds:
-            default:
-              return istTimeFormatter.format(date);
+            switch (tickMarkType) {
+              case TickMarkType.Year:
+                return istYearFormatter.format(date);
+              case TickMarkType.Month:
+                return istDateFormatter.format(date);
+              case TickMarkType.DayOfMonth:
+                return istDateFormatter.format(date);
+              case TickMarkType.Time:
+              case TickMarkType.TimeWithSeconds:
+              default:
+                return istTimeFormatter.format(date);
+            }
+          } catch {
+            return null;
           }
         },
       },
@@ -369,27 +386,67 @@ export function TradingViewLightweightChart({
 
   // 2. Load and Sync Candle Data
   useEffect(() => {
-    if (!candleSeriesRef.current || !volumeSeriesRef.current || candles.length === 0) return;
+    if (!candleSeriesRef.current || !volumeSeriesRef.current || !candles || candles.length === 0) return;
 
-    const formattedCandles = candles.map((c) => ({
-      time: toUtcSeconds(c.time),
-      open: c.open,
-      high: c.high,
-      low: c.low,
-      close: c.close,
-    }));
+    // Filter, strictly validate, and sort candles ascending by time
+    const validCandles = candles.filter(
+      (c) =>
+        c &&
+        typeof c.time === "number" &&
+        Number.isFinite(c.time) &&
+        c.time > 0 &&
+        Number.isFinite(c.open) &&
+        Number.isFinite(c.high) &&
+        Number.isFinite(c.low) &&
+        Number.isFinite(c.close)
+    );
 
-    candleSeriesRef.current.setData(formattedCandles);
+    const sortedCandles = [...validCandles].sort((a, b) => a.time - b.time);
+    const uniqueMap = new Map<number, (typeof sortedCandles)[0]>();
+    for (const c of sortedCandles) {
+      const t = toUtcSeconds(c.time);
+      if (Number.isFinite(t)) {
+        uniqueMap.set(t, c);
+      }
+    }
+
+    const formattedCandles = Array.from(uniqueMap.values())
+      .map((c) => ({
+        time: toUtcSeconds(c.time),
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+      }))
+      .sort((a, b) => (a.time as number) - (b.time as number));
+
+    if (formattedCandles.length > 0) {
+      try {
+        candleSeriesRef.current.setData(formattedCandles);
+      } catch (err) {
+        console.warn("[Chart] Candle setData error:", err);
+      }
+    }
 
     if (showVolume) {
-      const formattedVolume = candles.map((c) => ({
-        time: toUtcSeconds(c.time),
-        value: c.volume ?? 1000,
-        color: c.close >= c.open ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.35)",
-      }));
-      volumeSeriesRef.current.setData(formattedVolume);
+      const formattedVolume = Array.from(uniqueMap.values())
+        .map((c) => ({
+          time: toUtcSeconds(c.time),
+          value: Number.isFinite(c.volume) ? (c.volume as number) : 1000,
+          color: c.close >= c.open ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.35)",
+        }))
+        .sort((a, b) => (a.time as number) - (b.time as number));
+      try {
+        volumeSeriesRef.current.setData(formattedVolume);
+      } catch (err) {
+        console.warn("[Chart] Volume setData error:", err);
+      }
     } else {
-      volumeSeriesRef.current.setData([]);
+      try {
+        volumeSeriesRef.current.setData([]);
+      } catch {
+        // ignore
+      }
     }
 
     // Compute Session VWAP
@@ -398,9 +455,9 @@ export function TradingViewLightweightChart({
       let cumulativeVolumePrice = 0;
       const vwapPoints: { time: UTCTimestamp; value: number }[] = [];
 
-      for (const c of candles) {
+      for (const c of Array.from(uniqueMap.values())) {
         const typical = (c.high + c.low + c.close) / 3;
-        const vol = c.volume ?? 1000;
+        const vol = Number.isFinite(c.volume) ? (c.volume as number) : 1000;
         cumulativeVolume += vol;
         cumulativeVolumePrice += typical * vol;
         if (cumulativeVolume > 0) {
@@ -410,9 +467,17 @@ export function TradingViewLightweightChart({
           });
         }
       }
-      vwapSeriesRef.current.setData(vwapPoints);
+      try {
+        vwapSeriesRef.current.setData(vwapPoints);
+      } catch (err) {
+        console.warn("[Chart] VWAP setData error:", err);
+      }
     } else if (vwapSeriesRef.current) {
-      vwapSeriesRef.current.setData([]);
+      try {
+        vwapSeriesRef.current.setData([]);
+      } catch {
+        // ignore
+      }
     }
 
     forceUpdateViewport();
@@ -421,24 +486,44 @@ export function TradingViewLightweightChart({
   // 3. Smooth Live Streaming Tick Updates (60 FPS without resetting viewport)
   useEffect(() => {
     if (!candleSeriesRef.current || !liveCandle) return;
+    if (
+      !Number.isFinite(liveCandle.time) ||
+      !Number.isFinite(liveCandle.open) ||
+      !Number.isFinite(liveCandle.high) ||
+      !Number.isFinite(liveCandle.low) ||
+      !Number.isFinite(liveCandle.close)
+    ) {
+      return;
+    }
 
-    candleSeriesRef.current.update({
-      time: toUtcSeconds(liveCandle.time),
-      open: liveCandle.open,
-      high: liveCandle.high,
-      low: liveCandle.low,
-      close: liveCandle.close,
-    });
+    const t = toUtcSeconds(liveCandle.time);
+    if (!Number.isFinite(t)) return;
 
-    if (showVolume && volumeSeriesRef.current && liveCandle.volume != null) {
-      volumeSeriesRef.current.update({
-        time: toUtcSeconds(liveCandle.time),
-        value: liveCandle.volume,
-        color:
-          liveCandle.close >= liveCandle.open
-            ? "rgba(16, 185, 129, 0.35)"
-            : "rgba(239, 68, 68, 0.35)",
+    try {
+      candleSeriesRef.current.update({
+        time: t,
+        open: liveCandle.open,
+        high: liveCandle.high,
+        low: liveCandle.low,
+        close: liveCandle.close,
       });
+    } catch {
+      // Ignore out-of-order tick assertions
+    }
+
+    if (showVolume && volumeSeriesRef.current && liveCandle.volume != null && Number.isFinite(liveCandle.volume)) {
+      try {
+        volumeSeriesRef.current.update({
+          time: t,
+          value: liveCandle.volume,
+          color:
+            liveCandle.close >= liveCandle.open
+              ? "rgba(16, 185, 129, 0.35)"
+              : "rgba(239, 68, 68, 0.35)",
+        });
+      } catch {
+        // Ignore out-of-order tick assertions
+      }
     }
   }, [liveCandle, showVolume, toUtcSeconds]);
 
@@ -577,25 +662,30 @@ export function TradingViewLightweightChart({
 
     // 2. Add or in-place update existing lines
     for (const [id, desired] of desiredMap.entries()) {
+      if (!Number.isFinite(desired.price)) continue;
       const existing = priceLinesMapRef.current.get(id);
-      if (existing) {
-        existing.applyOptions({
-          price: desired.price,
-          color: desired.color,
-          lineWidth: desired.lineWidth,
-          lineStyle: desired.lineStyle,
-          title: desired.title,
-        });
-      } else {
-        const created = series.createPriceLine({
-          price: desired.price,
-          color: desired.color,
-          lineWidth: desired.lineWidth,
-          lineStyle: desired.lineStyle,
-          title: desired.title,
-          axisLabelVisible: true,
-        });
-        priceLinesMapRef.current.set(id, created);
+      try {
+        if (existing) {
+          existing.applyOptions({
+            price: desired.price,
+            color: desired.color,
+            lineWidth: desired.lineWidth,
+            lineStyle: desired.lineStyle,
+            title: desired.title,
+          });
+        } else {
+          const created = series.createPriceLine({
+            price: desired.price,
+            color: desired.color,
+            lineWidth: desired.lineWidth,
+            lineStyle: desired.lineStyle,
+            title: desired.title,
+            axisLabelVisible: true,
+          });
+          priceLinesMapRef.current.set(id, created);
+        }
+      } catch (err) {
+        console.warn(`[Chart] Error updating price line ${id}:`, err);
       }
     }
   }, [
@@ -835,11 +925,13 @@ export function TradingViewLightweightChart({
 
         {/* 1. Fair Value Gaps (FVG) Boxes */}
         {showIctUnicorn &&
+          Array.isArray(fvgs) &&
           fvgs.map((fvg, i) => {
             if (!chartRef.current || !candleSeriesRef.current) return null;
+            if (!fvg || !Number.isFinite(fvg.high) || !Number.isFinite(fvg.low)) return null;
             const topY = candleSeriesRef.current.priceToCoordinate(fvg.high);
             const botY = candleSeriesRef.current.priceToCoordinate(fvg.low);
-            if (topY == null || botY == null) return null;
+            if (topY == null || botY == null || !Number.isFinite(topY) || !Number.isFinite(botY)) return null;
 
             const height = Math.abs(botY - topY);
             const y = Math.min(topY, botY);
@@ -875,50 +967,58 @@ export function TradingViewLightweightChart({
 
         {/* 2. Live OI Profile Horizontal Bars on Right Axis (Constrained max-w-[110px]) */}
         {showOiProfile &&
-          oiProfile.map((oi, i) => {
-            if (!candleSeriesRef.current) return null;
-            const y = candleSeriesRef.current.priceToCoordinate(oi.strike);
-            if (y == null) return null;
-
-            const maxOi = Math.max(...oiProfile.map((p) => Math.max(p.callOi, p.putOi))) || 1;
-            const maxBarWidth = 85; // Constrained width so bars never block candles or drag physics
-            const callWidth = Math.min(maxBarWidth, (oi.callOi / maxOi) * maxBarWidth);
-            const putWidth = Math.min(maxBarWidth, (oi.putOi / maxOi) * maxBarWidth);
-
-            return (
-              <g key={`oi-${oi.strike}-${i}`} className="pointer-events-none select-none">
-                {/* Put OI Bar (Green) */}
-                <rect
-                  x={`calc(100% - ${putWidth + 50}px)`}
-                  y={y - 5}
-                  width={putWidth}
-                  height="4"
-                  fill="#10B981"
-                  opacity="0.65"
-                  rx="1"
-                />
-                {/* Call OI Bar (Red) */}
-                <rect
-                  x={`calc(100% - ${callWidth + 50}px)`}
-                  y={y + 1}
-                  width={callWidth}
-                  height="4"
-                  fill="#F43F5E"
-                  opacity="0.65"
-                  rx="1"
-                />
-                <text
-                  x="calc(100% - 46px)"
-                  y={y + 3}
-                  fill="#9CA3AF"
-                  fontSize="8"
-                  fontFamily="monospace"
-                >
-                  {oi.strike}
-                </text>
-              </g>
+          Array.isArray(oiProfile) &&
+          (() => {
+            const maxOi = Math.max(
+              1,
+              ...oiProfile.map((p) => Math.max(Number.isFinite(p?.callOi) ? p.callOi : 0, Number.isFinite(p?.putOi) ? p.putOi : 0))
             );
-          })}
+            return oiProfile.map((oi, i) => {
+              if (!candleSeriesRef.current || !oi || !Number.isFinite(oi.strike)) return null;
+              const y = candleSeriesRef.current.priceToCoordinate(oi.strike);
+              if (y == null || !Number.isFinite(y)) return null;
+
+              const maxBarWidth = 85; // Constrained width so bars never block candles or drag physics
+              const callOiVal = Number.isFinite(oi.callOi) ? oi.callOi : 0;
+              const putOiVal = Number.isFinite(oi.putOi) ? oi.putOi : 0;
+              const callWidth = Math.max(0, Math.min(maxBarWidth, (callOiVal / maxOi) * maxBarWidth));
+              const putWidth = Math.max(0, Math.min(maxBarWidth, (putOiVal / maxOi) * maxBarWidth));
+
+              return (
+                <g key={`oi-${oi.strike}-${i}`} className="pointer-events-none select-none">
+                  {/* Put OI Bar (Green) */}
+                  <rect
+                    x={`calc(100% - ${putWidth + 50}px)`}
+                    y={y - 5}
+                    width={putWidth}
+                    height="4"
+                    fill="#10B981"
+                    opacity="0.65"
+                    rx="1"
+                  />
+                  {/* Call OI Bar (Red) */}
+                  <rect
+                    x={`calc(100% - ${callWidth + 50}px)`}
+                    y={y + 1}
+                    width={callWidth}
+                    height="4"
+                    fill="#F43F5E"
+                    opacity="0.65"
+                    rx="1"
+                  />
+                  <text
+                    x="calc(100% - 46px)"
+                    y={y + 3}
+                    fill="#9CA3AF"
+                    fontSize="8"
+                    fontFamily="monospace"
+                  >
+                    {oi.strike}
+                  </text>
+                </g>
+              );
+            });
+          })()}
 
         {/* 3. Persistent User Drawings */}
         {drawings.map((d) => {
@@ -951,7 +1051,7 @@ export function TradingViewLightweightChart({
                   fontFamily="monospace"
                   fontWeight="bold"
                 >
-                  {d.label ?? `Level: ${d.points[0].price.toFixed(1)}`}
+                  {d.label ?? `Level: ${Number.isFinite(d.points?.[0]?.price) ? d.points[0].price.toFixed(1) : ""}`}
                 </text>
               </g>
             );
@@ -1026,7 +1126,7 @@ export function TradingViewLightweightChart({
                         fontFamily="monospace"
                         fontWeight="bold"
                       >
-                        {fib.label} ({price.toFixed(1)})
+                        {fib.label} ({Number.isFinite(price) ? price.toFixed(1) : ""})
                       </text>
                     </g>
                   );

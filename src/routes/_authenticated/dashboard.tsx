@@ -7,12 +7,9 @@ import { computeLevels } from "@/lib/levels";
 import { prefetchInsights } from "@/lib/insights.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { NewsCenter } from "@/components/NewsPopup";
 import { newsQuery } from "@/lib/news.functions";
 import { fiiDiiQuery } from "@/lib/fiidii.functions";
 import { seasonalityQuery } from "@/lib/seasonality.functions";
-import { EagleLogo } from "@/components/EagleLogo";
-import { useIstClock } from "@/hooks/use-scheduler";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import {
   DashboardDataProvider,
@@ -119,7 +116,6 @@ const fmt = (n: number) =>
 function Dashboard() {
   const { data, dataUpdatedAt, isFetching, isStale, error, refetch } =
     useSuspenseQuery(marketQuery());
-  const clock = useIstClock();
   type TabKey = "nifty" | "banknifty" | "sensex" | "btc" | "gold";
 
   const [prefs, setPrefs] = useState<DashboardPreferences>(DEFAULT_PREFERENCES);
@@ -289,17 +285,6 @@ function Dashboard() {
   return (
     <div className="eb-shell eb-scanlines">
       <div className="eb-space-bg" aria-hidden="true" />
-      <Header
-        clock={clock}
-        nifty={data.nifty}
-        banknifty={data.banknifty}
-        vix={data.vix}
-        btc={data.btc}
-        gold={data.gold}
-        goldSilverRatio={data.goldSilverRatio}
-      />
-
-      {/* LiveTicker removed — Header already renders the same instruments; second row was duplicative. */}
 
       {/* Tabs */}
       <div
@@ -509,216 +494,6 @@ function SectionSkeleton({ label }: { label: string }) {
     >
       {label}
     </div>
-  );
-}
-
-function Header({
-  clock,
-  nifty,
-  banknifty,
-  vix,
-  btc,
-  gold,
-  goldSilverRatio,
-}: {
-  clock: string;
-  nifty: IndexQuote;
-  banknifty: IndexQuote;
-  vix: IndexQuote | null;
-  btc: IndexQuote | null;
-  gold: IndexQuote | null;
-  goldSilverRatio: number | null;
-}) {
-  return (
-    <header
-      className="eb-header"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "14px 28px",
-        borderBottom: "1px solid var(--eb-border)",
-        background: "linear-gradient(135deg,var(--eb-bg),var(--eb-bg2))",
-        position: "sticky",
-        top: 0,
-        zIndex: 500,
-        flexWrap: "wrap",
-        gap: 12,
-      }}
-    >
-      <div
-        className="eb-header-brand"
-        style={{
-          fontFamily: "var(--eb-head)",
-          fontSize: 26,
-          letterSpacing: 3,
-          color: "var(--eb-accent)",
-          textShadow: "0 0 18px rgba(240,165,0,0.4)",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <EagleLogo
-          size={44}
-          className="w-11 h-11 rounded-[10px] object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)]"
-        />
-        <span>
-          EAGLE<span style={{ color: "var(--eb-accent2)" }}>BABA</span>
-          <span
-            style={{ fontSize: 13, letterSpacing: 2, color: "var(--eb-muted)", marginLeft: 10 }}
-          >
-            · ASTRO LEVELS
-          </span>
-        </span>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          gap: 22,
-          alignItems: "center",
-          fontFamily: "var(--eb-mono)",
-          fontSize: 12,
-          color: "var(--eb-muted)",
-          flexWrap: "wrap",
-        }}
-      >
-        <MiniTicker q={nifty} color="var(--eb-accent)" />
-        <MiniTicker q={banknifty} color="var(--eb-bn)" />
-        {vix ? <VixTicker q={vix} /> : null}
-        {btc ? <MiniTicker q={btc} color="#f7931a" label="BTC" /> : null}
-        {gold ? <MiniTicker q={gold} color="var(--eb-accent)" label="XAU/USD" /> : null}
-        {goldSilverRatio != null ? (
-          <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-            <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>GS RATIO</span>
-            <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>
-              {goldSilverRatio}
-            </span>
-          </span>
-        ) : null}
-        <span>
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "var(--eb-bull)",
-              boxShadow: "0 0 7px var(--eb-bull)",
-              animation: "eb-pulse 1.5s infinite",
-              display: "inline-block",
-              marginRight: 5,
-            }}
-          />
-          NSE INDIA
-        </span>
-        <span style={{ color: "var(--eb-neutral)" }}>{clock} IST</span>
-        <Link
-          to="/astro"
-          style={{
-            color: "var(--eb-neutral)",
-            textDecoration: "none",
-            border: "1px solid var(--eb-line, #1f2937)",
-            padding: "3px 9px",
-            borderRadius: 7,
-            fontSize: 12,
-          }}
-        >
-          🪐 Astro Levels
-        </Link>
-        <NewsCenter />
-        <ThemeToggle />
-      </div>
-    </header>
-  );
-}
-
-function MiniTicker({ q, color, label }: { q: IndexQuote; color: string; label?: string }) {
-  const up = q.change >= 0;
-  return (
-    <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-      <span style={{ color, fontWeight: 700 }}>{label ?? q.name}</span>
-      <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>
-        {fmt(q.livePrice)}
-      </span>
-      <span suppressHydrationWarning style={{ color: up ? "var(--eb-bull)" : "var(--eb-bear)" }}>
-        {up ? "▲" : "▼"} {q.changePct}%
-      </span>
-    </span>
-  );
-}
-
-/* ------------------------- Live scrolling ticker ------------------------ */
-
-function LiveTicker({
-  nifty,
-  banknifty,
-  sensex,
-  vix,
-  btc,
-  gold,
-  silver,
-}: {
-  nifty: IndexQuote;
-  banknifty: IndexQuote;
-  sensex?: IndexQuote | null;
-  vix: IndexQuote | null;
-  btc: IndexQuote | null;
-  gold: IndexQuote | null;
-  silver: IndexQuote | null;
-}) {
-  const items: { label: string; q: IndexQuote; color: string; invert?: boolean }[] = [
-    { label: "NIFTY 50", q: nifty, color: "var(--eb-accent)" },
-    { label: "BANKNIFTY", q: banknifty, color: "var(--eb-bn)" },
-  ];
-  if (sensex) items.push({ label: "BSE SENSEX", q: sensex, color: "#38bdf8" });
-  if (vix) items.push({ label: "INDIA VIX", q: vix, color: "var(--eb-neutral)", invert: true });
-  if (gold) items.push({ label: "GOLD", q: gold, color: "var(--eb-accent)" });
-  if (silver) items.push({ label: "SILVER", q: silver, color: "var(--eb-muted)" });
-  if (btc) items.push({ label: "BTC/USD", q: btc, color: "#f7931a" });
-
-  const row = (keyPrefix: string) =>
-    items.map(({ label, q, color, invert }) => {
-      const up = q.change >= 0;
-      const tone = (invert ? !up : up) ? "var(--eb-bull)" : "var(--eb-bear)";
-      return (
-        <span className="eb-ticker-item" key={`${keyPrefix}-${label}`}>
-          <span className="eb-ticker-sym" style={{ color }}>
-            {label}
-          </span>
-          <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>
-            {fmt(q.livePrice)}
-          </span>
-          <span suppressHydrationWarning style={{ color: tone }}>
-            {up ? "▲" : "▼"} {q.changePct}%
-          </span>
-        </span>
-      );
-    });
-
-  return (
-    <div className="eb-ticker" role="marquee" aria-label="Live market ticker">
-      <div className="eb-ticker-track">
-        {row("a")}
-        {row("b")}
-      </div>
-    </div>
-  );
-}
-
-// For India VIX a RISE means more fear (bearish for market), so colors invert.
-function VixTicker({ q }: { q: IndexQuote }) {
-  const up = q.change >= 0;
-  const col = up ? "var(--eb-bear)" : "var(--eb-bull)";
-  return (
-    <span style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-      <span style={{ color: "var(--eb-neutral)", fontWeight: 700 }}>VIX</span>
-      <span suppressHydrationWarning style={{ color: "var(--eb-text)" }}>
-        {fmt(q.livePrice)}
-      </span>
-      <span suppressHydrationWarning style={{ color: col }}>
-        {up ? "▲" : "▼"} {q.changePct}%
-      </span>
-    </span>
   );
 }
 

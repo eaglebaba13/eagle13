@@ -159,8 +159,8 @@ export function SymbolSearchModal({
                   <div className="text-right">
                     <div className="font-mono text-sm text-zinc-200">
                       {inst.currency === "INR" ? "₹" : inst.currency === "USDT" ? "₮" : "$"}
-                      {inst.defaultPrice.toLocaleString("en-IN", {
-                        maximumFractionDigits: inst.defaultPrice < 10 ? 4 : 2,
+                      {(inst.defaultPrice ?? 0).toLocaleString("en-IN", {
+                        maximumFractionDigits: (inst.defaultPrice ?? 0) < 10 ? 4 : 2,
                       })}
                     </div>
                     <div className="text-[11px] text-zinc-500 font-mono">

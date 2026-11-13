@@ -28,13 +28,19 @@ export function ChartHeaderHud({
   const t = hud?.time ?? latestCandle?.time;
 
   const istTimeStr = useMemo(() => {
-    if (!t) return null;
-    return new Intl.DateTimeFormat("en-IN", {
-      timeZone: "Asia/Kolkata",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(t));
+    if (!t || !Number.isFinite(t)) return null;
+    try {
+      const date = new Date(t > 1e11 ? t : t * 1000);
+      if (isNaN(date.getTime())) return null;
+      return new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(date);
+    } catch {
+      return null;
+    }
   }, [t]);
 
   if (!activeOhlc) return null;
@@ -43,21 +49,23 @@ export function ChartHeaderHud({
   const h = activeOhlc.high;
   const l = activeOhlc.low;
   const c = activeOhlc.close;
-  const change = c - o;
-  const changePct = o > 0 ? (change / o) * 100 : 0;
+  const change = Number.isFinite(c) && Number.isFinite(o) ? c - o : 0;
+  const changePct = Number.isFinite(o) && o > 0 ? (change / o) * 100 : 0;
   const isUp = change >= 0;
   const vol = hud?.volume ?? latestCandle?.volume;
 
   const currencySymbol =
     instrument?.currency === "INR" ? "₹" : instrument?.currency === "USDT" ? "₮" : "$";
 
-  const formatPrice = (val: number) => {
+  const formatPrice = (val?: number | null) => {
+    if (val == null || !Number.isFinite(val)) return "--";
     return `${currencySymbol}${val.toLocaleString("en-IN", {
       maximumFractionDigits: val < 10 ? 4 : 2,
     })}`;
   };
 
-  const formatVol = (v: number) => {
+  const formatVol = (v?: number | null) => {
+    if (v == null || !Number.isFinite(v)) return "--";
     if (v >= 10_000_000) return `${(v / 10_000_000).toFixed(2)}Cr`;
     if (v >= 100_000) return `${(v / 100_000).toFixed(2)}L`;
     if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;

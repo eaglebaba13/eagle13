@@ -93,13 +93,55 @@ export function OptionChainTable({
   }, [callStrikes, putStrikes, atmStrike]);
 
   const visibleStrikes = React.useMemo(() => {
-    if (!strikeDepth || strikeDepth <= 0 || strikes.length === 0) return strikes;
-    const atmIndex = strikes.findIndex((s) => s.isAtm || s.strike === atmStrike);
-    if (atmIndex === -1) return strikes.slice(0, strikeDepth * 2);
+    if (!strikes || strikes.length === 0) return [];
+    if (!strikeDepth || strikeDepth <= 0) return strikes;
+
+    // Find ATM index: match isAtm or exact atmStrike, or closest strike to spotPrice/atmStrike
+    let atmIndex = strikes.findIndex((s) => s.isAtm || s.strike === atmStrike);
+    if (atmIndex === -1) {
+      const target = atmStrike > 0 ? atmStrike : spotPrice;
+      let minDiff = Infinity;
+      let bestIdx = 0;
+      for (let i = 0; i < strikes.length; i++) {
+        const diff = Math.abs(strikes[i].strike - target);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestIdx = i;
+        }
+      }
+      atmIndex = bestIdx;
+    }
+
     const start = Math.max(0, atmIndex - strikeDepth);
     const end = Math.min(strikes.length, atmIndex + strikeDepth + 1);
-    return strikes.slice(start, end);
-  }, [strikes, atmStrike, strikeDepth]);
+    const sliced = strikes.slice(start, end);
+
+    // Ensure at least one row in the slice is marked as ATM
+    if (!sliced.some((s) => s.isAtm)) {
+      const target = atmStrike > 0 ? atmStrike : spotPrice;
+      let minDiff = Infinity;
+      let bestSliceIdx = 0;
+      for (let i = 0; i < sliced.length; i++) {
+        const diff = Math.abs(sliced[i].strike - target);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestSliceIdx = i;
+        }
+      }
+      return sliced.map((s, idx) => (idx === bestSliceIdx ? { ...s, isAtm: true } : s));
+    }
+    return sliced;
+  }, [strikes, atmStrike, spotPrice, strikeDepth]);
+
+  // Exactly ONE single index in visibleStrikes where the spot divider is rendered
+  const spotDividerIndex = React.useMemo(() => {
+    if (!visibleStrikes || visibleStrikes.length === 0 || spotPrice <= 0) return -1;
+    // Find first strike strictly greater than spotPrice
+    const firstAboveIdx = visibleStrikes.findIndex((s) => s.strike > spotPrice);
+    if (firstAboveIdx !== -1) return firstAboveIdx;
+    // If all visible strikes are <= spotPrice, place at visibleStrikes.length
+    return visibleStrikes.length;
+  }, [visibleStrikes, spotPrice]);
 
   const fmt = (n: number | null | undefined): string => {
     if (n == null || !Number.isFinite(n)) return "—";
@@ -264,23 +306,24 @@ export function OptionChainTable({
 
             return (
               <React.Fragment key={row.strike}>
-                {/* Spot divider inserted right before ATM if strike crosses spot */}
-                {idx > 0 &&
-                  spotPrice >= strikes[idx - 1].strike &&
-                  spotPrice < row.strike && (
-                    <tr className="bg-gradient-to-r from-cyan-950/60 via-amber-950/60 to-rose-950/60 border-y border-amber-400/40">
-                      <td colSpan={11} className="py-1 px-4 text-center">
-                        <div className="flex items-center justify-center gap-3 text-amber-300 text-[11px] font-bold">
-                          <span className="w-16 h-px bg-amber-400/40" />
-                          <span>● SPOT PRICE: ₹{spotPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                          <span className="text-[10px] text-zinc-400 font-normal">
-                            (ATM Strike: {atmStrike})
-                          </span>
-                          <span className="w-16 h-px bg-amber-400/40" />
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                {/* Spot divider inserted strictly once before the first strike above spot */}
+                {idx === spotDividerIndex && spotPrice > 0 && (
+                  <tr className="bg-gradient-to-r from-cyan-950/60 via-amber-950/60 to-rose-950/60 border-y border-amber-400/40">
+                    <td colSpan={11} className="py-1 px-4 text-center">
+                      <div className="flex items-center justify-center gap-3 text-amber-300 text-[11px] font-bold">
+                        <span className="w-16 h-px bg-amber-400/40" />
+                        <span>
+                          ● SPOT PRICE: {currencySymbol}
+                          {spotPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-normal">
+                          (ATM Strike: {atmStrike})
+                        </span>
+                        <span className="w-16 h-px bg-amber-400/40" />
+                      </div>
+                    </td>
+                  </tr>
+                )}
 
                 <tr className={rowBg} onClick={() => onSelectStrike?.(row.strike)}>
                   {/* Call Side */}
@@ -347,6 +390,25 @@ export function OptionChainTable({
                     {putOiBadge}
                   </td>
                 </tr>
+
+                {/* If spot price is above all visible strikes, render strictly once after the final row */}
+                {idx === visibleStrikes.length - 1 && spotDividerIndex === visibleStrikes.length && spotPrice > 0 && (
+                  <tr className="bg-gradient-to-r from-cyan-950/60 via-amber-950/60 to-rose-950/60 border-y border-amber-400/40">
+                    <td colSpan={11} className="py-1 px-4 text-center">
+                      <div className="flex items-center justify-center gap-3 text-amber-300 text-[11px] font-bold">
+                        <span className="w-16 h-px bg-amber-400/40" />
+                        <span>
+                          ● SPOT PRICE: {currencySymbol}
+                          {spotPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-normal">
+                          (ATM Strike: {atmStrike})
+                        </span>
+                        <span className="w-16 h-px bg-amber-400/40" />
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             );
           })}
