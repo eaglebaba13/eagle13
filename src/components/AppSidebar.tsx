@@ -34,9 +34,10 @@ export function AppSidebar() {
       <div className="eb-sidebar-inner eb-glass">
         <div className="flex items-center justify-between px-2.5 py-2 mb-1 border-b border-zinc-800/60">
           <Link to="/" className="flex items-center gap-2 min-w-0" aria-label="EagleBABA Home">
-            <EagleLogo
-              size={28}
-              className="w-7 h-7 rounded-lg object-cover border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] shrink-0"
+            <img
+              src="/images/eaglebaba_logo1.png"
+              alt="EagleBABA"
+              className="w-7 h-7 rounded-lg object-contain border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] shrink-0"
             />
             {!collapsed ? (
               <span className="font-bold text-xs tracking-wider text-amber-400 font-mono truncate">

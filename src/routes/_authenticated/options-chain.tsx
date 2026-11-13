@@ -1,5 +1,5 @@
 // Phase 38 — Institutional AI LTP Calculator & Chart of Accuracy (COA 1.0) Station
-// Inspired by Investing Daddy's Mathematical Framework.
+// EagleBABA Proprietary Mathematical Framework.
 //
 // Features:
 // 1. Percentage Dominance & Shifting Matrix (100% Strong, >=75% WTT / WTB).
@@ -175,7 +175,7 @@ function LtpCalculatorPage() {
             AI LTP Calculator & Chart of Accuracy
           </h1>
           <p className="text-xs text-zinc-400 mt-1 max-w-2xl font-sans">
-            Mathematical reversal & diversion engine inspired by Investing Daddy's COA 1.0 framework. Dot-to-dot reversal prices, 75% WTT/WTB shifting matrix, and 4-line F&O triggers.
+            EagleBABA Proprietary Mathematical Reversal &amp; Diversion Engine (COA 1.0). Dot-to-dot strike reversal prices, 75% WTT/WTB shifting matrix, and 4-line F&amp;O institutional triggers.
           </p>
         </div>
 

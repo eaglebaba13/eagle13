@@ -73,13 +73,13 @@ function EagleVectorFallback({
  * - Supports custom dimensions and styling.
  */
 export function EagleLogo({
-  src = defaultLogoUrl,
+  src = "/images/eaglebaba_logo1.png",
   alt = "EagleBABA",
   className = "",
   size = 32,
   width,
   height,
-  flip = true,
+  flip = false,
 }: EagleLogoProps) {
   const [error, setError] = useState(false);
   const w = width ?? size;

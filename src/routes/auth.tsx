@@ -112,7 +112,11 @@ function AuthPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <EagleLogo size={40} className="h-10 w-10 rounded-lg object-cover" />
+          <img
+            src="/images/eaglebaba_logo1.png"
+            alt="EagleBABA"
+            className="h-10 w-10 rounded-lg object-contain"
+          />
           <div>
             <h1 className="text-lg font-semibold">EagleBABA</h1>
             <p className="text-xs text-muted-foreground">Astro Research Terminal</p>

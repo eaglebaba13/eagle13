@@ -194,7 +194,11 @@ export function PublicLandingPage() {
           <Link to="/" className="flex items-center gap-3.5 group">
             <div className="relative">
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-[#E5B869]/40 to-[#06B6D4]/30 blur-sm opacity-60 group-hover:opacity-100 transition duration-300" />
-              <EagleLogo size={38} className="relative rounded-xl object-cover" />
+              <img
+                src="/images/eaglebaba_logo1.png"
+                alt="EagleBABA"
+                className="relative w-[38px] h-[38px] rounded-xl object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
@@ -924,7 +928,11 @@ export function PublicLandingPage() {
       <section className="py-20 relative overflow-hidden border-t border-[#E5B869]/15 bg-gradient-to-b from-[#0E1015] to-[#08090C]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(229,184,105,0.08),transparent_70%)] pointer-events-none" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <EagleLogo size={56} className="mx-auto rounded-2xl object-cover mb-6" />
+          <img
+            src="/images/eaglebaba_logo1.png"
+            alt="EagleBABA"
+            className="mx-auto w-14 h-14 rounded-2xl object-contain mb-6"
+          />
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
             Ready to Experience Institutional Precision?
           </h2>
@@ -952,7 +960,11 @@ export function PublicLandingPage() {
             {/* Col 1: Brand */}
             <div className="md:col-span-2">
               <div className="flex items-center gap-3">
-                <EagleLogo size={32} className="rounded-lg object-cover" />
+                <img
+                  src="/images/eaglebaba_logo1.png"
+                  alt="EagleBABA"
+                  className="w-8 h-8 rounded-lg object-contain"
+                />
                 <span className="font-bold text-base text-white tracking-wider">EagleBABA</span>
               </div>
               <p className="mt-3 text-zinc-400 text-xs leading-relaxed max-w-md">

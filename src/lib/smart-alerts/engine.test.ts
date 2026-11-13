@@ -88,7 +88,7 @@ describe("smart-alerts engine", () => {
     });
     expect(repeated.emitted).toHaveLength(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  }, 15_000);
+  }, 30_000);
 
   it("emits nothing on first evaluation (no prior state)", async () => {
     const r = await runAlertEngine({

@@ -6,12 +6,14 @@ import {
   LineSeries,
   CrosshairMode,
   LineStyle,
+  TickMarkType,
   type IChartApi,
   type ISeriesApi,
   type IPriceLine,
   type UTCTimestamp,
   type MouseEventParams,
   type AutoscaleInfoProvider,
+  type Time,
 } from "lightweight-charts";
 import type { DrawingToolType, ChartDrawing, DrawingPoint } from "@/lib/chart/drawing-types";
 import { FIBONACCI_LEVELS } from "@/lib/chart/drawing-types";
@@ -130,7 +132,46 @@ export function TradingViewLightweightChart({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const istTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const istDateFormatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+    });
+
+    const istDateTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
     const chart = createChart(containerRef.current, {
+      localization: {
+        locale: "en-IN",
+        dateFormat: "dd MMM yyyy",
+        timeFormatter: (time: Time) => {
+          let date: Date;
+          if (typeof time === "number") {
+            date = new Date(time * 1000);
+          } else if (typeof time === "string") {
+            date = new Date(time);
+          } else if (typeof time === "object" && "year" in time) {
+            date = new Date(time.year, time.month - 1, time.day);
+          } else {
+            return "";
+          }
+          return `${istDateTimeFormatter.format(date)} IST`;
+        },
+      },
       layout: {
         background: { color: "#08090C" },
         textColor: "#9CA3AF",
@@ -163,6 +204,31 @@ export function TradingViewLightweightChart({
         rightOffset: 15,
         barSpacing: 9,
         minBarSpacing: 2,
+        tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
+          let date: Date;
+          if (typeof time === "number") {
+            date = new Date(time * 1000);
+          } else if (typeof time === "string") {
+            date = new Date(time);
+          } else if (typeof time === "object" && "year" in time) {
+            date = new Date(time.year, time.month - 1, time.day);
+          } else {
+            return null;
+          }
+
+          switch (tickMarkType) {
+            case TickMarkType.Year:
+              return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", year: "numeric" }).format(date);
+            case TickMarkType.Month:
+              return istDateFormatter.format(date);
+            case TickMarkType.DayOfMonth:
+              return istDateFormatter.format(date);
+            case TickMarkType.Time:
+            case TickMarkType.TimeWithSeconds:
+            default:
+              return istTimeFormatter.format(date);
+          }
+        },
       },
       rightPriceScale: {
         borderColor: "rgba(255, 255, 255, 0.08)",

@@ -54,9 +54,10 @@ function AppShellHeader() {
       </button>
 
       <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="EagleBABA Home">
-        <EagleLogo
-          size={28}
-          className="w-7 h-7 rounded-lg object-cover border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:border-amber-500/60 transition-colors"
+        <img
+          src="/images/eaglebaba_logo1.png"
+          alt="EagleBABA"
+          className="w-7 h-7 rounded-lg object-contain border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] group-hover:border-amber-500/60 transition-colors"
         />
         <span className="font-bold text-xs tracking-wider text-amber-400 group-hover:text-amber-300 font-mono hidden xl:inline">
           EagleBABA

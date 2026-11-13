@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { HudData } from "./TradingViewLightweightChart";
 import type { UniversalInstrument } from "@/lib/market-data/fo-universe";
 
@@ -7,6 +7,7 @@ interface ChartHeaderHudProps {
   readonly intervalLabel: string;
   readonly hud: HudData | null;
   readonly latestCandle?: {
+    readonly time?: number;
     readonly open: number;
     readonly high: number;
     readonly low: number;
@@ -24,6 +25,18 @@ export function ChartHeaderHud({
   isLive,
 }: ChartHeaderHudProps) {
   const activeOhlc = hud ?? latestCandle;
+  const t = hud?.time ?? latestCandle?.time;
+
+  const istTimeStr = useMemo(() => {
+    if (!t) return null;
+    return new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(t));
+  }, [t]);
+
   if (!activeOhlc) return null;
 
   const o = activeOhlc.open;
@@ -60,6 +73,11 @@ export function ChartHeaderHud({
       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-zinc-300">
         {intervalLabel}
       </span>
+      {istTimeStr ? (
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-amber-300/90 bg-amber-500/10 border border-amber-500/20">
+          {istTimeStr} IST
+        </span>
+      ) : null}
       {isLive ? (
         <span className="inline-flex items-center gap-1 text-[9px] text-emerald-400 font-semibold px-1 rounded bg-emerald-500/10">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />

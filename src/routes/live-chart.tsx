@@ -245,13 +245,21 @@ function LiveChartSelection({
       if (symbol === "GC1!" || activeInstrument.category === "CRYPTO") {
         return sorted.slice(-120);
       }
-      const todayStr = new Date().toDateString();
-      const todayCandles = sorted.filter((c) => new Date(c.x).toDateString() === todayStr);
+      const getIstDay = (timestamp: number) =>
+        new Intl.DateTimeFormat("en-IN", {
+          timeZone: "Asia/Kolkata",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(timestamp));
+
+      const todayStr = getIstDay(Date.now());
+      const todayCandles = sorted.filter((c) => getIstDay(c.x) === todayStr);
       if (todayCandles.length > 0) {
         return todayCandles;
       }
-      const lastDayStr = new Date(sorted[sorted.length - 1].x).toDateString();
-      return sorted.filter((c) => new Date(c.x).toDateString() === lastDayStr);
+      const lastDayStr = getIstDay(sorted[sorted.length - 1].x);
+      return sorted.filter((c) => getIstDay(c.x) === lastDayStr);
     }
 
     return sorted;
@@ -657,6 +665,7 @@ function LiveChartSelection({
             latestCandle={
               displayCandles.length > 0
                 ? {
+                    time: displayCandles[displayCandles.length - 1].x,
                     open: displayCandles[displayCandles.length - 1].y[0],
                     high: displayCandles[displayCandles.length - 1].y[1],
                     low: displayCandles[displayCandles.length - 1].y[2],
@@ -749,6 +758,24 @@ function LiveChartSelection({
             <span>
               FEED: <strong className="text-zinc-300">{sse.status?.provider ?? (symbol === "GC1!" ? "COMEX_STREAM" : "UPSTOX_V3")}</strong>
             </span>
+            {sse.status?.lastTick && (
+              <>
+                <span>·</span>
+                <span>
+                  TIME:{" "}
+                  <strong className="text-amber-300">
+                    {new Intl.DateTimeFormat("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: false,
+                    }).format(new Date(sse.status.lastTick))}{" "}
+                    IST
+                  </strong>
+                </span>
+              </>
+            )}
             {sessionLiquidity && (
               <>
                 <span>·</span>

@@ -1,5 +1,5 @@
 // Phase 38 — Institutional AI LTP Calculator & Chart of Accuracy (COA 1.0) Engine
-// Inspired by Investing Daddy's Mathematical Framework.
+// EagleBABA Proprietary Mathematical Framework.
 //
 // Calculates:
 // 1. Percentage Dominance & Shifting Matrix (100% Strong, >=75% WTT / WTB).

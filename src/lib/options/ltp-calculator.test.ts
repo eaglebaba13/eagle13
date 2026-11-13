@@ -9,7 +9,7 @@ import {
 } from "./ltp-calculator-engine.server";
 import { makeStrike, type OptionChainStrike, type OptionChainSnapshot } from "../option-chain/types";
 
-describe("Investing Daddy LTP Calculator & COA 1.0 Engine", () => {
+describe("EagleBABA LTP Calculator & COA 1.0 Engine", () => {
   describe("Chart of Accuracy (COA 1.0) 9-Scenario Classifier", () => {
     it("Scenario 1: Support STRONG & Resistance STRONG -> Ideal Range", () => {
       const res = classifyCoaScenario("STRONG", "STRONG");

@@ -98,7 +98,7 @@ export function MobileNav() {
           <MenuIcon size={22} />
         </button>
         <Link to="/" className="eb-mtopbar-brand" aria-label="EagleBABA home">
-          <EagleLogo size={30} className="rounded-lg object-cover" />
+          <EagleLogo size={30} className="rounded-lg object-contain" />
           <span>EagleBABA</span>
         </Link>
         <div className="eb-mtopbar-actions">
@@ -139,7 +139,7 @@ export function MobileNav() {
             >
               <div className="eb-drawer-head">
                 <div className="eb-drawer-brand">
-                  <EagleLogo size={34} className="rounded-lg object-cover" />
+                  <EagleLogo size={34} className="rounded-lg object-contain" />
                   <div>
                     <div className="eb-drawer-title">EagleBABA</div>
                     <div className="eb-drawer-sub">Astro Trading Terminal</div>

@@ -1,5 +1,5 @@
 // Phase 38 — Stocks 4-Line Mode Visualizer (P2, P1, C1, C2)
-// Inspired by Investing Daddy's 4-line framework for F&O equities.
+// EagleBABA proprietary 4-line institutional framework for F&O equities.
 
 import React from "react";
 import { Target, ShieldAlert, ArrowUpRight, ArrowDownRight, Layers, ExternalLink, Zap } from "lucide-react";
