@@ -96,7 +96,7 @@ function AppShellHeader() {
         </ol>
       </nav>
 
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ml-auto flex flex-nowrap shrink-0 items-center gap-2 z-30">
         <SoundToggle />
         <ThemeToggle />
         <NotificationBell />

@@ -38,60 +38,53 @@ export function ChartHeaderHud({
   const currencySymbol =
     instrument?.currency === "INR" ? "₹" : instrument?.currency === "USDT" ? "₮" : "$";
 
+  const formatPrice = (val: number) => {
+    return `${currencySymbol}${val.toLocaleString("en-IN", {
+      maximumFractionDigits: val < 10 ? 4 : 2,
+    })}`;
+  };
+
+  const formatVol = (v: number) => {
+    if (v >= 10_000_000) return `${(v / 10_000_000).toFixed(2)}Cr`;
+    if (v >= 100_000) return `${(v / 100_000).toFixed(2)}L`;
+    if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+    return String(v);
+  };
+
   return (
-    <div className="absolute top-2 left-14 z-20 flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 bg-zinc-950/80 backdrop-blur-md border border-white/10 rounded-lg text-xs font-mono select-none shadow-xl pointer-events-none">
+    <div className="absolute top-1.5 left-12 z-20 flex items-center gap-2.5 px-3 py-1 bg-zinc-950/80 backdrop-blur-md border border-white/10 rounded-md text-[11px] font-mono select-none shadow-lg pointer-events-none whitespace-nowrap overflow-hidden text-zinc-300">
       {/* Symbol & Timeframe */}
-      <div className="flex items-center gap-1.5">
-        <span className="font-bold text-zinc-100 font-sans tracking-wide">
-          {instrument?.name ?? instrument?.symbol ?? "Symbol"}
+      <span className="font-bold text-amber-300 font-sans tracking-wide">
+        {instrument?.name ?? instrument?.symbol ?? "Symbol"}
+      </span>
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-zinc-300">
+        {intervalLabel}
+      </span>
+      {isLive ? (
+        <span className="inline-flex items-center gap-1 text-[9px] text-emerald-400 font-semibold px-1 rounded bg-emerald-500/10">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          LIVE
         </span>
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-amber-300">
-          {intervalLabel}
-        </span>
-        {isLive ? (
-          <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold px-1 rounded bg-emerald-500/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            LIVE
-          </span>
-        ) : null}
-      </div>
+      ) : null}
 
-      <div className="hidden sm:block text-zinc-600">|</div>
+      <span className="text-zinc-600 hidden sm:inline">|</span>
 
-      {/* OHLC Readout */}
-      <div className="flex items-center gap-2 text-[11px]">
-        <div>
-          <span className="text-zinc-500">O </span>
-          <span className="text-zinc-200">
-            {currencySymbol}
-            {o.toLocaleString("en-IN", { maximumFractionDigits: o < 10 ? 4 : 2 })}
-          </span>
-        </div>
-        <div>
-          <span className="text-zinc-500">H </span>
-          <span className="text-emerald-400">
-            {currencySymbol}
-            {h.toLocaleString("en-IN", { maximumFractionDigits: h < 10 ? 4 : 2 })}
-          </span>
-        </div>
-        <div>
-          <span className="text-zinc-500">L </span>
-          <span className="text-rose-400">
-            {currencySymbol}
-            {l.toLocaleString("en-IN", { maximumFractionDigits: l < 10 ? 4 : 2 })}
-          </span>
-        </div>
-        <div>
-          <span className="text-zinc-500">C </span>
-          <span className={`font-semibold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-            {currencySymbol}
-            {c.toLocaleString("en-IN", { maximumFractionDigits: c < 10 ? 4 : 2 })}
-          </span>
-        </div>
-      </div>
+      {/* Sleek 1-Line Compact OHLC */}
+      <span>
+        O: <strong className="text-zinc-100 font-medium">{formatPrice(o)}</strong>
+      </span>
+      <span>
+        H: <strong className="text-emerald-400 font-medium">{formatPrice(h)}</strong>
+      </span>
+      <span>
+        L: <strong className="text-rose-400 font-medium">{formatPrice(l)}</strong>
+      </span>
+      <span>
+        C: <strong className={`${isUp ? "text-emerald-400" : "text-rose-400"} font-medium`}>{formatPrice(c)}</strong>
+      </span>
 
       {/* Change & Change% Badge */}
-      <div
+      <span
         className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
           isUp
             ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
@@ -101,15 +94,13 @@ export function ChartHeaderHud({
         {isUp ? "+" : ""}
         {change.toFixed(2)} ({isUp ? "+" : ""}
         {changePct.toFixed(2)}%)
-      </div>
+      </span>
 
       {/* Volume */}
       {vol != null && vol > 0 ? (
-        <div className="hidden md:flex items-center gap-1 text-[11px] text-zinc-400">
-          <span className="text-zinc-600">·</span>
-          <span className="text-zinc-500">Vol:</span>
-          <span>{vol >= 1000000 ? `${(vol / 1000000).toFixed(2)}M` : vol >= 1000 ? `${(vol / 1000).toFixed(1)}K` : vol}</span>
-        </div>
+        <span className="hidden xl:inline text-zinc-400">
+          <span className="text-zinc-600">·</span> Vol: <strong className="text-zinc-300 font-medium">{formatVol(vol)}</strong>
+        </span>
       ) : null}
     </div>
   );

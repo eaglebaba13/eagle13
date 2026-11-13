@@ -1,7 +1,11 @@
 import { useMarketSession } from "@/hooks/use-market-session";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SoundToggle } from "@/components/SoundToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
 import { getLiveCandleBootstrap } from "@/lib/live-candle-stream.functions";
 import { getLiveLevels, type MarketKey } from "@/lib/live-levels.functions";
@@ -147,6 +151,10 @@ function LiveChartSelection({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudData, setHudData] = useState<HudData | null>(null);
 
+  // Viewport Fit & Scroll State
+  const fitContentRef = useRef<(() => void) | null>(null);
+  const [isChartScrolled, setIsChartScrolled] = useState(false);
+
   // Data Queries
   const { data: liveLevels } = useSuspenseQuery(levelsQuery());
   const { state: sse } = useLiveCandleSSE(symbol, intervalMs);
@@ -194,7 +202,7 @@ function LiveChartSelection({
     };
   }, [symbol, intervalMs, activeInstrument.defaultPrice, sse.status?.lastLtp]);
 
-  // Merge Completed Candles + Current Candle
+  // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
     const hasHistorical = historical.length > 0;
     let baseHistorical: ChartCandle[] = [];
@@ -214,18 +222,8 @@ function LiveChartSelection({
         volume: c.volume,
       });
     }
-    if (sse.currentCandle) {
-      all.push({
-        x: sse.currentCandle.time,
-        y: [
-          Number(sse.currentCandle.open),
-          Number(sse.currentCandle.high),
-          Number(sse.currentCandle.low),
-          Number(sse.currentCandle.close),
-        ],
-        volume: sse.currentCandle.volume,
-      });
-    }
+    // Note: sse.currentCandle is NOT pushed here. It is streamed directly via liveCandle prop
+    // to candlestickSeries.update() so base dataset and Y-axis bounds are never wiped or re-calculated on every tick!
 
     const byTime = new Map<number, ChartCandle>();
     for (const c of all) {
@@ -257,7 +255,7 @@ function LiveChartSelection({
     }
 
     return sorted;
-  }, [historical, activeInstrument, symbol, intervalMs, sse.completedCandles, sse.currentCandle, sse.status?.lastLtp]);
+  }, [historical, activeInstrument, symbol, intervalMs, sse.completedCandles, sse.status?.lastLtp]);
 
   const displayCandles = chartData;
 
@@ -347,40 +345,48 @@ function LiveChartSelection({
     return showOiProfile && oiResult?.ok ? oiResult.data : [];
   }, [showOiProfile, oiResult]);
 
-  // AI-LTP Levels (EOS / EOR or Stock 4-Line P2/P1/C1/C2)
+  // AI-LTP Levels (EOS / EOR or Stock 4-Line P2/P1/C1/C2) - Memoized on ATM strike bracket to avoid tick churn
+  const ltpStep = useMemo(() => {
+    if (symbol.includes("BANKNIFTY") || symbol.includes("SENSEX")) return 100;
+    if (symbol.includes("NIFTY")) return 50;
+    if (!currentLtp || currentLtp <= 0) return 10;
+    if (currentLtp < 200) return 2.5;
+    if (currentLtp < 500) return 5;
+    if (currentLtp < 1000) return 10;
+    if (currentLtp < 2500) return 25;
+    if (currentLtp < 5000) return 50;
+    return 100;
+  }, [symbol, currentLtp]);
+
+  const currentAtm = useMemo(() => {
+    if (!currentLtp || currentLtp <= 0) return 0;
+    return Math.round(currentLtp / ltpStep) * ltpStep;
+  }, [currentLtp, ltpStep]);
+
   const ltpLevels = useMemo(() => {
-    if (!showLtpLevels || !currentLtp || currentLtp <= 0) return [];
+    if (!showLtpLevels || !currentAtm || currentAtm <= 0) return [];
     const isIndex = symbol.includes("NIFTY") || symbol.includes("SENSEX");
 
     if (isIndex) {
-      const step = symbol.includes("BANKNIFTY") || symbol.includes("SENSEX") ? 100 : 50;
-      const atm = Math.round(currentLtp / step) * step;
+      const step = ltpStep;
       const prem = Math.round(step * 0.45 * 100) / 100;
       return [
-        { name: "EOR+1 Max Pain", price: atm + step + prem, color: "#EF4444", dash: true },
-        { name: "EOR Resistance", price: atm + prem, color: "#F87171", dash: false },
-        { name: "EOS Support", price: atm - prem, color: "#34D399", dash: false },
-        { name: "EOS-1 Max Pain", price: atm - step - prem, color: "#10B981", dash: true },
+        { name: "EOR+1 Max Pain", price: currentAtm + step + prem, color: "#EF4444", dash: true },
+        { name: "EOR Resistance", price: currentAtm + prem, color: "#F87171", dash: false },
+        { name: "EOS Support", price: currentAtm - prem, color: "#34D399", dash: false },
+        { name: "EOS-1 Max Pain", price: currentAtm - step - prem, color: "#10B981", dash: true },
       ];
     } else {
-      let step = 10;
-      if (currentLtp < 200) step = 2.5;
-      else if (currentLtp < 500) step = 5;
-      else if (currentLtp < 1000) step = 10;
-      else if (currentLtp < 2500) step = 25;
-      else if (currentLtp < 5000) step = 50;
-      else step = 100;
-
-      const atm = Math.round(currentLtp / step) * step;
+      const step = ltpStep;
       const prem = Math.round(step * 0.4 * 100) / 100;
       return [
-        { name: "P2 Strong Resistance", price: atm + 2 * step + prem, color: "#EF4444", dash: true },
-        { name: "P1 Sell Trigger", price: atm + step + prem, color: "#F87171", dash: false },
-        { name: "C1 Buy Trigger", price: atm - step - prem, color: "#34D399", dash: false },
-        { name: "C2 Deep Support", price: atm - 2 * step - prem, color: "#10B981", dash: true },
+        { name: "P2 Strong Resistance", price: currentAtm + 2 * step + prem, color: "#EF4444", dash: true },
+        { name: "P1 Sell Trigger", price: currentAtm + step + prem, color: "#F87171", dash: false },
+        { name: "C1 Buy Trigger", price: currentAtm - step - prem, color: "#34D399", dash: false },
+        { name: "C2 Deep Support", price: currentAtm - 2 * step - prem, color: "#10B981", dash: true },
       ];
     }
-  }, [showLtpLevels, currentLtp, symbol]);
+  }, [showLtpLevels, currentAtm, ltpStep, symbol]);
 
   // Astro Levels
   const astroLevels = useMemo(() => {
@@ -454,14 +460,14 @@ function LiveChartSelection({
       {/* Main Charting Workstation */}
       <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden relative">
         {/* Top Institutional Toolbar */}
-        <header className="shrink-0 px-3 py-2 border-b border-white/10 bg-zinc-950/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 z-30">
+        <header className="shrink-0 px-3 py-1.5 border-b border-white/10 bg-zinc-950/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 z-30">
           {/* Left: Universal Symbol Search + Quick Pills + Timeframes */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             {/* Universal Search Modal Trigger */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/60 text-amber-200 text-xs font-mono font-bold transition-all shadow-sm shadow-amber-500/10 group cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/60 text-amber-200 text-xs font-mono font-bold transition-all shadow-sm shadow-amber-500/10 group cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
               <span>{activeInstrument.symbol}</span>
@@ -491,7 +497,7 @@ function LiveChartSelection({
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
             {/* Timeframe Selector */}
-            <div className="flex items-center gap-1 bg-zinc-900/60 p-0.5 rounded-lg border border-white/10">
+            <div className="flex items-center gap-0.5 bg-zinc-900/60 p-0.5 rounded-lg border border-white/10">
               {TIMEFRAMES.map((tf) => (
                 <button
                   key={tf.label}
@@ -509,55 +515,55 @@ function LiveChartSelection({
             </div>
           </div>
 
-          {/* Right: Indicator Overlays + Live Badge + Fullscreen */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Right: Indicator Overlays + Utility Toggles + Fullscreen */}
+          <div className="flex items-center flex-nowrap shrink-0 gap-1.5 z-30">
             {/* ICT Unicorn & FVG Toggle */}
             <button
               type="button"
               onClick={() => setShowIctUnicorn(!showIctUnicorn)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
                 showIctUnicorn
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
               }`}
             >
               {showIctUnicorn && <Check className="w-3 h-3 text-emerald-400" />}
-              <span>ICT Unicorn & FVG</span>
+              <span className="hidden sm:inline">ICT</span> Unicorn
             </button>
 
             {/* Live Right-Axis OI Profile Toggle */}
             <button
               type="button"
               onClick={() => setShowOiProfile(!showOiProfile)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
                 showOiProfile
                   ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
               }`}
             >
               {showOiProfile && <Check className="w-3 h-3 text-rose-400" />}
-              <span>Live OI Profile</span>
+              <span>OI</span>
             </button>
 
             {/* AI-LTP Levels Toggle */}
             <button
               type="button"
               onClick={() => setShowLtpLevels(!showLtpLevels)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
                 showLtpLevels
                   ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
               }`}
             >
               {showLtpLevels && <Check className="w-3 h-3 text-amber-400" />}
-              <span>AI-LTP Levels</span>
+              <span>LTP</span>
             </button>
 
             {/* Astro Levels Toggle */}
             <button
               type="button"
               onClick={() => setShowAstroLevels(!showAstroLevels)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
                 showAstroLevels
                   ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
@@ -571,7 +577,7 @@ function LiveChartSelection({
             <button
               type="button"
               onClick={() => setShowLiquidity(!showLiquidity)}
-              className={`hidden sm:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
+              className={`hidden md:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
                 showLiquidity
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
@@ -585,7 +591,7 @@ function LiveChartSelection({
             <button
               type="button"
               onClick={() => setShowVwap(!showVwap)}
-              className={`hidden sm:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
+              className={`hidden md:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
                 showVwap
                   ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
@@ -599,7 +605,7 @@ function LiveChartSelection({
             <button
               type="button"
               onClick={() => setShowVolumeProfile(!showVolumeProfile)}
-              className={`hidden md:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
+              className={`hidden lg:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
                 showVolumeProfile
                   ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
@@ -609,11 +615,19 @@ function LiveChartSelection({
               <span>FRVP</span>
             </button>
 
+            <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
+
+            {/* Embedded Utility Controls */}
+            <SoundToggle />
+            <ThemeToggle />
+            <NotificationBell />
+            <ProfileMenu />
+
             {/* Fullscreen Button */}
             <button
               type="button"
               onClick={handleToggleFullscreen}
-              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-white/5 transition-colors cursor-pointer"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -713,12 +727,9 @@ function LiveChartSelection({
             fvgs={fvgs}
             oiProfile={oiProfile}
             onCrosshairMove={setHudData}
+            onFitContentRef={fitContentRef}
+            onIsScrolledChange={setIsChartScrolled}
           />
-
-          {/* Fixed Range Volume Profile (FRVP) Overlay */}
-          {showVolumeProfile && volumeProfile && (
-            <VolumeProfileHistogramOverlay profile={volumeProfile} currentPrice={currentLtp} />
-          )}
         </div>
 
         {/* Institutional Bottom Status Footer */}
@@ -750,9 +761,32 @@ function LiveChartSelection({
                 </span>
               </>
             )}
+            {showVolumeProfile && volumeProfile && (
+              <>
+                <span>·</span>
+                <span className="text-zinc-400">
+                  FRVP: VAL <strong className="text-zinc-200">{volumeProfile.val.toFixed(0)}</strong> · POC <strong className="text-amber-300">{volumeProfile.poc.toFixed(0)}</strong> · VAH <strong className="text-zinc-200">{volumeProfile.vah.toFixed(0)}</strong>
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
+            {/* Auto-Fit / Reset Viewport Button */}
+            <button
+              type="button"
+              onClick={() => fitContentRef.current?.()}
+              className={`px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1 transition-all border cursor-pointer ${
+                isChartScrolled
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.25)] animate-pulse"
+                  : "bg-zinc-900/80 text-zinc-400 border-white/10 hover:text-zinc-200 hover:bg-white/5"
+              }`}
+              title="Reset Viewport & Auto-Fit Chart"
+            >
+              <RotateCcw className="w-3 h-3 text-amber-400" />
+              <span>Auto-Fit</span>
+            </button>
+
             {currentLtp != null && (
               <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 font-bold">
                 <span>LTP:</span>

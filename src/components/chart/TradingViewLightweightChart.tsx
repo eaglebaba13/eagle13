@@ -8,8 +8,10 @@ import {
   LineStyle,
   type IChartApi,
   type ISeriesApi,
+  type IPriceLine,
   type UTCTimestamp,
   type MouseEventParams,
+  type AutoscaleInfoProvider,
 } from "lightweight-charts";
 import type { DrawingToolType, ChartDrawing, DrawingPoint } from "@/lib/chart/drawing-types";
 import { FIBONACCI_LEVELS } from "@/lib/chart/drawing-types";
@@ -56,6 +58,8 @@ export interface TradingViewLightweightChartProps {
   readonly fvgs?: readonly FVGZone[];
   readonly oiProfile?: readonly OiProfileLevel[];
   readonly onCrosshairMove?: (hud: HudData | null) => void;
+  readonly onFitContentRef?: React.MutableRefObject<(() => void) | null>;
+  readonly onIsScrolledChange?: (isScrolled: boolean) => void;
 }
 
 export interface HudData {
@@ -93,13 +97,16 @@ export function TradingViewLightweightChart({
   fvgs = [],
   oiProfile = [],
   onCrosshairMove,
+  onFitContentRef,
+  onIsScrolledChange,
 }: TradingViewLightweightChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const vwapSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const priceLinesRef = useRef<unknown[]>([]);
+  const priceLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
+  const isScrolledRef = useRef(false);
 
   // Coordinate sync state for SVG drawing overlay
   const [, setViewportTick] = useState(0);
@@ -179,7 +186,7 @@ export function TradingViewLightweightChart({
 
     chartRef.current = chart;
 
-    // Add Candlestick Series
+    // Add Candlestick Series with pure candlestick autoscale decoupling
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#10B981",
       downColor: "#EF4444",
@@ -187,6 +194,20 @@ export function TradingViewLightweightChart({
       wickUpColor: "#10B981",
       wickDownColor: "#EF4444",
       priceLineColor: "#E5B869",
+      autoscaleInfoProvider: ((original) => {
+        const res = original();
+        if (!res || !res.priceRange) return null;
+        return {
+          priceRange: {
+            minValue: res.priceRange.minValue,
+            maxValue: res.priceRange.maxValue,
+          },
+          margins: {
+            above: 0.08,
+            below: 0.18,
+          },
+        };
+      }) as AutoscaleInfoProvider,
     });
     candleSeriesRef.current = candleSeries;
 
@@ -203,12 +224,13 @@ export function TradingViewLightweightChart({
     });
     volumeSeriesRef.current = volumeSeries;
 
-    // Add VWAP Series
+    // Add VWAP Series (strictly non-scaling so VWAP never distorts candle Y-axis bounds)
     const vwapSeries = chart.addSeries(LineSeries, {
       color: "#8B5CF6",
       lineWidth: 2,
       priceLineVisible: false,
       lastValueVisible: false,
+      autoscaleInfoProvider: () => null,
     });
     vwapSeriesRef.current = vwapSeries;
 
@@ -345,78 +367,71 @@ export function TradingViewLightweightChart({
     }
   }, [liveCandle, showVolume, toUtcSeconds]);
 
-  // 4. Manage Price Lines (LTP Levels, Astro, Liquidity, Unicorn SL/TP)
+  // 4. Manage Price Lines (In-place update to eliminate scale jumping and 1-frame disappearance)
   useEffect(() => {
     const series = candleSeriesRef.current;
     if (!series) return;
 
-    // Remove old lines
-    for (const line of priceLinesRef.current) {
-      try {
-        series.removePriceLine(line as never);
-      } catch {
-        // ignore
-      }
+    interface DesiredLine {
+      id: string;
+      price: number;
+      color: string;
+      lineWidth: 1 | 2;
+      lineStyle: LineStyle;
+      title: string;
     }
-    priceLinesRef.current = [];
 
-    const newLines: unknown[] = [];
+    const desiredMap = new Map<string, DesiredLine>();
 
     // AI-LTP Levels
     if (showLtpLevels && ltpLevels.length > 0) {
       for (const l of ltpLevels) {
-        const pl = series.createPriceLine({
+        desiredMap.set(`ltp-${l.name}`, {
+          id: `ltp-${l.name}`,
           price: l.price,
           color: l.color,
           lineWidth: 1,
           lineStyle: l.dash ? LineStyle.Dashed : LineStyle.Solid,
-          axisLabelVisible: true,
           title: l.name,
         });
-        newLines.push(pl);
       }
     }
 
     // Astro Levels
     if (showAstroLevels && astroLevels.length > 0) {
       for (const a of astroLevels) {
-        const pl = series.createPriceLine({
+        desiredMap.set(`astro-${a.label}`, {
+          id: `astro-${a.label}`,
           price: a.price,
           color: a.color,
           lineWidth: 1,
           lineStyle: LineStyle.Dotted,
-          axisLabelVisible: true,
           title: a.label,
         });
-        newLines.push(pl);
       }
     }
 
     // Session Liquidity (PDH / PDL / PWH / PWL)
     if (showLiquidity && liquidityLevels) {
       if (liquidityLevels.pdh > 0) {
-        newLines.push(
-          series.createPriceLine({
-            price: liquidityLevels.pdh,
-            color: "#06B6D4",
-            lineWidth: 2,
-            lineStyle: LineStyle.Dashed,
-            axisLabelVisible: true,
-            title: `PDH ${liquidityLevels.pdh.toLocaleString("en-IN")}`,
-          }),
-        );
+        desiredMap.set("liq-pdh", {
+          id: "liq-pdh",
+          price: liquidityLevels.pdh,
+          color: "#06B6D4",
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          title: `PDH ${liquidityLevels.pdh.toLocaleString("en-IN")}`,
+        });
       }
       if (liquidityLevels.pdl > 0) {
-        newLines.push(
-          series.createPriceLine({
-            price: liquidityLevels.pdl,
-            color: "#F43F5E",
-            lineWidth: 2,
-            lineStyle: LineStyle.Dashed,
-            axisLabelVisible: true,
-            title: `PDL ${liquidityLevels.pdl.toLocaleString("en-IN")}`,
-          }),
-        );
+        desiredMap.set("liq-pdl", {
+          id: "liq-pdl",
+          price: liquidityLevels.pdl,
+          color: "#F43F5E",
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          title: `PDL ${liquidityLevels.pdl.toLocaleString("en-IN")}`,
+        });
       }
     }
 
@@ -431,59 +446,83 @@ export function TradingViewLightweightChart({
       const tp2 = isBull ? entry + 2.5 * risk : entry - 2.5 * risk;
       const tp3 = isBull ? entry + 4.0 * risk : entry - 4.0 * risk;
 
-      newLines.push(
-        series.createPriceLine({
-          price: entry,
-          color: "#E5B869",
-          lineWidth: 2,
-          lineStyle: LineStyle.Dashed,
-          axisLabelVisible: true,
-          title: `ENTRY ${entry.toLocaleString("en-IN")}`,
-        }),
-      );
-      newLines.push(
-        series.createPriceLine({
-          price: sl,
-          color: "#EF4444",
-          lineWidth: 2,
-          lineStyle: LineStyle.Solid,
-          axisLabelVisible: true,
-          title: `HARD SL ${sl.toLocaleString("en-IN")}`,
-        }),
-      );
-      newLines.push(
-        series.createPriceLine({
-          price: tp1,
-          color: "#10B981",
-          lineWidth: 1,
-          lineStyle: LineStyle.Dashed,
-          axisLabelVisible: true,
-          title: `TP1 (1.5R) ${tp1.toFixed(1)}`,
-        }),
-      );
-      newLines.push(
-        series.createPriceLine({
-          price: tp2,
-          color: "#06B6D4",
-          lineWidth: 1,
-          lineStyle: LineStyle.Dashed,
-          axisLabelVisible: true,
-          title: `TP2 (2.5R) ${tp2.toFixed(1)}`,
-        }),
-      );
-      newLines.push(
-        series.createPriceLine({
-          price: tp3,
-          color: "#8B5CF6",
-          lineWidth: 2,
-          lineStyle: LineStyle.Solid,
-          axisLabelVisible: true,
-          title: `TP3 (4.0R) ${tp3.toFixed(1)}`,
-        }),
-      );
+      desiredMap.set("unicorn-entry", {
+        id: "unicorn-entry",
+        price: entry,
+        color: "#E5B869",
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        title: `ENTRY ${entry.toLocaleString("en-IN")}`,
+      });
+      desiredMap.set("unicorn-sl", {
+        id: "unicorn-sl",
+        price: sl,
+        color: "#EF4444",
+        lineWidth: 2,
+        lineStyle: LineStyle.Solid,
+        title: `HARD SL ${sl.toLocaleString("en-IN")}`,
+      });
+      desiredMap.set("unicorn-tp1", {
+        id: "unicorn-tp1",
+        price: tp1,
+        color: "#10B981",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        title: `TP1 (1.5R) ${tp1.toFixed(1)}`,
+      });
+      desiredMap.set("unicorn-tp2", {
+        id: "unicorn-tp2",
+        price: tp2,
+        color: "#06B6D4",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        title: `TP2 (2.5R) ${tp2.toFixed(1)}`,
+      });
+      desiredMap.set("unicorn-tp3", {
+        id: "unicorn-tp3",
+        price: tp3,
+        color: "#8B5CF6",
+        lineWidth: 2,
+        lineStyle: LineStyle.Solid,
+        title: `TP3 (4.0R) ${tp3.toFixed(1)}`,
+      });
     }
 
-    priceLinesRef.current = newLines;
+    // 1. Remove obsolete lines
+    for (const [id, line] of priceLinesMapRef.current.entries()) {
+      if (!desiredMap.has(id)) {
+        try {
+          series.removePriceLine(line);
+        } catch {
+          // ignore
+        }
+        priceLinesMapRef.current.delete(id);
+      }
+    }
+
+    // 2. Add or in-place update existing lines
+    for (const [id, desired] of desiredMap.entries()) {
+      const existing = priceLinesMapRef.current.get(id);
+      if (existing) {
+        existing.applyOptions({
+          price: desired.price,
+          color: desired.color,
+          lineWidth: desired.lineWidth,
+          lineStyle: desired.lineStyle,
+          title: desired.title,
+        });
+      } else {
+        const created = series.createPriceLine({
+          price: desired.price,
+          color: desired.color,
+          lineWidth: desired.lineWidth,
+          lineStyle: desired.lineStyle,
+          title: desired.title,
+          axisLabelVisible: true,
+        });
+        priceLinesMapRef.current.set(id, created);
+      }
+    }
   }, [
     showLtpLevels,
     ltpLevels,
@@ -590,10 +629,64 @@ export function TradingViewLightweightChart({
   // Reset / Auto-Fit Viewport
   const handleResetViewport = useCallback(() => {
     if (chartRef.current) {
+      isScrolledRef.current = false;
+      chartRef.current.priceScale("right").applyOptions({ autoScale: true });
       chartRef.current.timeScale().fitContent();
+      chartRef.current.timeScale().applyOptions({ rightOffset: 15 });
+      onIsScrolledChange?.(false);
       forceUpdateViewport();
     }
-  }, [forceUpdateViewport]);
+  }, [forceUpdateViewport, onIsScrolledChange]);
+
+  // Expose fitContent to parent ref
+  useEffect(() => {
+    if (onFitContentRef) {
+      onFitContentRef.current = handleResetViewport;
+    }
+    return () => {
+      if (onFitContentRef) onFitContentRef.current = null;
+    };
+  }, [onFitContentRef, handleResetViewport]);
+
+  // Lock autoScale: false on user manual wheel or drag until explicit [Auto-Fit]
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const lockAutoscale = () => {
+      if (!isScrolledRef.current && chartRef.current) {
+        isScrolledRef.current = true;
+        chartRef.current.priceScale("right").applyOptions({ autoScale: false });
+        onIsScrolledChange?.(true);
+      }
+    };
+
+    container.addEventListener("wheel", lockAutoscale, { passive: true });
+
+    let isPointerDown = false;
+    const handlePointerDown = () => {
+      isPointerDown = true;
+    };
+    const handlePointerMove = () => {
+      if (isPointerDown) {
+        lockAutoscale();
+      }
+    };
+    const handlePointerUp = () => {
+      isPointerDown = false;
+    };
+
+    container.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      container.removeEventListener("wheel", lockAutoscale);
+      container.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [onIsScrolledChange]);
 
   return (
     <div className="relative w-full h-full flex-1 min-h-[460px] bg-[#08090C] overflow-hidden select-none">
@@ -659,7 +752,7 @@ export function TradingViewLightweightChart({
             );
           })}
 
-        {/* 2. Live OI Profile Horizontal Bars on Right Axis */}
+        {/* 2. Live OI Profile Horizontal Bars on Right Axis (Constrained max-w-[110px]) */}
         {showOiProfile &&
           oiProfile.map((oi, i) => {
             if (!candleSeriesRef.current) return null;
@@ -667,33 +760,34 @@ export function TradingViewLightweightChart({
             if (y == null) return null;
 
             const maxOi = Math.max(...oiProfile.map((p) => Math.max(p.callOi, p.putOi))) || 1;
-            const callWidth = Math.min(180, (oi.callOi / maxOi) * 160);
-            const putWidth = Math.min(180, (oi.putOi / maxOi) * 160);
+            const maxBarWidth = 85; // Constrained width so bars never block candles or drag physics
+            const callWidth = Math.min(maxBarWidth, (oi.callOi / maxOi) * maxBarWidth);
+            const putWidth = Math.min(maxBarWidth, (oi.putOi / maxOi) * maxBarWidth);
 
             return (
-              <g key={`oi-${oi.strike}-${i}`}>
+              <g key={`oi-${oi.strike}-${i}`} className="pointer-events-none select-none">
                 {/* Put OI Bar (Green) */}
                 <rect
-                  x={`calc(100% - ${putWidth + 60}px)`}
-                  y={y - 6}
+                  x={`calc(100% - ${putWidth + 50}px)`}
+                  y={y - 5}
                   width={putWidth}
-                  height="5"
+                  height="4"
                   fill="#10B981"
-                  opacity="0.6"
+                  opacity="0.65"
                   rx="1"
                 />
                 {/* Call OI Bar (Red) */}
                 <rect
-                  x={`calc(100% - ${callWidth + 60}px)`}
+                  x={`calc(100% - ${callWidth + 50}px)`}
                   y={y + 1}
                   width={callWidth}
-                  height="5"
+                  height="4"
                   fill="#F43F5E"
-                  opacity="0.6"
+                  opacity="0.65"
                   rx="1"
                 />
                 <text
-                  x="calc(100% - 55px)"
+                  x="calc(100% - 46px)"
                   y={y + 3}
                   fill="#9CA3AF"
                   fontSize="8"
@@ -916,16 +1010,6 @@ export function TradingViewLightweightChart({
           );
         })()}
       </svg>
-
-      {/* Floating Auto-Fit / Reset Button */}
-      <button
-        type="button"
-        onClick={handleResetViewport}
-        title="Auto-Fit / Reset Chart"
-        className="absolute bottom-6 right-16 z-20 px-2 py-1 text-[11px] font-mono text-zinc-400 hover:text-amber-300 bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 rounded-md backdrop-blur-md shadow-lg transition-colors"
-      >
-        [⟲ Auto-Fit]
-      </button>
     </div>
   );
 }
