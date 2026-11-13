@@ -17,7 +17,7 @@ export interface CanonicalSnapshotInput {
   readonly underlying: OptionUnderlying;
   readonly expiry?: string;
   readonly useMock?: boolean;
-  readonly mockScenario?: string;
+  readonly mockScenario?: unknown;
 }
 
 export interface CanonicalSnapshotResult {
@@ -33,14 +33,21 @@ export async function fetchCanonicalOptionChain(
   input: CanonicalSnapshotInput,
 ): Promise<CanonicalSnapshotResult> {
   const { UpstoxOptionChainProvider } = await import("./upstox-provider.server");
-  const { MockOptionChainProvider } = await import("./mock-provider");
   const { assessDataQuality } = await import("./data-quality");
   const { computeAtm } = await import("./atm-engine");
   const { getSnapshotHistory } = await import("./snapshot-history");
 
-  const provider = input.useMock
-    ? new MockOptionChainProvider({ scenario: (input.mockScenario as never) ?? "SIDEWAYS" })
-    : new UpstoxOptionChainProvider();
+  let provider: {
+    fetchSnapshot(req: { underlying: OptionUnderlying; expiry?: string }): Promise<import("./provider").FetchSnapshotResult>;
+    meta: import("./provider").OptionChainProviderMeta;
+  };
+
+  if (process.env.NODE_ENV === "test" && input.useMock) {
+    const { MockOptionChainProvider } = await import("./mock-provider");
+    provider = new MockOptionChainProvider({ scenario: (input.mockScenario as never) ?? "SIDEWAYS" });
+  } else {
+    provider = new UpstoxOptionChainProvider();
+  }
 
   const res = await provider.fetchSnapshot({ underlying: input.underlying, expiry: input.expiry });
   const now = new Date().toISOString();

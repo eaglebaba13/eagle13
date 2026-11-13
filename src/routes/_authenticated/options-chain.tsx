@@ -41,7 +41,7 @@ import { OptionChainTable } from "@/components/option-chain/OptionChainTable";
 import { LtpBlastScreener } from "@/components/option-chain/LtpBlastScreener";
 import { StockFourLineCard } from "@/components/option-chain/StockFourLineCard";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import type { OptionUnderlying } from "@/lib/option-chain/types";
+import { UNIVERSAL_INSTRUMENTS } from "@/lib/market-data/fo-universe";
 
 export const Route = createFileRoute("/_authenticated/options-chain")({
   head: () => ({
@@ -62,10 +62,11 @@ type CalculatorMode = "LIVE" | "STATIC_0920" | "STOCKS_4LINE" | "LTP_BLAST";
 
 function LtpCalculatorPage() {
   const [mode, setMode] = useState<CalculatorMode>("LIVE");
-  const [underlying, setUnderlying] = useState<OptionUnderlying>("NIFTY");
+  const [underlying, setUnderlying] = useState<string>("NIFTY");
+  const [strikeDepth, setStrikeDepth] = useState<number>(10);
   const [expiry, setExpiry] = useState<string>("");
   const [selectedStock, setSelectedStock] = useState<string>("RELIANCE");
-  const [useMock, setUseMock] = useState(false);
+  const [searchFilter, setSearchFilter] = useState<string>("");
 
   // Data states
   const [ltpData, setLtpData] = useState<LtpCalculatorOutput | null>(null);
@@ -81,7 +82,7 @@ function LtpCalculatorPage() {
   const fetchBlastFn = useServerFn(getLtpBlastStocks);
   const fetchFourLineFn = useServerFn(getStockFourLineData);
 
-  // Load Main Index LTP Calculator
+  // Load Main Index / Multi-Asset LTP Calculator
   const loadIndexLtp = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -90,7 +91,6 @@ function LtpCalculatorPage() {
         data: {
           underlying,
           expiry: expiry || undefined,
-          useMock,
         },
       });
 
@@ -106,7 +106,7 @@ function LtpCalculatorPage() {
     } finally {
       setLoading(false);
     }
-  }, [fetchLtpFn, underlying, expiry, useMock]);
+  }, [fetchLtpFn, underlying, expiry]);
 
   // Load LTP Blast Screener Stocks
   const loadBlastScreener = useCallback(async () => {
@@ -192,17 +192,6 @@ function LtpCalculatorPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-amber-400" : ""}`} />
             Refresh Data
-          </button>
-
-          <button
-            onClick={() => setUseMock((m) => !m)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors border ${
-              useMock
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200"
-            }`}
-          >
-            {useMock ? "Mock Mode ON" : "Live Upstox Feed"}
           </button>
         </div>
       </header>
@@ -305,7 +294,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
                   <div className="text-[10px] text-emerald-400 font-bold">EOS (SUPPORT)</div>
                   <div className="text-lg font-black text-emerald-300 mt-0.5">
-                    ₹{activeLevels.eos.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.eos.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
                     Strike {activeLevels.supportStrike}
@@ -316,7 +305,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-emerald-950/10 border border-emerald-500/20">
                   <div className="text-[10px] text-emerald-400 font-medium">S-MOD (SAFE BUY)</div>
                   <div className="text-lg font-black text-zinc-100 mt-0.5">
-                    ₹{activeLevels.sModerate.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.sModerate.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-emerald-400/80 mt-0.5">
                     Safe Support Entry
@@ -327,7 +316,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30">
                   <div className="text-[10px] text-rose-400 font-bold">EOR (RESISTANCE)</div>
                   <div className="text-lg font-black text-rose-300 mt-0.5">
-                    ₹{activeLevels.eor.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.eor.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
                     Strike {activeLevels.resistanceStrike}
@@ -338,7 +327,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-rose-950/10 border border-rose-500/20">
                   <div className="text-[10px] text-rose-400 font-medium">R-MOD (SAFE SELL)</div>
                   <div className="text-lg font-black text-zinc-100 mt-0.5">
-                    ₹{activeLevels.rModerate.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.rModerate.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-rose-400/80 mt-0.5">
                     Safe Resistance Entry
@@ -349,7 +338,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
                   <div className="text-[10px] text-amber-400 font-bold">MAX PAIN (SL)</div>
                   <div className="text-lg font-black text-rose-400 mt-0.5">
-                    ₹{activeLevels.maxPainSl.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.maxPainSl.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
                     Next Strike Reversal
@@ -360,7 +349,7 @@ function LtpCalculatorPage() {
                 <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
                   <div className="text-[10px] text-cyan-400 font-bold">MAX GAIN (TP)</div>
                   <div className="text-lg font-black text-emerald-400 mt-0.5">
-                    ₹{activeLevels.maxGainTarget.toFixed(2)}
+                    {ltpData?.currencySymbol ?? "₹"}{activeLevels.maxGainTarget.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
                     Opposite Reversal
@@ -370,23 +359,63 @@ function LtpCalculatorPage() {
             </div>
           )}
 
-          {/* Index Selector & Expiry Toolbar */}
+          {/* Index Selector, Strike Depth & Expiry Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-zinc-800 bg-[#0c0e14]">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Categorized Multi-Asset Selector */}
               <label className="text-xs font-mono text-zinc-400 font-semibold flex items-center gap-1.5">
                 UNDERLYING:
                 <select
                   value={underlying}
                   onChange={(e) => {
-                    setUnderlying(e.target.value as OptionUnderlying);
+                    setUnderlying(e.target.value);
                     setExpiry("");
                   }}
-                  className="px-2.5 py-1 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 text-xs font-mono focus:outline-none focus:border-amber-500"
+                  className="px-2.5 py-1.5 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 text-xs font-mono focus:outline-none focus:border-amber-500 max-w-[220px]"
                 >
-                  <option value="NIFTY">NIFTY 50</option>
-                  <option value="BANKNIFTY">BANK NIFTY</option>
+                  <optgroup label="── 1. INDIAN INDICES ──">
+                    <option value="NIFTY">NIFTY 50</option>
+                    <option value="BANKNIFTY">BANK NIFTY</option>
+                    <option value="FINNIFTY">FINNIFTY</option>
+                    <option value="MIDCPNIFTY">MIDCPNIFTY</option>
+                    <option value="SENSEX">BSE SENSEX</option>
+                    <option value="BANKEX">BSE BANKEX</option>
+                  </optgroup>
+                  <optgroup label="── 2. CRYPTO & COMMODITIES ──">
+                    <option value="BTCUSDT">BTC/USDT (Bitcoin)</option>
+                    <option value="ETHUSDT">ETH/USDT (Ethereum)</option>
+                    <option value="SOLUSDT">SOL/USDT (Solana)</option>
+                    <option value="GC1!">COMEX GOLD (GC1!)</option>
+                    <option value="SI1!">COMEX SILVER (SI1!)</option>
+                  </optgroup>
+                  <optgroup label="── 3. 200+ F&O EQUITIES ──">
+                    {UNIVERSAL_INSTRUMENTS.filter((i) => i.category === "FO_EQUITY").map((inst) => (
+                      <option key={inst.symbol} value={inst.symbol}>
+                        {inst.symbol} ({inst.name})
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </label>
+
+              {/* Quick Strike Depth Selector */}
+              <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-800">
+                <span className="text-[10px] font-mono font-semibold text-zinc-500 px-1.5">DEPTH:</span>
+                {[5, 10, 15, 20].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setStrikeDepth(d)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
+                      strikeDepth === d
+                        ? "bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-sm"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                    }`}
+                  >
+                    {d} Strikes
+                  </button>
+                ))}
+              </div>
 
               {availableExpiries.length > 0 && (
                 <label className="text-xs font-mono text-zinc-400 font-semibold flex items-center gap-1.5">
@@ -394,7 +423,7 @@ function LtpCalculatorPage() {
                   <select
                     value={expiry}
                     onChange={(e) => setExpiry(e.target.value)}
-                    className="px-2.5 py-1 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 text-xs font-mono focus:outline-none focus:border-amber-500"
+                    className="px-2.5 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100 text-xs font-mono focus:outline-none focus:border-amber-500"
                   >
                     <option value="">Current Weekly Expiry</option>
                     {availableExpiries.map((exp) => (
@@ -410,7 +439,7 @@ function LtpCalculatorPage() {
             <div className="text-xs font-mono text-zinc-400">
               {lastRefreshed && <span>Refreshed: {lastRefreshed} · </span>}
               <span className="text-amber-400 font-bold">
-                SPOT: ₹{ltpData?.spotPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                SPOT: {ltpData?.currencySymbol ?? "₹"}{ltpData?.spotPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>
           </div>
@@ -426,6 +455,8 @@ function LtpCalculatorPage() {
               atmStrike={ltpData.atmStrike}
               reversalLevels={activeLevels}
               coaScenario={coaScenario}
+              strikeDepth={strikeDepth}
+              currencySymbol={ltpData.currencySymbol ?? "₹"}
             />
           ) : (
             <div className="p-8 text-center text-zinc-500 font-mono text-xs border border-zinc-800 rounded-xl bg-zinc-950">

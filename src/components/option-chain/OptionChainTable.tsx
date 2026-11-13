@@ -14,6 +14,8 @@ interface OptionChainTableProps {
   readonly reversalLevels: ReversalLevels;
   readonly coaScenario: CoaScenarioResult;
   readonly onSelectStrike?: (strike: number) => void;
+  readonly strikeDepth?: number;
+  readonly currencySymbol?: string;
 }
 
 export function OptionChainTable({
@@ -24,6 +26,8 @@ export function OptionChainTable({
   reversalLevels,
   coaScenario,
   onSelectStrike,
+  strikeDepth = 10,
+  currencySymbol = "₹",
 }: OptionChainTableProps) {
   // Combine strikes
   const strikes = React.useMemo(() => {
@@ -88,6 +92,15 @@ export function OptionChainTable({
     return list;
   }, [callStrikes, putStrikes, atmStrike]);
 
+  const visibleStrikes = React.useMemo(() => {
+    if (!strikeDepth || strikeDepth <= 0 || strikes.length === 0) return strikes;
+    const atmIndex = strikes.findIndex((s) => s.isAtm || s.strike === atmStrike);
+    if (atmIndex === -1) return strikes.slice(0, strikeDepth * 2);
+    const start = Math.max(0, atmIndex - strikeDepth);
+    const end = Math.min(strikes.length, atmIndex + strikeDepth + 1);
+    return strikes.slice(start, end);
+  }, [strikes, atmStrike, strikeDepth]);
+
   const fmt = (n: number | null | undefined): string => {
     if (n == null || !Number.isFinite(n)) return "—";
     return n >= 1000000 ? `${(n / 100000).toFixed(1)}L` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toLocaleString("en-IN");
@@ -95,7 +108,7 @@ export function OptionChainTable({
 
   const fmtPrice = (n: number | null | undefined): string => {
     if (n == null || !Number.isFinite(n)) return "—";
-    return n.toFixed(2);
+    return `${currencySymbol}${n.toFixed(2)}`;
   };
 
   return (
@@ -134,7 +147,7 @@ export function OptionChainTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800/60">
-          {strikes.map((row, idx) => {
+          {visibleStrikes.map((row, idx) => {
             const isAtm = row.isAtm;
             const isEos = row.strike === reversalLevels.supportStrike;
             const isEor = row.strike === reversalLevels.resistanceStrike;

@@ -7,6 +7,7 @@ import {
   CrosshairMode,
   LineStyle,
   TickMarkType,
+  PriceScaleMode,
   type IChartApi,
   type ISeriesApi,
   type IPriceLine,
@@ -62,6 +63,8 @@ export interface TradingViewLightweightChartProps {
   readonly onCrosshairMove?: (hud: HudData | null) => void;
   readonly onFitContentRef?: React.MutableRefObject<(() => void) | null>;
   readonly onIsScrolledChange?: (isScrolled: boolean) => void;
+  readonly currencySymbol?: string;
+  readonly priceScaleMode?: "normal" | "log" | "percent";
 }
 
 export interface HudData {
@@ -101,6 +104,8 @@ export function TradingViewLightweightChart({
   onCrosshairMove,
   onFitContentRef,
   onIsScrolledChange,
+  currencySymbol = "₹",
+  priceScaleMode = "normal",
 }: TradingViewLightweightChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -158,6 +163,10 @@ export function TradingViewLightweightChart({
       localization: {
         locale: "en-IN",
         dateFormat: "dd MMM yyyy",
+        priceFormatter: (p: number) =>
+          `${currencySymbol}${p.toLocaleString("en-IN", {
+            maximumFractionDigits: p < 10 ? 4 : 2,
+          })}`,
         timeFormatter: (time: Time) => {
           let date: Date;
           if (typeof time === "number") {
@@ -600,6 +609,22 @@ export function TradingViewLightweightChart({
     unicornSetup,
   ]);
 
+  // Apply Price Scale Mode (% | log | normal)
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const mode =
+      priceScaleMode === "log"
+        ? PriceScaleMode.Logarithmic
+        : priceScaleMode === "percent"
+          ? PriceScaleMode.Percentage
+          : PriceScaleMode.Normal;
+    try {
+      chartRef.current.priceScale("right").applyOptions({ mode });
+    } catch {
+      // ignore
+    }
+  }, [priceScaleMode]);
+
   // Coordinate conversion helpers
   const getCoordinates = useCallback(
     (p: DrawingPoint): { x: number; y: number } | null => {
@@ -612,45 +637,11 @@ export function TradingViewLightweightChart({
     [toUtcSeconds],
   );
 
-  // Mouse Handlers for Left Drawing Toolbar
-  const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (activeTool === "cursor") return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
+  // Mouse Handlers for Left Drawing Toolbar (Supports both click-and-drag and click-click)
+  const dragStartRef = useRef<{ clientX: number; clientY: number; pt: DrawingPoint } | null>(null);
 
-    if (!chartRef.current || !candleSeriesRef.current) return;
-    const time = chartRef.current.timeScale().coordinateToTime(clientX);
-    const price = candleSeriesRef.current.coordinateToPrice(clientY);
-    if (!time || !price) return;
-
-    const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
-    const pt: DrawingPoint = { time: timeNum, price };
-
-    if (activeTool === "horizontal") {
-      const newDrawing: ChartDrawing = {
-        id: `h-${Date.now()}`,
-        type: "horizontal",
-        points: [pt],
-        color: "#E5B869",
-        isComplete: true,
-        label: `H-Line: ${price.toFixed(2)}`,
-      };
-      onSaveDrawings([...drawings, newDrawing]);
-      if (onFinishDrawingTool) onFinishDrawingTool();
-      return;
-    }
-
-    if (!currentDrawing) {
-      setCurrentDrawing({
-        type: activeTool,
-        start: pt,
-        current: pt,
-      });
-    } else {
-      // Complete drawing
-      const p1 = currentDrawing.start;
-      const p2 = pt;
+  const completeDrawingWith = useCallback(
+    (p1: DrawingPoint, p2: DrawingPoint) => {
       const priceDiff = p2.price - p1.price;
       const percentDiff = p1.price > 0 ? (priceDiff / p1.price) * 100 : 0;
 
@@ -674,7 +665,50 @@ export function TradingViewLightweightChart({
       };
       onSaveDrawings([...drawings, newDrawing]);
       setCurrentDrawing(null);
+      dragStartRef.current = null;
       if (onFinishDrawingTool) onFinishDrawingTool();
+    },
+    [activeTool, drawings, onFinishDrawingTool, onSaveDrawings],
+  );
+
+  const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (activeTool === "cursor") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+
+    if (!chartRef.current || !candleSeriesRef.current) return;
+    const time = chartRef.current.timeScale().coordinateToTime(clientX);
+    const price = candleSeriesRef.current.coordinateToPrice(clientY);
+    if (!time || !price) return;
+
+    const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
+    const pt: DrawingPoint = { time: timeNum, price };
+
+    dragStartRef.current = { clientX, clientY, pt };
+
+    if (activeTool === "horizontal") {
+      const newDrawing: ChartDrawing = {
+        id: `h-${Date.now()}`,
+        type: "horizontal",
+        points: [pt],
+        color: "#E5B869",
+        isComplete: true,
+        label: `H-Line: ${price.toFixed(2)}`,
+      };
+      onSaveDrawings([...drawings, newDrawing]);
+      if (onFinishDrawingTool) onFinishDrawingTool();
+      return;
+    }
+
+    if (!currentDrawing) {
+      setCurrentDrawing({
+        type: activeTool,
+        start: pt,
+        current: pt,
+      });
+    } else {
+      completeDrawingWith(currentDrawing.start, pt);
     }
   };
 
@@ -690,6 +724,27 @@ export function TradingViewLightweightChart({
 
     const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
     setCurrentDrawing((prev) => (prev ? { ...prev, current: { time: timeNum, price } } : null));
+  };
+
+  const handleSvgMouseUp = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!currentDrawing || !dragStartRef.current || !chartRef.current || !candleSeriesRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+
+    const dx = Math.abs(clientX - dragStartRef.current.clientX);
+    const dy = Math.abs(clientY - dragStartRef.current.clientY);
+
+    // If mouse was dragged at least 10px, complete drawing on release
+    if (Math.hypot(dx, dy) >= 10) {
+      const time = chartRef.current.timeScale().coordinateToTime(clientX);
+      const price = candleSeriesRef.current.coordinateToPrice(clientY);
+      if (time && price) {
+        const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
+        completeDrawingWith(dragStartRef.current.pt, { time: timeNum, price });
+      }
+    }
+    dragStartRef.current = null;
   };
 
   // Reset / Auto-Fit Viewport

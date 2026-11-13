@@ -475,12 +475,9 @@ function Dashboard() {
         @media(max-width:820px){
           .eb-grid{grid-template-columns:1fr !important;}
         }
-        /* The sticky mobile top bar already shows the brand, so hide the
-           duplicate wordmark in the page header on phones/tablets. */
-        @media(max-width:860px){
-          .eb-header-brand{display:none !important;}
-          .eb-header{justify-content:flex-start !important;}
-        }
+        /* AppShell header already provides brand + profile, hide duplicate brand in page header */
+        .eb-header-brand{display:none !important;}
+        .eb-header{padding:8px 20px !important;justify-content:space-between !important;}
         @media(max-width:640px){
           .eb-header{padding:12px 16px !important;}
           .eb-header-brand{font-size:21px !important;letter-spacing:2px !important;}

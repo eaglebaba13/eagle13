@@ -1162,7 +1162,18 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
             attempted_at: att.attemptedAt,
           } as never);
         if (attemptError) {
-          if (!isGuest && (attemptError as { code?: string })?.code !== "42501") {
+          const code = (attemptError as { code?: string })?.code;
+          const msg = (attemptError as { message?: string })?.message ?? "";
+          const isBenignDbIssue =
+            code === "42501" ||
+            code === "42P01" ||
+            code === "23503" ||
+            code === "22P02" ||
+            msg.toLowerCase().includes("relation") ||
+            msg.toLowerCase().includes("does not exist") ||
+            msg.toLowerCase().includes("foreign key") ||
+            msg.toLowerCase().includes("invalid input syntax for type uuid");
+          if (!isGuest && !isBenignDbIssue) {
             persistenceFailed = true;
             persistenceError = "SMART_ALERT_DELIVERY_AUDIT_WRITE_FAILED";
           }

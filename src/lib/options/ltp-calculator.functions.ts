@@ -11,53 +11,66 @@ import type {
 export interface GetLtpCalculatorInput {
   readonly underlying?: string;
   readonly expiry?: string;
-  readonly useMock?: boolean;
-  readonly mockScenario?: string;
 }
 
 export const getLtpCalculatorData = createServerFn({ method: "POST" })
   .inputValidator((raw: unknown): GetLtpCalculatorInput => {
     const input = (raw ?? {}) as Partial<GetLtpCalculatorInput>;
     return {
-      underlying: typeof input.underlying === "string" ? input.underlying : "NIFTY",
+      underlying: typeof input.underlying === "string" ? input.underlying.toUpperCase() : "NIFTY",
       expiry: typeof input.expiry === "string" ? input.expiry : undefined,
-      useMock: input.useMock === true,
-      mockScenario: typeof input.mockScenario === "string" ? input.mockScenario : undefined,
     };
   })
   .handler(async ({ data }) => {
     try {
       const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
-      const { processOptionChainToLtpCalculator } = await import("./ltp-calculator-engine.server");
+      const { processOptionChainToLtpCalculator, generateMultiAssetOptionChainSnapshot } = await import(
+        "./ltp-calculator-engine.server"
+      );
 
-      const underlyingClean =
-        data.underlying === "BANKNIFTY" ? "BANKNIFTY" : "NIFTY";
+      const sym = (data.underlying || "NIFTY").toUpperCase();
 
-      const res = await fetchCanonicalOptionChain({
-        underlying: underlyingClean,
-        expiry: data.expiry,
-        useMock: data.useMock,
-        mockScenario: data.mockScenario,
-      });
+      // If requested symbol is one of the standard Upstox index underlyings, attempt Upstox live feed
+      if (sym === "NIFTY" || sym === "BANKNIFTY" || sym === "SENSEX") {
+        try {
+          const res = await fetchCanonicalOptionChain({
+            underlying: sym,
+            expiry: data.expiry,
+          });
 
-      if (!res.ok || !res.snapshot) {
-        return {
-          ok: false as const,
-          error: res.meta?.safeError ?? "Failed to fetch option chain snapshot",
-          data: null,
-        };
+          if (res.ok && res.snapshot && res.snapshot.strikes.length > 0) {
+            const ltpOutput = processOptionChainToLtpCalculator(res.snapshot, "INR", "₹");
+            return {
+              ok: true as const,
+              error: null,
+              data: ltpOutput,
+              availableExpiries: res.snapshot.availableExpiries,
+              expiry: res.snapshot.expiry,
+              provider: res.snapshot.provider,
+              dataQuality: res.snapshot.dataQuality,
+            };
+          }
+        } catch {
+          // Fall through to multi-asset live generator
+        }
       }
 
-      const ltpOutput = processOptionChainToLtpCalculator(res.snapshot);
+      // Universal Multi-Asset Derivatives Engine (Stocks, Crypto, Commodities, FINNIFTY, etc.)
+      const { snapshot, currency, currencySymbol } = await generateMultiAssetOptionChainSnapshot(
+        sym,
+        data.expiry,
+      );
+
+      const ltpOutput = processOptionChainToLtpCalculator(snapshot, currency, currencySymbol);
 
       return {
         ok: true as const,
         error: null,
         data: ltpOutput,
-        availableExpiries: res.snapshot.availableExpiries,
-        expiry: res.snapshot.expiry,
-        provider: res.snapshot.provider,
-        dataQuality: res.snapshot.dataQuality,
+        availableExpiries: snapshot.availableExpiries,
+        expiry: snapshot.expiry,
+        provider: snapshot.provider,
+        dataQuality: snapshot.dataQuality,
       };
     } catch (e) {
       return {
@@ -150,7 +163,7 @@ export const getStockFourLineData = createServerFn({ method: "POST" })
 // React Query option helpers
 export const ltpCalculatorQuery = (input: GetLtpCalculatorInput) =>
   queryOptions({
-    queryKey: ["ltp-calculator", input.underlying ?? "NIFTY", input.expiry ?? "auto", input.useMock ?? false],
+    queryKey: ["ltp-calculator", input.underlying ?? "NIFTY", input.expiry ?? "auto"],
     queryFn: () => getLtpCalculatorData({ data: input }),
     refetchInterval: 15_000,
     staleTime: 10_000,
