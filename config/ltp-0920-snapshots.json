@@ -1,0 +1,19 @@
+{
+  "2026-11-13": {
+    "NIFTY": {
+      "eos": 24970,
+      "eosMinus1": 24761.6,
+      "eor": 25255,
+      "eorPlus1": 25320,
+      "sModerate": 24970,
+      "sRisky": 24995,
+      "rModerate": 25255,
+      "rRisky": 25230,
+      "supportStrike": 25000,
+      "resistanceStrike": 25200,
+      "spotPrice": 25150,
+      "maxPainSl": 24761.6,
+      "maxGainTarget": 25255
+    }
+  }
+}

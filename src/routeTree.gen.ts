@@ -16,7 +16,6 @@ import { Route as RiskRouteImport } from './routes/risk'
 import { Route as ReleaseNotesRouteImport } from './routes/release-notes'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as OptionsChainRouteImport } from './routes/options-chain'
 import { Route as OptionsAnalyticsRouteImport } from './routes/options-analytics'
 import { Route as OptionStrategyRouteImport } from './routes/option-strategy'
 import { Route as NewsRouteImport } from './routes/news'
@@ -54,6 +53,7 @@ import { Route as AuthenticatedResearchLabRouteImport } from './routes/_authenti
 import { Route as AuthenticatedReferralsRouteImport } from './routes/_authenticated/referrals'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentStatusRouteImport } from './routes/_authenticated/payment-status'
+import { Route as AuthenticatedOptionsChainRouteImport } from './routes/_authenticated/options-chain'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMultiAssetIntelligenceRouteImport } from './routes/_authenticated/multi-asset-intelligence'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
@@ -130,11 +130,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptionsChainRoute = OptionsChainRouteImport.update({
-  id: '/options-chain',
-  path: '/options-chain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OptionsAnalyticsRoute = OptionsAnalyticsRouteImport.update({
@@ -326,6 +321,12 @@ const AuthenticatedPaymentStatusRoute =
   AuthenticatedPaymentStatusRouteImport.update({
     id: '/payment-status',
     path: '/payment-status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOptionsChainRoute =
+  AuthenticatedOptionsChainRouteImport.update({
+    id: '/options-chain',
+    path: '/options-chain',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNotificationsRoute =
@@ -594,7 +595,6 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
-  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
@@ -615,6 +615,7 @@ export interface FileRoutesByFullPath {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/options-chain': typeof AuthenticatedOptionsChainRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/referrals': typeof AuthenticatedReferralsRoute
@@ -682,7 +683,6 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
-  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
@@ -703,6 +703,7 @@ export interface FileRoutesByTo {
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/options-chain': typeof AuthenticatedOptionsChainRoute
   '/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/referrals': typeof AuthenticatedReferralsRoute
@@ -772,7 +773,6 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/option-strategy': typeof OptionStrategyRoute
   '/options-analytics': typeof OptionsAnalyticsRoute
-  '/options-chain': typeof OptionsChainRoute
   '/pricing': typeof PricingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/release-notes': typeof ReleaseNotesRoute
@@ -793,6 +793,7 @@ export interface FileRoutesById {
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/options-chain': typeof AuthenticatedOptionsChainRoute
   '/_authenticated/payment-status': typeof AuthenticatedPaymentStatusRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/referrals': typeof AuthenticatedReferralsRoute
@@ -862,7 +863,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
-    | '/options-chain'
     | '/pricing'
     | '/privacy'
     | '/release-notes'
@@ -883,6 +883,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/multi-asset-intelligence'
     | '/notifications'
+    | '/options-chain'
     | '/payment-status'
     | '/profile'
     | '/referrals'
@@ -950,7 +951,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
-    | '/options-chain'
     | '/pricing'
     | '/privacy'
     | '/release-notes'
@@ -971,6 +971,7 @@ export interface FileRouteTypes {
     | '/live-option-terminal'
     | '/multi-asset-intelligence'
     | '/notifications'
+    | '/options-chain'
     | '/payment-status'
     | '/profile'
     | '/referrals'
@@ -1039,7 +1040,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/option-strategy'
     | '/options-analytics'
-    | '/options-chain'
     | '/pricing'
     | '/privacy'
     | '/release-notes'
@@ -1060,6 +1060,7 @@ export interface FileRouteTypes {
     | '/_authenticated/live-option-terminal'
     | '/_authenticated/multi-asset-intelligence'
     | '/_authenticated/notifications'
+    | '/_authenticated/options-chain'
     | '/_authenticated/payment-status'
     | '/_authenticated/profile'
     | '/_authenticated/referrals'
@@ -1129,7 +1130,6 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   OptionStrategyRoute: typeof OptionStrategyRoute
   OptionsAnalyticsRoute: typeof OptionsAnalyticsRoute
-  OptionsChainRoute: typeof OptionsChainRoute
   PricingRoute: typeof PricingRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ReleaseNotesRoute: typeof ReleaseNotesRoute
@@ -1195,13 +1195,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/options-chain': {
-      id: '/options-chain'
-      path: '/options-chain'
-      fullPath: '/options-chain'
-      preLoaderRoute: typeof OptionsChainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/options-analytics': {
@@ -1461,6 +1454,13 @@ declare module '@tanstack/react-router' {
       path: '/payment-status'
       fullPath: '/payment-status'
       preLoaderRoute: typeof AuthenticatedPaymentStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/options-chain': {
+      id: '/_authenticated/options-chain'
+      path: '/options-chain'
+      fullPath: '/options-chain'
+      preLoaderRoute: typeof AuthenticatedOptionsChainRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications': {
@@ -1813,6 +1813,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedMultiAssetIntelligenceRoute: typeof AuthenticatedMultiAssetIntelligenceRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedOptionsChainRoute: typeof AuthenticatedOptionsChainRoute
   AuthenticatedPaymentStatusRoute: typeof AuthenticatedPaymentStatusRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReferralsRoute: typeof AuthenticatedReferralsRoute
@@ -1861,6 +1862,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMultiAssetIntelligenceRoute:
     AuthenticatedMultiAssetIntelligenceRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedOptionsChainRoute: AuthenticatedOptionsChainRoute,
   AuthenticatedPaymentStatusRoute: AuthenticatedPaymentStatusRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReferralsRoute: AuthenticatedReferralsRoute,
@@ -1943,7 +1945,6 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   OptionStrategyRoute: OptionStrategyRoute,
   OptionsAnalyticsRoute: OptionsAnalyticsRoute,
-  OptionsChainRoute: OptionsChainRoute,
   PricingRoute: PricingRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ReleaseNotesRoute: ReleaseNotesRoute,

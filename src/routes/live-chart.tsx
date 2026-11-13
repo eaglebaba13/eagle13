@@ -145,6 +145,7 @@ function LiveChartSelection({
   const [showVwap, setShowVwap] = useState(true);
   const [showVolumeProfile, setShowVolumeProfile] = useState(true);
   const [showLiquidity, setShowLiquidity] = useState(true);
+  const [showLtpLevels, setShowLtpLevels] = useState(true);
   const [showAstroLevels, setShowAstroLevels] = useState(true);
   const [showGannLevels, setShowGannLevels] = useState(false);
   const [showSquareRootLevels, setShowSquareRootLevels] = useState(false);
@@ -784,6 +785,122 @@ function LiveChartSelection({
           ]
         : [];
 
+    const activeLtp = currentLtp ?? (displayCandles.length > 0 ? displayCandles[displayCandles.length - 1].y[3] : 0);
+    const ltpYaxis = showLtpLevels && activeLtp && activeLtp > 0 ? (() => {
+      const isIndex = symbol.includes("NIFTY") || symbol.includes("SENSEX");
+      if (isIndex) {
+        const step = symbol.includes("BANKNIFTY") || symbol.includes("SENSEX") ? 100 : 50;
+        const atm = Math.round(activeLtp / step) * step;
+        const prem = Math.round(step * 0.45 * 100) / 100;
+        const eos = atm - prem;
+        const eosMinus1 = (atm - step) - prem;
+        const eor = atm + prem;
+        const eorPlus1 = (atm + step) + prem;
+
+        return [
+          {
+            y: eorPlus1,
+            borderColor: "#ef4444",
+            strokeDashArray: 4,
+            opacity: 0.9,
+            label: {
+              text: `EOR+1 Max Pain: ${eorPlus1.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#b91c1c", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: eor,
+            borderColor: "#f87171",
+            strokeDashArray: 0,
+            opacity: 1,
+            label: {
+              text: `EOR Resistance: ${eor.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#dc2626", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: eos,
+            borderColor: "#34d399",
+            strokeDashArray: 0,
+            opacity: 1,
+            label: {
+              text: `EOS Support: ${eos.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#059669", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: eosMinus1,
+            borderColor: "#10b981",
+            strokeDashArray: 4,
+            opacity: 0.9,
+            label: {
+              text: `EOS-1 Max Pain: ${eosMinus1.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#047857", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+        ];
+      } else {
+        // Stock 4-line levels: P2, P1, C1, C2
+        let step = 10;
+        if (activeLtp < 200) step = 2.5;
+        else if (activeLtp < 500) step = 5;
+        else if (activeLtp < 1000) step = 10;
+        else if (activeLtp < 2500) step = 25;
+        else if (activeLtp < 5000) step = 50;
+        else step = 100;
+
+        const atm = Math.round(activeLtp / step) * step;
+        const prem = Math.round(step * 0.4 * 100) / 100;
+        const p2 = atm + 2 * step + prem;
+        const p1 = atm + step + prem;
+        const c1 = atm - step - prem;
+        const c2 = atm - 2 * step - prem;
+
+        return [
+          {
+            y: p2,
+            borderColor: "#ef4444",
+            strokeDashArray: 4,
+            opacity: 0.9,
+            label: {
+              text: `P2 Top Res: ₹${p2.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#b91c1c", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: p1,
+            borderColor: "#f87171",
+            strokeDashArray: 0,
+            opacity: 1,
+            label: {
+              text: `P1 Inner Res: ₹${p1.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#dc2626", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: c1,
+            borderColor: "#34d399",
+            strokeDashArray: 0,
+            opacity: 1,
+            label: {
+              text: `C1 Inner Sup: ₹${c1.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#059669", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+          {
+            y: c2,
+            borderColor: "#10b981",
+            strokeDashArray: 4,
+            opacity: 0.9,
+            label: {
+              text: `C2 Bottom Sup: ₹${c2.toFixed(1)}`,
+              style: { color: "#ffffff", background: "#047857", fontWeight: "bold", fontSize: "10px" },
+            },
+          },
+        ];
+      }
+    })() : [];
+
     return {
       chart: {
         type: "candlestick" as const,
@@ -832,11 +949,11 @@ function LiveChartSelection({
       grid: { borderColor: "rgba(39, 39, 42, 0.6)", strokeDashArray: 3 },
       tooltip: { theme: "dark" as const },
       annotations: {
-        yaxis: [...astroYaxis, ...frvpYaxis, ...liquidityYaxis],
+        yaxis: [...astroYaxis, ...frvpYaxis, ...liquidityYaxis, ...ltpYaxis],
       },
       dataLabels: { enabled: false },
     };
-  }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, showLiquidity, sessionLiquidity, displayCandles, chartData, symbol, intervalMs, currentLtp]);
+  }, [overlaySeries, astroAnnotations, showVolume, showVwap, vwapResult, showVolumeProfile, volumeProfile, showLiquidity, sessionLiquidity, showLtpLevels, displayCandles, chartData, symbol, intervalMs, currentLtp]);
 
   const activeInstrument = SYMBOLS.find((s) => s.key === symbol) ?? SYMBOLS[0];
   const selectedCategory = activeInstrument.category;
@@ -1012,6 +1129,17 @@ function LiveChartSelection({
           <option value="gann">Gann Square of 9</option>
           <option value="sqrt">Square Root Levels</option>
         </select>
+
+        {/* AI-LTP Levels Toggle */}
+        <label className="flex items-center gap-1.5 text-xs font-mono text-zinc-300 cursor-pointer select-none px-2.5 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/60 transition-colors">
+          <input
+            type="checkbox"
+            checked={showLtpLevels}
+            onChange={(e) => setShowLtpLevels(e.target.checked)}
+            className="accent-amber-500"
+          />
+          <span className="font-bold text-amber-300">AI-LTP Levels</span>
+        </label>
 
         {/* Moon Phase Toggle */}
         <label className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-zinc-300 cursor-pointer select-none px-2 py-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700">
