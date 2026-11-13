@@ -604,39 +604,60 @@ function LiveChartSelection({
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)
   const astroLevels = useMemo(() => {
     if (!showAstroLevels) return [];
-    const isIndex =
-      symbol.includes("NIFTY") ||
-      symbol.includes("BANKNIFTY") ||
-      symbol.includes("SENSEX") ||
-      symbol.includes("MIDCPNIFTY") ||
-      symbol.includes("FINNIFTY");
+    try {
+      const isIndex =
+        symbol.includes("NIFTY") ||
+        symbol.includes("BANKNIFTY") ||
+        symbol.includes("SENSEX") ||
+        symbol.includes("MIDCPNIFTY") ||
+        symbol.includes("FINNIFTY");
 
-    const market = liveLevels?.markets.find((m) =>
-      m.key === (symbol.includes("BANKNIFTY") ? "BANKNIFTY" : symbol.includes("SENSEX") ? "SENSEX" : "NIFTY")
-    );
-
-    // For non-index symbols (Crypto, Commodities, Equities), derive Gann cycles strictly from currentLtp
-    const refPrice = isIndex && market?.prevClose ? market.prevClose : currentLtp;
-    if (!refPrice || !Number.isFinite(refPrice) || refPrice <= 0) return [];
-
-    const cycles = computeCycles(refPrice);
-    const result: { label: string; price: number; color: string }[] = [];
-    const defaultPlanets: readonly { planet: string; degree: number }[] = [
-      { planet: "Sun", degree: 45 },
-      { planet: "Moon", degree: 120 },
-      { planet: "Mars", degree: 210 },
-      { planet: "Jupiter", degree: 330 },
-    ];
-    const planetsToUse = market?.planets?.length ? market.planets.slice(0, 4) : defaultPlanets;
-
-    for (const p of planetsToUse) {
-      const gann = computeGannAstroLevels(cycles, p.degree);
-      result.push(
-        { label: `${p.planet} R1`, price: gann.r1, color: "#10B981" },
-        { label: `${p.planet} S1`, price: gann.s1, color: "#EF4444" },
+      const market = liveLevels?.markets.find((m) =>
+        m.key === (symbol.includes("BANKNIFTY") ? "BANKNIFTY" : symbol.includes("SENSEX") ? "SENSEX" : "NIFTY")
       );
+
+      // For non-index symbols (Crypto, Commodities, Equities), derive Gann cycles strictly from currentLtp
+      const refPrice = isIndex && market?.prevClose ? market.prevClose : currentLtp;
+      if (!refPrice || !Number.isFinite(refPrice) || refPrice <= 0) return [];
+
+      const cycles = computeCycles(refPrice);
+      const result: { label: string; price: number; color: string }[] = [];
+      const defaultPlanets: readonly { planet: string; degree: number }[] = [
+        { planet: "Sun", degree: 15 },
+        { planet: "Moon", degree: 0 },
+        { planet: "Mars", degree: 0 },
+        { planet: "Jupiter", degree: 0 },
+      ];
+      const planetsToUse = market?.planets?.length ? market.planets.slice(0, 4) : defaultPlanets;
+
+      for (const p of planetsToUse) {
+        try {
+          const rawDeg =
+            typeof p.degree === "number" && Number.isFinite(p.degree)
+              ? p.degree
+              : typeof (p as any).absDegree === "number" && Number.isFinite((p as any).absDegree)
+                ? (p as any).absDegree
+                : 0;
+          // Normalize to degree-within-sign [0, 30)
+          let normalizedDegree = ((rawDeg % 30) + 30) % 30;
+          if (normalizedDegree >= 30) normalizedDegree = 29.99;
+
+          const gann = computeGannAstroLevels(cycles, normalizedDegree);
+          if (gann && Number.isFinite(gann.r1) && Number.isFinite(gann.s1)) {
+            result.push(
+              { label: `${p.planet} R1`, price: gann.r1, color: "#10B981" },
+              { label: `${p.planet} S1`, price: gann.s1, color: "#EF4444" },
+            );
+          }
+        } catch (planetErr) {
+          console.warn(`[LiveChart] Failed computing Gann astro levels for planet ${p.planet}:`, planetErr);
+        }
+      }
+      return result;
+    } catch (err) {
+      console.warn("[LiveChart] Safe Astro level computation caught error:", err);
+      return [];
     }
-    return result;
   }, [showAstroLevels, liveLevels, symbol, currentLtp]);
 
   // Drawings Management
