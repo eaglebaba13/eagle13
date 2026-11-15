@@ -22,6 +22,7 @@ import { MigrationAssistant } from "../components/MigrationAssistant";
 import { supabase } from "../integrations/supabase/client";
 import { Toaster } from "sonner";
 import { installBillingAdapter } from "../lib/billing-init";
+import { initServerScheduler } from "../lib/server-scheduler.functions";
 
 installBillingAdapter();
 
@@ -152,6 +153,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
   }),
+  beforeLoad: async () => {
+    await initServerScheduler().catch(() => {});
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

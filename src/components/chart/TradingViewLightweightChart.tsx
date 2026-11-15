@@ -137,6 +137,28 @@ export function TradingViewLightweightChart({
     setViewportTick((t) => (t + 1) % 100000);
   }, []);
 
+  // Selected user drawing for deletion & highlight
+  const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null);
+
+  const handleDeleteSelectedDrawing = useCallback(() => {
+    if (!selectedDrawingId) return;
+    onSaveDrawings(drawings.filter((d) => d.id !== selectedDrawingId));
+    setSelectedDrawingId(null);
+  }, [selectedDrawingId, drawings, onSaveDrawings]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedDrawingId) {
+          onSaveDrawings(drawings.filter((d) => d.id !== selectedDrawingId));
+          setSelectedDrawingId(null);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedDrawingId, drawings, onSaveDrawings]);
+
   // Temporary interactive drawing in-progress
   const [currentDrawing, setCurrentDrawing] = useState<{
     type: DrawingToolType;
@@ -838,7 +860,10 @@ export function TradingViewLightweightChart({
   );
 
   const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (activeTool === "cursor") return;
+    if (activeTool === "cursor") {
+      setSelectedDrawingId(null);
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
@@ -1131,23 +1156,53 @@ export function TradingViewLightweightChart({
           }
           if (coords.length === 0) return null;
           const c0 = coords[0];
+          const isSelected = d.id === selectedDrawingId;
 
           if (d.type === "horizontal" && c0) {
             return (
-              <g key={d.id}>
+              <g
+                key={d.id}
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
+                {/* Wider invisible stroke for easy clicking */}
                 <line
                   x1="0"
                   y1={c0.y}
                   x2="100%"
                   y2={c0.y}
-                  stroke={d.color}
-                  strokeWidth="1.5"
+                  stroke="transparent"
+                  strokeWidth="12"
+                />
+                <line
+                  x1="0"
+                  y1={c0.y}
+                  x2="100%"
+                  y2={c0.y}
+                  stroke={isSelected ? "#38BDF8" : d.color}
+                  strokeWidth={isSelected ? "2.5" : "1.5"}
                   strokeDasharray="4 2"
                 />
+                {isSelected && (
+                  <circle
+                    cx="70"
+                    cy={c0.y}
+                    r="4.5"
+                    fill="#38BDF8"
+                    stroke="#08090C"
+                    strokeWidth="1.5"
+                  />
+                )}
                 <text
-                  x="70"
+                  x="80"
                   y={c0.y - 4}
-                  fill={d.color}
+                  fill={isSelected ? "#38BDF8" : d.color}
                   fontSize="10"
                   fontFamily="monospace"
                   fontWeight="bold"
@@ -1165,15 +1220,40 @@ export function TradingViewLightweightChart({
 
           if (d.type === "trendline") {
             return (
-              <line
+              <g
                 key={d.id}
-                x1={c1.x}
-                y1={c1.y}
-                x2={c2.x}
-                y2={c2.y}
-                stroke={d.color}
-                strokeWidth="2"
-              />
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
+                <line
+                  x1={c1.x}
+                  y1={c1.y}
+                  x2={c2.x}
+                  y2={c2.y}
+                  stroke="transparent"
+                  strokeWidth="12"
+                />
+                <line
+                  x1={c1.x}
+                  y1={c1.y}
+                  x2={c2.x}
+                  y2={c2.y}
+                  stroke={isSelected ? "#38BDF8" : d.color}
+                  strokeWidth={isSelected ? "3" : "2"}
+                />
+                {isSelected && (
+                  <>
+                    <circle cx={c1.x} cy={c1.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                    <circle cx={c2.x} cy={c2.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                  </>
+                )}
+              </g>
             );
           }
 
@@ -1183,16 +1263,33 @@ export function TradingViewLightweightChart({
             const w = Math.abs(c2.x - c1.x);
             const h = Math.abs(c2.y - c1.y);
             return (
-              <rect
+              <g
                 key={d.id}
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                fill="rgba(6, 182, 212, 0.15)"
-                stroke={d.color}
-                strokeWidth="1.5"
-              />
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
+                <rect
+                  x={x}
+                  y={y}
+                  width={w}
+                  height={h}
+                  fill={isSelected ? "rgba(56, 189, 248, 0.25)" : "rgba(6, 182, 212, 0.15)"}
+                  stroke={isSelected ? "#38BDF8" : d.color}
+                  strokeWidth={isSelected ? "2.5" : "1.5"}
+                />
+                {isSelected && (
+                  <>
+                    <circle cx={c1.x} cy={c1.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                    <circle cx={c2.x} cy={c2.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                  </>
+                )}
+              </g>
             );
           }
 
@@ -1203,7 +1300,17 @@ export function TradingViewLightweightChart({
             const diff = priceHigh - priceLow;
 
             return (
-              <g key={d.id}>
+              <g
+                key={d.id}
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
                 {FIBONACCI_LEVELS.map((fib) => {
                   if (!candleSeriesRef.current) return null;
                   const price = priceLow + diff * fib.ratio;
@@ -1216,14 +1323,14 @@ export function TradingViewLightweightChart({
                         y1={fibY}
                         x2="95%"
                         y2={fibY}
-                        stroke={fib.color}
+                        stroke={isSelected ? "#38BDF8" : fib.color}
                         strokeWidth={fib.ratio === 0.618 || fib.ratio === 0.5 ? "2" : "1"}
                         strokeDasharray={fib.ratio === 0.618 ? "0" : "4 2"}
                       />
                       <text
                         x={Math.min(c1.x, c2.x) + 5}
                         y={fibY - 4}
-                        fill={fib.color}
+                        fill={isSelected ? "#38BDF8" : fib.color}
                         fontSize="9"
                         fontFamily="monospace"
                         fontWeight="bold"
@@ -1233,6 +1340,12 @@ export function TradingViewLightweightChart({
                     </g>
                   );
                 })}
+                {isSelected && (
+                  <>
+                    <circle cx={c1.x} cy={c1.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                    <circle cx={c2.x} cy={c2.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                  </>
+                )}
               </g>
             );
           }
@@ -1247,7 +1360,17 @@ export function TradingViewLightweightChart({
             const targetY = isLong ? entryY - Math.abs(entryY - slY) * 2 : entryY + Math.abs(entryY - slY) * 2;
 
             return (
-              <g key={d.id}>
+              <g
+                key={d.id}
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
                 {/* Target Box (Green) */}
                 <rect
                   x={x}
@@ -1256,7 +1379,7 @@ export function TradingViewLightweightChart({
                   height={Math.abs(targetY - entryY)}
                   fill="rgba(16, 185, 129, 0.2)"
                   stroke="#10B981"
-                  strokeWidth="1.5"
+                  strokeWidth={isSelected ? "2.5" : "1.5"}
                 />
                 {/* Stop Loss Box (Red) */}
                 <rect
@@ -1266,7 +1389,7 @@ export function TradingViewLightweightChart({
                   height={Math.abs(slY - entryY)}
                   fill="rgba(239, 68, 68, 0.2)"
                   stroke="#EF4444"
-                  strokeWidth="1.5"
+                  strokeWidth={isSelected ? "2.5" : "1.5"}
                 />
                 <text
                   x={x + 6}
@@ -1278,6 +1401,12 @@ export function TradingViewLightweightChart({
                 >
                   Entry | R:R = 2.00
                 </text>
+                {isSelected && (
+                  <>
+                    <circle cx={c1.x} cy={c1.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                    <circle cx={c2.x} cy={c2.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                  </>
+                )}
               </g>
             );
           }
@@ -1287,8 +1416,18 @@ export function TradingViewLightweightChart({
             const pDiff = d.points[1].price - d.points[0].price;
             const pPct = d.points[0].price > 0 ? (pDiff / d.points[0].price) * 100 : 0;
             return (
-              <g key={d.id}>
-                <line x1={c1.x} y1={c1.y} x2={c2.x} y2={c2.y} stroke="#38BDF8" strokeWidth="1.5" />
+              <g
+                key={d.id}
+                className="pointer-events-auto cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDrawingId(d.id);
+                }}
+                style={{
+                  filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
+                }}
+              >
+                <line x1={c1.x} y1={c1.y} x2={c2.x} y2={c2.y} stroke={isSelected ? "#38BDF8" : "#38BDF8"} strokeWidth={isSelected ? "2.5" : "1.5"} />
                 <rect
                   x={Math.min(c1.x, c2.x) + 10}
                   y={Math.min(c1.y, c2.y) + 10}
@@ -1296,7 +1435,7 @@ export function TradingViewLightweightChart({
                   height="36"
                   fill="#0E1015"
                   stroke="#38BDF8"
-                  strokeWidth="1"
+                  strokeWidth={isSelected ? "2" : "1"}
                   rx="4"
                 />
                 <text
@@ -1310,6 +1449,12 @@ export function TradingViewLightweightChart({
                   Δ {pDiff > 0 ? `+${pDiff.toFixed(1)}` : pDiff.toFixed(1)} (
                   {pPct > 0 ? `+${pPct.toFixed(2)}%` : `${pPct.toFixed(2)}%`})
                 </text>
+                {isSelected && (
+                  <>
+                    <circle cx={c1.x} cy={c1.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                    <circle cx={c2.x} cy={c2.y} r="4.5" fill="#38BDF8" stroke="#08090C" strokeWidth="1.5" />
+                  </>
+                )}
               </g>
             );
           }
@@ -1335,6 +1480,35 @@ export function TradingViewLightweightChart({
           );
         })()}
       </svg>
+
+      {/* Floating Selected Drawing Action Pill */}
+      {selectedDrawingId && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-950/95 border border-sky-500/60 shadow-2xl backdrop-blur-md">
+          <span className="text-xs font-mono font-medium text-sky-400">Drawing Selected</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteSelectedDrawing();
+            }}
+            className="px-2.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/40 text-xs font-mono font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+            title="Delete Selected Drawing (Delete or Backspace)"
+          >
+            <span>🗑</span> Delete
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedDrawingId(null);
+            }}
+            className="text-zinc-400 hover:text-zinc-100 text-xs cursor-pointer ml-1"
+            title="Deselect"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Floating [+] Add Alert Button next to price scale on crosshair move */}
       {crosshairPos != null && !contextMenu && (
@@ -1411,6 +1585,19 @@ export function TradingViewLightweightChart({
               <span>➖</span>
               <span>Draw Horizontal Line</span>
             </button>
+            {selectedDrawingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setContextMenu(null);
+                  handleDeleteSelectedDrawing();
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/20 hover:text-rose-300 text-rose-400 flex items-center gap-2 cursor-pointer transition-colors border-t border-white/5 pt-2"
+              >
+                <span>🗑</span>
+                <span>Delete Selected Drawing</span>
+              </button>
+            )}
           </div>
         </div>
       )}

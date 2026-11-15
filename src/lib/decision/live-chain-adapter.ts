@@ -193,7 +193,7 @@ export function adaptUpstoxToLegacyChain(
   }
 
   const legacySnap: LegacySnapshot = {
-    symbol: underlying,
+    symbol: underlying as "NIFTY" | "BANKNIFTY" | "SENSEX",
     spot,
     expiry: snap.expiry,
     fetchedAt: snap.timestamp,

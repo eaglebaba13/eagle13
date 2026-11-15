@@ -109,4 +109,12 @@ describe("UpstoxOptionChainProvider expiry auto-resolution", () => {
     expect(r.meta.upstreamCode).toBe("UDAPI100050");
     expect(r.meta.safeError ?? "").toContain("UDAPI100050");
   });
+
+  it("resolves F&O equity instrument keys and fetches stock option chains", async () => {
+    const urls: string[] = [];
+    const p = newProvider(makeFetch(urls, "ok") as unknown as typeof fetch);
+    const r = await p.fetchSnapshot({ underlying: "RELIANCE", expiry: "2026-11-23" });
+    expect(r.ok).toBe(true);
+    expect(urls[0]).toContain("NSE_EQ%7CINE002A01018");
+  });
 });

@@ -3,12 +3,14 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { EmptyState } from "@/components/common";
 import {
   analyseHistory,
   STRATEGY_VALIDATION_DISCLAIMER,
   type AnalyticsReport,
 } from "@/lib/strategy-validation";
+import { getStrategyAnalyticsReport } from "@/lib/strategy-validation/history-provider.functions";
 
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 
@@ -52,10 +54,16 @@ function StrategyAnalyticsPage() {
     "overview" | "performance" | "regime" | "calibration" | "contribution" | "journal" | "failure"
   >("overview");
 
-  // Analytics is fed via a cached historical snapshot list. Until an ingest
-  // adapter is wired, the report is empty and renders UNAVAILABLE — no
-  // fabricated values.
-  const report: AnalyticsReport = useMemo(() => analyseHistory([]), []);
+  const [holdingBars] = useState<number>(1);
+  const { data: serverReport, isLoading } = useQuery({
+    queryKey: ["strategy-analytics-report", holdingBars],
+    queryFn: () => getStrategyAnalyticsReport({ data: { holdingBars } }),
+    staleTime: 60_000,
+  });
+
+  const report: AnalyticsReport = useMemo(() => {
+    return serverReport ?? analyseHistory([]);
+  }, [serverReport]);
 
   return (
     <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">

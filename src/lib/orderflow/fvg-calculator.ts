@@ -9,6 +9,7 @@ export interface FVGZone {
   readonly midpoint: number;
   readonly candleIndex: number;
   readonly isFilled: boolean;
+  readonly direction: "BULLISH" | "BEARISH";
 }
 
 export interface UnicornSetup {
@@ -46,12 +47,20 @@ export function detectFairValueGaps(
       const gapSize = high - low;
       const minGap = c2.close * 0.0006; // 0.06% min threshold
       if (gapSize >= minGap) {
+        let isFilled = false;
+        for (let j = i + 1; j < candles.length; j++) {
+          if (candles[j].low <= low) {
+            isFilled = true;
+            break;
+          }
+        }
         fvgs.push({
           low: Math.round(low * 100) / 100,
           high: Math.round(high * 100) / 100,
           midpoint: Math.round(((low + high) / 2) * 100) / 100,
           candleIndex: i - 1,
-          isFilled: false,
+          isFilled,
+          direction: "BULLISH",
         });
       }
     }
@@ -62,12 +71,20 @@ export function detectFairValueGaps(
       const gapSize = high - low;
       const minGap = c2.close * 0.0006;
       if (gapSize >= minGap) {
+        let isFilled = false;
+        for (let j = i + 1; j < candles.length; j++) {
+          if (candles[j].high >= high) {
+            isFilled = true;
+            break;
+          }
+        }
         fvgs.push({
           low: Math.round(low * 100) / 100,
           high: Math.round(high * 100) / 100,
           midpoint: Math.round(((low + high) / 2) * 100) / 100,
           candleIndex: i - 1,
-          isFilled: false,
+          isFilled,
+          direction: "BEARISH",
         });
       }
     }

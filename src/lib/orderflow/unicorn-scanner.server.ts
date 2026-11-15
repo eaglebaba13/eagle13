@@ -496,9 +496,63 @@ const CURATED_SCANNER_SYMBOLS = [
 /**
  * Generate high-fidelity live scanner signals across categories anchored to live market LTPs.
  */
-export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): UnicornSetup[] {
-  const now = Date.now();
+function makeDynamicUnicornSetup(params: {
+  id: string;
+  symbol: string;
+  displayName: string;
+  category: ScannerCategory;
+  currency?: "₹" | "$";
+  timeframe: UnicornTimeframe;
+  direction: UnicornDirection;
+  status: UnicornStatus;
+  price: number;
+  decimals: number;
+  minutesAgo: number;
+  confidence: number;
+}): UnicornSetup {
+  const { id, symbol, displayName, category, currency = "₹", timeframe, direction, status, price, decimals, minutesAgo, confidence } = params;
+  const isBull = direction === "BULLISH";
+  const atr = price * 0.0035;
 
+  const sweepLevel = roundPrice(isBull ? price - atr * 0.8 : price + atr * 0.8, decimals);
+  const mssLevel = roundPrice(isBull ? price - atr * 0.35 : price + atr * 0.35, decimals);
+  const fvgLow = roundPrice(isBull ? price - atr * 0.28 : price + atr * 0.08, decimals);
+  const fvgHigh = roundPrice(isBull ? price - atr * 0.06 : price + atr * 0.30, decimals);
+  const breakerLow = roundPrice(isBull ? price - atr * 0.40 : price + atr * 0.22, decimals);
+  const breakerHigh = roundPrice(isBull ? price - atr * 0.32 : price + atr * 0.32, decimals);
+  const entryPrice = roundPrice(isBull ? fvgHigh : fvgLow, decimals);
+  const invalidationSL = roundPrice(isBull ? sweepLevel - atr * 0.15 : sweepLevel + atr * 0.15, decimals);
+  const risk = Math.abs(entryPrice - invalidationSL);
+  const targetPrice = roundPrice(isBull ? entryPrice + risk * 2.6 : entryPrice - risk * 2.6, decimals);
+  const rr = risk > 0 ? Math.round((Math.abs(targetPrice - entryPrice) / risk) * 10) / 10 : 2.6;
+
+  return {
+    id,
+    symbol,
+    displayName,
+    category,
+    currency,
+    timeframe,
+    direction,
+    status,
+    currentPrice: roundPrice(price, decimals),
+    sweepLevel,
+    sweepType: isBull ? "PDL" : "PDH",
+    mssLevel,
+    fvgZone: { low: fvgLow, high: fvgHigh },
+    breakerZone: { low: breakerLow, high: breakerHigh },
+    triggerZone: { low: fvgLow, high: fvgHigh },
+    entryPrice,
+    invalidationSL,
+    targetPrice,
+    riskRewardRatio: Math.max(1.8, rr),
+    confidenceScore: confidence,
+    detectedAt: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+    timeElapsed: `${minutesAgo}m ago`,
+  };
+}
+
+export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): UnicornSetup[] {
   const getPrice = (sym: string, def: number) => {
     const q = quoteMap?.get(sym);
     return q && q > 0 ? q : def;
@@ -514,8 +568,8 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
   const beesPrice = getPrice("NIFTYBEES", 272.5);
   const pnbPrice = getPrice("PNB", 132.17);
 
-  const setups: UnicornSetup[] = [
-    {
+  return [
+    makeDynamicUnicornSetup({
       id: "unicorn-nifty-5m-1",
       symbol: "NIFTY50",
       displayName: "NIFTY 50",
@@ -524,22 +578,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "5m",
       direction: "BULLISH",
       status: "Retest Ready",
-      currentPrice: roundPrice(niftyPrice, 1),
-      sweepLevel: roundPrice(niftyPrice - 48.5, 1),
-      sweepType: "PDL",
-      mssLevel: roundPrice(niftyPrice - 23.5, 1),
-      fvgZone: { low: roundPrice(niftyPrice - 18.5, 1), high: roundPrice(niftyPrice - 3.5, 1) },
-      breakerZone: { low: roundPrice(niftyPrice - 26.5, 1), high: roundPrice(niftyPrice - 20.5, 1) },
-      triggerZone: { low: roundPrice(niftyPrice - 18.5, 1), high: roundPrice(niftyPrice - 3.5, 1) },
-      entryPrice: roundPrice(niftyPrice - 3.5, 1),
-      invalidationSL: roundPrice(niftyPrice - 53.5, 1),
-      targetPrice: roundPrice(niftyPrice + 71.5, 1),
-      riskRewardRatio: 2.8,
-      confidenceScore: 94,
-      detectedAt: new Date(now - 180_000).toISOString(),
-      timeElapsed: "3m ago",
-    },
-    {
+      price: niftyPrice,
+      decimals: 1,
+      minutesAgo: 3,
+      confidence: 94,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-banknifty-15m-1",
       symbol: "BANKNIFTY",
       displayName: "BANK NIFTY",
@@ -548,22 +592,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "15m",
       direction: "BEARISH",
       status: "Triggered",
-      currentPrice: roundPrice(bankPrice, 1),
-      sweepLevel: roundPrice(bankPrice + 200.0, 1),
-      sweepType: "PDH",
-      mssLevel: roundPrice(bankPrice + 60.0, 1),
-      fvgZone: { low: roundPrice(bankPrice + 10.0, 1), high: roundPrice(bankPrice + 50.0, 1) },
-      breakerZone: { low: roundPrice(bankPrice + 55.0, 1), high: roundPrice(bankPrice + 70.0, 1) },
-      triggerZone: { low: roundPrice(bankPrice + 10.0, 1), high: roundPrice(bankPrice + 50.0, 1) },
-      entryPrice: roundPrice(bankPrice + 10.0, 1),
-      invalidationSL: roundPrice(bankPrice + 215.0, 1),
-      targetPrice: roundPrice(bankPrice - 460.0, 1),
-      riskRewardRatio: 3.1,
-      confidenceScore: 92,
-      detectedAt: new Date(now - 420_000).toISOString(),
-      timeElapsed: "7m ago",
-    },
-    {
+      price: bankPrice,
+      decimals: 1,
+      minutesAgo: 7,
+      confidence: 92,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-reliance-5m-1",
       symbol: "RELIANCE",
       displayName: "Reliance Industries",
@@ -572,22 +606,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "5m",
       direction: "BULLISH",
       status: "Triggered",
-      currentPrice: roundPrice(reliancePrice, 1),
-      sweepLevel: roundPrice(reliancePrice - 13.5, 1),
-      sweepType: "SWING_LOW",
-      mssLevel: roundPrice(reliancePrice - 6.0, 1),
-      fvgZone: { low: roundPrice(reliancePrice - 4.0, 1), high: roundPrice(reliancePrice + 1.0, 1) },
-      breakerZone: { low: roundPrice(reliancePrice - 7.0, 1), high: roundPrice(reliancePrice - 4.5, 1) },
-      triggerZone: { low: roundPrice(reliancePrice - 4.0, 1), high: roundPrice(reliancePrice + 1.0, 1) },
-      entryPrice: roundPrice(reliancePrice + 0.5, 1),
-      invalidationSL: roundPrice(reliancePrice - 17.0, 1),
-      targetPrice: roundPrice(reliancePrice + 43.0, 1),
-      riskRewardRatio: 2.4,
-      confidenceScore: 89,
-      detectedAt: new Date(now - 300_000).toISOString(),
-      timeElapsed: "5m ago",
-    },
-    {
+      price: reliancePrice,
+      decimals: 1,
+      minutesAgo: 5,
+      confidence: 89,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-gold-15m-1",
       symbol: "GC1!",
       displayName: "COMEX GOLD (GC1!)",
@@ -596,22 +620,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "15m",
       direction: "BULLISH",
       status: "Retest Ready",
-      currentPrice: roundPrice(goldPrice, 1),
-      sweepLevel: roundPrice(goldPrice - 9.2, 1),
-      sweepType: "PDL",
-      mssLevel: roundPrice(goldPrice - 2.7, 1),
-      fvgZone: { low: roundPrice(goldPrice - 1.7, 1), high: roundPrice(goldPrice + 0.8, 1) },
-      breakerZone: { low: roundPrice(goldPrice - 3.2, 1), high: roundPrice(goldPrice - 2.2, 1) },
-      triggerZone: { low: roundPrice(goldPrice - 1.7, 1), high: roundPrice(goldPrice + 0.8, 1) },
-      entryPrice: roundPrice(goldPrice + 0.8, 1),
-      invalidationSL: roundPrice(goldPrice - 10.7, 1),
-      targetPrice: roundPrice(goldPrice + 23.8, 1),
-      riskRewardRatio: 3.2,
-      confidenceScore: 95,
-      detectedAt: new Date(now - 120_000).toISOString(),
-      timeElapsed: "2m ago",
-    },
-    {
+      price: goldPrice,
+      decimals: 1,
+      minutesAgo: 2,
+      confidence: 95,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-btc-5m-1",
       symbol: "BTCUSDT",
       displayName: "Bitcoin (BTC/USDT)",
@@ -620,22 +634,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "5m",
       direction: "BULLISH",
       status: "Triggered",
-      currentPrice: roundPrice(btcPrice, 0),
-      sweepLevel: roundPrice(btcPrice - 670, 0),
-      sweepType: "SWING_LOW",
-      mssLevel: roundPrice(btcPrice - 320, 0),
-      fvgZone: { low: roundPrice(btcPrice - 220, 0), high: roundPrice(btcPrice + 30, 0) },
-      breakerZone: { low: roundPrice(btcPrice - 340, 0), high: roundPrice(btcPrice - 270, 0) },
-      triggerZone: { low: roundPrice(btcPrice - 220, 0), high: roundPrice(btcPrice + 30, 0) },
-      entryPrice: roundPrice(btcPrice + 30, 0),
-      invalidationSL: roundPrice(btcPrice - 740, 0),
-      targetPrice: roundPrice(btcPrice + 1680, 0),
-      riskRewardRatio: 2.9,
-      confidenceScore: 91,
-      detectedAt: new Date(now - 600_000).toISOString(),
-      timeElapsed: "10m ago",
-    },
-    {
+      price: btcPrice,
+      decimals: 0,
+      minutesAgo: 10,
+      confidence: 91,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-trent-15m-1",
       symbol: "TRENT",
       displayName: "Trent Ltd",
@@ -644,22 +648,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "15m",
       direction: "BEARISH",
       status: "Forming",
-      currentPrice: roundPrice(trentPrice, 1),
-      sweepLevel: roundPrice(trentPrice + 75.0, 1),
-      sweepType: "PDH",
-      mssLevel: roundPrice(trentPrice + 25.0, 1),
-      fvgZone: { low: roundPrice(trentPrice + 5.0, 1), high: roundPrice(trentPrice + 45.0, 1) },
-      breakerZone: { low: roundPrice(trentPrice + 20.0, 1), high: roundPrice(trentPrice + 35.0, 1) },
-      triggerZone: { low: roundPrice(trentPrice + 5.0, 1), high: roundPrice(trentPrice + 45.0, 1) },
-      entryPrice: roundPrice(trentPrice + 5.0, 1),
-      invalidationSL: roundPrice(trentPrice + 90.0, 1),
-      targetPrice: roundPrice(trentPrice - 185.0, 1),
-      riskRewardRatio: 2.2,
-      confidenceScore: 86,
-      detectedAt: new Date(now - 900_000).toISOString(),
-      timeElapsed: "15m ago",
-    },
-    {
+      price: trentPrice,
+      decimals: 1,
+      minutesAgo: 15,
+      confidence: 86,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-niftyit-5m-1",
       symbol: "NIFTY_IT",
       displayName: "NIFTY IT",
@@ -668,22 +662,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "5m",
       direction: "BULLISH",
       status: "Retest Ready",
-      currentPrice: roundPrice(itPrice, 1),
-      sweepLevel: roundPrice(itPrice - 230.0, 1),
-      sweepType: "PDL",
-      mssLevel: roundPrice(itPrice - 70.0, 1),
-      fvgZone: { low: roundPrice(itPrice - 40.0, 1), high: roundPrice(itPrice + 20.0, 1) },
-      breakerZone: { low: roundPrice(itPrice - 80.0, 1), high: roundPrice(itPrice - 55.0, 1) },
-      triggerZone: { low: roundPrice(itPrice - 40.0, 1), high: roundPrice(itPrice + 20.0, 1) },
-      entryPrice: roundPrice(itPrice + 20.0, 1),
-      invalidationSL: roundPrice(itPrice - 260.0, 1),
-      targetPrice: roundPrice(itPrice + 620.0, 1),
-      riskRewardRatio: 2.5,
-      confidenceScore: 90,
-      detectedAt: new Date(now - 240_000).toISOString(),
-      timeElapsed: "4m ago",
-    },
-    {
+      price: itPrice,
+      decimals: 1,
+      minutesAgo: 4,
+      confidence: 90,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-niftybees-5m-1",
       symbol: "NIFTYBEES",
       displayName: "Nippon India Nifty 50 ETF",
@@ -692,22 +676,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "5m",
       direction: "BULLISH",
       status: "Triggered",
-      currentPrice: roundPrice(beesPrice, 2),
-      sweepLevel: roundPrice(beesPrice - 0.8, 2),
-      sweepType: "SWING_LOW",
-      mssLevel: roundPrice(beesPrice - 0.4, 2),
-      fvgZone: { low: roundPrice(beesPrice - 0.3, 2), high: roundPrice(beesPrice + 0.1, 2) },
-      breakerZone: { low: roundPrice(beesPrice - 0.45, 2), high: roundPrice(beesPrice - 0.35, 2) },
-      triggerZone: { low: roundPrice(beesPrice - 0.3, 2), high: roundPrice(beesPrice + 0.1, 2) },
-      entryPrice: roundPrice(beesPrice + 0.1, 2),
-      invalidationSL: roundPrice(beesPrice - 1.1, 2),
-      targetPrice: roundPrice(beesPrice + 2.9, 2),
-      riskRewardRatio: 2.3,
-      confidenceScore: 88,
-      detectedAt: new Date(now - 360_000).toISOString(),
-      timeElapsed: "6m ago",
-    },
-    {
+      price: beesPrice,
+      decimals: 2,
+      minutesAgo: 6,
+      confidence: 88,
+    }),
+    makeDynamicUnicornSetup({
       id: "unicorn-pnb-15m-1",
       symbol: "PNB",
       displayName: "Punjab National Bank",
@@ -716,24 +690,12 @@ export function generateCuratedUnicornRadar(quoteMap?: Map<string, number>): Uni
       timeframe: "15m",
       direction: "BULLISH",
       status: "Retest Ready",
-      currentPrice: roundPrice(pnbPrice, 2),
-      sweepLevel: roundPrice(pnbPrice - 1.85, 2),
-      sweepType: "PDL",
-      mssLevel: roundPrice(pnbPrice - 0.65, 2),
-      fvgZone: { low: roundPrice(pnbPrice - 0.45, 2), high: roundPrice(pnbPrice + 0.20, 2) },
-      breakerZone: { low: roundPrice(pnbPrice - 0.70, 2), high: roundPrice(pnbPrice - 0.50, 2) },
-      triggerZone: { low: roundPrice(pnbPrice - 0.45, 2), high: roundPrice(pnbPrice + 0.20, 2) },
-      entryPrice: roundPrice(pnbPrice + 0.20, 2),
-      invalidationSL: roundPrice(pnbPrice - 2.20, 2),
-      targetPrice: roundPrice(pnbPrice + 4.80, 2),
-      riskRewardRatio: 2.4,
-      confidenceScore: 93,
-      detectedAt: new Date(now - 200_000).toISOString(),
-      timeElapsed: "3m ago",
-    },
+      price: pnbPrice,
+      decimals: 2,
+      minutesAgo: 3,
+      confidence: 93,
+    }),
   ];
-
-  return setups;
 }
 
 /**

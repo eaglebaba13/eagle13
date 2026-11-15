@@ -15,12 +15,28 @@ import type {
   OptionChainProviderStatus,
 } from "./provider";
 import { makeStrike, type OptionChainSnapshot, type OptionUnderlying } from "./types";
+import upstoxEquityKeys from "../market-data/upstox-equity-keys.json";
 
-const INSTRUMENT_KEYS: Record<OptionUnderlying, string> = {
+const INDEX_INSTRUMENT_KEYS: Record<string, string> = {
   NIFTY: "NSE_INDEX|Nifty 50",
+  NIFTY50: "NSE_INDEX|Nifty 50",
+  "NIFTY 50": "NSE_INDEX|Nifty 50",
   BANKNIFTY: "NSE_INDEX|Nifty Bank",
+  "NIFTY BANK": "NSE_INDEX|Nifty Bank",
+  FINNIFTY: "NSE_INDEX|Nifty Fin Service",
+  MIDCPNIFTY: "NSE_INDEX|Nifty Midcap Select",
   SENSEX: "BSE_INDEX|SENSEX",
+  BANKEX: "BSE_INDEX|BANKEX",
 };
+
+export function resolveOptionChainInstrumentKey(underlying: string): string | null {
+  const sym = (underlying || "").toUpperCase().trim();
+  if (sym.includes("|")) return sym;
+  if (INDEX_INSTRUMENT_KEYS[sym]) return INDEX_INSTRUMENT_KEYS[sym];
+  const mapped = (upstoxEquityKeys as Record<string, string>)[sym];
+  if (mapped) return mapped;
+  return null;
+}
 
 type UpstoxRow = {
   strike_price?: number;
@@ -85,11 +101,13 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
   }
 
   async listExpiries(underlying: OptionUnderlying): Promise<readonly string[]> {
+    const instrumentKey = resolveOptionChainInstrumentKey(underlying);
+    if (!instrumentKey) return [];
     const res = await this.http.request<{
       data?: { expiries?: string[] } | Array<{ expiry?: string }>;
     }>({
       path: "v2/option/contract",
-      query: { instrument_key: INSTRUMENT_KEYS[underlying] },
+      query: { instrument_key: instrumentKey },
     });
     if (!res.ok) return [];
     return extractExpiries(res.data?.data);
@@ -97,6 +115,22 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
 
   async fetchSnapshot(req: OptionChainRequest): Promise<OptionChainResult> {
     const t0 = Date.now();
+    const instrumentKey = resolveOptionChainInstrumentKey(req.underlying);
+    if (!instrumentKey) {
+      return {
+        ok: false,
+        snapshot: null,
+        meta: {
+          providerId: this.id,
+          status: "UNAVAILABLE",
+          latencyMs: Date.now() - t0,
+          fetchedAt: new Date().toISOString(),
+          safeError: redactUpstoxMessage(`Unknown instrument key for underlying: ${req.underlying}`),
+          upstreamCode: null,
+        },
+      };
+    }
+
     // Upstox `v2/option/chain` REQUIRES both `instrument_key` and
     // `expiry_date`. Omitting `expiry_date` returns HTTP 400 with
     // Upstox error UDAPI1110 / UDAPI100013 depending on account. Resolve
@@ -138,7 +172,7 @@ export class UpstoxOptionChainProvider implements OptionChainProvider {
       };
     }
     const query: Record<string, string | number | undefined> = {
-      instrument_key: INSTRUMENT_KEYS[req.underlying],
+      instrument_key: instrumentKey,
       expiry_date: resolvedExpiry,
     };
     const res = await this.http.request<{ data?: UpstoxRow[] }>({

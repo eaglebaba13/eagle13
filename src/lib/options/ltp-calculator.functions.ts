@@ -29,9 +29,10 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
       );
 
       const sym = (data.underlying || "NIFTY").toUpperCase();
+      const isCryptoOrCommodity = /^(BTC|ETH|SOL|XRP|GC1!|SI1!|CL1!|NG1!|GOLD|SILVER|CRUDE)/i.test(sym);
 
-      // If requested symbol is one of the standard Upstox index underlyings, attempt Upstox live feed
-      if (sym === "NIFTY" || sym === "BANKNIFTY" || sym === "SENSEX") {
+      // Attempt authentic Upstox live option chain for all Indian Indices & F&O Equities
+      if (!isCryptoOrCommodity) {
         try {
           const res = await fetchCanonicalOptionChain({
             underlying: sym,
@@ -40,10 +41,13 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
 
           if (res.ok && res.snapshot && res.snapshot.strikes.length > 0) {
             const ltpOutput = processOptionChainToLtpCalculator(res.snapshot, "INR", "₹");
-            const { getUpcomingWeeklyExpiries } = await import("./ltp-calculator-engine.server");
+            const { getUpcomingWeeklyExpiries, getNseMonthlyExpiries, isFoStock } = await import("./ltp-calculator-engine.server");
+            const defaultExpiries = isFoStock(sym)
+              ? getNseMonthlyExpiries().map((m) => m.dateStr)
+              : getUpcomingWeeklyExpiries(sym);
             const expiries = res.snapshot.availableExpiries && res.snapshot.availableExpiries.length > 0
               ? res.snapshot.availableExpiries
-              : getUpcomingWeeklyExpiries(sym);
+              : defaultExpiries;
             return {
               ok: true as const,
               error: null,
@@ -55,7 +59,7 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
             };
           }
         } catch {
-          // Fall through to multi-asset live generator
+          // Fall through to multi-asset calibrated generator if Upstox unavailable
         }
       }
 

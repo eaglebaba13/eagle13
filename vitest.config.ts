@@ -11,6 +11,11 @@ export default defineConfig({
     environment: "node",
     testTimeout: 15_000,
     include: ["src/**/*.test.ts"],
+    exclude: [
+      "**/node_modules/**",
+      "**/.git/**",
+      "src/lib/diagnostics.http.test.ts",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary"],

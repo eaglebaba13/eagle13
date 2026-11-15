@@ -169,12 +169,15 @@ export async function postTelegramBroadcast(
   text: string,
   parseMode?: TelegramParseMode,
 ): Promise<TelegramSendResult> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const env = getTelegramEnv();
+  const token = env?.token || process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
     return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
   }
   const chatIds = new Set<string>();
-  if (process.env.TELEGRAM_CHAT_ID?.trim()) {
+  if (env?.chatId) {
+    chatIds.add(env.chatId);
+  } else if (process.env.TELEGRAM_CHAT_ID?.trim()) {
     chatIds.add(process.env.TELEGRAM_CHAT_ID.trim());
   }
   chatIds.add("@EagleBABAAIBOT");
@@ -200,7 +203,11 @@ export async function postTelegramMessage(
   text: string,
   parseMode?: TelegramParseMode,
 ): Promise<TelegramSendResult> {
-  return postTelegramBroadcast(text, parseMode);
+  const env = getTelegramEnv();
+  if (!env) {
+    return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
+  }
+  return postTelegramMessageToDestination(env, text, parseMode);
 }
 
 export async function sendPriceAlertTelegram(params: {
