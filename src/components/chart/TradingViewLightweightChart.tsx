@@ -557,9 +557,40 @@ export function TradingViewLightweightChart({
       }
     }
 
-    // Astro Levels
+    // Astro Levels: On 1D and 1W, limit to nearest R1 and S1 levels to prevent right-axis label overlapping
     if (showAstroLevels && astroLevels.length > 0) {
-      for (const a of astroLevels) {
+      let levelsToRender = astroLevels;
+      if (intervalMs >= 86_400_000) {
+        const lastCandle = candles.length > 0 ? candles[candles.length - 1] : null;
+        const currentPrice = lastCandle ? lastCandle.close : 0;
+        if (currentPrice > 0) {
+          const r1s = astroLevels.filter((a) => a.label.includes("R1"));
+          const s1s = astroLevels.filter((a) => a.label.includes("S1"));
+          const nearestR1 =
+            r1s.length > 0
+              ? r1s.reduce((prev, curr) =>
+                  Math.abs(curr.price - currentPrice) < Math.abs(prev.price - currentPrice)
+                    ? curr
+                    : prev,
+                )
+              : null;
+          const nearestS1 =
+            s1s.length > 0
+              ? s1s.reduce((prev, curr) =>
+                  Math.abs(curr.price - currentPrice) < Math.abs(prev.price - currentPrice)
+                    ? curr
+                    : prev,
+                )
+              : null;
+          levelsToRender = [nearestR1, nearestS1].filter(
+            (l): l is NonNullable<typeof l> => l != null,
+          );
+        } else {
+          levelsToRender = astroLevels.slice(0, 2);
+        }
+      }
+
+      for (const a of levelsToRender) {
         desiredMap.set(`astro-${a.label}`, {
           id: `astro-${a.label}`,
           price: a.price,

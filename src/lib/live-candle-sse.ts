@@ -12,6 +12,7 @@ import {
   getCoindcxSocketStream,
   isCoindcxSymbol,
 } from "./brokers/coindcx/coindcx-socket.server";
+import { findInstrument } from "./market-data/fo-universe";
 
 // Status ticks update age/freshness only; market data remains provider-driven.
 export function createLiveCandleSSE(
@@ -22,7 +23,8 @@ export function createLiveCandleSSE(
 ): Response {
   const isGc1 = symbol === "GC1!" && LIVE_INTERVALS.some((i) => i === intervalMs);
   const isCoindcx = isCoindcxSymbol(symbol);
-  if (!validSelection(symbol, intervalMs) && !isGc1 && !isCoindcx)
+  const isUniversal = findInstrument(symbol) != null && LIVE_INTERVALS.some((i) => i === intervalMs);
+  if (!validSelection(symbol, intervalMs) && !isGc1 && !isCoindcx && !isUniversal)
     return Response.json({ error: "UNVERIFIED_SYMBOL_OR_INTERVAL" }, { status: 400 });
   let closed = false;
   let subscribed = false;

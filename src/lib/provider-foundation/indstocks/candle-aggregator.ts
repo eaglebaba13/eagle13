@@ -18,15 +18,27 @@ export interface LiveCandle {
   readonly tickCount: number;
 }
 
-export type AggregationIntervalMs = 60_000 | 180_000 | 300_000 | 900_000 | 3_600_000 | 86_400_000;
+export type AggregationIntervalMs =
+  | 60_000
+  | 180_000
+  | 300_000
+  | 900_000
+  | 1_800_000
+  | 3_600_000
+  | 14_400_000
+  | 86_400_000
+  | 604_800_000;
 
 export const SUPPORTED_INTERVALS: readonly AggregationIntervalMs[] = [
   60_000, // 1m
   180_000, // 3m
   300_000, // 5m
   900_000, // 15m
+  1_800_000, // 30m
   3_600_000, // 1h
+  14_400_000, // 4h
   86_400_000, // 1d
+  604_800_000, // 1w
 ];
 
 export interface CandleAggregatorState {

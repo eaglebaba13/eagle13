@@ -17,7 +17,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundToggle } from "@/components/SoundToggle";
-import { HeaderAlertBell } from "@/components/HeaderAlertBell";
 import { NotificationBell } from "@/components/NotificationBell";
 import { buildBreadcrumbs } from "@/components/app-shell.utils";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -101,9 +100,6 @@ function AppShellHeader() {
         <SoundToggle />
         <ThemeToggle />
         <NotificationBell />
-        <div className="hidden lg:block">
-          <HeaderAlertBell />
-        </div>
         <ProfileMenu />
       </div>
     </header>

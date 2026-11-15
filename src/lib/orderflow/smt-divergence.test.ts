@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   detectSMTDivergence,
   formatSMTTelegramAlert,
@@ -7,6 +7,20 @@ import {
   type SMTDivergence,
 } from "./smt-divergence.server";
 import type { OrderFlowCandle } from "./volume-profile-engine";
+
+vi.mock("../cycles/market-data-adapter.server", () => ({
+  fetchRealLiveQuote: vi.fn(async (symbol: string) => {
+    const fixturePrices: Record<string, number> = {
+      NIFTY50: 25144.3,
+      BANKNIFTY: 61034.1,
+      SENSEX: 81592.45,
+      "GC1!": 4033.0,
+      "SI1!": 49.8,
+    };
+    const ltp = fixturePrices[symbol];
+    return ltp == null ? null : { ltp };
+  }),
+}));
 
 describe("Institutional SMT Divergence Engine", () => {
   it("defines institutional correlated pairs (NIFTY/BANKNIFTY, GOLD/SILVER, NIFTY/SENSEX)", () => {
@@ -144,6 +158,7 @@ describe("Institutional SMT Divergence Engine", () => {
     expect(goldSilver?.asset1.currency).toBe("$");
     expect(goldSilver?.asset2.currency).toBe("$");
     expect(goldSilver?.asset1.swingBPrice).toBeGreaterThan(3500); // Gold at ~$4,033+
-    expect(goldSilver?.asset2.swingBPrice).toBeGreaterThan(45);   // Silver at ~$51+
+    expect(goldSilver?.asset2.swingBPrice).toBe(49.8);
+    expect(goldSilver?.asset2.swingBPrice).toBeGreaterThan(45);
   });
 });

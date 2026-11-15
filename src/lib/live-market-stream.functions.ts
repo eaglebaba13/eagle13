@@ -163,10 +163,18 @@ function intervalToTimeframe(
       return "5m";
     case 900_000:
       return "15m";
+    case 1_800_000:
+      return "15m";
     case 3_600_000:
+      return "1h";
+    case 14_400_000:
       return "1h";
     case 86_400_000:
       return "1d";
+    case 604_800_000:
+      return "1d";
+    default:
+      return "1m";
   }
 }
 
@@ -180,10 +188,18 @@ function intervalToLimit(intervalMs: AggregationIntervalMs): number {
     case 300_000:
       return 75; // 1 day of 5m
     case 900_000:
-      return 25; // 1 day of 15m
+      return 50; // 2 days of 15m
+    case 1_800_000:
+      return 50; // ~4 days of 30m
     case 3_600_000:
-      return 6; // 1 day of 1h
+      return 50; // ~8 days of 1h
+    case 14_400_000:
+      return 50; // ~25 days of 4h
     case 86_400_000:
-      return 30; // 30 days of 1d
+      return 100; // 100 days of 1d
+    case 604_800_000:
+      return 100; // 100 weeks of 1w
+    default:
+      return 100;
   }
 }

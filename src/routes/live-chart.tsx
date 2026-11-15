@@ -235,7 +235,7 @@ function LiveChartSelection({
   const [showVolumeProfile, setShowVolumeProfile] = useState(true);
   const [showLiquidity, setShowLiquidity] = useState(true);
   const [showLtpLevels, setShowLtpLevels] = useState(true);
-  const [showAstroLevels, setShowAstroLevels] = useState(true);
+  const [showAstroLevels, setShowAstroLevels] = useState(false);
   const [showIctUnicorn, setShowIctUnicorn] = useState(true);
   const [showOiProfile, setShowOiProfile] = useState(true);
 
@@ -337,26 +337,16 @@ function LiveChartSelection({
         const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs } });
         if (cancelled) return;
         if (resp.error || !resp.series || resp.series.length === 0) {
-          const basePrice =
-            sse.status?.lastLtp ??
-            activeInstrument.defaultPrice ??
-            24400;
-          const baseline = generateFallbackClientSeed(basePrice, intervalMs);
-          setHistorical(baseline);
+          setHistorical([]);
           setBootstrapStatus("done");
-          setBootstrapError(null);
+          setBootstrapError(resp.error ?? null);
           return;
         }
         setHistorical(resp.series ?? []);
         setBootstrapStatus("done");
       } catch {
         if (!cancelled) {
-          const basePrice =
-            sse.status?.lastLtp ??
-            activeInstrument.defaultPrice ??
-            24400;
-          const baseline = generateFallbackClientSeed(basePrice, intervalMs);
-          setHistorical(baseline);
+          setHistorical([]);
           setBootstrapStatus("done");
           setBootstrapError(null);
         }
@@ -370,17 +360,7 @@ function LiveChartSelection({
 
   // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
-    const hasHistorical = historical.length > 0;
-    let baseHistorical: ChartCandle[] = [];
-    if (hasHistorical) {
-      baseHistorical = [...historical];
-    } else {
-      const basePrice =
-        sse.status?.lastLtp ?? activeInstrument.defaultPrice ?? 24400;
-      baseHistorical = generateFallbackClientSeed(basePrice, intervalMs);
-    }
-
-    const all: ChartCandle[] = [...baseHistorical];
+    const all: ChartCandle[] = [...historical];
     for (const c of sse.completedCandles.values()) {
       all.push({
         x: c.time,
@@ -675,15 +655,18 @@ function LiveChartSelection({
   }, [symbol]);
 
   // Connection Status
+  const isMarketClosed = !session.isOpen && activeInstrument.category !== "CRYPTO";
   const isConnected = sse.status?.connectionState === "CONNECTED";
   const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
   const statusLabel = isLive
     ? "CONNECTED • STREAMING"
-    : sse.status?.freshness === "STALE"
-      ? "STALE (CACHED)"
-      : isConnected
-        ? "CONNECTED"
-        : "STREAM DISCONNECTED";
+    : isMarketClosed
+      ? "EOD SYNCED"
+      : sse.status?.freshness === "STALE"
+        ? "STALE (CACHED)"
+        : isConnected
+          ? "CONNECTED"
+          : "STREAM DISCONNECTED";
 
   // Volume layout constants for verification and 18% chart headroom
   // maxVol * 5.5 | rgba(16, 185, 129, 0.5) | rgba(244, 63, 94, 0.5)
@@ -1419,7 +1402,7 @@ function LiveChartSelection({
             </span>
             <span>·</span>
             <span>
-              STATUS: <strong className="text-amber-300">{statusLabel}</strong>
+              STATUS: <strong className={isLive || isMarketClosed ? "text-emerald-400" : "text-amber-300"}>{statusLabel}</strong>
             </span>
             <span>·</span>
             <span>
@@ -1766,30 +1749,4 @@ function VolumeProfileHistogramOverlay({
       </div>
     </div>
   );
-}
-
-function generateFallbackClientSeed(
-  basePrice: number,
-  intervalMs: number,
-  _count = 10,
-): ChartCandle[] {
-  if (!basePrice || !Number.isFinite(basePrice) || basePrice <= 0) return [];
-  const now = Math.floor(Date.now() / intervalMs) * intervalMs;
-  return [
-    {
-      x: now - intervalMs * 2,
-      y: [basePrice, basePrice, basePrice, basePrice],
-      volume: 0,
-    },
-    {
-      x: now - intervalMs,
-      y: [basePrice, basePrice, basePrice, basePrice],
-      volume: 0,
-    },
-    {
-      x: now,
-      y: [basePrice, basePrice, basePrice, basePrice],
-      volume: 0,
-    },
-  ];
 }

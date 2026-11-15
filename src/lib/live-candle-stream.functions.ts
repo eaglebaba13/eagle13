@@ -74,167 +74,47 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
       };
     }
 
-    if (!validSelection(symbol, intervalMs)) {
-      if (symbol === "GC1!") {
-        const series = generateFallbackSeed("GC1!", intervalMs, 3891.5);
-        return {
-          error: null,
-          series,
-          status: {
-            symbol: "GC1!",
-            connectionState: "CONNECTED",
-            provider: "COMEX_SYNTHETIC",
-            freshness: "LIVE",
-            lastTick: new Date().toISOString(),
-            lastLtp: 3891.5,
-            currentCandle: null,
-            completedCount: series.length,
-            historicalCount: series.length,
-          },
-        };
-      }
-
-      // Check UNIVERSAL_INSTRUMENTS for 200+ F&O Equities & Commodities
-      const { findInstrument } = await import("./market-data/fo-universe");
-      const matched = findInstrument(symbol);
-      if (matched) {
-        try {
-          const { getInstrumentMarketData } = await import("./cycles/market-data-adapter.server");
-          const mData = await getInstrumentMarketData(matched.symbol, matched.defaultPrice);
-          if (mData && mData.candles && mData.candles.length > 0) {
-            const series = mData.candles.map((c) => ({
-              x: c.timestamp,
-              y: [c.open, c.high, c.low, c.close] as [number, number, number, number],
-              volume: c.volume,
-            }));
-            return {
-              error: null,
-              series,
-              status: {
-                symbol: matched.symbol,
-                connectionState: "CONNECTED",
-                provider: mData.dataSource,
-                freshness: mData.isLive ? "LIVE" : "STALE",
-                lastTick: new Date(mData.fetchedAt).toISOString(),
-                lastLtp: mData.ltp,
-                currentCandle: null,
-                completedCount: series.length,
-                historicalCount: series.length,
-              },
-            };
-          }
-        } catch {
-          // fallback to seeded baseline
-        }
-
-        const series = generateFallbackSeed(matched.symbol, intervalMs, matched.defaultPrice);
-        return {
-          error: null,
-          series,
-          status: {
-            symbol: matched.symbol,
-            connectionState: "CONNECTED",
-            provider: "UNIVERSAL_REGISTRY",
-            freshness: "LIVE",
-            lastTick: new Date().toISOString(),
-            lastLtp: matched.defaultPrice,
-            currentCandle: null,
-            completedCount: series.length,
-            historicalCount: series.length,
-          },
-        };
-      }
-
-      return { error: `Unsupported symbol: ${symbol}`, series: [], status: null };
-    }
-
-    const { getLiveMarketStream } = await import("./live-market-stream.server");
-    const stream = getLiveMarketStream();
-
-    // Fetch historical candles
-    let historical: readonly {
-      readonly time: string;
-      readonly open: number;
-      readonly high: number;
-      readonly low: number;
-      readonly close: number;
-      readonly volume: number | null;
-    }[] = [];
-    try {
-      const { getActiveLiveMarketProvider } = await import("./live-market-provider.server");
-      const provider = getActiveLiveMarketProvider();
-      const tf = intervalToTimeframe(intervalMs);
-      const limit = intervalToLimit(intervalMs);
-      const nowIso = new Date().toISOString();
-
-      if (provider === "UPSTOX") {
-        const upstoxMod = await import("./provider-foundation/upstox/upstox-historical.adapter.server");
-        const buildUpstox =
-          upstoxMod.buildUpstoxProviderAdapter ??
-          (upstoxMod as { default?: { buildUpstoxProviderAdapter?: () => { fetchHistorical?: (...args: unknown[]) => unknown; fetchIntraday?: (...args: unknown[]) => unknown } } })
-            .default?.buildUpstoxProviderAdapter;
-        if (typeof buildUpstox === "function") {
-          const adapter = buildUpstox();
-          // For intraday timeframes (1m-1h), fetch today's active session candles first
-          if (intervalMs < 86_400_000 && adapter.fetchIntraday) {
-            const intradayResult = await adapter.fetchIntraday(
-              symbol as QuoteSymbol,
-              tf,
-              nowIso,
-            );
-            if (intradayResult.ok && intradayResult.data.candles.length > 0) {
-              historical = intradayResult.data.candles;
-            }
-          }
-          if (historical.length === 0 && adapter.fetchHistorical) {
-            const result = await adapter.fetchHistorical(
-              symbol as QuoteSymbol,
-              tf,
-              limit,
-              nowIso,
-            );
-            if (result.ok && result.data.candles.length > 0) {
-              historical = result.data.candles;
-            }
-          }
-        }
-      } else {
-        const indMod = await import("./provider-foundation/indstocks/indstocks-historical.adapter.server");
-        const buildInd =
-          indMod.buildIndstocksProviderAdapter ??
-          (indMod as { default?: { buildIndstocksProviderAdapter?: () => { fetchHistorical?: (...args: unknown[]) => unknown } } })
-            .default?.buildIndstocksProviderAdapter;
-        if (typeof buildInd === "function") {
-          const adapter = buildInd();
-          if (adapter.fetchHistorical) {
-            const result = await adapter.fetchHistorical(
-              symbol as QuoteSymbol,
-              tf,
-              limit,
-              nowIso,
-            );
-            if (result.ok && result.data.candles.length > 0) {
-              historical = result.data.candles;
-            }
-          }
-        }
-      }
-    } catch {
-      /* historical unavailable — continue with live only */
-    }
-
-    const snap = stream.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
-    let series = stream.getCandleSeries(
-      symbol as QuoteSymbol,
-      intervalMs as AggregationIntervalMs,
-      historical,
+    const { getDeepMultiTimeframeCandles } = await import(
+      "./provider-foundation/upstox/upstox-historical-deep.server"
     );
 
-    // Fallback seed: if neither historical nor live stream has candles yet (e.g. outside market hours,
-    // market holiday, or initial token boot), guarantee a minimum valid series so ApexCharts can calculate
-    // time-axis intervals and render visible candlestick bars.
-    if (series.length === 0) {
-      series = generateFallbackSeed(symbol, intervalMs, snap.lastTick?.ltp);
+    const deepData = await getDeepMultiTimeframeCandles(symbol, intervalMs);
+    let series: import("./provider-foundation/indstocks/candle-aggregator").MergedCandlePoint[] =
+      deepData.candles.map((c) => ({
+        x: c.x,
+        y: c.y,
+        volume: c.volume ?? null,
+      }));
+
+    let lastLtp =
+      deepData.spotPrice ?? (series.length > 0 ? series[series.length - 1].y[3] : null);
+    let lastTick = series.length > 0 ? new Date(series[series.length - 1].x).toISOString() : null;
+    let connectionState = "CONNECTED";
+    let provider = deepData.provider;
+    let freshness: "LIVE" | "STALE" | "NO_DATA" = series.length > 0 ? "LIVE" : "NO_DATA";
+    let currentCandle: import("./provider-foundation/indstocks/candle-aggregator").LiveCandle | null =
+      null;
+
+    try {
+      const { getLiveMarketStream } = await import("./live-market-stream.server");
+      const stream = getLiveMarketStream();
+      const snap = stream.getSnapshot(symbol as QuoteSymbol, intervalMs as AggregationIntervalMs);
+
+      if (snap.lastTick?.ltp) {
+        lastLtp = snap.lastTick.ltp;
+        lastTick = snap.lastTick.timestamp;
+      }
+      if (snap.connectionState === "CONNECTED") {
+        connectionState = "CONNECTED";
+      }
+      if (snap.currentCandle) {
+        currentCandle = snap.currentCandle;
+      }
+      if (snap.telemetry?.providerId) {
+        provider = snap.telemetry.providerId;
+      }
+    } catch {
+      // Live stream snapshot optional
     }
 
     return {
@@ -242,64 +122,17 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
       series,
       status: {
         symbol,
-        connectionState: snap.connectionState,
-        provider: snap.telemetry.providerId,
-        freshness:
-          snap.telemetry.status === "LIVE"
-            ? "LIVE"
-            : snap.telemetry.status === "STALE"
-              ? "STALE"
-              : "NO_DATA",
-        lastTick: snap.lastTick?.timestamp ?? null,
-        lastLtp: snap.lastTick?.ltp ?? null,
-        currentCandle: snap.currentCandle,
-        completedCount: snap.completedCandleCount,
-        historicalCount: historical.length || series.length,
+        connectionState,
+        provider,
+        freshness,
+        lastTick,
+        lastLtp,
+        currentCandle,
+        completedCount: series.length,
+        historicalCount: series.length,
       },
     };
   });
-
-function generateFallbackSeed(
-  symbol: string,
-  intervalMs: number,
-  lastLtp?: number | null,
-): import("./provider-foundation/indstocks/candle-aggregator").MergedCandlePoint[] {
-  const base =
-    lastLtp && Number.isFinite(lastLtp) && lastLtp > 0
-      ? lastLtp
-      : symbol === "BANKNIFTY"
-        ? 55450
-        : symbol === "INDIA_VIX"
-          ? 15.6
-          : symbol === "SENSEX"
-            ? 80200
-            : symbol === "GC1!"
-              ? 3891.5
-              : 23800;
-
-  const count = 30;
-  const now = Math.floor(Date.now() / intervalMs) * intervalMs;
-  const points: import("./provider-foundation/indstocks/candle-aggregator").MergedCandlePoint[] = [];
-  let prevClose = base;
-
-  for (let i = count - 1; i >= 0; i--) {
-    const t = now - i * intervalMs;
-    const wave = Math.sin(i * 0.4) * 0.0006 + Math.cos(i * 0.25) * 0.0004;
-    const open = Math.round(prevClose * 100) / 100;
-    const close = Math.round((prevClose + base * wave) * 100) / 100;
-    const spread = Math.abs(open - close) || base * 0.0003;
-    const high = Math.round((Math.max(open, close) + spread * 0.4) * 100) / 100;
-    const low = Math.round((Math.min(open, close) - spread * 0.4) * 100) / 100;
-
-    points.push({
-      x: t,
-      y: [open, high, low, close],
-      volume: 1000,
-    });
-    prevClose = close;
-  }
-  return points;
-}
 
 function intervalToTimeframe(intervalMs: number): import("./provider-foundation/types").Timeframe {
   switch (intervalMs) {

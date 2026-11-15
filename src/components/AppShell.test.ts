@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { shouldSuppressShell, buildBreadcrumbs } from "./app-shell.utils";
 
 describe("Phase 36 · AppShell suppression", () => {
@@ -45,5 +46,14 @@ describe("Phase 36 · Breadcrumbs", () => {
   it("falls back to prettified segments when no registry entry", () => {
     const c = buildBreadcrumbs("/admin/beta-readiness");
     expect(c.map((x) => x.label)).toEqual(["Home", "Admin", "Beta Readiness"]);
+  });
+});
+
+describe("AppShell header notifications", () => {
+  it("renders one unified notification bell", () => {
+    const source = readFileSync("src/components/AppShell.tsx", "utf8");
+
+    expect(source.match(/<NotificationBell\s*\/>/g)).toHaveLength(1);
+    expect(source).not.toContain("HeaderAlertBell");
   });
 });

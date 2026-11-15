@@ -14,7 +14,17 @@ export const LIVE_SYMBOLS = [
   "ETHUSDT",
   "ETCUSDT",
 ] as const;
-export const LIVE_INTERVALS = [60000, 180000, 300000, 900000, 3600000, 86400000] as const;
+export const LIVE_INTERVALS = [
+  60000,
+  180000,
+  300000,
+  900000,
+  1800000,
+  3600000,
+  14400000,
+  86400000,
+  604800000,
+] as const;
 export const candleSchema = z
   .object({
     time: z.number().finite().positive(),

@@ -246,7 +246,7 @@ export function generateCuratedSMTSignals(quotes?: SMTCuratedQuotes): SMTDiverge
   const bankLtp = quotes?.bank && quotes.bank > 0 ? quotes.bank : 59741.25;
   const sensexLtp = quotes?.sensex && quotes.sensex > 0 ? quotes.sensex : 81106.65;
   const goldLtp = quotes?.gold && quotes.gold > 0 ? quotes.gold : 3891.50;
-  const silverLtp = quotes?.silver && quotes.silver > 0 ? quotes.silver : 32.85;
+  const silverLtp = quotes?.silver && quotes.silver > 0 ? quotes.silver : 49.80;
 
   const niftySwingA = Math.round((niftyLtp + 35) * 10) / 10;
   const niftySwingB = Math.round(niftyLtp * 10) / 10;
