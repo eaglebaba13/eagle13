@@ -73,7 +73,7 @@ export const NAV_REGISTRY: NavItem[] = [
     mobileVisible: true,
     mobileBottom: true,
     bottomOrder: 2,
-    badge: "V2 CUBE",
+    badge: "360° CUBE",
   },
   {
     id: "live-chart",

@@ -141,6 +141,9 @@ export interface HTGannIntraPayload {
   masterCube: MasterCubeVerdict;
 }
 
+// Proprietary EagleBABA alias
+export type EagleBabaAstroPayload = HTGannIntraPayload;
+
 export const getHTGannIntra = createServerFn({ method: "GET" })
   .validator((d: unknown): { symbol?: "NIFTY" | "BANKNIFTY"; date?: string; customPrevClose?: number } => {
     if (typeof d === "object" && d !== null) {
@@ -263,3 +266,6 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
       { ttlMs: 30_000 },
     );
   });
+
+// Proprietary EagleBABA alias
+export const getEagleBabaAstroMatrix = getHTGannIntra;

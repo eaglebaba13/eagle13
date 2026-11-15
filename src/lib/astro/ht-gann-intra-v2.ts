@@ -1,17 +1,17 @@
 /**
- * Harmonics Traders Gann Intra V2 (HTGANNIntraV2.xlsx) & 4-Pillar "Cube Setup" Engine.
+ * EagleBABA Navagraha 360° Harmonic Matrix & 4-Pillar Cube Engine.
  *
- * Implements the authentic 4-pillar institutional trading setup:
- * 1. Pillar 1: Index Intraday 360° Absolute-Degree Calculator (36 matrix levels, OM Floor Pivots, VIX confluence)
+ * Proprietary institutional multi-pillar trading engine:
+ * 1. Pillar 1: EagleBABA Navagraha Intraday 360° Absolute-Degree Calculator (36 matrix levels, EagleBABA Pivot Matrix, VIX confluence, Trade Levels)
  * 2. Pillar 2: 27 Nakshatras Historical Matrix + Daily RSI 14 Sync
- * 3. Pillar 3: Retrograde Cycles + Mandatory Daily EMA (13) Filter
- * 4. Pillar 4: Empirical 18 Planet Aspect Matrix (±3° Orb, Exclude Rahu-Ketu)
+ * 3. Pillar 3: Vakri Retrograde Cycles + Mandatory Daily EMA (13) Filter
+ * 4. Pillar 4: Empirical 18 Graha Aspect Matrix (±3° Orb, Exclude Rahu-Ketu)
  * 5. Master Cube Verdict: 3/4 Rule (2 Positional + 1 Intra Safe Level) + Expiry Hero-or-Zero flag
  *
  * NOTE: The 8 baseline mathematical files remain byte-for-byte untouched.
  */
 
-export const HT_GANN_PLANETS = [
+export const NAVAGRAHA_PLANETS = [
   "Rahu",
   "Mars",
   "Mercury",
@@ -23,12 +23,26 @@ export const HT_GANN_PLANETS = [
   "Jupiter",
 ] as const;
 
-export type HTGannPlanet = (typeof HT_GANN_PLANETS)[number];
+export type NavagrahaPlanet = (typeof NAVAGRAHA_PLANETS)[number];
+
+// Backward-compatible alias
+export const HT_GANN_PLANETS = NAVAGRAHA_PLANETS;
+export type HTGannPlanet = NavagrahaPlanet;
 
 export type SafetyCategory = "SAFE_BUY" | "SAFE_SELL" | "RISKY_INNER";
 
+export interface TradeLevels {
+  entry: number;
+  sl: number;
+  tp1: number;
+  tp2: number;
+  tp3: number;
+  riskPts: number;
+  recommendedStrike: string;
+}
+
 export interface PlanetPositionInput {
-  name: HTGannPlanet;
+  name: NavagrahaPlanet;
   absDegree: number; // 0° to 360° absolute longitude
   retro?: boolean;
   speed?: number;
@@ -45,10 +59,11 @@ export interface IntradayMatrixCell {
   confluenceBadge?: string;
   confluencePivot?: string;
   distanceFromPrevClose: number;
+  tradeLevels?: TradeLevels;
 }
 
 export interface IntradayPlanetRow {
-  planet: HTGannPlanet;
+  planet: NavagrahaPlanet;
   absDegree: number;
   L1: IntradayMatrixCell; // upper360 + absDegree
   L2: IntradayMatrixCell; // lower360 + absDegree
@@ -77,7 +92,9 @@ export interface IntradayMatrixResult {
   safeBuyThreshold: number;
   safeSellThreshold: number;
   rows: IntradayPlanetRow[];
-  allLevelsSorted: Array<IntradayMatrixCell & { planet: HTGannPlanet; column: "L1" | "L2" | "L3" | "L4" }>;
+  allLevelsSorted: Array<IntradayMatrixCell & { planet: NavagrahaPlanet; column: "L1" | "L2" | "L3" | "L4" }>;
+  primarySafeBuySetup?: IntradayMatrixCell & { planet: NavagrahaPlanet; column: "L1" | "L2" | "L3" | "L4" };
+  primarySafeSellSetup?: IntradayMatrixCell & { planet: NavagrahaPlanet; column: "L1" | "L2" | "L3" | "L4" };
   floorPivots?: FloorPivots;
   indiaVix?: number;
   riskRules: {
@@ -88,7 +105,7 @@ export interface IntradayMatrixResult {
 }
 
 // ============================================================================
-// PILLAR 1: INTRADAY 360° ABSOLUTE-DEGREE CALCULATOR
+// PILLAR 1: EAGLEBABA NAVAGRAHA 360° ABSOLUTE-DEGREE CALCULATOR
 // ============================================================================
 
 export function computeFloorPivots(high: number, low: number, close: number): FloorPivots {
@@ -123,6 +140,9 @@ export function computeHtGannIntraV2Matrix(params: {
   const safeBuyThreshold = prevClose - safeBuffer;
   const safeSellThreshold = prevClose + safeBuffer;
 
+  const riskPts = symbol === "BANKNIFTY" ? 101 : 51;
+  const strikeStep = symbol === "BANKNIFTY" ? 100 : 50;
+
   const floorPivots = ohlc ? computeFloorPivots(ohlc.high, ohlc.low, ohlc.close) : undefined;
   const tolerance = symbol === "BANKNIFTY" ? 40 : 15;
   const clusterDist = symbol === "BANKNIFTY" ? 15 : 5;
@@ -133,42 +153,42 @@ export function computeHtGannIntraV2Matrix(params: {
     return "RISKY_INNER";
   }
 
-  function checkOMConfluence(level: number, safety: SafetyCategory): { badge?: string; pivot?: string } {
+  function checkEbPivotConfluence(level: number, safety: SafetyCategory): { badge?: string; pivot?: string } {
     if (!floorPivots) return {};
 
     const isLowVix = indiaVix != null && indiaVix < 15;
 
     if (isLowVix) {
       if (safety === "SAFE_BUY" && Math.abs(level - floorPivots.S2) <= tolerance) {
-        return { badge: "★ VERY SAFE OM CONFLUENCE", pivot: `S2 (${floorPivots.S2})` };
+        return { badge: "★ VERY SAFE EB PIVOT CONFLUENCE", pivot: `EB S2 (${floorPivots.S2})` };
       }
       if (safety === "SAFE_SELL" && Math.abs(level - floorPivots.R2) <= tolerance) {
-        return { badge: "★ VERY SAFE OM CONFLUENCE", pivot: `R2 (${floorPivots.R2})` };
+        return { badge: "★ VERY SAFE EB PIVOT CONFLUENCE", pivot: `EB R2 (${floorPivots.R2})` };
       }
       if (safety === "RISKY_INNER") {
         if (Math.abs(level - floorPivots.S2) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `S2 (${floorPivots.S2})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB S2 (${floorPivots.S2})` };
         }
         if (Math.abs(level - floorPivots.R2) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `R2 (${floorPivots.R2})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB R2 (${floorPivots.R2})` };
         }
       }
     } else {
       // Normal/High VIX >= 15
       if (safety === "SAFE_BUY") {
         if (Math.abs(level - floorPivots.S2) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `S2 (${floorPivots.S2})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB S2 (${floorPivots.S2})` };
         }
         if (Math.abs(level - floorPivots.S1) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `S1 (${floorPivots.S1})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB S1 (${floorPivots.S1})` };
         }
       }
       if (safety === "SAFE_SELL") {
         if (Math.abs(level - floorPivots.R2) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `R2 (${floorPivots.R2})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB R2 (${floorPivots.R2})` };
         }
         if (Math.abs(level - floorPivots.R1) <= tolerance) {
-          return { badge: "★ OM CONFLUENCE", pivot: `R1 (${floorPivots.R1})` };
+          return { badge: "★ EB PIVOT CONFLUENCE", pivot: `EB R1 (${floorPivots.R1})` };
         }
       }
     }
@@ -177,14 +197,14 @@ export function computeHtGannIntraV2Matrix(params: {
   }
 
   const rows: IntradayPlanetRow[] = [];
-  const allLevels: Array<IntradayMatrixCell & { planet: HTGannPlanet; column: "L1" | "L2" | "L3" | "L4" }> = [];
+  const allLevels: Array<IntradayMatrixCell & { planet: NavagrahaPlanet; column: "L1" | "L2" | "L3" | "L4" }> = [];
 
-  const planetMap = new Map<HTGannPlanet, PlanetPositionInput>();
+  const planetMap = new Map<NavagrahaPlanet, PlanetPositionInput>();
   for (const p of planets) {
     planetMap.set(p.name, p);
   }
 
-  for (const name of HT_GANN_PLANETS) {
+  for (const name of NAVAGRAHA_PLANETS) {
     const input = planetMap.get(name);
     const absDegree = input ? ((input.absDegree % 360) + 360) % 360 : 0;
     const isPrimaryPlanet = name === "Moon" || name === "Sun";
@@ -192,9 +212,32 @@ export function computeHtGannIntraV2Matrix(params: {
     const makeCell = (rawLevel: number, column: "L1" | "L2" | "L3" | "L4"): IntradayMatrixCell => {
       const level = Math.round(rawLevel);
       const safety = classifySafety(level);
-      const { badge, pivot } = checkOMConfluence(level, safety);
+      const { badge, pivot } = checkEbPivotConfluence(level, safety);
       const isNear360 = Math.abs(level - upper360) <= 25 || Math.abs(level - lower360) <= 25;
       const isPrimary = isPrimaryPlanet || isNear360;
+
+      let tradeLevels: TradeLevels | undefined;
+      if (safety === "SAFE_BUY") {
+        tradeLevels = {
+          entry: level,
+          sl: level - riskPts,
+          tp1: level + riskPts,
+          tp2: level + riskPts * 2,
+          tp3: level + riskPts * 3,
+          riskPts,
+          recommendedStrike: `${Math.floor(level / strikeStep) * strikeStep} CE (ITM)`,
+        };
+      } else if (safety === "SAFE_SELL") {
+        tradeLevels = {
+          entry: level,
+          sl: level + riskPts,
+          tp1: level - riskPts,
+          tp2: level - riskPts * 2,
+          tp3: level - riskPts * 3,
+          riskPts,
+          recommendedStrike: `${Math.ceil(level / strikeStep) * strikeStep} PE (ITM)`,
+        };
+      }
 
       const cell: IntradayMatrixCell = {
         level,
@@ -203,6 +246,7 @@ export function computeHtGannIntraV2Matrix(params: {
         confluenceBadge: badge,
         confluencePivot: pivot,
         distanceFromPrevClose: Math.round((level - prevClose) * 100) / 100,
+        tradeLevels,
       };
 
       allLevels.push({ ...cell, planet: name, column });
@@ -231,7 +275,6 @@ export function computeHtGannIntraV2Matrix(params: {
     const cur = allLevels[i];
     const nxt = allLevels[i + 1];
     if (nxt.level - cur.level <= clusterDist) {
-      // Mark the outer / extreme level further away from prevClose
       const distCur = Math.abs(cur.level - prevClose);
       const distNxt = Math.abs(nxt.level - prevClose);
       if (distCur >= distNxt) {
@@ -242,9 +285,35 @@ export function computeHtGannIntraV2Matrix(params: {
     }
   }
 
+  // Identify Primary Safe Buy Setup (Support Reversal)
+  const safeBuys = allLevels.filter((l) => l.safety === "SAFE_BUY");
+  safeBuys.sort((a, b) => {
+    const aConf = a.confluenceBadge ? 1 : 0;
+    const bConf = b.confluenceBadge ? 1 : 0;
+    if (aConf !== bConf) return bConf - aConf;
+    const aPrim = a.isPrimary ? 1 : 0;
+    const bPrim = b.isPrimary ? 1 : 0;
+    if (aPrim !== bPrim) return bPrim - aPrim;
+    return Math.abs(a.level - prevClose) - Math.abs(b.level - prevClose);
+  });
+  const primarySafeBuySetup = safeBuys[0];
+
+  // Identify Primary Safe Sell Setup (Resistance Reversal)
+  const safeSells = allLevels.filter((l) => l.safety === "SAFE_SELL");
+  safeSells.sort((a, b) => {
+    const aConf = a.confluenceBadge ? 1 : 0;
+    const bConf = b.confluenceBadge ? 1 : 0;
+    if (aConf !== bConf) return bConf - aConf;
+    const aPrim = a.isPrimary ? 1 : 0;
+    const bPrim = b.isPrimary ? 1 : 0;
+    if (aPrim !== bPrim) return bPrim - aPrim;
+    return Math.abs(a.level - prevClose) - Math.abs(b.level - prevClose);
+  });
+  const primarySafeSellSetup = safeSells[0];
+
   const riskRules = {
-    spotSl: symbol === "BANKNIFTY" ? 101 : 51,
-    target1: symbol === "BANKNIFTY" ? 101 : 51,
+    spotSl: riskPts,
+    target1: riskPts,
     description:
       symbol === "BANKNIFTY"
         ? "Spot SL: 101 Pts | Target 1: 101 Pts (1:1 -> Trail) | Option: ITM Strike | Entry: Wait for 5m Confirmation Candle + Pullback"
@@ -262,11 +331,16 @@ export function computeHtGannIntraV2Matrix(params: {
     safeSellThreshold,
     rows,
     allLevelsSorted: allLevels,
+    primarySafeBuySetup,
+    primarySafeSellSetup,
     floorPivots,
     indiaVix,
     riskRules,
   };
 }
+
+// Backward-compatible alias
+export const computeEagleBabaAstroMatrix = computeHtGannIntraV2Matrix;
 
 // ============================================================================
 // PILLAR 2: 27 NAKSHATRAS HISTORICAL DOMINANCE & DAILY RSI 14 SYNC
@@ -392,7 +466,6 @@ export function evaluatePillar2Starwise(params: {
 }): Pillar2StarwiseResult {
   const { moonNakshatra, dailyRsi14, starDayHigh, starDayLow } = params;
 
-  // Normalize name for lookup
   const cleanName = Object.keys(NAKSHATRA_DOMINANCE_MAP).find(
     (k) =>
       k.toLowerCase() === moonNakshatra.toLowerCase() ||
@@ -506,7 +579,7 @@ export function evaluatePillar3Retrograde(params: {
     if (spotClose != null && dailyEma13 != null) {
       if (spotClose >= dailyEma13) {
         status = "ACTIVE_CONFIRMED";
-        badge = `🟢 BULLISH RETRO (${bullishRetrogrades.join(", ")}) CONFIRMED (Above EMA 13)`;
+        badge = `🟢 BULLISH VAKRI (${bullishRetrogrades.join(", ")}) CONFIRMED (Above EMA 13)`;
       } else {
         status = "EXIT_SIGNAL";
         badge = "⚠️ EMA 13 EXIT SIGNAL — Exit Positional Longs";
@@ -514,14 +587,14 @@ export function evaluatePillar3Retrograde(params: {
       }
     } else {
       status = "ACTIVE_UNCONFIRMED";
-      badge = `🟢 BULLISH RETRO (${bullishRetrogrades.join(", ")}) (Awaiting Daily EMA 13)`;
+      badge = `🟢 BULLISH VAKRI (${bullishRetrogrades.join(", ")}) (Awaiting Daily EMA 13)`;
     }
   } else if (bearishRetrogrades.length > 0 && bullishRetrogrades.length === 0) {
     bias = "BEARISH";
     if (spotClose != null && dailyEma13 != null) {
       if (spotClose <= dailyEma13) {
         status = "ACTIVE_CONFIRMED";
-        badge = `🔴 BEARISH RETRO (${bearishRetrogrades.join(", ")}) CONFIRMED (Below EMA 13)`;
+        badge = `🔴 BEARISH VAKRI (${bearishRetrogrades.join(", ")}) CONFIRMED (Below EMA 13)`;
       } else {
         status = "EXIT_SIGNAL";
         badge = "⚠️ EMA 13 EXIT SIGNAL — Exit Positional Shorts";
@@ -529,29 +602,28 @@ export function evaluatePillar3Retrograde(params: {
       }
     } else {
       status = "ACTIVE_UNCONFIRMED";
-      badge = `🔴 BEARISH RETRO (${bearishRetrogrades.join(", ")}) (Awaiting Daily EMA 13)`;
+      badge = `🔴 BEARISH VAKRI (${bearishRetrogrades.join(", ")}) (Awaiting Daily EMA 13)`;
     }
   } else if (bullishRetrogrades.length > 0 && bearishRetrogrades.length > 0) {
-    // Both active: compare against EMA 13 to resolve
     if (spotClose != null && dailyEma13 != null) {
       if (spotClose >= dailyEma13) {
         bias = "BULLISH";
         status = "ACTIVE_CONFIRMED";
-        badge = `🟢 MIXED RETRO: Bullish Dominance (${bullishRetrogrades.join(", ")}) Above EMA 13`;
+        badge = `🟢 MIXED VAKRI: Bullish Dominance (${bullishRetrogrades.join(", ")}) Above EMA 13`;
       } else {
         bias = "BEARISH";
         status = "ACTIVE_CONFIRMED";
-        badge = `🔴 MIXED RETRO: Bearish Dominance (${bearishRetrogrades.join(", ")}) Below EMA 13`;
+        badge = `🔴 MIXED VAKRI: Bearish Dominance (${bearishRetrogrades.join(", ")}) Below EMA 13`;
       }
     } else {
       bias = "NEUTRAL";
       status = "NEUTRAL";
-      badge = `⚪ MIXED RETROGRADES (${[...bullishRetrogrades, ...bearishRetrogrades].join(", ")})`;
+      badge = `⚪ MIXED VAKRI (${[...bullishRetrogrades, ...bearishRetrogrades].join(", ")})`;
     }
   } else if (neutralRetrogrades.length > 0) {
     bias = "NEUTRAL";
     status = "NEUTRAL";
-    badge = "⚪ NEUTRAL RETROGRADE (Venus)";
+    badge = "⚪ NEUTRAL VAKRI (Venus)";
   }
 
   return {
@@ -574,8 +646,8 @@ export function evaluatePillar3Retrograde(params: {
 
 export interface DefinedAspect {
   id: string;
-  planet1: HTGannPlanet;
-  planet2: HTGannPlanet;
+  planet1: NavagrahaPlanet;
+  planet2: NavagrahaPlanet;
   targetAngle: number;
   nature: "BULL" | "BEAR";
   hits: number;
@@ -714,7 +786,7 @@ export interface MasterCubeVerdict {
     bearishCount: number;
   };
   hasIntraConfluence: boolean;
-  confluentIntraLevels: Array<IntradayMatrixCell & { planet: HTGannPlanet }>;
+  confluentIntraLevels: Array<IntradayMatrixCell & { planet: NavagrahaPlanet }>;
   isMasterCubeActive: boolean;
   isExpiryWindow: boolean;
   verdictBadge: string;
@@ -767,7 +839,7 @@ export function evaluateMasterCube(params: {
   else if (bearVotes >= 2) positionalDirection = "BEARISH";
 
   // 4. Intra Safe Level Confluence matching positional direction
-  const confluentLevels: Array<IntradayMatrixCell & { planet: HTGannPlanet }> = [];
+  const confluentLevels: Array<IntradayMatrixCell & { planet: NavagrahaPlanet }> = [];
   for (const row of intraMatrix.rows) {
     for (const col of [row.L1, row.L2, row.L3, row.L4]) {
       if (col.confluenceBadge) {
@@ -785,15 +857,15 @@ export function evaluateMasterCube(params: {
 
   // Day of week check (Wednesday = 3, Thursday = 4)
   const d = targetDate ? new Date(targetDate) : new Date();
-  const dayOfWeek = d.getUTCDay(); // approx UTC or IST
+  const dayOfWeek = d.getUTCDay();
   const isExpiryWindow = dayOfWeek === 3 || dayOfWeek === 4;
 
   let verdictBadge = "⚪ CUBE AWAITING CONFLUENCE";
   if (isMasterCubeActive) {
     const syncGrade = bullVotes === 3 || bearVotes === 3 ? "4/4 Sync" : "3/4 Sync";
-    verdictBadge = `🔥 A+ CUBE SETUP ACTIVE (${positionalDirection} · ${syncGrade})`;
+    verdictBadge = `🔥 EAGLEBABA A+ CUBE SETUP ACTIVE (${positionalDirection} · ${syncGrade})`;
   } else if (positionalDirection !== "NEUTRAL") {
-    verdictBadge = `⚠️ POSITIONAL SYNC (${positionalDirection}) — Awaiting Intra OM Confluence Level`;
+    verdictBadge = `⚠️ POSITIONAL SYNC (${positionalDirection}) — Awaiting Intra EB Pivot Confluence Level`;
   }
 
   const expiryBadge = isExpiryWindow && isMasterCubeActive ? "⚡ HERO-OR-ZERO EXPIRY CUBE" : undefined;
@@ -802,7 +874,7 @@ export function evaluateMasterCube(params: {
     ? positionalDirection === "BULLISH"
       ? `BUY CALL / LONG: Target safe support level around ${confluentLevels[0]?.level ?? "S2"}. ${intraMatrix.riskRules.description}`
       : `BUY PUT / SHORT: Target safe resistance level around ${confluentLevels[0]?.level ?? "R2"}. ${intraMatrix.riskRules.description}`
-    : `Observe: Wait for 2+ Positional Pillars to align with a qualified Safe Zone OM Confluence level.`;
+    : `Observe: Wait for 2+ Positional Pillars to align with a qualified Safe Zone EB Pivot Confluence level.`;
 
   return {
     positionalDirection,

@@ -87,7 +87,7 @@ describe("HT Gann Intra V2 & 4-Pillar Cube Engine", () => {
       expect(res.riskRules.target1).toBe(101);
     });
 
-    it("flags dynamic OM confluence based on India VIX regime", () => {
+    it("flags dynamic EB Pivot confluence and populates explicit Trade Levels", () => {
       // Low VIX (< 15): flags S2 / R2
       const resLowVix = computeHtGannIntraV2Matrix({
         symbol: "NIFTY",
@@ -102,9 +102,31 @@ describe("HT Gann Intra V2 & 4-Pillar Cube Engine", () => {
 
       const pivots = resLowVix.floorPivots!;
       expect(pivots).toBeDefined();
-      // Low VIX should prioritize S2/R2
       const sunRow = resLowVix.rows.find((r) => r.planet === "Sun");
       expect(sunRow).toBeDefined();
+
+      // Check primary safe buy and sell setups
+      expect(resLowVix.primarySafeBuySetup).toBeDefined();
+      expect(resLowVix.primarySafeBuySetup?.safety).toBe("SAFE_BUY");
+      expect(resLowVix.primarySafeBuySetup?.tradeLevels).toBeDefined();
+      const buyTl = resLowVix.primarySafeBuySetup!.tradeLevels!;
+      expect(buyTl.riskPts).toBe(51);
+      expect(buyTl.sl).toBe(buyTl.entry - 51);
+      expect(buyTl.tp1).toBe(buyTl.entry + 51);
+      expect(buyTl.tp2).toBe(buyTl.entry + 102);
+      expect(buyTl.tp3).toBe(buyTl.entry + 153);
+      expect(buyTl.recommendedStrike).toContain("CE (ITM)");
+
+      expect(resLowVix.primarySafeSellSetup).toBeDefined();
+      expect(resLowVix.primarySafeSellSetup?.safety).toBe("SAFE_SELL");
+      expect(resLowVix.primarySafeSellSetup?.tradeLevels).toBeDefined();
+      const sellTl = resLowVix.primarySafeSellSetup!.tradeLevels!;
+      expect(sellTl.riskPts).toBe(51);
+      expect(sellTl.sl).toBe(sellTl.entry + 51);
+      expect(sellTl.tp1).toBe(sellTl.entry - 51);
+      expect(sellTl.tp2).toBe(sellTl.entry - 102);
+      expect(sellTl.tp3).toBe(sellTl.entry - 153);
+      expect(sellTl.recommendedStrike).toContain("PE (ITM)");
     });
   });
 
@@ -145,7 +167,7 @@ describe("HT Gann Intra V2 & 4-Pillar Cube Engine", () => {
       });
       expect(res.bias).toBe("BULLISH");
       expect(res.status).toBe("ACTIVE_CONFIRMED");
-      expect(res.badge).toContain("BULLISH RETRO (Mars) CONFIRMED");
+      expect(res.badge).toContain("BULLISH VAKRI (Mars) CONFIRMED");
     });
 
     it("triggers EMA 13 EXIT SIGNAL when Spot Close < Daily EMA 13 during Bullish Retrograde", () => {
@@ -167,7 +189,7 @@ describe("HT Gann Intra V2 & 4-Pillar Cube Engine", () => {
       });
       expect(res.bias).toBe("BEARISH");
       expect(res.status).toBe("ACTIVE_CONFIRMED");
-      expect(res.badge).toContain("BEARISH RETRO (Saturn) CONFIRMED");
+      expect(res.badge).toContain("BEARISH VAKRI (Saturn) CONFIRMED");
     });
   });
 
