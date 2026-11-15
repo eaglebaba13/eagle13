@@ -246,17 +246,7 @@ function RootComponent() {
         {/* Global mobile navigation: sticky hamburger bar, slide drawer, bottom nav. */}
         <MobileNav />
         {suppressShell ? (
-          <>
-            {/* Legacy floating profile menu for self-shelled routes (astro, live-*, option-strategy)
-                and pre-auth pages. Suppressed on root landing page since it has its own luxury navbar,
-                and on /live-chart since it embeds ProfileMenu in its top toolbar. */}
-            {pathname !== "/" && pathname !== "/live-chart" && (
-              <div className="fixed top-3 right-3 z-40 hidden lg:block">
-                <ProfileMenu />
-              </div>
-            )}
-            <Outlet />
-          </>
+          <Outlet />
         ) : (
           <AppShell>
             <Outlet />

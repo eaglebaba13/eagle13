@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { applyThemeToDOM, getCachedThemeConfig } from "@/lib/theme-manager";
 
 type Theme = "dark" | "light";
 
@@ -17,6 +18,7 @@ export function ThemeToggle() {
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
     document.documentElement.classList.toggle("dark", saved === "dark");
+    applyThemeToDOM(getCachedThemeConfig());
     setMounted(true);
   }, []);
 
@@ -30,6 +32,7 @@ export function ThemeToggle() {
     }
     document.documentElement.setAttribute("data-theme", next);
     document.documentElement.classList.toggle("dark", next === "dark");
+    applyThemeToDOM(getCachedThemeConfig());
   };
 
   const isDark = theme === "dark";

@@ -23,20 +23,36 @@ export function hexToRgba(hex: string, alpha: number): string {
 export function applyThemeToDOM(config: ThemeStudioConfig): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.style.setProperty("--eb-base-bg", config.baseBackground);
+  const isLight = root.getAttribute("data-theme") === "light";
+
+  // Base background & card surfaces
+  root.style.setProperty("--eb-base-bg", isLight ? "#f8fafc" : config.baseBackground);
+  root.style.setProperty("--surface-bg", isLight ? "#f8fafc" : config.baseBackground);
+  root.style.setProperty(
+    "--eb-card-surface",
+    isLight ? "#ffffff" : hexToRgba(config.cardSurface, config.cardTransparency),
+  );
+  root.style.setProperty(
+    "--surface-card",
+    isLight ? "#ffffff" : hexToRgba(config.cardSurface, config.cardTransparency),
+  );
+
+  // Accent & Brand Colors
   root.style.setProperty("--eb-accent-color", config.accentColor);
+  root.style.setProperty("--eb-accent", config.accentColor);
+  root.style.setProperty("--brand-primary", config.accentColor);
+  root.style.setProperty("--brand-border", config.borderTint);
+  root.style.setProperty("--brand-glow", config.glowColor);
   root.style.setProperty("--eb-border-tint", config.borderTint);
   root.style.setProperty("--eb-border-hover", config.accentColor);
   root.style.setProperty("--eb-glow-color", config.glowColor);
   root.style.setProperty("--eb-active-pill", config.activePillColor);
-  root.style.setProperty("--eb-text-accent", config.textAccentColor);
-  root.style.setProperty(
-    "--eb-card-surface",
-    hexToRgba(config.cardSurface, config.cardTransparency),
-  );
+  root.style.setProperty("--eb-text-accent", isLight ? (config.accentColor || "#0f766e") : config.textAccentColor);
+  root.style.setProperty("--text-primary", isLight ? "#0f172a" : config.textAccentColor);
+  root.style.setProperty("--text-muted", isLight ? "#475569" : hexToRgba(config.textAccentColor, 0.65));
 
   // Sync background color of document body
-  document.body.style.backgroundColor = config.baseBackground;
+  document.body.style.backgroundColor = isLight ? "#f8fafc" : config.baseBackground;
 }
 
 export function getCachedThemeConfig(): ThemeStudioConfig {

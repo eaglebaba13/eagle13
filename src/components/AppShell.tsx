@@ -38,7 +38,7 @@ function AppShellHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 hidden items-center gap-3 border-b border-zinc-800/80 bg-[#070a0e]/90 px-4 py-2.5 backdrop-blur-md md:flex"
+      className="sticky top-0 z-30 hidden items-center gap-3 border-b border-border/60 bg-background/95 text-foreground px-4 py-2.5 backdrop-blur-md md:flex"
       aria-label="Page header"
     >
       <button
@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex min-h-screen w-full text-zinc-100 overflow-x-hidden"
+      className="flex min-h-screen w-full text-foreground dark:text-zinc-100 overflow-x-hidden"
       style={{ backgroundColor: "var(--eb-base-bg, #070a0e)" }}
     >
       {/* Ambient background glow */}

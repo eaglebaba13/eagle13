@@ -58,7 +58,7 @@ export default function SmcBacktestPanel() {
   const [timeframe, setTimeframe] = useState<SmcTimeframe>("5m");
   const [from, setFrom] = useState<string>(isoDaysAgo(30));
   const [to, setTo] = useState<string>(today());
-  const [mode, setMode] = useState<Mode>("csv");
+  const [mode, setMode] = useState<Mode>("provider");
   const [providerName, setProviderName] = useState<string>("Zerodha");
   const [csvText, setCsvText] = useState<string>("");
   const [csvFileName, setCsvFileName] = useState<string | null>(null);

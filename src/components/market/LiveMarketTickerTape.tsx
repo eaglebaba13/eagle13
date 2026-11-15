@@ -57,10 +57,10 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
   );
 
   return (
-    <div aria-label="Live market ticker" className="relative z-20 flex h-8 w-full select-none items-center overflow-hidden border-b border-white/10 bg-zinc-950/90 text-xs backdrop-blur-md">
-      <div className="relative z-10 flex shrink-0 items-center gap-2 border-r border-white/10 bg-zinc-950/95 px-3 py-1 shadow-md">
+    <div aria-label="Live market ticker" className="relative z-20 flex h-8 w-full select-none items-center overflow-hidden border-b border-white/10 dark:border-white/10 border-slate-200 bg-slate-100 dark:bg-zinc-950/90 text-xs backdrop-blur-md">
+      <div className="relative z-10 flex shrink-0 items-center gap-2 border-r border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-zinc-950/95 px-3 py-1 shadow-md">
         <span className={`h-2 w-2 rounded-full ${isStreaming ? "bg-emerald-500" : "bg-amber-400"}`} />
-        <span className="font-mono text-[10px] font-semibold tracking-wider text-zinc-300">
+        <span className="font-mono text-[10px] font-semibold tracking-wider text-slate-800 dark:text-zinc-300">
           {isStreaming ? "UPSTOX V3 LIVE" : "UPSTOX / LAST QUOTE"}
         </span>
       </div>
@@ -71,19 +71,19 @@ export const LiveMarketTickerTape = memo(function LiveMarketTickerTape() {
             const negative = item.change !== null && item.change < 0;
             return (
               <div key={`${track}-${item.symbol}`} aria-hidden={track === 1 ? true : undefined} className="inline-flex items-center gap-2 font-mono">
-                <span className="font-bold tracking-wide text-zinc-300">{item.symbol}</span>
-                <span className="font-semibold text-zinc-100">
+                <span className="font-bold tracking-wide text-slate-700 dark:text-zinc-300">{item.symbol}</span>
+                <span className="font-semibold text-slate-950 dark:text-zinc-100">
                   {item.ltp === null ? "-" : item.ltp.toLocaleString("en-IN", {
                     minimumFractionDigits: item.symbol === "INDIA VIX" ? 2 : 1,
                     maximumFractionDigits: item.symbol === "INDIA VIX" ? 2 : 1,
                   })}
                 </span>
-                <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${positive ? "text-emerald-400" : negative ? "text-rose-400" : "text-zinc-400"}`}>
+                <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${positive ? "text-emerald-500 dark:text-emerald-400" : negative ? "text-rose-500 dark:text-rose-400" : "text-slate-500 dark:text-zinc-400"}`}>
                   {positive ? <TrendingUp size={12} /> : negative ? <TrendingDown size={12} /> : null}
                   {item.change === null ? "-" : `${positive ? "+" : ""}${item.change.toFixed(1)}`}
                   {" ("}{item.changePct === null ? "-" : `${item.changePct.toFixed(2)}%`}{")"}
                 </span>
-                <span className="text-zinc-600">·</span>
+                <span className="text-slate-400 dark:text-zinc-600">·</span>
               </div>
             );
           }))}

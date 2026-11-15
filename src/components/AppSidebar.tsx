@@ -68,7 +68,14 @@ export function AppSidebar() {
                   <span className="eb-sb-label flex items-center justify-between flex-1">
                     <span>{it.label}</span>
                     {it.badge ? (
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.2 rounded"
+                        style={{
+                          background: "var(--eb-active-pill, rgba(245,158,11,0.2))",
+                          color: "var(--eb-text-accent, #fbbf24)",
+                          border: "1px solid var(--eb-border-hover, rgba(245,158,11,0.4))",
+                        }}
+                      >
                         {it.badge}
                       </span>
                     ) : null}
@@ -77,7 +84,7 @@ export function AppSidebar() {
                 {active ? <span className="eb-sb-active" aria-hidden /> : null}
               </>
             );
-            const cls = `eb-sb-item${active ? " is-active text-amber-400 border-amber-500/40 bg-amber-500/10 shadow-[0_0_12px_rgba(245,158,11,0.15)]" : ""}`;
+            const cls = `eb-sb-item${active ? " is-active" : ""}`;
             return it.to ? (
               <Link key={it.id} to={it.to} className={cls} title={it.label}>
                 {content}

@@ -859,6 +859,48 @@ export function TradingViewLightweightChart({
     [activeTool, drawings, onFinishDrawingTool, onSaveDrawings],
   );
 
+  // Disable chart panning and zooming when an active drawing tool is selected
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const isDrawing = activeTool !== "cursor";
+    chartRef.current.applyOptions({
+      handleScroll: {
+        mouseWheel: !isDrawing,
+        pressedMouseMove: !isDrawing,
+        horzTouchDrag: !isDrawing,
+        vertTouchDrag: !isDrawing,
+      },
+      handleScale: {
+        axisPressedMouseMove: !isDrawing,
+        mouseWheel: !isDrawing,
+        pinch: !isDrawing,
+      },
+    });
+  }, [activeTool]);
+
+  const resolveTimeFromX = useCallback(
+    (clientX: number): number | null => {
+      if (!chartRef.current) return null;
+      const timeScale = chartRef.current.timeScale();
+      const time = timeScale.coordinateToTime(clientX);
+      if (time != null) {
+        return typeof time === "number" ? time : Date.parse(time as string) / 1000;
+      }
+      const logical = timeScale.coordinateToLogical(clientX);
+      if (logical != null && candles.length > 0) {
+        const lastCandle = candles[candles.length - 1];
+        const barStep =
+          candles.length > 1
+            ? (candles[candles.length - 1].time - candles[0].time) / (candles.length - 1)
+            : 300;
+        const offset = logical - (candles.length - 1);
+        return Math.round(lastCandle.time + offset * barStep);
+      }
+      return null;
+    },
+    [candles],
+  );
+
   const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     if (activeTool === "cursor") {
       setSelectedDrawingId(null);
@@ -869,11 +911,10 @@ export function TradingViewLightweightChart({
     const clientY = e.clientY - rect.top;
 
     if (!chartRef.current || !candleSeriesRef.current) return;
-    const time = chartRef.current.timeScale().coordinateToTime(clientX);
+    const timeNum = resolveTimeFromX(clientX);
     const price = candleSeriesRef.current.coordinateToPrice(clientY);
-    if (!time || !price) return;
+    if (timeNum == null || !price) return;
 
-    const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
     const pt: DrawingPoint = { time: timeNum, price };
 
     dragStartRef.current = { clientX, clientY, pt };
@@ -909,11 +950,10 @@ export function TradingViewLightweightChart({
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
 
-    const time = chartRef.current.timeScale().coordinateToTime(clientX);
+    const timeNum = resolveTimeFromX(clientX);
     const price = candleSeriesRef.current.coordinateToPrice(clientY);
-    if (!time || !price) return;
+    if (timeNum == null || !price) return;
 
-    const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
     setCurrentDrawing((prev) => (prev ? { ...prev, current: { time: timeNum, price } } : null));
   };
 
@@ -928,10 +968,9 @@ export function TradingViewLightweightChart({
 
     // If mouse was dragged at least 10px, complete drawing on release
     if (Math.hypot(dx, dy) >= 10) {
-      const time = chartRef.current.timeScale().coordinateToTime(clientX);
+      const timeNum = resolveTimeFromX(clientX);
       const price = candleSeriesRef.current.coordinateToPrice(clientY);
-      if (time && price) {
-        const timeNum = typeof time === "number" ? time : Date.parse(time as string) / 1000;
+      if (timeNum != null && price) {
         completeDrawingWith(dragStartRef.current.pt, { time: timeNum, price });
       }
     }

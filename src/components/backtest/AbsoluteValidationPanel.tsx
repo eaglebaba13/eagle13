@@ -214,7 +214,11 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
         {GANN_ABSOLUTE_INTRADAY_VALIDATION_VERSION}
       </p>
 
-      <Section title="Historical CSV Import (Stage 5.1)">
+      <details style={{ marginTop: 14, marginBottom: 14, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px" }}>
+        <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 600, color: C.muted }}>
+          📁 Custom CSV Candle Import (Optional / Advanced)
+        </summary>
+        <Section title="Historical CSV Import (Stage 5.1)">
         <p style={{ color: C.muted, fontSize: 12, marginTop: 0 }}>
           Load 5-minute candles from a provider export. Timezone is fixed to Asia/Kolkata; interval
           to 5m. Data is validated client-side; nothing is uploaded or persisted.
@@ -471,8 +475,9 @@ export function AbsoluteValidationPanel({ onResult }: AbsoluteValidationPanelPro
           </div>
         )}
       </Section>
+      </details>
 
-      <Section title="Run Historical Validation">
+      <Section title="Run Historical Validation (1-Click Multi-Session Replay)">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
           <label style={{ fontSize: 12, color: C.muted }}>
             Instrument

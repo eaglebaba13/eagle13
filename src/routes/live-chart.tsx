@@ -1162,18 +1162,18 @@ function LiveChartSelection({
 
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
-            {/* Right Dock Switcher / Mobile Toggle */}
+            {/* Right Dock Switcher / Toggle */}
             <button
               type="button"
               onClick={() => {
-                if (typeof window !== "undefined" && window.innerWidth < 768) {
+                if (typeof window !== "undefined" && window.innerWidth < 1280) {
                   setIsRightSidebarOpen(!isRightSidebarOpen);
                 } else {
                   setRightSidebarTab((prev) => (prev === "watchlist" ? "alerts" : "watchlist"));
                 }
               }}
               className="px-2.5 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer border bg-amber-500/20 text-amber-300 border-amber-500/50"
-              title="Docked Watchlist & Alerts Panel"
+              title="Watchlist & Alerts Panel"
             >
               <Layers className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline capitalize">{rightSidebarTab}</span>
@@ -1308,11 +1308,21 @@ function LiveChartSelection({
             </ChartCanvasErrorBoundary>
           </div>
 
-          {/* Right Dock (Live Watchlist & Active Alerts) - permanently docked on desktop */}
+          {/* Backdrop on tablet/mobile when drawer is open */}
+          {isRightSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/60 z-30 xl:hidden backdrop-blur-xs"
+              onClick={() => setIsRightSidebarOpen(false)}
+            />
+          )}
+
+          {/* Right Dock (Live Watchlist & Active Alerts) - permanently docked on desktop >= 1280px, drawer on < 1280px */}
           <aside
             className={`${
-              isRightSidebarOpen ? "flex" : "hidden md:flex"
-            } w-72 sm:w-80 h-full border-l border-amber-500/20 bg-zinc-950/95 backdrop-blur-md flex-col z-20 shrink-0 select-none`}
+              isRightSidebarOpen
+                ? "fixed inset-y-0 right-0 z-40 flex shadow-2xl xl:static xl:z-20 xl:shadow-none"
+                : "hidden xl:flex"
+            } w-72 sm:w-80 h-full border-l border-amber-500/20 bg-zinc-950/95 backdrop-blur-md flex-col shrink-0 select-none`}
           >
             {/* Header */}
             <div className="p-2.5 border-b border-white/10 flex items-center justify-between">
@@ -1343,8 +1353,18 @@ function LiveChartSelection({
                   </span>
                 </button>
               </div>
-              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">
-                Docked
+              <div className="flex items-center gap-1.5">
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold hidden xl:block">
+                  Docked
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRightSidebarOpen(false)}
+                  className="xl:hidden p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10"
+                  aria-label="Close sidebar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -1397,12 +1417,21 @@ function LiveChartSelection({
                         cryptoTickers?.[inst.symbol] ??
                         cryptoTickers?.[inst.key] ??
                         cryptoTickers?.[inst.symbol.toUpperCase()];
+                      const marketItem = liveLevels?.markets?.find(
+                        (m) => m.key === inst.key || m.symbol === inst.symbol || m.name === inst.name,
+                      );
                       const priceVal =
                         cryptoItem?.price ??
+                        marketItem?.livePrice ??
                         (typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice)
                           ? inst.defaultPrice
                           : 0);
-                      const changeVal = cryptoItem ? cryptoItem.changePct : 0.45;
+                      const changeVal =
+                        cryptoItem?.changePct ??
+                        marketItem?.changePct ??
+                        (marketItem?.prevClose && marketItem.livePrice
+                          ? ((marketItem.livePrice - marketItem.prevClose) / marketItem.prevClose) * 100
+                          : 0);
                       const isUp = changeVal >= 0;
                       return (
                         <div

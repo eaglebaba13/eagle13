@@ -121,6 +121,7 @@ function ChronoWheelPage() {
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [hideBanStocks, setHideBanStocks] = useState<boolean>(false);
+  const [hideNearBanStocks, setHideNearBanStocks] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"winRate" | "avgReturn" | "ivPercentile" | "beta">("winRate");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
@@ -183,6 +184,11 @@ function ChronoWheelPage() {
     if (hideBanStocks) {
       list = list.filter((s) => s.foBanStatus !== "IN_BAN");
     }
+    if (hideNearBanStocks) {
+      list = list.filter(
+        (s) => s.foBanStatus !== "UPCOMING_BAN" && (s.mwplPercent == null || s.mwplPercent < 80),
+      );
+    }
     list.sort((a, b) => {
       let diff = 0;
       if (sortBy === "winRate") {
@@ -197,7 +203,7 @@ function ChronoWheelPage() {
       return sortOrder === "desc" ? -diff : diff;
     });
     return list;
-  }, [scanResult?.results, sortBy, sortOrder]);
+  }, [scanResult?.results, sortBy, sortOrder, hideBanStocks, hideNearBanStocks]);
 
   const handleSendToTelegram = useCallback(
     async (stock: StockCyclePerformance) => {
@@ -796,7 +802,7 @@ function ChronoWheelPage() {
               <button
                 type="button"
                 onClick={() => setHideBanStocks((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   hideBanStocks
                     ? "bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.25)]"
                     : "bg-zinc-900 border-zinc-700/80 text-zinc-300 hover:text-white hover:border-zinc-600"
@@ -805,6 +811,21 @@ function ChronoWheelPage() {
               >
                 <span>🚫</span>
                 <span>{hideBanStocks ? "Ban Hidden" : "Hide Ban"}</span>
+              </button>
+
+              {/* Quick Filter: Hide F&O Near Ban Stocks */}
+              <button
+                type="button"
+                onClick={() => setHideNearBanStocks((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  hideNearBanStocks
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+                    : "bg-zinc-900 border-zinc-700/80 text-zinc-300 hover:text-white hover:border-zinc-600"
+                }`}
+                title="Hide stocks near NSE F&O Ban (>= 80% MWPL or NEAR_BAN status)"
+              >
+                <span>⚠️</span>
+                <span>{hideNearBanStocks ? "Near-Ban Hidden" : "Hide Near Ban"}</span>
               </button>
             </div>
           </div>

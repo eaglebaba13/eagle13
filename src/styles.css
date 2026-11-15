@@ -957,17 +957,17 @@ a {
   color: inherit;
 }
 .eb-sb-item:hover {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.25);
+  color: var(--eb-text-accent, #fbbf24);
+  background: var(--eb-active-pill, rgba(245, 158, 11, 0.08));
+  border-color: var(--eb-border-tint, rgba(245, 158, 11, 0.25));
   transform: translateX(3px);
-  box-shadow: 0 0 16px -4px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 16px -4px var(--eb-glow-color, rgba(245, 158, 11, 0.2));
 }
 .eb-sb-item.is-active {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 0 16px -4px rgba(245, 158, 11, 0.25);
+  color: var(--eb-text-accent, #fbbf24);
+  background: var(--eb-active-pill, rgba(245, 158, 11, 0.12));
+  border-color: var(--eb-border-hover, rgba(245, 158, 11, 0.4));
+  box-shadow: 0 0 16px -4px var(--eb-glow-color, rgba(245, 158, 11, 0.25));
 }
 .eb-sb-active {
   position: absolute;
@@ -976,8 +976,8 @@ a {
   bottom: 22%;
   width: 3px;
   border-radius: 3px;
-  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  background: linear-gradient(180deg, var(--eb-text-accent, #fbbf24) 0%, var(--eb-accent-color, #d97706) 100%);
+  box-shadow: 0 0 10px var(--eb-glow-color, rgba(245, 158, 11, 0.6));
 }
 
 /* ------------------------- Right information panel ----------------------- */
