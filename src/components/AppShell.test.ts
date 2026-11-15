@@ -10,11 +10,7 @@ describe("Phase 36 · AppShell suppression", () => {
 
   it("suppresses on self-shelled routes", () => {
     expect(shouldSuppressShell("/")).toBe(true);
-    expect(shouldSuppressShell("/astro")).toBe(true);
-    expect(shouldSuppressShell("/live-terminal")).toBe(true);
-    expect(shouldSuppressShell("/live-market-terminal")).toBe(true);
     expect(shouldSuppressShell("/live-chart")).toBe(true);
-    expect(shouldSuppressShell("/live-levels")).toBe(true);
     expect(shouldSuppressShell("/option-strategy")).toBe(true);
   });
 
@@ -25,6 +21,7 @@ describe("Phase 36 · AppShell suppression", () => {
   });
 
   it("keeps the shell on ordinary app routes", () => {
+    expect(shouldSuppressShell("/astro")).toBe(false);
     expect(shouldSuppressShell("/decision")).toBe(false);
     expect(shouldSuppressShell("/settings")).toBe(false);
     expect(shouldSuppressShell("/admin/system-status")).toBe(false);

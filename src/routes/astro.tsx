@@ -1,1151 +1,1398 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Orbit,
+  Radio,
+  Activity,
+  Target,
+  ShieldCheck,
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Bell,
+  BellOff,
+  Download,
+  RefreshCw,
+  Sun,
+  Moon,
+  Zap,
+  Sparkles,
+  AlertTriangle,
+  CheckCircle2,
+  Calendar,
+  Layers,
+} from "lucide-react";
 
+import { getHTGannIntra, type HTGannIntraPayload } from "@/lib/ht-gann-intra.functions";
 import { getAstro, type AstroData } from "@/lib/astro.functions";
-import {
-  buildLevelBoard,
-  computeSignal,
-  type PlanetRow,
-  type LevelEntry,
-  type MoonPhaseInfo,
-} from "@/lib/astro-levels";
-import { Disclaimer } from "@/components/Disclaimer";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { AppSidebar } from "@/components/AppSidebar";
 import { useMarketSession } from "@/hooks/use-market-session";
-import { ApexChart } from "@/components/ApexChart";
-import { NewsCenter } from "@/components/NewsPopup";
-import { Moon, Sunrise, Sunset, RotateCcw } from "lucide-react";
-import { EagleLogo } from "@/components/EagleLogo";
+import { fmt, inrRound } from "@/lib/format";
 import { useIstClock } from "@/hooks/use-scheduler";
-import { orbStyle as orbStyleFor } from "@/lib/planet-style";
-import { deriveTithi, sunTimes } from "@/lib/panchang";
-import { inrRound } from "@/lib/format";
-import { FormulaBadge } from "@/components/FormulaBadge";
-import {
-  astroFormulaSlug,
-  DEFAULT_ASTRO_FORMULA_VERSION,
-  type AstroFormulaVersion,
-} from "@/lib/engine-version";
 
-/* ------------------------------ color tokens ------------------------------ */
-
-const C = {
-  bg: "#070a0e",
-  card: "rgba(24, 24, 27, 0.5)",
-  border: "rgba(39, 39, 42, 0.8)",
-  green: "#10b981", // Emerald 500
-  red: "#f43f5e",   // Rose 500
-  gold: "#f59e0b",  // Amber 500
-  blue: "#38bdf8",  // Sky 400
-  purple: "#a855f7",
-  text: "#f4f4f5",  // Zinc 100
-  muted: "#a1a1aa", // Zinc 400
-};
-
-const astroQuery = () =>
-  queryOptions({
-    queryKey: ["astro"],
-    queryFn: () => getAstro(),
-    refetchInterval: 45_000,
-    refetchOnWindowFocus: true,
-  });
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
 
 export const Route = createFileRoute("/astro")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(astroQuery()),
-  component: AstroDashboard,
-  head: () => ({
-    meta: [
-      { title: "Astro Levels | Daily NIFTY Planetary Support & Resistance" },
-      {
-        name: "description",
-        content:
-          "Auto-updating Vedic astro trading dashboard: planetary positions, nakshatra, retrograde tracking, and NIFTY astro support/resistance levels with a live BUY/SELL/WAIT signal engine.",
-      },
-      { property: "og:title", content: "Astro Levels | NIFTY Planetary Dashboard" },
-      {
-        property: "og:description",
-        content: "Daily planetary positions and NIFTY astro levels with a live signal engine.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
-  errorComponent: ({ error }) => (
-    <div className="min-h-screen bg-[#070a0e] p-8 flex flex-col items-center justify-center text-center">
-      <div className="card-institutional bg-zinc-900/60 border border-rose-500/30 p-8 max-w-lg rounded-xl">
-        <p className="font-mono text-rose-400 text-sm mb-4">
-          Astro data unavailable: {error instanceof Error ? error.message : "Unexpected error"}
-        </p>
-        <Link
-          to="/"
-          className="inline-flex items-center text-xs font-mono text-amber-400 hover:text-amber-300 transition-colors"
-        >
-          ← Back to market dashboard
-        </Link>
-      </div>
-    </div>
-  ),
-  notFoundComponent: () => (
-    <div className="min-h-screen bg-[#070a0e] p-8 flex flex-col items-center justify-center text-center">
-      <div className="card-institutional bg-zinc-900/60 border border-zinc-800 p-8 max-w-lg rounded-xl">
-        <p className="font-mono text-zinc-400 text-sm mb-4">Astro page not found.</p>
-        <Link
-          to="/"
-          className="inline-flex items-center text-xs font-mono text-amber-400 hover:text-amber-300 transition-colors"
-        >
-          ← Back to market dashboard
-        </Link>
-      </div>
-    </div>
-  ),
+  component: AstroWorkstationPage,
 });
 
-/* ------------------------------ helpers ------------------------------ */
+type AstroTab = "matrix" | "radar" | "cube" | "sessions";
 
-const num = inrRound;
-
-function todayIstLabel() {
-  return new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
+function AstroWorkstationPage() {
+  const [activeTab, setActiveTab] = useState<AstroTab>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      if (t === "radar" || t === "cube" || t === "sessions") return t;
+    }
+    return "matrix";
   });
-}
 
-function formatMoonDate(iso: string) {
-  return new Date(iso).toLocaleString("en-IN", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Kolkata",
+  const setTab = (t: AstroTab) => {
+    setActiveTab(t);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", t);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  const [symbol, setSymbol] = useState<"NIFTY" | "BANKNIFTY">("NIFTY");
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = new Date(Date.now() + 19800 * 1000);
+    return d.toISOString().slice(0, 10);
   });
-}
+  const [customPrevClose, setCustomPrevClose] = useState<string>("");
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
+  const [lastChimeLevel, setLastChimeLevel] = useState<number | null>(null);
 
-function daysLabel(d: number) {
-  if (d < 1) return "Today";
-  const whole = Math.floor(d);
-  return `in ${d.toFixed(1)} day${whole === 1 ? "" : "s"}`;
-}
+  const parsedCustomClose = customPrevClose.trim() ? Number(customPrevClose) : undefined;
 
-function MoonPhaseSection({ moon }: { moon: MoonPhaseInfo }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-      <Card>
-        <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-          Current Moon Phase
-        </div>
-        <div className="text-xl sm:text-2xl font-bold text-zinc-100 mt-1">
-          🌙 {moon.phaseName}
-        </div>
-        <div className="text-xs font-mono text-zinc-400 mt-1" suppressHydrationWarning>
-          {moon.illumination}% illuminated · {moon.elongation}° elongation
-        </div>
-        <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden mt-3">
-          <div
-            className="h-full bg-sky-400 rounded-full transition-all duration-500"
-            style={{ width: `${moon.illumination}%` }}
-          />
-        </div>
-      </Card>
+  // Primary Query: Authentic HT Gann Intra V2 & 4-Pillar Cube Engine
+  const intraQ = useQuery({
+    queryKey: ["ht-gann-intra", symbol, selectedDate, parsedCustomClose],
+    queryFn: () =>
+      getHTGannIntra({
+        data: {
+          symbol,
+          date: selectedDate,
+          customPrevClose: Number.isFinite(parsedCustomClose) ? parsedCustomClose : undefined,
+        },
+      }),
+    refetchInterval: 15_000,
+  });
 
-      <Card className="border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-zinc-900/50 to-zinc-900/50">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-sky-400">
-          Next New Moon 🌑
-        </div>
-        <div
-          className="text-2xl sm:text-3xl font-extrabold text-sky-400 mt-1"
-          suppressHydrationWarning
-        >
-          {daysLabel(moon.daysToNewMoon)}
-        </div>
-        <div className="text-xs font-mono text-zinc-400 mt-1" suppressHydrationWarning>
-          {formatMoonDate(moon.nextNewMoon)} IST
-        </div>
-      </Card>
+  // Secondary Query: Global Astro Ephemeris & Moon Cycles
+  const astroQ = useQuery({
+    queryKey: ["astro-base"],
+    queryFn: () => getAstro(),
+    refetchInterval: 30_000,
+  });
 
-      <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-zinc-900/50 to-zinc-900/50">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400">
-          Next Full Moon 🌕
-        </div>
-        <div
-          className="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-1"
-          suppressHydrationWarning
-        >
-          {daysLabel(moon.daysToFullMoon)}
-        </div>
-        <div className="text-xs font-mono text-zinc-400 mt-1" suppressHydrationWarning>
-          {formatMoonDate(moon.nextFullMoon)} IST
-        </div>
-      </Card>
-    </div>
-  );
-}
+  const session = useMarketSession();
+  const istClock = useIstClock();
 
-function downloadBlob(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+  const data = intraQ.data;
+  const astro = astroQ.data;
 
-function exportCsv(
-  planets: PlanetRow[],
-  version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION,
-) {
-  const slug = astroFormulaSlug(version);
-  const header = [
-    "Planet",
-    "Degree",
-    "Sign",
-    "Nakshatra",
-    "Lord",
-    "Pada",
-    "Speed",
-    "Motion",
-    "AbsDegree",
-    "R1",
-    "S1",
-    "R2",
-    "S2",
-  ];
-  const rows = planets.map((p) =>
-    [
-      p.planet,
-      p.degree,
-      p.sign,
-      p.nakshatra,
-      p.lord,
-      p.pada,
-      p.speed,
-      p.motion,
-      p.absDegree,
-      p.r1,
-      p.s1,
-      p.r2,
-      p.s2,
-    ].join(","),
-  );
-  downloadBlob(
-    [`# EagleBABA Astro Levels · ${version}`, header.join(","), ...rows].join("\n"),
-    `astro-levels-${slug}.csv`,
-    "text/csv",
-  );
-}
+  // Web Audio Chime Generator
+  const playChime = (freq = 880, duration = 180) => {
+    if (!audioEnabled || typeof window === "undefined") return;
+    try {
+      const AC = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
+      if (AC) {
+        const ctx = new AC();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => {
+          try {
+            osc.stop();
+            ctx.close();
+          } catch {}
+        }, duration + 50);
+      }
+    } catch {
+      /* ignore audio context restrictions */
+    }
+  };
 
-function exportExcel(
-  planets: PlanetRow[],
-  version: AstroFormulaVersion = DEFAULT_ASTRO_FORMULA_VERSION,
-) {
-  const slug = astroFormulaSlug(version);
-  const cells = (arr: (string | number)[]) => arr.map((c) => `<td>${c}</td>`).join("");
-  const head =
-    "<tr>" +
-    cells([
+  // Check proximity for Audio Alerts in Radar mode
+  useEffect(() => {
+    if (!data || !audioEnabled) return;
+    const live = data.livePrice;
+    const touched = data.intraMatrix.allLevelsSorted.find(
+      (l) => Math.abs(l.level - live) <= (symbol === "BANKNIFTY" ? 10 : 3),
+    );
+    if (touched && touched.level !== lastChimeLevel) {
+      setLastChimeLevel(touched.level);
+      playChime(1046.5, 300); // High C chime on touch
+    }
+  }, [data, audioEnabled, lastChimeLevel, symbol]);
+
+  // Export Matrix to CSV
+  const exportCsv = () => {
+    if (!data) return;
+    const headers = [
       "Planet",
-      "Degree",
-      "Sign",
-      "Nakshatra",
-      "Lord",
-      "Pada",
-      "Speed",
-      "Motion",
-      "Abs°",
-      "R1",
-      "S1",
-      "R2",
-      "S2",
-    ]) +
-    "</tr>";
-  const body = planets
-    .map(
-      (p) =>
-        "<tr>" +
-        cells([
-          p.planet,
-          p.degree,
-          p.sign,
-          p.nakshatra,
-          p.lord,
-          p.pada,
-          p.speed,
-          p.motion,
-          p.absDegree,
-          p.r1,
-          p.s1,
-          p.r2,
-          p.s2,
-        ]) +
-        "</tr>",
-    )
-    .join("");
-  const html = `<html><head><meta charset="utf-8"></head><body><table border="1">${head}${body}</table></body></html>`;
-  downloadBlob(html, `astro-levels-${slug}.xls`, "application/vnd.ms-excel");
-}
+      "AbsDegree",
+      "L1_UpperPlus",
+      "L1_Safety",
+      "L2_LowerPlus",
+      "L2_Safety",
+      "L3_UpperMinus",
+      "L3_Safety",
+      "L4_LowerMinus",
+      "L4_Safety",
+    ];
+    const rows = data.intraMatrix.rows.map((r) => [
+      r.planet,
+      r.absDegree,
+      r.L1.level,
+      r.L1.safety,
+      r.L2.level,
+      r.L2.safety,
+      r.L3.level,
+      r.L3.safety,
+      r.L4.level,
+      r.L4.safety,
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ht_gann_intra_${symbol}_${selectedDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-/* -------------------------------- UI -------------------------------- */
-
-function Card({
-  children,
-  style,
-  className,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-  className?: string;
-}) {
   return (
-    <div
-      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-colors rounded-xl p-4 ${className || ""}`}
-      style={style}
-    >
-      {children}
+    <div style={{ padding: "20px 24px", maxWidth: 1600, margin: "0 auto", color: "var(--text-primary)" }}>
+      {/* HEADER BAR */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 20,
+          borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.08))",
+          paddingBottom: 16,
+        }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05))",
+                border: "1px solid rgba(245,158,11,0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--brand-primary, #f59e0b)",
+              }}
+            >
+              <Orbit size={22} />
+            </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  margin: 0,
+                  letterSpacing: -0.5,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                Astro Levels & 4-Pillar Cube Workstation
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    background: "rgba(245,158,11,0.15)",
+                    color: "var(--brand-primary, #f59e0b)",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  HT GANN INTRA V2
+                </span>
+              </h1>
+              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "var(--text-muted, #9ca3af)" }}>
+                Harmonics Traders Gann Intra V2 (HTGANNIntraV2.xlsx) · Starwise Nakshatra · Retrograde EMA 13 · 18 Empirical Aspects
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Master Cube Verdict Pill in Header */}
+        {data && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 14px",
+              borderRadius: 8,
+              background: data.masterCube.isMasterCubeActive
+                ? data.masterCube.positionalDirection === "BULLISH"
+                  ? "rgba(0, 201, 122, 0.12)"
+                  : "rgba(255, 58, 92, 0.12)"
+                : "rgba(255,255,255,0.04)",
+              border: data.masterCube.isMasterCubeActive
+                ? data.masterCube.positionalDirection === "BULLISH"
+                  ? "1px solid rgba(0, 201, 122, 0.4)"
+                  : "1px solid rgba(255, 58, 92, 0.4)"
+                : "1px solid var(--eb-border, rgba(255,255,255,0.1))",
+            }}
+          >
+            <Zap
+              size={18}
+              style={{
+                color: data.masterCube.isMasterCubeActive
+                  ? data.masterCube.positionalDirection === "BULLISH"
+                    ? "var(--eb-bull, #00c97a)"
+                    : "var(--eb-bear, #ff3a5c)"
+                  : "var(--text-muted, #9ca3af)",
+              }}
+            />
+            <div>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, color: "var(--text-muted)" }}>
+                Master Cube Verdict (3/4 Rule)
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: data.masterCube.isMasterCubeActive
+                    ? data.masterCube.positionalDirection === "BULLISH"
+                      ? "var(--eb-bull, #00c97a)"
+                      : "var(--eb-bear, #ff3a5c)"
+                    : "inherit",
+                }}
+              >
+                {data.masterCube.verdictBadge}
+                {data.masterCube.expiryBadge && (
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: "rgba(245,158,11,0.2)",
+                      color: "#f59e0b",
+                      fontSize: 10,
+                    }}
+                  >
+                    {data.masterCube.expiryBadge}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* WORKSTATION CONTROLS BAR */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "12px 16px",
+          background: "var(--surface-card, rgba(255,255,255,0.02))",
+          border: "1px solid var(--eb-border, rgba(255,255,255,0.08))",
+          borderRadius: 8,
+          marginBottom: 18,
+        }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+          {/* Symbol Switcher */}
+          <div style={{ display: "flex", borderRadius: 6, overflow: "hidden", border: "1px solid var(--eb-border, rgba(255,255,255,0.15))" }}>
+            <button
+              onClick={() => setSymbol("NIFTY")}
+              style={{
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                background: symbol === "NIFTY" ? "var(--brand-primary, #f59e0b)" : "transparent",
+                color: symbol === "NIFTY" ? "#000" : "var(--text-primary)",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              NIFTY 50
+            </button>
+            <button
+              onClick={() => setSymbol("BANKNIFTY")}
+              style={{
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                background: symbol === "BANKNIFTY" ? "var(--brand-primary, #f59e0b)" : "transparent",
+                color: symbol === "BANKNIFTY" ? "#000" : "var(--text-primary)",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              BANK NIFTY
+            </button>
+          </div>
+
+          {/* Date Picker */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
+            <Calendar size={14} />
+            <span>Target Date:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid var(--eb-border, rgba(255,255,255,0.15))",
+                borderRadius: 4,
+                padding: "4px 8px",
+                color: "inherit",
+                fontSize: 12,
+                fontFamily: "var(--eb-mono, monospace)",
+              }}
+            />
+          </div>
+
+          {/* Custom Prev Close Override */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
+            <span>Prev Close:</span>
+            <input
+              type="number"
+              step="0.05"
+              placeholder={data ? `${data.prevClose}` : "e.g. 25144.30"}
+              value={customPrevClose}
+              onChange={(e) => setCustomPrevClose(e.target.value)}
+              style={{
+                width: 110,
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid var(--eb-border, rgba(255,255,255,0.15))",
+                borderRadius: 4,
+                padding: "4px 8px",
+                color: "inherit",
+                fontSize: 12,
+                fontFamily: "var(--eb-mono, monospace)",
+              }}
+            />
+            {customPrevClose && (
+              <button
+                onClick={() => setCustomPrevClose("")}
+                title="Reset to Authentic Close"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  padding: "4px",
+                }}
+              >
+                <RefreshCw size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons: Audio Alert & CSV Export */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => {
+              setAudioEnabled(!audioEnabled);
+              if (!audioEnabled) playChime(880, 150);
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 6,
+              background: audioEnabled ? "rgba(0,201,122,0.12)" : "rgba(255,255,255,0.05)",
+              border: audioEnabled ? "1px solid rgba(0,201,122,0.3)" : "1px solid var(--eb-border)",
+              color: audioEnabled ? "var(--eb-bull, #00c97a)" : "var(--text-muted)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {audioEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+            <span>{audioEnabled ? "Audio On" : "Muted"}</span>
+          </button>
+
+          <button
+            onClick={exportCsv}
+            disabled={!data}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 6,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid var(--eb-border, rgba(255,255,255,0.15))",
+              color: "inherit",
+              fontSize: 12,
+              cursor: data ? "pointer" : "not-allowed",
+            }}
+          >
+            <Download size={14} />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* INSTITUTIONAL NAVIGATION TABS */}
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.1))",
+          marginBottom: 20,
+        }}
+      >
+        <button
+          onClick={() => setTab("matrix")}
+          style={{
+            padding: "10px 18px",
+            fontSize: 13,
+            fontWeight: 700,
+            background: "transparent",
+            color: activeTab === "matrix" ? "var(--brand-primary, #f59e0b)" : "var(--text-muted)",
+            border: "none",
+            borderBottom: activeTab === "matrix" ? "2px solid var(--brand-primary, #f59e0b)" : "2px solid transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Target size={16} />
+          <span>🎯 HT Gann Intra V2 & Cube Matrix</span>
+        </button>
+
+        <button
+          onClick={() => setTab("radar")}
+          style={{
+            padding: "10px 18px",
+            fontSize: 13,
+            fontWeight: 700,
+            background: "transparent",
+            color: activeTab === "radar" ? "var(--brand-primary, #f59e0b)" : "var(--text-muted)",
+            border: "none",
+            borderBottom: activeTab === "radar" ? "2px solid var(--brand-primary, #f59e0b)" : "2px solid transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Radio size={16} />
+          <span>📡 Live Level Radar & Audio Monitor</span>
+        </button>
+
+        <button
+          onClick={() => setTab("cube")}
+          style={{
+            padding: "10px 18px",
+            fontSize: 13,
+            fontWeight: 700,
+            background: "transparent",
+            color: activeTab === "cube" ? "var(--brand-primary, #f59e0b)" : "var(--text-muted)",
+            border: "none",
+            borderBottom: activeTab === "cube" ? "2px solid var(--brand-primary, #f59e0b)" : "2px solid transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Orbit size={16} />
+          <span>🪐 4-Pillar Positional Cube</span>
+        </button>
+
+        <button
+          onClick={() => setTab("sessions")}
+          style={{
+            padding: "10px 18px",
+            fontSize: 13,
+            fontWeight: 700,
+            background: "transparent",
+            color: activeTab === "sessions" ? "var(--brand-primary, #f59e0b)" : "var(--text-muted)",
+            border: "none",
+            borderBottom: activeTab === "sessions" ? "2px solid var(--brand-primary, #f59e0b)" : "2px solid transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Clock size={16} />
+          <span>🌐 Multi-Asset Sessions & Astro Clock</span>
+        </button>
+      </div>
+
+      {/* LOADING OR ERROR STATE */}
+      {intraQ.isLoading && (
+        <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+          <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", marginBottom: 12 }} />
+          <div>Computing 09:15 IST Vedic Ephemeris & Gann 360° Matrix...</div>
+        </div>
+      )}
+
+      {intraQ.error && (
+        <div style={{ padding: 20, borderRadius: 8, background: "rgba(255,58,92,0.1)", border: "1px solid rgba(255,58,92,0.3)", color: "var(--eb-bear, #ff3a5c)" }}>
+          Failed to load Gann Intra V2 engine data. Please retry.
+        </div>
+      )}
+
+      {/* TAB 1: 🎯 HT GANN INTRA V2 & CUBE MATRIX */}
+      {data && activeTab === "matrix" && (
+        <div>
+          {/* STATS STRIP */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+              marginBottom: 18,
+            }}
+          >
+            <StatCard label="Live Spot Price" value={fmt(data.livePrice)} sub={symbol} isPrice />
+            <StatCard label="Prev Session Close" value={fmt(data.prevClose)} sub="Anchor" isPrice />
+            <StatCard label="360° Upper Cycle" value={fmt(data.intraMatrix.upper360)} sub="Ceil Multiple" isPrice />
+            <StatCard label="360° Lower Cycle" value={fmt(data.intraMatrix.lower360)} sub="Floor Multiple" isPrice />
+            <StatCard
+              label="🟢 Safe Buy Threshold"
+              value={`<= ${fmt(data.intraMatrix.safeBuyThreshold)}`}
+              sub={`Support Reversal (-${data.intraMatrix.safeBuffer})`}
+              highlightColor="var(--eb-bull, #00c97a)"
+            />
+            <StatCard
+              label="🔴 Safe Sell Threshold"
+              value={`>= ${fmt(data.intraMatrix.safeSellThreshold)}`}
+              sub={`Resistance Reversal (+${data.intraMatrix.safeBuffer})`}
+              highlightColor="var(--eb-bear, #ff3a5c)"
+            />
+            <StatCard
+              label="India VIX"
+              value={data.indiaVix.toFixed(2)}
+              sub={data.indiaVix < 15 ? "Low VIX (<15: S2/R2 Priority)" : "Normal/High VIX (>=15: S1/S2)"}
+            />
+          </div>
+
+          {/* OM FLOOR PIVOTS STRIP */}
+          {data.intraMatrix.floorPivots && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 16px",
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid var(--eb-border, rgba(255,255,255,0.06))",
+                borderRadius: 8,
+                marginBottom: 16,
+                fontSize: 12,
+              }}
+            >
+              <span style={{ fontWeight: 700, color: "var(--brand-primary, #f59e0b)" }}>OM Floor Pivots:</span>
+              <PivotPill label="S3" value={data.intraMatrix.floorPivots.S3} color="var(--eb-bull, #00c97a)" />
+              <PivotPill label="S2" value={data.intraMatrix.floorPivots.S2} color="var(--eb-bull, #00c97a)" />
+              <PivotPill label="S1" value={data.intraMatrix.floorPivots.S1} color="var(--eb-bull, #00c97a)" />
+              <PivotPill label="P (Pivot)" value={data.intraMatrix.floorPivots.P} color="var(--text-primary)" isNeutral />
+              <PivotPill label="R1" value={data.intraMatrix.floorPivots.R1} color="var(--eb-bear, #ff3a5c)" />
+              <PivotPill label="R2" value={data.intraMatrix.floorPivots.R2} color="var(--eb-bear, #ff3a5c)" />
+              <PivotPill label="R3" value={data.intraMatrix.floorPivots.R3} color="var(--eb-bear, #ff3a5c)" />
+            </div>
+          )}
+
+          {/* 36-LEVEL MATRIX TABLE */}
+          <div
+            style={{
+              overflowX: "auto",
+              background: "var(--surface-card, rgba(255,255,255,0.02))",
+              border: "1px solid var(--eb-border, rgba(255,255,255,0.08))",
+              borderRadius: 8,
+              marginBottom: 16,
+            }}
+          >
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
+              <thead>
+                <tr
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.1))",
+                    color: "var(--text-muted)",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  <th style={{ padding: "12px 16px" }}>Planet</th>
+                  <th style={{ padding: "12px 14px", fontFamily: "var(--eb-mono, monospace)" }}>Absolute Longitude</th>
+                  <th style={{ padding: "12px 14px" }}>L1 (Upper + Deg)</th>
+                  <th style={{ padding: "12px 14px" }}>L2 (Lower + Deg)</th>
+                  <th style={{ padding: "12px 14px" }}>L3 (Upper - Deg)</th>
+                  <th style={{ padding: "12px 14px" }}>L4 (Lower - Deg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.intraMatrix.rows.map((row) => (
+                  <tr
+                    key={row.planet}
+                    style={{
+                      borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.05))",
+                      background: row.isPrimaryPlanet ? "rgba(245,158,11,0.03)" : "transparent",
+                    }}
+                  >
+                    <td style={{ padding: "12px 16px", fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>{row.planet}</span>
+                        {row.isPrimaryPlanet && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              padding: "1px 5px",
+                              borderRadius: 4,
+                              background: "rgba(245,158,11,0.2)",
+                              color: "#f59e0b",
+                              fontWeight: 700,
+                            }}
+                          >
+                            👑 PRIMARY
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 14px", fontFamily: "var(--eb-mono, monospace)", color: "var(--text-muted)" }}>
+                      {row.absDegree.toFixed(2)}°
+                    </td>
+                    <MatrixCellTd cell={row.L1} prevClose={data.prevClose} />
+                    <MatrixCellTd cell={row.L2} prevClose={data.prevClose} />
+                    <MatrixCellTd cell={row.L3} prevClose={data.prevClose} />
+                    <MatrixCellTd cell={row.L4} prevClose={data.prevClose} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* RISK RULES & EXECUTION POLICY BANNER */}
+          <div
+            style={{
+              padding: "14px 18px",
+              borderRadius: 8,
+              background: "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.03))",
+              border: "1px solid rgba(245,158,11,0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <ShieldCheck size={22} style={{ color: "var(--brand-primary, #f59e0b)", flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 13, color: "var(--brand-primary, #f59e0b)" }}>
+                FIXED INTRADAY RISK RULES ({symbol})
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                {data.intraMatrix.riskRules.description}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: 📡 LIVE LEVEL RADAR & AUDIO MONITOR */}
+      {data && activeTab === "radar" && (
+        <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: "var(--surface-card)",
+              borderRadius: 8,
+              border: "1px solid var(--eb-border)",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>Current Price Target Tracker</div>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "var(--eb-mono)" }}>
+                {fmt(data.livePrice)} <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{symbol}</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ padding: "6px 12px", borderRadius: 6, background: "rgba(0,201,122,0.1)", color: "var(--eb-bull)", fontSize: 12, fontWeight: 700 }}>
+                Target 1: +{data.intraMatrix.riskRules.target1} Pts
+              </div>
+              <div style={{ padding: "6px 12px", borderRadius: 6, background: "rgba(255,58,92,0.1)", color: "var(--eb-bear)", fontSize: 12, fontWeight: 700 }}>
+                Stop Loss: -{data.intraMatrix.riskRules.spotSl} Pts
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "var(--surface-card)",
+              border: "1px solid var(--eb-border)",
+              borderRadius: 8,
+              overflowX: "auto",
+            }}
+          >
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--eb-border)", color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase" }}>
+                  <th style={{ padding: "10px 14px" }}>Proximity</th>
+                  <th style={{ padding: "10px 14px" }}>Level (₹)</th>
+                  <th style={{ padding: "10px 14px" }}>Distance to Spot</th>
+                  <th style={{ padding: "10px 14px" }}>Planet & Column</th>
+                  <th style={{ padding: "10px 14px" }}>Classification</th>
+                  <th style={{ padding: "10px 14px" }}>OM Confluence</th>
+                  <th style={{ padding: "10px 14px" }}>Actionable Setup</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.intraMatrix.allLevelsSorted
+                  .map((l) => ({ ...l, distToSpot: Math.abs(l.level - data.livePrice) }))
+                  .sort((a, b) => a.distToSpot - b.distToSpot)
+                  .map((l, idx) => {
+                    const isTouched = l.distToSpot <= (symbol === "BANKNIFTY" ? 10 : 3);
+                    const isApproaching = l.distToSpot <= (symbol === "BANKNIFTY" ? 35 : 15);
+                    const isAbove = l.level >= data.livePrice;
+
+                    return (
+                      <tr
+                        key={`${l.planet}-${l.column}-${idx}`}
+                        style={{
+                          borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.04))",
+                          background: isTouched
+                            ? "rgba(245,158,11,0.15)"
+                            : isApproaching
+                              ? "rgba(245,158,11,0.05)"
+                              : "transparent",
+                        }}
+                      >
+                        <td style={{ padding: "10px 14px" }}>
+                          {isTouched ? (
+                            <span style={{ padding: "2px 8px", borderRadius: 4, background: "#f59e0b", color: "#000", fontWeight: 800, fontSize: 10 }}>
+                              🎯 TOUCHED
+                            </span>
+                          ) : isApproaching ? (
+                            <span style={{ padding: "2px 8px", borderRadius: 4, background: "rgba(245,158,11,0.2)", color: "#f59e0b", fontWeight: 700, fontSize: 10 }}>
+                              ⚠️ APPROACHING
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>Radar</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontWeight: 800, fontFamily: "var(--eb-mono)" }}>
+                          {fmt(l.level)}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--eb-mono)", color: isAbove ? "var(--eb-bear)" : "var(--eb-bull)" }}>
+                          {isAbove ? `+${l.distToSpot.toFixed(1)} pts` : `-${l.distToSpot.toFixed(1)} pts`}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "var(--text-muted)" }}>
+                          {l.planet} ({l.column}) {l.isPrimary && "👑"}
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span
+                            style={{
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              background:
+                                l.safety === "SAFE_BUY"
+                                  ? "rgba(0,201,122,0.15)"
+                                  : l.safety === "SAFE_SELL"
+                                    ? "rgba(255,58,92,0.15)"
+                                    : "rgba(255,255,255,0.05)",
+                              color:
+                                l.safety === "SAFE_BUY"
+                                  ? "var(--eb-bull)"
+                                  : l.safety === "SAFE_SELL"
+                                    ? "var(--eb-bear)"
+                                    : "var(--text-muted)",
+                            }}
+                          >
+                            {l.safety}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          {l.confluenceBadge ? (
+                            <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11 }}>
+                              {l.confluenceBadge} ({l.confluencePivot})
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontSize: 11 }}>
+                          {l.safety === "SAFE_BUY" ? (
+                            <span style={{ color: "var(--eb-bull)" }}>Support Reversal → Buy Call (SL: {data.intraMatrix.riskRules.spotSl}p)</span>
+                          ) : l.safety === "SAFE_SELL" ? (
+                            <span style={{ color: "var(--eb-bear)" }}>Resistance Reversal → Buy Put (SL: {data.intraMatrix.riskRules.spotSl}p)</span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)" }}>Inner Zone (Avoid Market Orders)</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: 🪐 4-PILLAR POSITIONAL CUBE */}
+      {data && activeTab === "cube" && (
+        <div>
+          {/* MASTER VERDICT HERO */}
+          <div
+            style={{
+              padding: "20px 24px",
+              borderRadius: 10,
+              background: data.masterCube.isMasterCubeActive
+                ? data.masterCube.positionalDirection === "BULLISH"
+                  ? "linear-gradient(135deg, rgba(0,201,122,0.15), rgba(0,201,122,0.03))"
+                  : "linear-gradient(135deg, rgba(255,58,92,0.15), rgba(255,58,92,0.03))"
+                : "rgba(255,255,255,0.02)",
+              border: data.masterCube.isMasterCubeActive
+                ? data.masterCube.positionalDirection === "BULLISH"
+                  ? "1px solid rgba(0,201,122,0.4)"
+                  : "1px solid rgba(255,58,92,0.4)"
+                : "1px solid var(--eb-border)",
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, color: "var(--text-muted)" }}>
+                  Institutional 4-Pillar Cube Status (3/4 Rule)
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>
+                  {data.masterCube.verdictBadge}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Positional Pillar Alignment</div>
+                <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>
+                  {data.masterCube.positionalVotes.bullishCount} Bullish vs {data.masterCube.positionalVotes.bearishCount} Bearish Votes
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 16,
+                padding: "12px 16px",
+                borderRadius: 6,
+                background: "rgba(0,0,0,0.2)",
+                fontSize: 13,
+                color: "var(--text-primary)",
+              }}
+            >
+              <strong>Execution Directive:</strong> {data.masterCube.executionPlan}
+            </div>
+          </div>
+
+          {/* 3 POSITIONAL PILLARS BREAKDOWN GRID */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16, marginBottom: 20 }}>
+            {/* PILLAR 2: STARWISE NAKSHATRA */}
+            <div style={{ padding: 16, borderRadius: 8, background: "var(--surface-card)", border: "1px solid var(--eb-border)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14 }}>
+                  <Moon size={16} style={{ color: "#f59e0b" }} />
+                  <span>Pillar 2: Moon Nakshatra & RSI 14</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    fontWeight: 700,
+                    background:
+                      data.pillar2Starwise.nature === "BULL"
+                        ? "rgba(0,201,122,0.15)"
+                        : data.pillar2Starwise.nature === "BEAR"
+                          ? "rgba(255,58,92,0.15)"
+                          : "rgba(255,255,255,0.05)",
+                    color:
+                      data.pillar2Starwise.nature === "BULL"
+                        ? "var(--eb-bull)"
+                        : data.pillar2Starwise.nature === "BEAR"
+                          ? "var(--eb-bear)"
+                          : "var(--text-muted)",
+                  }}
+                >
+                  {data.pillar2Starwise.badge}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                <strong>Active Moon Star:</strong> {data.moonNakshatra}
+                {data.pillar2Starwise.starInfo && (
+                  <span style={{ color: "var(--text-muted)", marginLeft: 6 }}>
+                    ({data.pillar2Starwise.starInfo.lord} Lord · {data.pillar2Starwise.starInfo.historicalRecord})
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>
+                <strong>Daily RSI (14):</strong> {data.dailyRsi14 != null ? data.dailyRsi14.toFixed(1) : "—"}{" "}
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>(Bullish Sync &lt;= 35 | Bearish Sync &gt;= 65)</span>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", padding: 8, borderRadius: 4 }}>
+                <strong>Holding Rule:</strong> {data.pillar2Starwise.holdingRule}
+              </div>
+            </div>
+
+            {/* PILLAR 3: RETROGRADE & DAILY EMA 13 */}
+            <div style={{ padding: 16, borderRadius: 8, background: "var(--surface-card)", border: "1px solid var(--eb-border)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14 }}>
+                  <Orbit size={16} style={{ color: "#f59e0b" }} />
+                  <span>Pillar 3: Retrograde & Daily EMA 13</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    fontWeight: 700,
+                    background:
+                      data.pillar3Retrograde.status === "ACTIVE_CONFIRMED"
+                        ? "rgba(0,201,122,0.15)"
+                        : data.pillar3Retrograde.status === "EXIT_SIGNAL"
+                          ? "rgba(255,58,92,0.15)"
+                          : "rgba(255,255,255,0.05)",
+                    color:
+                      data.pillar3Retrograde.status === "ACTIVE_CONFIRMED"
+                        ? "var(--eb-bull)"
+                        : data.pillar3Retrograde.status === "EXIT_SIGNAL"
+                          ? "var(--eb-bear)"
+                          : "var(--text-muted)",
+                  }}
+                >
+                  {data.pillar3Retrograde.badge}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                <strong>Active Retrogrades:</strong>{" "}
+                {data.pillar3Retrograde.activeRetrogrades.length > 0
+                  ? data.pillar3Retrograde.activeRetrogrades.join(", ")
+                  : "None active"}
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>
+                <strong>Spot vs Daily EMA 13:</strong> Spot {fmt(data.livePrice)} vs EMA 13{" "}
+                {data.dailyEma13 != null ? fmt(data.dailyEma13) : "—"}
+              </div>
+              {data.pillar3Retrograde.exitWarning ? (
+                <div style={{ fontSize: 11, color: "var(--eb-bear)", background: "rgba(255,58,92,0.08)", padding: 8, borderRadius: 4 }}>
+                  {data.pillar3Retrograde.exitWarning}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", padding: 8, borderRadius: 4 }}>
+                  Holding filter active: Mars/Jupiter bullish longs held above Daily EMA 13; Saturn/Mercury shorts held below EMA 13.
+                </div>
+              )}
+            </div>
+
+            {/* PILLAR 4: 18 EMPIRICAL ASPECTS SUMMARY */}
+            <div style={{ padding: 16, borderRadius: 8, background: "var(--surface-card)", border: "1px solid var(--eb-border)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14 }}>
+                  <Layers size={16} style={{ color: "#f59e0b" }} />
+                  <span>Pillar 4: Empirical Aspects (±3° Orb)</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    fontWeight: 700,
+                    background:
+                      data.pillar4Aspects.netBias === "BULLISH"
+                        ? "rgba(0,201,122,0.15)"
+                        : data.pillar4Aspects.netBias === "BEARISH"
+                          ? "rgba(255,58,92,0.15)"
+                          : "rgba(255,255,255,0.05)",
+                    color:
+                      data.pillar4Aspects.netBias === "BULLISH"
+                        ? "var(--eb-bull)"
+                        : data.pillar4Aspects.netBias === "BEARISH"
+                          ? "var(--eb-bear)"
+                          : "var(--text-muted)",
+                  }}
+                >
+                  Net: {data.pillar4Aspects.netBias}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                <strong>Active Bullish Aspects:</strong> {data.pillar4Aspects.activeBullishAspects.length} ({data.pillar4Aspects.totalBullHits} historical hits)
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>
+                <strong>Active Bearish Aspects:</strong> {data.pillar4Aspects.activeBearishAspects.length} ({data.pillar4Aspects.totalBearHits} historical hits)
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", padding: 8, borderRadius: 4 }}>
+                {data.pillar4Aspects.summary}
+              </div>
+            </div>
+          </div>
+
+          {/* 18 EMPIRICAL PLANET ASPECTS TABLE */}
+          <div style={{ background: "var(--surface-card)", border: "1px solid var(--eb-border)", borderRadius: 8, overflowX: "auto" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--eb-border)", fontWeight: 700, fontSize: 13 }}>
+              Empirical 18 Planet Aspects Matrix (10-Year Backtested Hits)
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid var(--eb-border)", color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase" }}>
+                  <th style={{ padding: "8px 14px" }}>Aspect Setup</th>
+                  <th style={{ padding: "8px 14px" }}>Nature</th>
+                  <th style={{ padding: "8px 14px" }}>Target Angle</th>
+                  <th style={{ padding: "8px 14px" }}>Actual Separation</th>
+                  <th style={{ padding: "8px 14px" }}>Orb Difference</th>
+                  <th style={{ padding: "8px 14px" }}>Hits</th>
+                  <th style={{ padding: "8px 14px" }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pillar4Aspects.allEvaluations.map((ev) => (
+                  <tr
+                    key={ev.aspect.id}
+                    style={{
+                      borderBottom: "1px solid var(--eb-border, rgba(255,255,255,0.04))",
+                      background: ev.isActive
+                        ? ev.aspect.nature === "BULL"
+                          ? "rgba(0,201,122,0.08)"
+                          : "rgba(255,58,92,0.08)"
+                        : "transparent",
+                    }}
+                  >
+                    <td style={{ padding: "8px 14px", fontWeight: 700 }}>{ev.aspect.description}</td>
+                    <td style={{ padding: "8px 14px" }}>
+                      <span
+                        style={{
+                          padding: "1px 6px",
+                          borderRadius: 3,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: ev.aspect.nature === "BULL" ? "rgba(0,201,122,0.15)" : "rgba(255,58,92,0.15)",
+                          color: ev.aspect.nature === "BULL" ? "var(--eb-bull)" : "var(--eb-bear)",
+                        }}
+                      >
+                        {ev.aspect.nature}
+                      </span>
+                    </td>
+                    <td style={{ padding: "8px 14px", fontFamily: "var(--eb-mono)" }}>{ev.aspect.targetAngle}°</td>
+                    <td style={{ padding: "8px 14px", fontFamily: "var(--eb-mono)" }}>{ev.actualSeparation.toFixed(2)}°</td>
+                    <td style={{ padding: "8px 14px", fontFamily: "var(--eb-mono)" }}>{ev.orbDifference.toFixed(2)}°</td>
+                    <td style={{ padding: "8px 14px", fontFamily: "var(--eb-mono)" }}>{ev.aspect.hits}</td>
+                    <td style={{ padding: "8px 14px" }}>
+                      {ev.isActive ? (
+                        <span style={{ color: ev.aspect.nature === "BULL" ? "var(--eb-bull)" : "var(--eb-bear)", fontWeight: 700 }}>
+                          ACTIVE (±3°)
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>Inactive</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: 🌐 MULTI-ASSET SESSIONS & ASTRO CLOCK */}
+      {activeTab === "sessions" && (
+        <div>
+          {/* MARKET SESSIONS GRID */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, marginBottom: 20 }}>
+            <SessionClockCard
+              market="NSE / BSE India Equity"
+              hours="09:15 AM – 03:30 PM IST"
+              active={session.status === "LIVE MARKET"}
+              statusText={session.status}
+              countdown={`${Math.max(0, Math.floor(session.countdownMs / 60000))}m to transition`}
+            />
+            <SessionClockCard
+              market="MCX India Commodity"
+              hours="09:00 AM – 11:30 PM IST"
+              active={true}
+              statusText="ACTIVE SESSION"
+              countdown="Closes 23:30 IST"
+            />
+            <SessionClockCard
+              market="US / Global Equity"
+              hours="07:00 PM – 01:30 AM IST"
+              active={false}
+              statusText="EVENING SESSION"
+              countdown="Opens 19:00 IST"
+            />
+            <SessionClockCard
+              market="Crypto Market (BTC/ETH/SOL)"
+              hours="24 Hours / 7 Days Continuous"
+              active={true}
+              statusText="24/7 OPEN"
+              countdown="Continuous"
+            />
+          </div>
+
+          {/* MOON NAKSHATRA & EPHEMERIS DETAIL */}
+          {astro && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16 }}>
+              <div style={{ padding: 16, borderRadius: 8, background: "var(--surface-card)", border: "1px solid var(--eb-border)" }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Moon size={16} style={{ color: "#f59e0b" }} />
+                  <span>Moon Phase & Tithi Clock</span>
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Phase:</strong> {astro.moonPhase.phaseName} ({astro.moonPhase.illumination}% Illumination)
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Moon Sign:</strong> {astro.moonSign} ({astro.moonDegree.toFixed(2)}°)
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Active Nakshatra:</strong> {astro.moonNakshatra}
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  <strong>Ayanamsa:</strong> {astro.ayanamsa.toFixed(4)}° (Lahiri Sidereal)
+                </div>
+              </div>
+
+              <div style={{ padding: 16, borderRadius: 8, background: "var(--surface-card)", border: "1px solid var(--eb-border)" }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Sun size={16} style={{ color: "#f59e0b" }} />
+                  <span>Sun Schedule (Mumbai / IST)</span>
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Current IST Time:</strong> {istClock}
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Trading Session Anchor:</strong> 09:15:00 AM IST
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  <strong>Intraday Cycle Factor:</strong> {data ? data.intraMatrix.factor.toFixed(4) : "—"}
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  <strong>Gann Intra Engine Version:</strong> V2.0 HT Authentic
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function Stat({
+// ============================================================================
+// HELPER COMPONENTS
+// ============================================================================
+
+function StatCard({
   label,
   value,
-  color,
   sub,
-  className,
+  highlightColor,
+  isPrice,
 }: {
   label: string;
-  value: React.ReactNode;
-  color?: string;
+  value: string;
   sub?: string;
-  className?: string;
+  highlightColor?: string;
+  isPrice?: boolean;
 }) {
   return (
     <div
-      className={`card-institutional bg-zinc-900/50 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-colors rounded-xl p-3 sm:p-3.5 flex flex-col justify-between ${className || ""}`}
+      style={{
+        padding: "12px 14px",
+        borderRadius: 8,
+        background: "var(--surface-card, rgba(255,255,255,0.02))",
+        border: "1px solid var(--eb-border, rgba(255,255,255,0.08))",
+      }}
     >
-      <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 truncate">
-        {label}
-      </div>
+      <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</div>
       <div
-        className="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-100 mt-1"
-        style={color ? { color } : undefined}
-        suppressHydrationWarning
+        style={{
+          fontSize: 16,
+          fontWeight: 800,
+          fontFamily: isPrice ? "var(--eb-mono, monospace)" : "inherit",
+          color: highlightColor ?? "inherit",
+          marginTop: 4,
+        }}
       >
         {value}
       </div>
-      {sub ? (
-        <div
-          className="text-[11px] font-mono text-zinc-400 mt-1 truncate"
-          title={sub}
-          suppressHydrationWarning
-        >
-          {sub}
-        </div>
-      ) : null}
+      {sub && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
 
-function RetroBadge() {
-  return (
-    <span className="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ml-1.5">
-      R
-    </span>
-  );
-}
-
-function RetroBiasBadge({ bias }: { bias: PlanetRow["retroBias"] }) {
-  if (bias === "none") return null;
-  const isBull = bias === "bull";
-  const isBear = bias === "bear";
-  return (
-    <span
-      title="Bias when this planet is retrograde"
-      className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ml-1.5 tracking-wider border ${
-        isBull
-          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-          : isBear
-            ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-            : "bg-zinc-800 text-zinc-300 border-zinc-700"
-      }`}
-    >
-      {isBull ? "BULL R" : isBear ? "BEAR R" : "NEUTRAL R"}
-    </span>
-  );
-}
-
-function NakBadge({ bull, bear, name }: { bull: boolean; bear: boolean; name: string }) {
-  if (!bull && !bear) return <span className="text-zinc-200">{name}</span>;
-  return (
-    <span
-      className={`px-2 py-0.5 rounded text-xs font-semibold border ${
-        bull
-          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-          : "bg-rose-500/15 text-rose-400 border-rose-500/30"
-      }`}
-    >
-      {name}
-    </span>
-  );
-}
-
-const proximityBadgeClass: Record<LevelEntry["proximity"], string> = {
-  FLASH: "text-rose-400 animate-pulse font-bold",
-  ORANGE: "text-amber-400 font-bold",
-  YELLOW: "text-yellow-400 font-bold",
-  BLUE: "text-sky-400 font-bold",
-  NORMAL: "text-zinc-500 font-normal",
-};
-
-const statusBadgeClass: Record<LevelEntry["status"], string> = {
-  BROKEN: "text-emerald-400 font-bold",
-  TOUCHED: "text-amber-400 font-bold",
-  ACTIVE: "text-sky-400 font-bold",
-  PENDING: "text-zinc-500 font-normal",
-};
-
-function AstroDashboard() {
-  const { data, isFetching, dataUpdatedAt, refetch } = useSuspenseQuery(astroQuery());
-  const clock = useIstClock();
-  const session = useMarketSession();
-  const [query, setQuery] = useState("");
-
-  const board = useMemo(
-    () => buildLevelBoard(data.planets, data.livePrice),
-    [data.planets, data.livePrice],
-  );
-  const signal = useMemo(
-    () =>
-      computeSignal({
-        price: data.livePrice,
-        board,
-        moonNakshatra: data.moonNakshatra,
-        retroCount: data.retroCount,
-        totalPlanets: data.planets.length,
-        bullRetroCount: data.bullRetroCount,
-        bearRetroCount: data.bearRetroCount,
-        emaBias: data.emaBias,
-      }),
-    [board, data],
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return data.planets;
-    return data.planets.filter(
-      (p) =>
-        p.planet.toLowerCase().includes(q) ||
-        p.sign.toLowerCase().includes(q) ||
-        p.nakshatra.toLowerCase().includes(q) ||
-        p.lord.toLowerCase().includes(q),
-    );
-  }, [query, data.planets]);
-
-  const isBuy = signal.signal === "BUY";
-  const isSell = signal.signal === "SELL";
-  const signalColorHex = isBuy ? C.green : isSell ? C.red : C.gold;
-  const signalTextColor = isBuy ? "text-emerald-400" : isSell ? "text-rose-400" : "text-amber-400";
-  const signalBgClass = isBuy
-    ? "from-emerald-500/15 via-zinc-900/60 to-zinc-900/60 border-emerald-500/40"
-    : isSell
-      ? "from-rose-500/15 via-zinc-900/60 to-zinc-900/60 border-rose-500/40"
-      : "from-amber-500/15 via-zinc-900/60 to-zinc-900/60 border-amber-500/40";
-  const signalBarBg = isBuy ? "bg-emerald-500" : isSell ? "bg-rose-500" : "bg-amber-500";
-
-  const lastUpdated = new Date(dataUpdatedAt).toLocaleTimeString("en-GB", {
-    hour12: false,
-    timeZone: "Asia/Kolkata",
-  });
-
-  const nearest = signal.nearest;
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#070a0e] text-zinc-400 flex items-center justify-center font-sans">
-        <div className="text-center">
-          <div className="text-2xl sm:text-3xl font-bold text-zinc-100 tracking-wide">
-            🪐 EagleBABA - Astro Levels Dashboard
-          </div>
-          <div className="mt-2 text-xs font-mono text-zinc-500">
-            Loading planetary &amp; market data…
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#070a0e] text-zinc-100 font-sans selection:bg-amber-500/20 selection:text-amber-200">
-      <div className="eb-space-bg" aria-hidden="true" />
-
-      <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 pt-4 pb-28 md:pb-8 flex flex-col gap-4 overflow-x-hidden relative z-1">
-        {/* Header */}
-        <header className="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-zinc-800/80">
-          <div className="flex items-center gap-3.5">
-            <EagleLogo
-              size={48}
-              className="w-12 h-12 rounded-xl object-cover shadow-[0_0_16px_rgba(212,175,55,0.35)] ring-1 ring-amber-500/30"
-            />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-                <span>🪐 EagleBABA - Astro Levels Dashboard</span>
-              </h1>
-              <div className="text-xs font-mono text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2">
-                <span>Mumbai · Asia/Kolkata · {todayIstLabel()}</span>
-                <span className="text-zinc-600">|</span>
-                <span className="text-amber-400/90">Planets fixed @ 09:00 IST</span>
-              </div>
-              <div className="mt-1.5">
-                <FormulaBadge version={data.formulaVersion} compact />
-              </div>
-            </div>
-          </div>
-
-          <div className="no-print flex items-center flex-wrap gap-2.5">
-            <span className="font-mono text-xs text-zinc-400 bg-zinc-900/60 border border-zinc-800 px-2.5 py-1 rounded-md">
-              IST {clock}
-            </span>
-            <span
-              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-md border ${
-                session.isOpen
-                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                  : "bg-zinc-800/60 text-zinc-400 border-zinc-700/60"
-              }`}
-            >
-              {session.isOpen ? "● MARKET OPEN" : `○ MARKET ${session.status}`}
-            </span>
-            <Link
-              to="/"
-              className="text-xs font-mono text-sky-400 hover:text-sky-300 border border-sky-500/30 bg-sky-500/10 px-3 py-1 rounded-md transition-colors"
-            >
-              Market View
-            </Link>
-            <NewsCenter />
-            <ThemeToggle />
-          </div>
-        </header>
-
-        {/* Layout with Sidebar + Main Content + Right Panels */}
-        <div className="flex gap-4 items-start w-full">
-          <AppSidebar />
-
-          <main className="flex-1 min-w-0 w-full space-y-4">
-            {isFetching ? (
-              <div className="no-print font-mono text-xs text-amber-400 animate-pulse flex items-center gap-2">
-                <span>⟳ Updating planetary &amp; price data…</span>
-              </div>
-            ) : null}
-
-            {/* Top Metric Band: 6 columns */}
-            <section
-              id="signals"
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3"
-            >
-              {/* Card 1: Signal */}
-              <div
-                className={`card-institutional bg-gradient-to-br ${signalBgClass} border border-amber-500/30 rounded-xl p-3 sm:p-4 flex flex-col justify-between`}
-              >
-                <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                  Active Signal
-                </div>
-                <div className={`text-2xl sm:text-3xl font-extrabold ${signalTextColor} mt-1 flex items-center gap-1.5`}>
-                  <span>{signal.emoji}</span>
-                  <span>{signal.signal}</span>
-                </div>
-                <div className="text-xs font-mono text-zinc-300 mt-1 flex justify-between items-center">
-                  <span>{signal.strength}</span>
-                  <span className="font-bold text-zinc-100">{signal.confidence}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800/80 rounded-full overflow-hidden mt-2">
-                  <div
-                    className={`h-full ${signalBarBg} rounded-full transition-all duration-500`}
-                    style={{ width: `${signal.confidence}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Card 2: Live NIFTY */}
-              <Stat
-                label="Live NIFTY"
-                value={<span className="font-mono text-sky-400">{data.livePrice.toLocaleString("en-IN")}</span>}
-                sub={`Prev close ${data.prevClose.toLocaleString("en-IN")}`}
-              />
-
-              {/* Card 3: Nearest Level */}
-              <Stat
-                label="Nearest Level"
-                value={nearest ? <span className="font-mono text-amber-400">{num(nearest.value)}</span> : "—"}
-                sub={nearest ? `${nearest.label} · ${Math.round(nearest.distance)} pts` : undefined}
-              />
-
-              {/* Card 4: Bias */}
-              <Stat
-                label="Bias"
-                value={
-                  signal.confidence >= 60
-                    ? "Bullish"
-                    : signal.confidence <= 40
-                      ? "Bearish"
-                      : "Neutral"
-                }
-                color={
-                  signal.confidence >= 60 ? C.green : signal.confidence <= 40 ? C.red : C.gold
-                }
-                sub={`${data.bullCount} bull · ${data.bearCount} bear nakshatra`}
-              />
-
-              {/* Card 5: Moon Sign & Nakshatra */}
-              <Stat
-                label="Moon Astro"
-                value={<span className="text-zinc-100 font-mono text-base sm:text-lg">{data.moonSign}</span>}
-                sub={`${data.moonNakshatra} · ${data.moonDegree.toFixed(1)}°`}
-              />
-
-              {/* Card 6: Days to Moon Phase */}
-              <Stat
-                label={`Next Phase (${data.moonPhase.daysToNewMoon <= data.moonPhase.daysToFullMoon ? "New Moon" : "Full Moon"})`}
-                value={
-                  <span className="font-mono text-amber-300">
-                    {daysLabel(Math.min(data.moonPhase.daysToNewMoon, data.moonPhase.daysToFullMoon))}
-                  </span>
-                }
-                sub={`${data.moonPhase.phaseName} · ${data.moonPhase.illumination}% lit`}
-              />
-            </section>
-
-            {/* Signal Reasoning */}
-            <div className="card-institutional bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 rounded-xl p-3">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 mb-2">
-                Signal Reasoning
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {signal.reasons.map((r, i) => (
-                  <span
-                    key={i}
-                    className="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono px-2.5 py-1 rounded-md"
-                  >
-                    {r}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Middle Astro Metrics: 7 columns */}
-            <section
-              id="nakshatra"
-              className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3"
-            >
-              <Stat label="Moon Sign" value={data.moonSign} />
-              <Stat label="Moon Nakshatra" value={data.moonNakshatra} />
-              <Stat
-                label="Moon Degree"
-                value={<span className="font-mono">{data.moonDegree.toFixed(2)}°</span>}
-              />
-              <Stat
-                label="Retrograde"
-                value={data.retroCount}
-                color={data.retroCount >= 3 ? C.red : undefined}
-                sub={`${data.retroCount} in Vakri`}
-              />
-              <Stat label="Bull Nakshatra" value={data.bullCount} color={C.green} />
-              <Stat label="Bear Nakshatra" value={data.bearCount} color={C.red} />
-              <Stat
-                label="Day EMA 13"
-                value={
-                  <span className="font-mono">{data.ema13 != null ? num(data.ema13) : "—"}</span>
-                }
-                color={
-                  data.emaBias === "Bullish" ? C.green : data.emaBias === "Bearish" ? C.red : undefined
-                }
-                sub={
-                  data.emaBias
-                    ? `${data.emaBias} · price ${data.emaBias === "Bullish" ? "above" : "below"} EMA 13`
-                    : "day timeframe"
-                }
-              />
-            </section>
-
-            {/* Moon Phase & Upcoming New/Full Moon countdown cards */}
-            <MoonPhaseSection moon={data.moonPhase} />
-
-            {/* Responsive Right Panels on Mobile/Tablet */}
-            <div className="block xl:hidden">
-              <RightPanelContent data={data} />
-            </div>
-
-            {/* Bottom Visual Gauges: 3 columns */}
-            <section id="analysis" className="scroll-mt-24">
-              <AstroCharts
-                confidence={signal.confidence}
-                signalColor={signalColorHex}
-                bullCount={data.bullCount}
-                bearCount={data.bearCount}
-                planets={data.planets}
-              />
-            </section>
-
-            {/* Nearest Astro Levels */}
-            <section id="levels" className="scroll-mt-24 space-y-2.5">
-              <div className="flex justify-between items-center px-1">
-                <span className="font-mono text-xs uppercase tracking-wider text-zinc-300 font-bold">
-                  NEAREST ASTRO LEVELS
-                </span>
-                <span className="text-[11px] font-mono text-zinc-400">
-                  Sorted by distance to live price
-                </span>
-              </div>
-              <LevelCards board={board} />
-            </section>
-
-            {/* Controls Bar */}
-            <div className="no-print flex flex-wrap gap-2.5 items-center justify-between pt-2">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search planet / sign / nakshatra…"
-                aria-label="Search planets, signs or nakshatras"
-                className="bg-zinc-950/70 border border-zinc-800 focus:border-amber-500/60 focus:outline-none text-zinc-100 text-xs rounded-lg px-3 py-2 min-w-[200px] flex-1 sm:max-w-xs transition-colors font-mono"
-              />
-              <div className="flex flex-wrap gap-2 items-center">
-                <button
-                  onClick={() => exportCsv(data.planets, data.formulaVersion)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all font-mono cursor-pointer"
-                >
-                  Export CSV
-                </button>
-                <button
-                  onClick={() => exportExcel(data.planets, data.formulaVersion)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 transition-all font-mono cursor-pointer"
-                >
-                  Export Excel
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all font-mono cursor-pointer"
-                >
-                  Print
-                </button>
-                <button
-                  onClick={() => refetch()}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-all font-mono cursor-pointer"
-                >
-                  Refresh
-                </button>
-              </div>
-            </div>
-
-            {/* Planetary Positions Grid */}
-            <section id="planets" className="scroll-mt-24 space-y-3">
-              <div className="font-mono text-xs uppercase tracking-wider text-zinc-300 font-bold px-1">
-                PLANETARY POSITIONS ({filtered.length} BODIES)
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {filtered.map((p) => (
-                  <PlanetCard key={p.planet} p={p} />
-                ))}
-              </div>
-            </section>
-
-            {/* Astro Level Table */}
-            <section className="card-institutional bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 rounded-xl overflow-hidden">
-              <div className="p-3 sm:p-4 border-b border-zinc-800/80 flex flex-wrap justify-between items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold text-zinc-200 tracking-wider font-mono">
-                  ASTRO LEVELS (R1 / S1 / R2 / S2)
-                </span>
-                <span className="text-[11px] font-mono text-zinc-400">
-                  Base {data.cycles.base} · Upper {num(data.cycles.upper)} · Lower{" "}
-                  {num(data.cycles.lower)}
-                </span>
-              </div>
-              <div className="table-responsive-container">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-zinc-950/70 border-b border-zinc-800 text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                      <th className="py-2.5 px-3">Planet</th>
-                      <th className="py-2.5 px-3">Degree</th>
-                      <th className="py-2.5 px-3">R1</th>
-                      <th className="py-2.5 px-3">S1</th>
-                      <th className="py-2.5 px-3">R2</th>
-                      <th className="py-2.5 px-3">S2</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60 font-mono">
-                    {filtered.map((p) => (
-                      <tr key={p.planet} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="py-2.5 px-3 font-bold text-zinc-200">{p.planet}</td>
-                        <td className="py-2.5 px-3 text-zinc-300">{p.degree.toFixed(2)}°</td>
-                        <td className="py-2.5 px-3 text-rose-400 font-semibold">{num(p.r1)}</td>
-                        <td className="py-2.5 px-3 text-emerald-400 font-semibold">{num(p.s1)}</td>
-                        <td className="py-2.5 px-3 text-rose-400 font-semibold">{num(p.r2)}</td>
-                        <td className="py-2.5 px-3 text-emerald-400 font-semibold">{num(p.s2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <div className="font-mono text-[11px] text-zinc-500 text-center py-2">
-              Last updated {lastUpdated} IST · Auto-refresh every 45s
-            </div>
-
-            <Disclaimer />
-          </main>
-
-          {/* Dedicated Right Panel on Desktop (xl+) */}
-          <aside className="hidden xl:flex xl:w-72 xl:shrink-0 flex-col gap-3">
-            <RightPanelContent data={data} />
-          </aside>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ==================================================================
- * Premium planet visuals + right panel + luxury level cards + charts
- * ================================================================== */
-
-const sunTimesMumbai = () => sunTimes(19.076, 72.8777);
-
-function PlanetCard({ p }: { p: PlanetRow }) {
-  const strength = Math.max(8, Math.min(100, Math.round((Math.abs(p.speed) / 13) * 100)));
-  const isRetro = p.retro;
+function PivotPill({ label, value, color, isNeutral }: { label: string; value: number; color: string; isNeutral?: boolean }) {
   return (
     <div
-      className="card-institutional bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 hover:border-amber-500/40 rounded-xl p-3.5 flex flex-col gap-3 transition-all"
-      style={orbStyleFor(p.planet)}
+      style={{
+        padding: "4px 8px",
+        borderRadius: 4,
+        background: isNeutral ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.02)",
+        border: `1px solid ${color}40`,
+        fontFamily: "var(--eb-mono, monospace)",
+      }}
     >
-      <div className="flex items-center gap-3">
-        <div className="eb-planet-orb w-11 h-11 shrink-0" />
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-zinc-100 text-sm tracking-wide">{p.planet}</span>
-            {isRetro ? <RetroBadge /> : null}
-          </div>
-          <div className="font-mono text-xs text-zinc-400">
-            {p.degree.toFixed(2)}° · {p.sign}
-          </div>
+      <span style={{ color: "var(--text-muted)", marginRight: 6 }}>{label}</span>
+      <strong style={{ color }}>{fmt(value)}</strong>
+    </div>
+  );
+}
+
+function MatrixCellTd({
+  cell,
+  prevClose,
+}: {
+  cell: {
+    level: number;
+    safety: "SAFE_BUY" | "SAFE_SELL" | "RISKY_INNER";
+    confluenceBadge?: string;
+    confluencePivot?: string;
+    isPrimary?: boolean;
+    isPreferredOuter?: boolean;
+  };
+  prevClose: number;
+}) {
+  const isSafeBuy = cell.safety === "SAFE_BUY";
+  const isSafeSell = cell.safety === "SAFE_SELL";
+
+  const bg = isSafeBuy
+    ? "rgba(0, 201, 122, 0.12)"
+    : isSafeSell
+      ? "rgba(255, 58, 92, 0.12)"
+      : "rgba(255, 255, 255, 0.02)";
+
+  const border = isSafeBuy
+    ? "1px solid rgba(0, 201, 122, 0.3)"
+    : isSafeSell
+      ? "1px solid rgba(255, 58, 92, 0.3)"
+      : "1px solid var(--eb-border, rgba(255,255,255,0.05))";
+
+  const textColor = isSafeBuy ? "var(--eb-bull, #00c97a)" : isSafeSell ? "var(--eb-bear, #ff3a5c)" : "var(--text-primary)";
+
+  return (
+    <td style={{ padding: "8px 10px" }}>
+      <div
+        style={{
+          padding: "8px 10px",
+          borderRadius: 6,
+          background: bg,
+          border,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+          <span style={{ fontFamily: "var(--eb-mono, monospace)", fontWeight: 800, fontSize: 14, color: textColor }}>
+            {fmt(cell.level)}
+          </span>
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              padding: "1px 4px",
+              borderRadius: 3,
+              background: isSafeBuy ? "rgba(0,201,122,0.2)" : isSafeSell ? "rgba(255,58,92,0.2)" : "rgba(255,255,255,0.08)",
+              color: textColor,
+            }}
+          >
+            {isSafeBuy ? "SAFE BUY" : isSafeSell ? "SAFE SELL" : "RISKY"}
+          </span>
         </div>
+
+        {/* Confluence Badge if matching Floor Pivot */}
+        {cell.confluenceBadge && (
+          <div style={{ fontSize: 9, color: "#f59e0b", fontWeight: 700, marginTop: 4 }}>
+            {cell.confluenceBadge} ({cell.confluencePivot})
+          </div>
+        )}
+
+        {/* Preferred Outer Badge */}
+        {cell.isPreferredOuter && (
+          <div style={{ fontSize: 9, color: "var(--brand-primary, #f59e0b)", marginTop: 2 }}>
+            ★ PREFERRED OUTER
+          </div>
+        )}
+      </div>
+    </td>
+  );
+}
+
+function SessionClockCard({
+  market,
+  hours,
+  active,
+  statusText,
+  countdown,
+}: {
+  market: string;
+  hours: string;
+  active: boolean;
+  statusText: string;
+  countdown: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: 16,
+        borderRadius: 8,
+        background: "var(--surface-card)",
+        border: active ? "1px solid rgba(0,201,122,0.3)" : "1px solid var(--eb-border)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontWeight: 700, fontSize: 13 }}>{market}</div>
         <span
-          className={`ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
-            isRetro
-              ? "text-rose-400 bg-rose-500/10 border-rose-500/30"
-              : "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
-          }`}
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            padding: "2px 6px",
+            borderRadius: 4,
+            background: active ? "rgba(0,201,122,0.15)" : "rgba(255,255,255,0.05)",
+            color: active ? "var(--eb-bull)" : "var(--text-muted)",
+          }}
         >
-          {p.motion}
+          {statusText}
         </span>
       </div>
-
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs pt-1 border-t border-zinc-800/60">
-        <Field
-          label="Nakshatra"
-          value={<NakBadge bull={p.bull} bear={p.bear} name={p.nakshatra} />}
-        />
-        <Field label="Lord" value={<span className="text-zinc-200">{p.lord}</span>} />
-        <Field label="Pada" value={<span className="font-mono text-zinc-300">{p.pada}</span>} />
-        <Field label="Speed" value={<span className="font-mono text-zinc-300">{p.speed.toFixed(3)}</span>} />
-        <Field label="Abs°" value={<span className="font-mono text-zinc-300">{p.absDegree.toFixed(2)}°</span>} />
-        {isRetro ? (
-          <Field label="Bias" value={<RetroBiasBadge bias={p.retroBias} />} />
-        ) : (
-          <span />
-        )}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{hours}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--brand-primary, #f59e0b)", marginTop: 8 }}>
+        {countdown}
       </div>
-
-      <div className="pt-1">
-        <div className="flex justify-between text-[10px] font-mono text-zinc-400 mb-1">
-          <span>PLANET STRENGTH</span>
-          <span>{strength}%</span>
-        </div>
-        <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full"
-            style={{ width: `${strength}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="font-semibold text-xs text-zinc-200 truncate">{value}</span>
-    </div>
-  );
-}
-
-function LevelCards({ board }: { board: LevelEntry[] }) {
-  return (
-    <div className="table-responsive-container pb-2">
-      <div className="flex gap-2.5 min-w-max sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 sm:min-w-0">
-        {board.slice(0, 8).map((e, i) => {
-          const isRes = e.isResistance;
-          return (
-            <div
-              key={e.label}
-              className={`card-institutional bg-zinc-900/60 backdrop-blur-md rounded-xl p-3 flex flex-col justify-between transition-all w-48 sm:w-auto shrink-0 sm:shrink border ${
-                i === 0
-                  ? "border-amber-500/80 shadow-[0_0_18px_rgba(245,158,11,0.25)] ring-1 ring-amber-500/40"
-                  : isRes
-                    ? "border-zinc-800/80 hover:border-rose-500/40"
-                    : "border-zinc-800/80 hover:border-emerald-500/40"
-              }`}
-              style={{ borderLeftWidth: 4, borderLeftColor: isRes ? "#f43f5e" : "#10b981" }}
-            >
-              <div className="flex justify-between items-center gap-1">
-                <span className="font-bold text-xs text-zinc-200 truncate">
-                  {e.label}{" "}
-                  <span
-                    className={`text-[10px] font-mono ${
-                      isRes ? "text-rose-400" : "text-emerald-400"
-                    }`}
-                  >
-                    ({isRes ? "R" : "S"})
-                  </span>
-                </span>
-                {i === 0 ? (
-                  <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1 py-0.2 rounded">
-                    NEAREST
-                  </span>
-                ) : null}
-              </div>
-              <div className="font-mono text-xl sm:text-2xl font-black text-zinc-100 my-1">
-                {num(e.value)}
-              </div>
-              <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-zinc-800/60">
-                <span className="text-zinc-400">
-                  Δ <b className="text-zinc-200">{Math.round(e.distance)}</b>
-                </span>
-                <span className={proximityBadgeClass[e.proximity]}>
-                  {e.proximity === "NORMAL" ? "—" : `● ${e.proximity}`}
-                </span>
-                <span className={statusBadgeClass[e.status]}>{e.status}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function RightPanelContent({ data }: { data: AstroData }) {
-  const tithi = deriveTithi(data.moonPhase.elongation);
-  const sun = sunTimesMumbai();
-  const retro = data.planets.filter((p) => p.retro);
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:flex-col gap-3 w-full">
-      {/* Panchang Now */}
-      <Card className="border-amber-500/20">
-        <div className="flex items-center gap-2 mb-2.5">
-          <Moon size={16} className="text-amber-400" />
-          <span className="font-mono text-xs uppercase tracking-wider text-amber-300 font-bold">
-            PANCHANG NOW
-          </span>
-        </div>
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="eb-planet-orb w-10 h-10 shrink-0"
-            style={orbStyleFor("Moon")}
-          />
-          <div>
-            <div className="text-sm font-bold text-zinc-100">{data.moonPhase.phaseName}</div>
-            <div className="font-mono text-xs text-zinc-400" suppressHydrationWarning>
-              {data.moonPhase.illumination}% lit
-            </div>
-          </div>
-        </div>
-        <PanelRow label="Moon Sign" value={data.moonSign} />
-        <PanelRow label="Nakshatra" value={data.moonNakshatra} />
-        <PanelRow label="Tithi" value={`${tithi.paksha} ${tithi.name}`} />
-        <PanelRow
-          label="Moon Degree"
-          value={<span className="font-mono text-zinc-300">{data.moonDegree.toFixed(2)}°</span>}
-        />
-      </Card>
-
-      {/* Sunrise / Sunset */}
-      <Card>
-        <div className="flex justify-around items-center text-center">
-          <div>
-            <Sunrise size={20} className="text-amber-400 mx-auto" />
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mt-1">
-              SUNRISE
-            </div>
-            <div className="font-mono text-sm font-bold text-zinc-200" suppressHydrationWarning>
-              {sun.sunrise}
-            </div>
-          </div>
-          <div className="w-px h-8 bg-zinc-800" />
-          <div>
-            <Sunset size={20} className="text-purple-400 mx-auto" />
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mt-1">
-              SUNSET
-            </div>
-            <div className="font-mono text-sm font-bold text-zinc-200" suppressHydrationWarning>
-              {sun.sunset}
-            </div>
-          </div>
-        </div>
-        <div className="text-[10px] font-mono text-zinc-500 text-center mt-2.5">
-          Mumbai · Asia/Kolkata
-        </div>
-      </Card>
-
-      {/* Retrograde */}
-      <Card>
-        <div className="flex items-center gap-2 mb-2.5">
-          <RotateCcw size={15} className="text-rose-400" />
-          <span className="font-mono text-xs uppercase tracking-wider text-zinc-300 font-bold">
-            RETROGRADE
-          </span>
-          <span className="ml-auto text-[11px] font-mono text-zinc-400">
-            {retro.length} active
-          </span>
-        </div>
-        {retro.length === 0 ? (
-          <div className="text-xs text-zinc-500 font-mono">All planets direct.</div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {retro.map((p) => (
-              <span
-                key={p.planet}
-                className="inline-flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2 py-1 text-xs font-mono text-rose-300"
-              >
-                <span
-                  className="eb-planet-orb w-3 h-3 shrink-0"
-                  style={orbStyleFor(p.planet)}
-                />
-                {p.planet}
-              </span>
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function PanelRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between items-center py-1.5 border-t border-zinc-800/60 text-xs">
-      <span className="text-zinc-400 font-mono">{label}</span>
-      <span className="font-semibold text-zinc-200">{value}</span>
-    </div>
-  );
-}
-
-function AstroCharts({
-  confidence,
-  signalColor,
-  bullCount,
-  bearCount,
-  planets,
-}: {
-  confidence: number;
-  signalColor: string;
-  bullCount: number;
-  bearCount: number;
-  planets: PlanetRow[];
-}) {
-  const neutralCount = Math.max(0, planets.length - bullCount - bearCount);
-  const speedPlanets = planets.filter((p) => Math.abs(p.speed) > 0);
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Chart 1: Signal Confidence */}
-      <Card>
-        <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
-          SIGNAL CONFIDENCE
-        </div>
-        <ApexChart
-          type="radialBar"
-          height={240}
-          width="100%"
-          series={[confidence]}
-          options={{
-            labels: ["Confidence"],
-            colors: [signalColor],
-            plotOptions: {
-              radialBar: {
-                hollow: { size: "62%" },
-                track: { background: "rgba(255,255,255,0.04)" },
-                dataLabels: {
-                  name: { color: "#a1a1aa", fontSize: "12px" },
-                  value: { color: "#f4f4f5", fontSize: "28px", fontWeight: 800 },
-                },
-              },
-            },
-            stroke: { lineCap: "round" },
-          }}
-        />
-      </Card>
-
-      {/* Chart 2: Nakshatra Bias */}
-      <Card>
-        <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
-          NAKSHATRA BIAS
-        </div>
-        <ApexChart
-          type="donut"
-          height={240}
-          width="100%"
-          series={[bullCount, bearCount, neutralCount]}
-          options={{
-            labels: ["Bullish", "Bearish", "Neutral"],
-            colors: ["#10b981", "#f43f5e", "#71717a"],
-            legend: { position: "bottom", labels: { colors: "#a1a1aa" } },
-            dataLabels: { enabled: true },
-            stroke: { width: 0 },
-            plotOptions: { pie: { donut: { size: "68%" } } },
-          }}
-        />
-      </Card>
-
-      {/* Chart 3: Planetary Speed */}
-      <Card>
-        <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
-          PLANETARY SPEED (°/day)
-        </div>
-        <ApexChart
-          type="area"
-          height={240}
-          width="100%"
-          series={[
-            { name: "Speed", data: speedPlanets.map((p) => Number(Math.abs(p.speed).toFixed(3))) },
-          ]}
-          options={{
-            colors: ["#f59e0b"],
-            xaxis: {
-              categories: speedPlanets.map((p) => p.planet),
-              labels: { style: { colors: "#a1a1aa", fontSize: "10px" }, rotate: -40 },
-            },
-            yaxis: { labels: { style: { colors: "#a1a1aa" } } },
-            dataLabels: { enabled: false },
-            stroke: { curve: "smooth", width: 2 },
-            fill: { type: "gradient", gradient: { opacityFrom: 0.5, opacityTo: 0 } },
-            grid: { borderColor: "rgba(255,255,255,0.06)" },
-            tooltip: { theme: "dark" },
-          }}
-        />
-      </Card>
     </div>
   );
 }

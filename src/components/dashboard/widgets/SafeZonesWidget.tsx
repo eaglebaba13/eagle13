@@ -4,15 +4,27 @@ import { fmt } from "@/lib/format";
 import { canDisplayActionableSignal, blockedLabel } from "@/lib/actionable-signal";
 
 export default function SafeZonesWidget() {
-  const { levels, safeBand, freshnessByDependency, providerMetadata } = useDashboardData();
+  const { levels, safeBand, activeQuote, freshnessByDependency, providerMetadata } = useDashboardData();
   const freshness = freshnessByDependency?.MARKET_DATA;
   const gate = canDisplayActionableSignal({
     freshness: freshness?.status ?? "UNAVAILABLE",
     providerStatus: providerMetadata?.status ?? "UNKNOWN",
     formulaVersion: "SAFE_ZONE_BAND_V1",
   });
-  const buyLabel = gate.allowed ? "Safe Buy" : "Buy Zone (blocked)";
-  const sellLabel = gate.allowed ? "Safe Sell" : "Sell Zone (blocked)";
+  const buyLabel = gate.allowed ? "Safe Buy (Support Rev)" : "Buy Zone (blocked)";
+  const sellLabel = gate.allowed ? "Safe Sell (Resistance Rev)" : "Sell Zone (blocked)";
+
+  // True Reversal Safe Zone:
+  // Safe Buy (Support Reversal: Market drops to support -> Buy Call) = prevClose - safeBand
+  // Safe Sell (Resistance Reversal: Market rises to resistance -> Buy Put) = prevClose + safeBand
+  const base =
+    activeQuote?.prevSessionClose && activeQuote.prevSessionClose > 0
+      ? activeQuote.prevSessionClose
+      : activeQuote?.prevDay?.close && activeQuote.prevDay.close > 0
+        ? activeQuote.prevDay.close
+        : (activeQuote?.livePrice ?? levels.pivot);
+  const trueSafeBuy = base - safeBand;
+  const trueSafeSell = base + safeBand;
   return (
     <Card
       title="SAFE ZONES"
@@ -53,7 +65,7 @@ export default function SafeZonesWidget() {
               marginTop: 3,
             }}
           >
-            {fmt(levels.safeBuy)}
+            {fmt(trueSafeBuy)}
           </div>
         </div>
         <div
@@ -84,7 +96,7 @@ export default function SafeZonesWidget() {
               marginTop: 3,
             }}
           >
-            {fmt(levels.safeSell)}
+            {fmt(trueSafeSell)}
           </div>
         </div>
       </div>
