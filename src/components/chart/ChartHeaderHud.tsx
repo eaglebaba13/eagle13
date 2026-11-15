@@ -54,12 +54,17 @@ export function ChartHeaderHud({
   const isUp = change >= 0;
   const vol = hud?.volume ?? latestCandle?.volume;
 
-  const currencySymbol =
-    instrument?.currency === "INR" ? "₹" : instrument?.currency === "USDT" ? "₮" : "$";
+  const isUsd = Boolean(
+    instrument?.currency === "USD" ||
+      instrument?.currency === "USDT" ||
+      (instrument?.symbol &&
+        /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(instrument.symbol)),
+  );
+  const currencySymbol = isUsd ? "$" : instrument?.currency === "INR" ? "₹" : "$";
 
   const formatPrice = (val?: number | null) => {
     if (val == null || !Number.isFinite(val)) return "--";
-    return `${currencySymbol}${val.toLocaleString("en-IN", {
+    return `${currencySymbol}${val.toLocaleString(isUsd ? "en-US" : "en-IN", {
       maximumFractionDigits: val < 10 ? 4 : 2,
     })}`;
   };

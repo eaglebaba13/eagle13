@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BellRing, CheckCheck, X, RefreshCw, Search as SearchIcon, Send } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   getSmartAlertEvents,
   getSmartAlertSubscription,
@@ -220,7 +220,8 @@ function AlertCenterPage() {
       }
       return getLocalPreferences();
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
     initialData: getLocalPreferences,
   });
 
@@ -316,6 +317,16 @@ function AlertCenterPage() {
       qc.setQueryData(["smart-alerts", "subscription"], data);
     },
   });
+
+  // Automated 60s background heartbeat evaluating smart alerts
+  useEffect(() => {
+    const timer = setInterval(() => {
+      run.mutate({
+        data: { telegramEnabled: subscription.data?.telegramEnabled ?? true },
+      });
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [run, subscription.data?.telegramEnabled]);
 
   const readMut = useMutation({
     mutationFn: async (id: string) => {
@@ -573,7 +584,7 @@ function AlertCenterPage() {
               <span className="font-medium">Telegram notifications</span>
               <input
                 type="checkbox"
-                checked={subscription.data?.telegramEnabled === true}
+                checked={subscription.data?.telegramEnabled ?? true}
                 disabled={toggleTelegram.isPending}
                 onChange={(ev) => {
                   const on = ev.target.checked;

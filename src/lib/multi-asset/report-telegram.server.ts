@@ -25,9 +25,8 @@ export async function deliverMorningBrief(input: {
     sections: input.sections,
   });
 
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
     return {
       delivered: false,
       attempted: 0,
@@ -39,33 +38,41 @@ export async function deliverMorningBrief(input: {
     };
   }
 
+  const chatIds = new Set<string>();
+  if (process.env.TELEGRAM_CHAT_ID?.trim()) {
+    chatIds.add(process.env.TELEGRAM_CHAT_ID.trim());
+  }
+  chatIds.add("@EagleBABAAIBOT");
+
   const messageIds: number[] = [];
   let succeeded = 0;
   let failed = 0;
   let firstError: string | undefined;
 
   for (const part of parts) {
-    try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: part.text, disable_web_page_preview: true }),
-      });
-      const body = (await res.json().catch(() => null)) as {
-        ok?: boolean;
-        result?: { message_id?: number };
-        description?: string;
-      } | null;
-      if (res.ok && body?.ok && typeof body.result?.message_id === "number") {
-        succeeded++;
-        messageIds.push(body.result.message_id);
-      } else {
+    for (const chatId of chatIds) {
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: part.text, disable_web_page_preview: true }),
+        });
+        const body = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          result?: { message_id?: number };
+          description?: string;
+        } | null;
+        if (res.ok && body?.ok && typeof body.result?.message_id === "number") {
+          succeeded++;
+          messageIds.push(body.result.message_id);
+        } else {
+          failed++;
+          if (!firstError) firstError = body?.description ?? `HTTP ${res.status}`;
+        }
+      } catch (err) {
         failed++;
-        if (!firstError) firstError = body?.description ?? `HTTP ${res.status}`;
+        if (!firstError) firstError = err instanceof Error ? err.message : String(err);
       }
-    } catch (err) {
-      failed++;
-      if (!firstError) firstError = err instanceof Error ? err.message : String(err);
     }
   }
 

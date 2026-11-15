@@ -165,15 +165,64 @@ async function postTelegramMessageToDestination(
 // Server-side Bot API transport shared by Smart Alerts and operator milestones.
 // Credentials are read from process.env only, never logged, and never included
 // in returned error codes. Callers own their own message formatting.
-async function postTelegramMessage(
+export async function postTelegramBroadcast(
   text: string,
   parseMode?: TelegramParseMode,
 ): Promise<TelegramSendResult> {
-  const env = getTelegramEnv();
-  if (!env) {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
     return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TELEGRAM_CREDENTIALS" };
   }
-  return postTelegramMessageToDestination(env, text, parseMode);
+  const chatIds = new Set<string>();
+  if (process.env.TELEGRAM_CHAT_ID?.trim()) {
+    chatIds.add(process.env.TELEGRAM_CHAT_ID.trim());
+  }
+  chatIds.add("@EagleBABAAIBOT");
+
+  let lastResult: TelegramSendResult = {
+    status: "CONFIGURATION_ERROR",
+    errorCode: "MISSING_TELEGRAM_CREDENTIALS",
+  };
+
+  for (const chatId of chatIds) {
+    const res = await postTelegramMessageToDestination({ token, chatId }, text, parseMode);
+    if (res.status === "DELIVERED") {
+      lastResult = res;
+    } else if (lastResult.status !== "DELIVERED") {
+      lastResult = res;
+    }
+  }
+
+  return lastResult;
+}
+
+export async function postTelegramMessage(
+  text: string,
+  parseMode?: TelegramParseMode,
+): Promise<TelegramSendResult> {
+  return postTelegramBroadcast(text, parseMode);
+}
+
+export async function sendPriceAlertTelegram(params: {
+  symbol: string;
+  targetPrice: number;
+  direction: string;
+  currentLtp: number;
+  note?: string;
+}): Promise<TelegramSendResult> {
+  const text = [
+    `🔔 *EAGLEBABA PRICE TRIGGER CREATED*`,
+    `• *Symbol:* ${params.symbol}`,
+    `• *Target Price:* ${params.targetPrice}`,
+    `• *Direction:* ${params.direction}`,
+    `• *Current LTP:* ${params.currentLtp}`,
+    params.note ? `• *Note:* ${params.note}` : null,
+    `• *Channel:* @EagleBABAAIBOT`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return postTelegramBroadcast(text, "Markdown");
 }
 
 export async function sendTelegramMessage(

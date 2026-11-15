@@ -118,3 +118,42 @@ export const queryChronoWheelAIFn = createServerFn({ method: "POST" })
     const { queryChronoWheelAI } = await import("./chronowheel-ai.server");
     return queryChronoWheelAI(data);
   });
+
+export interface ChronoWheelBroadcastPayload {
+  readonly symbol: string;
+  readonly direction: string;
+  readonly ltp: number;
+  readonly foBanStatus: string;
+  readonly startDate: string;
+  readonly endDate: string;
+  readonly startPhase?: string;
+  readonly endPhase?: string;
+  readonly winRate: number;
+  readonly avgReturn: number;
+  readonly entryLow: number;
+  readonly entryHigh: number;
+  readonly sl: number;
+  readonly tp1: number;
+  readonly tp2: number;
+  readonly tp3: number;
+  readonly lotSize: number;
+}
+
+export const broadcastChronoWheelSetupToTelegram = createServerFn({ method: "POST" })
+  .validator((input: unknown): ChronoWheelBroadcastPayload => {
+    return input as ChronoWheelBroadcastPayload;
+  })
+  .handler(async ({ data }) => {
+    const { postTelegramBroadcast } = await import("../smart-alerts/telegram-delivery.server");
+    const phaseStr = data.startPhase ? ` (${data.startPhase} to ${data.endPhase ?? "Target"})` : "";
+    const lines = [
+      `🦅 *EAGLEBABA CHRONOWHEEL SIGNAL*`,
+      `• *Symbol:* ${data.symbol} (${data.direction}) | LTP: ₹${Number(data.ltp || 0).toFixed(2)}`,
+      `• *Ban/MWPL Status:* ${data.foBanStatus}`,
+      `• *Synodic Window:* ${data.startDate} -> ${data.endDate}${phaseStr}`,
+      `• *10-Yr Historical Consistency:* ${data.winRate}% (Avg Return: ${data.avgReturn}%)`,
+      `• *Entry Zone:* ₹${Number(data.entryLow || 0).toFixed(2)} – ₹${Number(data.entryHigh || 0).toFixed(2)}`,
+      `• *Hard SL:* ₹${Number(data.sl || 0).toFixed(2)} | TP1: ₹${Number(data.tp1 || 0).toFixed(2)} | TP2: ₹${Number(data.tp2 || 0).toFixed(2)} | TP3: ₹${Number(data.tp3 || 0).toFixed(2)} (Lot: ${data.lotSize})`,
+    ];
+    return await postTelegramBroadcast(lines.join("\n"), "Markdown");
+  });

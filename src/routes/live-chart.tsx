@@ -48,6 +48,7 @@ import {
   computeUnicornSetup,
 } from "@/lib/orderflow/fvg-calculator";
 import { oiProfileQuery } from "@/lib/orderflow/oi-profile.functions";
+import { getCryptoTickers, notifyPriceAlertCreated } from "@/lib/market-data/crypto-tickers.functions";
 import {
   Search,
   RotateCcw,
@@ -227,7 +228,12 @@ function LiveChartSelection({
     };
   }, [symbol]);
 
-  const currencySymbol = activeInstrument.currency === "INR" ? "₹" : "$";
+  const isUsd = Boolean(
+    activeInstrument.currency === "USD" ||
+      activeInstrument.currency === "USDT" ||
+      /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(symbol),
+  );
+  const currencySymbol = isUsd ? "$" : activeInstrument.currency === "INR" ? "₹" : "$";
 
   // Indicator Toggle States
   const [showVolume, setShowVolume] = useState(false);
@@ -287,11 +293,18 @@ function LiveChartSelection({
     },
   ]);
 
-  // Right Collapsible Sidebar State
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  // Right Sidebar State (Permanently docked on desktop)
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [rightSidebarTab, setRightSidebarTab] = useState<"watchlist" | "alerts">("watchlist");
   const [watchlistCategory, setWatchlistCategory] = useState<string>("ALL");
   const [watchlistSearch, setWatchlistSearch] = useState<string>("");
+
+  // Live Crypto Tickers (Binance/CoinDCX with server caching)
+  const { data: cryptoTickers } = useQuery({
+    queryKey: ["crypto-tickers"],
+    queryFn: () => getCryptoTickers(),
+    refetchInterval: 10_000,
+  });
 
   // Go-To Date Popover State
   const [isGoToDateOpen, setIsGoToDateOpen] = useState(false);
@@ -460,10 +473,22 @@ function LiveChartSelection({
     };
   }, [isReplayActive, sse.currentCandle]);
 
-  // Current Price & LTP
+  // Current Price & LTP strictly anchored to authentic market data
+  const latestCandleClose =
+    displayCandles.length > 0 ? displayCandles[displayCandles.length - 1].y[3] : undefined;
+  const isCryptoSymbol = /USDT|BTC|ETH|SOL|XRP/i.test(symbol);
+  const cryptoLivePrice = isCryptoSymbol
+    ? (cryptoTickers?.[symbol]?.price ??
+       cryptoTickers?.[symbol.toUpperCase()]?.price ??
+       cryptoTickers?.[activeInstrument.symbol]?.price)
+    : undefined;
+
   const currentLtp =
+    liveCandleData?.close ??
+    cryptoLivePrice ??
+    latestCandleClose ??
     sse.status?.lastLtp ??
-    (displayCandles.length > 0 ? displayCandles[displayCandles.length - 1].y[3] : activeInstrument.defaultPrice);
+    activeInstrument.defaultPrice;
 
   // Volume Profile (FRVP)
   const ofCandles: readonly OrderFlowCandle[] = useMemo(() => {
@@ -733,6 +758,58 @@ function LiveChartSelection({
   const handleDeleteAlert = (id: string) => {
     setPriceAlerts((prev) => prev.filter((a) => a.id !== id));
   };
+
+  const handleQuickCreateAlert = useCallback(
+    (targetPrice: number) => {
+      const isAbove = currentLtp ? targetPrice > currentLtp : true;
+      const condition = isAbove ? "ABOVE" : "BELOW";
+      const newAlert: PriceAlertItem = {
+        id: `alt-${Date.now()}`,
+        symbol,
+        targetPrice,
+        condition,
+        note: `Crosshair trigger at ${currencySymbol}${targetPrice}`,
+        createdAt: new Intl.DateTimeFormat("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "short",
+        }).format(new Date()),
+        active: true,
+      };
+      setPriceAlerts((prev) => [newAlert, ...prev]);
+
+      // Dispatch trigger notification to Telegram
+      notifyPriceAlertCreated({
+        data: {
+          symbol,
+          targetPrice,
+          direction: condition,
+          ltp: currentLtp ?? targetPrice,
+        },
+      }).catch(() => {});
+    },
+    [currentLtp, symbol, currencySymbol],
+  );
+
+  const handleQuickAddHorizontalLine = useCallback(
+    (targetPrice: number) => {
+      const now = Date.now();
+      const newDrawing: ChartDrawing = {
+        id: `draw-${now}`,
+        type: "horizontal",
+        points: [
+          { time: now / 1000, price: targetPrice },
+          { time: now / 1000 + 86400, price: targetPrice },
+        ],
+        color: "#F59E0B",
+        isComplete: true,
+      };
+      handleSaveDrawings([...drawings, newDrawing]);
+    },
+    [drawings, handleSaveDrawings],
+  );
 
   // Filtered Watchlist Instruments
   const filteredWatchlist = useMemo(() => {
@@ -1006,19 +1083,21 @@ function LiveChartSelection({
 
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
-            {/* Right Collapsible Sidebar Toggle (Watchlist & Alerts) */}
+            {/* Right Dock Switcher / Mobile Toggle */}
             <button
               type="button"
-              onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer border ${
-                isRightSidebarOpen
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
-                  : "text-zinc-400 hover:text-zinc-100 hover:bg-white/5 border-white/10"
-              }`}
-              title="Toggle Live Watchlist & Alerts Panel"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth < 768) {
+                  setIsRightSidebarOpen(!isRightSidebarOpen);
+                } else {
+                  setRightSidebarTab((prev) => (prev === "watchlist" ? "alerts" : "watchlist"));
+                }
+              }}
+              className="px-2.5 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer border bg-amber-500/20 text-amber-300 border-amber-500/50"
+              title="Docked Watchlist & Alerts Panel"
             >
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Watchlist</span>
+              <span className="hidden sm:inline capitalize">{rightSidebarTab}</span>
               {priceAlerts.length > 0 && (
                 <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] flex items-center justify-center font-bold">
                   {priceAlerts.length}
@@ -1143,50 +1222,52 @@ function LiveChartSelection({
                 onIsScrolledChange={setIsChartScrolled}
                 currencySymbol={currencySymbol}
                 priceScaleMode={priceScaleMode}
+                priceAlerts={priceAlerts.filter((a) => a.symbol === symbol && a.active)}
+                onAddPriceAlert={handleQuickCreateAlert}
+                onAddHorizontalLine={handleQuickAddHorizontalLine}
               />
             </ChartCanvasErrorBoundary>
           </div>
 
-          {/* Right Collapsible Dock (Live Watchlist & Active Alerts) */}
-          {isRightSidebarOpen && (
-            <aside className="w-72 sm:w-80 h-full border-l border-white/10 bg-zinc-950/95 backdrop-blur-md flex flex-col z-20 shrink-0 select-none">
-              {/* Header */}
-              <div className="p-2.5 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => setRightSidebarTab("watchlist")}
-                    className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
-                      rightSidebarTab === "watchlist"
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                        : "text-zinc-400 hover:text-zinc-200"
-                    }`}
-                  >
-                    Watchlist
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRightSidebarTab("alerts")}
-                    className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                      rightSidebarTab === "alerts"
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                        : "text-zinc-400 hover:text-zinc-200"
-                    }`}
-                  >
-                    <span>Alerts</span>
-                    <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] flex items-center justify-center font-bold">
-                      {priceAlerts.length}
-                    </span>
-                  </button>
-                </div>
+          {/* Right Dock (Live Watchlist & Active Alerts) - permanently docked on desktop */}
+          <aside
+            className={`${
+              isRightSidebarOpen ? "flex" : "hidden md:flex"
+            } w-72 sm:w-80 h-full border-l border-amber-500/20 bg-zinc-950/95 backdrop-blur-md flex-col z-20 shrink-0 select-none`}
+          >
+            {/* Header */}
+            <div className="p-2.5 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-white/5">
                 <button
                   type="button"
-                  onClick={() => setIsRightSidebarOpen(false)}
-                  className="p-1 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 rounded cursor-pointer"
+                  onClick={() => setRightSidebarTab("watchlist")}
+                  className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+                    rightSidebarTab === "watchlist"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
                 >
-                  <X className="w-4 h-4" />
+                  Watchlist
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRightSidebarTab("alerts")}
+                  className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                    rightSidebarTab === "alerts"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  <span>Alerts</span>
+                  <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] flex items-center justify-center font-bold">
+                    {priceAlerts.length}
+                  </span>
                 </button>
               </div>
+              <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">
+                Docked
+              </div>
+            </div>
 
               {/* Tab Content */}
               {rightSidebarTab === "watchlist" ? (
@@ -1228,8 +1309,22 @@ function LiveChartSelection({
                     {filteredWatchlist.slice(0, 100).map((inst) => {
                       if (!inst || !inst.key) return null;
                       const isCurrent = inst.key === symbol;
-                      const instSym = inst.currency === "INR" ? "₹" : "$";
-                      const priceVal = typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice) ? inst.defaultPrice : 0;
+                      const isUsdInst =
+                        inst.currency === "USD" ||
+                        inst.currency === "USDT" ||
+                        /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(inst.symbol);
+                      const instSym = isUsdInst ? "$" : inst.currency === "INR" ? "₹" : "$";
+                      const cryptoItem =
+                        cryptoTickers?.[inst.symbol] ??
+                        cryptoTickers?.[inst.key] ??
+                        cryptoTickers?.[inst.symbol.toUpperCase()];
+                      const priceVal =
+                        cryptoItem?.price ??
+                        (typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice)
+                          ? inst.defaultPrice
+                          : 0);
+                      const changeVal = cryptoItem ? cryptoItem.changePct : 0.45;
+                      const isUp = changeVal >= 0;
                       return (
                         <div
                           key={inst.key}
@@ -1250,11 +1345,13 @@ function LiveChartSelection({
                           <div className="text-right font-mono">
                             <div className="text-xs font-bold text-zinc-200">
                               {instSym}
-                              {priceVal.toLocaleString("en-IN", {
+                              {priceVal.toLocaleString(isUsdInst ? "en-US" : "en-IN", {
                                 maximumFractionDigits: priceVal < 10 ? 4 : 2,
                               })}
                             </div>
-                            <div className="text-[10px] text-emerald-400 font-semibold">+0.45%</div>
+                            <div className={`text-[10px] font-semibold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                              {isUp ? "+" : ""}{changeVal.toFixed(2)}%
+                            </div>
                           </div>
                         </div>
                       );
@@ -1326,8 +1423,7 @@ function LiveChartSelection({
                 </div>
               )}
             </aside>
-          )}
-        </div>
+          </div>
 
         {/* Institutional Bottom Control Bar & Status Footer */}
         <footer className="shrink-0 px-4 py-1.5 border-t border-white/10 text-xs flex flex-wrap items-center justify-between gap-2 bg-zinc-950/90 backdrop-blur-md z-30">
@@ -1501,7 +1597,7 @@ function LiveChartSelection({
                 <span>LTP:</span>
                 <span>
                   {currencySymbol}
-                  {currentLtp.toLocaleString("en-IN", {
+                  {currentLtp.toLocaleString(isUsd ? "en-US" : "en-IN", {
                     maximumFractionDigits: currentLtp < 10 ? 4 : 2,
                   })}
                 </span>

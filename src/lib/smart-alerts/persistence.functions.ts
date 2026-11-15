@@ -1068,18 +1068,13 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       (subRow.data as Record<string, unknown> | null) ?? null,
     );
 
-    // Apply explicit telegramEnabled override or default on for guest with active server env
+    // Apply explicit telegramEnabled override or default true
     const effectiveSubscription: AlertSubscription = {
       ...subscription,
       telegramEnabled:
         data?.telegramEnabled !== undefined
           ? data.telegramEnabled
-          : isGuest &&
-              typeof process !== "undefined" &&
-              !!process.env.TELEGRAM_BOT_TOKEN &&
-              !!process.env.TELEGRAM_CHAT_ID
-            ? true
-            : subscription.telegramEnabled,
+          : true,
     };
 
     let ctx: AlertEvaluationContext;

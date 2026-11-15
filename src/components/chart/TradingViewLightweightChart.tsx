@@ -65,6 +65,15 @@ export interface TradingViewLightweightChartProps {
   readonly onIsScrolledChange?: (isScrolled: boolean) => void;
   readonly currencySymbol?: string;
   readonly priceScaleMode?: "normal" | "log" | "percent";
+  readonly priceAlerts?: readonly {
+    id: string;
+    targetPrice: number;
+    direction?: string;
+    condition?: string;
+    note?: string;
+  }[];
+  readonly onAddPriceAlert?: (price: number) => void;
+  readonly onAddHorizontalLine?: (price: number) => void;
 }
 
 export interface HudData {
@@ -106,6 +115,9 @@ export function TradingViewLightweightChart({
   onIsScrolledChange,
   currencySymbol = "₹",
   priceScaleMode = "normal",
+  priceAlerts = [],
+  onAddPriceAlert,
+  onAddHorizontalLine,
 }: TradingViewLightweightChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -114,6 +126,10 @@ export function TradingViewLightweightChart({
   const vwapSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const priceLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
   const isScrolledRef = useRef(false);
+
+  // Floating crosshair + quick action context menu
+  const [crosshairPos, setCrosshairPos] = useState<{ price: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; price: number } | null>(null);
 
   // Coordinate sync state for SVG drawing overlay
   const [, setViewportTick] = useState(0);
@@ -343,11 +359,23 @@ export function TradingViewLightweightChart({
       forceUpdateViewport();
     });
 
-    // Crosshair hover for HUD
+    // Crosshair hover for HUD & Floating Alert Button
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
       if (!param || !param.time || !param.seriesData) {
         if (onCrosshairMove) onCrosshairMove(null);
+        setCrosshairPos(null);
         return;
+      }
+
+      if (param.point) {
+        const p = candleSeries.coordinateToPrice(param.point.y);
+        if (p != null && Number.isFinite(p) && p > 0) {
+          setCrosshairPos({ price: Math.round(p * 100) / 100, y: param.point.y });
+        } else {
+          setCrosshairPos(null);
+        }
+      } else {
+        setCrosshairPos(null);
       }
       const data = param.seriesData.get(candleSeries);
       if (data && "open" in data && "close" in data) {
@@ -679,6 +707,22 @@ export function TradingViewLightweightChart({
       });
     }
 
+    // Active price alerts from right dock / crosshair trigger
+    if (priceAlerts && priceAlerts.length > 0) {
+      for (const alt of priceAlerts) {
+        if (!alt || !Number.isFinite(alt.targetPrice) || alt.targetPrice <= 0) continue;
+        const lineId = `alert-${alt.id}`;
+        desiredMap.set(lineId, {
+          id: lineId,
+          price: alt.targetPrice,
+          color: "#F59E0B",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          title: `🔔 Alert ${alt.targetPrice}`,
+        });
+      }
+    }
+
     // 1. Remove obsolete lines
     for (const [id, line] of priceLinesMapRef.current.entries()) {
       if (!desiredMap.has(id)) {
@@ -728,6 +772,7 @@ export function TradingViewLightweightChart({
     liquidityLevels,
     showIctUnicorn,
     unicornSetup,
+    priceAlerts,
   ]);
 
   // Apply Price Scale Mode (% | log | normal)
@@ -930,8 +975,32 @@ export function TradingViewLightweightChart({
     };
   }, [onIsScrolledChange]);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!containerRef.current || !candleSeriesRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const p = candleSeriesRef.current.coordinateToPrice(y);
+    if (p != null && Number.isFinite(p) && p > 0) {
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        price: Math.round(p * 100) / 100,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
   return (
-    <div className="relative w-full h-full flex-1 min-h-[460px] bg-[#08090C] overflow-hidden select-none">
+    <div
+      onContextMenu={handleContextMenu}
+      className="relative w-full h-full flex-1 min-h-[460px] bg-[#08090C] overflow-hidden select-none"
+    >
       {/* Chart Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
 
@@ -1266,6 +1335,85 @@ export function TradingViewLightweightChart({
           );
         })()}
       </svg>
+
+      {/* Floating [+] Add Alert Button next to price scale on crosshair move */}
+      {crosshairPos != null && !contextMenu && (
+        <div
+          style={{ top: `${Math.max(10, crosshairPos.y - 12)}px` }}
+          className="absolute right-[56px] z-30 flex items-center pointer-events-auto"
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setContextMenu({
+                x: Math.max(10, e.clientX - 220),
+                y: Math.max(10, e.clientY - 60),
+                price: crosshairPos.price,
+              });
+            }}
+            className="group flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-950/90 border border-amber-500/50 text-amber-300 hover:bg-amber-500 hover:text-black font-mono text-[11px] font-bold shadow-xl transition-all cursor-pointer backdrop-blur-sm"
+            title={`Add alert or line at ${currencySymbol}${crosshairPos.price}`}
+          >
+            <span className="text-sm leading-none font-bold">+</span>
+            <span className="text-[10px] hidden group-hover:inline font-mono">
+              {crosshairPos.price}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* TradingView-Style Quick Context Menu */}
+      {contextMenu && (
+        <div
+          style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
+          className="fixed z-50 bg-zinc-950/95 border border-amber-500/40 rounded-xl p-1.5 shadow-2xl min-w-[230px] font-mono text-xs select-none backdrop-blur-md"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-2.5 py-1 text-[10px] text-zinc-400 border-b border-white/10 font-semibold flex items-center justify-between">
+            <span>
+              {symbol} @ {currencySymbol}
+              {contextMenu.price}
+            </span>
+            <button
+              type="button"
+              onClick={() => setContextMenu(null)}
+              className="text-zinc-500 hover:text-zinc-200 cursor-pointer text-xs"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="py-1 flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                const p = contextMenu.price;
+                setContextMenu(null);
+                onAddPriceAlert?.(p);
+              }}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-amber-500/20 hover:text-amber-300 text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <span>🔔</span>
+              <span>
+                Add Alert at {currencySymbol}
+                {contextMenu.price}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const p = contextMenu.price;
+                setContextMenu(null);
+                onAddHorizontalLine?.(p);
+              }}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <span>➖</span>
+              <span>Draw Horizontal Line</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

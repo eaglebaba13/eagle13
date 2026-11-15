@@ -8,6 +8,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getChronoWheelScan,
+  broadcastChronoWheelSetupToTelegram,
   type ChronoWheelScanFilter,
   type ChronoWheelScanResult,
   type StockCyclePerformance,
@@ -136,6 +137,9 @@ function ChronoWheelPage() {
   const [calculatorCapital, setCalculatorCapital] = useState<number>(100000);
   const [calculatorRiskPct, setCalculatorRiskPct] = useState<number>(2.0);
 
+  // Telegram & WhatsApp Signal Dispatch state
+  const [sentTelegramMap, setSentTelegramMap] = useState<Record<string, boolean>>({});
+
   // TanStack Query for ChronoWheel Scan
   const scanQueryPayload: ChronoWheelScanFilter = useMemo(
     () => ({
@@ -194,6 +198,96 @@ function ChronoWheelPage() {
     });
     return list;
   }, [scanResult?.results, sortBy, sortOrder]);
+
+  const handleSendToTelegram = useCallback(
+    async (stock: StockCyclePerformance) => {
+      const plan = stock.executionPlan;
+      const ltp = stock.currentPrice;
+      const winRate = stock.winRate;
+      const avgReturn = stock.avgReturn;
+      const foBanStatus = stock.foBanStatus ?? "NORMAL (Traded)";
+      const startD = scanResult?.referenceWindow?.startDate ?? startDate;
+      const endD = scanResult?.referenceWindow?.endDate ?? endDate;
+      const startPhase = scanResult?.referenceWindow?.startPhase?.phaseName ?? "";
+      const endPhase = scanResult?.referenceWindow?.endPhase?.phaseName ?? "";
+
+      try {
+        await broadcastChronoWheelSetupToTelegram({
+          data: {
+            symbol: stock.symbol,
+            direction: plan?.direction ?? "LONG",
+            ltp,
+            foBanStatus,
+            startDate: startD,
+            endDate: endD,
+            startPhase,
+            endPhase,
+            winRate,
+            avgReturn,
+            entryLow: plan?.entryTriggerZone?.min ?? ltp * 0.995,
+            entryHigh: plan?.entryTriggerZone?.max ?? ltp * 1.005,
+            sl: plan?.stopLoss ?? ltp * 0.98,
+            tp1: plan?.tp1 ?? ltp * 1.02,
+            tp2: plan?.tp2 ?? ltp * 1.04,
+            tp3: plan?.tp3 ?? ltp * 1.06,
+            lotSize: plan?.lotSize ?? 500,
+          },
+        });
+        setSentTelegramMap((prev) => ({ ...prev, [stock.symbol]: true }));
+        setTimeout(() => {
+          setSentTelegramMap((prev) => ({ ...prev, [stock.symbol]: false }));
+        }, 4000);
+      } catch {
+        // ignore
+      }
+    },
+    [scanResult, startDate, endDate],
+  );
+
+  const handleSendToWhatsApp = useCallback(
+    (stock: StockCyclePerformance) => {
+      const plan = stock.executionPlan;
+      const ltp = stock.currentPrice;
+      const winRate = stock.winRate;
+      const avgReturn = stock.avgReturn;
+      const foBanStatus = stock.foBanStatus ?? "NORMAL (Traded)";
+      const startD = scanResult?.referenceWindow?.startDate ?? startDate;
+      const endD = scanResult?.referenceWindow?.endDate ?? endDate;
+      const startPhase = scanResult?.referenceWindow?.startPhase?.phaseName ?? "";
+      const endPhase = scanResult?.referenceWindow?.endPhase?.phaseName ?? "";
+      const phaseStr = startPhase ? ` (${startPhase} to ${endPhase || "Target"})` : "";
+
+      const entryMin = (plan?.entryTriggerZone?.min ?? ltp * 0.995).toFixed(2);
+      const entryMax = (plan?.entryTriggerZone?.max ?? ltp * 1.005).toFixed(2);
+      const slVal = (plan?.stopLoss ?? ltp * 0.98).toFixed(2);
+      const tp1Val = (plan?.tp1 ?? ltp * 1.02).toFixed(2);
+      const tp2Val = (plan?.tp2 ?? ltp * 1.04).toFixed(2);
+      const tp3Val = (plan?.tp3 ?? ltp * 1.06).toFixed(2);
+      const lotVal = plan?.lotSize ?? 500;
+
+      const text = [
+        `🦅 *EAGLEBABA CHRONOWHEEL SIGNAL*`,
+        `• *Symbol:* ${stock.symbol} (${plan?.direction ?? "LONG"}) | LTP: ₹${ltp.toFixed(2)}`,
+        `• *Ban/MWPL Status:* ${foBanStatus}`,
+        `• *Synodic Window:* ${startD} -> ${endD}${phaseStr}`,
+        `• *10-Yr Historical Consistency:* ${winRate}% (Avg Return: ${avgReturn}%)`,
+        `• *Entry Zone:* ₹${entryMin} – ₹${entryMax}`,
+        `• *Hard SL:* ₹${slVal} | TP1: ₹${tp1Val} | TP2: ₹${tp2Val} | TP3: ₹${tp3Val} (Lot: ${lotVal})`,
+      ].join("\n");
+
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+        }
+      } catch {
+        // ignore
+      }
+      if (typeof window !== "undefined") {
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+      }
+    },
+    [scanResult, startDate, endDate],
+  );
 
   // Quick Preset Handlers
   const handleSetPreset = useCallback((daysAhead: number) => {
@@ -1000,6 +1094,32 @@ function ChronoWheelPage() {
                             </Link>
 
                             <button
+                              type="button"
+                              onClick={() => handleSendToTelegram(stock)}
+                              className={`px-2 py-1 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer ${
+                                sentTelegramMap[stock.symbol]
+                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                  : "bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 hover:text-sky-300 border-sky-500/30"
+                              }`}
+                              title="Send Signal to Telegram (@EagleBABAAIBOT)"
+                            >
+                              <span>✈️</span>
+                              <span className="hidden sm:inline">
+                                {sentTelegramMap[stock.symbol] ? "Sent!" : "Telegram"}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSendToWhatsApp(stock)}
+                              className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Share Signal to WhatsApp Channel"
+                            >
+                              <span>💬</span>
+                              <span className="hidden sm:inline">WhatsApp</span>
+                            </button>
+
+                            <button
                               onClick={() => setExpandedStock(isExpanded ? null : stock.symbol)}
                               className="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
                               title="Expand/Collapse Yearly Breakdown & Position Calculator"
@@ -1280,6 +1400,40 @@ function ChronoWheelPage() {
                                   <div className="text-[10px] text-rose-400 mt-0.5">
                                     If SL Hit: -₹{riskAmount.toLocaleString("en-IN")}
                                   </div>
+                                </div>
+                              </div>
+
+                              {/* Institutional Broadcast Action Bar */}
+                              <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800/80">
+                                <span className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                  Broadcast Verified Institutional Signal
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSendToTelegram(stock)}
+                                    className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                      sentTelegramMap[stock.symbol]
+                                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                        : "bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border-sky-500/35"
+                                    }`}
+                                  >
+                                    <span>✈️</span>
+                                    <span>
+                                      {sentTelegramMap[stock.symbol]
+                                        ? "✓ Sent to Telegram (@EagleBABAAIBOT)"
+                                        : "Send to Telegram (@EagleBABAAIBOT)"}
+                                    </span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSendToWhatsApp(stock)}
+                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-xs font-mono text-emerald-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <span>💬</span>
+                                    <span>Share to WhatsApp Channel</span>
+                                  </button>
                                 </div>
                               </div>
                             </div>
