@@ -25,7 +25,7 @@ import {
   Layers,
 } from "lucide-react";
 
-import { getHTGannIntra, type HTGannIntraPayload, type EagleBabaAstroPayload } from "@/lib/ht-gann-intra.functions";
+import { getEagleBabaAstroMatrix, type EagleBabaAstroPayload } from "@/lib/ht-gann-intra.functions";
 import { getAstro, type AstroData } from "@/lib/astro.functions";
 import { useMarketSession } from "@/hooks/use-market-session";
 import { fmt, inrRound } from "@/lib/format";
@@ -146,7 +146,7 @@ function AstroWorkstationPage() {
   const intraQ = useQuery({
     queryKey: ["eaglebaba-astro-matrix", symbol, selectedDate],
     queryFn: () =>
-      getHTGannIntra({
+      getEagleBabaAstroMatrix({
         data: {
           symbol,
           date: selectedDate,

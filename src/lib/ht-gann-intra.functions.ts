@@ -40,7 +40,7 @@ function parseIstAnchor(dateStr?: string): Date {
   return new Date(Date.UTC(y, m, d, 3, 45, 0));
 }
 
-async function fetchIndexDailyData(ticker: string): Promise<{
+async function fetchIndexDailyData(ticker: string, targetDateStr?: string): Promise<{
   livePrice: number;
   prevClose: number;
   prevHigh: number;
@@ -78,17 +78,28 @@ async function fetchIndexDailyData(ticker: string): Promise<{
 
     if (candles.length === 0) throw new Error(`No candles for ${ticker}`);
 
-    const last = candles[candles.length - 1];
-    const prev = candles.length > 1 ? candles[candles.length - 2] : last;
+    let activeIdx = candles.length - 1;
+    if (targetDateStr) {
+      const targetUtcSec = Math.floor(new Date(targetDateStr + "T23:59:59Z").getTime() / 1000);
+      for (let i = candles.length - 1; i >= 0; i--) {
+        if (candles[i].time <= targetUtcSec) {
+          activeIdx = i;
+          break;
+        }
+      }
+    }
 
-    const closes = candles.map((c) => c.close);
+    const current = candles[activeIdx];
+    const prev = activeIdx > 0 ? candles[activeIdx - 1] : current;
+
+    const closes = candles.slice(0, activeIdx + 1).map((c) => c.close);
     const ema13 = computeEma(closes, 13);
 
-    const rsiResult = calculateRsi(candles, { period: 14 });
+    const rsiResult = calculateRsi(candles.slice(0, activeIdx + 1), { period: 14 });
     const lastRsiPoint = rsiResult.points[rsiResult.points.length - 1];
     const rsi14 = lastRsiPoint?.values.rsi != null ? round2(lastRsiPoint.values.rsi) : null;
 
-    const livePrice = round2(meta.regularMarketPrice ?? last.close);
+    const livePrice = round2(activeIdx === candles.length - 1 ? (meta.regularMarketPrice ?? current.close) : current.close);
     const prevClose = round2(prev.close);
     const prevHigh = round2(prev.high);
     const prevLow = round2(prev.low);
@@ -160,7 +171,7 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
     const symbol = data.symbol ?? "NIFTY";
     const targetAnchor = parseIstAnchor(data.date);
     const targetDateStr = targetAnchor.toISOString().slice(0, 10);
-    const cacheKey = `ht-gann-intra:${symbol}:${targetDateStr}:${data.customPrevClose ?? "auto"}`;
+    const cacheKey = `eaglebaba-astro:${symbol}:${targetDateStr}:${data.customPrevClose ?? "auto"}`;
 
     return cached<HTGannIntraPayload>(
       cacheKey,
@@ -169,7 +180,7 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
 
         const ticker = symbol === "BANKNIFTY" ? "^NSEBANK" : "^NSEI";
         const [marketData, vix, positions] = await Promise.all([
-          fetchIndexDailyData(ticker),
+          fetchIndexDailyData(ticker, targetDateStr),
           fetchIndiaVix(),
           Promise.resolve(computeAstroPositions(targetAnchor)),
         ]);
@@ -178,7 +189,7 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
           ? data.customPrevClose
           : marketData.prevClose;
 
-        // Map astronomical positions to HTGann planets
+        // Map astronomical positions to Navagraha planets
         const planets: PlanetPositionInput[] = positions.planets
           .filter((p) =>
             [
