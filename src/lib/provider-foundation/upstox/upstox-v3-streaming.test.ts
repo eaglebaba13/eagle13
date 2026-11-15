@@ -294,6 +294,9 @@ describe("Upstox V3 Market Data Streaming Integration", () => {
     expect(tick.freshness).toBe("LIVE");
     expect(tick.quality).toBe("OK");
     expect(tick.source).toBe("LTP");
+    // LTPC cp is not a provider-supplied daily delta.
+    expect(tick.change).toBeNull();
+    expect(tick.changePct).toBeNull();
     adapter.close();
   });
 

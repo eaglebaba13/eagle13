@@ -149,6 +149,8 @@ export function createLiveCandleSSE(
           quality: snap.lastTick?.quality ?? "UNKNOWN",
           lastTick: snap.lastTick?.timestamp ?? null,
           lastLtp: snap.lastTick?.ltp ?? null,
+          change: snap.lastTick?.change ?? null,
+          changePct: snap.lastTick?.changePct ?? null,
           completedCount: snap.completedCandleCount,
           error:
             snap.connectionState === "CONNECTED" && snap.telemetry.status === "LIVE"

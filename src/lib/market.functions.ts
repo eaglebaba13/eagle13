@@ -24,6 +24,12 @@ export type IndexQuote = {
   prevDay: OHLC;
   updatedAt: string;
   providerTime?: string | null;
+  dailyQuote?: {
+    source: "UPSTOX";
+    prevClose: number | null;
+    change: number | null;
+    changePct: number | null;
+  };
 };
 
 export type MarketProviderMetadata = {
@@ -220,7 +226,7 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
             : fallbackMeta(yVix, uxVix && !uxVix.ok ? uxVix.reason : "upstox-unavailable"),
       };
 
-      return { nifty, banknifty, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
+      return { nifty, banknifty, sensex, vix, btc, gold, silver, goldSilverRatio, providerMetadata };
     },
     { ttlMs: 30_000 },
   );

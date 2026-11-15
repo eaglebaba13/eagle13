@@ -36,6 +36,8 @@ const envelope = {
   quality: z.enum(["OK", "DEGRADED", "UNKNOWN"]),
   lastTick: z.string().datetime().nullable(),
   lastLtp: z.number().finite().positive().nullable(),
+  change: z.number().finite().nullable().optional(),
+  changePct: z.number().finite().nullable().optional(),
   connectionState: z.string(),
 };
 export const liveEventSchema = z.discriminatedUnion("type", [

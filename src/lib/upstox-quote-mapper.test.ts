@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mapUpstoxToIndexQuote } from "./upstox-quote-mapper";
+import { describe, it, expect, vi } from "vitest";
+import { mapUpstoxToIndexQuote, resolveUpstoxDailyChange } from "./upstox-quote-mapper";
 import type { QuoteTick, HistoricalCandle } from "./provider-foundation/types";
 
 function tick(overrides: Partial<QuoteTick> = {}): QuoteTick {
@@ -61,18 +61,20 @@ describe("mapUpstoxToIndexQuote", () => {
     expect(q.livePrice).toBe(24500);
     expect(q.prevDay.close).toBe(24400);
     expect(q.change).toBeCloseTo(100, 2);
-    expect(q.changePct).toBeCloseTo(0.41, 1);
+    expect(q.changePct).toBe(0.4);
     expect(q.marketState).toBe("OPEN");
   });
 
-  it("uses tick prev-close when no candles provided", () => {
+  it("preserves provider deltas even when a different quote baseline is present", () => {
     const q = mapUpstoxToIndexQuote({
       symbol: "^NSEI",
       name: "NIFTY 50",
       tick: tick({ prevClose: 24380 }),
     });
     expect(q.prevDay.close).toBe(24380);
-    expect(q.change).toBeCloseTo(120, 2);
+    expect(q.change).toBe(100);
+    expect(q.changePct).toBe(0.4);
+    expect(q.dailyQuote).toEqual({ source: "UPSTOX", prevClose: 24380, change: 100, changePct: 0.4 });
   });
 
   it("marks marketState CLOSED when session is not REGULAR", () => {
@@ -88,10 +90,62 @@ describe("mapUpstoxToIndexQuote", () => {
     const q = mapUpstoxToIndexQuote({
       symbol: "^NSEI",
       name: "NIFTY 50",
-      tick: tick({ open: null, high: null, low: null, prevClose: null }),
+      tick: tick({ open: null, high: null, low: null, prevClose: null, change: null, changePct: null }),
     });
     expect(Number.isFinite(q.livePrice)).toBe(true);
     expect(Number.isFinite(q.change)).toBe(true);
     expect(Number.isFinite(q.prevDay.close)).toBe(true);
+    expect(q.dailyQuote).toEqual({ source: "UPSTOX", prevClose: null, change: null, changePct: null });
+  });
+
+  it("uses the REST quote baseline when the latest closed-session candle equals LTP", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-18T05:00:00.000Z"));
+    try {
+      const q = mapUpstoxToIndexQuote({
+        symbol: "^NSEI", name: "NIFTY 50",
+        tick: tick({ last: 24500, prevClose: 24650, change: 0, changePct: 0 }),
+        dailyCandles: [{ time: "2026-07-17T10:00:00.000Z", open: 24600, high: 24700, low: 24450, close: 24500, volume: null, closed: true }],
+      });
+      expect(q.prevDay.close).toBe(24500);
+      expect(q.change).toBe(-150);
+      expect(q.changePct).toBe(-0.61);
+      expect(q.dailyQuote?.prevClose).toBe(24650);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("resolveUpstoxDailyChange", () => {
+  it("returns direct provider deltas without rounding or recalculation", () => {
+    expect(resolveUpstoxDailyChange({ lastPrice: 24500, prevClose: 20000, change: -151.25, changePct: -0.61345 }))
+      .toEqual({ change: -151.25, changePct: -0.61345 });
+  });
+
+  it.each([0, null, undefined])("calculates from an authentic previous close when net change is %s", (change) => {
+    const result = resolveUpstoxDailyChange({ lastPrice: 24500, prevClose: 24650, change, changePct: 0 });
+    expect(result.change).toBe(-150);
+    expect(result.changePct).toBeCloseTo(-150 / 24650 * 100, 10);
+  });
+
+  it("preserves a genuine zero with an authentic baseline", () => {
+    expect(resolveUpstoxDailyChange({ lastPrice: 24500, prevClose: 24500, change: 0, changePct: 0 }))
+      .toEqual({ change: 0, changePct: 0 });
+  });
+
+  it.each([null, undefined, 0, -1, NaN, Infinity])("leaves the delta unavailable for invalid previous close %s", (prevClose) => {
+    expect(resolveUpstoxDailyChange({ lastPrice: 24500, prevClose, change: 0 }))
+      .toEqual({ change: null, changePct: null });
+  });
+
+  it.each([null, undefined, 0, -1, NaN, Infinity])("does not calculate a fallback from invalid LTP %s", (lastPrice) => {
+    expect(resolveUpstoxDailyChange({ lastPrice, prevClose: 24500 }))
+      .toEqual({ change: null, changePct: null });
+  });
+
+  it("keeps missing percent unavailable without an authentic baseline", () => {
+    expect(resolveUpstoxDailyChange({ lastPrice: 24500, change: -150 }))
+      .toEqual({ change: -150, changePct: null });
   });
 });

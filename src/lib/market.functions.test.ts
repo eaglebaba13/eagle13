@@ -93,7 +93,7 @@ vi.mock("./server-cache", () => ({
 }));
 
 vi.mock("./upstox-market-data.server", () => ({
-  fetchUpstoxIndexQuote: vi.fn(async (sym: "NIFTY50" | "BANKNIFTY" | "INDIA_VIX") => {
+  fetchUpstoxIndexQuote: vi.fn(async (sym: "NIFTY50" | "BANKNIFTY" | "INDIA_VIX" | "SENSEX") => {
     if (sym === "INDIA_VIX" && vixProviderUnavailable.value) {
       return {
         ok: false,
@@ -110,6 +110,7 @@ vi.mock("./upstox-market-data.server", () => ({
     }
     if (sym === "NIFTY50") return makeUpstoxQuote("^NSEI", 25000);
     if (sym === "BANKNIFTY") return makeUpstoxQuote("^NSEBANK", 52000);
+    if (sym === "SENSEX") return makeUpstoxQuote("^BSESN", 81000);
     return makeUpstoxQuote("^INDIAVIX", 12);
   }),
 }));
@@ -126,7 +127,7 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
   it("prefers Upstox for NIFTY/BANKNIFTY/VIX and does NOT call Yahoo for those symbols", async () => {
     const res = await getMarketDataImpl();
     // Yahoo should be called ONLY for GC=F and SI=F (commodities), never for indices.
-    const indexHits = yahooCalls.filter((u) => /NSEI|NSEBANK|INDIAVIX/i.test(u));
+    const indexHits = yahooCalls.filter((u) => /NSEI|NSEBANK|INDIAVIX|BSESN/i.test(u));
     expect(indexHits, "no Yahoo index requests when Upstox is healthy").toEqual([]);
     // Commodity fallback preserved.
     const commodityHits = yahooCalls.filter((u) => /GC%3DF|SI%3DF|GC=F|SI=F/.test(u));
@@ -138,6 +139,8 @@ describe("market.functions — provider routing (Phase 36.3)", () => {
     expect(res.providerMetadata?.vix.providerTime).not.toBeNull();
     expect(res.providerMetadata?.vix.candlesAvailable).toBe(true);
     expect(res.providerMetadata?.vix.dataQuality).toBe("OK");
+    expect(res.sensex?.symbol).toBe("^BSESN");
+    expect(res.sensex?.livePrice).toBe(81000);
   });
 
   it("reports Yahoo fallback as delayed and retains its provider timestamp", async () => {

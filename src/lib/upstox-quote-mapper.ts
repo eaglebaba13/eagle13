@@ -9,6 +9,28 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+export function resolveUpstoxDailyChange(input: {
+  lastPrice: number | null | undefined;
+  change?: number | null;
+  changePct?: number | null;
+  prevClose?: number | null;
+}): { change: number | null; changePct: number | null } {
+  const validClose = typeof input.prevClose === "number" && Number.isFinite(input.prevClose) && input.prevClose > 0;
+  if (typeof input.change === "number" && Number.isFinite(input.change) && input.change !== 0) {
+    return {
+      change: input.change,
+      changePct: typeof input.changePct === "number" && Number.isFinite(input.changePct)
+        ? input.changePct
+        : validClose ? (input.change / input.prevClose!) * 100 : null,
+    };
+  }
+  if (validClose && typeof input.lastPrice === "number" && Number.isFinite(input.lastPrice) && input.lastPrice > 0) {
+    const change = input.lastPrice - input.prevClose!;
+    return { change, changePct: (change / input.prevClose!) * 100 };
+  }
+  return { change: null, changePct: null };
+}
+
 function istDateFromIso(iso: string | null | undefined): string {
   const t = iso ? Date.parse(iso) : NaN;
   const base = Number.isFinite(t) ? t : Date.now();
@@ -44,8 +66,13 @@ export function mapUpstoxToIndexQuote(input: MapUpstoxQuoteInput): IndexQuote {
   const sessionBefore = prevIdx > 0 ? sorted[prevIdx - 1] : prev;
 
   const prevClose = prev?.close ?? tick.prevClose ?? tick.open ?? livePrice;
-  const change = round2(livePrice - prevClose);
-  const changePct = prevClose ? round2((change / prevClose) * 100) : 0;
+  // Daily deltas use the quote API baseline, never an intraday/historical candle.
+  const daily = resolveUpstoxDailyChange({
+    lastPrice: tick.last,
+    change: tick.change,
+    changePct: tick.changePct,
+    prevClose: tick.prevClose,
+  });
 
   const prevDay: OHLC = {
     open: round2(prev?.open ?? tick.open ?? prevClose),
@@ -63,8 +90,9 @@ export function mapUpstoxToIndexQuote(input: MapUpstoxQuoteInput): IndexQuote {
     name,
     livePrice,
     prevSessionClose: round2(sessionBefore?.close ?? prevClose),
-    change,
-    changePct,
+    change: round2(daily.change ?? 0),
+    changePct: round2(daily.changePct ?? 0),
+    dailyQuote: { source: "UPSTOX", prevClose: tick.prevClose, ...daily },
     marketState,
     prevDay,
     updatedAt: tick.telemetry.receivedAt ?? new Date().toISOString(),

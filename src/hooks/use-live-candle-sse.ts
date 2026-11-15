@@ -44,6 +44,8 @@ export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): 
               quality: event.quality,
               lastTick: event.lastTick,
               lastLtp: event.lastLtp,
+              change: event.change,
+              changePct: event.changePct,
               connectionState: event.connectionState,
               completed: false,
               timestamp: event.lastTick,

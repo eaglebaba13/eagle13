@@ -11,6 +11,7 @@ import type {
   Timeframe,
 } from "../types";
 import { DEFAULT_FRESHNESS, classifyFreshness } from "../types";
+import { resolveUpstoxDailyChange } from "../../upstox-quote-mapper";
 import {
   TIMEFRAME_TO_UPSTOX,
   UPSTOX_ADAPTER_ID,
@@ -250,6 +251,9 @@ export class UpstoxHistoricalAdapter {
         string,
         {
           last_price?: number;
+          net_change?: number;
+          change_percent?: number;
+          prev_close?: number;
           last_trade_time?: number | string;
           timestamp?: string;
           ohlc?: { open?: number; high?: number; low?: number; close?: number };
@@ -277,7 +281,7 @@ export class UpstoxHistoricalAdapter {
     }
     const row = res.data?.data ? Object.values(res.data.data)[0] : undefined;
     const last = row?.last_price;
-    if (typeof last !== "number" || !Number.isFinite(last)) {
+    if (typeof last !== "number" || !Number.isFinite(last) || last <= 0) {
       return {
         ok: false,
         reason: "SCHEMA_ERROR",
@@ -291,7 +295,13 @@ export class UpstoxHistoricalAdapter {
         }),
       };
     }
-    const prevClose = row?.ohlc?.close ?? null;
+    const positivePrice = (value: number | undefined): number | null =>
+      typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+    // After close, OHLC.close may be the current close; net_change still identifies yesterday's close.
+    const impliedPrevClose = typeof row?.net_change === "number" && Number.isFinite(row.net_change) && row.net_change !== 0
+      ? positivePrice(last - row.net_change) : null;
+    const prevClose = positivePrice(row?.prev_close) ?? impliedPrevClose ?? positivePrice(row?.ohlc?.close);
+    const daily = resolveUpstoxDailyChange({ lastPrice: last, prevClose, change: row?.net_change, changePct: row?.change_percent });
     const providerTime = parseProviderTimestamp(row?.last_trade_time ?? row?.timestamp);
     const telemetry = quoteTelemetry({
       ok: true,
@@ -308,9 +318,8 @@ export class UpstoxHistoricalAdapter {
       high: row?.ohlc?.high ?? null,
       low: row?.ohlc?.low ?? null,
       prevClose,
-      change: prevClose != null ? last - prevClose : null,
-      changePct:
-        prevClose != null && prevClose !== 0 ? ((last - prevClose) / prevClose) * 100 : null,
+      change: daily.change,
+      changePct: daily.changePct,
       volume: row?.volume ?? null,
       currency: "INR",
       telemetry,

@@ -447,6 +447,9 @@ export class UpstoxWsAdapter implements LiveMarketStreamProvider {
         provider: UPSTOX_WS_ADAPTER_ID,
         timestamp: isoTime,
         ltp: ltpc.ltp,
+        // V3 LTPC has no daily delta fields; REST quotes supply the fallback.
+        change: null,
+        changePct: null,
         bid: null,
         ask: null,
         volume: null,

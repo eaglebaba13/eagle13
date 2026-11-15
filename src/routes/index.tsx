@@ -59,129 +59,25 @@ export function PublicLandingPage() {
     staleTime: 10_000,
   });
 
-  const tickerItems = useMemo(() => {
-    const list: Array<{
-      symbol: string;
-      name: string;
-      price: number;
-      change: number;
-      changePct: number;
-      isUp: boolean;
-      status: string;
-    }> = [];
-
-    if (marketData?.nifty?.livePrice) {
-      list.push({
-        symbol: "NIFTY 50",
-        name: "NSE Index",
-        price: marketData.nifty.livePrice,
-        change: marketData.nifty.change || 0,
-        changePct: marketData.nifty.changePct || 0,
-        isUp: (marketData.nifty.changePct || 0) >= 0,
-        status: marketData.nifty.marketState || "LIVE",
-      });
-    } else {
-      list.push({
-        symbol: "NIFTY 50",
-        name: "NSE Index",
-        price: 25044.25,
-        change: 142.6,
-        changePct: 0.57,
-        isUp: true,
-        status: "LIVE",
-      });
-    }
-
-    if (marketData?.banknifty?.livePrice) {
-      list.push({
-        symbol: "BANK NIFTY",
-        name: "Banking Benchmark",
-        price: marketData.banknifty.livePrice,
-        change: marketData.banknifty.change || 0,
-        changePct: marketData.banknifty.changePct || 0,
-        isUp: (marketData.banknifty.changePct || 0) >= 0,
-        status: marketData.banknifty.marketState || "LIVE",
-      });
-    } else {
-      list.push({
-        symbol: "BANK NIFTY",
-        name: "Banking Benchmark",
-        price: 52400.1,
-        change: -118.4,
-        changePct: -0.23,
-        isUp: false,
-        status: "LIVE",
-      });
-    }
-
-    if (marketData?.sensex?.livePrice) {
-      list.push({
-        symbol: "BSE SENSEX",
-        name: "BSE 30",
-        price: marketData.sensex.livePrice,
-        change: marketData.sensex.change || 0,
-        changePct: marketData.sensex.changePct || 0,
-        isUp: (marketData.sensex.changePct || 0) >= 0,
-        status: marketData.sensex.marketState || "LIVE",
-      });
-    } else {
-      list.push({
-        symbol: "BSE SENSEX",
-        name: "BSE 30",
-        price: 81890.5,
-        change: 320.1,
-        changePct: 0.39,
-        isUp: true,
-        status: "LIVE",
-      });
-    }
-
-    if (marketData?.gold?.livePrice) {
-      list.push({
-        symbol: "COMEX GOLD",
-        name: "GC1! Continuous",
-        price: marketData.gold.livePrice,
-        change: marketData.gold.change || 0,
-        changePct: marketData.gold.changePct || 0,
-        isUp: (marketData.gold.changePct || 0) >= 0,
-        status: "24/7",
-      });
-    } else {
-      list.push({
-        symbol: "COMEX GOLD",
-        name: "GC1! Continuous",
-        price: 4035.8,
-        change: 18.2,
-        changePct: 0.45,
-        isUp: true,
-        status: "24/7",
-      });
-    }
-
-    if (marketData?.btc?.livePrice) {
-      list.push({
-        symbol: "BTC / USDT",
-        name: "CoinDCX Spot",
-        price: marketData.btc.livePrice,
-        change: marketData.btc.change || 0,
-        changePct: marketData.btc.changePct || 0,
-        isUp: (marketData.btc.changePct || 0) >= 0,
-        status: "24/7",
-      });
-    } else {
-      list.push({
-        symbol: "BTC / USDT",
-        name: "Crypto Digital",
-        price: 88420.0,
-        change: 1450.0,
-        changePct: 1.67,
-        isUp: true,
-        status: "24/7",
-      });
-    }
-
-    return list;
-  }, [marketData]);
+  const tickerItems = useMemo(() => [
+    { symbol: "NIFTY 50", name: "NSE Index", expected: "^NSEI", quote: marketData?.nifty, index: true },
+    { symbol: "BANK NIFTY", name: "Banking Benchmark", expected: "^NSEBANK", quote: marketData?.banknifty, index: true },
+    { symbol: "BSE SENSEX", name: "BSE 30", expected: "^BSESN", quote: marketData?.sensex, index: true },
+    { symbol: "COMEX GOLD", name: "GC1! Continuous", expected: "GC=F", quote: marketData?.gold, index: false },
+    { symbol: "BTC / USDT", name: "Crypto Digital", expected: "BTC-USD", quote: marketData?.btc, index: false },
+  ].map(({ symbol, name, expected, quote: candidate, index }) => {
+    const quote = candidate?.symbol === expected ? candidate : null;
+    const daily = quote?.dailyQuote?.source === "UPSTOX" ? quote.dailyQuote : null;
+    const changePct = index ? daily?.changePct ?? null : quote?.changePct ?? null;
+    return {
+      symbol,
+      name,
+      price: quote?.livePrice ?? null,
+      changePct,
+      isUp: changePct !== null && changePct > 0,
+      status: quote?.marketState ?? "UNAVAILABLE",
+    };
+  }), [marketData]);
 
   const terminalUrl = isAuthenticated ? "/dashboard" : "/auth";
 
@@ -439,18 +335,18 @@ export function PublicLandingPage() {
                     </span>
                   </div>
                   <div className="mt-2 text-base font-mono font-bold text-white">
-                    ₹{item.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    ₹{item.price === null ? "-" : item.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[11px] font-mono">
                     <span className="text-zinc-500">{item.name}</span>
                     <span
                       className={`inline-flex items-center gap-0.5 font-semibold ${
-                        item.isUp ? "text-[#10B981]" : "text-rose-400"
+                        item.changePct === null || item.changePct === 0 ? "text-zinc-400" : item.isUp ? "text-[#10B981]" : "text-rose-400"
                       }`}
                     >
-                      {item.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {item.changePct === null || item.changePct === 0 ? null : item.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                       {item.isUp ? "+" : ""}
-                      {item.changePct.toFixed(2)}%
+                      {item.changePct === null ? "-" : `${item.changePct.toFixed(2)}%`}
                     </span>
                   </div>
                 </div>

@@ -23,6 +23,9 @@ export interface MarketTick {
   readonly provider: string;
   readonly timestamp: string; // ISO
   readonly ltp: number;
+  /** Daily deltas supplied by the provider, never candle-derived. */
+  readonly change?: number | null;
+  readonly changePct?: number | null;
   readonly bid: number | null;
   readonly ask: number | null;
   readonly volume: number | null;

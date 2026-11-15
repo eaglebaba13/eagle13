@@ -482,6 +482,76 @@ describe("upstox adapter (mock HTTP)", () => {
     }
   });
 
+  it("preserves direct quote net_change and change_percent over recalculation", async () => {
+    const adapter = makeAdapter(async () => jsonResponse({
+      data: { "NSE_INDEX|Nifty 50": { last_price: 24500, prev_close: 24000, net_change: -151.25, change_percent: -0.61345 } },
+    }));
+    const result = await adapter.fetchQuote("NIFTY50", "2026-07-16T09:30:01.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.prevClose).toBe(24000);
+      expect(result.data.change).toBe(-151.25);
+      expect(result.data.changePct).toBe(-0.61345);
+    }
+  });
+
+  it.each([
+    { symbol: "NIFTY50" as const, key: "NSE_INDEX|Nifty 50", last: 25144.3, net: -155.05, prevClose: 25299.35, pct: -0.61 },
+    { symbol: "BANKNIFTY" as const, key: "NSE_INDEX|Nifty Bank", last: 61034.1, net: -484.4, prevClose: 61518.5, pct: -0.79 },
+    { symbol: "SENSEX" as const, key: "BSE_INDEX|SENSEX", last: 81592.45, net: -318.56, prevClose: 81911.01, pct: -0.39 },
+  ])("retains authentic EOD change when $symbol ohlc.close is the current close", async ({ symbol, key, last, net, prevClose, pct }) => {
+    const adapter = makeAdapter(async () => jsonResponse({
+      data: { [key]: { last_price: last, net_change: net, ohlc: { close: last } } },
+    }));
+    const result = await adapter.fetchQuote(symbol, "2026-11-14T17:00:00.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.prevClose).toBeCloseTo(prevClose, 8);
+      expect(result.data.change).toBe(net);
+      expect(result.data.changePct).toBeCloseTo(net / prevClose * 100, 10);
+      expect(Number(result.data.changePct?.toFixed(2))).toBe(pct);
+    }
+  });
+
+  it.each([0, undefined])("uses real ohlc.close when REST net_change is %s", async (net_change) => {
+    const adapter = makeAdapter(async () => jsonResponse({
+      data: { "NSE_INDEX|Nifty 50": { last_price: 24500, net_change, change_percent: 0, ohlc: { open: 24495, close: 24650 } } },
+    }));
+    const result = await adapter.fetchQuote("NIFTY50", "2026-07-16T09:30:01.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.prevClose).toBe(24650);
+      expect(result.data.change).toBe(-150);
+      expect(result.data.changePct).toBeCloseTo(-150 / 24650 * 100, 10);
+    }
+  });
+
+  it("prefers valid prev_close and retains authentic zero change", async () => {
+    const adapter = makeAdapter(async () => jsonResponse({
+      data: { "NSE_INDEX|Nifty 50": { last_price: 24500, prev_close: 24500, net_change: 0, ohlc: { close: 24000 } } },
+    }));
+    const result = await adapter.fetchQuote("NIFTY50", "2026-07-16T09:30:01.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.prevClose).toBe(24500);
+      expect(result.data.change).toBe(0);
+      expect(result.data.changePct).toBe(0);
+    }
+  });
+
+  it.each([undefined, 0, -1])("does not substitute open or zero for unavailable previous close %s", async (close) => {
+    const adapter = makeAdapter(async () => jsonResponse({
+      data: { "NSE_INDEX|Nifty 50": { last_price: 24500, prev_close: close, net_change: 0, ohlc: { open: 24000, close } } },
+    }));
+    const result = await adapter.fetchQuote("NIFTY50", "2026-07-16T09:30:01.000Z");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.prevClose).toBeNull();
+      expect(result.data.change).toBeNull();
+      expect(result.data.changePct).toBeNull();
+    }
+  });
+
   it("chunks a >30-day 1m request into multiple HTTP calls", async () => {
     let calls = 0;
     const adapter = makeAdapter(async () => {

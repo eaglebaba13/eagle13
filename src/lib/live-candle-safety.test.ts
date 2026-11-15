@@ -245,6 +245,46 @@ describe("P0.1 fail-closed market pipeline", () => {
     expect(emptyLiveState().currentCandle).toBeNull();
     expect(emptyLiveState().completedCandles.size).toBe(0);
   });
+  it.each([
+    { change: -152.5, changePct: -0.61 },
+    { change: 0, changePct: 0 },
+    { change: null, changePct: null },
+  ])("preserves provider daily deltas through SSE and browser state: %j", async (delta) => {
+    vi.useFakeTimers();
+    const f = provider();
+    const mgr = new LiveMarketStreamManager(() => f.p);
+    const reader = createLiveCandleSSE("NIFTY50", 60000, undefined, mgr).body!.getReader();
+    const readEvent = async () => {
+      const { value } = await reader.read();
+      const wire: unknown = JSON.parse(new TextDecoder().decode(value).slice(6).trim());
+      const parsed = parseLiveEvent(wire, "NIFTY50", 60000);
+      expect(parsed).not.toBeNull();
+      return parsed!;
+    };
+    try {
+      expect(await readEvent()).toMatchObject({ change: null, changePct: null });
+      f.emit({ ...tick(new Date().toISOString()), ...delta });
+      const update = await readEvent();
+      expect(update).toMatchObject(delta);
+      const state = applyLiveEvent(emptyLiveState(), update);
+      expect(state.status).toMatchObject(delta);
+      expect(state.currentCandle).toMatchObject(delta);
+      vi.advanceTimersByTime(5000);
+      const status = await readEvent();
+      expect(status).toMatchObject({ type: "status", ...delta });
+      expect(applyLiveEvent(state, status).currentCandle).toMatchObject(delta);
+    } finally {
+      await reader.cancel();
+    }
+  });
+  it("rejects non-finite daily deltas and accepts older events without delta fields", () => {
+    expect(parseLiveEvent({ ...event, change: Infinity }, "NIFTY50", 60000)).toBeNull();
+    expect(parseLiveEvent({ ...event, changePct: NaN }, "NIFTY50", 60000)).toBeNull();
+    const parsed = parseLiveEvent(event, "NIFTY50", 60000)!;
+    const state = applyLiveEvent(emptyLiveState(), parsed);
+    expect(state.status?.change).toBeUndefined();
+    expect(state.status?.changePct).toBeUndefined();
+  });
   it("freshness uses provider time, not socket connection", () => {
     const now = Date.now();
     expect(tickFreshness(null, now)).toBe("NO_DATA");
