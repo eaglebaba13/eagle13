@@ -52,3 +52,16 @@ The authenticated production provider preflight returned HTTP 200 for both NIFTY
 Browser interaction verification is unavailable: the connected-browser inventory is empty and both Chrome/in-app browser surfaces are unavailable. Pointer behavior is implemented and supporting logic is covered by regressions, but no visual live-market gesture sign-off is claimed. Other instruments retain their existing provider adapters; this release does not certify every provider or promise equivalence with every broker terminal.
 
 Ignored `backups/live-chart-*` artifacts retain protected-file hashes, configuration snapshots, test/build logs and production provider/release evidence. Test-written configuration changes are excluded from the release and restored to the pre-test snapshot.
+
+
+## Production rollout
+
+- Deployed application commit: `f3e633ff4d7d79df8c4031d0a911ac51dda7635c`, pushed to `origin/production-release-v2`.
+- Canonical VPS: `root@200.234.35.116`; existing EagleBABA Coolify application `zrrxmyubwxrhfowlnmfztutk`.
+- Deployment ID: `e9642921-c944-4e4c-b949-7dcd9c72048d`; new application container healthy on the release image.
+- During live market hours on 16 Nov 2026, actual production bootstrap RPC plus SSE checks passed for NIFTY50 and BANKNIFTY across 1m, 3m, 5m, 15m, 30m, 1h, 4h, 1D and 1W: 18/18 cases passed, each with 500 sorted unique valid candles, previous-session history and current-session data.
+- One-minute sessions started at 09:15 IST and were continuous to the latest provider minute; the live SSE candle advanced to 10:57 IST with genuine current provider timestamps. Larger live buckets aligned with the shared Indian session policy, including 1h/4h and daily/weekly boundaries.
+- Public `https://eaglebaba.lwill.in/live-chart`: HTTP 200. Broker execution remains disabled.
+- The prior healthy image `zrrxmyubwxrhfowlnmfztutk:b5c251d12a150426832665654f107ed4e5f9babd` was retained as the rollback reference.
+- Production gesture/viewport visual sign-off remains unavailable because no browser surface is connected. The data/API checks above do not claim to replace that visual verification.
+- This documentation follow-up changes no application runtime code.
