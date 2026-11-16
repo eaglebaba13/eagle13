@@ -78,3 +78,25 @@ Extension files:
 - `docs/ltp-overlay-engine-parity.md`: document this bounded presentation extension and its checks.
 
 Extension validation: targeted suite passed 32 tests; `npm test -- --maxWorkers=2` passed all 325 files / 3,006 tests; TypeScript passed with zero errors; the production build exited 0; `git diff --check` passed. All eight protected-file hashes and the calculator-engine hash match their pre-change snapshots. Test-written config changes were backed up and restored under the existing user approval. Runtime rollout results follow below.
+
+
+### WTB/WTT production verification
+
+Application commit `b18186c7e388442efdd3f31cfd0e9dc9c67fbbea` was pushed and deployed through Coolify deployment `96ad928b-dd8c-4baf-8e6f-2ffebb33cdc8` on the canonical VPS. The new image passed health checks; `33b6aa2` is the prior-image rollback reference.
+
+At 12:34 IST on 16 Nov 2026, actual calculator responses and the deployed source mapper/HUD were checked for NIFTY50, BANKNIFTY and RELIANCE. Every valid flagged row produced the expected labelled, dashed, two-pixel line at the exact engine reversal price. No extra challenger was manufactured. Observed examples:
+
+| Instrument | Label | Reversal price | Engine factor |
+| --- | --- | ---: | --- |
+| NIFTY50 | WTB Support (25000 PE) | 24,982.05 | OI 76.2% |
+| NIFTY50 | WTT Support (25300 PE) | 25,196.50 | VOL 76.6% |
+| NIFTY50 | WTT Resistance (26000 CE) | 26,002.05 | OI 86.2% |
+| BANKNIFTY | WTT Support (60500 PE) | 60,292.85 | OI 99.9% |
+| BANKNIFTY | WTB Resistance (61000 CE) | 61,882.40 | OI 87.6% |
+| BANKNIFTY | WTT Resistance (62000 CE) | 62,366.85 | VOL 80.7% |
+| RELIANCE | WTB Support (1100 PE) | 1,099.70 | OI 95.0% |
+| RELIANCE | WTT Support (1330 PE) | 1,318.75 | VOL 100.0% |
+
+These are verification-time observations and update with the calculator snapshot. Public `/live-chart` returned HTTP 200, and broker execution remained disabled. The browser inventory was empty during this extension; no screenshot-based visual sign-off is claimed. Exact mapper/flag/price parity and real HUD server rendering passed for all three instruments.
+
+This final report update changes no application runtime code.
