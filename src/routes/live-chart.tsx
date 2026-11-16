@@ -611,7 +611,7 @@ function LiveChartSelection({
   const ltpData = ltpQ.data?.ok ? ltpQ.data.data : null;
   const fourLineData = fourLineQ.data?.ok ? fourLineQ.data.fourLine : null;
   const ltpLevels = useMemo(() => showLtpLevels && !isReplayActive
-    ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" ? null : ltpData, activeInstrument.category === "FO_EQUITY" ? fourLineData : null) : [],
+    ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" && !fourLineData ? null : ltpData, activeInstrument.category === "FO_EQUITY" ? fourLineData : null) : [],
     [showLtpLevels, isReplayActive, ltpData, fourLineData, activeInstrument.category]);
 
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)

@@ -49,7 +49,7 @@ export interface TradingViewLightweightChartProps {
   readonly showIctUnicorn: boolean;
   readonly showOiProfile: boolean;
   // Overlay Data
-  readonly ltpLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean }[];
+  readonly ltpLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean; lineWidth?: 1 | 2 }[];
   readonly astroLevels?: readonly { label: string; price: number; color: string }[];
   readonly liquidityLevels?: { pdh: number; pdl: number; pwh: number; pwl: number } | null;
   readonly unicornSetup?: UnicornSetup | null;
@@ -476,7 +476,7 @@ export function TradingViewLightweightChart({
           id: `ltp-${l.id ?? l.name}`,
           price: l.price,
           color: l.color,
-          lineWidth: 1,
+          lineWidth: l.lineWidth ?? 1,
           lineStyle: l.dash ? LineStyle.Dashed : LineStyle.Solid,
           title: l.name,
         });

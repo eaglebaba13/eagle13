@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import type { HudData } from "./TradingViewLightweightChart";
 import type { UniversalInstrument } from "@/lib/market-data/fo-universe";
 import type { LtpCalculatorOutput } from "@/lib/options/ltp-calculator-engine.server";
+import { buildShiftingChartLevels } from "@/lib/chart/ltp-overlay";
 
 interface ChartHeaderHudProps {
   readonly instrument: UniversalInstrument | null;
@@ -35,6 +36,7 @@ export function ChartHeaderHud({
 }: ChartHeaderHudProps) {
   const activeOhlc = hud ?? latestCandle;
   const t = hud?.time ?? latestCandle?.time;
+  const shiftingLevels = useMemo(() => buildShiftingChartLevels(ltpData ?? null), [ltpData]);
 
   const istTimeStr = useMemo(() => {
     if (!t || !Number.isFinite(t)) return null;
@@ -161,6 +163,15 @@ export function ChartHeaderHud({
               <span className="text-rose-300">EOR: {formatPrice(ltpData.reversalLevels.eor)}</span>
               <span className="text-amber-300">SL: {formatPrice(ltpData.reversalLevels.maxPainSl)}</span>
               {ltpState === "unavailable" && <span className="text-amber-400">STALE · Refresh unavailable</span>}
+            </div>
+            <div aria-label="WTB and WTT reversal levels" className="mt-1 flex flex-wrap gap-1 text-[10px]">
+              {shiftingLevels.length ? shiftingLevels.map((level) => (
+                <span key={level.id} title={level.detail} className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5">
+                  <strong style={{ color: level.color }}>{level.name}</strong>{" "}
+                  <span className="text-zinc-200">{formatPrice(level.price)}</span>{" "}
+                  <span className="text-zinc-500">{level.detail}</span>
+                </span>
+              )) : <span className="text-zinc-500">No active WTB/WTT challenger levels</span>}
             </div>
             <p className="mt-1 text-[10px] leading-relaxed text-zinc-400" title={ltpData.coaScenario.recommendation}>
               {ltpData.coaScenario.recommendation}

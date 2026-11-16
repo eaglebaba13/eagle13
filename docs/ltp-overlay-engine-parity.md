@@ -59,3 +59,22 @@ No connected browser is available (inventory checked this turn). Automated engin
 - Broker execution remained disabled. The previous healthy `f3e633f` application image is the rollback reference.
 - Visual desktop/mobile watchlist/footer verification remains unavailable without a connected browser. The successful RPC, deployed-source mapping and HUD-markup checks do not claim browser screenshots or visual sign-off.
 - This documentation follow-up changes no application runtime code.
+
+
+## WTB / WTT plotting extension
+
+The LTP overlay now also plots each engine-flagged PE support / CE resistance challenger at its exact `StrikeDominance.reversalPrice`. WTT is cyan and WTB is rose; both use two-pixel dashed lines. Chart titles include direction, side and strike. The COA HUD lists the same reversal prices and the engine's Volume/OI percentages.
+
+Flags `isWttVol`, `isWttOi`, `isWtbVol` and `isWtbOi` are authoritative. No thresholds, strikes, premiums or prices are recalculated in the chart. Volume and OI flags for the same strike/direction share one line; opposed directions stay separate. Missing/invalid reversal prices are omitted, with no strike-price substitute. If no flags are active, the HUD states that no challenger levels are active.
+
+These levels follow the existing LTP toggle and 15-second shared snapshot refresh. Stock four-line prices remain in place and can include shifting levels from the already-fetched calculator snapshot. Existing candle-only auto-scaling and user viewport behavior remain unchanged.
+
+Extension files:
+- `src/lib/chart/ltp-overlay.ts`: map flagged engine rows into stable, labelled lines and combine shared Volume/OI factors.
+- `src/routes/live-chart.tsx`: retain calculator flags alongside stock four-line results.
+- `src/components/chart/TradingViewLightweightChart.tsx`: accept optional line width for distinct shifting-level rendering.
+- `src/components/chart/ChartHeaderHud.tsx`: display active WTB/WTT prices and factor detail, or an explicit inactive state.
+- `src/lib/chart/ltp-overlay.test.ts`: verify exact PE/CE prices, combined/opposed flags, stable IDs, invalid prices, stock coexistence and actual HUD markup.
+- `docs/ltp-overlay-engine-parity.md`: document this bounded presentation extension and its checks.
+
+Extension validation: targeted suite passed 32 tests; `npm test -- --maxWorkers=2` passed all 325 files / 3,006 tests; TypeScript passed with zero errors; the production build exited 0; `git diff --check` passed. All eight protected-file hashes and the calculator-engine hash match their pre-change snapshots. Test-written config changes were backed up and restored under the existing user approval. Runtime rollout results follow below.

@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ChartHeaderHud } from "../../components/chart/ChartHeaderHud";
-import { buildLtpChartLevels, calculatorUnderlying } from "./ltp-overlay";
+import { buildLtpChartLevels, buildShiftingChartLevels, calculatorUnderlying } from "./ltp-overlay";
 import { isRegularSessionCandle } from "../provider-foundation/indstocks/candle-aggregator";
-import type { LtpCalculatorOutput, StockFourLineLevels } from "../options/ltp-calculator-engine.server";
+import type { LtpCalculatorOutput, StockFourLineLevels, StrikeDominance } from "../options/ltp-calculator-engine.server";
 
 export const calculatorFixture: LtpCalculatorOutput = {
   underlying: "NIFTY", timestamp: "2026-11-16T05:30:00Z", spotPrice: 25250, atmStrike: 25250,
@@ -16,6 +16,53 @@ export const calculatorFixture: LtpCalculatorOutput = {
     supportStrike: 25200, resistanceStrike: 25300, spotPrice: 25250, maxPainSl: 25091.05, maxGainTarget: 25401.25 },
   callStrikes: [], putStrikes: [], currency: "INR", currencySymbol: "₹",
 };
+
+const challenger = (overrides: Partial<StrikeDominance> = {}): StrikeDominance => ({
+  strike: 25250, reversalPrice: 25210.35, volume: 100, volPct: 84.5, oi: 200, oiPct: 79.2, ltp: 39.65, iv: 15,
+  isMaxVol: false, isMaxOi: false, isWttVol: false, isWtbVol: false, isWttOi: false, isWtbOi: false, ...overrides,
+});
+
+describe("engine WTB/WTT chart levels", () => {
+  const input = { ...calculatorFixture,
+    putStrikes: [challenger({ isWttVol: true, isWttOi: true })],
+    callStrikes: [challenger({ strike: 25350, reversalPrice: 25424.85, isWtbOi: true })],
+  };
+  it("plots exact flagged PE/CE reversal prices and combines Volume/OI on one line", () => {
+    const levels = buildShiftingChartLevels(input);
+    expect(levels).toHaveLength(2);
+    expect(levels[0]).toMatchObject({ id: "shift-pe-wtt-25250", name: "WTT Support (25250 PE)", price: 25210.35, color: "#06B6D4", dash: true, lineWidth: 2,
+      detail: "VOL 84.5% / OI 79.2%" });
+    expect(levels[1]).toMatchObject({ id: "shift-ce-wtb-25350", name: "WTB Resistance (25350 CE)", price: 25424.85, color: "#F43F5E", detail: "OI 79.2%" });
+    expect(buildLtpChartLevels(input).filter((l) => l.id.startsWith("shift-"))).toEqual(levels);
+  });
+  it("retains opposed Volume/OI flags and stable identities as percentages change", () => {
+    const mixed = { ...calculatorFixture, putStrikes: [challenger({ isWttVol: true, isWtbOi: true })] };
+    const first = buildShiftingChartLevels(mixed);
+    expect(first.map((l) => l.id)).toEqual(["shift-pe-wtt-25250", "shift-pe-wtb-25250"]);
+    const next = buildShiftingChartLevels({ ...mixed, putStrikes: [challenger({ isWttVol: true, isWtbOi: true, volPct: 91.3 })] });
+    expect(next.map((l) => l.id)).toEqual(first.map((l) => l.id));
+    expect(next[0].detail).toBe("VOL 91.3%");
+  });
+  it("does not manufacture flags from percentages or substitute a strike for missing reversal prices", () => {
+    expect(buildShiftingChartLevels({ ...calculatorFixture, putStrikes: [
+      challenger({ volPct: 99.9, oiPct: 100 }), challenger({ isWtbVol: true, reversalPrice: NaN }),
+      challenger({ isWttOi: true, reversalPrice: 0 }),
+    ] })).toEqual([]);
+    expect(buildShiftingChartLevels(null)).toEqual([]);
+  });
+  it("adds flagged levels alongside stock four-line prices", () => {
+    const stock = { p2: 1482.85, p1: 1461.15, c1: 1418.45, c2: 1397.65 } as StockFourLineLevels;
+    expect(buildLtpChartLevels(input, stock).map((l) => l.id)).toEqual(["p2", "p1", "c1", "c2", "shift-pe-wtt-25250", "shift-ce-wtb-25350"]);
+  });
+  it("renders active WTB/WTT prices and factor labels in the actual HUD", () => {
+    const html = renderToStaticMarkup(createElement(ChartHeaderHud, {
+      instrument: { key: "NIFTY50", symbol: "NIFTY50", name: "NIFTY 50", currency: "INR", category: "INDEX", sector: "Index", defaultPrice: 0, lotSize: 25, tickSize: 0.05 },
+      intervalLabel: "1m", hud: null, latestCandle: { open: 25200, high: 25300, low: 25100, close: 25250 }, isLive: true,
+      ltpData: input, ltpState: "ready",
+    }));
+    for (const value of ["WTT Support (25250 PE)", "WTB Resistance (25350 CE)", "25,210.35", "25,424.85", "VOL 84.5% / OI 79.2%"]) expect(html).toContain(value);
+  });
+});
 
 describe("authentic calculator presentation", () => {
   it("copies exact engine prices and strike labels rather than reconstructing ATM premiums", () => {
