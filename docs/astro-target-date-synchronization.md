@@ -37,4 +37,16 @@ The previous-close session is Thursday 17 Oct, because Saturday's selected targe
 - `git diff --check`: passed.
 - Interactive browser verification was unavailable (no connected browser). A local Vite development smoke attempt timed out during its module transport startup; the production build succeeded. Production HTTP/server checks are performed through the existing Coolify deployment on `root@200.234.35.116` after push.
 
-Local provider snapshots, baseline hashes and check logs are stored under ignored `backups/astro-target-date-*` paths. The full suite rewrote four unrelated config files; their diffs are backed up, and they are excluded from the release commit. Restoring them was blocked by automatic approval review, so restoration is pending user approval.
+Local provider snapshots, baseline hashes and check logs are stored under ignored `backups/astro-target-date-*` paths. The full suite rewrote four unrelated config files; their diffs were backed up and excluded from the release commit. After automatic approval review initially blocked restoration, the user explicitly approved restoring these files; all four are restored and the working tree is clean.
+
+
+## Production rollout verification
+
+- Application commit: `b5c251d12a150426832665654f107ed4e5f9babd`, pushed to `origin/production-release-v2`.
+- Canonical VPS: `root@200.234.35.116`; existing Coolify application `zrrxmyubwxrhfowlnmfztutk` (`eaglebaba`).
+- Deployment: `b7430158-4966-4d43-a94a-d42a3ef5d193`; new container healthy on the application commit.
+- Public `https://eaglebaba.lwill.in/astro`: HTTP 200.
+- Actual production TanStack RPC checks passed for both symbols: the historical session dates, previous closes, spot closes, EMA/RSI and all 36 levels match the fixture evidence above. Changing to 16 Oct recalculates the matrix; historical manual overrides are ignored.
+- Actual production live override: NIFTY Prev Close set to 26,000; omitting the override returns the authentic automatic anchor (25,144.30 in this verification). Broker execution remains disabled.
+- Explicit `cmd.exe` build rerun completed with exit code 0, resolving PowerShell stderr-warning exit ambiguity.
+- This documentation follow-up records the completed rollout; it changes no application source or runtime behavior.
