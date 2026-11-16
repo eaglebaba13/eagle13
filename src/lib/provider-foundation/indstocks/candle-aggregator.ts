@@ -52,7 +52,7 @@ export interface CandleAggregatorState {
  * Deterministic time bucket: floor(timestamp / intervalMs) * intervalMs
  */
 export function bucketTimestamp(epochMs: number, intervalMs: number, instrument?: string): number {
-  const indiaSession = instrument != null && !/USDT|BTC|ETH|SOL|XRP|GC1!|SI1!|CL1!|NG1!|XAU|XAG|GOLD|SILVER/i.test(instrument);
+  const indiaSession = instrument != null && isIndianSessionInstrument(instrument);
   if (indiaSession) {
     const day = Math.floor((epochMs + 19_800_000) / 86_400_000) * 86_400_000 - 19_800_000;
     if (intervalMs === 86_400_000) return day;
@@ -64,6 +64,19 @@ export function bucketTimestamp(epochMs: number, intervalMs: number, instrument?
     return open + Math.floor((epochMs - open) / intervalMs) * intervalMs;
   }
   return Math.floor(epochMs / intervalMs) * intervalMs;
+}
+
+export function isIndianSessionInstrument(instrument: string): boolean {
+  return !/USDT|BTC|ETH|SOL|XRP|GC1!|SI1!|CL1!|NG1!|XAU|XAG|GOLD|SILVER/i.test(instrument);
+}
+
+/** Exclude midnight/EOD anchors from regular Indian intraday charts; daily/weekly and 24/7 assets retain their timestamps. */
+export function isRegularSessionCandle(epochMs: number, intervalMs: number, instrument: string): boolean {
+  if (!Number.isFinite(epochMs) || epochMs <= 0) return false;
+  if (intervalMs >= 86_400_000 || !isIndianSessionInstrument(instrument)) return true;
+  const ist = new Date(epochMs + 19_800_000);
+  const minute = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  return minute >= 9 * 60 + 15 && minute < 15 * 60 + 30;
 }
 
 function createCandleFromTick(

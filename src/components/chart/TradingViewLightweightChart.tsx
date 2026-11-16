@@ -49,7 +49,7 @@ export interface TradingViewLightweightChartProps {
   readonly showIctUnicorn: boolean;
   readonly showOiProfile: boolean;
   // Overlay Data
-  readonly ltpLevels?: readonly { name: string; price: number; color: string; dash?: boolean }[];
+  readonly ltpLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean }[];
   readonly astroLevels?: readonly { label: string; price: number; color: string }[];
   readonly liquidityLevels?: { pdh: number; pdl: number; pwh: number; pwl: number } | null;
   readonly unicornSetup?: UnicornSetup | null;
@@ -205,6 +205,7 @@ export function TradingViewLightweightChart({
         priceFormatter: (p: number) => {
           if (!Number.isFinite(p)) return "";
           return `${currencySymbol}${p.toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
             maximumFractionDigits: p < 10 ? 4 : 2,
           })}`;
         },
@@ -471,8 +472,8 @@ export function TradingViewLightweightChart({
     // AI-LTP Levels
     if (showLtpLevels && ltpLevels.length > 0) {
       for (const l of ltpLevels) {
-        desiredMap.set(`ltp-${l.name}`, {
-          id: `ltp-${l.name}`,
+        desiredMap.set(`ltp-${l.id ?? l.name}`, {
+          id: `ltp-${l.id ?? l.name}`,
           price: l.price,
           color: l.color,
           lineWidth: 1,
@@ -857,7 +858,7 @@ export function TradingViewLightweightChart({
     <div
       onContextMenu={handleContextMenu}
       onPointerDown={(event) => { if (activeTool === "cursor" && !(event.target as Element).closest("[data-drawing-id]")) setSelectedDrawingId(null); }}
-      className="relative w-full h-full flex-1 min-h-[460px] bg-[#08090C] overflow-hidden select-none"
+      className="relative w-full h-full flex-1 min-h-0 bg-[#08090C] overflow-hidden select-none"
     >
       {/* Chart Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />

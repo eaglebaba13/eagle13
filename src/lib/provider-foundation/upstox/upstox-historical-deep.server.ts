@@ -4,7 +4,7 @@
 
 import https from "node:https";
 import { UpstoxHttpClient } from "./upstox-http.server";
-import { bucketTimestamp } from "../indstocks/candle-aggregator";
+import { bucketTimestamp, isRegularSessionCandle } from "../indstocks/candle-aggregator";
 import { mapToMarketSymbol } from "@/lib/cycles/market-data-adapter.server";
 
 export interface DeepCandle {
@@ -138,6 +138,7 @@ function aggregateToIstBuckets(
   const buckets = new Map<number, { open: number; high: number; low: number; close: number; volume: number }>();
 
   for (const c of sorted) {
+    if (!isRegularSessionCandle(c.time, intervalMs, symbol)) continue;
     const bucketKey = bucketTimestamp(c.time, intervalMs, symbol);
     const existing = buckets.get(bucketKey);
     if (!existing) {
@@ -325,14 +326,6 @@ async function loadDeepMultiTimeframeCandles(
       const latestSpot = candles.at(-1)?.y[3] ?? null;
 
       if (candles.length > 0) {
-        // Ensure final candle close matches latest canonical spot price
-        if (latestSpot && latestSpot > 0) {
-          const last = candles[candles.length - 1];
-          last.y[3] = latestSpot;
-          last.y[1] = Math.max(last.y[1], latestSpot);
-          last.y[2] = Math.min(last.y[2], latestSpot);
-        }
-
         const res: DeepCandleResult = {
           candles,
           spotPrice: latestSpot,

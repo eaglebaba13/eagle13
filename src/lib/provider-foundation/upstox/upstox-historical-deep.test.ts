@@ -84,4 +84,18 @@ describe("deep historical/current-session stitching", () => {
     await getDeepMultiTimeframeCandles("NIFTY BANK", 60000, true);
     expect(provider.request).toHaveBeenCalledTimes(4);
   });
+  it("rejects orphan midnight/pre-open anchors before aggregation while keeping real session history", async () => {
+    const original = provider.request.getMockImplementation()!;
+    provider.request.mockImplementation(async (input: { path: string }) => {
+      const response = await original(input);
+      response.data.data.candles.push(candle(Date.parse(`${today}T00:00:00+05:30`), 1), candle(Date.parse(`${today}T09:00:00+05:30`), 1));
+      return response;
+    });
+    const result = await getDeepMultiTimeframeCandles("NIFTY50", 60000, true);
+    expect(result.candles).toHaveLength(500);
+    expect(result.candles.every((c) => c.y[2] > 2)).toBe(true);
+    const session = result.candles.filter((c) => c.x >= Date.parse(`${today}T00:00:00+05:30`));
+    expect(session[0].x).toBe(Date.parse(`${today}T09:15:00+05:30`));
+    expect(result.candles[0].x).toBeLessThan(session[0].x);
+  });
 });

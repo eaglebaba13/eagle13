@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import type { HudData } from "./TradingViewLightweightChart";
 import type { UniversalInstrument } from "@/lib/market-data/fo-universe";
+import type { LtpCalculatorOutput } from "@/lib/options/ltp-calculator-engine.server";
 
 interface ChartHeaderHudProps {
   readonly instrument: UniversalInstrument | null;
@@ -15,6 +16,10 @@ interface ChartHeaderHudProps {
     readonly volume?: number | null;
   } | null;
   readonly isLive: boolean;
+  readonly ltpData?: LtpCalculatorOutput | null;
+  readonly ltpState?: "hidden" | "loading" | "unavailable" | "ready";
+  readonly ltpProvider?: string;
+  readonly ltpQuality?: string;
 }
 
 export function ChartHeaderHud({
@@ -23,6 +28,10 @@ export function ChartHeaderHud({
   hud,
   latestCandle,
   isLive,
+  ltpData,
+  ltpState = "hidden",
+  ltpProvider,
+  ltpQuality,
 }: ChartHeaderHudProps) {
   const activeOhlc = hud ?? latestCandle;
   const t = hud?.time ?? latestCandle?.time;
@@ -65,6 +74,7 @@ export function ChartHeaderHud({
   const formatPrice = (val?: number | null) => {
     if (val == null || !Number.isFinite(val)) return "--";
     return `${currencySymbol}${val.toLocaleString(isUsd ? "en-US" : "en-IN", {
+      minimumFractionDigits: 2,
       maximumFractionDigits: val < 10 ? 4 : 2,
     })}`;
   };
@@ -78,7 +88,8 @@ export function ChartHeaderHud({
   };
 
   return (
-    <div className="absolute top-1.5 left-12 z-20 flex items-center gap-2.5 px-3 py-1 bg-zinc-950/80 backdrop-blur-md border border-white/10 rounded-md text-[11px] font-mono select-none shadow-lg pointer-events-none whitespace-nowrap overflow-hidden text-zinc-300">
+    <div className="absolute top-1.5 left-12 right-2 z-20 max-w-full font-mono text-[11px] select-none pointer-events-none text-zinc-300">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-1 bg-zinc-950/90 backdrop-blur-md border border-white/10 rounded-md shadow-lg">
       {/* Symbol & Timeframe */}
       <span className="font-bold text-amber-300 font-sans tracking-wide">
         {instrument?.name ?? instrument?.symbol ?? "Symbol"}
@@ -133,6 +144,32 @@ export function ChartHeaderHud({
           <span className="text-zinc-600">·</span> Vol: <strong className="text-zinc-300 font-medium">{formatVol(vol)}</strong>
         </span>
       ) : null}
+    </div>
+    {ltpState !== "hidden" && (
+      <div role="status" aria-label="AI-LTP COA 1.0" className="mt-1 rounded-md border border-amber-500/20 bg-zinc-950/95 px-3 py-1.5 shadow-lg pointer-events-auto">
+        {ltpState === "loading" ? <span className="text-amber-300">AI-LTP COA 1.0 · Loading calculator snapshot…</span> :
+          !ltpData ? <span className="text-amber-300">AI-LTP COA 1.0 · Calculator unavailable</span> : (
+          <>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-[9px] font-bold tracking-wider text-zinc-500">AI-LTP COA 1.0</span>
+              <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${ltpData.coaScenario.color === "emerald" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : ltpData.coaScenario.color === "rose" ? "border-rose-500/40 bg-rose-500/10 text-rose-300" : "border-amber-500/40 bg-amber-500/10 text-amber-300"}`}>
+                {ltpData.coaScenario.name} ({ltpData.coaScenario.tag})
+              </span>
+              <span>Support: <strong>{ltpData.coaScenario.supportState}</strong> ({ltpData.reversalLevels.supportStrike} PE)</span>
+              <span>Resistance: <strong>{ltpData.coaScenario.resistanceState}</strong> ({ltpData.reversalLevels.resistanceStrike} CE)</span>
+              <span className="text-emerald-300">EOS: {formatPrice(ltpData.reversalLevels.eos)}</span>
+              <span className="text-rose-300">EOR: {formatPrice(ltpData.reversalLevels.eor)}</span>
+              <span className="text-amber-300">SL: {formatPrice(ltpData.reversalLevels.maxPainSl)}</span>
+              {ltpState === "unavailable" && <span className="text-amber-400">STALE · Refresh unavailable</span>}
+            </div>
+            <p className="mt-1 text-[10px] leading-relaxed text-zinc-400" title={ltpData.coaScenario.recommendation}>
+              {ltpData.coaScenario.recommendation}
+              <span className="ml-2 text-zinc-500">{ltpProvider} {ltpQuality}</span>
+            </p>
+          </>
+        )}
+      </div>
+    )}
     </div>
   );
 }

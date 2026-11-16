@@ -10,6 +10,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Zap,
@@ -27,9 +28,9 @@ import {
 } from "lucide-react";
 
 import {
-  getLtpCalculatorData,
+  ltpCalculatorQuery,
+  stockFourLineQuery,
   getLtpBlastStocks,
-  getStockFourLineData,
 } from "@/lib/options/ltp-calculator.functions";
 import type {
   LtpCalculatorOutput,
@@ -69,14 +70,18 @@ function LtpCalculatorPage() {
   const [searchFilter, setSearchFilter] = useState<string>("");
 
   // Data states
-  const [ltpData, setLtpData] = useState<LtpCalculatorOutput | null>(null);
-  const [availableExpiries, setAvailableExpiries] = useState<readonly string[]>([]);
   const [blastStocks, setBlastStocks] = useState<StockFourLineLevels[]>([]);
-  const [fourLineData, setFourLineData] = useState<StockFourLineLevels | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [lastRefreshed, setLastRefreshed] = useState<string>("");
+  const [otherLoading, setOtherLoading] = useState(true);
+  const indexMode = mode === "LIVE" || mode === "STATIC_0920";
+  const ltpQuery = useQuery({ ...ltpCalculatorQuery({ underlying, expiry: expiry || undefined }), enabled: indexMode });
+  const fourLineQuery = useQuery({ ...stockFourLineQuery(selectedStock), enabled: mode === "STOCKS_4LINE" });
+  const ltpData: LtpCalculatorOutput | null = ltpQuery.data?.ok ? ltpQuery.data.data : null;
+  const availableExpiries = ltpQuery.data?.ok ? ltpQuery.data.availableExpiries ?? [] : [];
+  const fourLineData = fourLineQuery.data?.ok ? fourLineQuery.data.fourLine : null;
+  const loading = indexMode ? ltpQuery.isFetching : mode === "STOCKS_4LINE" ? fourLineQuery.isFetching : otherLoading;
+  const errorMsg = ltpQuery.error?.message ?? (ltpQuery.data?.ok === false ? ltpQuery.data.error : null);
+  const lastRefreshed = ltpQuery.dataUpdatedAt ? new Date(ltpQuery.dataUpdatedAt).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
 
   const isFoStock = useMemo(() => {
     const sym = (underlying || "").toUpperCase();
@@ -106,39 +111,14 @@ function LtpCalculatorPage() {
     [isFoStock],
   );
 
-  const fetchLtpFn = useServerFn(getLtpCalculatorData);
   const fetchBlastFn = useServerFn(getLtpBlastStocks);
-  const fetchFourLineFn = useServerFn(getStockFourLineData);
 
-  // Load Main Index / Multi-Asset LTP Calculator
-  const loadIndexLtp = useCallback(async () => {
-    setLoading(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetchLtpFn({
-        data: {
-          underlying,
-          expiry: expiry || undefined,
-        },
-      });
-
-      if (res.ok && res.data) {
-        setLtpData(res.data);
-        if (res.availableExpiries) setAvailableExpiries(res.availableExpiries);
-        setLastRefreshed(new Date().toLocaleTimeString("en-IN"));
-      } else {
-        setErrorMsg(res.error ?? "Failed to load option chain data");
-      }
-    } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message.slice(0, 160) : "Load failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchLtpFn, underlying, expiry]);
+  const loadIndexLtp = () => ltpQuery.refetch();
+  const loadStockFourLine = (_symbol: string) => fourLineQuery.refetch();
 
   // Load LTP Blast Screener Stocks
   const loadBlastScreener = useCallback(async () => {
-    setLoading(true);
+    setOtherLoading(true);
     try {
       const res = await fetchBlastFn({ data: { filter: "ALL" } });
       if (res.ok && res.stocks) {
@@ -147,37 +127,13 @@ function LtpCalculatorPage() {
     } catch (e) {
       // ignore
     } finally {
-      setLoading(false);
+      setOtherLoading(false);
     }
   }, [fetchBlastFn]);
 
-  // Load Single Stock 4-Line Data
-  const loadStockFourLine = useCallback(
-    async (sym: string) => {
-      setLoading(true);
-      try {
-        const res = await fetchFourLineFn({ data: { symbol: sym } });
-        if (res.ok && res.fourLine) {
-          setFourLineData(res.fourLine);
-        }
-      } catch (e) {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchFourLineFn],
-  );
-
   useEffect(() => {
-    if (mode === "LIVE" || mode === "STATIC_0920") {
-      loadIndexLtp();
-    } else if (mode === "LTP_BLAST") {
-      loadBlastScreener();
-    } else if (mode === "STOCKS_4LINE") {
-      loadStockFourLine(selectedStock);
-    }
-  }, [mode, underlying, expiry, selectedStock, loadIndexLtp, loadBlastScreener, loadStockFourLine]);
+    if (mode === "LTP_BLAST") loadBlastScreener();
+  }, [mode, loadBlastScreener]);
 
   // Active levels based on LIVE vs 09:20 STATIC
   const activeLevels: ReversalLevels | null = useMemo(() => {

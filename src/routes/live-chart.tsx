@@ -1,4 +1,5 @@
 import { useMarketSession } from "@/hooks/use-market-session";
+import { createPortal } from "react-dom";
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useCallback, useRef, Component, type ErrorInfo, type ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -7,7 +8,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundToggle } from "@/components/SoundToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
-import { stitchCandlePoints } from "@/lib/provider-foundation/indstocks/candle-aggregator";
+import { isRegularSessionCandle, stitchCandlePoints } from "@/lib/provider-foundation/indstocks/candle-aggregator";
+import { ltpCalculatorQuery, stockFourLineQuery } from "@/lib/options/ltp-calculator.functions";
+import { buildLtpChartLevels, calculatorUnderlying } from "@/lib/chart/ltp-overlay";
 import { getLiveCandleBootstrap } from "@/lib/live-candle-stream.functions";
 import { getLiveLevels, type MarketKey } from "@/lib/live-levels.functions";
 import { computeCycles, computeGannAstroLevels, type PlanetRow } from "@/lib/astro-levels";
@@ -379,10 +382,10 @@ function LiveChartSelection({
 
   // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
-    return stitchCandlePoints(historical, [...sse.completedCandles.values()].map((c) => ({
+    return stitchCandlePoints(historical.filter((c) => isRegularSessionCandle(c.x, intervalMs, symbol)), [...sse.completedCandles.values()].filter((c) => isRegularSessionCandle(c.time, intervalMs, symbol)).map((c) => ({
       x: c.time, y: [c.open, c.high, c.low, c.close] as const, volume: c.volume,
     })));
-  }, [historical, sse.completedCandles]);
+  }, [historical, sse.completedCandles, symbol, intervalMs]);
 
   // Handle Replay slice if active
   const displayCandles = useMemo(() => {
@@ -424,13 +427,13 @@ function LiveChartSelection({
   // Live Current Candle
   const liveCandleData: ChartCandleData | null = useMemo(() => {
     if (isReplayActive) return null;
-    if (!sse.currentCandle) return null;
+    if (!sse.currentCandle || !isRegularSessionCandle(sse.currentCandle.time, intervalMs, symbol)) return null;
     const current = sse.currentCandle;
     const merged = stitchCandlePoints(chartData, [{ x: current.time,
       y: [current.open, current.high, current.low, current.close], volume: current.volume }])
       .find((c) => c.x === current.time);
     return merged ? { time: merged.x, open: merged.y[0], high: merged.y[1], low: merged.y[2], close: merged.y[3], volume: merged.volume } : null;
-  }, [isReplayActive, sse.currentCandle, chartData]);
+  }, [isReplayActive, sse.currentCandle, chartData, symbol, intervalMs]);
 
   // Current Price & LTP strictly anchored to authentic market data
   const latestCandleClose =
@@ -601,48 +604,15 @@ function LiveChartSelection({
     return showOiProfile && oiResult?.ok ? oiResult.data : [];
   }, [showOiProfile, oiResult]);
 
-  // AI-LTP Levels (EOS / EOR or Stock 4-Line P2/P1/C1/C2) - Memoized on ATM strike bracket to avoid tick churn
-  const ltpStep = useMemo(() => {
-    if (symbol.includes("BANKNIFTY") || symbol.includes("SENSEX")) return 100;
-    if (symbol.includes("NIFTY")) return 50;
-    if (!currentLtp || currentLtp <= 0) return 10;
-    if (currentLtp < 200) return 2.5;
-    if (currentLtp < 500) return 5;
-    if (currentLtp < 1000) return 10;
-    if (currentLtp < 2500) return 25;
-    if (currentLtp < 5000) return 50;
-    return 100;
-  }, [symbol, currentLtp]);
-
-  const currentAtm = useMemo(() => {
-    if (!currentLtp || currentLtp <= 0) return 0;
-    return Math.round(currentLtp / ltpStep) * ltpStep;
-  }, [currentLtp, ltpStep]);
-
-  const ltpLevels = useMemo(() => {
-    if (!showLtpLevels || !currentAtm || currentAtm <= 0) return [];
-    const isIndex = symbol.includes("NIFTY") || symbol.includes("SENSEX");
-
-    if (isIndex) {
-      const step = ltpStep;
-      const prem = Math.round(step * 0.45 * 100) / 100;
-      return [
-        { name: "EOR+1 Max Pain", price: currentAtm + step + prem, color: "#EF4444", dash: true },
-        { name: "EOR Resistance", price: currentAtm + prem, color: "#F87171", dash: false },
-        { name: "EOS Support", price: currentAtm - prem, color: "#34D399", dash: false },
-        { name: "EOS-1 Max Pain", price: currentAtm - step - prem, color: "#10B981", dash: true },
-      ];
-    } else {
-      const step = ltpStep;
-      const prem = Math.round(step * 0.4 * 100) / 100;
-      return [
-        { name: "P2 Strong Resistance", price: currentAtm + 2 * step + prem, color: "#EF4444", dash: true },
-        { name: "P1 Sell Trigger", price: currentAtm + step + prem, color: "#F87171", dash: false },
-        { name: "C1 Buy Trigger", price: currentAtm - step - prem, color: "#34D399", dash: false },
-        { name: "C2 Deep Support", price: currentAtm - 2 * step - prem, color: "#10B981", dash: true },
-      ];
-    }
-  }, [showLtpLevels, currentAtm, ltpStep, symbol]);
+  // Use the same live RPC, response shape and cache keys as the calculator page.
+  const ltpUnderlying = calculatorUnderlying(symbol);
+  const ltpQ = useQuery({ ...ltpCalculatorQuery({ underlying: ltpUnderlying }), enabled: showLtpLevels && !isReplayActive });
+  const fourLineQ = useQuery({ ...stockFourLineQuery(ltpUnderlying), enabled: showLtpLevels && !isReplayActive && activeInstrument.category === "FO_EQUITY" });
+  const ltpData = ltpQ.data?.ok ? ltpQ.data.data : null;
+  const fourLineData = fourLineQ.data?.ok ? fourLineQ.data.fourLine : null;
+  const ltpLevels = useMemo(() => showLtpLevels && !isReplayActive
+    ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" ? null : ltpData, activeInstrument.category === "FO_EQUITY" ? fourLineData : null) : [],
+    [showLtpLevels, isReplayActive, ltpData, fourLineData, activeInstrument.category]);
 
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)
   const astroLevels = useMemo(() => {
@@ -1124,13 +1094,9 @@ function LiveChartSelection({
             {/* Right Dock Switcher / Toggle */}
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== "undefined" && window.innerWidth < 1280) {
-                  setIsRightSidebarOpen(!isRightSidebarOpen);
-                } else {
-                  setRightSidebarTab((prev) => (prev === "watchlist" ? "alerts" : "watchlist"));
-                }
-              }}
+              onClick={() => setIsRightSidebarOpen((open) => !open)}
+              aria-expanded={isRightSidebarOpen}
+              aria-controls="live-chart-watchlist"
               className="px-2.5 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer border bg-amber-500/20 text-amber-300 border-amber-500/50"
               title="Watchlist & Alerts Panel"
             >
@@ -1175,25 +1141,7 @@ function LiveChartSelection({
             />
           </div>
 
-          {/* Top-Left OHLCV + Change% HUD */}
-          <ChartHeaderHud
-            instrument={activeInstrument}
-            intervalLabel={currentTimeframeLabel}
-            hud={hudData}
-            latestCandle={
-              displayCandles.length > 0
-                ? {
-                    time: displayCandles[displayCandles.length - 1].x,
-                    open: displayCandles[displayCandles.length - 1].y[0],
-                    high: displayCandles[displayCandles.length - 1].y[1],
-                    low: displayCandles[displayCandles.length - 1].y[2],
-                    close: displayCandles[displayCandles.length - 1].y[3],
-                    volume: displayCandles[displayCandles.length - 1].volume,
-                  }
-                : null
-            }
-            isLive={isLive}
-          />
+
 
           {/* Loading / Error States */}
           {bootstrapStatus === "loading" && (
@@ -1234,6 +1182,29 @@ function LiveChartSelection({
           )}
           {/* Interactive TradingView Lightweight Chart */}
           <div className="flex-1 h-full min-w-0 relative">
+          {/* Top-Left OHLCV + Change% HUD */}
+          <ChartHeaderHud
+            instrument={activeInstrument}
+            intervalLabel={currentTimeframeLabel}
+            hud={hudData}
+            latestCandle={
+              displayCandles.length > 0
+                ? {
+                    time: displayCandles[displayCandles.length - 1].x,
+                    open: displayCandles[displayCandles.length - 1].y[0],
+                    high: displayCandles[displayCandles.length - 1].y[1],
+                    low: displayCandles[displayCandles.length - 1].y[2],
+                    close: displayCandles[displayCandles.length - 1].y[3],
+                    volume: displayCandles[displayCandles.length - 1].volume,
+                  }
+                : null
+            }
+            isLive={isLive}
+            ltpData={showLtpLevels && !isReplayActive ? ltpData : null}
+            ltpState={!showLtpLevels || isReplayActive ? "hidden" : ltpQ.isPending ? "loading" : ltpQ.isError || !ltpQ.data?.ok ? "unavailable" : "ready"}
+            ltpProvider={ltpQ.data?.ok ? ltpQ.data.provider : undefined}
+            ltpQuality={ltpQ.data?.ok ? ltpQ.data.dataQuality : undefined}
+          />
             <ChartCanvasErrorBoundary onReset={() => fitContentRef.current?.()}>
               <TradingViewLightweightChart
                 symbol={symbol}
@@ -1280,12 +1251,14 @@ function LiveChartSelection({
             />
           )}
 
-          {/* Right Dock (Live Watchlist & Active Alerts) - permanently docked on desktop >= 1280px, drawer on < 1280px */}
+          {/* Right dock follows the same explicit open/closed state at every breakpoint. */}
           <aside
+            id="live-chart-watchlist"
+            aria-label="Watchlist and alerts"
             className={`${
               isRightSidebarOpen
                 ? "fixed inset-y-0 right-0 z-40 flex shadow-2xl xl:static xl:z-20 xl:shadow-none"
-                : "hidden xl:flex"
+                : "hidden"
             } w-72 sm:w-80 h-full border-l border-amber-500/20 bg-zinc-950/95 backdrop-blur-md flex-col shrink-0 select-none`}
           >
             {/* Header */}
@@ -1324,7 +1297,7 @@ function LiveChartSelection({
                 <button
                   type="button"
                   onClick={() => setIsRightSidebarOpen(false)}
-                  className="xl:hidden p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10"
+                  className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10"
                   aria-label="Close sidebar"
                 >
                   <X className="w-4 h-4" />
@@ -1498,7 +1471,7 @@ function LiveChartSelection({
           </div>
 
         {/* Institutional Bottom Control Bar & Status Footer */}
-        <footer className="shrink-0 px-4 py-1.5 border-t border-white/10 text-xs flex flex-wrap items-center justify-between gap-2 bg-zinc-950/90 backdrop-blur-md z-30">
+        <footer className="shrink-0 min-w-0 max-w-full flex flex-wrap items-center justify-between gap-2 px-3 py-1 overflow-x-auto border-t border-white/10 text-xs bg-zinc-950/90 backdrop-blur-md z-30">
           {/* Left: Range Presets + Go-To Date */}
           <div className="flex items-center gap-2">
             {/* Range Presets */}
@@ -1527,8 +1500,8 @@ function LiveChartSelection({
                 <span className="hidden sm:inline">Date</span>
               </button>
 
-              {isGoToDateOpen && (
-                <div className="absolute bottom-8 left-0 z-40 bg-zinc-950 border border-white/15 rounded-xl p-3 shadow-2xl flex flex-col gap-2 w-56">
+              {isGoToDateOpen && typeof document !== "undefined" && createPortal(
+                <div role="dialog" aria-label="Jump to date" className="fixed bottom-20 left-4 z-[1000] bg-zinc-950 border border-white/15 rounded-xl p-3 shadow-2xl flex flex-col gap-2 w-56">
                   <div className="flex items-center justify-between text-xs font-mono font-bold text-zinc-200">
                     <span>Jump to Date</span>
                     <button
@@ -1556,7 +1529,7 @@ function LiveChartSelection({
                     Navigate
                   </button>
                 </div>
-              )}
+              , document.body)}
             </div>
           </div>
 
@@ -1607,7 +1580,7 @@ function LiveChartSelection({
           </div>
 
           {/* Right: Scale Mode Toggles (% | log | auto) + Auto-Fit + LTP */}
-          <div className="flex items-center gap-2 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-2 min-w-0 font-mono text-xs">
             {/* Scale Mode Toggles */}
             <div className="flex items-center gap-0.5 bg-zinc-900/80 p-0.5 rounded-lg border border-white/10">
               <button

@@ -3,6 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { queryOptions } from "@tanstack/react-query";
+import { cached } from "../server-cache";
 import type {
   LtpCalculatorOutput,
   StockFourLineLevels,
@@ -21,7 +22,9 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
       expiry: typeof input.expiry === "string" ? input.expiry : undefined,
     };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => cached(
+    `ltp-calculator:${data.underlying ?? "NIFTY"}:${data.expiry ?? "auto"}`,
+    async () => {
     try {
       const { fetchCanonicalOptionChain } = await import("../option-chain/canonical-snapshot.server");
       const { processOptionChainToLtpCalculator, generateMultiAssetOptionChainSnapshot } = await import(
@@ -87,7 +90,8 @@ export const getLtpCalculatorData = createServerFn({ method: "POST" })
         data: null,
       };
     }
-  });
+    }, { ttlMs: 15_000, swrMs: 0 },
+  ));
 
 export const getLtpBlastStocks = createServerFn({ method: "POST" })
   .inputValidator((raw: unknown): { filter?: "ALL" | "BULLISH" | "BEARISH" } => {
@@ -124,7 +128,7 @@ export const getStockFourLineData = createServerFn({ method: "POST" })
       symbol: typeof input.symbol === "string" ? input.symbol.toUpperCase() : "RELIANCE",
     };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => cached(`ltp-stock-four-line:${data.symbol}`, async () => {
     try {
       const { FO_UNIVERSE } = await import("../cycles/cycle-performance.server");
       const { computeStockFourLine } = await import("./ltp-calculator-engine.server");
@@ -166,7 +170,7 @@ export const getStockFourLineData = createServerFn({ method: "POST" })
         fourLine: null,
       };
     }
-  });
+  }, { ttlMs: 15_000, swrMs: 0 }));
 
 // React Query option helpers
 export const ltpCalculatorQuery = (input: GetLtpCalculatorInput) =>
@@ -184,3 +188,11 @@ export const ltpBlastQuery = (filter: "ALL" | "BULLISH" | "BEARISH" = "ALL") =>
     refetchInterval: 30_000,
     staleTime: 20_000,
   });
+
+
+export const stockFourLineQuery = (symbol: string) => queryOptions({
+  queryKey: ["ltp-stock-four-line", symbol],
+  queryFn: () => getStockFourLineData({ data: { symbol } }),
+  refetchInterval: 15_000,
+  staleTime: 10_000,
+});
