@@ -38,3 +38,24 @@ Targeted suite: 62 tests passed. Production provider preflight on 16 Nov 2026 re
 Final local checks: `npm test -- --maxWorkers=2` passed all 325 files / 3,001 tests (exit 0); `npx tsc --noEmit` passed with zero errors (exit 0); `npm run build` passed (exit 0). Existing dependency/deprecation/browser-externalization build warnings remain. All eight protected baseline SHA-256 hashes match; the calculator engine's own SHA-256 hash also matches. `git diff --check` passed. All four test-written configuration files were backed up and restored using the user's existing approval. Production rollout results are recorded separately after deployment. Ignored `backups/ltp-overlay-*` files retain check logs and provider/release evidence. The eight protected baseline files and the calculator engine itself are verified against pre-change hashes. Test-written configuration changes are excluded and restored.
 
 No connected browser is available (inventory checked this turn). Automated engine/RPC/HUD-markup checks do not constitute visual browser sign-off for watchlist/footer interactions. `/options-chain` retains its existing authentication gate; no login or security protection is changed for verification.
+
+
+## Production rollout verification
+
+- Application commit: `33b6aa27e07902e4156a042e24ebc5d55cf7576f`, pushed to `origin/production-release-v2`.
+- Canonical VPS: `root@200.234.35.116`; existing Coolify application `zrrxmyubwxrhfowlnmfztutk`.
+- Deployment ID: `270c4c92-b6dd-4b15-97b2-039514dac47c`; the new application container is healthy.
+- At 12:09 IST on 16 Nov 2026, concurrent calculator/chart RPC requests returned identical complete reversal-level and COA objects with identical timestamps. The actual deployed presentation mapper and HUD source were transpiled/rendered on the VPS and checked against those same responses.
+
+| Underlying | Expiry | EOS | EOR | Max Pain SL | Max Gain TP | COA |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| NIFTY | 2026-11-17 | 25,140.85 | 25,382.85 | 25,106.00 | 25,382.85 | #2 |
+| BANKNIFTY | 2026-11-23 | 60,289.55 | 62,363.75 | 59,873.90 | 62,363.75 | #8 |
+
+- Both observed index responses reported `UPSTOX / OK`. These numbers are verification-time observations, not fixed future values.
+- RELIANCE's calculator and chart stock RPC results matched exactly for P2/P1/C1/C2.
+- Both indices retained 500 valid candles in each tested 1m/5m/1h/4h/1D bootstrap. Indian intraday timestamps passed the shared session filter; daily candles were preserved.
+- Public `/live-chart` and `/options-chain` HTTP responses were 200. No authentication configuration was changed; an HTTP/SSR check does not establish an authenticated interactive browser session.
+- Broker execution remained disabled. The previous healthy `f3e633f` application image is the rollback reference.
+- Visual desktop/mobile watchlist/footer verification remains unavailable without a connected browser. The successful RPC, deployed-source mapping and HUD-markup checks do not claim browser screenshots or visual sign-off.
+- This documentation follow-up changes no application runtime code.
