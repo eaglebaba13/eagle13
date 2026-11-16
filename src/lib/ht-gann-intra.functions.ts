@@ -27,6 +27,11 @@ function round2(n: number): number {
 
 function parseIstAnchor(dateStr?: string): Date {
   if (dateStr) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) ||
+        !Number.isFinite(Date.parse(`${dateStr}T00:00:00Z`)) ||
+        new Date(`${dateStr}T00:00:00Z`).toISOString().slice(0, 10) !== dateStr) {
+      throw new Error("Target Date must be a valid YYYY-MM-DD date");
+    }
     const parts = dateStr.slice(0, 10).split("-").map(Number);
     if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
       // 09:15:00 IST is 03:45:00 UTC
@@ -40,7 +45,7 @@ function parseIstAnchor(dateStr?: string): Date {
   return new Date(Date.UTC(y, m, d, 3, 45, 0));
 }
 
-async function fetchIndexDailyData(ticker: string, targetDateStr?: string): Promise<{
+export async function fetchIndexDailyData(symbol: "NIFTY" | "BANKNIFTY", targetDateStr: string, now = new Date()): Promise<{
   livePrice: number;
   prevClose: number;
   prevHigh: number;
@@ -48,77 +53,88 @@ async function fetchIndexDailyData(ticker: string, targetDateStr?: string): Prom
   ema13: number | null;
   rsi14: number | null;
   dateStr: string;
+  sessionDate: string;
+  starDayHigh: number;
+  starDayLow: number;
+  historical: boolean;
 }> {
-  const url = `${YAHOO}${encodeURIComponent(ticker)}?interval=1d&range=3mo`;
-  try {
-    const json = parseProvider(YahooChartSchema, await fetchJson<unknown>(url), `Yahoo (${ticker})`);
-    const result = json.chart.result?.[0];
-    if (!result) throw new Error(`No data for ${ticker}`);
-
-    const meta = result.meta;
-    const ts: number[] = result.timestamp ?? [];
-    const q = (result.indicators?.quote?.[0] ?? {}) as {
-      open?: (number | null)[];
-      high?: (number | null)[];
-      low?: (number | null)[];
-      close?: (number | null)[];
-      volume?: (number | null)[];
-    };
-
-    const candles = ts
-      .map((t, i) => ({
-        time: t,
-        open: q.open?.[i] ?? 0,
-        high: q.high?.[i] ?? 0,
-        low: q.low?.[i] ?? 0,
-        close: q.close?.[i] ?? null,
-        volume: q.volume?.[i] ?? 0,
-      }))
-      .filter((c): c is { time: number; open: number; high: number; low: number; close: number; volume: number } => c.close != null);
-
-    if (candles.length === 0) throw new Error(`No candles for ${ticker}`);
-
-    let activeIdx = candles.length - 1;
-    if (targetDateStr) {
-      const targetUtcSec = Math.floor(new Date(targetDateStr + "T23:59:59Z").getTime() / 1000);
-      for (let i = candles.length - 1; i >= 0; i--) {
-        if (candles[i].time <= targetUtcSec) {
-          activeIdx = i;
-          break;
-        }
+  parseIstAnchor(targetDateStr);
+  const istNow = new Date(now.getTime() + 19800_000);
+  const today = istNow.toISOString().slice(0, 10);
+  // Today always follows live semantics; future projections use data available now.
+  const historical = targetDateStr < today;
+  const toDate = historical ? targetDateStr : today;
+  const from = new Date(`${toDate}T00:00:00Z`);
+  from.setUTCDate(from.getUTCDate() - 90);
+  const fromDate = from.toISOString().slice(0, 10);
+  const instrumentKey = symbol === "BANKNIFTY" ? "NSE_INDEX|Nifty Bank" : "NSE_INDEX|Nifty 50";
+  const { UpstoxHttpClient } = await import("./provider-foundation/upstox/upstox-http.server");
+  const client = new UpstoxHttpClient();
+  type CandleResponse = { status?: string; data?: { candles?: unknown[][] } };
+  let response = await client.request<CandleResponse>({
+    path: `v2/historical-candle/${encodeURIComponent(instrumentKey)}/day/${toDate}/${fromDate}`,
+  });
+  // V3 also supports older daily history (back to 2000).
+  if (!response.ok || !response.data.data?.candles?.length) {
+    response = await client.request<CandleResponse>({
+      path: `v3/historical-candle/${encodeURIComponent(instrumentKey)}/days/1/${toDate}/${fromDate}`,
+    });
+  }
+  if (!response.ok || !Array.isArray(response.data.data?.candles)) {
+    throw new Error(`Historical daily candles unavailable for ${symbol} on ${toDate}`);
+  }
+  const byDate = new Map<string, { date: string; time: number; open: number; high: number; low: number; close: number; volume: number }>();
+  for (const row of response.data.data.candles) {
+    if (!Array.isArray(row) || row.length < 5) continue;
+    const timestamp = typeof row[0] === "string" ? Date.parse(row[0]) : NaN;
+    const [open, high, low, close] = row.slice(1, 5);
+    if (!Number.isFinite(timestamp) ||
+        ![open, high, low, close].every((n) => typeof n === "number" && Number.isFinite(n) && n > 0)) continue;
+    const date = new Date(timestamp + 19800_000).toISOString().slice(0, 10);
+    if (date < fromDate || date > toDate || (high as number) < (low as number)) continue;
+    byDate.set(date, { date, time: timestamp / 1000, open: open as number, high: high as number,
+      low: low as number, close: close as number, volume: typeof row[5] === "number" ? row[5] : 0 });
+  }
+  const candles = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  const current = candles.at(-1);
+  if (!current || candles.length < 15) {
+    throw new Error(`Insufficient historical daily candles for ${symbol} on ${toDate}`);
+  }
+  let livePrice = current.close;
+  let sessionDate = current.date;
+  let starDayHigh = current.high;
+  let starDayLow = current.low;
+  if (!historical) {
+    const { UpstoxHistoricalAdapter } = await import("./provider-foundation/upstox/upstox-historical.adapter.server");
+    const quote = await new UpstoxHistoricalAdapter().fetchQuote(symbol === "NIFTY" ? "NIFTY50" : "BANKNIFTY", now.toISOString());
+    if (quote.ok) {
+      livePrice = quote.data.last;
+      const providerTime = Date.parse(quote.data.telemetry.providerTime ?? "");
+      sessionDate = Number.isFinite(providerTime)
+        ? new Date(providerTime + 19800_000).toISOString().slice(0, 10)
+        : current.date;
+      starDayHigh = quote.data.high ?? current.high;
+      starDayLow = quote.data.low ?? current.low;
+      // Include the current session in live daily indicators when history has not yet published it.
+      if (sessionDate === today && current.date < today && quote.data.open != null &&
+          quote.data.high != null && quote.data.low != null) {
+        candles.push({ date: today, time: providerTime / 1000, open: quote.data.open,
+          high: starDayHigh, low: starDayLow, close: livePrice, volume: quote.data.volume ?? 0 });
+      } else if (sessionDate === today && current.date === today) {
+        candles[candles.length - 1] = { ...current, close: livePrice, high: starDayHigh, low: starDayLow };
       }
     }
-
-    const current = candles[activeIdx];
-    const prev = activeIdx > 0 ? candles[activeIdx - 1] : current;
-
-    const closes = candles.slice(0, activeIdx + 1).map((c) => c.close);
-    const ema13 = computeEma(closes, 13);
-
-    const rsiResult = calculateRsi(candles.slice(0, activeIdx + 1), { period: 14 });
-    const lastRsiPoint = rsiResult.points[rsiResult.points.length - 1];
-    const rsi14 = lastRsiPoint?.values.rsi != null ? round2(lastRsiPoint.values.rsi) : null;
-
-    const livePrice = round2(activeIdx === candles.length - 1 ? (meta.regularMarketPrice ?? current.close) : current.close);
-    const prevClose = round2(prev.close);
-    const prevHigh = round2(prev.high);
-    const prevLow = round2(prev.low);
-    const dateStr = new Date((prev.time + 19800) * 1000).toISOString().slice(0, 10);
-
-    return { livePrice, prevClose, prevHigh, prevLow, ema13, rsi14, dateStr };
-  } catch (err) {
-    // Fallback safe values if external network fails
-    const defaultClose = ticker === "^NSEBANK" ? 51600 : 25144.3;
-    return {
-      livePrice: defaultClose,
-      prevClose: defaultClose,
-      prevHigh: defaultClose + (ticker === "^NSEBANK" ? 250 : 80),
-      prevLow: defaultClose - (ticker === "^NSEBANK" ? 250 : 80),
-      ema13: defaultClose,
-      rsi14: 50,
-      dateStr: new Date().toISOString().slice(0, 10),
-    };
   }
+  // Today's anchor is T-1 even after close. Future dates can use today's completed EOD.
+  const todayCompleted = istNow.getUTCHours() * 60 + istNow.getUTCMinutes() >= 15 * 60 + 30;
+  const prev = historical ? candles.at(-2) : candles.filter((c) =>
+    c.date < today || (targetDateStr > today && todayCompleted && c.date === today)).at(-1);
+  if (!prev) throw new Error(`Previous trading session unavailable for ${symbol} on ${toDate}`);
+  const ema13 = computeEma(candles.map((c) => c.close), 13);
+  const rsi = calculateRsi(candles, { period: 14 }).points.at(-1)?.values.rsi;
+  return { livePrice: round2(livePrice), prevClose: round2(prev.close), prevHigh: round2(prev.high),
+    prevLow: round2(prev.low), ema13, rsi14: rsi != null ? round2(rsi) : null,
+    dateStr: prev.date, sessionDate, starDayHigh, starDayLow, historical };
 }
 
 async function fetchIndiaVix(): Promise<number> {
@@ -135,6 +151,10 @@ async function fetchIndiaVix(): Promise<number> {
 export interface HTGannIntraPayload {
   asOf: string;
   targetDate: string;
+  sessionDate: string;
+  prevSessionDate: string;
+  historical: boolean;
+  customPrevClose: number | null;
   symbol: "NIFTY" | "BANKNIFTY";
   livePrice: number;
   prevClose: number;
@@ -162,7 +182,7 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
       return {
         symbol: obj.symbol === "BANKNIFTY" ? "BANKNIFTY" : "NIFTY",
         date: typeof obj.date === "string" ? obj.date : undefined,
-        customPrevClose: typeof obj.customPrevClose === "number" ? obj.customPrevClose : undefined,
+        customPrevClose: typeof obj.customPrevClose === "number" && Number.isFinite(obj.customPrevClose) && obj.customPrevClose > 0 ? obj.customPrevClose : undefined,
       };
     }
     return { symbol: "NIFTY" };
@@ -171,22 +191,23 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
     const symbol = data.symbol ?? "NIFTY";
     const targetAnchor = parseIstAnchor(data.date);
     const targetDateStr = targetAnchor.toISOString().slice(0, 10);
-    const cacheKey = `eaglebaba-astro:${symbol}:${targetDateStr}:${data.customPrevClose ?? "auto"}`;
+    const today = new Date(Date.now() + 19800_000).toISOString().slice(0, 10);
+    const customPrevClose = targetDateStr >= today ? data.customPrevClose : undefined;
+    const cacheKey = `eaglebaba-astro:${symbol}:${targetDateStr}:${customPrevClose ?? "auto"}`;
 
     return cached<HTGannIntraPayload>(
       cacheKey,
       async () => {
         const { computeAstroPositions } = await import("./astro-engine.server");
 
-        const ticker = symbol === "BANKNIFTY" ? "^NSEBANK" : "^NSEI";
         const [marketData, vix, positions] = await Promise.all([
-          fetchIndexDailyData(ticker, targetDateStr),
+          fetchIndexDailyData(symbol, targetDateStr),
           fetchIndiaVix(),
           Promise.resolve(computeAstroPositions(targetAnchor)),
         ]);
 
-        const prevClose = data.customPrevClose != null && data.customPrevClose > 0
-          ? data.customPrevClose
+        const prevClose = customPrevClose != null
+          ? customPrevClose
           : marketData.prevClose;
 
         // Map astronomical positions to Navagraha planets
@@ -233,8 +254,8 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
         const pillar2Starwise = evaluatePillar2Starwise({
           moonNakshatra,
           dailyRsi14: marketData.rsi14,
-          starDayHigh: marketData.prevHigh,
-          starDayLow: marketData.prevLow,
+          starDayHigh: marketData.starDayHigh,
+          starDayLow: marketData.starDayLow,
         });
 
         const retroPlanets = planets.filter((p) => p.retro).map((p) => p.name);
@@ -257,6 +278,10 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
         return {
           asOf: new Date().toISOString(),
           targetDate: targetDateStr,
+          sessionDate: marketData.sessionDate,
+          prevSessionDate: marketData.dateStr,
+          historical: marketData.historical,
+          customPrevClose: customPrevClose ?? null,
           symbol,
           livePrice: marketData.livePrice,
           prevClose,

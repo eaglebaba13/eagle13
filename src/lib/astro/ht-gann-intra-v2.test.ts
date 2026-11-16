@@ -1,4 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import dailyFixture from "./ht-gann-daily-oct-2024.fixture.json";
+import { fetchIndexDailyData, getHTGannIntra, type HTGannIntraPayload } from "../ht-gann-intra.functions";
+
+const provider = vi.hoisted(() => ({ request: vi.fn(), quote: vi.fn() }));
+vi.mock("../provider-foundation/upstox/upstox-http.server", () => ({
+  UpstoxHttpClient: class { request = provider.request; },
+}));
+vi.mock("../provider-foundation/upstox/upstox-historical.adapter.server", () => ({
+  UpstoxHistoricalAdapter: class { fetchQuote = provider.quote; },
+}));
+vi.mock("../server-cache", () => ({ cached: (_key: string, load: () => unknown) => load() }));
+vi.mock("../http", () => ({ fetchJson: async () => { throw new Error("VIX unavailable in fixture"); } }));
+vi.mock("@tanstack/react-start", () => ({
+  createServerFn: () => ({ validator: (validate: (input: unknown) => unknown) => ({
+    handler: (fn: (arg: unknown) => unknown) => (arg: { data: unknown }) => fn({ data: validate(arg.data) }),
+  }) }),
+}));
 import {
   computeFloorPivots,
   computeHtGannIntraV2Matrix,
@@ -254,5 +271,93 @@ describe("HT Gann Intra V2 & 4-Pillar Cube Engine", () => {
       expect(verdict.positionalVotes.bullishCount).toBe(3);
       expect(verdict.isExpiryWindow).toBe(true);
     });
+  });
+});
+
+describe("Target Date historical/live synchronization", () => {
+  const call = getHTGannIntra as unknown as (arg: { data: { symbol: "NIFTY" | "BANKNIFTY"; date: string; customPrevClose?: number } }) => Promise<HTGannIntraPayload>;
+  const success = (candles: unknown[][]) => ({ ok: true, data: { status: "success", data: { candles } } });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-16T05:00:00Z"));
+    provider.request.mockReset().mockImplementation(async ({ path }: { path: string }) =>
+      success(path.includes("Nifty%20Bank") ? dailyFixture.BANKNIFTY : dailyFixture.NIFTY));
+    provider.quote.mockReset().mockResolvedValue({ ok: false });
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it.each([
+    ["NIFTY", 24749.85, 24854.05, 25029.5, 24728.9, 25074.69, 41.15],
+    ["BANKNIFTY", 51288.8, 52094.2, 51930.2, 51150.25, 51815.5, 51.34],
+  ] as const)("%s: authentic October 2024 session, strict T-1, indicators and all 36 levels", async (symbol, close, spot, high, low, ema, rsi) => {
+    const result = await call({ data: { symbol, date: "2024-10-19" } });
+    expect(result).toMatchObject({ targetDate: "2024-10-19", sessionDate: "2024-10-18", prevSessionDate: "2024-10-17",
+      historical: true, prevClose: close, livePrice: spot, prevHigh: high, prevLow: low, dailyEma13: ema, dailyRsi14: rsi });
+    expect(provider.request).toHaveBeenCalledWith({ path: `v2/historical-candle/${encodeURIComponent(symbol === "NIFTY" ? "NSE_INDEX|Nifty 50" : "NSE_INDEX|Nifty Bank")}/day/2024-10-19/2024-07-21` });
+    expect(provider.quote).not.toHaveBeenCalled();
+    const expected = computeHtGannIntraV2Matrix({ symbol, prevClose: close, planets: result.planets, ohlc: { high, low, close }, indiaVix: result.indiaVix });
+    expect(result.intraMatrix).toEqual(expected);
+    expect(result.intraMatrix.allLevelsSorted).toHaveLength(36);
+    expect(result.intraMatrix.safeBuyThreshold).toBe(close - (symbol === "NIFTY" ? 100 : 300));
+    expect(result.intraMatrix.safeSellThreshold).toBe(close + (symbol === "NIFTY" ? 100 : 300));
+  });
+
+  it("uses the same target session for a trading day, weekend and holiday; ignores future rows and invalid candles", async () => {
+    const friday = await fetchIndexDailyData("NIFTY", "2024-10-18");
+    const sunday = await fetchIndexDailyData("NIFTY", "2024-10-20");
+    expect(sunday).toEqual(friday);
+    provider.request.mockResolvedValue(success([
+      ["2024-10-21T00:00:00+05:30", 99999, 99999, 99999, 99999],
+      ...dailyFixture.NIFTY, ["bad", 1, 2, 1, 2], null,
+    ] as unknown as unknown[][]));
+    expect(await fetchIndexDailyData("NIFTY", "2024-10-19")).toEqual(friday);
+    provider.request.mockResolvedValue(success(dailyFixture.NIFTY.filter((c) => !String(c[0]).startsWith("2024-10-18"))));
+    expect(await fetchIndexDailyData("NIFTY", "2024-10-19")).toMatchObject({ sessionDate: "2024-10-17", dateStr: "2024-10-16", prevClose: 24971.3, livePrice: 24749.85 });
+  });
+
+  it("uses live quote today with a strict T-1 anchor and completed EOD for future projections", async () => {
+    const quote = { last: 24900, high: 25000, low: 24560, open: 24665, volume: 0, telemetry: { providerTime: "2024-10-18T09:59:00Z" } };
+    provider.quote.mockResolvedValue({ ok: true, data: quote });
+    const now = new Date("2024-10-18T10:01:00Z");
+    expect(await fetchIndexDailyData("NIFTY", "2024-10-18", now)).toMatchObject({ historical: false, livePrice: 24900, prevClose: 24749.85, dateStr: "2024-10-17", sessionDate: "2024-10-18" });
+    expect(await fetchIndexDailyData("NIFTY", "2025-01-01", now)).toMatchObject({ historical: false, prevClose: 24900, dateStr: "2024-10-18" });
+    expect(await fetchIndexDailyData("NIFTY", "2025-01-01", new Date("2024-10-18T05:00:00Z"))).toMatchObject({ prevClose: 24749.85, dateStr: "2024-10-17" });
+    expect(provider.request.mock.calls.at(-1)?.[0].path).toContain("/day/2024-10-18/2024-07-20");
+  });
+
+  it("uses the latest completed Friday as live weekend anchor without subtracting a second session", async () => {
+    expect(await fetchIndexDailyData("BANKNIFTY", "2024-10-19", new Date("2024-10-19T05:00:00Z"))).toMatchObject({ historical: false, prevClose: 52094.2, dateStr: "2024-10-18" });
+  });
+
+  it("includes today's live candle in indicators when daily history has not yet published it", async () => {
+    provider.request.mockResolvedValue(success(dailyFixture.NIFTY.slice(1)));
+    provider.quote.mockResolvedValue({ ok: true, data: { last: 24854.05, high: 24886.2, low: 24567.65, open: 24664.95, volume: 0, telemetry: { providerTime: "2024-10-18T09:59:00Z" } } });
+    const result = await fetchIndexDailyData("NIFTY", "2024-10-18", new Date("2024-10-18T10:01:00Z"));
+    expect(result).toMatchObject({ prevClose: 24749.85, sessionDate: "2024-10-18", rsi14: 41.15 });
+  });
+
+  it("accepts a finite positive override only for live/future projections and resets to auto when omitted", async () => {
+    vi.setSystemTime(new Date("2024-10-18T05:00:00Z"));
+    const manual = await call({ data: { symbol: "NIFTY", date: "2024-10-21", customPrevClose: 26000 } });
+    expect(manual).toMatchObject({ prevClose: 26000, customPrevClose: 26000 });
+    const auto = await call({ data: { symbol: "NIFTY", date: "2024-10-21" } });
+    expect(auto).toMatchObject({ prevClose: 24749.85, customPrevClose: null });
+    expect(auto.intraMatrix.allLevelsSorted).not.toEqual(manual.intraMatrix.allLevelsSorted);
+    expect((await call({ data: { symbol: "NIFTY", date: "2024-10-21", customPrevClose: Infinity } })).prevClose).toBe(24749.85);
+    vi.setSystemTime(new Date("2026-11-16T05:00:00Z"));
+    expect((await call({ data: { symbol: "NIFTY", date: "2024-10-19", customPrevClose: 26000 } })).prevClose).toBe(24749.85);
+  });
+
+  it("supports old daily history through V3 fallback and rejects missing or insufficient data", async () => {
+    const old = dailyFixture.NIFTY.map((row) => [String(row[0]).replace("2024-", "2010-"), ...row.slice(1)]);
+    provider.request.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce(success(old));
+    expect(await fetchIndexDailyData("NIFTY", "2010-10-19")).toMatchObject({ sessionDate: "2010-10-18", dateStr: "2010-10-17" });
+    expect(provider.request.mock.calls[1][0].path).toContain("/days/1/2010-10-19/2010-07-21");
+    provider.request.mockResolvedValue({ ok: false });
+    await expect(fetchIndexDailyData("NIFTY", "2024-10-19")).rejects.toThrow("unavailable");
+    provider.request.mockResolvedValue(success(dailyFixture.NIFTY.slice(0, 1)));
+    await expect(fetchIndexDailyData("NIFTY", "2024-10-19")).rejects.toThrow("Insufficient");
+    await expect(fetchIndexDailyData("NIFTY", "2024-02-30")).rejects.toThrow("valid YYYY-MM-DD");
   });
 });

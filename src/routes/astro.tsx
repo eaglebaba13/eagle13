@@ -42,6 +42,12 @@ export const Route = createFileRoute("/astro")({
 
 type AstroTab = "matrix" | "radar" | "cube" | "sessions";
 
+function formatSessionDate(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata",
+  });
+}
+
 const PLANET_CONFIG: Record<
   string,
   { glyph: string; color: string; aura: string; isPrimary?: boolean; sanskrit: string }
@@ -141,15 +147,30 @@ function AstroWorkstationPage() {
   });
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
   const [lastChimeLevel, setLastChimeLevel] = useState<number | null>(null);
+  const [override, setOverride] = useState<{ symbol: string; date: string; value: number } | null>(null);
+  const [editingPrevClose, setEditingPrevClose] = useState(false);
+  const [prevCloseDraft, setPrevCloseDraft] = useState("");
+  const today = new Date(Date.now() + 19800_000).toISOString().slice(0, 10);
+  const canOverride = selectedDate >= today;
+  const customPrevClose = canOverride && override?.symbol === symbol && override.date === selectedDate
+    ? override.value : undefined;
+
+  useEffect(() => {
+    setOverride(null);
+    setEditingPrevClose(false);
+    setPrevCloseDraft("");
+    setLastChimeLevel(null);
+  }, [symbol, selectedDate]);
 
   // Primary Query: Proprietary EagleBABA Navagraha 360° & 4-Pillar Cube Engine
   const intraQ = useQuery({
-    queryKey: ["eaglebaba-astro-matrix", symbol, selectedDate],
+    queryKey: ["eaglebaba-navagraha-cube", symbol, selectedDate, customPrevClose],
     queryFn: () =>
       getEagleBabaAstroMatrix({
         data: {
           symbol,
           date: selectedDate,
+          customPrevClose,
         },
       }),
     refetchInterval: 15_000,
@@ -198,7 +219,7 @@ function AstroWorkstationPage() {
 
   // Check proximity for Audio Alerts in Radar mode
   useEffect(() => {
-    if (!data || !audioEnabled) return;
+    if (!data || !audioEnabled || data.historical) return;
     const live = data.livePrice;
     const touched = data.intraMatrix.allLevelsSorted.find(
       (l) => Math.abs(l.level - live) <= (symbol === "BANKNIFTY" ? 10 : 3),
@@ -476,8 +497,10 @@ function AstroWorkstationPage() {
               <span>Target Date:</span>
               <input
                 type="date"
+                aria-label="Target Date"
+                min="2010-01-01"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
                 style={{
                   background: "rgba(0,0,0,0.4)",
                   border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -503,10 +526,36 @@ function AstroWorkstationPage() {
                 fontSize: 12,
               }}
             >
-              <span style={{ color: "var(--text-muted)" }}>Prev Close:</span>
-              <span style={{ fontFamily: "var(--eb-mono, monospace)", fontWeight: 800, color: "#f8fafc" }}>
-                ₹{data ? fmt(data.prevClose) : "..."}
+              <span style={{ color: "var(--text-muted)" }}>
+                Prev Close{data ? ` (${formatSessionDate(data.prevSessionDate)})` : ""}:
               </span>
+              {editingPrevClose && canOverride ? (
+                <form style={{ display: "flex", gap: 6 }} onSubmit={(e) => {
+                  e.preventDefault();
+                  const value = Number(prevCloseDraft);
+                  if (Number.isFinite(value) && value > 0) {
+                    setOverride({ symbol, date: selectedDate, value });
+                    setEditingPrevClose(false);
+                  }
+                }}>
+                  <input autoFocus aria-label="Custom Prev Close" type="number" min="0.01" step="0.01" required
+                    value={prevCloseDraft} onChange={(e) => setPrevCloseDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Escape") setEditingPrevClose(false); }}
+                    style={{ width: 110, background: "#0f172a", color: "#fbbf24", border: "1px solid #64748b", padding: 4 }} />
+                  <button type="submit">Apply</button>
+                  <button type="button" onClick={() => setEditingPrevClose(false)}>Cancel</button>
+                </form>
+              ) : (
+                <button type="button" disabled={!canOverride || !data}
+                  title={canOverride ? "Edit projection Prev Close" : "Historical session anchor"}
+                  onClick={() => { setPrevCloseDraft(String(data?.prevClose ?? "")); setEditingPrevClose(true); }}
+                  style={{ fontFamily: "var(--eb-mono, monospace)", fontWeight: 800, color: "#f8fafc", background: "transparent", border: 0, cursor: canOverride ? "pointer" : "default" }}>
+                  ₹{data ? fmt(data.prevClose) : "..."}{canOverride && data ? " ✎" : ""}
+                </button>
+              )}
+              {customPrevClose != null && (
+                <button type="button" onClick={() => { setOverride(null); setEditingPrevClose(false); }}>⚡ Reset Auto</button>
+              )}
               <span
                 style={{
                   fontSize: 10,
@@ -518,7 +567,7 @@ function AstroWorkstationPage() {
                   letterSpacing: 0.5,
                 }}
               >
-                ⚡ AUTO-SYNCED
+                {customPrevClose != null ? "MANUAL PROJECTION" : "⚡ AUTO-SYNCED"}
               </span>
             </div>
           </div>
@@ -685,8 +734,8 @@ function AstroWorkstationPage() {
                 marginBottom: 18,
               }}
             >
-              <StatCard label="Live Spot Price" value={fmt(data.livePrice)} sub={symbol} isPrice />
-              <StatCard label="Prev Session Close" value={fmt(data.prevClose)} sub="Auto-Synced Anchor" isPrice />
+              <StatCard label={data.historical ? "Session Spot Price" : "Live / Session Spot Price"} value={fmt(data.livePrice)} sub={`${symbol} · ${formatSessionDate(data.sessionDate)}`} isPrice />
+              <StatCard label="Prev Session Close" value={fmt(data.prevClose)} sub={`${formatSessionDate(data.prevSessionDate)} · ${data.customPrevClose != null ? "Manual Projection" : "Auto-Synced Anchor"}`} isPrice />
               <StatCard label="360° Upper Cycle" value={fmt(data.intraMatrix.upper360)} sub="Ceil Multiple" isPrice />
               <StatCard label="360° Lower Cycle" value={fmt(data.intraMatrix.lower360)} sub="Floor Multiple" isPrice />
               <StatCard
@@ -702,7 +751,7 @@ function AstroWorkstationPage() {
                 highlightColor="var(--eb-bear, #ff3a5c)"
               />
               <StatCard
-                label="India VIX"
+                label={data.historical ? "India VIX (Live Context)" : "India VIX"}
                 value={data.indiaVix.toFixed(2)}
                 sub={data.indiaVix < 15 ? "Low VIX (<15: S2/R2 Priority)" : "Normal/High VIX (>=15: S1/S2)"}
               />
