@@ -3,7 +3,8 @@
 // Eliminates all synthetic sine waves permanently. Server-only.
 
 import https from "node:https";
-import { resolveUpstoxAccessToken } from "./upstox-token-policy.server";
+import { UpstoxHttpClient } from "./upstox-http.server";
+import { bucketTimestamp } from "../indstocks/candle-aggregator";
 import { mapToMarketSymbol } from "@/lib/cycles/market-data-adapter.server";
 
 export interface DeepCandle {
@@ -16,6 +17,7 @@ export interface DeepCandleResult {
   candles: DeepCandle[];
   spotPrice: number | null;
   provider: string;
+  warning?: string;
 }
 
 const IST_OFFSET_MS = 5.5 * 3600 * 1000;
@@ -82,95 +84,44 @@ function httpsGetJson<T>(url: string, headers: Record<string, string> = {}, time
   });
 }
 
-/**
- * Fetch raw Upstox candles for a given interval and date window
- */
-async function fetchUpstoxRawCandles(
-  instrumentKey: string,
-  interval: "1minute" | "30minute" | "day" | "week" | "month",
-  toDate: string,
-  fromDate?: string,
-): Promise<{ time: number; open: number; high: number; low: number; close: number; volume: number }[]> {
-  const encKey = encodeURIComponent(instrumentKey);
-  const token = resolveUpstoxAccessToken();
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+type RawCandle = { time: number; open: number; high: number; low: number; close: number; volume: number };
 
-  const url = fromDate
-    ? `https://api.upstox.com/v2/historical-candle/${encKey}/${interval}/${toDate}/${fromDate}`
-    : `https://api.upstox.com/v2/historical-candle/${encKey}/${interval}/${toDate}`;
-
-  interface UpstoxCandleResponse {
-    status?: string;
-    data?: {
-      candles?: [string, number, number, number, number, number, number][];
-    };
+async function fetchUpstoxCandles(path: string): Promise<RawCandle[]> {
+  const response = await new UpstoxHttpClient({ timeoutMs: 8000, maxRetries: 1 }).request<{
+    data?: { candles?: unknown[][] };
+  }>({ path });
+  if (!response.ok || !Array.isArray(response.data.data?.candles)) return [];
+  const result: RawCandle[] = [];
+  for (const row of response.data.data.candles) {
+    if (!Array.isArray(row) || row.length < 5) continue;
+    const time = typeof row[0] === "string" ? Date.parse(row[0]) : NaN;
+    const [open, high, low, close] = row.slice(1, 5).map(Number);
+    if (!Number.isFinite(time) || ![open, high, low, close].every((n) => Number.isFinite(n) && n > 0) ||
+        high < Math.max(open, close) || low > Math.min(open, close)) continue;
+    result.push({ time, open, high, low, close, volume: Math.max(0, Number(row[5]) || 0) });
   }
-
-  const json = await httpsGetJson<UpstoxCandleResponse>(url, headers);
-  if (!json || json.status !== "success" || !Array.isArray(json.data?.candles)) {
-    return [];
-  }
-
-  const result: { time: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
-  for (const c of json.data.candles) {
-    if (!c || c.length < 5) continue;
-    const ts = Date.parse(c[0]);
-    if (!Number.isFinite(ts)) continue;
-    const open = Number(c[1]);
-    const high = Number(c[2]);
-    const low = Number(c[3]);
-    const close = Number(c[4]);
-    const volume = Number(c[5]) || 0;
-    if (Number.isFinite(open) && Number.isFinite(high) && Number.isFinite(low) && Number.isFinite(close)) {
-      result.push({ time: ts, open, high, low, close, volume });
-    }
-  }
-
-  // Upstox returns newest first; sort oldest first
   return result.sort((a, b) => a.time - b.time);
 }
 
-/**
- * Fetch today's current intraday candles from Upstox
- */
-async function fetchUpstoxIntradayCandles(
-  instrumentKey: string,
-  interval: "1minute" | "30minute",
-): Promise<{ time: number; open: number; high: number; low: number; close: number; volume: number }[]> {
-  const encKey = encodeURIComponent(instrumentKey);
-  const token = resolveUpstoxAccessToken();
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-
-  const url = `https://api.upstox.com/v2/historical-candle/intraday/${encKey}/${interval}`;
-
-  interface UpstoxCandleResponse {
-    status?: string;
-    data?: {
-      candles?: [string, number, number, number, number, number, number][];
-    };
+/** Respect V3's one-month (1m) and one-quarter (30m) retrieval limits. */
+export function buildDeepHistoryPlan(intervalMs: number, now = Date.now()) {
+  const today = new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+  const end = Date.parse(`${today}T00:00:00Z`) - 86_400_000;
+  const days = ({ 60000: 7, 180000: 14, 300000: 21, 900000: 45, 1800000: 75,
+    3600000: 150, 14400000: 400, 86400000: 800, 604800000: 4015 } as Record<number, number>)[intervalMs];
+  if (!days) throw new Error("Unsupported chart timeframe");
+  const intraday = intervalMs < 86_400_000;
+  const baseMinutes = intervalMs < 1_800_000 ? 1 : 30;
+  const unit = intraday ? "minutes" : intervalMs === 86_400_000 ? "days" : "weeks";
+  const interval = intraday ? baseMinutes : 1;
+  const chunkDays = intraday ? baseMinutes === 1 ? 28 : 88 : days;
+  const start = end - (days - 1) * 86_400_000;
+  const chunks: { from: string; to: string }[] = [];
+  for (let to = end; to >= start; to -= chunkDays * 86_400_000) {
+    chunks.push({ from: new Date(Math.max(start, to - (chunkDays - 1) * 86_400_000)).toISOString().slice(0, 10),
+      to: new Date(to).toISOString().slice(0, 10) });
   }
-
-  const json = await httpsGetJson<UpstoxCandleResponse>(url, headers);
-  if (!json || json.status !== "success" || !Array.isArray(json.data?.candles)) {
-    return [];
-  }
-
-  const result: { time: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
-  for (const c of json.data.candles) {
-    if (!c || c.length < 5) continue;
-    const ts = Date.parse(c[0]);
-    if (!Number.isFinite(ts)) continue;
-    const open = Number(c[1]);
-    const high = Number(c[2]);
-    const low = Number(c[3]);
-    const close = Number(c[4]);
-    const volume = Number(c[5]) || 0;
-    if (Number.isFinite(open) && Number.isFinite(high) && Number.isFinite(low) && Number.isFinite(close)) {
-      result.push({ time: ts, open, high, low, close, volume });
-    }
-  }
-
-  return result.sort((a, b) => a.time - b.time);
+  return { today, unit, interval, intraday, chunks };
 }
 
 /**
@@ -179,53 +130,15 @@ async function fetchUpstoxIntradayCandles(
 function aggregateToIstBuckets(
   candles: { time: number; open: number; high: number; low: number; close: number; volume: number }[],
   intervalMs: number,
+  symbol = "NIFTY50",
 ): DeepCandle[] {
   if (candles.length === 0) return [];
   const sorted = [...candles].sort((a, b) => a.time - b.time);
 
-  function getBucketTime(ts: number): number {
-    if (intervalMs === 3_600_000) {
-      // 1-hour session bucket aligned to 09:15 IST
-      const istDate = new Date(ts + IST_OFFSET_MS);
-      const hours = istDate.getUTCHours();
-      const minutes = istDate.getUTCMinutes();
-      let bucketHour = hours;
-      let bucketMinute = 15;
-      if (minutes < 15) {
-        bucketHour = hours - 1;
-      }
-      const bucketDate = new Date(istDate);
-      bucketDate.setUTCHours(bucketHour, bucketMinute, 0, 0);
-      return bucketDate.getTime() - IST_OFFSET_MS;
-    }
-
-    if (intervalMs === 14_400_000) {
-      // 4-hour session bucket aligned to 09:15 IST
-      // Morning: 09:15 - 13:15, Afternoon: 13:15 - 15:30
-      const istDate = new Date(ts + IST_OFFSET_MS);
-      const hours = istDate.getUTCHours();
-      const minutes = istDate.getUTCMinutes();
-      const timeVal = hours * 100 + minutes;
-      let bucketHour = 9;
-      let bucketMinute = 15;
-      if (timeVal >= 1315) {
-        bucketHour = 13;
-        bucketMinute = 15;
-      }
-      const bucketDate = new Date(istDate);
-      bucketDate.setUTCHours(bucketHour, bucketMinute, 0, 0);
-      return bucketDate.getTime() - IST_OFFSET_MS;
-    }
-
-    // Standard intervals (3m, 5m, 15m) aligned to IST
-    const istMs = ts + IST_OFFSET_MS;
-    return Math.floor(istMs / intervalMs) * intervalMs - IST_OFFSET_MS;
-  }
-
   const buckets = new Map<number, { open: number; high: number; low: number; close: number; volume: number }>();
 
   for (const c of sorted) {
-    const bucketKey = getBucketTime(c.time);
+    const bucketKey = bucketTimestamp(c.time, intervalMs, symbol);
     const existing = buckets.get(bucketKey);
     if (!existing) {
       buckets.set(bucketKey, {
@@ -273,7 +186,7 @@ async function fetchUniversalMarketCandles(symbol: string, intervalMs: number): 
     yfInterval = "1m";
     yfRange = "5d";
   } else if (intervalMs === 180_000) {
-    yfInterval = "2m";
+    yfInterval = "1m";
     yfRange = "5d";
   } else if (intervalMs === 300_000) {
     yfInterval = "5m";
@@ -347,7 +260,7 @@ async function fetchUniversalMarketCandles(symbol: string, intervalMs: number): 
 
   let candles: DeepCandle[] = [];
   if (intervalMs === 180_000 || intervalMs === 14_400_000) {
-    candles = aggregateToIstBuckets(rawPoints, intervalMs);
+    candles = aggregateToIstBuckets(rawPoints, intervalMs, symbol);
   } else {
     candles = rawPoints.map((p) => ({
       x: p.time,
@@ -367,7 +280,7 @@ async function fetchUniversalMarketCandles(symbol: string, intervalMs: number): 
       : candles[candles.length - 1]?.y[3] ?? null;
 
   return {
-    candles,
+    candles: candles.slice(-500),
     spotPrice,
     provider: "MARKET_INTEGRATED",
   };
@@ -376,7 +289,7 @@ async function fetchUniversalMarketCandles(symbol: string, intervalMs: number): 
 /**
  * Main deep candle fetcher: guarantees 150 to 400+ authentic candles across all 9 timeframes.
  */
-export async function getDeepMultiTimeframeCandles(
+async function loadDeepMultiTimeframeCandles(
   symbol: string,
   intervalMs: number,
 ): Promise<DeepCandleResult> {
@@ -392,126 +305,24 @@ export async function getDeepMultiTimeframeCandles(
 
   if (upstoxKey) {
     try {
-      const now = new Date();
-      const toDate = now.toISOString().slice(0, 10);
-      let candles: DeepCandle[] = [];
-      let latestSpot: number | null = null;
-
-      if (intervalMs <= 900_000) {
-        // 1m, 3m, 5m, 15m: Fetch Upstox 1minute candles + intraday
-        const daysBack = intervalMs === 60_000 ? 7 : intervalMs === 180_000 ? 10 : intervalMs === 300_000 ? 15 : 30;
-        const fromDate = new Date(now.getTime() - daysBack * 86_400_000).toISOString().slice(0, 10);
-
-        const [historicalRaw, intradayRaw] = await Promise.all([
-          fetchUpstoxRawCandles(upstoxKey, "1minute", toDate, fromDate),
-          fetchUpstoxIntradayCandles(upstoxKey, "1minute"),
-        ]);
-
-        const mergedMap = new Map<number, { time: number; open: number; high: number; low: number; close: number; volume: number }>();
-        for (const c of historicalRaw) mergedMap.set(c.time, c);
-        for (const c of intradayRaw) mergedMap.set(c.time, c);
-
-        const rawSorted = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
-        if (rawSorted.length > 0) {
-          latestSpot = rawSorted[rawSorted.length - 1].close;
-        }
-
-        if (intervalMs === 60_000) {
-          // Keep last 400-500 candles for 1m to keep lightweight chart ultra responsive
-          const sliced = rawSorted.slice(-500);
-          candles = sliced.map((c) => ({
-            x: c.time,
-            y: [c.open, c.high, c.low, c.close],
-            volume: c.volume,
-          }));
-        } else {
-          candles = aggregateToIstBuckets(rawSorted, intervalMs);
-          if (candles.length > 500) candles = candles.slice(-500);
-        }
-      } else if (intervalMs === 1_800_000) {
-        // 30m: Fetch last 45 calendar days of Upstox 30minute candles + intraday
-        const fromDate = new Date(now.getTime() - 45 * 86_400_000).toISOString().slice(0, 10);
-        const [historicalRaw, intradayRaw] = await Promise.all([
-          fetchUpstoxRawCandles(upstoxKey, "30minute", toDate, fromDate),
-          fetchUpstoxIntradayCandles(upstoxKey, "30minute"),
-        ]);
-
-        const mergedMap = new Map<number, { time: number; open: number; high: number; low: number; close: number; volume: number }>();
-        for (const c of historicalRaw) mergedMap.set(c.time, c);
-        for (const c of intradayRaw) mergedMap.set(c.time, c);
-
-        const rawSorted = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
-        if (rawSorted.length > 0) {
-          latestSpot = rawSorted[rawSorted.length - 1].close;
-        }
-        candles = rawSorted.map((c) => ({
-          x: c.time,
-          y: [c.open, c.high, c.low, c.close],
-          volume: c.volume,
-        }));
-      } else if (intervalMs === 3_600_000) {
-        // 1h: Fetch last 90 calendar days of Upstox 30minute candles and aggregate to 1h IST buckets
-        const fromDate = new Date(now.getTime() - 90 * 86_400_000).toISOString().slice(0, 10);
-        const [historicalRaw, intradayRaw] = await Promise.all([
-          fetchUpstoxRawCandles(upstoxKey, "30minute", toDate, fromDate),
-          fetchUpstoxIntradayCandles(upstoxKey, "30minute"),
-        ]);
-
-        const mergedMap = new Map<number, { time: number; open: number; high: number; low: number; close: number; volume: number }>();
-        for (const c of historicalRaw) mergedMap.set(c.time, c);
-        for (const c of intradayRaw) mergedMap.set(c.time, c);
-
-        const rawSorted = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
-        if (rawSorted.length > 0) {
-          latestSpot = rawSorted[rawSorted.length - 1].close;
-        }
-        candles = aggregateToIstBuckets(rawSorted, 3_600_000);
-      } else if (intervalMs === 14_400_000) {
-        // 4h: Fetch last 180 calendar days of Upstox 30minute candles in two 90-day chunks
-        const midDate = new Date(now.getTime() - 90 * 86_400_000).toISOString().slice(0, 10);
-        const fromDate = new Date(now.getTime() - 180 * 86_400_000).toISOString().slice(0, 10);
-
-        const [chunk1, chunk2, intradayRaw] = await Promise.all([
-          fetchUpstoxRawCandles(upstoxKey, "30minute", toDate, midDate),
-          fetchUpstoxRawCandles(upstoxKey, "30minute", midDate, fromDate),
-          fetchUpstoxIntradayCandles(upstoxKey, "30minute"),
-        ]);
-
-        const mergedMap = new Map<number, { time: number; open: number; high: number; low: number; close: number; volume: number }>();
-        for (const c of chunk2) mergedMap.set(c.time, c);
-        for (const c of chunk1) mergedMap.set(c.time, c);
-        for (const c of intradayRaw) mergedMap.set(c.time, c);
-
-        const rawSorted = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
-        if (rawSorted.length > 0) {
-          latestSpot = rawSorted[rawSorted.length - 1].close;
-        }
-        candles = aggregateToIstBuckets(rawSorted, 14_400_000);
-      } else if (intervalMs === 86_400_000) {
-        // 1D: Fetch last 400 calendar days of Upstox day candles
-        const fromDate = new Date(now.getTime() - 400 * 86_400_000).toISOString().slice(0, 10);
-        const dayRaw = await fetchUpstoxRawCandles(upstoxKey, "day", toDate, fromDate);
-        if (dayRaw.length > 0) {
-          latestSpot = dayRaw[dayRaw.length - 1].close;
-        }
-        candles = dayRaw.map((c) => ({
-          x: c.time,
-          y: [c.open, c.high, c.low, c.close],
-          volume: c.volume,
-        }));
-      } else if (intervalMs === 604_800_000) {
-        // 1W: Fetch last 1,825 calendar days (5 years) of Upstox week candles
-        const fromDate = new Date(now.getTime() - 1825 * 86_400_000).toISOString().slice(0, 10);
-        const weekRaw = await fetchUpstoxRawCandles(upstoxKey, "week", toDate, fromDate);
-        if (weekRaw.length > 0) {
-          latestSpot = weekRaw[weekRaw.length - 1].close;
-        }
-        candles = weekRaw.map((c) => ({
-          x: c.time,
-          y: [c.open, c.high, c.low, c.close],
-          volume: c.volume,
-        }));
+      const plan = buildDeepHistoryPlan(intervalMs);
+      const encoded = encodeURIComponent(upstoxKey);
+      const history: RawCandle[] = [];
+      let historyComplete = true;
+      // Limit concurrency while retaining all requested sessions.
+      const intradayPromise = fetchUpstoxCandles(`v3/historical-candle/intraday/${encoded}/minutes/1`);
+      for (let i = 0; i < plan.chunks.length; i += 3) {
+        const batch = await Promise.all(plan.chunks.slice(i, i + 3).map(({ from, to }) =>
+          fetchUpstoxCandles(`v3/historical-candle/${encoded}/${plan.unit}/${plan.interval}/${to}/${from}`)));
+        if (batch.some((chunk) => chunk.length === 0)) historyComplete = false;
+        history.push(...batch.flat());
       }
+      const intradayRaw = await intradayPromise;
+      const merged = new Map<number, RawCandle>();
+      for (const candle of [...history, ...intradayRaw]) merged.set(candle.time, candle);
+      const rawSorted = [...merged.values()].sort((a, b) => a.time - b.time);
+      const candles = aggregateToIstBuckets(rawSorted, intervalMs, cleanSym).slice(-500);
+      const latestSpot = candles.at(-1)?.y[3] ?? null;
 
       if (candles.length > 0) {
         // Ensure final candle close matches latest canonical spot price
@@ -526,8 +337,9 @@ export async function getDeepMultiTimeframeCandles(
           candles,
           spotPrice: latestSpot,
           provider: "UPSTOX_V3_DEEP",
+          ...(!historyComplete || candles.length < 250 ? { warning: "Provider returned limited history; previous sessions may be incomplete." } : {}),
         };
-        DEEP_CANDLE_CACHE.set(cacheKey, { data: res, timestamp: Date.now() });
+        if (!res.warning) DEEP_CANDLE_CACHE.set(cacheKey, { data: res, timestamp: Date.now() });
         return res;
       }
     } catch (err) {
@@ -548,4 +360,16 @@ export async function getDeepMultiTimeframeCandles(
     spotPrice: null,
     provider: "NO_DATA",
   };
+}
+
+
+const pendingHistory = new Map<string, Promise<DeepCandleResult>>();
+export function getDeepMultiTimeframeCandles(symbol: string, intervalMs: number, refresh = false): Promise<DeepCandleResult> {
+  const key = `${symbol.trim().toUpperCase()}_${intervalMs}`;
+  if (refresh) DEEP_CANDLE_CACHE.delete(key);
+  const existing = pendingHistory.get(key);
+  if (existing) return existing;
+  const request = loadDeepMultiTimeframeCandles(symbol, intervalMs).finally(() => pendingHistory.delete(key));
+  pendingHistory.set(key, request);
+  return request;
 }

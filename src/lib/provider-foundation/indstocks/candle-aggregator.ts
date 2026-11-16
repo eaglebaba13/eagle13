@@ -51,7 +51,18 @@ export interface CandleAggregatorState {
 /**
  * Deterministic time bucket: floor(timestamp / intervalMs) * intervalMs
  */
-export function bucketTimestamp(epochMs: number, intervalMs: AggregationIntervalMs): number {
+export function bucketTimestamp(epochMs: number, intervalMs: number, instrument?: string): number {
+  const indiaSession = instrument != null && !/USDT|BTC|ETH|SOL|XRP|GC1!|SI1!|CL1!|NG1!|XAU|XAG|GOLD|SILVER/i.test(instrument);
+  if (indiaSession) {
+    const day = Math.floor((epochMs + 19_800_000) / 86_400_000) * 86_400_000 - 19_800_000;
+    if (intervalMs === 86_400_000) return day;
+    if (intervalMs === 604_800_000) {
+      const weekday = new Date(day + 19_800_000).getUTCDay();
+      return day - ((weekday + 6) % 7) * 86_400_000;
+    }
+    const open = day + (9 * 60 + 15) * 60_000;
+    return open + Math.floor((epochMs - open) / intervalMs) * intervalMs;
+  }
   return Math.floor(epochMs / intervalMs) * intervalMs;
 }
 
@@ -102,7 +113,7 @@ export function aggregateTick(
   const tickMs = Date.parse(tick.timestamp);
   if (!Number.isFinite(tickMs)) return state; // invalid timestamp — skip
 
-  const bucketMs = bucketTimestamp(tickMs, state.intervalMs);
+  const bucketMs = bucketTimestamp(tickMs, state.intervalMs, state.instrument);
 
   if (!state.current) {
     // First tick — create initial candle
@@ -159,6 +170,27 @@ export interface MergedCandlePoint {
   readonly x: number;
   readonly y: readonly [number, number, number, number];
   readonly volume: number | null;
+}
+
+/** REST supplies the full bar open/range; an SSE connection may start halfway through it. */
+export function stitchCandlePoints(
+  historical: readonly MergedCandlePoint[],
+  updates: readonly MergedCandlePoint[],
+): MergedCandlePoint[] {
+  const byTime = new Map<number, MergedCandlePoint>();
+  for (const candle of [...historical, ...updates]) {
+    if (!Number.isFinite(candle.x) || candle.x <= 0 ||
+        !candle.y.every((n) => Number.isFinite(n) && n > 0) ||
+        candle.y[1] < Math.max(candle.y[0], candle.y[3]) || candle.y[2] > Math.min(candle.y[0], candle.y[3])) continue;
+    const existing = byTime.get(candle.x);
+    byTime.set(candle.x, existing ? {
+      x: candle.x,
+      y: [existing.y[0], Math.max(existing.y[1], candle.y[1]), Math.min(existing.y[2], candle.y[2]), candle.y[3]],
+      // Never add REST volume to an overlapping partial SSE volume.
+      volume: existing.volume == null ? candle.volume : candle.volume == null ? existing.volume : Math.max(existing.volume, candle.volume),
+    } : candle);
+  }
+  return [...byTime.values()].sort((a, b) => a.x - b.x);
 }
 
 export function mergeHistoricalAndLive(

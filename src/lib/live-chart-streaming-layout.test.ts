@@ -148,6 +148,25 @@ describe("Live Chart Streaming & Layout Verification Suite", () => {
       expect(state.completedCandles.size).toBe(1);
       expect(state.completedCandles.get(1750000000000)?.close).toBe(2744.0);
     });
+
+    it("keeps completed history referentially stable during ticks and rejects older status snapshots", () => {
+      const event: LiveCandleEvent = {
+        type: "candle_update", symbol: "NIFTY50", intervalMs: 60000, provider: "UPSTOX",
+        freshness: "LIVE", quality: "OK", lastTick: "2026-11-16T04:45:10Z", lastLtp: 25100,
+        connectionState: "CONNECTED", completed: false, timestamp: "2026-11-16T04:45:10Z", tickCount: 1,
+        candle: { time: Date.parse("2026-11-16T04:45:00Z"), open: 25000, high: 25100, low: 25000, close: 25100, volume: 10 },
+      };
+      const initial = emptyLiveState();
+      const ticking = applyLiveEvent(initial, event);
+      expect(ticking.completedCandles).toBe(initial.completedCandles);
+      const staleStatus: LiveStatusEvent = { ...event, type: "status", completedCount: 0, error: null,
+        lastTick: "2026-11-16T04:44:10Z", currentCandle: { ...event.candle, time: event.candle.time - 60000, close: 25000 } };
+      expect(applyLiveEvent(ticking, staleStatus).currentCandle).toBe(ticking.currentCandle);
+      const finalized = applyLiveEvent(ticking, { ...event, completed: true });
+      expect(finalized.completedCandles.size).toBe(1);
+      expect(finalized.currentCandle).toBeNull();
+      expect(finalized.completedCandles).not.toBe(ticking.completedCandles);
+    });
   });
 
   describe("3. Decoupled Volume Bar Scaling & Bull/Bear Color Coding", () => {

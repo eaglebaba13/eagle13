@@ -13,21 +13,14 @@ import {
   type IPriceLine,
   type UTCTimestamp,
   type MouseEventParams,
-  type AutoscaleInfoProvider,
   type Time,
 } from "lightweight-charts";
 import type { DrawingToolType, ChartDrawing, DrawingPoint } from "@/lib/chart/drawing-types";
-import { FIBONACCI_LEVELS } from "@/lib/chart/drawing-types";
+import { createChartDrawing, drawingLogical, pointAtLogical, FIBONACCI_LEVELS } from "@/lib/chart/drawing-types";
 import type { UnicornSetup, FVGZone } from "@/lib/orderflow/fvg-calculator";
 
-export interface ChartCandleData {
-  readonly time: number; // UNIX timestamp in ms or seconds
-  readonly open: number;
-  readonly high: number;
-  readonly low: number;
-  readonly close: number;
-  readonly volume?: number | null;
-}
+import { LiveSeriesSynchronizer, mergeChartCandles, utcSeconds, type ChartCandleData } from "@/lib/chart/live-series";
+export type { ChartCandleData } from "@/lib/chart/live-series";
 
 export interface OiProfileLevel {
   readonly strike: number;
@@ -39,6 +32,8 @@ export interface TradingViewLightweightChartProps {
   readonly symbol: string;
   readonly intervalMs: number;
   readonly candles: readonly ChartCandleData[];
+  readonly historyReady?: boolean;
+  readonly datasetKey?: string;
   readonly liveCandle?: ChartCandleData | null;
   readonly activeTool: DrawingToolType;
   readonly onFinishDrawingTool?: () => void;
@@ -92,6 +87,8 @@ export function TradingViewLightweightChart({
   intervalMs,
   candles,
   liveCandle,
+  historyReady = true,
+  datasetKey = `${symbol}:${intervalMs}`,
   activeTool,
   onFinishDrawingTool,
   isMagnet,
@@ -126,6 +123,13 @@ export function TradingViewLightweightChart({
   const vwapSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const priceLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
   const isScrolledRef = useRef(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const loadedDatasetKeyRef = useRef("");
+  const synchronizerRef = useRef(new LiveSeriesSynchronizer());
+  const chartBarsRef = useRef<readonly ChartCandleData[]>([]);
+  const callbacksRef = useRef({ onCrosshairMove, onIsScrolledChange });
+  callbacksRef.current = { onCrosshairMove, onIsScrolledChange };
+  const mergedCandles = useMemo(() => mergeChartCandles(candles, liveCandle), [candles, liveCandle]);
 
   // Floating crosshair + quick action context menu
   const [crosshairPos, setCrosshairPos] = useState<{ price: number; y: number } | null>(null);
@@ -146,25 +150,17 @@ export function TradingViewLightweightChart({
     setSelectedDrawingId(null);
   }, [selectedDrawingId, drawings, onSaveDrawings]);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedDrawingId) {
-          onSaveDrawings(drawings.filter((d) => d.id !== selectedDrawingId));
-          setSelectedDrawingId(null);
-        }
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedDrawingId, drawings, onSaveDrawings]);
-
   // Temporary interactive drawing in-progress
   const [currentDrawing, setCurrentDrawing] = useState<{
     type: DrawingToolType;
     start: DrawingPoint;
     current: DrawingPoint;
   } | null>(null);
+
+  const draftRef = useRef<typeof currentDrawing>(null);
+  const editRef = useRef<{ id: string; pointIndex: number | null; start: DrawingPoint; original: ChartDrawing } | null>(null);
+  const [editedDrawing, setEditedDrawing] = useState<ChartDrawing | null>(null);
+  const editedRef = useRef<ChartDrawing | null>(null);
 
   // Helper to convert timestamp to seconds (UTCTimestamp)
   const toUtcSeconds = useCallback((msOrSec: number): UTCTimestamp => {
@@ -260,7 +256,9 @@ export function TradingViewLightweightChart({
         borderColor: "rgba(255, 255, 255, 0.08)",
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 15,
+        rightOffset: 6,
+        shiftVisibleRangeOnNewBar: true,
+        allowShiftVisibleRangeOnWhitespaceReplacement: false,
         barSpacing: 9,
         minBarSpacing: 2,
         tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => {
@@ -295,9 +293,11 @@ export function TradingViewLightweightChart({
         },
       },
       rightPriceScale: {
+        autoScale: true,
+        borderVisible: true,
         borderColor: "rgba(255, 255, 255, 0.08)",
         scaleMargins: {
-          top: 0.08,
+          top: 0.12,
           bottom: 0.18,
         },
       },
@@ -315,6 +315,8 @@ export function TradingViewLightweightChart({
     });
 
     chartRef.current = chart;
+    synchronizerRef.current = new LiveSeriesSynchronizer();
+    loadedDatasetKeyRef.current = "";
 
     // Add Candlestick Series with pure candlestick autoscale decoupling
     const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -324,20 +326,6 @@ export function TradingViewLightweightChart({
       wickUpColor: "#10B981",
       wickDownColor: "#EF4444",
       priceLineColor: "#E5B869",
-      autoscaleInfoProvider: ((original: () => any) => {
-        const res = original();
-        if (!res || !res.priceRange) return null;
-        return {
-          priceRange: {
-            minValue: res.priceRange.minValue,
-            maxValue: res.priceRange.maxValue,
-          },
-          margins: {
-            above: 0.08,
-            below: 0.18,
-          },
-        };
-      }) as AutoscaleInfoProvider,
     });
     candleSeriesRef.current = candleSeries;
 
@@ -377,14 +365,20 @@ export function TradingViewLightweightChart({
     chart.timeScale().subscribeVisibleTimeRangeChange(() => {
       forceUpdateViewport();
     });
-    chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      const last = candleSeries.data().length - 1;
+      const scrolled = range != null && range.to < last;
+      if (isScrolledRef.current !== scrolled) chart.timeScale().applyOptions({ shiftVisibleRangeOnNewBar: !scrolled });
+      isScrolledRef.current = scrolled;
+      setIsScrolled(scrolled);
+      callbacksRef.current.onIsScrolledChange?.(scrolled);
       forceUpdateViewport();
     });
 
     // Crosshair hover for HUD & Floating Alert Button
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
       if (!param || !param.time || !param.seriesData) {
-        if (onCrosshairMove) onCrosshairMove(null);
+        callbacksRef.current.onCrosshairMove?.(null);
         setCrosshairPos(null);
         return;
       }
@@ -409,8 +403,8 @@ export function TradingViewLightweightChart({
         const changePct = o > 0 ? (change / o) * 100 : 0;
         const volData = param.seriesData.get(volumeSeries);
         const v = volData && "value" in volData ? Number(volData.value) : null;
-        if (onCrosshairMove) {
-          onCrosshairMove({
+        if (callbacksRef.current.onCrosshairMove) {
+          callbacksRef.current.onCrosshairMove({
             time: Number(param.time) * 1000,
             open: o,
             high: h,
@@ -432,150 +426,31 @@ export function TradingViewLightweightChart({
       volumeSeriesRef.current = null;
       vwapSeriesRef.current = null;
     };
-  }, [isMagnet, forceUpdateViewport, onCrosshairMove]);
+  }, [forceUpdateViewport]);
 
-  // 2. Load and Sync Candle Data
+  // Seed the full bootstrap once. Live bars and finalized corrections use update(), never viewport resets.
   useEffect(() => {
-    if (!candleSeriesRef.current || !volumeSeriesRef.current || !candles || candles.length === 0) return;
-
-    // Filter, strictly validate, and sort candles ascending by time
-    const validCandles = candles.filter(
-      (c) =>
-        c &&
-        typeof c.time === "number" &&
-        Number.isFinite(c.time) &&
-        c.time > 0 &&
-        Number.isFinite(c.open) &&
-        Number.isFinite(c.high) &&
-        Number.isFinite(c.low) &&
-        Number.isFinite(c.close)
-    );
-
-    const sortedCandles = [...validCandles].sort((a, b) => a.time - b.time);
-    const uniqueMap = new Map<number, (typeof sortedCandles)[0]>();
-    for (const c of sortedCandles) {
-      const t = toUtcSeconds(c.time);
-      if (Number.isFinite(t)) {
-        uniqueMap.set(t, c);
-      }
+    const candle = candleSeriesRef.current;
+    const volume = volumeSeriesRef.current;
+    const vwap = vwapSeriesRef.current;
+    if (!historyReady || !candle || !volume || !vwap || !mergedCandles.length) return;
+    const initial = synchronizerRef.current.sync(datasetKey, mergedCandles, { candle, volume, vwap });
+    chartBarsRef.current = synchronizerRef.current.candles;
+    if (initial && chartRef.current) {
+      loadedDatasetKeyRef.current = datasetKey;
+      chartRef.current.timeScale().setVisibleLogicalRange({ from: Math.max(0, mergedCandles.length - 90), to: mergedCandles.length + 6 });
     }
-
-    const formattedCandles = Array.from(uniqueMap.values())
-      .map((c) => ({
-        time: toUtcSeconds(c.time),
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-      }))
-      .sort((a, b) => (a.time as number) - (b.time as number));
-
-    if (formattedCandles.length > 0) {
-      try {
-        candleSeriesRef.current.setData(formattedCandles);
-      } catch (err) {
-        console.warn("[Chart] Candle setData error:", err);
-      }
-    }
-
-    if (showVolume) {
-      const formattedVolume = Array.from(uniqueMap.values())
-        .map((c) => ({
-          time: toUtcSeconds(c.time),
-          value: Number.isFinite(c.volume) ? (c.volume as number) : 1000,
-          color: c.close >= c.open ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.35)",
-        }))
-        .sort((a, b) => (a.time as number) - (b.time as number));
-      try {
-        volumeSeriesRef.current.setData(formattedVolume);
-      } catch (err) {
-        console.warn("[Chart] Volume setData error:", err);
-      }
-    } else {
-      try {
-        volumeSeriesRef.current.setData([]);
-      } catch {
-        // ignore
-      }
-    }
-
-    // Compute Session VWAP
-    if (showVwap && vwapSeriesRef.current) {
-      let cumulativeVolume = 0;
-      let cumulativeVolumePrice = 0;
-      const vwapPoints: { time: UTCTimestamp; value: number }[] = [];
-
-      for (const c of Array.from(uniqueMap.values())) {
-        const typical = (c.high + c.low + c.close) / 3;
-        const vol = Number.isFinite(c.volume) ? (c.volume as number) : 1000;
-        cumulativeVolume += vol;
-        cumulativeVolumePrice += typical * vol;
-        if (cumulativeVolume > 0) {
-          vwapPoints.push({
-            time: toUtcSeconds(c.time),
-            value: Math.round((cumulativeVolumePrice / cumulativeVolume) * 100) / 100,
-          });
-        }
-      }
-      try {
-        vwapSeriesRef.current.setData(vwapPoints);
-      } catch (err) {
-        console.warn("[Chart] VWAP setData error:", err);
-      }
-    } else if (vwapSeriesRef.current) {
-      try {
-        vwapSeriesRef.current.setData([]);
-      } catch {
-        // ignore
-      }
-    }
-
     forceUpdateViewport();
-  }, [candles, showVolume, showVwap, toUtcSeconds, forceUpdateViewport]);
+  }, [mergedCandles, historyReady, datasetKey, forceUpdateViewport]);
 
-  // 3. Smooth Live Streaming Tick Updates (60 FPS without resetting viewport)
   useEffect(() => {
-    if (!candleSeriesRef.current || !liveCandle) return;
-    if (
-      !Number.isFinite(liveCandle.time) ||
-      !Number.isFinite(liveCandle.open) ||
-      !Number.isFinite(liveCandle.high) ||
-      !Number.isFinite(liveCandle.low) ||
-      !Number.isFinite(liveCandle.close)
-    ) {
-      return;
-    }
+    volumeSeriesRef.current?.applyOptions({ visible: showVolume });
+    vwapSeriesRef.current?.applyOptions({ visible: showVwap });
+  }, [showVolume, showVwap]);
 
-    const t = toUtcSeconds(liveCandle.time);
-    if (!Number.isFinite(t)) return;
-
-    try {
-      candleSeriesRef.current.update({
-        time: t,
-        open: liveCandle.open,
-        high: liveCandle.high,
-        low: liveCandle.low,
-        close: liveCandle.close,
-      });
-    } catch {
-      // Ignore out-of-order tick assertions
-    }
-
-    if (showVolume && volumeSeriesRef.current && liveCandle.volume != null && Number.isFinite(liveCandle.volume)) {
-      try {
-        volumeSeriesRef.current.update({
-          time: t,
-          value: liveCandle.volume,
-          color:
-            liveCandle.close >= liveCandle.open
-              ? "rgba(16, 185, 129, 0.35)"
-              : "rgba(239, 68, 68, 0.35)",
-        });
-      } catch {
-        // Ignore out-of-order tick assertions
-      }
-    }
-  }, [liveCandle, showVolume, toUtcSeconds]);
+  useEffect(() => {
+    chartRef.current?.applyOptions({ crosshair: { mode: isMagnet ? CrosshairMode.Magnet : CrosshairMode.Normal } });
+  }, [isMagnet]);
 
   // 4. Manage Price Lines (In-place update to eliminate scale jumping and 1-frame disappearance)
   useEffect(() => {
@@ -813,177 +688,135 @@ export function TradingViewLightweightChart({
     }
   }, [priceScaleMode]);
 
-  // Coordinate conversion helpers
-  const getCoordinates = useCallback(
-    (p: DrawingPoint): { x: number; y: number } | null => {
-      if (!chartRef.current || !candleSeriesRef.current) return null;
-      const x = chartRef.current.timeScale().timeToCoordinate(toUtcSeconds(p.time));
-      const y = candleSeriesRef.current.priceToCoordinate(p.price);
-      if (x == null || y == null) return null;
-      return { x: Number(x), y: Number(y) };
-    },
-    [toUtcSeconds],
-  );
+  // Logical indices remain valid in future whitespace; stored anchors rebase after a reload.
+  const getCoordinates = useCallback((point: DrawingPoint): { x: number; y: number } | null => {
+    const chart = chartRef.current;
+    const series = candleSeriesRef.current;
+    if (!chart || !series) return null;
+    const logical = drawingLogical(point, chartBarsRef.current, intervalMs);
+    const x = logical != null ? chart.timeScale().logicalToCoordinate(logical as import("lightweight-charts").Logical)
+      : chart.timeScale().timeToCoordinate(toUtcSeconds(point.time));
+    const y = series.priceToCoordinate(point.price);
+    return x != null && y != null ? { x: Number(x), y: Number(y) } : null;
+  }, [intervalMs, toUtcSeconds]);
 
-  // Mouse Handlers for Left Drawing Toolbar (Supports both click-and-drag and click-click)
-  const dragStartRef = useRef<{ clientX: number; clientY: number; pt: DrawingPoint } | null>(null);
-
-  const completeDrawingWith = useCallback(
-    (p1: DrawingPoint, p2: DrawingPoint) => {
-      const priceDiff = p2.price - p1.price;
-      const percentDiff = p1.price > 0 ? (priceDiff / p1.price) * 100 : 0;
-
-      const newDrawing: ChartDrawing = {
-        id: `draw-${Date.now()}`,
-        type: activeTool,
-        points: [p1, p2],
-        color:
-          activeTool === "riskRewardLong"
-            ? "#10B981"
-            : activeTool === "riskRewardShort"
-              ? "#EF4444"
-              : activeTool === "rectangle"
-                ? "#06B6D4"
-                : "#E5B869",
-        isComplete: true,
-        meta: {
-          priceDiff,
-          percentDiff,
-        },
-      };
-      onSaveDrawings([...drawings, newDrawing]);
-      setCurrentDrawing(null);
-      dragStartRef.current = null;
-      if (onFinishDrawingTool) onFinishDrawingTool();
-    },
-    [activeTool, drawings, onFinishDrawingTool, onSaveDrawings],
-  );
-
-  // Disable chart panning and zooming when an active drawing tool is selected
-  useEffect(() => {
-    if (!chartRef.current) return;
-    const isDrawing = activeTool !== "cursor";
-    chartRef.current.applyOptions({
-      handleScroll: {
-        mouseWheel: !isDrawing,
-        pressedMouseMove: !isDrawing,
-        horzTouchDrag: !isDrawing,
-        vertTouchDrag: !isDrawing,
-      },
-      handleScale: {
-        axisPressedMouseMove: !isDrawing,
-        mouseWheel: !isDrawing,
-        pinch: !isDrawing,
-      },
-    });
-  }, [activeTool]);
-
-  const resolveTimeFromX = useCallback(
-    (clientX: number): number | null => {
-      if (!chartRef.current) return null;
-      const timeScale = chartRef.current.timeScale();
-      const time = timeScale.coordinateToTime(clientX);
-      if (time != null) {
-        return typeof time === "number" ? time : Date.parse(time as string) / 1000;
-      }
-      const logical = timeScale.coordinateToLogical(clientX);
-      if (logical != null && candles.length > 0) {
-        const lastCandle = candles[candles.length - 1];
-        const barStep =
-          candles.length > 1
-            ? (candles[candles.length - 1].time - candles[0].time) / (candles.length - 1)
-            : 300;
-        const offset = logical - (candles.length - 1);
-        return Math.round(lastCandle.time + offset * barStep);
-      }
-      return null;
-    },
-    [candles],
-  );
-
-  const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (activeTool === "cursor") {
-      setSelectedDrawingId(null);
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-
-    if (!chartRef.current || !candleSeriesRef.current) return;
-    const timeNum = resolveTimeFromX(clientX);
-    const price = candleSeriesRef.current.coordinateToPrice(clientY);
-    if (timeNum == null || !price) return;
-
-    const pt: DrawingPoint = { time: timeNum, price };
-
-    dragStartRef.current = { clientX, clientY, pt };
-
-    if (activeTool === "horizontal") {
-      const newDrawing: ChartDrawing = {
-        id: `h-${Date.now()}`,
-        type: "horizontal",
-        points: [pt],
-        color: "#E5B869",
-        isComplete: true,
-        label: `H-Line: ${price.toFixed(2)}`,
-      };
-      onSaveDrawings([...drawings, newDrawing]);
-      if (onFinishDrawingTool) onFinishDrawingTool();
-      return;
-    }
-
-    if (!currentDrawing) {
-      setCurrentDrawing({
-        type: activeTool,
-        start: pt,
-        current: pt,
-      });
-    } else {
-      completeDrawingWith(currentDrawing.start, pt);
-    }
+  const dragStartRef = useRef<{ x: number; y: number; point: DrawingPoint } | null>(null);
+  const setDraft = (draft: typeof currentDrawing) => { draftRef.current = draft; setCurrentDrawing(draft); };
+  const capturePoint = (event: React.PointerEvent<SVGSVGElement>) => {
+    const chart = chartRef.current;
+    const series = candleSeriesRef.current;
+    if (!chart || !series) return null;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (x < 0 || x > chart.timeScale().width()) return null;
+    const logical = chart.timeScale().coordinateToLogical(x);
+    const price = series.coordinateToPrice(y);
+    if (logical == null || price == null || !Number.isFinite(price)) return null;
+    const point = pointAtLogical(Number(logical), Number(price), chartBarsRef.current, intervalMs);
+    return point ? { x, y, point } : null;
   };
-
-  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!currentDrawing || !chartRef.current || !candleSeriesRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-
-    const timeNum = resolveTimeFromX(clientX);
-    const price = candleSeriesRef.current.coordinateToPrice(clientY);
-    if (timeNum == null || !price) return;
-
-    setCurrentDrawing((prev) => (prev ? { ...prev, current: { time: timeNum, price } } : null));
-  };
-
-  const handleSvgMouseUp = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!currentDrawing || !dragStartRef.current || !chartRef.current || !candleSeriesRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-
-    const dx = Math.abs(clientX - dragStartRef.current.clientX);
-    const dy = Math.abs(clientY - dragStartRef.current.clientY);
-
-    // If mouse was dragged at least 10px, complete drawing on release
-    if (Math.hypot(dx, dy) >= 10) {
-      const timeNum = resolveTimeFromX(clientX);
-      const price = candleSeriesRef.current.coordinateToPrice(clientY);
-      if (timeNum != null && price) {
-        completeDrawingWith(dragStartRef.current.pt, { time: timeNum, price });
-      }
-    }
+  const completeDrawingWith = (type: DrawingToolType, first: DrawingPoint, second: DrawingPoint) => {
+    onSaveDrawings([...drawings, createChartDrawing(type, first, second, `draw-${crypto.randomUUID()}`)]);
+    setDraft(null);
     dragStartRef.current = null;
+    onFinishDrawingTool?.();
   };
+
+  useEffect(() => {
+    const disabled = activeTool !== "cursor" || editedDrawing != null;
+    chartRef.current?.applyOptions({ handleScroll: { mouseWheel: !disabled, pressedMouseMove: !disabled,
+      horzTouchDrag: !disabled, vertTouchDrag: !disabled },
+      handleScale: { axisPressedMouseMove: !disabled, mouseWheel: !disabled, pinch: !disabled } });
+    if (draftRef.current && draftRef.current.type !== activeTool) { draftRef.current = null; setCurrentDrawing(null); }
+  }, [activeTool, editedDrawing != null]);
+
+  const handleSvgPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (event.button !== 0) return;
+    const captured = capturePoint(event);
+    if (!captured) return;
+    const target = event.target as SVGElement;
+    if (activeTool === "cursor") {
+      const id = target.closest("[data-drawing-id]")?.getAttribute("data-drawing-id");
+      const drawing = drawings.find((d) => d.id === id);
+      if (!drawing) { setSelectedDrawingId(null); return; }
+      event.stopPropagation();
+      event.preventDefault();
+      const pointIndex = target.getAttribute("data-point-index");
+      editRef.current = { id: drawing.id, original: drawing, start: captured.point,
+        pointIndex: pointIndex != null ? Number(pointIndex) : null };
+      editedRef.current = drawing;
+      setEditedDrawing(drawing);
+      setSelectedDrawingId(drawing.id);
+    } else {
+      event.preventDefault();
+      if (activeTool === "horizontal") {
+        onSaveDrawings([...drawings, { id: `h-${crypto.randomUUID()}`, type: "horizontal", points: [captured.point], color: "#E5B869", isComplete: true }]);
+        onFinishDrawingTool?.();
+        return;
+      }
+      if (draftRef.current) { completeDrawingWith(draftRef.current.type, draftRef.current.start, captured.point); return; }
+      setDraft({ type: activeTool, start: captured.point, current: captured.point });
+      dragStartRef.current = captured;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const handleSvgPointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    const captured = capturePoint(event);
+    if (!captured) return;
+    const edit = editRef.current;
+    if (edit) {
+      const deltaLogical = captured.point.logical! - edit.start.logical!;
+      const deltaPrice = captured.point.price - edit.start.price;
+      const points = edit.original.points.map((point, index) => {
+        if (edit.pointIndex != null) return index === edit.pointIndex ? captured.point : point;
+        const logical = drawingLogical(point, chartBarsRef.current, intervalMs);
+        return logical == null ? point : pointAtLogical(logical + deltaLogical, point.price + deltaPrice, chartBarsRef.current, intervalMs) ?? point;
+      });
+      const next = { ...edit.original, points };
+      editedRef.current = next;
+      setEditedDrawing(next);
+    } else if (draftRef.current) setDraft({ ...draftRef.current, current: captured.point });
+  };
+  const handleSvgPointerUp = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (editRef.current && editedRef.current) {
+      onSaveDrawings(drawings.map((d) => d.id === editedRef.current!.id ? editedRef.current! : d));
+      editRef.current = null;
+      editedRef.current = null;
+      setEditedDrawing(null);
+    } else {
+      const end = capturePoint(event);
+      const start = dragStartRef.current;
+      const draft = draftRef.current;
+      if (end && start && draft && Math.hypot(end.x - start.x, end.y - start.y) > 8)
+        completeDrawingWith(draft.type, draft.start, end.point);
+      dragStartRef.current = null;
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+  const cancelGesture = () => {
+    setDraft(null); editRef.current = null; editedRef.current = null; dragStartRef.current = null; setEditedDrawing(null);
+  };
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement)?.closest("input,textarea,select,[contenteditable=true]")) return;
+      if (event.key === "Escape") { cancelGesture(); onFinishDrawingTool?.(); }
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedDrawingId) {
+        event.preventDefault(); handleDeleteSelectedDrawing();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedDrawingId, handleDeleteSelectedDrawing, onFinishDrawingTool]);
 
   // Reset / Auto-Fit Viewport
   const handleResetViewport = useCallback(() => {
     if (chartRef.current) {
       isScrolledRef.current = false;
       chartRef.current.priceScale("right").applyOptions({ autoScale: true });
-      chartRef.current.timeScale().fitContent();
-      chartRef.current.timeScale().applyOptions({ rightOffset: 15 });
+      chartRef.current.timeScale().applyOptions({ shiftVisibleRangeOnNewBar: true });
+      chartRef.current.timeScale().scrollToRealTime();
+      setIsScrolled(false);
       onIsScrolledChange?.(false);
       forceUpdateViewport();
     }
@@ -998,46 +831,6 @@ export function TradingViewLightweightChart({
       if (onFitContentRef) onFitContentRef.current = null;
     };
   }, [onFitContentRef, handleResetViewport]);
-
-  // Lock autoScale: false on user manual wheel or drag until explicit [Auto-Fit]
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const lockAutoscale = () => {
-      if (!isScrolledRef.current && chartRef.current) {
-        isScrolledRef.current = true;
-        chartRef.current.priceScale("right").applyOptions({ autoScale: false });
-        onIsScrolledChange?.(true);
-      }
-    };
-
-    container.addEventListener("wheel", lockAutoscale, { passive: true });
-
-    let isPointerDown = false;
-    const handlePointerDown = () => {
-      isPointerDown = true;
-    };
-    const handlePointerMove = () => {
-      if (isPointerDown) {
-        lockAutoscale();
-      }
-    };
-    const handlePointerUp = () => {
-      isPointerDown = false;
-    };
-
-    container.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-
-    return () => {
-      container.removeEventListener("wheel", lockAutoscale);
-      container.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [onIsScrolledChange]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -1063,6 +856,7 @@ export function TradingViewLightweightChart({
   return (
     <div
       onContextMenu={handleContextMenu}
+      onPointerDown={(event) => { if (activeTool === "cursor" && !(event.target as Element).closest("[data-drawing-id]")) setSelectedDrawingId(null); }}
       className="relative w-full h-full flex-1 min-h-[460px] bg-[#08090C] overflow-hidden select-none"
     >
       {/* Chart Canvas Container */}
@@ -1073,8 +867,11 @@ export function TradingViewLightweightChart({
         className={`absolute inset-0 w-full h-full pointer-events-none ${
           activeTool !== "cursor" ? "pointer-events-auto cursor-crosshair" : ""
         }`}
-        onMouseDown={handleSvgMouseDown}
-        onMouseMove={handleSvgMouseMove}
+        style={{ touchAction: activeTool !== "cursor" || editedDrawing ? "none" : "auto" }}
+        onPointerDown={handleSvgPointerDown}
+        onPointerMove={handleSvgPointerMove}
+        onPointerUp={handleSvgPointerUp}
+        onPointerCancel={cancelGesture}
       >
         <defs>
           <linearGradient id="bullFvgGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1185,7 +982,8 @@ export function TradingViewLightweightChart({
           })()}
 
         {/* 3. Persistent User Drawings */}
-        {(drawings || []).map((d) => {
+        {[...(drawings || []).map((d) => editedDrawing?.id === d.id ? editedDrawing : d),
+          ...(currentDrawing ? [{ id: "draft-preview", type: currentDrawing.type, points: [currentDrawing.start, currentDrawing.current], color: "#E5B869", isComplete: false } as ChartDrawing] : [])].map((d) => {
           if (!d || !d.points || d.points.length === 0) return null;
           const coords: { x: number; y: number }[] = [];
           for (const pt of d.points) {
@@ -1201,12 +999,14 @@ export function TradingViewLightweightChart({
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1261,12 +1061,14 @@ export function TradingViewLightweightChart({
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1304,12 +1106,14 @@ export function TradingViewLightweightChart({
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1341,12 +1145,14 @@ export function TradingViewLightweightChart({
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1395,18 +1201,26 @@ export function TradingViewLightweightChart({
             const x = Math.min(c1.x, c2.x);
             const w = Math.abs(c2.x - c1.x) || 120;
             const entryY = c1.y;
-            const slY = c2.y;
-            const targetY = isLong ? entryY - Math.abs(entryY - slY) * 2 : entryY + Math.abs(entryY - slY) * 2;
+            const entry = d.points[0].price;
+            const risk = Math.abs(d.points[1].price - entry);
+            const stop = d.isComplete ? d.points[1].price : entry + (isLong ? -risk : risk);
+            const target = d.points[2]?.price ?? entry + (isLong ? risk * 2 : -risk * 2);
+            const slY = Number(candleSeriesRef.current?.priceToCoordinate(stop) ?? c2.y);
+            const targetY = Number(candleSeriesRef.current?.priceToCoordinate(target) ?? c1.y);
+            const reward = Math.abs(target - entry);
+            const rr = risk > 0 ? reward / risk : 0;
 
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1438,7 +1252,7 @@ export function TradingViewLightweightChart({
                   fontFamily="monospace"
                   fontWeight="bold"
                 >
-                  Entry | R:R = 2.00
+                  R:R {rr.toFixed(2)} ? TP {entry ? (reward / entry * 100).toFixed(2) : "0"}% ? SL {entry ? (risk / entry * 100).toFixed(2) : "0"}%
                 </text>
                 {isSelected && (
                   <>
@@ -1457,12 +1271,14 @@ export function TradingViewLightweightChart({
             return (
               <g
                 key={d.id}
+                data-drawing-id={d.id}
                 className="pointer-events-auto cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedDrawingId(d.id);
                 }}
                 style={{
+                  pointerEvents: d.isComplete ? "auto" : "none",
                   filter: isSelected ? "drop-shadow(0 0 6px #38BDF8)" : undefined,
                 }}
               >
@@ -1471,7 +1287,7 @@ export function TradingViewLightweightChart({
                   x={Math.min(c1.x, c2.x) + 10}
                   y={Math.min(c1.y, c2.y) + 10}
                   width="130"
-                  height="36"
+                  height="48"
                   fill="#0E1015"
                   stroke="#38BDF8"
                   strokeWidth={isSelected ? "2" : "1"}
@@ -1487,6 +1303,7 @@ export function TradingViewLightweightChart({
                 >
                   Δ {pDiff > 0 ? `+${pDiff.toFixed(1)}` : pDiff.toFixed(1)} (
                   {pPct > 0 ? `+${pPct.toFixed(2)}%` : `${pPct.toFixed(2)}%`})
+                  <tspan x={Math.min(c1.x, c2.x) + 18} dy="14">{Math.abs(Math.round((drawingLogical(d.points[1], chartBarsRef.current, intervalMs) ?? 0) - (drawingLogical(d.points[0], chartBarsRef.current, intervalMs) ?? 0)))} bars</tspan>
                 </text>
                 {isSelected && (
                   <>
@@ -1501,25 +1318,21 @@ export function TradingViewLightweightChart({
           return null;
         })}
 
-        {/* 4. Active Drawing Preview */}
-        {currentDrawing && (() => {
-          const c1 = getCoordinates(currentDrawing.start);
-          const c2 = getCoordinates(currentDrawing.current);
-          if (!c1 || !c2) return null;
-          return (
-            <line
-              x1={c1.x}
-              y1={c1.y}
-              x2={c2.x}
-              y2={c2.y}
-              stroke="#F59E0B"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-            />
-          );
+        {/* Selected endpoints sit above hit targets for precise resizing. */}
+        {(() => {
+          const selected = editedDrawing ?? drawings.find((d) => d.id === selectedDrawingId);
+          return selected?.points.map((point, index) => {
+            const coordinate = getCoordinates(point);
+            return coordinate ? <circle key={`handle-${index}`} data-drawing-id={selected.id} data-point-index={index}
+              aria-label={`Drawing endpoint ${index + 1}`} cx={coordinate.x} cy={coordinate.y} r={6}
+              fill="#E5B869" stroke="#08090C" strokeWidth={2} className="pointer-events-auto cursor-move" /> : null;
+          });
         })()}
       </svg>
 
+      {isScrolled && <button type="button" onClick={handleResetViewport}
+        className="absolute bottom-8 right-20 z-30 rounded border border-amber-500/50 bg-zinc-950/95 px-3 py-1.5 font-mono text-xs text-amber-300"
+        aria-label="Scroll to Real-Time">&#x23E9; Scroll to Real-Time</button>}
       {/* Floating Selected Drawing Action Pill */}
       {selectedDrawingId && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-950/95 border border-sky-500/60 shadow-2xl backdrop-blur-md">

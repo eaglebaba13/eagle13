@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundToggle } from "@/components/SoundToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
+import { stitchCandlePoints } from "@/lib/provider-foundation/indstocks/candle-aggregator";
 import { getLiveCandleBootstrap } from "@/lib/live-candle-stream.functions";
 import { getLiveLevels, type MarketKey } from "@/lib/live-levels.functions";
 import { computeCycles, computeGannAstroLevels, type PlanetRow } from "@/lib/astro-levels";
@@ -341,27 +342,32 @@ function LiveChartSelection({
   const [historical, setHistorical] = useState<readonly ChartCandle[]>([]);
   const [bootstrapStatus, setBootstrapStatus] = useState<"loading" | "done" | "error">("loading");
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const connectionKey = `${sse.connected}:${sse.status?.connectionState ?? "starting"}`;
+  const [bootstrappedConnection, setBootstrappedConnection] = useState<string | null>(null);
 
   // Initial Data Bootstrap
   useEffect(() => {
     let cancelled = false;
+    setBootstrapStatus("loading");
     async function bootstrap() {
       try {
-        const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs } });
+        const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs, refresh: true } });
         if (cancelled) return;
-        if (resp.error || !resp.series || resp.series.length === 0) {
-          setHistorical([]);
+        if (!resp.series || resp.series.length === 0) {
           setBootstrapStatus("done");
+          setBootstrappedConnection(connectionKey);
           setBootstrapError(resp.error ?? null);
           return;
         }
+        setBootstrappedConnection(connectionKey);
         setHistorical(resp.series ?? []);
+        setBootstrapError(resp.error ?? null);
         setBootstrapStatus("done");
       } catch {
         if (!cancelled) {
-          setHistorical([]);
           setBootstrapStatus("done");
-          setBootstrapError(null);
+          setBootstrappedConnection(connectionKey);
+          setBootstrapError("History refresh unavailable; retained existing candles.");
         }
       }
     }
@@ -369,58 +375,14 @@ function LiveChartSelection({
     return () => {
       cancelled = true;
     };
-  }, [symbol, intervalMs, activeInstrument.defaultPrice, sse.status?.lastLtp]);
+  }, [symbol, intervalMs, connectionKey]);
 
   // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
-    const all: ChartCandle[] = [...historical];
-    for (const c of sse.completedCandles.values()) {
-      all.push({
-        x: c.time,
-        y: [Number(c.open), Number(c.high), Number(c.low), Number(c.close)],
-        volume: c.volume,
-      });
-    }
-
-    const byTime = new Map<number, ChartCandle>();
-    for (const c of all) {
-      if (
-        typeof c.x === "number" &&
-        Number.isFinite(c.x) &&
-        c.x > 0 &&
-        Array.isArray(c.y) &&
-        c.y.length === 4 &&
-        c.y.every((v) => typeof v === "number" && Number.isFinite(v) && v > 0)
-      ) {
-        byTime.set(c.x, c);
-      }
-    }
-    const sorted = [...byTime.values()].sort((a, b) => a.x - b.x);
-
-    // Intraday filter to latest active trading session
-    if (intervalMs < 86_400_000 && sorted.length > 0) {
-      if (symbol === "GC1!" || activeInstrument.category === "CRYPTO") {
-        return sorted.slice(-120);
-      }
-      const getIstDay = (timestamp: number) =>
-        new Intl.DateTimeFormat("en-IN", {
-          timeZone: "Asia/Kolkata",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(new Date(timestamp));
-
-      const todayStr = getIstDay(Date.now());
-      const todayCandles = sorted.filter((c) => getIstDay(c.x) === todayStr);
-      if (todayCandles.length > 0) {
-        return todayCandles;
-      }
-      const lastDayStr = getIstDay(sorted[sorted.length - 1].x);
-      return sorted.filter((c) => getIstDay(c.x) === lastDayStr);
-    }
-
-    return sorted;
-  }, [historical, activeInstrument, symbol, intervalMs, sse.completedCandles, sse.status?.lastLtp]);
+    return stitchCandlePoints(historical, [...sse.completedCandles.values()].map((c) => ({
+      x: c.time, y: [c.open, c.high, c.low, c.close] as const, volume: c.volume,
+    })));
+  }, [historical, sse.completedCandles]);
 
   // Handle Replay slice if active
   const displayCandles = useMemo(() => {
@@ -463,15 +425,12 @@ function LiveChartSelection({
   const liveCandleData: ChartCandleData | null = useMemo(() => {
     if (isReplayActive) return null;
     if (!sse.currentCandle) return null;
-    return {
-      time: sse.currentCandle.time,
-      open: Number(sse.currentCandle.open),
-      high: Number(sse.currentCandle.high),
-      low: Number(sse.currentCandle.low),
-      close: Number(sse.currentCandle.close),
-      volume: sse.currentCandle.volume,
-    };
-  }, [isReplayActive, sse.currentCandle]);
+    const current = sse.currentCandle;
+    const merged = stitchCandlePoints(chartData, [{ x: current.time,
+      y: [current.open, current.high, current.low, current.close], volume: current.volume }])
+      .find((c) => c.x === current.time);
+    return merged ? { time: merged.x, open: merged.y[0], high: merged.y[1], low: merged.y[2], close: merged.y[3], volume: merged.volume } : null;
+  }, [isReplayActive, sse.currentCandle, chartData]);
 
   // Current Price & LTP strictly anchored to authentic market data
   const latestCandleClose =
@@ -908,7 +867,7 @@ function LiveChartSelection({
   }, [watchlistCategory, watchlistSearch]);
 
   return (
-    <div className="flex h-screen w-full bg-[#08090C] text-white overflow-hidden font-sans">
+    <div className="flex h-screen w-full max-w-full min-w-0 bg-[#08090C] text-white overflow-hidden font-sans">
       {/* Platform Sidebar */}
       {!isFullscreen && (
         <div className="hidden lg:flex shrink-0">
@@ -1270,6 +1229,9 @@ function LiveChartSelection({
             return null;
           })()}
 
+          {bootstrapError && displayCandles.length > 0 && (
+            <div role="status" className="absolute top-2 left-16 z-20 rounded border border-amber-500/30 bg-zinc-950/90 px-2 py-1 text-[10px] text-amber-300">{bootstrapError}</div>
+          )}
           {/* Interactive TradingView Lightweight Chart */}
           <div className="flex-1 h-full min-w-0 relative">
             <ChartCanvasErrorBoundary onReset={() => fitContentRef.current?.()}>
@@ -1277,6 +1239,8 @@ function LiveChartSelection({
                 symbol={symbol}
                 intervalMs={intervalMs}
                 candles={lightweightCandles}
+                historyReady={bootstrapStatus !== "loading" && bootstrappedConnection === connectionKey}
+                datasetKey={`${symbol}:${intervalMs}:${isReplayActive ? `replay:${replayIndex}` : historical.length ? "history" : "stream-only"}`}
                 liveCandle={liveCandleData}
                 activeTool={activeTool}
                 onFinishDrawingTool={() => setActiveTool("cursor")}

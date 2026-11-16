@@ -16,6 +16,36 @@ export type DrawingToolType =
 export interface DrawingPoint {
   readonly time: number; // UNIX timestamp in seconds
   readonly price: number;
+  readonly logical?: number;
+  readonly anchorTime?: number;
+  readonly logicalOffset?: number;
+  readonly intervalMs?: number;
+}
+
+const seconds = (time: number) => time > 1e11 ? time / 1000 : time;
+
+export function pointAtLogical(logical: number, price: number, bars: readonly { time: number }[], intervalMs: number): DrawingPoint | null {
+  if (!bars.length || !Number.isFinite(logical) || !Number.isFinite(price)) return null;
+  const index = Math.max(0, Math.min(bars.length - 1, Math.round(logical)));
+  const anchorTime = seconds(bars[index].time);
+  const offset = logical - index;
+  return { logical, price, time: anchorTime + offset * intervalMs / 1000,
+    anchorTime, logicalOffset: offset, intervalMs };
+}
+
+/** Rebase saved logical coordinates when history shifts; legacy time-only drawings still load. */
+export function drawingLogical(point: DrawingPoint, bars: readonly { time: number }[], intervalMs: number): number | null {
+  if (!bars.length) return point.logical ?? null;
+  if (point.anchorTime != null && point.intervalMs === intervalMs) {
+    const anchor = bars.findIndex((c) => seconds(c.time) === point.anchorTime);
+    if (anchor >= 0) return anchor + (point.logicalOffset ?? 0);
+  }
+  const time = seconds(point.time);
+  const after = bars.findIndex((c) => seconds(c.time) >= time);
+  if (after === 0) return (time - seconds(bars[0].time)) / (intervalMs / 1000);
+  if (after < 0) return bars.length - 1 + (time - seconds(bars.at(-1)!.time)) / (intervalMs / 1000);
+  const previous = seconds(bars[after - 1].time);
+  return after - 1 + (time - previous) / (seconds(bars[after].time) - previous);
 }
 
 export interface ChartDrawing {
@@ -34,6 +64,20 @@ export interface ChartDrawing {
     readonly percentDiff?: number;
     readonly barCount?: number;
   };
+}
+
+export function createChartDrawing(type: DrawingToolType, first: DrawingPoint, second: DrawingPoint, id: string): ChartDrawing {
+  let points = type === "horizontal" ? [first] : [first, second];
+  if (type === "riskRewardLong" || type === "riskRewardShort") {
+    const direction = type === "riskRewardLong" ? 1 : -1;
+    const risk = Math.abs(second.price - first.price);
+    points = [first, { ...second, price: first.price - direction * risk },
+      { ...second, price: first.price + direction * risk * 2 }];
+  }
+  return { id, type, points, isComplete: true,
+    color: type === "riskRewardLong" ? "#10B981" : type === "riskRewardShort" ? "#EF4444" : "#E5B869",
+    meta: { priceDiff: second.price - first.price, percentDiff: first.price ? (second.price - first.price) / first.price * 100 : 0,
+      barCount: Math.abs(Math.round((second.logical ?? 0) - (first.logical ?? 0))) } };
 }
 
 export const FIBONACCI_LEVELS = [

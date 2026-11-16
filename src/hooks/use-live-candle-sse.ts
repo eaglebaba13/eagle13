@@ -29,12 +29,14 @@ export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): 
   if (event.type === "status") {
     const isConnected = event.connectionState === "CONNECTED";
     const c = event.currentCandle;
+    const newer = c != null && !state.completedCandles.has(c.time) && (!state.currentCandle ||
+      (c.time >= state.currentCandle.time && Date.parse(event.lastTick ?? "") >= Date.parse(state.currentCandle.lastTick ?? "")));
     return {
       ...state,
       status: event,
       error: isConnected ? null : event.error,
       currentCandle:
-        c && event.lastTick
+        c && event.lastTick && newer
           ? {
               ...c,
               symbol: event.symbol,
@@ -56,9 +58,12 @@ export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): 
   }
   const { candle, ...metadata } = event;
   const normalized: LiveSSECandle = { ...metadata, ...candle };
+  if (!event.completed && state.completedCandles.has(candle.time)) return state;
   if (state.currentCandle && candle.time < state.currentCandle.time && !event.completed)
     return state;
-  const completed = new Map(state.completedCandles);
+  if (!event.completed && state.currentCandle?.time === candle.time &&
+      Date.parse(event.timestamp) < Date.parse(state.currentCandle.timestamp)) return state;
+  const completed = event.completed ? new Map(state.completedCandles) : state.completedCandles;
   if (event.completed) {
     completed.set(candle.time, normalized);
     while (completed.size > 2000) completed.delete(Math.min(...completed.keys()));
@@ -66,7 +71,7 @@ export function applyLiveEvent(state: LiveSSEState, event: LiveCandleSseEvent): 
   return {
     ...state,
     completedCandles: completed,
-    currentCandle: event.completed ? state.currentCandle : normalized,
+    currentCandle: event.completed ? (state.currentCandle?.time === candle.time ? null : state.currentCandle) : normalized,
     status: { ...metadata, currentCandle: candle, completedCount: completed.size, error: null },
     error: null,
   };

@@ -38,7 +38,7 @@ export interface LiveStatusUpdate {
 // Server function that returns historical + current candle snapshot
 // Used for initial chart bootstrap
 export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
-  .validator((data: { symbol: string; intervalMs?: number }) => data)
+  .validator((data: { symbol: string; intervalMs?: number; refresh?: boolean }) => data)
   .handler(async ({ data }) => {
     const symbol = data.symbol;
     const intervalMs = data.intervalMs ?? 60_000;
@@ -78,7 +78,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
       "./provider-foundation/upstox/upstox-historical-deep.server"
     );
 
-    const deepData = await getDeepMultiTimeframeCandles(symbol, intervalMs);
+    const deepData = await getDeepMultiTimeframeCandles(symbol, intervalMs, data.refresh === true);
     let series: import("./provider-foundation/indstocks/candle-aggregator").MergedCandlePoint[] =
       deepData.candles.map((c) => ({
         x: c.x,
@@ -89,9 +89,9 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     let lastLtp =
       deepData.spotPrice ?? (series.length > 0 ? series[series.length - 1].y[3] : null);
     let lastTick = series.length > 0 ? new Date(series[series.length - 1].x).toISOString() : null;
-    let connectionState = "CONNECTED";
+    let connectionState = "DISCONNECTED";
     let provider = deepData.provider;
-    let freshness: "LIVE" | "STALE" | "NO_DATA" = series.length > 0 ? "LIVE" : "NO_DATA";
+    let freshness: "LIVE" | "STALE" | "NO_DATA" = series.length > 0 ? "STALE" : "NO_DATA";
     let currentCandle: import("./provider-foundation/indstocks/candle-aggregator").LiveCandle | null =
       null;
 
@@ -106,6 +106,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
       }
       if (snap.connectionState === "CONNECTED") {
         connectionState = "CONNECTED";
+        freshness = snap.telemetry.status === "LIVE" ? "LIVE" : "STALE";
       }
       if (snap.currentCandle) {
         currentCandle = snap.currentCandle;
@@ -118,7 +119,7 @@ export const getLiveCandleBootstrap = createServerFn({ method: "GET" })
     }
 
     return {
-      error: null,
+      error: deepData.warning ?? (series.length === 0 ? "Historical candles unavailable" : null),
       series,
       status: {
         symbol,
