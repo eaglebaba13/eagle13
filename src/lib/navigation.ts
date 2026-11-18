@@ -89,6 +89,17 @@ export const NAV_REGISTRY: NavItem[] = [
     bottomOrder: 3,
   },
   {
+    id: "liquidity-heatmap",
+    label: "Liquidity & Orderflow Desk",
+    icon: Layers,
+    to: "/liquidity-heatmap",
+    section: "CORE",
+    order: 41.5,
+    status: "RESEARCH",
+    desktopVisible: true,
+    mobileVisible: true,
+  },
+  {
     id: "unicorn-radar",
     label: "Unicorn & SMT Radar",
     icon: Radar,

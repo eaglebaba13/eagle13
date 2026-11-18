@@ -6,6 +6,7 @@
 import { runSmartAlerts } from "./smart-alerts/persistence.functions";
 import { processOptionChainToLtpCalculator } from "./options/ltp-calculator-engine.server";
 import { fetchCanonicalOptionChain } from "./option-chain/canonical-snapshot.server";
+import { collectScheduledLiquidity } from "./market-data/liquidity-heatmap.server";
 
 let isSchedulerRunning = false;
 let lastCapturedDate = "";
@@ -28,6 +29,8 @@ export function ensureServerSchedulerStarted(): void {
   isSchedulerRunning = true;
 
   console.log("[ServerScheduler] Autonomous background daemon initialized.");
+  const liquidityTimer = setInterval(() => { void collectScheduledLiquidity().catch(() => console.warn("[Liquidity] Snapshot collection unavailable.")); }, 120_000);
+  liquidityTimer.unref?.();
 
   // 1. 60-Second Headless Smart Alert Heartbeat
   setInterval(async () => {

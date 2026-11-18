@@ -57,6 +57,7 @@ import { Route as AuthenticatedOptionsChainRouteImport } from './routes/_authent
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMultiAssetIntelligenceRouteImport } from './routes/_authenticated/multi-asset-intelligence'
 import { Route as AuthenticatedLiveOptionTerminalRouteImport } from './routes/_authenticated/live-option-terminal'
+import { Route as AuthenticatedLiquidityHeatmapRouteImport } from './routes/_authenticated/liquidity-heatmap'
 import { Route as AuthenticatedLicenseRouteImport } from './routes/_authenticated/license'
 import { Route as AuthenticatedInstitutionalIntelligenceRouteImport } from './routes/_authenticated/institutional-intelligence'
 import { Route as AuthenticatedInstitutionalFlowRouteImport } from './routes/_authenticated/institutional-flow'
@@ -347,6 +348,12 @@ const AuthenticatedLiveOptionTerminalRoute =
     path: '/live-option-terminal',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLiquidityHeatmapRoute =
+  AuthenticatedLiquidityHeatmapRouteImport.update({
+    id: '/liquidity-heatmap',
+    path: '/liquidity-heatmap',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLicenseRoute = AuthenticatedLicenseRouteImport.update({
   id: '/license',
   path: '/license',
@@ -612,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/liquidity-heatmap': typeof AuthenticatedLiquidityHeatmapRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -700,6 +708,7 @@ export interface FileRoutesByTo {
   '/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/license': typeof AuthenticatedLicenseRoute
+  '/liquidity-heatmap': typeof AuthenticatedLiquidityHeatmapRoute
   '/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -790,6 +799,7 @@ export interface FileRoutesById {
   '/_authenticated/institutional-flow': typeof AuthenticatedInstitutionalFlowRoute
   '/_authenticated/institutional-intelligence': typeof AuthenticatedInstitutionalIntelligenceRoute
   '/_authenticated/license': typeof AuthenticatedLicenseRoute
+  '/_authenticated/liquidity-heatmap': typeof AuthenticatedLiquidityHeatmapRoute
   '/_authenticated/live-option-terminal': typeof AuthenticatedLiveOptionTerminalRoute
   '/_authenticated/multi-asset-intelligence': typeof AuthenticatedMultiAssetIntelligenceRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -880,6 +890,7 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
+    | '/liquidity-heatmap'
     | '/live-option-terminal'
     | '/multi-asset-intelligence'
     | '/notifications'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/institutional-flow'
     | '/institutional-intelligence'
     | '/license'
+    | '/liquidity-heatmap'
     | '/live-option-terminal'
     | '/multi-asset-intelligence'
     | '/notifications'
@@ -1057,6 +1069,7 @@ export interface FileRouteTypes {
     | '/_authenticated/institutional-flow'
     | '/_authenticated/institutional-intelligence'
     | '/_authenticated/license'
+    | '/_authenticated/liquidity-heatmap'
     | '/_authenticated/live-option-terminal'
     | '/_authenticated/multi-asset-intelligence'
     | '/_authenticated/notifications'
@@ -1484,6 +1497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLiveOptionTerminalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/liquidity-heatmap': {
+      id: '/_authenticated/liquidity-heatmap'
+      path: '/liquidity-heatmap'
+      fullPath: '/liquidity-heatmap'
+      preLoaderRoute: typeof AuthenticatedLiquidityHeatmapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/license': {
       id: '/_authenticated/license'
       path: '/license'
@@ -1810,6 +1830,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInstitutionalFlowRoute: typeof AuthenticatedInstitutionalFlowRoute
   AuthenticatedInstitutionalIntelligenceRoute: typeof AuthenticatedInstitutionalIntelligenceRoute
   AuthenticatedLicenseRoute: typeof AuthenticatedLicenseRoute
+  AuthenticatedLiquidityHeatmapRoute: typeof AuthenticatedLiquidityHeatmapRoute
   AuthenticatedLiveOptionTerminalRoute: typeof AuthenticatedLiveOptionTerminalRoute
   AuthenticatedMultiAssetIntelligenceRoute: typeof AuthenticatedMultiAssetIntelligenceRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -1858,6 +1879,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInstitutionalIntelligenceRoute:
     AuthenticatedInstitutionalIntelligenceRoute,
   AuthenticatedLicenseRoute: AuthenticatedLicenseRoute,
+  AuthenticatedLiquidityHeatmapRoute: AuthenticatedLiquidityHeatmapRoute,
   AuthenticatedLiveOptionTerminalRoute: AuthenticatedLiveOptionTerminalRoute,
   AuthenticatedMultiAssetIntelligenceRoute:
     AuthenticatedMultiAssetIntelligenceRoute,

@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { LiquidityHeatmapCanvas } from "./LiquidityHeatmapCanvas";
+import type { HeatmapPalette, LiquiditySnapshot } from "@/lib/market-data/liquidity-heatmap";
 import {
   createChart,
   CandlestickSeries,
@@ -48,6 +50,9 @@ export interface TradingViewLightweightChartProps {
   readonly showLiquidity: boolean;
   readonly showIctUnicorn: boolean;
   readonly showOiProfile: boolean;
+  readonly heatmapSnapshots?: readonly LiquiditySnapshot[];
+  readonly heatmapThreshold?: number;
+  readonly heatmapPalette?: HeatmapPalette;
   // Overlay Data
   readonly ltpLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean; lineWidth?: 1 | 2 }[];
   readonly astroLevels?: readonly { label: string; price: number; color: string }[];
@@ -101,6 +106,9 @@ export function TradingViewLightweightChart({
   showLiquidity,
   showIctUnicorn,
   showOiProfile,
+  heatmapSnapshots = [],
+  heatmapThreshold = 0.25,
+  heatmapPalette = "institutional",
   ltpLevels = [],
   astroLevels = [],
   liquidityLevels,
@@ -136,7 +144,7 @@ export function TradingViewLightweightChart({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; price: number } | null>(null);
 
   // Coordinate sync state for SVG drawing overlay
-  const [, setViewportTick] = useState(0);
+  const [viewportTick, setViewportTick] = useState(0);
   const forceUpdateViewport = useCallback(() => {
     setViewportTick((t) => (t + 1) % 100000);
   }, []);
@@ -862,6 +870,7 @@ export function TradingViewLightweightChart({
     >
       {/* Chart Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      {heatmapSnapshots.length > 0 && <LiquidityHeatmapCanvas snapshots={heatmapSnapshots} chart={chartRef.current} series={candleSeriesRef.current} threshold={heatmapThreshold} palette={heatmapPalette} viewportTick={viewportTick} />}
 
       {/* Synchronized Interactive SVG Layer */}
       <svg

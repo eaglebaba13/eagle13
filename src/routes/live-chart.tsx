@@ -52,6 +52,8 @@ import {
   computeUnicornSetup,
 } from "@/lib/orderflow/fvg-calculator";
 import { oiProfileQuery } from "@/lib/orderflow/oi-profile.functions";
+import { liquidityHeatmapQuery } from "@/lib/market-data/liquidity-heatmap.functions";
+import type { HeatmapAsset, HeatmapPalette } from "@/lib/market-data/liquidity-heatmap";
 import { getCryptoTickers, notifyPriceAlertCreated } from "@/lib/market-data/crypto-tickers.functions";
 import {
   Search,
@@ -248,6 +250,9 @@ function LiveChartSelection({
   const [showAstroLevels, setShowAstroLevels] = useState(false);
   const [showIctUnicorn, setShowIctUnicorn] = useState(true);
   const [showOiProfile, setShowOiProfile] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapThreshold, setHeatmapThreshold] = useState(0.25);
+  const [heatmapPalette, setHeatmapPalette] = useState<HeatmapPalette>("institutional");
 
   // Left Drawing Toolbar States
   const [activeTool, setActiveTool] = useState<DrawingToolType>("cursor");
@@ -600,6 +605,8 @@ function LiveChartSelection({
 
   // Live Right-Axis OI Profile Query
   const { data: oiResult } = useQuery(oiProfileQuery(symbol, currentLtp));
+  const heatmapAsset: HeatmapAsset | null = symbol === "NIFTY50" || symbol === "NIFTY" ? "NIFTY50" : symbol === "BANKNIFTY" || symbol === "BANK NIFTY" ? "BANKNIFTY" : ["BTCUSDT", "ETHUSDT", "SOLUSDT"].includes(symbol) ? symbol as HeatmapAsset : null;
+  const { data: heatmapResult } = useQuery({ ...liquidityHeatmapQuery(heatmapAsset ?? "NIFTY50"), enabled: showHeatmap && heatmapAsset != null && !isReplayActive });
   const oiProfile = useMemo(() => {
     return showOiProfile && oiResult?.ok ? oiResult.data : [];
   }, [showOiProfile, oiResult]);
@@ -1019,6 +1026,9 @@ function LiveChartSelection({
               <span>OI</span>
             </button>
 
+            <button type="button" onClick={() => setShowHeatmap((value) => !value)} aria-pressed={showHeatmap} className={`px-2 py-1 rounded-md text-xs font-mono ${showHeatmap ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "text-zinc-500 hover:text-zinc-300"}`}>🔥 Heatmap</button>
+            {showHeatmap && <label className="text-[10px] text-zinc-400">Threshold <input aria-label="Heatmap intensity threshold" type="range" min="0" max="0.9" step="0.05" value={heatmapThreshold} onChange={(event) => setHeatmapThreshold(Number(event.target.value))} /></label>}
+            {showHeatmap && <select aria-label="Heatmap color palette" value={heatmapPalette} onChange={(event) => setHeatmapPalette(event.target.value as HeatmapPalette)} className="bg-[#111827] text-[10px] text-zinc-300"><option value="institutional">Institutional</option><option value="contrast">Contrast</option></select>}
             {/* AI-LTP Levels Toggle */}
             <button
               type="button"
@@ -1225,6 +1235,9 @@ function LiveChartSelection({
                 showLiquidity={showLiquidity}
                 showIctUnicorn={showIctUnicorn}
                 showOiProfile={showOiProfile}
+                heatmapSnapshots={showHeatmap && !isReplayActive && !heatmapResult?.stale ? heatmapResult?.snapshots : []}
+                heatmapThreshold={heatmapThreshold}
+                heatmapPalette={heatmapPalette}
                 ltpLevels={ltpLevels}
                 astroLevels={astroLevels}
                 liquidityLevels={sessionLiquidity}
