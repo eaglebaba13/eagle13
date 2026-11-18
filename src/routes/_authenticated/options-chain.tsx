@@ -41,6 +41,7 @@ import type {
 import { OptionChainTable } from "@/components/option-chain/OptionChainTable";
 import { LtpBlastScreener } from "@/components/option-chain/LtpBlastScreener";
 import { StockFourLineCard } from "@/components/option-chain/StockFourLineCard";
+import { OiDirectionScanner } from "@/components/option-chain/OiDirectionScanner";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { UNIVERSAL_INSTRUMENTS } from "@/lib/market-data/fo-universe";
 
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/options-chain")({
   component: LtpCalculatorPage,
 });
 
-type CalculatorMode = "LIVE" | "STATIC_0920" | "STOCKS_4LINE" | "LTP_BLAST";
+type CalculatorMode = "LIVE" | "STATIC_0920" | "STOCKS_4LINE" | "LTP_BLAST" | "OI_SCANNER";
 
 function LtpCalculatorPage() {
   const [mode, setMode] = useState<CalculatorMode>("LIVE");
@@ -164,7 +165,7 @@ function LtpCalculatorPage() {
         </div>
 
         {/* Global Action Tools */}
-        <div className="flex items-center gap-2.5">
+        <div className={`flex items-center gap-2.5 ${mode === "OI_SCANNER" ? "hidden" : ""}`}>
           <button
             onClick={() => {
               if (mode === "LIVE" || mode === "STATIC_0920") loadIndexLtp();
@@ -229,9 +230,11 @@ function LtpCalculatorPage() {
           <Flame className="w-3.5 h-3.5" />
           🎯 LTP BLAST SCREENER
         </button>
+        <button onClick={() => setMode("OI_SCANNER")} aria-pressed={mode === "OI_SCANNER"} className={`px-4 py-2 rounded border text-xs font-mono ${mode === "OI_SCANNER" ? "border-amber-600 text-amber-300 bg-amber-950/20" : "border-zinc-700 text-zinc-400"}`}>OI DIRECTION SCANNER</button>
       </div>
 
       {/* Main Content Area */}
+      {mode === "OI_SCANNER" && <OiDirectionScanner/>}
       {(mode === "LIVE" || mode === "STATIC_0920") && (
         <div className="space-y-5">
           {/* Top Regime Banner & Key Levels Ribbon */}

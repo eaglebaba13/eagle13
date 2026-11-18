@@ -64,8 +64,7 @@ export function saveFeaturesConfigToFile(config: SiteFeaturesConfig): void {
     fs.writeFileSync(filePath, JSON.stringify(config, null, 2), "utf-8");
     inMemoryFeatures = config;
   } catch (err) {
-    console.error("[FeaturesManager] Failed to write site features file:", err);
-    inMemoryFeatures = config;
+    throw new Error("Feature settings could not be saved. Check server storage permissions and retry.");
   }
 }
 

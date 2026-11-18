@@ -60,8 +60,15 @@ async function assertAdmin(supabase: NonNullable<AuthContext["supabase"]>, userI
   if (role === "admin" || role === "superadmin" || email === "lwillshivansh@gmail.com" || email === "dheerajnarula13@gmail.com") {
     return;
   }
-  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (!data) throw new Error("forbidden");
+  try {
+    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (data) return;
+  } catch {
+    // remote DB permission error fallback
+  }
+  const { data: adminRole } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+  if (adminRole) return;
+  throw new Error("forbidden");
 }
 
 export const createManualPaymentRequest = createServerFn({ method: "POST" })

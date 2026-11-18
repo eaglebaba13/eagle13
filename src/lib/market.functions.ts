@@ -177,8 +177,8 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
       const yahooNifty = yNifty instanceof Error ? null : yNifty;
       const yahooBank = yBank instanceof Error ? null : yBank;
 
-      const nifty = upstoxNiftyQuote ?? yahooNifty ?? yahooBank ?? null;
-      const banknifty = upstoxBankQuote ?? yahooBank ?? yahooNifty ?? null;
+      const nifty = upstoxNiftyQuote ?? yahooNifty ?? null;
+      const banknifty = upstoxBankQuote ?? yahooBank ?? null;
       const sensex: IndexQuote | null = upstoxSensexQuote ?? ySensex ?? null;
       const vix: IndexQuote | null = upstoxVixQuote ?? yVix ?? null;
       const btc: IndexQuote | null = null;
@@ -210,14 +210,14 @@ export async function getMarketDataImpl(): Promise<MarketDataResponse> {
           uxNifty && uxNifty.ok
             ? uxNifty.providerMetadata
             : fallbackMeta(
-                yahooNifty ?? yahooBank,
+                yahooNifty,
                 uxNifty && !uxNifty.ok ? uxNifty.reason : "upstox-unavailable",
               ),
         banknifty:
           uxBank && uxBank.ok
             ? uxBank.providerMetadata
             : fallbackMeta(
-                yahooBank ?? yahooNifty,
+                yahooBank,
                 uxBank && !uxBank.ok ? uxBank.reason : "upstox-unavailable",
               ),
         vix:

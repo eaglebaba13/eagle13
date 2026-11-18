@@ -162,7 +162,9 @@ export const getIntraday5mCandles = createServerFn({ method: "GET" })
     }
     return input;
   })
-  .handler(async ({ data }): Promise<CandleFetchResult> => {
+  .handler(async ({ data }): Promise<CandleFetchResult> => loadIntraday5mCandles(data));
+
+export async function loadIntraday5mCandles(data: CandleFetchArgs): Promise<CandleFetchResult> {
     const key = `${CACHE_NAMESPACE_VERSION}:gann-abs-5m:${data.instrument}:${data.sessionDate}`;
     const status = computeSnapshotStatus(data.sessionDate);
     // Historical sessions never change — long TTL. Live sessions refresh often.
@@ -171,7 +173,8 @@ export const getIntraday5mCandles = createServerFn({ method: "GET" })
       ttlMs: ttl,
       swrMs: ttl,
     });
-  });
+}
+
 
 // Test/preview hook — bypasses caching for deterministic assertions.
 export const _testFetchSessionCandles = fetchSessionCandles;

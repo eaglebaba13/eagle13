@@ -59,6 +59,8 @@ function MultiAssetIntelligencePage() {
           Scheduled 08:15 Asia/Kolkata · Version <code>{MORNING_REPORT_VERSION}</code>
         </p>
       </header>
+      {retryMut.isError && <p role="alert" className="text-sm text-rose-400">{retryMut.error.message === "Forbidden" ? "Morning brief delivery retry requires an administrator account." : "Delivery retry failed. Please try again or contact an administrator."}</p>}
+      {retryMut.isSuccess && <p role="status" className="text-sm text-amber-400">Retry completed. {record ? `Delivery status: ${record.deliveryStatus}.` : "No morning report is available yet."}</p>}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4">

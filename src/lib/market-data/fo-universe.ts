@@ -29,6 +29,7 @@ export const UNIVERSAL_INSTRUMENTS: readonly UniversalInstrument[] = [
   { key: "SENSEX", symbol: "SENSEX", name: "BSE SENSEX", sector: "Indices & ETFs", category: "INDEX", currency: "INR", defaultPrice: 81106.65, lotSize: 10, tickSize: 0.05 },
   { key: "BANKEX", symbol: "BANKEX", name: "BSE BANKEX", sector: "Indices & ETFs", category: "INDEX", currency: "INR", defaultPrice: 62450.00, lotSize: 15, tickSize: 0.05 },
   { key: "INDIA_VIX", symbol: "INDIA_VIX", name: "INDIA VIX", sector: "Indices & ETFs", category: "INDEX", currency: "INR", defaultPrice: 14.85, lotSize: 1, tickSize: 0.01 },
+  { key: "NIFTY_IT", symbol: "NIFTY_IT", name: "NIFTY IT", sector: "Indices & ETFs", category: "INDEX", currency: "INR", defaultPrice: 43850.00, lotSize: 1, tickSize: 0.05 },
   { key: "NIFTYBEES", symbol: "NIFTYBEES", name: "Nippon India Nifty 50 ETF", sector: "Indices & ETFs", category: "ETF", currency: "INR", defaultPrice: 285.01, lotSize: 100, tickSize: 0.01 },
   { key: "BANKBEES", symbol: "BANKBEES", name: "Nippon India Bank ETF", sector: "Indices & ETFs", category: "ETF", currency: "INR", defaultPrice: 616.82, lotSize: 100, tickSize: 0.01 },
   { key: "GOLDBEES", symbol: "GOLDBEES", name: "Nippon India Gold ETF", sector: "Indices & ETFs", category: "ETF", currency: "INR", defaultPrice: 116.86, lotSize: 100, tickSize: 0.01 },

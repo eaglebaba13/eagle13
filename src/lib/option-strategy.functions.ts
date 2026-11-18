@@ -297,7 +297,12 @@ export const getOptionStrategy = createServerFn({ method: "GET" }).handler(
 
         // Live market data.
         const [niftyR, vixR, topRaw, sectorRaw] = await Promise.all([
-          fetchQuote("^NSEI", "NIFTY 50"),
+          (async () => {
+            const { getMarketDataImpl } = await import("./market.functions");
+            const quote = (await getMarketDataImpl()).nifty;
+            return { symbol: "^NSEI", name: "NIFTY 50", price: quote.livePrice, prevClose: quote.prevDay.close,
+              change: quote.change, changePct: quote.changePct, ok: true };
+          })(),
           safeQuote("^INDIAVIX", "India VIX"),
           Promise.all(TOP10.map((t) => safeQuote(t.symbol, t.name).then((q) => ({ meta: t, q })))),
           Promise.all(

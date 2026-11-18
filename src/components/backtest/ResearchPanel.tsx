@@ -464,7 +464,7 @@ export default function ResearchPanel() {
         );
         const key = `${opt.id}::${opt.formula}`;
         newWalks[key] = walk;
-        newRows.push(buildStrategyRow(opt.id, opt.label, walk));
+        newRows.push(buildStrategyRow(opt.id, opt.formula, walk));
       }
       const dataHash = `${cfg.symbol}:${cfg.from}:${cfg.to}`;
       const rid = computeResearchRunId({

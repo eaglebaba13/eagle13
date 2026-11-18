@@ -239,7 +239,7 @@ export const loadReplaySession = createServerFn({ method: "POST" })
 
         const rawCandles = await fetchIntraday(map.yahoo, win.start, win.end, interval);
         const filtered = rawCandles.filter(
-          (c) => c.ts >= win.start * 1000 && c.ts <= win.end * 1000,
+          (c) => c.ts >= win.start * 1000 && c.ts < win.end * 1000,
         );
         const candles = data.timeframe === "3m" ? aggregateTo3m(filtered) : filtered;
 

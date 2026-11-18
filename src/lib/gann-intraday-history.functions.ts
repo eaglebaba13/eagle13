@@ -11,8 +11,8 @@ import {
   todayIst,
   type InstrumentSymbol,
 } from "./gann-intraday-anchor";
-import { getGannIntradaySnapshot } from "./gann-intraday.functions";
-import { getIntraday5mCandles } from "./gann-intraday-candles.functions";
+import { loadGannIntradaySnapshot } from "./gann-intraday.functions";
+import { loadIntraday5mCandles } from "./gann-intraday-candles.functions";
 import { simulateSession, type AmbiguousPolicy } from "./gann-intraday-simulator";
 import { computeCoreMetrics, type SessionResult } from "./gann-intraday-metrics";
 import { computeRunId } from "./gann-formula-compare";
@@ -99,9 +99,7 @@ export const runHistoricalValidation = createServerFn({ method: "GET" })
       try {
         const status = computeSnapshotStatus(date);
         if (status === "NO_TRADING_SESSION") continue;
-        const snapshot = await getGannIntradaySnapshot({
-          data: { instrument: data.instrument, tradingDate: date },
-        });
+        const snapshot = await loadGannIntradaySnapshot({ instrument: data.instrument, tradingDate: date });
         if (snapshot.tradingDate !== date) {
           causalityFailures++;
           throw new Error("Snapshot date drift");
@@ -110,9 +108,7 @@ export const runHistoricalValidation = createServerFn({ method: "GET" })
           causalityFailures++;
           throw new Error("Previous close from future");
         }
-        const candles = await getIntraday5mCandles({
-          data: { instrument: data.instrument, sessionDate: date },
-        });
+        const candles = await loadIntraday5mCandles({ instrument: data.instrument, sessionDate: date });
         const simulation = simulateSession({
           instrument: data.instrument,
           ranked: snapshot.rankedLevels,

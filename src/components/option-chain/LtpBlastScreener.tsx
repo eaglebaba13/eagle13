@@ -55,7 +55,7 @@ export function LtpBlastScreener({
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Live algorithmic scan for F&O stocks trading right at their P1/P2 or C1/C2 trigger lines with Risk ≤ 1.
+              F&O stocks near P1/P2 or C1/C2 triggers. Review the displayed risk; All Triggers includes moderate-risk candidates.
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApexChart } from "@/components/ApexChart";
 import type { ApexOptions } from "apexcharts";
@@ -13,7 +13,7 @@ import {
 } from "@/lib/derivatives-analytics";
 
 import { useHydrated } from "@/hooks/use-hydrated";
-import { getOptionsChain, type OptionsSymbol } from "@/lib/options-chain.functions";
+import { getOptionsChain, type OptionsSymbol, type OptionsChainResponse } from "@/lib/options-chain.functions";
 import { getAstro } from "@/lib/astro.functions";
 import { getMarketData } from "@/lib/market.functions";
 import {
@@ -30,6 +30,7 @@ import {
   scoreRecommendation,
   selectOptionsLevels,
   assessDataQuality,
+  normalizeOptionLegs,
   type AstroLevelLite,
   type FocusSample,
   type OptionLeg,
@@ -46,6 +47,7 @@ import {
 import { nseSession } from "@/lib/terminal-clock";
 import { downloadBlob } from "@/lib/download";
 import { formatPcr } from "@/lib/format";
+import { OiDirectionScanner } from "@/components/option-chain/OiDirectionScanner";
 
 const C = {
   bg: "var(--eb-bg)",
@@ -91,13 +93,13 @@ const marketQuery = () =>
   });
 
 export const Route = createFileRoute("/options-analytics")({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(chainQuery("NIFTY")),
-      context.queryClient.ensureQueryData(astroQuery()),
-      context.queryClient.ensureQueryData(marketQuery()),
-    ]),
-  component: OptionsAnalyticsPage,
+  loader: ({ context }) => {
+    // Optional confluence feeds must never prevent the option-chain terminal from opening.
+    void context.queryClient.prefetchQuery(chainQuery("NIFTY"));
+    void context.queryClient.prefetchQuery(astroQuery());
+    void context.queryClient.prefetchQuery(marketQuery());
+  },
+  component: OptionsAnalyticsTerminal,
   head: () => ({
     meta: [
       { title: "Options Analytics Terminal | EagleBABA" },
@@ -128,19 +130,44 @@ function pct(n: number): string {
   return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 }
 
-function OptionsAnalyticsPage() {
+export function OptionsAnalyticsTerminal() {
+  const [view, setView] = useState<"scanner" | "greeks">("scanner");
+  return <div className="bg-[#0a0e14] min-h-screen p-2 sm:p-4">
+    <nav aria-label="Options analytics views" className="flex flex-wrap gap-2 mb-3">
+      {([ ["scanner", "OI DIRECTION SCANNER & PCR LOG"], ["greeks", "GEX, MAX PAIN & GREEKS"] ] as const).map(([key, label]) => <button key={key} aria-pressed={view === key} onClick={() => setView(key)} className={`px-4 py-2 border rounded text-xs font-mono ${view === key ? "border-amber-600 text-amber-300 bg-amber-950/20" : "border-zinc-700 text-zinc-400"}`}>{label}</button>)}
+    </nav>
+    {view === "scanner" ? <OiDirectionScanner/> : <OptionsAnalyticsPage/>}
+  </div>;
+}
+
+export function OptionsAnalyticsPage() {
   const [symbol, setSymbol] = useState<OptionsSymbol>("NIFTY");
   const [expiry, setExpiry] = useState<string | undefined>(undefined);
   const [showMethod, setShowMethod] = useState(false);
   const [strikeSearch, setStrikeSearch] = useState("");
   const [demoMode, setDemoMode] = useState(false);
 
-  const chainQ = useSuspenseQuery(chainQuery(symbol, expiry, demoMode));
-  const astroQ = useSuspenseQuery(astroQuery());
-  const marketQ = useSuspenseQuery(marketQuery());
+  const chainQ = useQuery(chainQuery(symbol, expiry, demoMode));
+  const astroQ = useQuery(astroQuery());
+  const marketQ = useQuery(marketQuery());
+
+  const emptyChain = useMemo<OptionsChainResponse>(() => ({
+    snapshot: { symbol, spot: 0, expiry: "", fetchedAt: "", strikes: [], legs: [], provider: "unavailable", source: "UNAVAILABLE" },
+    expiries: [], selectedExpiry: "", step: symbol === "NIFTY" ? 50 : 100, degraded: true,
+    errorMessage: chainQ.isPending ? "Loading verified option-chain data…" : "Option-chain data is unavailable. Retry to reconnect.",
+    yahooSpot: null,
+    integrity: { sourceStatus: "UNAVAILABLE", provider: "unavailable", fetchedAt: "", providerTimestamp: null,
+      receivedAt: "", dataAgeSeconds: 0, expiry: null, underlying: null, strikeCount: 0, validStrikeCount: 0,
+      missingFieldCount: 0, isTradable: false, lastLiveFetchAt: null, cacheStatus: "NONE", spotDivergence: null },
+  }), [symbol, chainQ.isPending]);
+  const normalizedChain = useMemo(() => {
+    const chain = chainQ.data ?? emptyChain;
+    const legs = normalizeOptionLegs(chain.snapshot.legs);
+    return { ...chain, snapshot: { ...chain.snapshot, legs, strikes: [...new Set(legs.map((leg) => leg.strike))].sort((a, b) => a - b) } };
+  }, [chainQ.data, emptyChain]);
 
   const { snapshot, expiries, selectedExpiry, step, degraded, errorMessage, integrity, yahooSpot } =
-    chainQ.data;
+    normalizedChain;
   const astro = astroQ.data;
   const market = marketQ.data;
 
@@ -206,7 +233,7 @@ function OptionsAnalyticsPage() {
     const hiPut = [...legs.filter((l) => l.side === "PE")].sort((a, b) => b.oi - a.oi)[0];
 
     // Astro levels only make sense for NIFTY; scale tolerance for BANKNIFTY.
-    const astroLevels: AstroLevelLite[] = astro.planets.flatMap((p) => [
+    const astroLevels: AstroLevelLite[] = (astro?.planets ?? []).flatMap((p) => [
       { planet: p.planet, label: `${p.planet} R1`, value: p.r1 },
       { planet: p.planet, label: `${p.planet} S1`, value: p.s1 },
       { planet: p.planet, label: `${p.planet} R2`, value: p.r2 },
@@ -220,13 +247,13 @@ function OptionsAnalyticsPage() {
     const sup = levelsWithConfluence.find((l) => l.kind === "SUPPORT" && l.rank === "PRIMARY");
     const res = levelsWithConfluence.find((l) => l.kind === "RESISTANCE" && l.rank === "PRIMARY");
 
-    const vix = market.vix?.livePrice ?? null;
+    const vix = market?.vix?.livePrice ?? null;
     const breadthBias =
-      astro.emaBias === "Bullish" ? "Bullish" : astro.emaBias === "Bearish" ? "Bearish" : "Neutral";
+      astro?.emaBias === "Bullish" ? "Bullish" : astro?.emaBias === "Bearish" ? "Bearish" : "Neutral";
     const astroBias: "Bullish" | "Bearish" | "Neutral" =
-      astro.bullCount > astro.bearCount + 1
+      astro && astro.bullCount > astro.bearCount + 1
         ? "Bullish"
-        : astro.bearCount > astro.bullCount + 1
+        : astro && astro.bearCount > astro.bullCount + 1
           ? "Bearish"
           : "Neutral";
 
@@ -311,7 +338,7 @@ function OptionsAnalyticsPage() {
     // focusHistory is a ref; safe to omit
   }, [snapshot, astro, market, symbol, isUnavailable]);
 
-  const spotChangePct = market.nifty.changePct;
+  const spotChangePct = (symbol === "NIFTY" ? market?.nifty : market?.banknifty)?.changePct ?? 0;
   const daysToExpiry = expiries.find((e) => e.expiry === selectedExpiry)?.daysToExpiry ?? 0;
 
   // Tradability gate — always compute so the source bar can render.
@@ -574,6 +601,8 @@ function OptionsAnalyticsPage() {
             </button>
           </div>
         </header>
+
+        {(astroQ.isError || marketQ.isError) && <p role="status" className="mb-3 text-xs text-amber-400">Optional Astro or market context unavailable. Option-chain analytics remain available; confluence is limited.</p>}
 
         {degraded && !isUnavailable && (
           <div

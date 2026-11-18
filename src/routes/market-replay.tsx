@@ -1,3 +1,4 @@
+import { dateRangeError } from "@/lib/input-validation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -226,6 +227,7 @@ function MarketReplayPage() {
   ]);
 
   const load = useCallback(async () => {
+    if (dateRangeError(date, date)) { setError("Choose a valid session date."); return; }
     setLoading(true);
     setError(null);
     setSession(null);

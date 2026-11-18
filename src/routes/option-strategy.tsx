@@ -730,6 +730,8 @@ type ReasonKind = "positive" | "negative" | "warning" | "neutral";
 
 function classifyReason(text: string): ReasonKind {
   const t = text.toLowerCase();
+  if (/breadth strong/.test(t)) return "positive";
+  if (/breadth weak/.test(t)) return "negative";
   if (/(astro|moon|nakshatra)/.test(t)) return "neutral";
   if (/(wait|mixed|no clear|neutral)/.test(t)) return "warning";
   if (/(weak|bearish|negative|▼|strong bearish|put)/.test(t)) return "negative";
@@ -1032,8 +1034,9 @@ function SectorStrengthWidget({ sectors }: { sectors: Sector[] }) {
     if (typeof localStorage !== "undefined") localStorage.setItem("eb-os-sector-sort", m);
   };
   const rows = useMemo(() => sortSectors(enrichSectors(sectors), mode), [sectors, mode]);
-  const topKey = rows.length ? rows[0].key : null;
-  const botKey = rows.length ? rows[rows.length - 1].key : null;
+  const rankedByChange = [...rows].sort((a, b) => b.changePct - a.changePct);
+  const topKey = rankedByChange[0]?.key ?? null;
+  const botKey = rankedByChange.at(-1)?.key ?? null;
 
   return (
     <Card style={{ padding: 0, marginBottom: 14 }}>

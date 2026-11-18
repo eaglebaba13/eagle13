@@ -193,6 +193,8 @@ export function resolveTrade(p: TradeParams): TradeResolve {
   let status: TradeStatus = "ACTIVE";
 
   for (let i = entryIndex; i <= p.currentIndex && i < p.candles.length; i++) {
+    // A close entry occurs after this bar's high/low. Those earlier prices cannot exit the trade.
+    if (i === entryIndex && p.entryMode === "signal_close" && p.entryOverride == null) continue;
     const c = view[i];
     const highExc = (c.high - entryAdj) * dir;
     const lowExc = (c.low - entryAdj) * dir;

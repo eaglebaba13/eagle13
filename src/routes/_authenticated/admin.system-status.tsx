@@ -41,7 +41,7 @@ function SystemStatusPage() {
   const buildVersion = (import.meta.env.VITE_BUILD_VERSION as string | undefined) ?? "dev";
   const gitCommit = (import.meta.env.VITE_GIT_COMMIT as string | undefined) ?? "local";
   const deployedAt =
-    (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? new Date().toISOString();
+    (import.meta.env.VITE_DEPLOYED_AT as string | undefined) ?? "Not recorded by deployment";
 
   const rq = useRuntimeReadinessQuery();
   const report = rq.data ?? null;

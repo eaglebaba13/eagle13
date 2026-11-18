@@ -328,7 +328,7 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
           priority: event.priority,
         },
         retry_count: 0,
-      });
+      }, sub?.userId);
       return {
         provider: "TELEGRAM",
         attemptedAt: nowIso,
@@ -368,7 +368,7 @@ export const TelegramServerAlertDeliveryProvider: AlertDeliveryProvider = {
         priority: event.priority,
       },
       retry_count: 0,
-    });
+    }, sub?.userId);
 
     return {
       provider: "TELEGRAM",

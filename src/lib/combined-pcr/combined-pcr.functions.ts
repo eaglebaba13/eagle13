@@ -55,6 +55,7 @@ export const getCombinedPcr = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const startedAt = new Date().toISOString();
     try {
+      if (data.useMock && process.env.NODE_ENV !== "test") throw new Error("Mock scenarios are available only in the test environment. Disable Mock to load live results.");
       const { fetchCanonicalOptionChain } =
         await import("../option-chain/canonical-snapshot.server");
       const { getSnapshotHistory } = await import("../option-chain/snapshot-history");

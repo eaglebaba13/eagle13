@@ -378,30 +378,31 @@ export const getOptionsChain = createServerFn({ method: "GET" })
           const legs: OptionLeg[] = [];
           const strikeSet = new Set<number>();
           for (const row of canonSnap.strikes) {
+            if (!row || !Number.isFinite(row.strike) || row.strike <= 0) continue;
             strikeSet.add(row.strike);
             legs.push({
               strike: row.strike,
               side: "CE",
-              oi: row.call.oi ?? 0,
-              changeOi: row.call.changeOi ?? 0,
-              volume: row.call.volume ?? 0,
-              ltp: row.call.ltp ?? 0,
+              oi: row.call?.oi ?? 0,
+              changeOi: row.call?.changeOi ?? 0,
+              volume: row.call?.volume ?? 0,
+              ltp: row.call?.ltp ?? 0,
               changePct: 0,
-              iv: row.call.iv,
-              bid: row.call.bid,
-              ask: row.call.ask,
+              iv: row.call?.iv ?? null,
+              bid: row.call?.bid ?? null,
+              ask: row.call?.ask ?? null,
             });
             legs.push({
               strike: row.strike,
               side: "PE",
-              oi: row.put.oi ?? 0,
-              changeOi: row.put.changeOi ?? 0,
-              volume: row.put.volume ?? 0,
-              ltp: row.put.ltp ?? 0,
+              oi: row.put?.oi ?? 0,
+              changeOi: row.put?.changeOi ?? 0,
+              volume: row.put?.volume ?? 0,
+              ltp: row.put?.ltp ?? 0,
               changePct: 0,
-              iv: row.put.iv,
-              bid: row.put.bid,
-              ask: row.put.ask,
+              iv: row.put?.iv ?? null,
+              bid: row.put?.bid ?? null,
+              ask: row.put?.ask ?? null,
             });
           }
           if (!legs.length) throw new Error("no legs for selected expiry");
@@ -432,6 +433,8 @@ export const getOptionsChain = createServerFn({ method: "GET" })
             tradingDate: currentTradingDate(),
             fetchedAtMs: Date.now(),
           });
+          const { saveAnalyticsSnapshot } = await import("./option-chain/analytics-lkg.server");
+          await saveAnalyticsSnapshot({ snapshot, expiries, selectedExpiry: selectedIso, step, degraded: false, errorMessage: null, integrity, yahooSpot }).catch(() => {});
           return {
             snapshot,
             expiries,
@@ -483,6 +486,9 @@ export const getOptionsChain = createServerFn({ method: "GET" })
               yahooSpot,
             };
           }
+          const { readAnalyticsSnapshot } = await import("./option-chain/analytics-lkg.server");
+          const eod = await readAnalyticsSnapshot(sym, data.expiry);
+          if (eod) return eod;
           return emptyUnavailableResponse(
             sym,
             data.expiry,

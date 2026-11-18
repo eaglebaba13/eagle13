@@ -85,6 +85,19 @@ const levelsQuery = () =>
   });
 
 export const Route = createFileRoute("/live-chart")({
+  validateSearch: (search: Record<string, unknown>): {
+    symbol?: string;
+    p2?: number;
+    p1?: number;
+    c1?: number;
+    c2?: number;
+  } => ({
+    symbol: typeof search.symbol === "string" ? search.symbol.trim().toUpperCase() : undefined,
+    p2: typeof search.p2 === "number" ? search.p2 : typeof search.p2 === "string" && Number.isFinite(Number(search.p2)) ? Number(search.p2) : undefined,
+    p1: typeof search.p1 === "number" ? search.p1 : typeof search.p1 === "string" && Number.isFinite(Number(search.p1)) ? Number(search.p1) : undefined,
+    c1: typeof search.c1 === "number" ? search.c1 : typeof search.c1 === "string" && Number.isFinite(Number(search.c1)) ? Number(search.c1) : undefined,
+    c2: typeof search.c2 === "number" ? search.c2 : typeof search.c2 === "string" && Number.isFinite(Number(search.c2)) ? Number(search.c2) : undefined,
+  }),
   loader: async ({ context }) => {
     try {
       return await context.queryClient.ensureQueryData(levelsQuery());
@@ -184,20 +197,16 @@ class ChartCanvasErrorBoundary extends Component<
 }
 
 function LiveChartPage() {
-  const initialSymbol = useMemo(() => {
-    if (typeof window === "undefined") return "NIFTY50";
-    const querySym = new URLSearchParams(window.location.search).get("symbol");
-    if (!querySym) return "NIFTY50";
-    const found = findInstrument(querySym);
-    return found ? found.key : querySym;
-  }, []);
-
-  const [symbol, setSymbol] = useState<string>(initialSymbol);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const requested = search.symbol || "NIFTY50";
+  const symbol = findInstrument(requested)?.key ?? requested;
+  const setSymbol = (next: string) => { void navigate({ search: (previous) => ({ ...previous, symbol: next }) }); };
   const [intervalMs, setIntervalMs] = useState<number>(60_000);
 
   return (
     <LiveChartSelection
-      key={`${symbol}:${intervalMs}`}
+      key={symbol}
       symbol={symbol}
       setSymbol={setSymbol}
       intervalMs={intervalMs}
@@ -239,7 +248,15 @@ function LiveChartSelection({
       activeInstrument.currency === "USDT" ||
       /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(symbol),
   );
-  const currencySymbol = isUsd ? "$" : activeInstrument.currency === "INR" ? "₹" : "$";
+  const currencySymbol = isUsd ? "$" : "₹";
+
+  const search = Route.useSearch();
+  const searchFourLine = useMemo(() => {
+    if (search.p2 != null && search.p1 != null && search.c1 != null && search.c2 != null) {
+      return { p2: search.p2, p1: search.p1, c1: search.c1, c2: search.c2 };
+    }
+    return null;
+  }, [search.p2, search.p1, search.c1, search.c2]);
 
   // Indicator Toggle States
   const [showVolume, setShowVolume] = useState(false);
@@ -248,7 +265,7 @@ function LiveChartSelection({
   const [showLiquidity, setShowLiquidity] = useState(true);
   const [showLtpLevels, setShowLtpLevels] = useState(true);
   const [showAstroLevels, setShowAstroLevels] = useState(false);
-  const [showIctUnicorn, setShowIctUnicorn] = useState(true);
+  const [showIctUnicorn, setShowIctUnicorn] = useState(() => !searchFourLine);
   const [showOiProfile, setShowOiProfile] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapThreshold, setHeatmapThreshold] = useState(0.25);
@@ -281,26 +298,18 @@ function LiveChartSelection({
   const [alertTargetPrice, setAlertTargetPrice] = useState<string>("");
   const [alertCondition, setAlertCondition] = useState<"ABOVE" | "BELOW">("ABOVE");
   const [alertNote, setAlertNote] = useState<string>("");
-  const [priceAlerts, setPriceAlerts] = useState<PriceAlertItem[]>([
-    {
-      id: "alt-1",
-      symbol: "NIFTY50",
-      targetPrice: 25250,
-      condition: "ABOVE",
-      note: "PDH Breakout & Value Area High Expansion",
-      createdAt: "Today 09:15 IST",
-      active: true,
-    },
-    {
-      id: "alt-2",
-      symbol: "BANKNIFTY",
-      targetPrice: 53800,
-      condition: "BELOW",
-      note: "Gann Cycle S1 Breakdown Support Alert",
-      createdAt: "Today 10:30 IST",
-      active: true,
-    },
-  ]);
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlertItem[]>([]);
+  const [alertsLoaded, setAlertsLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem("eb-live-chart-price-alerts-v1") || "[]");
+      if (Array.isArray(saved)) setPriceAlerts(saved.filter((item) => item && typeof item.id === "string" && typeof item.symbol === "string" && Number.isFinite(item.targetPrice) && item.targetPrice > 0 && (item.condition === "ABOVE" || item.condition === "BELOW")).slice(0, 200));
+    } catch { /* Storage is optional. */ }
+    setAlertsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (alertsLoaded) try { localStorage.setItem("eb-live-chart-price-alerts-v1", JSON.stringify(priceAlerts)); } catch { /* Storage is optional. */ }
+  }, [priceAlerts, alertsLoaded]);
 
   // Right Sidebar State (Permanently docked on desktop)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -452,8 +461,8 @@ function LiveChartSelection({
 
   const currentLtp =
     liveCandleData?.close ??
-    cryptoLivePrice ??
     latestCandleClose ??
+    cryptoLivePrice ??
     sse.status?.lastLtp ??
     activeInstrument.defaultPrice;
 
@@ -617,9 +626,10 @@ function LiveChartSelection({
   const fourLineQ = useQuery({ ...stockFourLineQuery(ltpUnderlying), enabled: showLtpLevels && !isReplayActive && activeInstrument.category === "FO_EQUITY" });
   const ltpData = ltpQ.data?.ok ? ltpQ.data.data : null;
   const fourLineData = fourLineQ.data?.ok ? fourLineQ.data.fourLine : null;
+  const activeFourLine = searchFourLine ?? fourLineData;
   const ltpLevels = useMemo(() => showLtpLevels && !isReplayActive
-    ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" && !fourLineData ? null : ltpData, activeInstrument.category === "FO_EQUITY" ? fourLineData : null) : [],
-    [showLtpLevels, isReplayActive, ltpData, fourLineData, activeInstrument.category]);
+    ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" && !activeFourLine ? null : ltpData, (activeInstrument.category === "FO_EQUITY" || searchFourLine) ? activeFourLine : null) : [],
+    [showLtpLevels, isReplayActive, ltpData, activeFourLine, searchFourLine, activeInstrument.category]);
 
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)
   const astroLevels = useMemo(() => {
@@ -749,7 +759,7 @@ function LiveChartSelection({
   // Create New Price Alert
   const handleCreateAlert = () => {
     const num = parseFloat(alertTargetPrice);
-    if (isNaN(num) || num <= 0) return;
+    if (!Number.isFinite(num) || num <= 0) return;
     const newAlert: PriceAlertItem = {
       id: `alt-${Date.now()}`,
       symbol,
@@ -815,15 +825,14 @@ function LiveChartSelection({
         id: `draw-${now}`,
         type: "horizontal",
         points: [
-          { time: now / 1000, price: targetPrice },
-          { time: now / 1000 + 86400, price: targetPrice },
+          { time: (displayCandles.at(-1)?.x ?? now) / 1000, logical: Math.max(0, displayCandles.length - 1), price: targetPrice },
         ],
         color: "#F59E0B",
         isComplete: true,
       };
       handleSaveDrawings([...drawings, newDrawing]);
     },
-    [drawings, handleSaveDrawings],
+    [drawings, handleSaveDrawings, displayCandles],
   );
 
   // Filtered Watchlist Instruments
@@ -1026,6 +1035,7 @@ function LiveChartSelection({
               <span>OI</span>
             </button>
 
+            {/* AI-LTP Levels Toggle */}
             <button type="button" onClick={() => setShowHeatmap((value) => !value)} aria-pressed={showHeatmap} className={`px-2 py-1 rounded-md text-xs font-mono ${showHeatmap ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "text-zinc-500 hover:text-zinc-300"}`}>🔥 Heatmap</button>
             {showHeatmap && <label className="text-[10px] text-zinc-400">Threshold <input aria-label="Heatmap intensity threshold" type="range" min="0" max="0.9" step="0.05" value={heatmapThreshold} onChange={(event) => setHeatmapThreshold(Number(event.target.value))} /></label>}
             {showHeatmap && <select aria-label="Heatmap color palette" value={heatmapPalette} onChange={(event) => setHeatmapPalette(event.target.value as HeatmapPalette)} className="bg-[#111827] text-[10px] text-zinc-300"><option value="institutional">Institutional</option><option value="contrast">Contrast</option></select>}
@@ -1150,6 +1160,22 @@ function LiveChartSelection({
               drawingsCount={drawings.length}
             />
           </div>
+
+          {/* Active Drawing Tool Feedback Badge */}
+          {activeTool !== "cursor" && (
+            <div className="absolute top-3 left-16 z-20 flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono shadow-lg backdrop-blur-md select-none pointer-events-auto">
+              <span>Tool: <strong>{activeTool === "rectangle" ? "Supply & Demand Zone Box" : activeTool}</strong></span>
+              <span className="text-[10px] text-zinc-400">• Drag or click two points to plot (Esc to cancel)</span>
+              <button
+                type="button"
+                onClick={() => setActiveTool("cursor")}
+                className="ml-1 text-zinc-400 hover:text-white cursor-pointer"
+                title="Cancel drawing tool"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
 
 
@@ -1362,7 +1388,7 @@ function LiveChartSelection({
                         inst.currency === "USD" ||
                         inst.currency === "USDT" ||
                         /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(inst.symbol);
-                      const instSym = isUsdInst ? "$" : inst.currency === "INR" ? "₹" : "$";
+                      const instSym = isUsdInst ? "$" : "₹";
                       const cryptoItem =
                         cryptoTickers?.[inst.symbol] ??
                         cryptoTickers?.[inst.key] ??
@@ -1804,11 +1830,14 @@ function LiveChartSelection({
                 <input
                   type="number"
                   step="any"
+                  aria-invalid={!Number.isFinite(Number(alertTargetPrice)) || Number(alertTargetPrice) <= 0}
+                  aria-describedby="price-alert-validation"
                   value={alertTargetPrice}
                   onChange={(e) => setAlertTargetPrice(e.target.value)}
                   placeholder={`e.g. ${currentLtp ?? 25000}`}
                   className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-cyan-500/50"
                 />
+                {(!Number.isFinite(Number(alertTargetPrice)) || Number(alertTargetPrice) <= 0) && <p id="price-alert-validation" role="alert" className="text-xs text-rose-400">Enter a target price greater than zero.</p>}
               </div>
 
               <div>
@@ -1832,6 +1861,7 @@ function LiveChartSelection({
                 </button>
                 <button
                   type="button"
+                  disabled={!Number.isFinite(Number(alertTargetPrice)) || Number(alertTargetPrice) <= 0}
                   onClick={handleCreateAlert}
                   className="flex-1 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold hover:bg-cyan-500/30 transition-all cursor-pointer"
                 >

@@ -470,7 +470,7 @@ function FoBanListPage() {
                 <Info className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-80" />
                 <p className="text-zinc-300 font-bold">No Securities in Near-Ban Zone</p>
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  All active F&O stocks currently have open interest below 80% MWPL.
+                  {query ? "No near-ban stocks match your search." : "All active F&O stocks currently have open interest below 80% MWPL."}
                 </p>
               </div>
             ) : (

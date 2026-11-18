@@ -502,7 +502,9 @@ function buildReadinessPanel(
     "breadth",
     "Advance/Decline",
     parts.breadth === "UNAVAILABLE" ? "UNAVAILABLE" : parts.breadth !== "NEUTRAL" ? "PASS" : "FAIL",
-    inp.breadthNet != null ? `${round(inp.breadthNet * 100)}%` : "—",
+    inp.breadthNet != null
+      ? `${round(Math.abs(inp.breadthNet) <= 1 && inp.breadthNet !== 0 ? inp.breadthNet * 100 : inp.breadthNet)}%`
+      : "—",
   );
   push(
     "oi",

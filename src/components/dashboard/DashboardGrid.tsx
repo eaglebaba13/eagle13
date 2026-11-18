@@ -15,6 +15,7 @@ type Props = {
   context: ResolveContext;
   preferences?: DashboardPreferences;
   widgets?: WidgetDefinition[];
+  preferenceDevice?: "desktop" | "mobile";
 };
 
 /**
@@ -32,6 +33,7 @@ export function DashboardGrid({
   context,
   preferences,
   widgets = DASHBOARD_WIDGETS,
+  preferenceDevice,
 }: Props) {
   const adminDisabled = useAdminDisabledWidgets();
   const filtered = useMemo(
@@ -48,9 +50,9 @@ export function DashboardGrid({
           desktopOrder: [],
           mobileOrder: [],
         },
-        device === "mobile" ? "mobile" : "desktop",
+        preferenceDevice ?? (device === "mobile" ? "mobile" : "desktop"),
       ),
-    [filtered, preferences, device],
+    [filtered, preferences, device, preferenceDevice],
   );
 
   const gridStyle: React.CSSProperties =
@@ -63,7 +65,7 @@ export function DashboardGrid({
   return (
     <div style={gridStyle} data-eb-dashboard-grid={device}>
       {ordered.map((w) => (
-        <WidgetSlot key={w.id} widget={w} device={device} />
+        <WidgetSlot key={w.id} widget={w} device={device} collapsed={!!w.supportsCollapse && !!preferences?.collapsed.includes(w.id)} />
       ))}
     </div>
   );
@@ -72,9 +74,11 @@ export function DashboardGrid({
 function WidgetSlot({
   widget,
   device,
+  collapsed,
 }: {
   widget: WidgetDefinition;
   device: "desktop" | "tablet" | "mobile";
+  collapsed: boolean;
 }) {
   const Lazy = useMemo(() => lazy(widget.componentLoader), [widget]);
   const span =
@@ -86,7 +90,7 @@ function WidgetSlot({
   return (
     <div style={span} data-eb-widget-id={widget.id}>
       <Suspense fallback={<DashboardWidgetSkeleton title={widget.title} />}>
-        <Lazy />
+        <Lazy collapsed={collapsed} />
       </Suspense>
     </div>
   );

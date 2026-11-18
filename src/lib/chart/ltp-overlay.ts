@@ -41,7 +41,7 @@ export function calculatorUnderlying(symbol: string): string {
 }
 
 /** Presentation only: prices and scenario rules come directly from the calculator RPCs. */
-export function buildLtpChartLevels(data: LtpCalculatorOutput | null, fourLine?: StockFourLineLevels | null): LtpChartLevel[] {
+export function buildLtpChartLevels(data: LtpCalculatorOutput | null, fourLine?: Pick<StockFourLineLevels, "p2" | "p1" | "c1" | "c2"> | null): LtpChartLevel[] {
   const shifting = buildShiftingChartLevels(data);
   if (fourLine) return [
     { id: "p2", name: "P2 Strong Resistance", price: fourLine.p2, color: "#EF4444", dash: true },

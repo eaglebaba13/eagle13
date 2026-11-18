@@ -105,7 +105,7 @@ export function evidenceFromOptionChain(
     blockers,
     warnings,
     provenance: cap.providerAlias,
-    diagnosticsPath: "/admin/system-status",
+    diagnosticsPath: "/options-chain",
   };
 }
 

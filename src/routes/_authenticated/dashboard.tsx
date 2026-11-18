@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { getMarketData, type IndexQuote } from "@/lib/market.functions";
@@ -82,7 +82,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     ],
   }),
   loader: ({ context }) => {
-    context.queryClient.ensureQueryData(marketQuery());
+    void context.queryClient.prefetchQuery(marketQuery());
     // Secondary sections stream in on their own Suspense boundaries, so we
     // only prime their caches (non-blocking) instead of awaiting them during
     // the critical above-the-fold render.
@@ -114,8 +114,19 @@ const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function Dashboard() {
+  const market = useQuery(marketQuery());
+  if (!market.data) return (
+    <div className="eb-shell p-6"><h1 className="text-lg font-semibold">Research Dashboard</h1>
+      <p role="status" className="my-3 text-sm text-amber-400">{market.isPending ? "Loading verified market quotes…" : "Market quotes are temporarily unavailable. Your research session is active."}</p>
+      <button type="button" disabled={market.isFetching} onClick={() => void market.refetch()}>Retry market data</button>
+    </div>
+  );
+  return <DashboardContent market={market} />;
+}
+
+function DashboardContent({ market }: { market: ReturnType<typeof useQuery<Awaited<ReturnType<typeof getMarketData>>>> }) {
   const { data, dataUpdatedAt, isFetching, isStale, error, refetch } =
-    useSuspenseQuery(marketQuery());
+    market as typeof market & { data: NonNullable<typeof market.data> };
   type TabKey = "nifty" | "banknifty" | "sensex" | "btc" | "gold";
 
   const [prefs, setPrefs] = useState<DashboardPreferences>(DEFAULT_PREFERENCES);
@@ -357,22 +368,10 @@ function Dashboard() {
             }}
             className="eb-grid"
           >
-            <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={leftRail} />
+            <DashboardGrid device="mobile" preferenceDevice="desktop" preferences={prefs} context={{ plan: "free" }} widgets={leftRail} />
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={cprWidget} />
-              <div
-                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
-                className="eb-grid"
-              >
-                <DashboardGrid
-                  device="mobile"
-                  context={{ plan: "free" }}
-                  widgets={safeZonesWidget}
-                />
-                <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannWidget} />
-              </div>
-              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={pivotWidget} />
-              <DashboardGrid device="mobile" context={{ plan: "free" }} widgets={gannCycleWidget} />
+              <DashboardGrid device="mobile" preferenceDevice="desktop" preferences={prefs} context={{ plan: "free" }}
+                widgets={[...cprWidget, ...safeZonesWidget, ...gannWidget, ...pivotWidget, ...gannCycleWidget]} />
               <Suspense fallback={<SectionSkeleton label="Loading GTI Summary…" />}>
                 <GtiSummaryCard />
               </Suspense>

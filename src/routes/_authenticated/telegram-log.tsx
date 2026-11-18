@@ -103,7 +103,7 @@ function TelegramLogPage() {
                       <div className="font-semibold text-zinc-100">{r.event?.title ?? r.event?.type ?? "—"}</div>
                       {r.event?.type && <div className="text-[10px] text-zinc-500">{r.event.type}</div>}
                     </td>
-                    <td className="px-3.5 py-2.5 text-zinc-300 font-semibold">{r.provider}</td>
+                    <td className="px-3.5 py-2.5 text-zinc-300 font-semibold">{r.provider}{r.target_channel && <div className="text-[10px] text-zinc-500">{r.target_channel}</div>}</td>
                     <td className="px-3.5 py-2.5">
                       <span
                         className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${statusTone(r.status)}`}

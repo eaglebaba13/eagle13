@@ -110,7 +110,7 @@ export const listTelegramChannelsAdmin = createServerFn({ method: "GET" }).handl
 const ChannelInputSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(2),
-  chatId: z.string().min(3),
+  chatId: z.string().trim().regex(/^(?:-?\d+|@[A-Za-z][A-Za-z0-9_]{4,31})$/, "Enter a numeric Telegram chat ID or @ChannelUsername."),
   botToken: z.string().optional(),
   alertFilter: z.enum(["all", "gann", "astro", "decision", "vix"]),
   status: z.enum(["active", "paused"]),

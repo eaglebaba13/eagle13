@@ -43,5 +43,10 @@ dist-ssr
 *.sw?
 
 .env
+config/telegram-delivery-audit.json
+config/telegram-delivery-audit.json.*.tmp
+config/options-analytics-lkg/
 .env.*
 !.env.example
+config/oi-direction-snapshots.json
+config/oi-direction-snapshots.json.tmp

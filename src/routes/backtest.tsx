@@ -1,3 +1,4 @@
+import { dateRangeError } from "@/lib/input-validation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useMemo, useState } from "react";
@@ -109,6 +110,14 @@ function BacktestPage() {
     ("GANN_SIGN_DEGREE_TABLE_V1_1" as UnifiedFormulaId);
   const [formula, setFormula] = useState<UnifiedFormulaId>(astroDefault);
 
+  const handleStrategyChange = (nextStrategy: StrategyId) => {
+    setStrategy(nextStrategy);
+    const def = getStrategyAdapter(nextStrategy).defaultFormulaVersion;
+    if (def) {
+      setFormula(def);
+    }
+  };
+
   const [symbol, setSymbol] = useState<BacktestSymbol>("NIFTY50");
   const [period, setPeriod] = useState<PeriodKey>("6M");
   const [from, setFrom] = useState<string>(isoDaysAgo(182));
@@ -135,6 +144,8 @@ function BacktestPage() {
   };
 
   const runNow = async () => {
+    const invalid = dateRangeError(from, to);
+    if (invalid) { setError(invalid); return; }
     // Phase 21.3d-parity-β2a · Sign-Degree AND Legacy dispatch through the
     // shared runBacktest path. Absolute is handled by the embedded
     // AbsoluteValidationPanel below (activated in β2b), which calls
@@ -336,7 +347,7 @@ function BacktestPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 }}>
               <div>
                 <div style={fieldLbl}>Strategy</div>
-                <StrategySelector value={strategy} onChange={setStrategy} />
+                <StrategySelector value={strategy} onChange={handleStrategyChange} />
               </div>
               {strategy === "ASTRO" || strategy === "SMC" || strategy === "ASTRO_SMC_HYBRID" ? (
                 <div>
@@ -517,7 +528,7 @@ function BacktestPage() {
             ) : null}
           </section>
 
-          {formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
+          {strategy === "ASTRO" && formula === "GANN_ASTRO_INTRADAY_ABSOLUTE_V1" ? (
             <section style={{ ...panel, marginTop: 14 }}>
               <Suspense
                 fallback={

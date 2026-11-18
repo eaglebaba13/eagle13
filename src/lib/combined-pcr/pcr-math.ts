@@ -7,6 +7,14 @@
 import type { OptionChainStrike } from "../option-chain/types";
 import type { CombinedPcrWeights, InstrumentPcr } from "./types";
 
+/** Normalize a percentage field; financial scoring formulas below are unchanged. */
+export function weightsFromPercent(raw: string, edited: "NIFTY" | "BANKNIFTY"): CombinedPcrWeights {
+  const parsed = Number(raw.replace(/^0+(?=\d)/, ""));
+  const percent = Math.min(100, Math.max(0, Number.isNaN(parsed) ? 0 : parsed));
+  const complement = (100 - percent) / 100;
+  return edited === "NIFTY" ? { NIFTY: percent / 100, BANKNIFTY: complement } : { NIFTY: complement, BANKNIFTY: percent / 100 };
+}
+
 export interface PcrAggregates {
   readonly callOi: number;
   readonly putOi: number;

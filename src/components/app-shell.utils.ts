@@ -45,7 +45,7 @@ export function buildBreadcrumbs(pathname: string): Crumb[] {
     acc += `/${seg}`;
     const nav = NAV_REGISTRY.find((n) => n.to === acc);
     const label = nav?.label ?? prettifySegment(seg);
-    crumbs.push({ label, to: acc });
+    crumbs.push({ label, to: acc === "/admin" ? "/admin/system-status" : acc });
   }
   return crumbs;
 }

@@ -21,7 +21,7 @@ function dashboardProviderStatus(status: MarketProviderStatus | undefined): Prov
   }
 }
 
-export default function VixWidget() {
+export default function VixWidget({ collapsed = false }: { collapsed?: boolean }) {
   const { data, marketProviderMetadata } = useDashboardData();
   const vix = data.vix;
   const metadata = marketProviderMetadata?.vix;
@@ -43,6 +43,16 @@ export default function VixWidget() {
         timeZone: "Asia/Kolkata",
       })
     : "Unavailable";
+
+  if (collapsed) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs" data-vix-collapsed>
+        <span className="font-semibold text-zinc-300">INDIA VIX</span>
+        <span className="font-mono tabular-nums text-zinc-100">{vix ? fmt(vix.livePrice) : "Unavailable"}</span>
+        <span className="text-zinc-500">{metadata?.status ?? "UNKNOWN"} · {freshness.status}</span>
+      </div>
+    );
+  }
 
   if (!vix) {
     return (

@@ -239,7 +239,9 @@ export const getGannIntradaySnapshot = createServerFn({ method: "GET" })
     }
     return input;
   })
-  .handler(async ({ data }): Promise<IntradaySnapshot> => {
+  .handler(async ({ data }): Promise<IntradaySnapshot> => loadGannIntradaySnapshot(data));
+
+export async function loadGannIntradaySnapshot(data: SnapshotArgs): Promise<IntradaySnapshot> {
     const tradingDate = data.tradingDate ?? todayIst();
     const status = computeSnapshotStatus(tradingDate);
     // Immutable cache for LOCKED/HISTORICAL — long TTL. Preview refreshes every minute.
@@ -248,7 +250,8 @@ export const getGannIntradaySnapshot = createServerFn({ method: "GET" })
       ttlMs: ttl,
       swrMs: ttl,
     });
-  });
+}
+
 
 // Test hook — exposes the pure computation without going through the server-fn RPC.
 export const _testComputeSnapshot = computeSnapshot;

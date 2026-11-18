@@ -8,7 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { GUEST_USER_ID } from "@/lib/guest-session";
-import { recordDeliveryAttempt } from "@/lib/notifications/alert-delivery.functions";
+import { recordDeliveryAttempt, persistOperatorDelivery } from "@/lib/notifications/alert-delivery.functions";
 
 import { getDecisionSnapshot } from "@/lib/decision.functions";
 import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
@@ -400,333 +400,47 @@ export async function buildEvaluationContext(userId: string): Promise<AlertEvalu
 // Active In-Memory / Runtime Alerts Generator
 // ─────────────────────────────────────────────────────────────
 
-export async function generateRuntimeAlertRows(userId: string): Promise<PersistedAlertEventRow[]> {
-  const generatedAt = new Date().toISOString();
-  const tradingDate = generatedAt.slice(0, 10);
-  const rows: PersistedAlertEventRow[] = [];
+const runtimeAlertFeeds = new Map<string, { rows: PersistedAlertEventRow[]; checkpoint: AlertCheckpoint }>();
+const runtimeSubscriptions = new Map<string, PersistedSubscriptionRow>();
 
-  try {
-    const ctx = await buildEvaluationContext(userId);
-
-    // 1. Decision Engine Alert
-    if (ctx.decision.available) {
-      const action = ctx.decision.action ?? "WAIT";
-      const bias = ctx.decision.bias ?? "NEUTRAL";
-      const priority: AlertPriority = action.includes("BUY") ? "HIGH" : "MEDIUM";
-      const fingerprint = `rt-decision-${tradingDate}-${action}`;
-      const title = `Decision Engine: ${action.replace(/_/g, " ")} (${bias})`;
-      const summary = `Institutional decision engine confirms ${bias.toLowerCase()} market bias with active signal ${action}. Evaluated across multi-engine weighting model.`;
-      rows.push({
-        id: `alert-rt-decision-${tradingDate}`,
-        fingerprint,
-        type: "DECISION_CHANGED",
-        priority,
-        title,
-        summary,
-        instrument: "NIFTY50",
-        tradingDate,
-        generatedAt,
-        readAt: null,
-        dismissedAt: null,
-        rulesVersion: SMART_ALERTS_RULES_VERSION,
-        sourceModules: ["DECISION_ENGINE"],
-        payload: {
-          id: fingerprint,
-          fingerprint,
-          type: "DECISION_CHANGED",
-          category: "MARKET_SIGNAL",
-          priority,
-          title,
-          summary,
-          instrument: "NIFTY50",
-          previousState: null,
-          currentState: bias,
-          evidence: [
-            {
-              module: "DECISION_ENGINE",
-              previous: null,
-              current: bias,
-              freshness: ctx.decision.freshness,
-              available: true,
-            },
-          ],
-          sourceModules: ["DECISION_ENGINE"],
-          freshness: ctx.decision.freshness,
-          createdAt: generatedAt,
-          tradingDate,
-          expiresAt: null,
-          researchOnly: true,
-          disclaimer: ALERT_DISCLAIMER,
-          rulesVersion: SMART_ALERTS_RULES_VERSION,
-          deliveryStatus: [],
-        },
-      });
-    }
-
-    // 2. Combined PCR Alert
-    if (ctx.pcr.available && ctx.pcr.direction) {
-      const pcrDir = ctx.pcr.direction;
-      const pcrBias = ctx.pcr.bias;
-      const priority: AlertPriority = "MEDIUM";
-      const fingerprint = `rt-pcr-${tradingDate}-${pcrDir}`;
-      const title = `Combined PCR Regime: ${pcrDir} Skew (${pcrBias})`;
-      const summary = `Institutional Option Chain Put-Call Ratio displays ${pcrBias.toLowerCase()} skew across NIFTY & BANKNIFTY active open interest profiles.`;
-      rows.push({
-        id: `alert-rt-pcr-${tradingDate}`,
-        fingerprint,
-        type: "PCR_REGIME_CHANGED",
-        priority,
-        title,
-        summary,
-        instrument: "NIFTY",
-        tradingDate,
-        generatedAt,
-        readAt: null,
-        dismissedAt: null,
-        rulesVersion: SMART_ALERTS_RULES_VERSION,
-        sourceModules: ["COMBINED_PCR"],
-        payload: {
-          id: fingerprint,
-          fingerprint,
-          type: "PCR_REGIME_CHANGED",
-          category: "MARKET_SIGNAL",
-          priority,
-          title,
-          summary,
-          instrument: "NIFTY",
-          previousState: null,
-          currentState: pcrDir,
-          evidence: [
-            {
-              module: "COMBINED_PCR",
-              previous: null,
-              current: pcrDir,
-              freshness: ctx.pcr.freshness,
-              available: true,
-            },
-          ],
-          sourceModules: ["COMBINED_PCR"],
-          freshness: ctx.pcr.freshness,
-          createdAt: generatedAt,
-          tradingDate,
-          expiresAt: null,
-          researchOnly: true,
-          disclaimer: ALERT_DISCLAIMER,
-          rulesVersion: SMART_ALERTS_RULES_VERSION,
-          deliveryStatus: [],
-        },
-      });
-    }
-
-    // 3. GTI Macro Trend Alert
-    if (ctx.gti.available && ctx.gti.state) {
-      const state = ctx.gti.state;
-      const priority: AlertPriority = "MEDIUM";
-      const fingerprint = `rt-gti-${tradingDate}-${state}`;
-      const title = `GTI Macro Trend: ${state.replace(/_/g, " ")}`;
-      const summary = `Global Trend Indicator tracking ${ctx.gti.bias.toLowerCase()} momentum across composite sectoral market breadth.`;
-      rows.push({
-        id: `alert-rt-gti-${tradingDate}`,
-        fingerprint,
-        type: "GTI_DIRECTION_CHANGED",
-        priority,
-        title,
-        summary,
-        instrument: "NIFTY50",
-        tradingDate,
-        generatedAt,
-        readAt: null,
-        dismissedAt: null,
-        rulesVersion: SMART_ALERTS_RULES_VERSION,
-        sourceModules: ["GTI", "MARKET_BREADTH"],
-        payload: {
-          id: fingerprint,
-          fingerprint,
-          type: "GTI_DIRECTION_CHANGED",
-          category: "MARKET_SIGNAL",
-          priority,
-          title,
-          summary,
-          instrument: "NIFTY50",
-          previousState: null,
-          currentState: state,
-          evidence: [
-            {
-              module: "GTI",
-              previous: null,
-              current: state,
-              freshness: ctx.gti.freshness,
-              available: true,
-            },
-          ],
-          sourceModules: ["GTI", "MARKET_BREADTH"],
-          freshness: ctx.gti.freshness,
-          createdAt: generatedAt,
-          tradingDate,
-          expiresAt: null,
-          researchOnly: true,
-          disclaimer: ALERT_DISCLAIMER,
-          rulesVersion: SMART_ALERTS_RULES_VERSION,
-          deliveryStatus: [],
-        },
-      });
-    }
-
-    // 4. India VIX Volatility Alert
-    if (ctx.vix.available && ctx.vix.value != null) {
-      const vixVal = ctx.vix.value.toFixed(2);
-      const regime = ctx.vix.regime;
-      const priority: AlertPriority = regime === "HIGH" ? "HIGH" : "LOW";
-      const fingerprint = `rt-vix-${tradingDate}-${regime}`;
-      const title = `India VIX Regime: ${regime} Volatility (${vixVal})`;
-      const summary = `Market volatility index is registered at ${vixVal}. Options implied pricing structures remain orderly in ${regime.toLowerCase()} regime.`;
-      rows.push({
-        id: `alert-rt-vix-${tradingDate}`,
-        fingerprint,
-        type: "VIX_REGIME_CHANGED",
-        priority,
-        title,
-        summary,
-        instrument: "INDIA_VIX",
-        tradingDate,
-        generatedAt,
-        readAt: null,
-        dismissedAt: null,
-        rulesVersion: SMART_ALERTS_RULES_VERSION,
-        sourceModules: ["INDIA_VIX"],
-        payload: {
-          id: fingerprint,
-          fingerprint,
-          type: "VIX_REGIME_CHANGED",
-          category: "MARKET_SIGNAL",
-          priority,
-          title,
-          summary,
-          instrument: "INDIA_VIX",
-          previousState: null,
-          currentState: regime,
-          evidence: [
-            {
-              module: "INDIA_VIX",
-              previous: null,
-              current: `${vixVal} (${regime})`,
-              freshness: ctx.vix.freshness,
-              available: true,
-            },
-          ],
-          sourceModules: ["INDIA_VIX"],
-          freshness: ctx.vix.freshness,
-          createdAt: generatedAt,
-          tradingDate,
-          expiresAt: null,
-          researchOnly: true,
-          disclaimer: ALERT_DISCLAIMER,
-          rulesVersion: SMART_ALERTS_RULES_VERSION,
-          deliveryStatus: [],
-        },
-      });
-    }
-  } catch {
-    // Context fallback
+function runtimeFeed(userId: string) {
+  const day = new Date().toISOString().slice(0, 10);
+  let feed = runtimeAlertFeeds.get(userId);
+  if (!feed || feed.checkpoint.updatedAt.slice(0, 10) !== day) {
+    feed = { rows: [], checkpoint: makeEmptyCheckpoint(userId, new Date().toISOString()) };
+    runtimeAlertFeeds.set(userId, feed);
+    if (runtimeAlertFeeds.size > 100) runtimeAlertFeeds.delete(runtimeAlertFeeds.keys().next().value!);
   }
+  return feed;
+}
 
-  // 5. Gann Harmonic Vibration Angle Alert
-  const gannFingerprint = `rt-gann-${tradingDate}-24450`;
-  rows.push({
-    id: `alert-rt-gann-${tradingDate}`,
-    fingerprint: gannFingerprint,
-    type: "GANN_LEVEL_APPROACHING",
-    priority: "MEDIUM",
-    title: "Gann 180° Vibration Angle Approaching: 24,450",
-    summary: "NIFTY spot index vibrating into primary Gann 180° mathematical resonance zone at 24,450.",
-    instrument: "NIFTY50",
-    tradingDate,
-    generatedAt,
-    readAt: null,
-    dismissedAt: null,
-    rulesVersion: SMART_ALERTS_RULES_VERSION,
-    sourceModules: ["GANN"],
-    payload: {
-      id: gannFingerprint,
-      fingerprint: gannFingerprint,
-      type: "GANN_LEVEL_APPROACHING",
-      category: "MARKET_SIGNAL",
-      priority: "MEDIUM",
-      title: "Gann 180° Vibration Angle Approaching: 24,450",
-      summary: "NIFTY spot index vibrating into primary Gann 180° mathematical resonance zone at 24,450.",
-      instrument: "NIFTY50",
-      previousState: null,
-      currentState: "APPROACHING:24450",
-      evidence: [
-        {
-          module: "GANN",
-          previous: null,
-          current: "24450 (180° Angle)",
-          freshness: "LIVE",
-          available: true,
-        },
-      ],
-      sourceModules: ["GANN"],
-      freshness: "LIVE",
-      createdAt: generatedAt,
-      tradingDate,
-      expiresAt: null,
-      researchOnly: true,
-      disclaimer: ALERT_DISCLAIMER,
-      rulesVersion: SMART_ALERTS_RULES_VERSION,
-      deliveryStatus: [],
-    },
-  });
+function rememberEvaluatedAlerts(userId: string, events: readonly AlertEvent[], checkpoint: AlertCheckpoint) {
+  const feed = runtimeFeed(userId);
+  const rows = events.map((event): PersistedAlertEventRow => ({
+    id: event.id || event.fingerprint, fingerprint: event.fingerprint, type: event.type,
+    priority: event.priority, title: event.title, summary: event.summary, instrument: event.instrument,
+    tradingDate: event.tradingDate, generatedAt: event.createdAt, readAt: null, dismissedAt: null,
+    rulesVersion: event.rulesVersion, sourceModules: event.sourceModules, payload: event,
+  }));
+  const merged = new Map(feed.rows.map((row) => [row.fingerprint, row]));
+  for (const row of rows) merged.set(row.fingerprint, row);
+  feed.rows = [...merged.values()].sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)).slice(0, 200);
+  feed.checkpoint = checkpoint;
+}
 
-  // 6. Astro Harmonic Cycle Alert
-  const astroFingerprint = `rt-astro-${tradingDate}-cycle`;
-  rows.push({
-    id: `alert-rt-astro-${tradingDate}`,
-    fingerprint: astroFingerprint,
-    type: "ASTRO_WINDOW_ACTIVE",
-    priority: "LOW",
-    title: "Astro Harmonic Cycle Active: Planetary Aspect Window",
-    summary: "Ephemeris 360° celestial harmonic synchronization window active for equity derivatives research.",
-    instrument: "NIFTY50",
-    tradingDate,
-    generatedAt,
-    readAt: null,
-    dismissedAt: null,
-    rulesVersion: SMART_ALERTS_RULES_VERSION,
-    sourceModules: ["ASTRO"],
-    payload: {
-      id: astroFingerprint,
-      fingerprint: astroFingerprint,
-      type: "ASTRO_WINDOW_ACTIVE",
-      category: "RESEARCH",
-      priority: "LOW",
-      title: "Astro Harmonic Cycle Active: Planetary Aspect Window",
-      summary: "Ephemeris 360° celestial harmonic synchronization window active for equity derivatives research.",
-      instrument: "NIFTY50",
-      previousState: null,
-      currentState: "ACTIVE",
-      evidence: [
-        {
-          module: "ASTRO",
-          previous: null,
-          current: "ACTIVE",
-          freshness: "LIVE",
-          available: true,
-        },
-      ],
-      sourceModules: ["ASTRO"],
-      freshness: "LIVE",
-      createdAt: generatedAt,
-      tradingDate,
-      expiresAt: null,
-      researchOnly: true,
-      disclaimer: ALERT_DISCLAIMER,
-      rulesVersion: SMART_ALERTS_RULES_VERSION,
-      deliveryStatus: [],
-    },
-  });
-
-  return rows;
+export async function generateRuntimeAlertRows(userId: string): Promise<PersistedAlertEventRow[]> {
+  const feed = runtimeFeed(userId);
+  if (feed.rows.length) return feed.rows;
+  try {
+    const context = await buildEvaluationContext(userId);
+    // Reading a fallback feed never dispatches external notifications.
+    const result = await runAlertEngine({ context, checkpoint: feed.checkpoint,
+      subscription: defaultSubscription(userId), providers: [] });
+    rememberEvaluatedAlerts(userId, result.emitted, result.nextCheckpoint);
+  } catch {
+    // No fabricated market signals when canonical evaluation is unavailable.
+  }
+  return feed.rows;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -737,6 +451,8 @@ export const getSmartAlertSubscription = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PersistedSubscriptionRow> => {
     assertAuth(context);
+    const local = runtimeSubscriptions.get(context.userId);
+    if (local && (context.userId === GUEST_USER_ID || context.isGuest)) return local;
     try {
       const { data, error } = await context.supabase
         .from("smart_alert_subscriptions")
@@ -811,6 +527,9 @@ export const updateSmartAlertSubscription = createServerFn({ method: "POST" })
           : data.cooldownOverrideSec,
       timezone: data.timezone ?? current.timezone,
     };
+    if (context.userId === GUEST_USER_ID || context.isGuest) {
+      runtimeSubscriptions.set(context.userId, mapSubscriptionRow(context.userId, row));
+    }
     try {
       const { data: up, error } = await context.supabase
         .from("smart_alert_subscriptions")
@@ -862,31 +581,17 @@ export const getSmartAlertEvents = createServerFn({ method: "GET" })
         .limit(data.limit);
       if (data.unreadOnly) q = q.is("read_at", null).is("dismissed_at", null);
       const { data: rows, error } = await q;
-      if (error) {
-        if (
-          context.userId === GUEST_USER_ID ||
-          (context as { isGuest?: boolean }).isGuest ||
-          error.code === "42501" ||
-          error.message?.includes("permission denied")
-        ) {
-          return await generateRuntimeAlertRows(context.userId);
-        }
-        throw new Error(error.message);
-      }
+      if (error) throw new Error("SMART_ALERT_FEED_READ_FAILED");
       const mapped = ((rows as Record<string, unknown>[] | null) ?? []).map(mapEventRow);
-      if (mapped.length === 0) {
-        return await generateRuntimeAlertRows(context.userId);
-      }
-      return mapped;
-    } catch (err) {
-      if (
-        context.userId === GUEST_USER_ID ||
-        (context as { isGuest?: boolean }).isGuest ||
-        (err as Error)?.message?.includes("permission denied")
-      ) {
-        return await generateRuntimeAlertRows(context.userId);
-      }
-      throw err;
+      const evaluated = runtimeFeed(context.userId).rows;
+      const merged = new Map(evaluated.map((row) => [row.fingerprint, row]));
+      for (const row of mapped) merged.set(row.fingerprint, row);
+      if (!merged.size) for (const row of await generateRuntimeAlertRows(context.userId)) merged.set(row.fingerprint, row);
+      return [...merged.values()].filter((row) => !data.unreadOnly || (!row.readAt && !row.dismissedAt))
+        .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)).slice(0, data.limit);
+    } catch {
+      return (await generateRuntimeAlertRows(context.userId))
+        .filter((row) => !data.unreadOnly || (!row.readAt && !row.dismissedAt)).slice(0, data.limit);
     }
   });
 
@@ -907,7 +612,7 @@ export const getSmartAlertUnreadCount = createServerFn({ method: "GET" })
           (context as { isGuest?: boolean }).isGuest ||
           error.code === "42501"
         ) {
-          return { count: 6 };
+          return { count: (await generateRuntimeAlertRows(context.userId)).filter((row) => !row.readAt && !row.dismissedAt).length };
         }
         throw new Error(error.message);
       }
@@ -918,7 +623,7 @@ export const getSmartAlertUnreadCount = createServerFn({ method: "GET" })
         (context as { isGuest?: boolean }).isGuest ||
         (err as Error)?.message?.includes("permission denied")
       ) {
-        return { count: 6 };
+        return { count: (await generateRuntimeAlertRows(context.userId)).filter((row) => !row.readAt && !row.dismissedAt).length };
       }
       throw err;
     }
@@ -929,6 +634,8 @@ export const markSmartAlertRead = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     assertAuth(context);
+    const feed = runtimeFeed(context.userId);
+    feed.rows = feed.rows.map((row) => row.id === data.id ? { ...row, readAt: new Date().toISOString() } : row);
     try {
       const { error } = await context.supabase
         .from("smart_alert_events")
@@ -960,6 +667,8 @@ export const markSmartAlertDismissed = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     assertAuth(context);
     const now = new Date().toISOString();
+    const feed = runtimeFeed(context.userId);
+    feed.rows = feed.rows.map((row) => row.id === data.id ? { ...row, dismissedAt: now, readAt: now } : row);
     try {
       const { error } = await context.supabase
         .from("smart_alert_events")
@@ -989,6 +698,8 @@ export const markAllSmartAlertsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ ok: true }> => {
     assertAuth(context);
+    const feed = runtimeFeed(context.userId);
+    feed.rows = feed.rows.map((row) => ({ ...row, readAt: row.readAt ?? new Date().toISOString() }));
     try {
       const { error } = await context.supabase
         .from("smart_alert_events")
@@ -1059,11 +770,11 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     if (subRow.error && !isGuest && (subRow.error as { code?: string })?.code !== "42501") {
       throw new Error("SMART_ALERT_SUBSCRIPTION_READ_FAILED");
     }
-    const checkpoint = mapCheckpointRow(
+    const checkpoint = cpRow.error || isGuest ? runtimeFeed(userId).checkpoint : mapCheckpointRow(
       userId,
       (cpRow.data as Record<string, unknown> | null) ?? null,
     ).checkpoint;
-    const subscription = mapSubscriptionRow(
+    const subscription = runtimeSubscriptions.get(userId) ?? mapSubscriptionRow(
       userId,
       (subRow.data as Record<string, unknown> | null) ?? null,
     );
@@ -1074,7 +785,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       telegramEnabled:
         data?.telegramEnabled !== undefined
           ? data.telegramEnabled
-          : true,
+          : subscription.telegramEnabled,
     };
 
     let ctx: AlertEvaluationContext;
@@ -1094,6 +805,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     }
 
     const out = await runAlertEngine({ context: ctx, checkpoint, subscription: effectiveSubscription });
+    rememberEvaluatedAlerts(userId, out.emitted, out.nextCheckpoint);
 
     // Persist events (idempotent via unique (user_id, fingerprint) constraint).
     // Track event failures without advancing the checkpoint. The unique key
@@ -1392,12 +1104,16 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TelegramTestPingResult> => {
     assertAuth(context);
+    const audit = async (row: Parameters<typeof recordDeliveryAttempt>[0]) => persistOperatorDelivery({
+      ...row, target_channel: process.env.TELEGRAM_CHAT_ID?.trim() || null,
+    }, context.userId);
+
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
     const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
     if (!token || !chatId) {
       const err =
         "TELEGRAM_CREDENTIALS_MISSING: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured on the production server.";
-      recordDeliveryAttempt({
+      await audit({
         id: `ping-${Date.now()}`,
         event_id: null,
         fingerprint: `operator-ping-${Date.now()}`,
@@ -1450,7 +1166,7 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
 
       if (!response.ok || json.ok !== true) {
         const errorDesc = json.description || `HTTP ${response.status}`;
-        recordDeliveryAttempt({
+        await audit({
           id: `ping-${Date.now()}`,
           event_id: null,
           fingerprint: `operator-ping-${Date.now()}`,
@@ -1474,7 +1190,7 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
         };
       }
 
-      recordDeliveryAttempt({
+      const auditPersisted = await audit({
         id: `ping-${Date.now()}`,
         event_id: null,
         fingerprint: `operator-ping-${Date.now()}`,
@@ -1500,7 +1216,7 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
     } catch (err) {
       const duration = Date.now() - start;
       const msg = (err as Error)?.message || "Network error sending Telegram ping";
-      recordDeliveryAttempt({
+      await audit({
         id: `ping-${Date.now()}`,
         event_id: null,
         fingerprint: `operator-ping-${Date.now()}`,

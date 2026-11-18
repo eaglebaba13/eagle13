@@ -119,12 +119,15 @@ export function moveWidget(
   id: string,
   direction: "up" | "down",
   device: "desktop" | "mobile",
+  availableOrder: readonly string[] = [],
 ): DashboardPreferences {
   const delta = direction === "up" ? -1 : 1;
+  const configured = device === "desktop" ? prefs.desktopOrder : prefs.mobileOrder;
+  const order = [...configured, ...availableOrder.filter((key) => !configured.includes(key))];
   if (device === "desktop") {
-    return { ...prefs, desktopOrder: moveInList(prefs.desktopOrder, id, delta) };
+    return { ...prefs, desktopOrder: moveInList(order, id, delta) };
   }
-  return { ...prefs, mobileOrder: moveInList(prefs.mobileOrder, id, delta) };
+  return { ...prefs, mobileOrder: moveInList(order, id, delta) };
 }
 
 export function resetDesktop(prefs: DashboardPreferences): DashboardPreferences {

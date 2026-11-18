@@ -198,7 +198,7 @@ function AdminUsersPage() {
       await updateSub({
         data: {
           userId: u.id,
-          planId: u.planId === "free" ? "pro" : u.planId,
+          planId: u.planId,
           planExpiresAt: newExpiry,
         },
       });

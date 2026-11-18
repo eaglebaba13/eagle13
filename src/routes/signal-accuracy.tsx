@@ -1,9 +1,11 @@
+import { dateRangeError } from "@/lib/input-validation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import {
   runBacktest,
+  rebuildBacktestAggregates,
   BACKTEST_SYMBOLS,
   type BacktestResult,
   type BacktestSymbol,
@@ -100,6 +102,8 @@ function SignalAccuracyPage() {
   };
 
   const run = async () => {
+    const invalid = dateRangeError(from, to);
+    if (invalid) { setError(invalid); return; }
     setLoading(true);
     setError(null);
     try {
@@ -141,7 +145,7 @@ function SignalAccuracyPage() {
         (monthFilter === "ALL" || mNames[parseInt(t.date.slice(5, 7), 10) - 1] === monthFilter) &&
         (yearFilter === "ALL" || t.date.slice(0, 4) === yearFilter),
     );
-    return { ...result, trades };
+    return rebuildBacktestAggregates(result, trades);
   }, [result, sigFilter, nakFilter, signFilter, retroFilter, dowFilter, monthFilter, yearFilter]);
 
   const analytics = useMemo<Analytics | null>(

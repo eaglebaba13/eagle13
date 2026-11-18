@@ -43,6 +43,7 @@ describe("Phase 36 · Breadcrumbs", () => {
   it("falls back to prettified segments when no registry entry", () => {
     const c = buildBreadcrumbs("/admin/beta-readiness");
     expect(c.map((x) => x.label)).toEqual(["Home", "Admin", "Beta Readiness"]);
+    expect(c.find((crumb) => crumb.label === "Admin")?.to).toBe("/admin/system-status");
   });
 });
 

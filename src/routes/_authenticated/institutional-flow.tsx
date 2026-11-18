@@ -2,7 +2,7 @@
 // Read-only, deterministic, canonical-consumer only. Never emits signals.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getInstitutionalFlow,
@@ -57,13 +57,17 @@ function InstitutionalFlowPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchFlow = useServerFn(getInstitutionalFlow);
+  const generation = useRef(0);
 
   const load = useCallback(async () => {
+    const request = ++generation.current;
     setLoading(true);
     setError(null);
+    setReport(null);
     try {
       const bounded = await callBounded(() => fetchFlow({ data: { underlying } }), 30_000);
 
+      if (request !== generation.current) return;
       if (!bounded.ok || !bounded.data) {
         setError(bounded.error ?? "load failed");
         return;
@@ -71,14 +75,15 @@ function InstitutionalFlowPage() {
 
       setReport(bounded.data);
     } catch (e) {
-      setError(e instanceof Error ? e.message.slice(0, 200) : "load failed");
+      if (request === generation.current) setError(e instanceof Error ? e.message.slice(0, 200) : "load failed");
     } finally {
-      setLoading(false);
+      if (request === generation.current) setLoading(false);
     }
   }, [fetchFlow, underlying]);
 
   useEffect(() => {
     void load();
+    return () => { generation.current += 1; };
   }, [load]);
 
   const providerAlias = safeProviderLabel(null, "OPTIONS");
@@ -259,7 +264,7 @@ function InstitutionalFlowPage() {
               <MiniStat label="Decision" value={report.internals.decisionAction} />
               <MiniStat
                 label="GTI"
-                value={`${report.internals.gtiState} (${Math.round(report.internals.gtiConfidence * 100)}%)`}
+                value={`${report.internals.gtiState} (${Math.round(report.internals.gtiConfidence)}%)`}
               />
             </div>
           </Section>

@@ -17,6 +17,8 @@ import {
   type CombinedPcrWeights,
 } from "@/lib/combined-pcr/types";
 import type { AtmMode } from "@/lib/option-chain/atm-engine";
+import { weightsFromPercent } from "@/lib/combined-pcr/pcr-math";
+import { useTick } from "@/hooks/use-scheduler";
 import {
   buildCombinedPcrResearchBundle,
   readingToCsv,
@@ -75,11 +77,18 @@ function CombinedPcrPage() {
   const [error, setError] = useState<string | null>(null);
   const [atmMode, setAtmMode] = useState<AtmMode>("ATM_10");
   const [weights, setWeights] = useState<CombinedPcrWeights>(DEFAULT_COMBINED_PCR_WEIGHTS);
+  const requestGeneration = useRef(0);
+  const editWeight = (raw: string, edited: "NIFTY" | "BANKNIFTY") => {
+    requestGeneration.current += 1;
+    setResult(null);
+    setWeights(weightsFromPercent(raw, edited));
+  };
   const [useMock, setUseMock] = useState(false);
   const [mockScenario, setMockScenario] = useState("BULLISH");
   const [showResearch, setShowResearch] = useState(false);
   const [persisted, setPersisted] = useState<readonly PersistedPcrPoint[]>([]);
   const [shadowSamples, setShadowSamples] = useState<readonly ShadowSample[]>([]);
+  const clockNow = useTick(1000);
 
   const historyRef = useRef<PersistentPcrHistory | null>(null);
   if (!historyRef.current) {
@@ -100,6 +109,7 @@ function CombinedPcrPage() {
   const weightsValid = Math.abs(weightSum - 1) < 1e-3;
 
   const run = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     setLoading(true);
     setError(null);
     try {
@@ -119,6 +129,7 @@ function CombinedPcrPage() {
         30_000,
       );
 
+      if (generation !== requestGeneration.current) return;
       if (!bounded.ok || !bounded.data) {
         setError(bounded.error ?? "request failed");
         return;
@@ -126,6 +137,7 @@ function CombinedPcrPage() {
 
       const res = bounded.data;
       setResult(res);
+      if (!res.ok) setError(res.safeError);
       if (res.ok && res.reading) {
         prevConf.current = {
           confirmed: res.reading.confirmedState,
@@ -142,14 +154,15 @@ function CombinedPcrPage() {
         setShadowSamples((prev) => [...prev, readingToShadowSample(res.reading!)].slice(-200));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "request failed");
+      if (generation === requestGeneration.current) setError(e instanceof Error ? e.message : "request failed");
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [fetchPcr, atmMode, weights, useMock, mockScenario]);
 
   useEffect(() => {
-    void run();
+    const timer = setTimeout(() => { void run(); }, 250);
+    return () => { clearTimeout(timer); requestGeneration.current += 1; };
   }, [run]);
 
   const reading = result && result.ok ? result.reading : null;
@@ -159,8 +172,8 @@ function CombinedPcrPage() {
   const capabilityBlocking = Boolean(result?.ok) && !computed;
   const freshness = useMemo(() => {
     if (!reading) return null;
-    return Math.max(0, Date.now() - Date.parse(reading.timestamp));
-  }, [reading]);
+    return Math.max(0, clockNow - Date.parse(reading.timestamp));
+  }, [reading, clockNow]);
 
   return (
     <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
@@ -281,10 +294,9 @@ function CombinedPcrPage() {
             step={5}
             min={0}
             max={100}
-            value={Math.round(weights.NIFTY * 100)}
+            value={Number((weights.NIFTY * 100).toFixed(6))}
             onChange={(e) => {
-              const n = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
-              setWeights({ NIFTY: n, BANKNIFTY: Math.max(0, 1 - n) });
+              editWeight(e.target.value, "NIFTY");
             }}
             className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 focus:outline-none focus:border-cyan-500 font-mono"
           />
@@ -296,10 +308,9 @@ function CombinedPcrPage() {
             step={5}
             min={0}
             max={100}
-            value={Math.round(weights.BANKNIFTY * 100)}
+            value={Number((weights.BANKNIFTY * 100).toFixed(6))}
             onChange={(e) => {
-              const b = Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100;
-              setWeights({ NIFTY: Math.max(0, 1 - b), BANKNIFTY: b });
+              editWeight(e.target.value, "BANKNIFTY");
             }}
             className="bg-zinc-950/80 text-zinc-200 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs w-20 focus:outline-none focus:border-cyan-500 font-mono"
           />
@@ -348,7 +359,7 @@ function CombinedPcrPage() {
       {/* Chart */}
       <div className="card-institutional p-4 mb-4 border-zinc-800/80">
         <Suspense fallback={<div className="text-xs text-zinc-500 p-4">Loading chart…</div>}>
-          {reading && <CombinedPcrChart reading={reading} />}
+          {reading && <CombinedPcrChart reading={reading} history={{ combined: persisted.filter((point) => point.atmMode === atmMode).map((point) => point.combinedScore), nifty: persisted.filter((point) => point.atmMode === atmMode).map((point) => point.niftyScore), banknifty: persisted.filter((point) => point.atmMode === atmMode).map((point) => point.banknityScore) }} />}
         </Suspense>
       </div>
 

@@ -134,13 +134,15 @@ const THEME_OPTIONS: {
 ];
 
 function SettingsPage() {
-  const { user, profile, role, signOut, logAudit } = useAuth();
+  const { user, profile, role, signOut, logAudit, isGuest, refreshProfile } = useAuth();
   const { effective } = useEntitlements();
 
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [preferences, setPreferences] = useState<UserPreferences>(loadUserSettings);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+
+  const profileIdentity = user?.id;
 
   // Profile Form State
   const [displayName, setDisplayName] = useState("");
@@ -163,7 +165,7 @@ function SettingsPage() {
       setDisplayName(profile?.displayName || meta.full_name || user.email?.split("@")[0] || "Trader");
       setMobileNumber(meta.phone || meta.mobile || "");
     }
-  }, [user, profile]);
+  }, [profileIdentity, profile?.displayName]);
 
   // Handle live theme update
   const handleSelectTheme = (themeId: Exclude<ThemePreset, "custom">) => {
@@ -175,6 +177,10 @@ function SettingsPage() {
   // Save Profile Changes
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isGuest) {
+      toast.error("Profile changes require a signed-in account. Guest research preferences can be saved locally.");
+      return;
+    }
     if (!user) {
       toast.error("You must be signed in to update profile settings.");
       return;
@@ -206,6 +212,9 @@ function SettingsPage() {
         displayName: displayName.trim(),
         hasPhone: Boolean(mobileNumber),
       });
+
+      await refreshProfile();
+      setDisplayName(displayName.trim());
 
       toast.success("Profile updated successfully!");
     } catch (err) {
@@ -514,7 +523,7 @@ function SettingsPage() {
                   <div className="md:col-span-2 flex justify-end pt-2">
                     <button
                       type="submit"
-                      disabled={savingProfile}
+                      disabled={savingProfile || isGuest}
                       className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold px-5 py-2 text-sm transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)] disabled:opacity-60 cursor-pointer"
                     >
                       {savingProfile ? (
@@ -525,7 +534,7 @@ function SettingsPage() {
                       ) : (
                         <>
                           <Check size={14} />
-                          <span>Save Profile Changes</span>
+                          <span>{isGuest ? "Sign in to edit your profile" : "Save Profile Changes"}</span>
                         </>
                       )}
                     </button>

@@ -82,7 +82,7 @@ export function StockFourLineCard({
         </div>
 
         <a
-          href={`/live-chart?symbol=${symbol}`}
+          href={`/live-chart?symbol=${symbol}&p2=${p2.toFixed(2)}&p1=${p1.toFixed(2)}&c1=${c1.toFixed(2)}&c2=${c2.toFixed(2)}`}
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-zinc-700 bg-zinc-800 text-xs font-mono text-zinc-200 hover:bg-zinc-700 transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5 text-amber-400" />

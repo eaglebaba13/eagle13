@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { isThemeColor } from "@/lib/input-validation";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -109,6 +110,8 @@ function AdminThemeStudioPage() {
   };
 
   const handleSave = async () => {
+    const colors = [config.baseBackground, config.cardSurface, config.borderTint, config.glowColor, config.accentColor, config.activePillColor, config.textAccentColor];
+    if (!colors.every(isThemeColor)) { setErr("Enter valid hex, rgb or rgba colors before saving the theme."); return; }
     setSaving(true);
     setErr(null);
     setMsg(null);

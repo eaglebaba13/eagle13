@@ -32,6 +32,21 @@ export type OptionChainSnapshot = {
   source: "NSE" | "UPSTOX" | "PROVIDER" | "SIMULATED" | "LAST_KNOWN_GOOD" | "UNAVAILABLE" | "DEMO";
 };
 
+/** Provider boundary only: discard invalid contracts and normalize missing numeric fields. */
+export function normalizeOptionLegs(input: unknown): OptionLeg[] {
+  if (!Array.isArray(input)) return [];
+  const finite = (value: unknown, fallback = 0) => typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  const optional = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+  return input.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const leg = value as Record<string, unknown>;
+    if (finite(leg.strike) <= 0 || (leg.side !== "CE" && leg.side !== "PE")) return [];
+    return [{ strike: finite(leg.strike), side: leg.side, oi: Math.max(0, finite(leg.oi)),
+      changeOi: finite(leg.changeOi), volume: Math.max(0, finite(leg.volume)), ltp: Math.max(0, finite(leg.ltp)),
+      changePct: finite(leg.changePct), iv: optional(leg.iv), bid: optional(leg.bid), ask: optional(leg.ask) }];
+  });
+}
+
 export type Moneyness = "ITM" | "ATM" | "OTM";
 
 /** Standard NIFTY step is 50, BANK NIFTY step is 100. */

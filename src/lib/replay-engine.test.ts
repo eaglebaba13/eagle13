@@ -21,6 +21,14 @@ function mkCandles(rows: [number, number, number, number, number][]): Candle[] {
 }
 
 describe("visibleCandles / causality", () => {
+  it("does not stop or target a signal-close entry using earlier prices in the same bar", () => {
+    const candles = mkCandles([[100, 120, 80, 100, 10], [100, 101, 90, 95, 10]]);
+    const input = { signal: "SELL" as const, signalIndex: 0, entryMode: "signal_close" as const,
+      target: 90, stop: 110, candles, policy: "conservative" as const };
+    expect(resolveTrade({ ...input, currentIndex: 0 }).status).toBe("ACTIVE");
+    expect(resolveTrade({ ...input, currentIndex: 0 }).mfe).toBe(0);
+    expect(resolveTrade({ ...input, currentIndex: 1 }).status).toBe("TARGET_HIT");
+  });
   const cs = mkCandles([
     [1, 2, 0, 1.5, 10],
     [1.5, 3, 1, 2, 10],

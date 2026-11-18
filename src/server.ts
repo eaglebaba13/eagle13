@@ -4,6 +4,10 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage, renderRateLimitPage } from "./lib/error-page";
 import { checkRateLimit } from "./lib/server/rate-limiter.server";
 import { applySecurityHeaders } from "./lib/server/security-headers";
+import { ensureOiCollectorStarted } from "./lib/server-scheduler.server";
+
+// Start research collection when the Node server module loads, independent of browser tabs.
+ensureOiCollectorStarted();
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;

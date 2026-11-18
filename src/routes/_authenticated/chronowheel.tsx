@@ -1,3 +1,4 @@
+import { dateRangeError } from "@/lib/input-validation";
 // Phase 36.4 — Dedicated Standalone Route: 🦅 EagleBABA ChronoWheel (Gann & Dynamic Lunar Cycle Scanner)
 // Quantitative multi-year cyclical confluence screener across 200+ F&O stocks and major indices.
 // Analyzes T-1 to T-10 historical matching Lunar Phase/Tithi windows, computing win rates, return profiles,
@@ -141,6 +142,8 @@ function ChronoWheelPage() {
   // Telegram & WhatsApp Signal Dispatch state
   const [sentTelegramMap, setSentTelegramMap] = useState<Record<string, boolean>>({});
 
+  const rangeError = dateRangeError(startDate, endDate);
+
   // TanStack Query for ChronoWheel Scan
   const scanQueryPayload: ChronoWheelScanFilter = useMemo(
     () => ({
@@ -172,6 +175,7 @@ function ChronoWheelPage() {
       searchQuery,
       hideBanStocks,
     ],
+    enabled: !rangeError,
     queryFn: () => getChronoWheelScan({ data: scanQueryPayload }),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
@@ -179,6 +183,7 @@ function ChronoWheelPage() {
 
   // Client-side sorting on received scan results
   const sortedStocks = useMemo(() => {
+    if (rangeError) return [];
     if (!scanResult?.results) return [];
     let list = [...scanResult.results];
     if (hideBanStocks) {
@@ -203,7 +208,7 @@ function ChronoWheelPage() {
       return sortOrder === "desc" ? -diff : diff;
     });
     return list;
-  }, [scanResult?.results, sortBy, sortOrder, hideBanStocks, hideNearBanStocks]);
+  }, [rangeError, scanResult?.results, sortBy, sortOrder, hideBanStocks, hideNearBanStocks]);
 
   const handleSendToTelegram = useCallback(
     async (stock: StockCyclePerformance) => {
@@ -622,6 +627,7 @@ function ChronoWheelPage() {
                   onChange={(e) => setStartDate(e.target.value)}
                   className="bg-transparent text-white font-mono outline-none cursor-pointer [color-scheme:dark]"
                 />
+                  {rangeError && <p role="alert" className="text-xs text-rose-400">{rangeError}</p>}
               </div>
 
               <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs font-mono">
@@ -855,7 +861,7 @@ function ChronoWheelPage() {
               onClick={() => {
                 setDirectionFilter("ALL");
                 setSectorFilter("ALL");
-                setSearchQuery("");
+                setSearchQuery(""); setHideNearBanStocks(false);
               }}
               className="mt-4 px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-white transition-colors"
             >
@@ -1234,7 +1240,7 @@ function ChronoWheelPage() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div className="text-xs font-mono text-amber-300 font-bold flex items-center gap-1.5">
                                 <Target className="w-3.5 h-3.5 text-amber-400" />
-                                <span>10-Year Trade Hit-Rate Backtest Validation ({stock.symbol})</span>
+                                <span>{lookbackYears}-Year Trade Hit-Rate Backtest Validation ({stock.symbol})</span>
                               </div>
                               <div className="flex items-center gap-2 text-xs font-mono">
                                 <span className="text-zinc-400">Profit Factor:</span>
@@ -1289,13 +1295,14 @@ function ChronoWheelPage() {
                           const exec = stock.executionPlan;
                           const riskAmount = Math.round(calculatorCapital * (calculatorRiskPct / 100));
                           const riskPerShare = Math.max(0.1, exec.riskPerShare);
-                          const shares = Math.max(1, Math.floor(riskAmount / riskPerShare));
+                          const shares = Math.max(0, Math.floor(riskAmount / riskPerShare));
                           const lots = Math.floor(shares / exec.lotSize);
                           const cashCost = Math.round(shares * stock.currentPrice);
                           const foMargin = lots > 0 ? lots * exec.capitalRequirementPerLot : cashCost;
 
                           return (
                             <div className="p-3.5 rounded-xl bg-[#0b0d14] border border-zinc-800 space-y-3">
+                              {shares === 0 && <p role="status" className="text-xs text-amber-400">No position fits this risk budget. Increase the budget or wait for a smaller stop distance.</p>}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
                                 <div className="flex items-center gap-2">
                                   <Calculator className="w-4 h-4 text-purple-400" />
@@ -1466,7 +1473,7 @@ function ChronoWheelPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="text-xs font-mono text-zinc-300 font-semibold flex items-center gap-2">
                               <Clock className="w-3.5 h-3.5 text-amber-400" />
-                              <span>10-Year Synodic Window Historical Breakdown</span>
+                              <span>{lookbackYears}-Year Synodic Window Historical Breakdown</span>
                             </div>
                             <div className="flex items-center gap-3 text-xs font-mono text-zinc-400">
                               <span>Volatility: <span className="text-zinc-200">{stock.volatility.toFixed(2)}%</span></span>

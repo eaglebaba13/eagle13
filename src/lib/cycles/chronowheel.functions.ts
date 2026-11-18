@@ -1,3 +1,4 @@
+import { dateRangeError } from "@/lib/input-validation";
 // Phase 36.4 — Server Functions & TanStack Query Options for ChronoWheel Quantitative Screener
 // Read-only server function for Gann & Dynamic Lunar Cycle screening across 200+ F&O stocks.
 
@@ -43,7 +44,7 @@ export type {
   ChronoWheelAIResponse,
 };
 
-function validateScanInput(input: unknown): ChronoWheelScanFilter {
+export function validateScanInput(input: unknown): ChronoWheelScanFilter {
   const i = (input ?? {}) as Partial<ChronoWheelScanFilter>;
 
   // Default to today and +3 days if not specified
@@ -52,8 +53,10 @@ function validateScanInput(input: unknown): ChronoWheelScanFilter {
   const futureDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const defaultEnd = futureDate.toISOString().slice(0, 10);
 
-  const startDate = typeof i.startDate === "string" && i.startDate.length === 10 ? i.startDate : defaultStart;
-  const endDate = typeof i.endDate === "string" && i.endDate.length === 10 ? i.endDate : defaultEnd;
+  const startDate = i.startDate === undefined ? defaultStart : i.startDate;
+  const endDate = i.endDate === undefined ? defaultEnd : i.endDate;
+  const invalid = dateRangeError(startDate, endDate);
+  if (invalid) throw new Error(invalid);
 
   let lookbackYears = typeof i.lookbackYears === "number" ? i.lookbackYears : 10;
   if (lookbackYears !== 3 && lookbackYears !== 5 && lookbackYears !== 10) {

@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   hideWidget,
@@ -51,13 +52,18 @@ export function CustomizeDashboardDrawer({
 
   const bySection = useMemo(() => {
     const groups = new Map<string, WidgetDefinition[]>();
-    for (const w of widgets) {
+    const configured = device === "desktop" ? prefs.desktopOrder : prefs.mobileOrder;
+    const ordered = [...widgets].sort((a, b) => {
+      const rank = (w: WidgetDefinition) => configured.includes(w.id) ? configured.indexOf(w.id) : configured.length + (device === "desktop" ? w.desktopOrder : w.mobileOrder);
+      return rank(a) - rank(b);
+    });
+    for (const w of ordered) {
       const arr = groups.get(w.section) ?? [];
       arr.push(w);
       groups.set(w.section, arr);
     }
     return Array.from(groups.entries());
-  }, [widgets]);
+  }, [widgets, prefs, device]);
 
   const applyToggleHide = useCallback(
     (id: string) => onChange(isHidden(prefs, id) ? showWidget(prefs, id) : hideWidget(prefs, id)),
@@ -68,13 +74,14 @@ export function CustomizeDashboardDrawer({
     [prefs, onChange],
   );
   const applyMove = useCallback(
-    (id: string, dir: "up" | "down") => onChange(moveWidget(prefs, id, dir, device)),
-    [prefs, onChange, device],
+    (id: string, dir: "up" | "down") => onChange(moveWidget(prefs, id, dir, device,
+      [...widgets].sort((a, b) => device === "desktop" ? a.desktopOrder - b.desktopOrder : a.mobileOrder - b.mobileOrder).map((w) => w.id))),
+    [prefs, onChange, device, widgets],
   );
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -83,7 +90,7 @@ export function CustomizeDashboardDrawer({
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.6)",
-        zIndex: 900,
+        zIndex: 10000,
         display: "flex",
         justifyContent: "flex-end",
       }}
@@ -238,7 +245,7 @@ export function CustomizeDashboardDrawer({
           </section>
         ))}
       </div>
-    </div>
+    </div>, document.body
   );
 }
 

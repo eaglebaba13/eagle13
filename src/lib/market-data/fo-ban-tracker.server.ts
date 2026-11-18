@@ -316,7 +316,7 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
       status = "IN_BAN";
       freshEntryEligible = false;
       const prevDays = prevHistory?.lastStatus === "IN_BAN" ? prevHistory.daysInBan : 0;
-      daysInBan = prevDays + (persistedState.tradeDate !== tradeDate ? 1 : Math.max(1, prevDays));
+      daysInBan = persistedState.tradeDate !== tradeDate ? prevDays + 1 : Math.max(1, prevDays);
     } else if (prevHistory?.lastStatus === "IN_BAN" && mwplPercent < 80.0) {
       // Transition from IN_BAN to RECENTLY_UNBANNED
       status = "RECENTLY_UNBANNED";

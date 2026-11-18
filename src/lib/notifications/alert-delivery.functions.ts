@@ -23,15 +23,28 @@ export interface AlertDeliveryRow {
     readonly priority: string | null;
   } | null;
   readonly retry_count: number;
+  readonly target_channel?: string | null;
 }
 
 const inMemoryDeliveryLogs: AlertDeliveryRow[] = [];
+const deliveryOwners = new Map<string, string>();
 
-export function recordDeliveryAttempt(row: AlertDeliveryRow): void {
+export function recordDeliveryAttempt(row: AlertDeliveryRow, userId?: string): void {
   inMemoryDeliveryLogs.unshift(row);
+  if (userId) deliveryOwners.set(row.id, userId);
   if (inMemoryDeliveryLogs.length > 100) {
+    for (const old of inMemoryDeliveryLogs.slice(100)) deliveryOwners.delete(old.id);
     inMemoryDeliveryLogs.length = 100;
   }
+}
+
+export async function persistOperatorDelivery(row: AlertDeliveryRow, userId: string): Promise<boolean> {
+  recordDeliveryAttempt(row, userId);
+  try {
+    const { persistDeliveryAudit } = await import("./delivery-audit.server");
+    await persistDeliveryAudit(userId, row);
+    return true;
+  } catch { return false; }
 }
 
 export function getInMemoryDeliveryAttempts(): readonly AlertDeliveryRow[] {
@@ -42,7 +55,6 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<readonly AlertDeliveryRow[]> => {
     assertAuth(context);
-    if (!context.supabase) throw new Error("Unauthorized: Authentication required");
     const userId = context.userId;
     const isGuest = userId === "guest-researcher" || (context as { isGuest?: boolean }).isGuest;
 
@@ -69,9 +81,7 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
         .select(
           "id, event_id, fingerprint, provider, status, error_code, retryable, duration_ms, attempted_at, smart_alert_events(title, type, priority)",
         );
-      if (!isGuest) {
-        query = query.eq("user_id", userId);
-      }
+      query = query.eq("user_id", userId);
       const { data, error } = await query
         .order("attempted_at", { ascending: false })
         .limit(200);
@@ -83,11 +93,7 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
       } else if (data) {
         rows = data as unknown as typeof rows;
       }
-    } catch (err) {
-      if (!isGuest && !(err as Error)?.message?.includes("42501")) {
-        throw err;
-      }
-    }
+    } catch { /* The scoped durable audit remains available when RLS or the database is down. */ }
 
     const dbRows: AlertDeliveryRow[] = rows.map((r) => ({
       id: r.id,
@@ -103,11 +109,11 @@ export const listAlertDeliveries = createServerFn({ method: "GET" })
       retry_count: 0,
     }));
 
-    const existingIds = new Set(dbRows.map((r) => r.id));
-    const combined = [
-      ...inMemoryDeliveryLogs.filter((r) => !existingIds.has(r.id)),
-      ...dbRows,
-    ];
+    const { readDeliveryAudit } = await import("./delivery-audit.server");
+    const durableRows = await readDeliveryAudit(userId).catch(() => []);
+    const byId = new Map(dbRows.map((row) => [row.id, row]));
+    for (const row of [...durableRows, ...inMemoryDeliveryLogs.filter((row) => deliveryOwners.get(row.id) === userId)]) byId.set(row.id, row);
+    const combined = [...byId.values()].sort((a, b) => b.attempted_at.localeCompare(a.attempted_at)).slice(0, 200);
 
     // Approximate retry count per fingerprint (attempts share fingerprint).
     const attemptsByFp = new Map<string, number>();

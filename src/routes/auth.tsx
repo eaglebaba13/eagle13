@@ -30,13 +30,13 @@ function AuthPage() {
   const [showAdminHelp, setShowAdminHelp] = useState(false);
   const navigate = useNavigate();
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, isGuest } = useAuth();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!loading && isAuthenticated && !isGuest) {
       void navigate({ to: "/dashboard" });
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, isGuest, navigate]);
 
   function handleContinueGuest() {
     enableGuestSession();

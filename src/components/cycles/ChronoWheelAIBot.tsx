@@ -91,7 +91,7 @@ export function ChronoWheelAIBot({
           text: `### 🦅 ChronoWheel Quant AI: Ready to analyze **${activeStock.symbol}** (${activeStock.name})
 
 - **Live Market LTP:** **${ltpStr}**${changeStr} • \`${activeStock.isLive ? "🟢 LIVE FEED" : "CALIBRATED EOD"}\`
-- **10-Year Synodic Win Rate:** **${activeStock.winRate}%** (${activeStock.avgReturn > 0 ? "+" : ""}${activeStock.avgReturn.toFixed(2)}% Avg)
+- **${cycleContext?.lookbackYears ?? "Selected"}-Year Synodic Win Rate:** **${activeStock.winRate}%** (${activeStock.avgReturn > 0 ? "+" : ""}${activeStock.avgReturn.toFixed(2)}% Avg)
 - **Institutional Bias:** \`${activeStock.confluenceBias}\`
 - **Execution Zone:** Entry **₹${exec?.entryPrice.toFixed(2)}** • SL **₹${exec?.stopLoss.toFixed(2)}** • TP2 **₹${exec?.tp2.toFixed(2)}** (R:R ${exec?.riskRewardRatio})
 

@@ -1,3 +1,4 @@
+import { dateRangeError } from "./input-validation";
 // Historical Backtest Engine — server function.
 //
 // This module reuses the production Astro engine (`computeAstroPositions`),
@@ -577,8 +578,20 @@ function pickBestWorst(
   return { best, worst };
 }
 
+export function rebuildBacktestAggregates(result: BacktestResult, trades: BacktestTrade[]): BacktestResult {
+  const { summary, monthly, equity } = aggregate(trades);
+  const decided = trades.filter((trade) => trade.result === "WIN" || trade.result === "LOSS" || trade.result === "FLAT");
+  return { ...result, trades, summary, monthly, equityCurve: equity,
+    stats: buildStats(decided, trades.length, summary.netProfit, summary.maxDrawdown) };
+}
+
 export const runBacktest = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => InputSchema.parse(data))
+  .inputValidator((data: unknown) => {
+    const parsed = InputSchema.parse(data);
+    const invalid = dateRangeError(parsed.from, parsed.to);
+    if (invalid) throw new Error(invalid);
+    return parsed;
+  })
   .handler(async ({ data }: { data: BacktestInput }): Promise<BacktestResult> => {
     // Resolve formula selection. When omitted, the cache key, Run ID, and
     // envelope are byte-identical to the pre-β2a Sign-Degree output because

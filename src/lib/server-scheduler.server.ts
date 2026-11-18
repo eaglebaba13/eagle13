@@ -6,10 +6,21 @@
 import { runSmartAlerts } from "./smart-alerts/persistence.functions";
 import { processOptionChainToLtpCalculator } from "./options/ltp-calculator-engine.server";
 import { fetchCanonicalOptionChain } from "./option-chain/canonical-snapshot.server";
+import { collectOiSession } from "./options/oi-direction-scanner.server";
 import { collectScheduledLiquidity } from "./market-data/liquidity-heatmap.server";
 
 let isSchedulerRunning = false;
 let lastCapturedDate = "";
+let oiCollectorStarted = false;
+
+export function ensureOiCollectorStarted(): void {
+  if (oiCollectorStarted || typeof process === "undefined" || process.env.VITEST || process.env.NODE_ENV === "test") return;
+  oiCollectorStarted = true;
+  const collect = () => { void collectOiSession().catch(() => console.warn("[OI Scanner] Collection unavailable.")); };
+  collect();
+  const timer = setInterval(collect, 60_000);
+  timer.unref?.();
+}
 
 export function isPastNineTwentyAmIst(): boolean {
   const now = new Date();
@@ -29,6 +40,8 @@ export function ensureServerSchedulerStarted(): void {
   isSchedulerRunning = true;
 
   console.log("[ServerScheduler] Autonomous background daemon initialized.");
+  // OI collection is independent of open browser tabs; the collector guards overlapping runs.
+  ensureOiCollectorStarted();
   const liquidityTimer = setInterval(() => { void collectScheduledLiquidity().catch(() => console.warn("[Liquidity] Snapshot collection unavailable.")); }, 120_000);
   liquidityTimer.unref?.();
 

@@ -7,6 +7,7 @@ import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { assertAdminAccess } from "./user-management.functions";
+import { isThemeColor } from "../input-validation";
 
 export type ThemePreset =
   | "obsidian-gold"
@@ -129,8 +130,7 @@ export function saveThemeConfigToFile(config: ThemeStudioConfig): void {
     fs.writeFileSync(filePath, JSON.stringify(config, null, 2), "utf-8");
     inMemoryThemeConfig = config;
   } catch (err) {
-    console.error("[ThemeStudio] Failed to write config file:", err);
-    inMemoryThemeConfig = config;
+    throw new Error("Theme settings could not be saved. Check server storage permissions and retry.");
   }
 }
 
@@ -152,16 +152,17 @@ export const getThemeConfigAdmin = createServerFn({ method: "GET" }).handler(
   },
 );
 
+const colorInput = z.string().trim().refine(isThemeColor, "Enter a valid hex, rgb or rgba color.");
 const SaveThemeSchema = z.object({
-  baseBackground: z.string().min(4),
-  cardSurface: z.string().min(4),
+  baseBackground: colorInput,
+  cardSurface: colorInput,
   cardTransparency: z.number().min(0.05).max(1.0),
-  borderTint: z.string().min(4),
+  borderTint: colorInput,
   glowIntensity: z.number().min(0).max(1),
-  glowColor: z.string().min(4),
-  accentColor: z.string().min(4),
-  activePillColor: z.string().min(4),
-  textAccentColor: z.string().min(4),
+  glowColor: colorInput,
+  accentColor: colorInput,
+  activePillColor: colorInput,
+  textAccentColor: colorInput,
   preset: z.enum([
     "obsidian-gold",
     "cyber-cyan",

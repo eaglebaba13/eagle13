@@ -71,7 +71,7 @@ export function ChartHeaderHud({
       (instrument?.symbol &&
         /^(BTCUSDT|ETHUSDT|SOLUSDT|XRPUSDT|GC1!|SI1!|GOLD|SILVER)$/i.test(instrument.symbol)),
   );
-  const currencySymbol = isUsd ? "$" : instrument?.currency === "INR" ? "₹" : "$";
+  const currencySymbol = isUsd ? "$" : "₹";
 
   const formatPrice = (val?: number | null) => {
     if (val == null || !Number.isFinite(val)) return "--";
