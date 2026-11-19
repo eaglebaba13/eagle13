@@ -8,6 +8,18 @@ export type Database = {
   };
   public: {
     Tables: {
+      modular_alert_settings: {
+        Row: { job: string; enabled: boolean; schedule: string; cooldown_minutes: number };
+        Insert: { job: string; enabled: boolean; schedule: string; cooldown_minutes: number };
+        Update: { enabled?: boolean; schedule?: string; cooldown_minutes?: number };
+        Relationships: [];
+      };
+      modular_alert_claims: {
+        Row: { user_id: string; job: string; fingerprint: string; event_version: string | null; claimed_at: string; status: string };
+        Insert: { user_id: string; job: string; fingerprint: string; event_version?: string | null; claimed_at?: string; status?: string };
+        Update: { status?: string };
+        Relationships: [];
+      };
       research_lab_failures: {
         Row: {
           created_at: string;
@@ -1198,6 +1210,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      claim_modular_alert: {
+        Args: { p_user: string; p_job: string; p_key: string; p_version: string | null; p_cooldown: number };
+        Returns: string | null;
+      };
       admin_approve_manual_payment: {
         Args: { _admin_note: string; _id: string };
         Returns: {

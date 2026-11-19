@@ -123,6 +123,7 @@ export const queryChronoWheelAIFn = createServerFn({ method: "POST" })
   });
 
 export interface ChronoWheelBroadcastPayload {
+  readonly accessToken: string;
   readonly symbol: string;
   readonly direction: string;
   readonly ltp: number;
@@ -147,6 +148,15 @@ export const broadcastChronoWheelSetupToTelegram = createServerFn({ method: "POS
     return input as ChronoWheelBroadcastPayload;
   })
   .handler(async ({ data }) => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin(data.accessToken);
+    const { isFoAlertEligible, isVerifiedFoAlertEligible } = await import("../smart-alerts/ban-filter");
+    const { getFoBanTrackerReport } = await import("../market-data/fo-ban-tracker.server");
+    const report = await getFoBanTrackerReport(true);
+    if (report.source !== "NSE_LIVE" || !report.allMap[data.symbol]) throw new Error("F&O ban status unavailable");
+    if (!isFoAlertEligible(data.foBanStatus) || !isVerifiedFoAlertEligible(report.allMap[data.symbol])) {
+      throw new Error("Banned or near-ban stocks cannot be alerted");
+    }
     const { postTelegramBroadcast } = await import("../smart-alerts/telegram-delivery.server");
     const phaseStr = data.startPhase ? ` (${data.startPhase} to ${data.endPhase ?? "Target"})` : "";
     const lines = [

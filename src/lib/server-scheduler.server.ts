@@ -3,7 +3,8 @@
 // 1. Exact 09:20:00 IST Static Snapshot capture for major F&O underlyings.
 // 2. 60-second headless smart alert heartbeat evaluating signals & dispatching to Telegram.
 
-import { runSmartAlerts } from "./smart-alerts/persistence.functions";
+import { runModularAlertHeartbeat, runSmartAlertHeartbeat } from "./smart-alerts/heartbeat.server";
+import { alertJobIds } from "./smart-alerts/modular-alert-schedule";
 import { processOptionChainToLtpCalculator } from "./options/ltp-calculator-engine.server";
 import { fetchCanonicalOptionChain } from "./option-chain/canonical-snapshot.server";
 import { collectOiSession } from "./options/oi-direction-scanner.server";
@@ -40,6 +41,10 @@ export function ensureServerSchedulerStarted(): void {
   isSchedulerRunning = true;
 
   console.log("[ServerScheduler] Autonomous background daemon initialized.");
+  console.log(`[ServerScheduler] Registered ${alertJobIds.length} modular alert jobs: ${alertJobIds.join(", ")}`);
+  void runModularAlertHeartbeat();
+  const modularTimer = setInterval(() => { void runModularAlertHeartbeat(); }, 15_000);
+  modularTimer.unref?.();
   // OI collection is independent of open browser tabs; the collector guards overlapping runs.
   ensureOiCollectorStarted();
   const liquidityTimer = setInterval(() => { void collectScheduledLiquidity().catch(() => console.warn("[Liquidity] Snapshot collection unavailable.")); }, 120_000);
@@ -47,15 +52,7 @@ export function ensureServerSchedulerStarted(): void {
 
   // 1. 60-Second Headless Smart Alert Heartbeat
   setInterval(async () => {
-    try {
-      await runSmartAlerts({
-        data: {
-          telegramEnabled: true,
-        },
-      });
-    } catch {
-      // Resilient continuous execution
-    }
+    await runSmartAlertHeartbeat();
   }, 60_000);
 
   // 2. 30-Second Check for 09:20 IST Static Snapshot Trigger

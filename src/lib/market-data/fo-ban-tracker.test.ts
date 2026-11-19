@@ -64,6 +64,8 @@ describe("F&O Ban & MWPL Thresholds & Transition Logic", () => {
       daysInBan: 1,
       freshEntryEligible: false,
       currentLtp: 5420.0,
+      verifiedLive: true,
+      asOfTimestamp: "2026-11-12T03:15:00.000Z",
       updatedAt: new Date().toISOString(),
     };
 
@@ -106,6 +108,8 @@ describe("F&O Ban & MWPL Thresholds & Transition Logic", () => {
       previousBanDays,
       freshEntryEligible: true,
       currentLtp: 112.5,
+      verifiedLive: true,
+      asOfTimestamp: "2026-11-12T03:15:00.000Z",
       updatedAt: new Date().toISOString(),
     };
 
@@ -149,6 +153,8 @@ describe("Telegram Alert Formatting", () => {
           daysInBan: 1,
           freshEntryEligible: false,
           currentLtp: 5420.0,
+          verifiedLive: true,
+          asOfTimestamp: "2026-11-12T03:15:00.000Z",
           updatedAt: "2026-11-12T03:15:00.000Z",
         },
       ],
@@ -163,6 +169,8 @@ describe("Telegram Alert Formatting", () => {
           distanceToBan: 0.8,
           freshEntryEligible: true,
           currentLtp: 430.5,
+          verifiedLive: true,
+          asOfTimestamp: "2026-11-12T03:15:00.000Z",
           updatedAt: "2026-11-12T03:15:00.000Z",
         },
         {
@@ -175,6 +183,8 @@ describe("Telegram Alert Formatting", () => {
           distanceToBan: 6.6,
           freshEntryEligible: true,
           currentLtp: 169.6,
+          verifiedLive: true,
+          asOfTimestamp: "2026-11-12T03:15:00.000Z",
           updatedAt: "2026-11-12T03:15:00.000Z",
         },
       ],
@@ -189,14 +199,16 @@ describe("Telegram Alert Formatting", () => {
           previousBanDays: 4,
           freshEntryEligible: true,
           currentLtp: 112.5,
+          verifiedLive: true,
+          asOfTimestamp: "2026-11-12T03:15:00.000Z",
           updatedAt: "2026-11-12T03:15:00.000Z",
         },
       ],
       allMap: {
-        KAYNES: { status: "IN_BAN", mwplPercent: 97.8, daysInBan: 1 },
-        HINDCOPPER: { status: "UPCOMING_BAN", mwplPercent: 94.2, daysInBan: 0 },
-        SAIL: { status: "UPCOMING_BAN", mwplPercent: 88.4, daysInBan: 0 },
-        DELTACORP: { status: "RECENTLY_UNBANNED", mwplPercent: 74.2, daysInBan: 0 },
+        KAYNES: { status: "IN_BAN", mwplPercent: 97.8, daysInBan: 1, verifiedLive: true, asOfTimestamp: "2026-11-12T03:15:00.000Z" },
+        HINDCOPPER: { status: "UPCOMING_BAN", mwplPercent: 94.2, daysInBan: 0, verifiedLive: true, asOfTimestamp: "2026-11-12T03:15:00.000Z" },
+        SAIL: { status: "UPCOMING_BAN", mwplPercent: 88.4, daysInBan: 0, verifiedLive: true, asOfTimestamp: "2026-11-12T03:15:00.000Z" },
+        DELTACORP: { status: "RECENTLY_UNBANNED", mwplPercent: 74.2, daysInBan: 0, verifiedLive: true, asOfTimestamp: "2026-11-12T03:15:00.000Z" },
       },
     };
 

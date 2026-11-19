@@ -193,6 +193,8 @@ export const notifyPriceAlertCreated = createServerFn({ method: "POST" })
       input as { symbol: string; targetPrice: number; direction: string; ltp: number },
   )
   .handler(async ({ data }) => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin();
     const { sendPriceAlertTelegram } = await import("../smart-alerts/telegram-delivery.server");
     return sendPriceAlertTelegram({
       symbol: data.symbol,

@@ -295,7 +295,7 @@ function FoBanListPage() {
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
               }`}
             >
-              <span>⚠️ Near Ban (&gt;80%)</span>
+              <span>⚠️ Near Ban (≥80%)</span>
               <span className="px-1.5 py-0.2 text-[10px] rounded bg-amber-950 text-amber-300 border border-amber-500/40">
                 {report?.upcomingBanCount ?? 0}
               </span>
@@ -395,7 +395,7 @@ function FoBanListPage() {
                                 style={{ width: `${Math.min(100, sec.mwplPercent)}%` }}
                               />
                             </div>
-                            <span className="text-rose-400 font-bold">{sec.mwplPercent.toFixed(1)}%</span>
+                            <span className="text-rose-400 font-bold">{sec.verifiedLive ? `${sec.mwplPercent.toFixed(1)}%` : "Unavailable"}</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
@@ -470,7 +470,7 @@ function FoBanListPage() {
                 <Info className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-80" />
                 <p className="text-zinc-300 font-bold">No Securities in Near-Ban Zone</p>
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  {query ? "No near-ban stocks match your search." : "All active F&O stocks currently have open interest below 80% MWPL."}
+                  {query ? "No near-ban stocks match your search." : "No near-ban stocks confirmed by the available exchange data."}
                 </p>
               </div>
             ) : (

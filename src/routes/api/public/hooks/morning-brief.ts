@@ -1,7 +1,4 @@
-// Phase 44B — Public cron hook that triggers the morning brief.
-// Called by pg_cron at 02:45 UTC (08:15 IST). Authenticated by the standard
-// Supabase anon apikey header, matching the pattern documented in the
-// scheduler knowledge card.
+// Manual morning brief trigger. The automatic schedule runs inside the server.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { runMorningBrief } from "@/lib/multi-asset/report.functions";
@@ -17,9 +14,15 @@ export const Route = createFileRoute("/api/public/hooks/morning-brief")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey") ?? "";
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!expected || apikey !== expected) return unauthorized();
+        const { requireStrictSuperadmin } = await import("@/lib/auth/admin-auth.server");
+        try {
+          await requireStrictSuperadmin(request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1]);
+        } catch (error) {
+          if (error instanceof Error && error.message === "FORBIDDEN_ACCESS_DENIED") {
+            return Response.json({ error: "forbidden" }, { status: 403 });
+          }
+          return unauthorized();
+        }
         try {
           const record = await runMorningBrief();
           return Response.json({

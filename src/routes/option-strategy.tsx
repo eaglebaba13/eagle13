@@ -1331,7 +1331,7 @@ function Top10Widget({ stocks, banReport }: { stocks: TopStock[]; banReport?: Fo
                                 border: "1px solid rgba(244, 63, 94, 0.5)",
                               }}
                             >
-                              🚫 BAN ({banInfo.mwplPercent}%)
+                              🚫 BAN ({banInfo.verifiedLive ? `${banInfo.mwplPercent}%` : "Unavailable"})
                             </span>
                           );
                         }

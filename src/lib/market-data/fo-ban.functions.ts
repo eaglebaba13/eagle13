@@ -7,6 +7,7 @@ import {
   type FoBanStatus,
 } from "./fo-ban-tracker.server";
 import { sendFoBanTelegramAlert } from "../smart-alerts/telegram-delivery.server";
+import { requireStrictSuperadmin } from "../auth/admin-auth.server";
 
 export type { FoBanReport, FoBanSecurity, FoBanStatus };
 
@@ -33,6 +34,7 @@ export const refreshFoBanStatus = createServerFn({ method: "POST" }).handler(
  */
 export const dispatchFoBanAlertNow = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ success: boolean; message: string }> => {
+    await requireStrictSuperadmin();
     const report = await getFoBanTrackerReport(false);
     const res = await sendFoBanTelegramAlert(report);
     return {

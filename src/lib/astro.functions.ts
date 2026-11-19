@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import {
   computeCycles,
   computeAstroLevels,
@@ -98,7 +98,7 @@ export type AstroData = {
   moonPhase: MoonPhaseInfo;
 };
 
-export const getAstro = createServerFn({ method: "GET" }).handler(async (): Promise<AstroData> =>
+export const getAstroInternal = createServerOnlyFn(async (): Promise<AstroData> =>
   cached<AstroData>(
     astroCacheKey("astro"),
     async () => {
@@ -144,3 +144,5 @@ export const getAstro = createServerFn({ method: "GET" }).handler(async (): Prom
     { ttlMs: 60_000 },
   ),
 );
+
+export const getAstro = createServerFn({ method: "GET" }).handler(() => getAstroInternal());

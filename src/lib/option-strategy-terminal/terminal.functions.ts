@@ -6,13 +6,13 @@
 //   - Gann Gap Outlook
 // and feeds them into the deterministic strategy engine.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
-import { getDecisionSnapshot } from "@/lib/decision.functions";
-import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
-import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
-import { getInstitutionalFlow } from "@/lib/institutional-flow/institutional-flow.functions";
+import { getDecisionSnapshotInternal } from "@/lib/decision.functions";
+import { getGtiSummaryInternal } from "@/lib/gti-summary/gti-summary.functions";
+import { getGannGapOutlookInternal } from "@/lib/gann-gap/gann-gap.functions";
+import { getInstitutionalFlowInternal } from "@/lib/institutional-flow/institutional-flow.functions";
 import { computeOptionDecision, computeInstitutionalFlow } from "@/lib/option-strategy-decision";
 import type {
   DecisionEngineOutput,
@@ -73,16 +73,13 @@ export interface TerminalResponse {
   readonly generatedAt: string;
 }
 
-export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<TerminalResponse> => {
-    assertAuth(context);
+export const getOptionStrategyTerminalInternal = createServerOnlyFn(async (): Promise<TerminalResponse> => {
     const generatedAt = new Date().toISOString();
     const [decisionRes, gtiRes, gapRes, flowRes] = await Promise.allSettled([
-      getDecisionSnapshot(),
-      getGtiSummary(),
-      getGannGapOutlook(),
-      getInstitutionalFlow({ data: { underlying: "NIFTY" } }),
+      getDecisionSnapshotInternal(),
+      getGtiSummaryInternal(),
+      getGannGapOutlookInternal(),
+      getInstitutionalFlowInternal({ underlying: "NIFTY" }),
     ]);
 
     const decision = decisionRes.status === "fulfilled" ? decisionRes.value : null;
@@ -308,3 +305,10 @@ export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
   });
 
 export type OptionStrategyTerminalResponse = TerminalResponse;
+
+export const getOptionStrategyTerminal = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    assertAuth(context);
+    return getOptionStrategyTerminalInternal();
+  });

@@ -5,8 +5,8 @@
 // and never issue duplicate provider requests. Pure consumer: this
 // module never touches Astro, Decision, Broker, or formulas.
 
-import { createServerFn } from "@tanstack/react-start";
-import { getMarketData } from "../market.functions";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
+import { getMarketDataImpl } from "../market.functions";
 import { computeCombinedPcr } from "../combined-pcr/combined-pcr";
 import { DEFAULT_COMBINED_PCR_WEIGHTS } from "../combined-pcr/types";
 import { getRealBreadthBundle } from "../market-breadth/real-breadth-engine.server";
@@ -67,15 +67,15 @@ function newRunId(): string {
   return `gti-sum-${Date.now().toString(36)}-${rand}`;
 }
 
-export const getGtiSummary = createServerFn({ method: "POST" }).handler(
+export const getGtiSummaryInternal = createServerOnlyFn(
   async (): Promise<GtiSummaryResponse> => {
     const generatedAt = new Date().toISOString();
     const warnings: string[] = [];
 
     // ── 1. Quotes ─────────────────────────────────────────────
-    let quotes: Awaited<ReturnType<typeof getMarketData>> | null = null;
+    let quotes: Awaited<ReturnType<typeof getMarketDataImpl>> | null = null;
     try {
-      quotes = await getMarketData();
+      quotes = await getMarketDataImpl();
     } catch (e) {
       warnings.push(`quotes:${e instanceof Error ? e.message.slice(0, 80) : "error"}`);
     }
@@ -219,3 +219,5 @@ export const getGtiSummary = createServerFn({ method: "POST" }).handler(
 );
 
 export type GtiSummary = Awaited<ReturnType<typeof getGtiSummary>>;
+
+export const getGtiSummary = createServerFn({ method: "POST" }).handler(() => getGtiSummaryInternal());

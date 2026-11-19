@@ -210,6 +210,13 @@ export async function postTelegramMessage(
   return postTelegramMessageToDestination(env, text, parseMode);
 }
 
+export async function postModularAlertTest(text: string): Promise<TelegramSendResult> {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_ALERT_TEST_CHAT_ID?.trim();
+  if (!token || !chatId) return { status: "CONFIGURATION_ERROR", errorCode: "MISSING_TEST_DESTINATION" };
+  return postTelegramMessageToDestination({ token, chatId }, text);
+}
+
 export async function sendPriceAlertTelegram(params: {
   symbol: string;
   targetPrice: number;
@@ -732,18 +739,18 @@ export function formatFoBanTelegramAlert(report: FoBanReport): string {
     lines.push(`🔴 CURRENTLY IN F&O BAN (${report.inBan.length}):`);
     for (const item of report.inBan) {
       lines.push(
-        `• ${item.symbol}: ${item.mwplPercent.toFixed(1)}% MWPL (Day ${item.daysInBan || 1} in Ban) | LTP: ₹${item.currentLtp.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+        `• ${item.symbol}: ${item.verifiedLive === false ? "MWPL unavailable" : `${item.mwplPercent.toFixed(1)}% MWPL`} (Day ${item.daysInBan || 1} in Ban) | LTP: ₹${item.currentLtp.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
       );
     }
     lines.push("⚠️ (Fresh derivative positions strictly prohibited by NSE. Only squaring off permitted.)");
   } else {
-    lines.push("🟢 CURRENTLY IN F&O BAN (0): None (All F&O stocks open for fresh positions)");
+    lines.push("ℹ️ CURRENTLY IN F&O BAN (0): No bans confirmed by the available feed");
   }
   lines.push("");
 
   // 2. UPCOMING BAN
   if (report.upcomingBan.length > 0) {
-    lines.push(`⚠️ UPCOMING BAN WATCHLIST (>80% MWPL) (${report.upcomingBan.length}):`);
+    lines.push(`⚠️ UPCOMING BAN WATCHLIST (≥80% MWPL) (${report.upcomingBan.length}):`);
     for (const item of report.upcomingBan.slice(0, 10)) {
       const distStr = item.distanceToBan !== undefined ? ` (${item.distanceToBan.toFixed(1)}% to Ban)` : "";
       lines.push(
@@ -754,7 +761,7 @@ export function formatFoBanTelegramAlert(report: FoBanReport): string {
       lines.push(`  ... and ${report.upcomingBan.length - 10} more upcoming stocks.`);
     }
   } else {
-    lines.push("ℹ️ UPCOMING BAN WATCHLIST (>80% MWPL): None");
+    lines.push("ℹ️ UPCOMING BAN WATCHLIST (≥80% MWPL): No verified matches");
   }
   lines.push("");
 

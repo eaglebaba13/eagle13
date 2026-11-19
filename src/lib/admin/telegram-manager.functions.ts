@@ -7,7 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { assertAdminAccess } from "./user-management.functions";
+import { requireStrictSuperadmin } from "../auth/admin-auth.server";
 import {
   getInMemoryDeliveryAttempts,
   type AlertDeliveryRow,
@@ -98,11 +98,7 @@ export function saveTelegramChannelsToFile(channels: TelegramChannelConfig[]): v
  */
 export const listTelegramChannelsAdmin = createServerFn({ method: "GET" }).handler(
   async ({ context }): Promise<TelegramChannelConfig[]> => {
-    try {
-      await assertAdminAccess(context);
-    } catch (err) {
-      console.warn("[listTelegramChannelsAdmin] Admin access check fallback:", err);
-    }
+    await requireStrictSuperadmin();
     return loadTelegramChannelsFromFile();
   },
 );
@@ -122,11 +118,7 @@ const ChannelInputSchema = z.object({
 export const saveTelegramChannelAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => ChannelInputSchema.parse(data))
   .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    try {
-      await assertAdminAccess(context);
-    } catch (err) {
-      console.warn("[saveTelegramChannelAdmin] Admin access check fallback:", err);
-    }
+    await requireStrictSuperadmin();
     const channels = loadTelegramChannelsFromFile();
     const channelId =
       data.id || `tg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -163,11 +155,7 @@ export const saveTelegramChannelAdmin = createServerFn({ method: "POST" })
 export const deleteTelegramChannelAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ id: z.string() }).parse(data))
   .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    try {
-      await assertAdminAccess(context);
-    } catch (err) {
-      console.warn("[deleteTelegramChannelAdmin] Admin access check fallback:", err);
-    }
+    await requireStrictSuperadmin();
     let channels = loadTelegramChannelsFromFile();
     channels = channels.filter((c) => c.id !== data.id);
     saveTelegramChannelsToFile(channels);
@@ -180,11 +168,7 @@ export const deleteTelegramChannelAdmin = createServerFn({ method: "POST" })
 export const toggleTelegramChannelStatusAdmin = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ id: z.string() }).parse(data))
   .handler(async ({ data, context }): Promise<{ success: boolean; channels: TelegramChannelConfig[] }> => {
-    try {
-      await assertAdminAccess(context);
-    } catch (err) {
-      console.warn("[toggleTelegramChannelStatusAdmin] Admin access check fallback:", err);
-    }
+    await requireStrictSuperadmin();
     const channels = loadTelegramChannelsFromFile();
     const target = channels.find((c) => c.id === data.id);
     if (target) {
@@ -209,11 +193,7 @@ export const testTelegramChannelAdmin = createServerFn({ method: "POST" })
       error?: string;
       channel: TelegramChannelConfig;
     }> => {
-      try {
-        await assertAdminAccess(context);
-      } catch (err) {
-        console.warn("[testTelegramChannelAdmin] Admin access check fallback:", err);
-      }
+      await requireStrictSuperadmin();
       const channels = loadTelegramChannelsFromFile();
       const ch = channels.find((c) => c.id === data.id);
       if (!ch) {
@@ -301,11 +281,7 @@ export const testTelegramChannelAdmin = createServerFn({ method: "POST" })
  */
 export const listTelegramDeliveryLogsAdmin = createServerFn({ method: "GET" }).handler(
   async ({ context }): Promise<readonly AlertDeliveryRow[]> => {
-    try {
-      await assertAdminAccess(context);
-    } catch (err) {
-      console.warn("[listTelegramDeliveryLogsAdmin] Admin access check fallback:", err);
-    }
+    await requireStrictSuperadmin();
     return getInMemoryDeliveryAttempts();
   },
 );

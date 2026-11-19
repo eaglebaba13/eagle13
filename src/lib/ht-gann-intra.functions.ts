@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { cached } from "./server-cache";
 import { fetchJson } from "./http";
 import { YahooChartSchema, parseProvider } from "./providers";
@@ -187,7 +187,9 @@ export const getHTGannIntra = createServerFn({ method: "GET" })
     }
     return { symbol: "NIFTY" };
   })
-  .handler(async ({ data }): Promise<HTGannIntraPayload> => {
+  .handler(({ data }) => getHTGannIntraInternal(data));
+
+export const getHTGannIntraInternal = createServerOnlyFn(async (data: { symbol?: "NIFTY" | "BANKNIFTY"; date?: string; customPrevClose?: number }): Promise<HTGannIntraPayload> => {
     const symbol = data.symbol ?? "NIFTY";
     const targetAnchor = parseIstAnchor(data.date);
     const targetDateStr = targetAnchor.toISOString().slice(0, 10);

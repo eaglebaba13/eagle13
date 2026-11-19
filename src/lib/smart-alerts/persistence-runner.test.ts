@@ -4,6 +4,7 @@ import { makeEmptyCheckpoint } from "./dedupe";
 
 // Exercise the actual runner handler while replacing framework/DB boundaries.
 vi.mock("@tanstack/react-start", () => ({
+  createServerOnlyFn: (fn: unknown) => fn,
   createServerFn: () => {
     const builder = {
       middleware: () => builder,
@@ -19,18 +20,24 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({
     if (!context.userId) throw new Error("Unauthorized: Authentication required");
   },
 }));
-vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshot: async () => null }));
-vi.mock("@/lib/gti-summary/gti-summary.functions", () => ({ getGtiSummary: async () => null }));
-vi.mock("@/lib/gann-gap/gann-gap.functions", () => ({ getGannGapOutlook: async () => null }));
+vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshotInternal: async () => null }));
+vi.mock("@/lib/gti-summary/gti-summary.functions", () => ({ getGtiSummaryInternal: async () => null }));
+vi.mock("@/lib/gann-gap/gann-gap.functions", () => ({
+  getGannGapOutlook: async () => null,
+  getGannGapOutlookInternal: async () => null,
+}));
 vi.mock("@/lib/option-strategy-terminal/terminal.functions", () => ({
   getOptionStrategyTerminal: async () => null,
+  getOptionStrategyTerminalInternal: async () => null,
 }));
 vi.mock("@/lib/ai-market-assistant/assistant.functions", () => ({
   getAiMarketAssistant: async () => null,
+  getAiMarketAssistantInternal: async () => null,
 }));
 vi.mock("./engine", () => ({ runAlertEngine: vi.fn() }));
 
 import { runAlertEngine } from "./engine";
+import { TelegramAlertDeliveryProvider } from "./delivery";
 import {
   getAdminAlertDiagnostics,
   getSmartAlertSubscription,
@@ -41,6 +48,7 @@ import {
   markSmartAlertDismissed,
   markAllSmartAlertsRead,
   runSmartAlerts,
+  runSmartAlertsInternal,
   type AdminAlertDiagnostics,
   type SmartAlertRunResult,
 } from "./persistence.functions";
@@ -220,6 +228,32 @@ describe("Smart Alert runner persistence boundaries", () => {
     expect(db.checkpointWrite).toHaveBeenCalledWith(
       expect.objectContaining({ last_error: null, fingerprints: expect.any(Object) }),
     );
+  });
+
+  it("skips Telegram when another scheduled run already claimed the fingerprint", async () => {
+    const db = database({ eventWrite: ok() });
+    const telegram = vi.spyOn(TelegramAlertDeliveryProvider, "deliver");
+    const enabled = TelegramAlertDeliveryProvider.enabled;
+    Object.defineProperty(TelegramAlertDeliveryProvider, "enabled", { value: true });
+    const engine = vi.mocked(runAlertEngine);
+    const next = await engine({} as Parameters<typeof runAlertEngine>[0]);
+    engine.mockImplementationOnce(async ({ providers, subscription }) => {
+      const provider = providers?.find(({ id }) => id === "TELEGRAM");
+      if (!provider) throw new Error("Missing scheduled Telegram provider");
+      const attempt = await provider.deliver(event, subscription, event.createdAt);
+      expect(attempt.errorCode).toBe("DUPLICATE_FINGERPRINT");
+      return { ...next, emitted: [{ ...event, deliveryStatus: [attempt] }] };
+    });
+    try {
+      await runSmartAlertsInternal({
+        userId: "u1", supabase: db as unknown as Parameters<typeof runSmartAlertsInternal>[0]["supabase"],
+      }, { telegramEnabled: true }, true);
+      expect(telegram).not.toHaveBeenCalled();
+      expect(db.auditWrite).not.toHaveBeenCalled();
+    } finally {
+      telegram.mockRestore();
+      Object.defineProperty(TelegramAlertDeliveryProvider, "enabled", { value: enabled });
+    }
   });
 
   it.each([failure, ok()])(

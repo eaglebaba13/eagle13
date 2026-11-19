@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => {
     inputValidator: () => chain(),
     handler: (fn: unknown) => fn,
   });
-  return { createServerFn: () => chain() };
+  return { createServerFn: () => chain(), createServerOnlyFn: (fn: unknown) => fn };
 });
 
 const { assertAuthMock } = vi.hoisted(() => ({ assertAuthMock: vi.fn() }));
@@ -54,11 +54,11 @@ const upstream = vi.hoisted(() => ({
   gap: vi.fn(),
   extra: vi.fn(),
 }));
-vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshot: upstream.decision }));
-vi.mock("@/lib/gti-summary/gti-summary.functions", () => ({ getGtiSummary: upstream.gti }));
-vi.mock("@/lib/gann-gap/gann-gap.functions", () => ({ getGannGapOutlook: upstream.gap }));
+vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshotInternal: upstream.decision }));
+vi.mock("@/lib/gti-summary/gti-summary.functions", () => ({ getGtiSummaryInternal: upstream.gti }));
+vi.mock("@/lib/gann-gap/gann-gap.functions", () => ({ getGannGapOutlookInternal: upstream.gap }));
 vi.mock("@/lib/option-strategy-terminal/terminal.functions", () => ({
-  getOptionStrategyTerminal: upstream.extra,
+  getOptionStrategyTerminalInternal: upstream.extra,
 }));
 
 describe("Authorized aggregation compatibility", () => {

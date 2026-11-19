@@ -5,18 +5,21 @@
 // user_id (the RLS policies enforce this at the database level). No broker
 // touches. No formula math. No trade execution.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { GUEST_USER_ID } from "@/lib/guest-session";
 import { recordDeliveryAttempt, persistOperatorDelivery } from "@/lib/notifications/alert-delivery.functions";
 
-import { getDecisionSnapshot } from "@/lib/decision.functions";
-import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
-import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
-import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/terminal.functions";
-import { getAiMarketAssistant } from "@/lib/ai-market-assistant/assistant.functions";
+import { getDecisionSnapshotInternal } from "@/lib/decision.functions";
+import { getGtiSummaryInternal } from "@/lib/gti-summary/gti-summary.functions";
+import { getGannGapOutlook, getGannGapOutlookInternal } from "@/lib/gann-gap/gann-gap.functions";
+import { getOptionStrategyTerminal, getOptionStrategyTerminalInternal } from "@/lib/option-strategy-terminal/terminal.functions";
+import { getAiMarketAssistant, getAiMarketAssistantInternal } from "@/lib/ai-market-assistant/assistant.functions";
 
 import { runAlertEngine } from "./engine";
+import { DEFAULT_DELIVERY_PROVIDERS } from "./delivery";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { makeEmptyCheckpoint } from "./dedupe";
 import { defaultSubscription, allAlertTypes } from "./subscriptions";
 import {
@@ -245,16 +248,16 @@ function assistantBiasToCanonical(b: string | undefined | null): CanonicalDirect
 // Build AlertEvaluationContext from canonical envelopes.
 // ─────────────────────────────────────────────────────────────
 
-export async function buildEvaluationContext(userId: string): Promise<AlertEvaluationContext> {
+export async function buildEvaluationContext(userId: string, internal = false): Promise<AlertEvaluationContext> {
   const generatedAt = new Date().toISOString();
   const tradingDate = generatedAt.slice(0, 10);
 
   const [decisionRes, gtiRes, gapRes, terminalRes, aiRes] = await Promise.allSettled([
-    getDecisionSnapshot(),
-    getGtiSummary(),
-    getGannGapOutlook(),
-    getOptionStrategyTerminal(),
-    getAiMarketAssistant(),
+    getDecisionSnapshotInternal(),
+    getGtiSummaryInternal(),
+    (internal ? getGannGapOutlookInternal : getGannGapOutlook)(),
+    (internal ? getOptionStrategyTerminalInternal : getOptionStrategyTerminal)(),
+    (internal ? getAiMarketAssistantInternal : getAiMarketAssistant)(),
   ]);
 
   const decision = decisionRes.status === "fulfilled" ? decisionRes.value : null;
@@ -747,6 +750,35 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<SmartAlertRunResult> => {
     assertAuth(context);
     if (!context.supabase) throw new Error("Unauthorized: Authentication required");
+    if (data?.telegramEnabled) {
+      const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+      await requireStrictSuperadmin();
+    }
+    return runSmartAlertsInternal({ ...context, supabase: context.supabase }, data);
+  });
+
+function alertEventRow(userId: string, ev: AlertEvent) {
+  return {
+    user_id: userId,
+    fingerprint: ev.fingerprint,
+    type: ev.type,
+    priority: ev.priority,
+    title: ev.title,
+    summary: ev.summary,
+    instrument: ev.instrument,
+    source_modules: ev.sourceModules as unknown as never,
+    generated_at: ev.createdAt,
+    trading_date: ev.tradingDate,
+    rules_version: ev.rulesVersion,
+    payload: ev as unknown as never,
+  };
+}
+
+export const runSmartAlertsInternal = createServerOnlyFn(async (
+  context: { userId: string; supabase: SupabaseClient<Database>; isGuest?: boolean },
+  data: { telegramEnabled?: boolean } = {},
+  scheduled = false,
+): Promise<SmartAlertRunResult> => {
     const userId = context.userId;
 
     // Load checkpoint + subscription in parallel.
@@ -764,10 +796,10 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     ]);
     const isGuest = userId === GUEST_USER_ID || (context as { isGuest?: boolean }).isGuest;
     // Failed reads must not reset dedupe state or substitute default preferences for registered users.
-    if (cpRow.error && !isGuest && (cpRow.error as { code?: string })?.code !== "42501") {
+    if (cpRow.error && (scheduled || (!isGuest && cpRow.error.code !== "42501"))) {
       throw new Error("SMART_ALERT_CHECKPOINT_READ_FAILED");
     }
-    if (subRow.error && !isGuest && (subRow.error as { code?: string })?.code !== "42501") {
+    if (subRow.error && (scheduled || (!isGuest && subRow.error.code !== "42501"))) {
       throw new Error("SMART_ALERT_SUBSCRIPTION_READ_FAILED");
     }
     const checkpoint = cpRow.error || isGuest ? runtimeFeed(userId).checkpoint : mapCheckpointRow(
@@ -779,6 +811,11 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       (subRow.data as Record<string, unknown> | null) ?? null,
     );
 
+    const wantsTelegram = data.telegramEnabled ?? subscription.telegramEnabled;
+    if (wantsTelegram && !scheduled && !data.telegramEnabled) {
+      const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+      await requireStrictSuperadmin();
+    }
     // Apply explicit telegramEnabled override or default true
     const effectiveSubscription: AlertSubscription = {
       ...subscription,
@@ -790,7 +827,7 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
 
     let ctx: AlertEvaluationContext;
     try {
-      ctx = await buildEvaluationContext(userId);
+      ctx = await buildEvaluationContext(userId, scheduled);
     } catch (err) {
       await context.supabase.from("smart_alert_engine_checkpoints").upsert(
         {
@@ -804,7 +841,30 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
       throw err;
     }
 
-    const out = await runAlertEngine({ context: ctx, checkpoint, subscription: effectiveSubscription });
+    const providers = scheduled ? DEFAULT_DELIVERY_PROVIDERS.map((provider) => {
+      if (provider.id !== "TELEGRAM") return provider;
+      return {
+        ...provider,
+        async deliver(...args: Parameters<typeof provider.deliver>) {
+          if (!provider.enabled || !args[1]?.telegramEnabled) return provider.deliver(...args);
+          const [event, , attemptedAt] = args;
+          const { data: claim, error } = await context.supabase
+            .from("smart_alert_events")
+            .upsert(alertEventRow(userId, event), { onConflict: "user_id,fingerprint", ignoreDuplicates: true })
+            .select("id")
+            .maybeSingle();
+          if (error) throw new Error("SMART_ALERT_DELIVERY_CLAIM_FAILED");
+          if (!claim) {
+            return {
+              provider: "TELEGRAM" as const, status: "SKIPPED" as const, attemptedAt,
+              errorCode: "DUPLICATE_FINGERPRINT", retryable: false, fingerprint: event.fingerprint,
+            };
+          }
+          return provider.deliver(...args);
+        },
+      };
+    }) : undefined;
+    const out = await runAlertEngine({ context: ctx, checkpoint, subscription: effectiveSubscription, providers });
     rememberEvaluatedAlerts(userId, out.emitted, out.nextCheckpoint);
 
     // Persist events (idempotent via unique (user_id, fingerprint) constraint).
@@ -816,20 +876,10 @@ export const runSmartAlerts = createServerFn({ method: "POST" })
     let eventPersistenceFailed = false;
     let persistenceError: string | null = null;
     for (const ev of out.emitted) {
-      const insertRow = {
-        user_id: userId,
-        fingerprint: ev.fingerprint,
-        type: ev.type,
-        priority: ev.priority,
-        title: ev.title,
-        summary: ev.summary,
-        instrument: ev.instrument,
-        source_modules: ev.sourceModules as unknown as never,
-        generated_at: ev.createdAt,
-        trading_date: ev.tradingDate,
-        rules_version: ev.rulesVersion,
-        payload: ev as unknown as never,
-      };
+      if (scheduled && ev.deliveryStatus.some((attempt) =>
+        attempt.provider === "TELEGRAM" && attempt.errorCode === "DUPLICATE_FINGERPRINT",
+      )) continue;
+      const insertRow = alertEventRow(userId, ev);
       const { data: ins, error: insErr } = await context.supabase
         .from("smart_alert_events")
         .upsert(insertRow as never, { onConflict: "user_id,fingerprint" })
@@ -1103,6 +1153,8 @@ export interface TelegramTestPingResult {
 export const sendTelegramTestPing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TelegramTestPingResult> => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin();
     assertAuth(context);
     const audit = async (row: Parameters<typeof recordDeliveryAttempt>[0]) => persistOperatorDelivery({
       ...row, target_channel: process.env.TELEGRAM_CHAT_ID?.trim() || null,
@@ -1240,6 +1292,8 @@ export const sendTelegramTestPing = createServerFn({ method: "POST" })
 export const dispatchVolumeProfileAlert = createServerFn({ method: "POST" })
   .inputValidator((signal: any) => signal)
   .handler(async ({ data }) => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin();
     try {
       const { sendVolumeProfileTelegramAlert } = await import("./telegram-delivery.server");
       const res = await sendVolumeProfileTelegramAlert(data);
@@ -1252,6 +1306,8 @@ export const dispatchVolumeProfileAlert = createServerFn({ method: "POST" })
 export const dispatchVWAPAlert = createServerFn({ method: "POST" })
   .inputValidator((signal: any) => signal)
   .handler(async ({ data }) => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin();
     try {
       const { sendVWAPTelegramAlert } = await import("./telegram-delivery.server");
       const res = await sendVWAPTelegramAlert(data);

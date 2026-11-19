@@ -11,7 +11,7 @@
 // computed once, in this scope, from the same canonical snapshots — the
 // pcrSignal is fed from that reading. Formulas are unchanged.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { cached } from "./server-cache";
 import {
   DEFAULT_ASTRO_FORMULA_VERSION,
@@ -19,8 +19,8 @@ import {
   astroFormulaLabel,
   type AstroFormulaVersion,
 } from "./engine-version";
-import { getAstro } from "./astro.functions";
-import { getMarketData } from "./market.functions";
+import { getAstroInternal } from "./astro.functions";
+import { getMarketDataImpl } from "./market.functions";
 import type { OptionUnderlying, OptionChainSnapshot } from "./option-chain/types";
 import type { OptionChainCapabilityStatus } from "./option-chain/capability";
 import { nseSession } from "./terminal-clock";
@@ -159,7 +159,7 @@ export type DecisionSnapshot = {
   generatedAt: string;
 };
 
-export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
+export const getDecisionSnapshotInternal = createServerOnlyFn(
   async (): Promise<DecisionSnapshot> =>
     cached<DecisionSnapshot>(
       astroCacheKey("decision-snapshot"),
@@ -173,8 +173,8 @@ export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(
         const { getSnapshotHistory } = await import("./option-chain/snapshot-history");
 
         const [astroRes, marketRes, niftyCanonRes, banknCanonRes] = await Promise.allSettled([
-          getAstro(),
-          getMarketData(),
+          getAstroInternal(),
+          getMarketDataImpl(),
           fetchCanonicalOptionChain({ underlying: "NIFTY" }),
           fetchCanonicalOptionChain({ underlying: "BANKNIFTY" }),
         ]);
@@ -614,3 +614,5 @@ function absentSignal(key: ModuleSignal["key"], weight: number, label: string): 
     note: "Not available",
   };
 }
+
+export const getDecisionSnapshot = createServerFn({ method: "GET" }).handler(() => getDecisionSnapshotInternal());

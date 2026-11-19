@@ -1,13 +1,13 @@
-﻿// Phase 3B â€” Assistant server function. Consumer-only aggregation of
+// Phase 3B â€” Assistant server function. Consumer-only aggregation of
 // canonical snapshots. Never creates provider connections directly.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 
-import { getDecisionSnapshot } from "@/lib/decision.functions";
-import { getGtiSummary } from "@/lib/gti-summary/gti-summary.functions";
-import { getGannGapOutlook } from "@/lib/gann-gap/gann-gap.functions";
-import { getOptionStrategyTerminal } from "@/lib/option-strategy-terminal/terminal.functions";
+import { getDecisionSnapshotInternal } from "@/lib/decision.functions";
+import { getGtiSummaryInternal } from "@/lib/gti-summary/gti-summary.functions";
+import { getGannGapOutlookInternal } from "@/lib/gann-gap/gann-gap.functions";
+import { getOptionStrategyTerminalInternal } from "@/lib/option-strategy-terminal/terminal.functions";
 
 import type { Bias, ModuleKey } from "@/lib/decision-engine";
 import type { CanonicalBias } from "@/lib/option-strategy-terminal/types";
@@ -54,19 +54,16 @@ export interface AssistantEnvelope {
   readonly diagnostics: AssistantDiagnostics;
 }
 
-export const getAiMarketAssistant = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AssistantEnvelope> => {
-    assertAuth(context);
+export const getAiMarketAssistantInternal = createServerOnlyFn(async (): Promise<AssistantEnvelope> => {
     const started = Date.now();
     const generatedAt = new Date().toISOString();
     const errors: string[] = [];
 
     const [decisionRes, gtiRes, gapRes, terminalRes] = await Promise.allSettled([
-      getDecisionSnapshot(),
-      getGtiSummary(),
-      getGannGapOutlook(),
-      getOptionStrategyTerminal(),
+      getDecisionSnapshotInternal(),
+      getGtiSummaryInternal(),
+      getGannGapOutlookInternal(),
+      getOptionStrategyTerminalInternal(),
     ]);
 
     const decision = decisionRes.status === "fulfilled" ? decisionRes.value : null;
@@ -141,7 +138,7 @@ export const getAiMarketAssistant = createServerFn({ method: "GET" })
     return { response, diagnostics };
   });
 
-function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategyTerminal>> | null) {
+function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategyTerminalInternal>> | null) {
   if (!terminal || terminal.engine.recommended.length === 0) {
     return {
       available: false,
@@ -175,3 +172,10 @@ function buildStrategyView(terminal: Awaited<ReturnType<typeof getOptionStrategy
 }
 
 export type AiMarketAssistantEnvelope = AssistantEnvelope;
+
+export const getAiMarketAssistant = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    assertAuth(context);
+    return getAiMarketAssistantInternal();
+  });

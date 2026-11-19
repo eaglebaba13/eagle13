@@ -1,8 +1,8 @@
-﻿// Phase 2I-B â€” Gann Gap Outlook server function.
+// Phase 2I-B â€” Gann Gap Outlook server function.
 // Consumes the canonical NIFTY market snapshot; never opens its own
 // provider connection. Feature-flagged and idempotent per session.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { findFeatureFlag } from "@/lib/feature-flags";
 import { DEFAULT_GANN_GAP_CONFIG } from "./config";
@@ -50,10 +50,7 @@ function emptyOutlook(
   };
 }
 
-export const getGannGapOutlook = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<GannGapOutlook> => {
-    assertAuth(context);
+export const getGannGapOutlookInternal = createServerOnlyFn(async (): Promise<GannGapOutlook> => {
     const now = new Date();
     const nowIso = now.toISOString();
     const flag = findFeatureFlag("gann.gap.outlook");
@@ -73,10 +70,10 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
     const life = resolveLifecycle({ now, config: cfg });
 
     // Canonical market data â€” never construct a new provider client here.
-    const { getMarketData } = await import("@/lib/market.functions");
+    const { getMarketDataImpl } = await import("@/lib/market.functions");
     let reference: number | null = null;
     try {
-      const md = await getMarketData();
+      const md = await getMarketDataImpl();
       const nifty = md?.nifty;
       // Prefer previous-day close as reference; fall back to live price.
       reference = nifty?.prevDay?.close ?? nifty?.livePrice ?? null;
@@ -137,12 +134,12 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
     // failures degrade the individual confirmation to UNAVAILABLE.
     const [gtiRes, decisionRes] = await Promise.allSettled([
       (async () => {
-        const { getGtiSummary } = await import("@/lib/gti-summary/gti-summary.functions");
-        return getGtiSummary();
+        const { getGtiSummaryInternal } = await import("@/lib/gti-summary/gti-summary.functions");
+        return getGtiSummaryInternal();
       })(),
       (async () => {
-        const { getDecisionSnapshot } = await import("@/lib/decision.functions");
-        return getDecisionSnapshot();
+        const { getDecisionSnapshotInternal } = await import("@/lib/decision.functions");
+        return getDecisionSnapshotInternal();
       })(),
     ]);
     const gti = gtiRes.status === "fulfilled" ? gtiRes.value : null;
@@ -271,4 +268,11 @@ export const getGannGapOutlook = createServerFn({ method: "GET" })
       reasons: [...cls.reasons, life.reason],
       featureEnabled: true,
     };
+  });
+
+export const getGannGapOutlook = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    assertAuth(context);
+    return getGannGapOutlookInternal();
   });

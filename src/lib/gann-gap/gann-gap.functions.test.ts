@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => {
     inputValidator: () => chain(),
     handler: (fn: unknown) => fn,
   });
-  return { createServerFn: () => chain() };
+  return { createServerFn: () => chain(), createServerOnlyFn: (fn: unknown) => fn };
 });
 
 const { assertAuthMock } = vi.hoisted(() => ({ assertAuthMock: vi.fn() }));
@@ -49,12 +49,12 @@ describe("getGannGapOutlook — authentication gate", () => {
 });
 
 const marketRead = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/market.functions", () => ({ getMarketData: marketRead }));
+vi.mock("@/lib/market.functions", () => ({ getMarketDataImpl: marketRead }));
 vi.mock("@/lib/feature-flags", () => ({ findFeatureFlag: vi.fn(() => ({ enabled: true })) }));
 vi.mock("@/lib/gti-summary/gti-summary.functions", () => ({
-  getGtiSummary: vi.fn(async () => null),
+  getGtiSummaryInternal: vi.fn(async () => null),
 }));
-vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshot: vi.fn(async () => null) }));
+vi.mock("@/lib/decision.functions", () => ({ getDecisionSnapshotInternal: vi.fn(async () => null) }));
 import { afterEach } from "vitest";
 import { findFeatureFlag } from "@/lib/feature-flags";
 import { generateGannGapLevels } from "./levels";

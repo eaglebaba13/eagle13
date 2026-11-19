@@ -14,6 +14,7 @@ export default defineConfig({
     tanstackStart(),
     nitro({
       preset: "node-server",
+      plugins: ["./src/lib/scheduler-startup.server.ts"],
       routeRules: {
         "/**": {
           headers: {

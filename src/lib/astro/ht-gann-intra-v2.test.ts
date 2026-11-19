@@ -12,6 +12,7 @@ vi.mock("../provider-foundation/upstox/upstox-historical.adapter.server", () => 
 vi.mock("../server-cache", () => ({ cached: (_key: string, load: () => unknown) => load() }));
 vi.mock("../http", () => ({ fetchJson: async () => { throw new Error("VIX unavailable in fixture"); } }));
 vi.mock("@tanstack/react-start", () => ({
+  createServerOnlyFn: (fn: unknown) => fn,
   createServerFn: () => ({ validator: (validate: (input: unknown) => unknown) => ({
     handler: (fn: (arg: unknown) => unknown) => (arg: { data: unknown }) => fn({ data: validate(arg.data) }),
   }) }),

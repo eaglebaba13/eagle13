@@ -7,6 +7,7 @@ import { dateRangeError } from "@/lib/input-validation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getChronoWheelScan,
   broadcastChronoWheelSetupToTelegram,
@@ -213,20 +214,26 @@ function ChronoWheelPage() {
   const handleSendToTelegram = useCallback(
     async (stock: StockCyclePerformance) => {
       const plan = stock.executionPlan;
+      if (!plan?.entryTriggerZone || !Number.isFinite(plan.stopLoss) ||
+          !Number.isFinite(plan.tp1) || !Number.isFinite(plan.tp2) || !Number.isFinite(plan.tp3)) return;
       const ltp = stock.currentPrice;
       const winRate = stock.winRate;
       const avgReturn = stock.avgReturn;
-      const foBanStatus = stock.foBanStatus ?? "NORMAL (Traded)";
+      const foBanStatus = stock.foBanStatus;
+      if (!foBanStatus) return;
       const startD = scanResult?.referenceWindow?.startDate ?? startDate;
       const endD = scanResult?.referenceWindow?.endDate ?? endDate;
       const startPhase = scanResult?.referenceWindow?.startPhase?.phaseName ?? "";
       const endPhase = scanResult?.referenceWindow?.endPhase?.phaseName ?? "";
 
       try {
+        const { data: authData } = await supabase.auth.getSession();
+        if (!authData.session?.access_token) throw new Error("Superadmin sign-in required");
         await broadcastChronoWheelSetupToTelegram({
           data: {
+            accessToken: authData.session.access_token,
             symbol: stock.symbol,
-            direction: plan?.direction ?? "LONG",
+            direction: plan.direction,
             ltp,
             foBanStatus,
             startDate: startD,
@@ -235,13 +242,13 @@ function ChronoWheelPage() {
             endPhase,
             winRate,
             avgReturn,
-            entryLow: plan?.entryTriggerZone?.min ?? ltp * 0.995,
-            entryHigh: plan?.entryTriggerZone?.max ?? ltp * 1.005,
-            sl: plan?.stopLoss ?? ltp * 0.98,
-            tp1: plan?.tp1 ?? ltp * 1.02,
-            tp2: plan?.tp2 ?? ltp * 1.04,
-            tp3: plan?.tp3 ?? ltp * 1.06,
-            lotSize: plan?.lotSize ?? 500,
+            entryLow: plan.entryTriggerZone.min,
+            entryHigh: plan.entryTriggerZone.max,
+            sl: plan.stopLoss,
+            tp1: plan.tp1,
+            tp2: plan.tp2,
+            tp3: plan.tp3,
+            lotSize: plan.lotSize,
           },
         });
         setSentTelegramMap((prev) => ({ ...prev, [stock.symbol]: true }));

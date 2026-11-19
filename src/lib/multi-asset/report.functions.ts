@@ -423,14 +423,9 @@ export const getLatestMorningReport = createServerFn({ method: "GET" })
 
 /** Admin manual retry â€” re-delivers the current-day brief. */
 export const retryMorningBriefDelivery = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    assertAuth(context);
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Forbidden");
+  .handler(async () => {
+    const { requireStrictSuperadmin } = await import("../auth/admin-auth.server");
+    await requireStrictSuperadmin();
     return runMorningBrief({ forceRedeliver: true });
   });
 

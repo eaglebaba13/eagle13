@@ -24,6 +24,9 @@ import { ALERT_DISCLAIMER, type AlertPriority, type AlertType } from "@/lib/smar
 import { callBounded } from "@/lib/bounded-server-call";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 import { GUEST_USER_ID, enableGuestSession, isGuestSessionActive } from "@/lib/guest-session";
+import { useAuth } from "@/lib/auth-context";
+import { getAlertManager, testAlertJob, updateAlertJob } from "@/lib/smart-alerts/alert-manager.functions";
+import { ALERT_JOBS, type AlertJob, type AlertJobSettings } from "@/lib/smart-alerts/modular-alert-schedule";
 
 export const Route = createFileRoute("/_authenticated/alerts")({
   component: AlertCenterPage,
@@ -103,6 +106,93 @@ function persistLocalPreferences(row: PersistedSubscriptionRow): void {
   } catch {
     /* ignore storage write error */
   }
+}
+
+function ModularAlertManager() {
+  const { session, role, user } = useAuth();
+  const queryClient = useQueryClient();
+  const load = useServerFn(getAlertManager);
+  const save = useServerFn(updateAlertJob);
+  const test = useServerFn(testAlertJob);
+  const [drafts, setDrafts] = useState<Partial<Record<AlertJob, AlertJobSettings>>>({});
+  const [feedback, setFeedback] = useState("");
+  const candidate = !!session && (role === "admin" || role === "superadmin" || user?.app_metadata?.role === "superadmin");
+  const queryKey = ["modular-alert-manager", user?.id];
+  const manager = useQuery({
+    queryKey,
+    enabled: candidate,
+    retry: false,
+    refetchInterval: 60_000,
+    queryFn: () => load({ headers: { Authorization: `Bearer ${session?.access_token}` } }),
+  });
+  const action = useMutation({
+    mutationFn: async (input: { id: AlertJob; draft?: AlertJobSettings }) => {
+      const headers = { Authorization: `Bearer ${session?.access_token}` };
+      if (!input.draft) {
+        const result = await test({ headers, data: { id: input.id } });
+        return `Test dispatch: ${result.status}${result.errorCode ? ` (${result.errorCode})` : ""}`;
+      }
+      await save({ headers, data: { id: input.id, ...input.draft } });
+      setDrafts((current) => ({ ...current, [input.id]: undefined }));
+      return `${ALERT_JOBS[input.id][0]} saved`;
+    },
+    onSuccess: (result) => {
+      setFeedback(result);
+      void queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => setFeedback(error.message),
+  });
+
+  if (!candidate) return null;
+  if (!manager.data) {
+    if (manager.isError && /FORBIDDEN|UNAUTHORIZED/.test(manager.error.message)) return null;
+    return <p role="status" className="text-xs text-zinc-400">{manager.isError ? manager.error.message : "Loading alert manager…"}</p>;
+  }
+  const { jobs, excluded, audit, tracked, asOfTimestamp } = manager.data;
+  return (
+    <section aria-label="Superadmin Telegram alert jobs" className="space-y-3 rounded border border-zinc-800 bg-zinc-950 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-amber-300">Telegram alert jobs</h2>
+        <span className="text-xs text-zinc-400">{jobs.filter(({ enabled }) => enabled).length} / {jobs.length} enabled</span>
+      </div>
+      <div className="divide-y divide-zinc-800">
+        {jobs.map((job) => {
+          const draft = drafts[job.id] ?? job;
+          const label = ALERT_JOBS[job.id][0];
+          const update = (patch: Partial<AlertJobSettings>) => setDrafts((current) => ({ ...current, [job.id]: { ...draft, ...patch } }));
+          return (
+            <div key={job.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 text-xs">
+              <label className="flex min-w-56 flex-1 items-center gap-2">
+                <input type="checkbox" checked={draft.enabled} onChange={(event) => update({ enabled: event.target.checked })} />
+                {label}
+              </label>
+              <label className="flex items-center gap-1 text-zinc-400">
+                IST <input aria-label={`${label} schedule in IST`} type="time" value={draft.schedule} onChange={(event) => update({ schedule: event.target.value })} className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100" />
+              </label>
+              <label className="flex items-center gap-1 text-zinc-400">
+                Cooldown <input aria-label={`${label} cooldown in minutes`} type="number" min={0} max={1440} value={draft.cooldownMinutes} onChange={(event) => update({ cooldownMinutes: event.target.valueAsNumber || 0 })} className="w-16 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100" /> min
+              </label>
+              <button type="button" disabled={!drafts[job.id] || action.isPending} onClick={() => action.mutate({ id: job.id, draft })} className="rounded border border-zinc-700 px-2 py-1 disabled:opacity-40">Save</button>
+              <button type="button" disabled={action.isPending} onClick={() => action.mutate({ id: job.id })} className="rounded border border-amber-700/60 px-2 py-1 text-amber-300 disabled:opacity-40">Test Dispatch</button>
+            </div>
+          );
+        })}
+      </div>
+      <p role="status" className="text-xs text-amber-200">{feedback}</p>
+      <details className="border-t border-zinc-800 pt-2 text-xs">
+        <summary className="cursor-pointer">MWPL filter · {excluded.length} / {tracked} excluded · {asOfTimestamp}</summary>
+        <ul className="mt-2 grid gap-1 text-zinc-400 sm:grid-cols-2 lg:grid-cols-3">
+          {excluded.map((row) => <li key={row.symbol}>{row.symbol} · {row.status} · {row.verifiedLive ? "Verified" : "Unverified"} · {row.asOfTimestamp ?? "No timestamp"}</li>)}
+        </ul>
+      </details>
+      <details className="border-t border-zinc-800 pt-2 text-xs">
+        <summary className="cursor-pointer">Delivery audit · {audit.length} recent attempts</summary>
+        <ul className="mt-2 space-y-1 text-zinc-400">
+          {audit.map((row, index) => <li key={`${row.job}:${row.timestamp}:${index}`}>{row.timestamp} · {ALERT_JOBS[row.job as AlertJob]?.[0] ?? row.job} · {row.test ? "Test · " : ""}{row.status}</li>)}
+        </ul>
+      </details>
+    </section>
+  );
 }
 
 function AlertCenterPage() {
@@ -407,6 +497,7 @@ function AlertCenterPage() {
 
   return (
     <div className="w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 pt-4 pb-16 md:pb-6 flex flex-col gap-4 overflow-x-hidden text-zinc-100">
+      <ModularAlertManager />
       <header className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-zinc-800/80">
         <div>
           <div className="text-[11px] font-mono font-bold tracking-wider text-amber-400 mb-1 flex items-center gap-2">

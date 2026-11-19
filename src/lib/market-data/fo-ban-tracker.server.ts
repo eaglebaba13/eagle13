@@ -16,10 +16,12 @@ import path from "node:path";
 import { FO_UNIVERSE, type FOInstrument } from "../cycles/cycle-performance.server";
 import { fetchLiveQuotesBatch } from "../cycles/market-data-adapter.server";
 import { warmupNseCookies } from "./fii-dii.server";
+import { fetchCombinedOi, nseTradeDay } from "./mwpl.server";
 
-export type FoBanStatus = "IN_BAN" | "UPCOMING_BAN" | "RECENTLY_UNBANNED" | "NORMAL";
+export type FoBanStatus = "IN_BAN" | "UPCOMING_BAN" | "RECENTLY_UNBANNED" | "NORMAL" | "UNVERIFIED";
+type Verification = { readonly verifiedLive: boolean; readonly asOfTimestamp: string };
 
-export interface FoBanSecurity {
+export interface FoBanSecurity extends Verification {
   readonly symbol: string;
   readonly name: string;
   readonly sector: string;
@@ -47,7 +49,7 @@ export interface FoBanReport {
   readonly inBan: readonly FoBanSecurity[];
   readonly upcomingBan: readonly FoBanSecurity[];
   readonly recentlyUnbanned: readonly FoBanSecurity[];
-  readonly allMap: Readonly<Record<string, { status: FoBanStatus; mwplPercent: number; daysInBan: number }>>;
+  readonly allMap: Readonly<Record<string, Verification & { status: FoBanStatus; mwplPercent: number; daysInBan: number }>>;
 }
 
 interface PersistedSecurityState {
@@ -253,7 +255,9 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
   }
 
   // 1. Fetch official NSE F&O ban list
-  const nseFetch = await fetchNseFoBanCsv();
+  const observedAt = new Date(now);
+  const [banList, liveMwpl] = await Promise.all([fetchNseFoBanCsv(), fetchCombinedOi(observedAt)]);
+  const nseFetch = banList?.tradeDate === nseTradeDay(observedAt) ? banList : null;
   const persistedState = loadFoBanPersistedState();
 
   const isNseLive = nseFetch !== null;
@@ -265,7 +269,7 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
 
   // 2. Build list of candidate symbols to monitor (Universe + Baseline + Persisted)
   const candidateSymbols = new Set<string>();
-  for (const s of Object.keys(BASELINE_FO_MWPL)) candidateSymbols.add(s.toUpperCase());
+  for (const s of liveMwpl.keys()) candidateSymbols.add(s);
   for (const s of Object.keys(persistedState.history)) candidateSymbols.add(s.toUpperCase());
   for (const sym of activeBannedSet) candidateSymbols.add(sym.toUpperCase());
   for (const inst of FO_UNIVERSE) {
@@ -285,7 +289,7 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
   const inBanList: FoBanSecurity[] = [];
   const upcomingBanList: FoBanSecurity[] = [];
   const recentlyUnbannedList: FoBanSecurity[] = [];
-  const allMap: Record<string, { status: FoBanStatus; mwplPercent: number; daysInBan: number }> = {};
+  const allMap: Record<string, FoBanReport["allMap"][string]> = {};
 
   const nextHistory: Record<string, PersistedSecurityState> = { ...persistedState.history };
 
@@ -296,14 +300,11 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
     const prevClose = quote?.prevClose;
     const dayChangePct = quote?.changePct;
 
-    // Determine current MWPL %:
-    // If in official ban list, MWPL is guaranteed >= 95.0%
     const isOfficiallyBanned = activeBannedSet.has(sym);
-    let mwplPercent = BASELINE_FO_MWPL[sym] ?? 25.0;
-
-    if (isOfficiallyBanned) {
-      mwplPercent = Math.max(95.5, mwplPercent);
-    }
+    const measured = liveMwpl.get(sym);
+    const verifiedLive = measured !== undefined;
+    const mwplPercent = measured ?? 0;
+    const asOfTimestamp = observedAt.toISOString();
 
     const prevHistory = persistedState.history[sym];
     let status: FoBanStatus = "NORMAL";
@@ -317,6 +318,9 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
       freshEntryEligible = false;
       const prevDays = prevHistory?.lastStatus === "IN_BAN" ? prevHistory.daysInBan : 0;
       daysInBan = persistedState.tradeDate !== tradeDate ? prevDays + 1 : Math.max(1, prevDays);
+    } else if (!verifiedLive || (!nseFetch && mwplPercent < 80)) {
+      status = "UNVERIFIED";
+      freshEntryEligible = false;
     } else if (prevHistory?.lastStatus === "IN_BAN" && mwplPercent < 80.0) {
       // Transition from IN_BAN to RECENTLY_UNBANNED
       status = "RECENTLY_UNBANNED";
@@ -339,7 +343,9 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
       name: inst?.name ?? sym,
       sector: inst?.sector ?? "F&O Equities",
       status,
-      mwplPercent: Math.round(mwplPercent * 10) / 10,
+      mwplPercent,
+      verifiedLive,
+      asOfTimestamp,
       daysInBan,
       previousBanDays,
       distanceToBan,
@@ -353,11 +359,13 @@ export async function getFoBanTrackerReport(forceRefresh = false): Promise<FoBan
     allMap[sym] = {
       status,
       mwplPercent: sec.mwplPercent,
+      verifiedLive,
+      asOfTimestamp,
       daysInBan,
     };
 
     // Update history tracking
-    nextHistory[sym] = {
+    if (status !== "UNVERIFIED") nextHistory[sym] = {
       daysInBan,
       lastStatus: status,
       lastMwplPercent: sec.mwplPercent,

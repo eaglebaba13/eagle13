@@ -1,8 +1,8 @@
-﻿// Phase 3D â€” Institutional Flow server function.
+// Phase 3D â€” Institutional Flow server function.
 // Consumer only. Canonical option-chain + PCR + breadth + decision + GTI.
 // Never fetches its own providers, never emits signals or orders.
 
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, assertAuth } from "@/integrations/supabase/auth-middleware";
 import { buildInstitutionalFlowReport } from "./report";
 import type { InstitutionalFlowReport } from "./types";
@@ -13,10 +13,8 @@ export interface GetInstitutionalFlowInput {
   readonly useMock?: boolean;
 }
 
-export const getInstitutionalFlow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: GetInstitutionalFlowInput | undefined) => data ?? {})
-  .handler(async ({ data }): Promise<InstitutionalFlowReport> => {
+export const getInstitutionalFlowInternal = createServerOnlyFn(
+  async (data: GetInstitutionalFlowInput): Promise<InstitutionalFlowReport> => {
     const underlying: OptionUnderlying = data.underlying === "BANKNIFTY" ? "BANKNIFTY" : "NIFTY";
     const t0 = Date.now();
 
@@ -63,12 +61,12 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
     const { SECTOR_REGISTRY_VERSION } = await import("../market-breadth/sector-registry");
     const bundle = await getRealBreadthBundle();
 
-    // Underlying price change â€” reuse getMarketData quote if present.
+    // Underlying price change â€” reuse getMarketDataImpl quote if present.
     let underlyingPriceChange: number | null = null;
     let vix: number | null = null;
     try {
-      const { getMarketData } = await import("../market.functions");
-      const md = await getMarketData();
+      const { getMarketDataImpl } = await import("../market.functions");
+      const md = await getMarketDataImpl();
       const q = underlying === "NIFTY" ? md?.nifty : md?.banknifty;
       if (q && Number.isFinite(q.change)) underlyingPriceChange = q.change;
       vix = md?.vix?.livePrice ?? null;
@@ -82,8 +80,8 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
     let gtiState: string | null = null;
     let gtiConfidence: number | null = null;
     try {
-      const { getDecisionSnapshot } = await import("../decision.functions");
-      const dec = await getDecisionSnapshot();
+      const { getDecisionSnapshotInternal } = await import("../decision.functions");
+      const dec = await getDecisionSnapshotInternal();
       decisionAction = dec?.summary?.decision ?? null;
       decisionConfidence = dec?.summary?.confidence ?? null;
     } catch {
@@ -169,5 +167,10 @@ export const getInstitutionalFlow = createServerFn({ method: "POST" })
       nowMs: t0,
     });
   });
+
+export const getInstitutionalFlow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: GetInstitutionalFlowInput | undefined) => data ?? {})
+  .handler(({ data }) => getInstitutionalFlowInternal(data));
 
 export type InstitutionalFlowResponse = Awaited<ReturnType<typeof getInstitutionalFlow>>;

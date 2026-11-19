@@ -767,7 +767,7 @@ function UnicornRadarPage() {
                             if (banInfo.status === "IN_BAN") {
                               return (
                                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-950/90 text-rose-300 font-mono border border-rose-500/50 font-bold animate-pulse">
-                                  🚫 BAN ({banInfo.mwplPercent.toFixed(0)}%)
+                                  🚫 BAN ({banInfo.verifiedLive ? `${banInfo.mwplPercent.toFixed(0)}%` : "Unavailable"})
                                 </span>
                               );
                             }
