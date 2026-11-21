@@ -66,6 +66,14 @@ export const Route = createFileRoute("/risk")({
         content:
           "Sizing, stop suggestion, portfolio heat, daily loss caps, quality grading and journal.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Portfolio & Risk Manager | EagleBABA" },
+      {
+        name: "twitter:description",
+        content:
+          "Sizing, stop suggestion, portfolio heat, daily loss caps, quality grading and journal.",
+      },
     ],
   }),
 });

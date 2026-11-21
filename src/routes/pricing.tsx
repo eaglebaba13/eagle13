@@ -21,6 +21,11 @@ export const Route = createFileRoute("/pricing")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "EagleBABA Pricing" },
+      {
+        name: "twitter:description",
+        content: "Institutional trading intelligence — pick a plan that scales with you.",
+      },
     ],
   }),
   component: PricingPage,

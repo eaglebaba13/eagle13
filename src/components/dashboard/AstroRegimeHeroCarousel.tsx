@@ -235,7 +235,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
       </div>
 
       {/* Slide Content Deck */}
-      <div className="pt-4">
+      <div className="pt-4 min-h-[290px] sm:min-h-[240px] transition-[min-height] duration-200">
         {/* SLIDE 0: ASTRO CYCLE HARMONICS */}
         {activeTab === "astro" && (
           <div className="space-y-4 animate-in fade-in duration-300">
@@ -445,7 +445,7 @@ export const AstroRegimeHeroCarousel = memo(function AstroRegimeHeroCarousel({
 
         {/* SLIDE 3: 🦄 ICT UNICORN RADAR & SMT DIVERGENCE */}
         {activeTab === "unicorn" && (
-          <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="space-y-4 animate-in fade-in duration-300 max-h-[460px] sm:max-h-none overflow-y-auto sm:overflow-visible pr-1 overscroll-contain">
             <IctUnicornRadarView />
           </div>
         )}

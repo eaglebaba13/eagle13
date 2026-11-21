@@ -17,6 +17,11 @@ export const Route = createFileRoute("/privacy")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Privacy Policy | EagleBABA" },
+      {
+        name: "twitter:description",
+        content: "Account, usage and diagnostic data handling for EagleBABA.",
+      },
     ],
   }),
 });

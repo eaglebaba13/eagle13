@@ -17,6 +17,11 @@ export const Route = createFileRoute("/terms")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Terms of Use | EagleBABA" },
+      {
+        name: "twitter:description",
+        content: "Research and analytics platform terms; no financial advice, no execution.",
+      },
     ],
   }),
 });
