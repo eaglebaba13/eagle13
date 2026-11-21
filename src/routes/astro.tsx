@@ -35,6 +35,14 @@ import { useIstClock } from "@/hooks/use-scheduler";
 type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
 
 export const Route = createFileRoute("/astro")({
+  head: () => ({ meta: [
+    { title: "Astro Levels & Cube | EagleBABA" },
+    { name: "description", content: "NIFTY and BANKNIFTY astro timing, Gann cube and market structure research." },
+    { property: "og:title", content: "Astro Levels & Cube | EagleBABA" },
+    { property: "og:description", content: "NIFTY and BANKNIFTY astro timing, Gann cube and market structure research." },
+    { name: "twitter:title", content: "Astro Levels & Cube | EagleBABA" },
+    { name: "twitter:description", content: "NIFTY and BANKNIFTY astro timing, Gann cube and market structure research." },
+  ] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
@@ -507,7 +515,7 @@ function AstroWorkstationPage() {
             >
               <span style={{ color: "var(--text-muted)" }}>Prev Close:</span>
               <span style={{ fontFamily: "var(--eb-mono, monospace)", fontWeight: 800, color: "#f8fafc" }}>
-                ₹{data ? fmt(data.prevClose) : "..."}
+                {data ? `₹${fmt(data.prevClose)}` : intraQ.isPending ? "Loading previous close" : "Previous close unavailable"}
               </span>
               <span
                 style={{
@@ -520,7 +528,7 @@ function AstroWorkstationPage() {
                   letterSpacing: 0.5,
                 }}
               >
-                ⚡ AUTO-SYNCED
+                {data ? "AUTO-SYNCED" : "NO VERIFIED CLOSE"}
               </span>
             </div>
           </div>

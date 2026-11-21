@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 import { isGuestSessionActive } from "@/lib/guest-session";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Route group for authenticated/research pages.
@@ -10,8 +11,18 @@ import { isGuestSessionActive } from "@/lib/guest-session";
  */
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: () => {
+  beforeLoad: async ({ location }) => {
     if (typeof window !== "undefined") {
+      if (location.pathname.startsWith("/admin/")) {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) throw redirect({ to: "/auth" });
+        const { data: roles, error: roleError } = await supabase
+          .from("user_roles").select("role").eq("user_id", user.id);
+        if (roleError || !roles?.some((row) => row.role === "admin") &&
+          user.app_metadata?.role !== "superadmin") {
+          throw redirect({ to: "/dashboard" });
+        }
+      }
       const isGuest = isGuestSessionActive();
       const hasSupabaseToken = Object.keys(window.localStorage).some(
         (k) => k.startsWith("sb-") && k.endsWith("-auth-token"),

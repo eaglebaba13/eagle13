@@ -10,6 +10,8 @@ export const Route = createFileRoute("/release-notes")({
       { property: "og:description", content: "Release history and v1.0 candidate summary." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Release Notes | EagleBABA" },
+      { name: "twitter:description", content: "Release history and v1.0 candidate summary." },
     ],
   }),
 });

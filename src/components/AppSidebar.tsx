@@ -3,12 +3,16 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { desktopNav, mobileBottomNav, type NavItem } from "@/lib/navigation";
 import { EagleLogo } from "@/components/EagleLogo";
+import { useAuth } from "@/lib/auth-context";
+import { hasPermission } from "@/lib/roles";
 
 type Item = NavItem;
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const items = desktopNav();
+  const { role, isGuest } = useAuth();
+  const items = desktopNav().filter((item) => !item.to?.startsWith("/admin/") ||
+    (!isGuest && hasPermission(role, "admin.console")));
   const path = useRouterState({ select: (r) => r.location.pathname });
   const hash = typeof window !== "undefined" ? window.location.hash : "";
   const width = collapsed ? 68 : 210;

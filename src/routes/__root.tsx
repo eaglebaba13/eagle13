@@ -108,16 +108,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "EagleBABA | Astro Levels" },
       {
-        name: "description",
-        content:
-          "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",
-      },
-      {
-        property: "og:description",
-        content:
-          "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",
-      },
-      {
         name: "twitter:description",
         content:
           "Astro Auto Dashboard provides Nifty & BankNifty trading levels, automatically updating with previous day's OHLC data.",

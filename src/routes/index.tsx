@@ -42,6 +42,10 @@ export const Route = createFileRoute("/")({
         content:
           "Institutional Quantitative Edge decoded by Time, Order Flow & Mathematical Harmonics. Precision-engineered workstation for Indian F&O, Commodities, and Equities.",
       },
+      { property: "og:title", content: "EagleBABA | Institutional Quantitative Workstation" },
+      { property: "og:description", content: "Research workstation for Indian markets, market structure and timing analysis." },
+      { name: "twitter:title", content: "EagleBABA | Institutional Quantitative Workstation" },
+      { name: "twitter:description", content: "Research workstation for Indian markets, market structure and timing analysis." },
     ],
   }),
   component: PublicLandingPage,
@@ -63,8 +67,8 @@ export function PublicLandingPage() {
     { symbol: "NIFTY 50", name: "NSE Index", expected: "^NSEI", quote: marketData?.nifty, index: true },
     { symbol: "BANK NIFTY", name: "Banking Benchmark", expected: "^NSEBANK", quote: marketData?.banknifty, index: true },
     { symbol: "BSE SENSEX", name: "BSE 30", expected: "^BSESN", quote: marketData?.sensex, index: true },
-    { symbol: "COMEX GOLD", name: "GC1! Continuous", expected: "GC=F", quote: marketData?.gold, index: false },
-    { symbol: "BTC / USDT", name: "Crypto Digital", expected: "BTC-USD", quote: marketData?.btc, index: false },
+    { symbol: "COMEX GOLD", name: "Gold futures · USD", expected: "GC=F", quote: marketData?.gold, index: false },
+    { symbol: "BTC / USD", name: "Bitcoin spot · USD", expected: "BTC-USD", quote: marketData?.btc, index: false },
   ].map(({ symbol, name, expected, quote: candidate, index }) => {
     const quote = candidate?.symbol === expected ? candidate : null;
     const daily = quote?.dailyQuote?.source === "UPSTOX" ? quote.dailyQuote : null;
@@ -72,10 +76,12 @@ export function PublicLandingPage() {
     return {
       symbol,
       name,
-      price: quote?.livePrice ?? null,
+      price: quote?.livePrice ?? quote?.prevDay?.close ?? null,
       changePct,
       isUp: changePct !== null && changePct > 0,
-      status: quote?.marketState ?? "UNAVAILABLE",
+      status: quote?.marketState === "CLOSED" ? "MARKET CLOSED · LAST CLOSE" :
+        quote ? "OPEN" : "QUOTE UNAVAILABLE",
+      unit: index ? "₹" : "$",
     };
   }), [marketData]);
 
@@ -268,7 +274,7 @@ export function PublicLandingPage() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]" />
             </span>
             <span className="text-[11px] font-mono tracking-widest text-[#E5B869] uppercase font-semibold">
-              INSTITUTIONAL QUANTITATIVE WORKSTATION • V3.2 RELEASE
+              INSTITUTIONAL QUANTITATIVE WORKSTATION • v1.0-RC1
             </span>
           </div>
 
@@ -335,7 +341,7 @@ export function PublicLandingPage() {
                     </span>
                   </div>
                   <div className="mt-2 text-base font-mono font-bold text-white">
-                    ₹{item.price === null ? "-" : item.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    {item.price === null ? "Price pending" : `${item.unit}${item.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[11px] font-mono">
                     <span className="text-zinc-500">{item.name}</span>
@@ -768,8 +774,7 @@ export function PublicLandingPage() {
             Institutional Infrastructure &amp; Data Isolation
           </h2>
           <p className="mt-3 text-zinc-400 text-sm">
-            Hardened on Hostinger KVM 4 VPS with host-level UFW firewalls, Docker network isolation,
-            and zero external cloud dependencies.
+            Hosted on dedicated infrastructure with external market data and authentication services.
           </p>
         </div>
 
@@ -802,8 +807,8 @@ export function PublicLandingPage() {
             </div>
             <h4 className="text-sm font-bold text-white">Upstox V3 &amp; CoinDCX WebSockets</h4>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-              Direct binary WebSocket pipelines for 200+ NSE contracts and 24/7 CoinDCX crypto
-              streaming with sub-millisecond local caching.
+              Market data is provider-dependent. Each quote shows its current availability and
+              last verified close where available.
             </p>
           </div>
 
@@ -917,7 +922,7 @@ export function PublicLandingPage() {
                 </li>
                 <li>
                   <Link to="/release-notes" className="hover:text-[#E5B869] transition">
-                    Release Notes (v3.2)
+                    Release Notes (v1.0-RC1)
                   </Link>
                 </li>
                 <li>
@@ -964,9 +969,7 @@ export function PublicLandingPage() {
                 © {new Date().getFullYear()} EagleBABA Quantitative Platform. All rights reserved.
               </div>
               <div className="mt-2 sm:mt-0 flex gap-4">
-                <span>Production Server: 200.234.35.116</span>
-                <span>•</span>
-                <span>Zero Cloud Isolation</span>
+                <span>Research platform · Broker execution disabled</span>
               </div>
             </div>
           </div>

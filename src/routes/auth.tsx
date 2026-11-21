@@ -16,6 +16,10 @@ export const Route = createFileRoute("/auth")({
         content:
           "Sign in or create an EagleBABA account to sync your journal, watchlists, layouts and risk settings across devices.",
       },
+      { property: "og:title", content: "Sign in | EagleBABA" },
+      { property: "og:description", content: "Sign in or create an EagleBABA research account." },
+      { name: "twitter:title", content: "Sign in | EagleBABA" },
+      { name: "twitter:description", content: "Sign in or create an EagleBABA research account." },
     ],
   }),
   component: AuthPage,
@@ -233,7 +237,7 @@ function AuthPage() {
               onClick={handleContinueGuest}
               className="w-full rounded-md border border-border bg-muted/40 hover:bg-muted py-2 text-xs font-semibold text-foreground transition-colors"
             >
-              Continue as Guest (Full Access)
+              Continue as Guest (Research Access)
             </button>
             <p className="mt-1.5 text-[11px] text-muted-foreground">
               Instant research workstation access without sign-in

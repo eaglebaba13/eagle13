@@ -7,10 +7,13 @@ import { mobileBottomNav, mobileDrawerNav, type NavItem } from "@/lib/navigation
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
-const DRAWER_ITEMS: NavItem[] = mobileDrawerNav();
+import { useAuth } from "@/lib/auth-context";
+import { hasPermission } from "@/lib/roles";
 
 export function MobileNav() {
+  const { role, isGuest } = useAuth();
+  const drawerItems: NavItem[] = mobileDrawerNav().filter((item) => !item.to?.startsWith("/admin/") ||
+    (!isGuest && hasPermission(role, "admin.console")));
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (r) => r.location.pathname });
   const hash = typeof window !== "undefined" ? window.location.hash : "";
@@ -156,7 +159,7 @@ export function MobileNav() {
               </div>
 
               <nav className="eb-drawer-nav" aria-label="Primary">
-                {DRAWER_ITEMS.map((it) => {
+                {drawerItems.map((it) => {
                   const Icon = it.icon;
                   const active = isActive(it);
                   const cls = `eb-drawer-item${active ? " is-active" : ""}`;

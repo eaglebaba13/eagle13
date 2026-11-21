@@ -10,6 +10,8 @@ export const Route = createFileRoute("/status")({
       { property: "og:description", content: "Public system status summary." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "System Status | EagleBABA" },
+      { name: "twitter:description", content: "EagleBABA public system status summary." },
     ],
   }),
 });
