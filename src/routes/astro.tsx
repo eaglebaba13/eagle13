@@ -289,6 +289,7 @@ function AstroWorkstationPage() {
         background: "radial-gradient(ellipse at top, rgba(88, 28, 135, 0.35) 0%, rgba(15, 23, 42, 0.95) 45%, rgba(4, 6, 18, 0.99) 100%)",
         position: "relative",
         padding: "20px 24px",
+        paddingBottom: 112,
         color: "var(--text-primary)",
         overflow: "hidden",
       }}
@@ -722,7 +723,7 @@ function AstroWorkstationPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
                 gap: 16,
                 marginBottom: 20,
               }}
@@ -730,6 +731,7 @@ function AstroWorkstationPage() {
               {/* 🟢 PRIMARY SAFE BUY SETUP */}
               {data.intraMatrix.primarySafeBuySetup && (
                 <div
+                  className="min-w-0"
                   style={{
                     padding: "18px 22px",
                     borderRadius: 12,
@@ -739,8 +741,8 @@ function AstroWorkstationPage() {
                     backdropFilter: "blur(12px)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: 12 }}>
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <div
                         style={{
                           width: 36,
@@ -757,7 +759,7 @@ function AstroWorkstationPage() {
                       >
                         {PLANET_CONFIG[data.intraMatrix.primarySafeBuySetup.planet]?.glyph ?? "☉"}
                       </div>
-                      <div>
+                      <div className="min-w-0 break-words">
                         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--eb-bull, #00c97a)", letterSpacing: 0.8, textTransform: "uppercase" }}>
                           🟢 EAGLEBABA PRIMARY SAFE BUY SETUP (SUPPORT REVERSAL)
                         </div>
@@ -796,7 +798,7 @@ function AstroWorkstationPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 125px), 1fr))",
                         gap: 8,
                         background: "rgba(0, 0, 0, 0.3)",
                         padding: 12,
@@ -849,6 +851,7 @@ function AstroWorkstationPage() {
               {/* 🔴 PRIMARY SAFE SELL SETUP */}
               {data.intraMatrix.primarySafeSellSetup && (
                 <div
+                  className="min-w-0"
                   style={{
                     padding: "18px 22px",
                     borderRadius: 12,
@@ -858,8 +861,8 @@ function AstroWorkstationPage() {
                     backdropFilter: "blur(12px)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: 12 }}>
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <div
                         style={{
                           width: 36,
@@ -876,7 +879,7 @@ function AstroWorkstationPage() {
                       >
                         {PLANET_CONFIG[data.intraMatrix.primarySafeSellSetup.planet]?.glyph ?? "☉"}
                       </div>
-                      <div>
+                      <div className="min-w-0 break-words">
                         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--eb-bear, #ff3a5c)", letterSpacing: 0.8, textTransform: "uppercase" }}>
                           🔴 EAGLEBABA PRIMARY SAFE SELL SETUP (RESISTANCE REVERSAL)
                         </div>
@@ -915,7 +918,7 @@ function AstroWorkstationPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 125px), 1fr))",
                         gap: 8,
                         background: "rgba(0, 0, 0, 0.3)",
                         padding: 12,
@@ -996,6 +999,7 @@ function AstroWorkstationPage() {
 
             {/* 36-LEVEL MATRIX TABLE */}
             <div
+              className="min-w-0"
               style={{
                 overflowX: "auto",
                 background: "rgba(12, 10, 32, 0.8)",
@@ -1006,7 +1010,7 @@ function AstroWorkstationPage() {
                 marginBottom: 16,
               }}
             >
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
+              <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                 <thead>
                   <tr
                     style={{
@@ -1340,7 +1344,7 @@ function AstroWorkstationPage() {
             </div>
 
             {/* 3 POSITIONAL PILLARS BREAKDOWN GRID */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16, marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 16, marginBottom: 20 }}>
               {/* PILLAR 2: STARWISE NAKSHATRA */}
               <div style={{ padding: 16, borderRadius: 8, background: "rgba(12, 10, 32, 0.75)", border: "1px solid rgba(139, 92, 246, 0.25)", backdropFilter: "blur(12px)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -1584,7 +1588,7 @@ function AstroWorkstationPage() {
 
             {/* MOON NAKSHATRA & EPHEMERIS DETAIL */}
             {astro && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 16 }}>
                 <div style={{ padding: 16, borderRadius: 8, background: "rgba(12, 10, 32, 0.75)", border: "1px solid rgba(139, 92, 246, 0.25)", backdropFilter: "blur(12px)" }}>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                     <Moon size={16} style={{ color: "#fbbf24" }} />
@@ -1733,7 +1737,7 @@ function MatrixCellTd({
   const textColor = isSafeBuy ? "var(--eb-bull, #00c97a)" : isSafeSell ? "var(--eb-bear, #ff3a5c)" : "var(--text-primary)";
 
   return (
-    <td style={{ padding: "8px 10px", verticalAlign: "top" }}>
+    <td style={{ padding: "8px 10px", verticalAlign: "top", minWidth: 170 }}>
       <div
         style={{
           padding: "10px 12px",

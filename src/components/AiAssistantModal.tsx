@@ -37,7 +37,7 @@ export function AiAssistantModal() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open Ask AI Assistant"
-        className="fixed bottom-[4.75rem] right-3 z-40 flex items-center gap-1.5 rounded-full border border-amber-500/50 bg-zinc-950/90 px-3 py-1.5 text-[11px] font-semibold text-amber-300 shadow-xl backdrop-blur-md transition-all hover:bg-zinc-900 hover:border-amber-400 active:scale-95 sm:bottom-6 sm:right-6 sm:px-4 sm:py-2 sm:text-xs"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-40 flex items-center gap-1.5 rounded-full border border-amber-500/50 bg-zinc-950/90 px-3 py-1.5 text-[11px] font-semibold text-amber-300 shadow-xl backdrop-blur-md transition-all hover:bg-zinc-900 hover:border-amber-400 active:scale-95 md:bottom-6 md:right-6 md:px-4 md:py-2 md:text-xs"
       >
         <Sparkles size={13} className="text-amber-400 animate-pulse shrink-0" />
         <span className="font-mono">Ask AI Assistant</span>

@@ -378,7 +378,7 @@ function ChronoWheelPage() {
   }, [sortedStocks, scanResult]);
 
   return (
-    <div className="min-h-screen bg-[#08090d] text-zinc-100 p-3 sm:p-6 pb-24 font-sans selection:bg-amber-500/30 selection:text-amber-200">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-[#08090d] text-zinc-100 p-3 sm:p-6 pb-32 font-sans selection:bg-amber-500/30 selection:text-amber-200">
       {/* 1. TOP HEADER RIBBON */}
       <div className="max-w-[1720px] mx-auto mb-6">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
@@ -1491,19 +1491,19 @@ function ChronoWheelPage() {
                             </div>
                           </div>
 
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs font-mono border-collapse">
+                          <div className="max-w-full overflow-x-auto" role="region" aria-label="Historical synodic windows" tabIndex={0}>
+                            <table className="min-w-[1050px] w-full text-left text-xs font-mono border-collapse">
                               <thead>
                                 <tr className="border-b border-zinc-800 text-zinc-400 uppercase text-[10px] tracking-wider">
-                                  <th className="pb-2">Year</th>
-                                  <th className="pb-2">Relative</th>
-                                  <th className="pb-2">Historical Window</th>
-                                  <th className="pb-2">Sessions</th>
-                                  <th className="pb-2">Simulated Open</th>
-                                  <th className="pb-2">Simulated Close</th>
-                                  <th className="pb-2 text-right">Holding Return</th>
-                                  <th className="pb-2 text-center">Execution Outcome</th>
-                                  <th className="pb-2 text-right">R-Multiple</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Year</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Relative</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Historical Window</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Sessions</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Simulated Open</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap">Simulated Close</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap text-right">Holding Return</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap text-center">Execution Outcome</th>
+                                  <th className="px-2 pb-2 whitespace-nowrap text-right">R-Multiple</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-zinc-800/40">
@@ -1511,12 +1511,12 @@ function ChronoWheelPage() {
                                   <tr key={yb.year} className="hover:bg-zinc-900/50">
                                     <td className="py-1.5 font-bold text-white">{yb.year}</td>
                                     <td className="py-1.5 text-zinc-400">{yb.relativeYear}</td>
-                                    <td className="py-1.5 text-zinc-300">{yb.startDate} ➔ {yb.endDate}</td>
+                                    <td className="px-2 py-1.5 whitespace-nowrap text-zinc-300">{yb.startDate} ➔ {yb.endDate}</td>
                                     <td className="py-1.5 text-zinc-400">{yb.tradingSessions}</td>
                                     <td className="py-1.5 text-zinc-400">₹{yb.startPrice.toLocaleString("en-IN")}</td>
                                     <td className="py-1.5 text-zinc-400">₹{yb.endPrice.toLocaleString("en-IN")}</td>
                                     <td
-                                      className={`py-1.5 text-right font-bold ${
+                                      className={`px-2 py-1.5 whitespace-nowrap text-right font-bold ${
                                         yb.returnPct > 0
                                           ? "text-emerald-400"
                                           : yb.returnPct < 0
@@ -1551,7 +1551,7 @@ function ChronoWheelPage() {
                                       )}
                                     </td>
                                     <td
-                                      className={`py-1.5 text-right font-mono font-bold ${
+                                      className={`px-2 py-1.5 whitespace-nowrap text-right font-mono font-bold ${
                                         (yb.rMultipleAchieved ?? 0) > 0
                                           ? "text-emerald-400"
                                           : (yb.rMultipleAchieved ?? 0) < 0
@@ -1604,7 +1604,7 @@ function ChronoWheelPage() {
       />
 
       {/* 7. FLOATING AI ASSISTANT TRIGGER PILL */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-3 z-40 md:bottom-6 md:left-auto md:right-6">
         <button
           onClick={() => {
             setAiStockContext(null);

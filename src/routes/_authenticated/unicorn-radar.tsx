@@ -14,6 +14,7 @@ import {
 } from "@/lib/orderflow/unicorn.functions";
 import { foBanStatusQuery } from "@/lib/market-data/fo-ban.functions";
 import { useLiveCandleSSE } from "@/hooks/use-live-candle-sse";
+import { nseSession } from "@/lib/terminal-clock";
 import { getAudioNotificationManager } from "@/lib/audio-notifications";
 import { GuestUnlockCard, isAuthErrorMessage } from "@/components/auth/GuestUnlockCard";
 import {
@@ -129,6 +130,7 @@ function UnicornRadarPage() {
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("ALL");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [countdown, setCountdown] = useState(30);
+  const marketOpen = nseSession().isOpen;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: banReport } = useQuery(foBanStatusQuery());
 
@@ -284,7 +286,7 @@ function UnicornRadarPage() {
   }, [setups]);
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 py-6 pb-32 md:pb-12 flex flex-col gap-6">
+    <div className="w-full min-w-0 max-w-[1700px] overflow-x-hidden mx-auto px-3 sm:px-6 py-6 pb-32 md:pb-12 flex flex-col gap-6">
       {/* =========================================================================
           TOP RIBBON & TERMINAL CONTROLS
           ========================================================================= */}
@@ -312,12 +314,12 @@ function UnicornRadarPage() {
           {/* Controls Bar: Live Status, Countdown, Sound Toggle, Refresh, Live Chart */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Live Scanner Active Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] text-xs font-mono font-bold">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${marketOpen ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40" : "bg-amber-500/10 text-amber-300 border-amber-500/30"}`}>
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                {marketOpen && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${marketOpen ? "bg-emerald-500" : "bg-amber-400"}`} />
               </span>
-              <span>LIVE SCANNER ACTIVE</span>
+              <span>{marketOpen ? "LIVE SCANNER ACTIVE" : "MARKET CLOSED · LAST VERIFIED"}</span>
             </div>
 
             {/* Countdown Badge */}
@@ -721,8 +723,8 @@ function UnicornRadarPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-800/90 bg-zinc-950/90">
-            <table className="w-full text-left text-xs font-mono">
+          <div className="max-w-full overflow-x-auto rounded-xl border border-zinc-800/90 bg-zinc-950/90" role="region" aria-label="Unicorn setup table" tabIndex={0}>
+            <table className="min-w-[1050px] w-full text-left text-xs font-mono">
               <thead>
                 <tr className="border-b border-zinc-800 text-[10px] text-zinc-400 uppercase tracking-wider bg-zinc-900/80">
                   <th className="py-3 px-3.5">Instrument</th>
@@ -743,7 +745,7 @@ function UnicornRadarPage() {
                   const curr =
                     setup.currency ?? (setup.category === "COMMODITY_CRYPTO" ? "$" : "₹");
                   const liveLtp = livePrices.get(setup.symbol) ?? setup.currentPrice;
-                  const isLive = livePrices.has(setup.symbol);
+                  const isLive = marketOpen && livePrices.has(setup.symbol) && ({ NIFTY50: niftySse, BANKNIFTY: bankNiftySse, SENSEX: sensexSse } as Record<string, typeof niftySse>)[setup.symbol]?.status?.freshness === "LIVE";
                   const distPts = liveLtp - setup.triggerZone.low;
                   const distPct = ((liveLtp - setup.triggerZone.low) / liveLtp) * 100;
 
@@ -796,13 +798,13 @@ function UnicornRadarPage() {
                             LTP: {curr}
                             {liveLtp.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-mono border border-emerald-500/30">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono border ${isLive ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-amber-500/10 text-amber-300 border-amber-500/30"}`}>
                             <span
-                              className={`h-1.5 w-1.5 rounded-full bg-emerald-400 ${
+                              className={`h-1.5 w-1.5 rounded-full ${isLive ? "bg-emerald-400" : "bg-amber-400"} ${
                                 isLive ? "animate-pulse" : ""
                               }`}
                             />
-                            LIVE
+                            {isLive ? "LIVE" : "LAST VERIFIED"}
                           </span>
                         </div>
                       </td>
@@ -817,7 +819,7 @@ function UnicornRadarPage() {
                       {/* 3. Setup Bias */}
                       <td className="py-3 px-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border ${
+                          className={`inline-flex min-w-[130px] items-center gap-1 whitespace-nowrap px-2 py-1 rounded-lg text-[11px] font-bold border ${
                             isBullish
                               ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
                               : "bg-rose-500/15 border-rose-500/40 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.2)]"

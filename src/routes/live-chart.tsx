@@ -853,7 +853,7 @@ function LiveChartSelection({
   }, [watchlistCategory, watchlistSearch]);
 
   return (
-    <div className="flex h-screen w-full max-w-full min-w-0 bg-[#08090C] text-white overflow-hidden font-sans">
+    <div className="flex h-[calc(100dvh-60px)] md:h-screen w-full max-w-full min-w-0 bg-[#08090C] text-white overflow-hidden font-sans">
       {/* Platform Sidebar */}
       {!isFullscreen && (
         <div className="hidden lg:flex shrink-0">
@@ -862,11 +862,11 @@ function LiveChartSelection({
       )}
 
       {/* Main Charting Workstation */}
-      <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden relative">
+      <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden relative pb-[76px] md:pb-0">
         {/* Top Institutional Toolbar */}
         <header className="shrink-0 px-3 py-1.5 border-b border-white/10 bg-zinc-950/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 z-30">
           {/* Left: Universal Symbol Search + Quick Pills + Timeframes */}
-          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <div className="flex w-full min-w-0 items-center gap-1.5 overflow-x-auto sm:flex-wrap xl:w-auto">
             {/* Universal Search Modal Trigger */}
             <button
               type="button"
@@ -901,7 +901,7 @@ function LiveChartSelection({
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
             {/* Timeframe Selector (9 Timeframes) */}
-            <div className="flex items-center gap-0.5 bg-zinc-900/60 p-0.5 rounded-lg border border-white/10">
+            <div className="flex shrink-0 items-center gap-0.5 bg-zinc-900/60 p-0.5 rounded-lg border border-white/10">
               {TIMEFRAMES.map((tf) => (
                 <button
                   key={tf.label}
@@ -920,7 +920,7 @@ function LiveChartSelection({
           </div>
 
           {/* Right: Workstation Actions + Overlays + Sidebar Toggle */}
-          <div className="flex items-center flex-nowrap shrink-0 gap-1.5 z-30">
+          <div className="flex w-full min-w-0 items-center gap-1.5 overflow-x-auto z-30 xl:w-auto xl:shrink-0">
             {/* Replay Mode Trigger / Control Bar */}
             {!isReplayActive ? (
               <button
@@ -1296,9 +1296,9 @@ function LiveChartSelection({
             aria-label="Watchlist and alerts"
             className={`${
               isRightSidebarOpen
-                ? "fixed inset-y-0 right-0 z-40 flex shadow-2xl xl:static xl:z-20 xl:shadow-none"
+                ? "fixed top-[60px] bottom-[76px] right-0 z-40 flex shadow-2xl xl:static xl:z-20 xl:shadow-none"
                 : "hidden"
-            } w-72 sm:w-80 h-full border-l border-amber-500/20 bg-zinc-950/95 backdrop-blur-md flex-col shrink-0 select-none`}
+            } w-[min(20rem,calc(100vw-1rem))] xl:h-full border-l border-amber-500/20 bg-zinc-950 flex-col shrink-0 select-none`}
           >
             {/* Header */}
             <div className="p-2.5 border-b border-white/10 flex items-center justify-between">
