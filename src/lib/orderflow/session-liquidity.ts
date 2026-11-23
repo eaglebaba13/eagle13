@@ -67,24 +67,26 @@ export function calculateSessionLiquidity(
 
   for (const c of candles) {
     if (!Number.isFinite(c.high) || !Number.isFinite(c.low)) continue;
+    const candleHigh = Math.max(c.high, c.low, Number.isFinite(c.open) ? c.open : c.high, Number.isFinite(c.close) ? c.close : c.low);
+    const candleLow = Math.min(c.high, c.low, Number.isFinite(c.open) ? c.open : c.high, Number.isFinite(c.close) ? c.close : c.low);
     const dateKey = toIstDateString(c.time);
     const weekKey = toIstWeekString(c.time);
 
     const dayStat = byDate.get(dateKey);
     if (!dayStat) {
-      byDate.set(dateKey, { high: c.high, low: c.low, count: 1 });
+      byDate.set(dateKey, { high: candleHigh, low: candleLow, count: 1 });
     } else {
-      dayStat.high = Math.max(dayStat.high, c.high);
-      dayStat.low = Math.min(dayStat.low, c.low);
+      dayStat.high = Math.max(dayStat.high, candleHigh);
+      dayStat.low = Math.min(dayStat.low, candleLow);
       dayStat.count++;
     }
 
     const weekStat = byWeek.get(weekKey);
     if (!weekStat) {
-      byWeek.set(weekKey, { high: c.high, low: c.low, count: 1 });
+      byWeek.set(weekKey, { high: candleHigh, low: candleLow, count: 1 });
     } else {
-      weekStat.high = Math.max(weekStat.high, c.high);
-      weekStat.low = Math.min(weekStat.low, c.low);
+      weekStat.high = Math.max(weekStat.high, candleHigh);
+      weekStat.low = Math.min(weekStat.low, candleLow);
       weekStat.count++;
     }
   }
@@ -101,22 +103,33 @@ export function calculateSessionLiquidity(
   if (sortedDates.length >= 2) {
     const prevDateKey = sortedDates[sortedDates.length - 2];
     const prevDay = byDate.get(prevDateKey)!;
-    pdh = prevDay.high;
-    pdl = prevDay.low;
+    pdh = Math.max(prevDay.high, prevDay.low);
+    pdl = Math.min(prevDay.high, prevDay.low);
   } else {
     // Single day: Derive institutional approximation based on current session range
     const today = byDate.get(sortedDates[0])!;
-    const range = Math.max(today.high - today.low, currentPrice * 0.008);
-    pdh = Math.round((today.high + range * 0.25) * 100) / 100;
-    pdl = Math.round((today.low - range * 0.25) * 100) / 100;
+    const todayHigh = Math.max(today.high, today.low);
+    const todayLow = Math.min(today.high, today.low);
+    const range = Math.max(todayHigh - todayLow, currentPrice * 0.008);
+    pdh = Math.round((todayHigh + range * 0.25) * 100) / 100;
+    pdl = Math.round((todayLow - range * 0.25) * 100) / 100;
   }
+
+  // Strictly enforce pdh >= pdl
+  let safePdh = Math.max(pdh, pdl);
+  let safePdl = Math.min(pdh, pdl);
+  if (safePdh <= safePdl) {
+    safePdh = safePdl + Math.max(currentPrice * 0.005, 0.5);
+  }
+  pdh = safePdh;
+  pdl = safePdl;
 
   // Previous week high/low
   if (sortedWeeks.length >= 2) {
     const prevWeekKey = sortedWeeks[sortedWeeks.length - 2];
     const prevWeek = byWeek.get(prevWeekKey)!;
-    pwh = prevWeek.high;
-    pwl = prevWeek.low;
+    pwh = Math.max(prevWeek.high, prevWeek.low);
+    pwl = Math.min(prevWeek.high, prevWeek.low);
   } else {
     // Single week: Derive institutional weekly outer liquidity envelope
     const range = pdh - pdl;
@@ -124,9 +137,14 @@ export function calculateSessionLiquidity(
     pwl = Math.round((pdl - range * 0.65) * 100) / 100;
   }
 
-  // Ensure levels are strictly positive and valid
-  if (pdh <= pdl) pdh = pdl + currentPrice * 0.01;
-  if (pwh <= pwl) pwh = pwl + currentPrice * 0.02;
+  // Strictly enforce pwh >= pwl and outer bounds
+  let safePwh = Math.max(pwh, pwl);
+  let safePwl = Math.min(pwh, pwl);
+  if (safePwh <= safePwl) {
+    safePwh = safePwl + Math.max(currentPrice * 0.01, 1.0);
+  }
+  pwh = safePwh;
+  pwl = safePwl;
 
   const roundPt = (val: number) => Math.round(val * 100) / 100;
   const roundPct = (val: number) => Math.round(val * 100) / 100;

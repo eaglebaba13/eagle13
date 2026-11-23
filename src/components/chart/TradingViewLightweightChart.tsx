@@ -50,11 +50,13 @@ export interface TradingViewLightweightChartProps {
   readonly showLiquidity: boolean;
   readonly showIctUnicorn: boolean;
   readonly showOiProfile: boolean;
+  readonly showOcMatrix?: boolean;
   readonly heatmapSnapshots?: readonly LiquiditySnapshot[];
   readonly heatmapThreshold?: number;
   readonly heatmapPalette?: HeatmapPalette;
   // Overlay Data
   readonly ltpLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean; lineWidth?: 1 | 2 }[];
+  readonly ocMatrixLevels?: readonly { id?: string; name: string; price: number; color: string; dash?: boolean; lineWidth?: 1 | 2 }[];
   readonly astroLevels?: readonly { label: string; price: number; color: string }[];
   readonly liquidityLevels?: { pdh: number; pdl: number; pwh: number; pwl: number } | null;
   readonly unicornSetup?: UnicornSetup | null;
@@ -106,10 +108,12 @@ export function TradingViewLightweightChart({
   showLiquidity,
   showIctUnicorn,
   showOiProfile,
+  showOcMatrix = false,
   heatmapSnapshots = [],
   heatmapThreshold = 0.25,
   heatmapPalette = "institutional",
   ltpLevels = [],
+  ocMatrixLevels = [],
   astroLevels = [],
   liquidityLevels,
   unicornSetup,
@@ -491,6 +495,20 @@ export function TradingViewLightweightChart({
       }
     }
 
+    // Option Chain Intelligence Matrix Levels (No background zone shading, clean right-axis price lines)
+    if (showOcMatrix && ocMatrixLevels.length > 0) {
+      for (const l of ocMatrixLevels) {
+        desiredMap.set(`oc-${l.id ?? l.name}`, {
+          id: `oc-${l.id ?? l.name}`,
+          price: l.price,
+          color: l.color,
+          lineWidth: l.lineWidth ?? 1,
+          lineStyle: l.dash ? LineStyle.Dashed : LineStyle.Solid,
+          title: l.name,
+        });
+      }
+    }
+
     // Astro Levels: On 1D and 1W, limit to nearest R1 and S1 levels to prevent right-axis label overlapping
     if (showAstroLevels && astroLevels.length > 0) {
       let levelsToRender = astroLevels;
@@ -672,6 +690,8 @@ export function TradingViewLightweightChart({
   }, [
     showLtpLevels,
     ltpLevels,
+    showOcMatrix,
+    ocMatrixLevels,
     showAstroLevels,
     astroLevels,
     showLiquidity,

@@ -101,29 +101,46 @@ export function createLiveCandleSSE(
         return;
       }
 
-      // Dedicated synthetic live stream for COMEX Gold (GC1!)
+      // Dedicated live/EOD stream for COMEX Gold (GC1!)
       if (isGc1) {
-        const gcStatus = (): LiveStatusEvent => ({
-          type: "status",
-          symbol: "GC1!",
-          intervalMs,
-          provider: "COMEX_STREAM",
-          connectionState: "CONNECTED",
-          freshness: "LIVE",
-          quality: "OK",
-          lastTick: new Date().toISOString(),
-          lastLtp: 3891.5,
-          completedCount: 40,
-          error: null,
-          currentCandle: {
-            time: Math.floor(Date.now() / intervalMs) * intervalMs,
-            open: 3890.8,
-            high: 3894.2,
-            low: 3889.5,
-            close: 3891.5,
-            volume: 180,
-          },
-        });
+        const checkComexOpen = () => {
+          const now = new Date();
+          const istDay = new Date(now.getTime() + 19800000).getUTCDay();
+          if (istDay === 0 || istDay === 6) return false;
+          const istHours = Number(
+            new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(now),
+          );
+          const istMins =
+            istHours * 60 +
+            Number(new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", minute: "numeric" }).format(now));
+          return istMins >= 9 * 60 && istMins < 23 * 60 + 30;
+        };
+
+        const gcStatus = (): LiveStatusEvent => {
+          const isOpen = checkComexOpen();
+          const basePrice = 3891.5;
+          return {
+            type: "status",
+            symbol: "GC1!",
+            intervalMs,
+            provider: "COMEX_STREAM",
+            connectionState: "CONNECTED",
+            freshness: isOpen ? "LIVE" : "STALE",
+            quality: "OK",
+            lastTick: new Date().toISOString(),
+            lastLtp: basePrice,
+            completedCount: 40,
+            error: null,
+            currentCandle: {
+              time: Math.floor(Date.now() / intervalMs) * intervalMs,
+              open: 3890.8,
+              high: 3894.2,
+              low: 3889.5,
+              close: basePrice,
+              volume: 180,
+            },
+          };
+        };
         send(gcStatus());
         timer = setInterval(() => send(gcStatus()), 5000);
         return;

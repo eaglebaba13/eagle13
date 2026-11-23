@@ -216,3 +216,48 @@ export const getLiveLevels = createServerFn({ method: "GET" }).handler(
       { ttlMs: 30_000 },
     ),
 );
+
+/**
+ * Canonical matcher that links user/watch-list symbols (e.g. "GC1!", "XAUUSDT", "NIFTY50")
+ * to the corresponding MarketBlock in LiveLevelsData.
+ */
+export function matchMarketItem(
+  markets: readonly MarketBlock[] | undefined,
+  symbolOrKey: string,
+  name?: string,
+): MarketBlock | undefined {
+  if (!markets || !markets.length) return undefined;
+  const s = symbolOrKey.toUpperCase();
+  // 1. Direct key/symbol match
+  const direct = markets.find(
+    (m) =>
+      m.key.toUpperCase() === s ||
+      m.symbol.toUpperCase() === s ||
+      (name && m.name.toUpperCase() === name.toUpperCase()),
+  );
+  if (direct) return direct;
+
+  // 2. Canonical aliases
+  if (s === "GC1!" || s === "GOLD" || s === "XAUUSDT" || (name && /GOLD/i.test(name))) {
+    return markets.find((m) => m.key === "GOLD");
+  }
+  if (s === "SI1!" || s === "SILVER" || s === "XAGUSDT" || (name && /SILVER/i.test(name))) {
+    return markets.find((m) => m.key === "SILVER");
+  }
+  if (s === "NIFTY50" || s === "NIFTY" || s === "^NSEI") {
+    return markets.find((m) => m.key === "NIFTY");
+  }
+  if (s === "BANKNIFTY" || s === "^NSEBANK") {
+    return markets.find((m) => m.key === "BANKNIFTY");
+  }
+  if (s === "FINNIFTY" || s === "^NSEFINNIFTY") {
+    return markets.find((m) => m.key === "FINNIFTY");
+  }
+  if (s === "SENSEX" || s === "^BSESN") {
+    return markets.find((m) => m.key === "SENSEX");
+  }
+  if (s === "BTCUSDT" || s === "BTC" || s === "BITCOIN") {
+    return markets.find((m) => m.key === "BTC");
+  }
+  return undefined;
+}

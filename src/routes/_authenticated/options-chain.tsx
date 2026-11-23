@@ -9,7 +9,7 @@
 // 5. Key Levels Ribbon: EOS, S-Mod, EOR, R-Mod, Max Pain SL, Max Gain Target.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -25,7 +25,10 @@ import {
   Flame,
   Layers,
   Sparkles,
+  Bell,
 } from "lucide-react";
+
+import { computeOptionChainIntelligence } from "@/lib/analytics/optionChainIntelligence";
 
 import {
   ltpCalculatorQuery,
@@ -147,6 +150,65 @@ function LtpCalculatorPage() {
 
   const coaScenario: CoaScenarioResult | null = ltpData?.coaScenario ?? null;
 
+  // Additive Option-Chain Intelligence Engine (PAZ, PDI, OVM-9, RSB, Top-Down Range)
+  const ocIntelligence = useMemo(() => {
+    if (!ltpData) return null;
+    return computeOptionChainIntelligence({
+      underlying,
+      spotPrice: ltpData.spotPrice,
+      atmStrike: ltpData.atmStrike,
+      expiry,
+      callStrikes: ltpData.callStrikes,
+      putStrikes: ltpData.putStrikes,
+      reversalLevels: activeLevels ?? undefined,
+      static0920Snapshot: ltpData.static0920Snapshot,
+    });
+  }, [ltpData, underlying, expiry, activeLevels]);
+
+  const [alertAudioEnabled, setAlertAudioEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("eaglebaba_oc_alerts") === "true";
+    }
+    return false;
+  });
+
+  const prevRegimeRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ocIntelligence) return;
+    const currentRegime = ocIntelligence.ovm9.regime;
+    if (prevRegimeRef.current && prevRegimeRef.current !== currentRegime && alertAudioEnabled) {
+      try {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioContextClass) {
+          const ctx = new AudioContextClass();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+        }
+      } catch {
+        // audio optional
+      }
+    }
+    prevRegimeRef.current = currentRegime;
+  }, [ocIntelligence, alertAudioEnabled]);
+
+  const toggleAlertAudio = () => {
+    setAlertAudioEnabled((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("eaglebaba_oc_alerts", String(next));
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#08090C] text-zinc-100 p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Top Breadcrumb & Controls */}
@@ -237,6 +299,78 @@ function LtpCalculatorPage() {
       {mode === "OI_SCANNER" && <OiDirectionScanner/>}
       {(mode === "LIVE" || mode === "STATIC_0920") && (
         <div className="space-y-5">
+          {/* Top-Down Range & Regime Header */}
+          {ocIntelligence && (
+            <div className="p-4 rounded-2xl border border-zinc-800 bg-[#0c0e14]/90 shadow-md flex flex-wrap items-center justify-between gap-4 font-mono">
+              {/* Left: OVM-9 Regime Badge & Description */}
+              <div className="flex items-center gap-3">
+                <div
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wide border flex items-center gap-2 ${
+                    ocIntelligence.ovm9.badgeColor === "emerald"
+                      ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
+                      : ocIntelligence.ovm9.badgeColor === "rose"
+                      ? "bg-rose-500/15 text-rose-300 border-rose-500/40"
+                      : ocIntelligence.ovm9.badgeColor === "gold"
+                      ? "bg-amber-500/15 text-amber-300 border-amber-500/40"
+                      : ocIntelligence.ovm9.badgeColor === "purple"
+                      ? "bg-purple-500/15 text-purple-300 border-purple-500/40"
+                      : "bg-zinc-800/80 text-zinc-300 border-zinc-700"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                  OVM-9: {ocIntelligence.ovm9.regime}
+                </div>
+                <span className="text-[11px] text-zinc-400 hidden sm:inline">
+                  {ocIntelligence.ovm9.description}
+                </span>
+              </div>
+
+              {/* Center: Weekly Range & 09:20 Day Range */}
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center gap-2">
+                  <span className="text-zinc-500 text-[10px] font-semibold">WEEKLY RANGE (IV ±{ocIntelligence.topDownRange.weeklyRange.expectedMove}):</span>
+                  <span className="text-zinc-200 font-bold">
+                    {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.weeklyRange.low.toFixed(2)} - {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.weeklyRange.high.toFixed(2)}
+                  </span>
+                  {ocIntelligence.topDownRange.weeklyRange.ivExpansion ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      IV EXPANSION ⚡
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                      IV NORMAL
+                    </span>
+                  )}
+                </div>
+
+                <div className="px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center gap-2">
+                  <span className="text-zinc-500 text-[10px] font-semibold">09:20 RANGE:</span>
+                  <span className="text-zinc-200 font-bold">
+                    {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.dayRange0920.low.toFixed(2)} - {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.dayRange0920.high.toFixed(2)}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    ({(ocIntelligence.topDownRange.dayRange0920.high - ocIntelligence.topDownRange.dayRange0920.low).toFixed(2)} pts)
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: Audio Alert Toggle */}
+              <button
+                type="button"
+                onClick={toggleAlertAudio}
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono border flex items-center gap-1.5 transition-colors ${
+                  alertAudioEnabled
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                    : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200"
+                }`}
+                title={alertAudioEnabled ? "Regime alert chime enabled" : "Enable regime audio chime"}
+              >
+                <Bell className={`w-3.5 h-3.5 ${alertAudioEnabled ? "text-amber-400" : ""}`} />
+                <span>{alertAudioEnabled ? "CHIME ON" : "CHIME OFF"}</span>
+              </button>
+            </div>
+          )}
+
           {/* Top Regime Banner & Key Levels Ribbon */}
           {coaScenario && activeLevels && (
             <div className="p-5 rounded-2xl border border-zinc-800 bg-gradient-to-br from-[#0e111a] via-[#10131e] to-[#0a0c14] shadow-xl space-y-4">
@@ -343,6 +477,126 @@ function LtpCalculatorPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Execution & Invalidation Matrix Card */}
+              {ocIntelligence && (
+                <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-950/70 font-mono space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/60 pb-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-200">
+                      <Target className="w-3.5 h-3.5 text-amber-400" />
+                      <span>REVERSAL &amp; STRETCH BANDS (RSB) EXECUTION MATRIX</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          ocIntelligence.rsbExecution.tradable
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                            : "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                        }`}
+                      >
+                        {ocIntelligence.rsbExecution.tradable ? "EXECUTION VALID" : "SETTLEMENT / RISK GATED"}
+                      </span>
+                      {ocIntelligence.rsbExecution.extendedTolerance && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                          RSB-EXT (+1 STRIKE EXPANSION)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-zinc-400">
+                      {ocIntelligence.rsbExecution.tradeReason}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+                    {/* Conservative Entry */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Conservative Entry")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-200"
+                      }`}
+                    >
+                      <div className="text-[9px] text-zinc-400 font-semibold uppercase">Conservative Entry</div>
+                      <div className="text-base font-black text-amber-300 mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.conservativeEntry.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Aggressive Entry */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Aggressive Entry")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-200"
+                      }`}
+                    >
+                      <div className="text-[9px] text-zinc-400 font-semibold uppercase">Aggressive Entry</div>
+                      <div className="text-base font-black text-amber-300 mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.aggressiveEntry.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Invalidation Stop */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Invalidation Stop")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-rose-950/20 border-rose-500/30 text-rose-300"
+                      }`}
+                    >
+                      <div className="text-[9px] text-rose-400 font-semibold uppercase">Invalidation Stop</div>
+                      <div className="text-base font-black mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.invalidationStop.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Target 1 */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 1")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
+                      }`}
+                    >
+                      <div className="text-[9px] text-emerald-400 font-semibold uppercase">Target 1 (T1)</div>
+                      <div className="text-base font-black mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target1.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Target 2 */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 2")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
+                      }`}
+                    >
+                      <div className="text-[9px] text-emerald-400 font-semibold uppercase">Target 2 (T2)</div>
+                      <div className="text-base font-black mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target2.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Target 3 */}
+                    <div
+                      className={`p-2.5 rounded-lg border ${
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 3")
+                          ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
+                          : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
+                      }`}
+                    >
+                      <div className="text-[9px] text-emerald-400 font-semibold uppercase flex items-center justify-between">
+                        <span>Target 3 (T3)</span>
+                        {ocIntelligence.rsbExecution.extendedTolerance && (
+                          <span className="text-[8px] px-1 rounded bg-cyan-500/30 text-cyan-200">EXT</span>
+                        )}
+                      </div>
+                      <div className="text-base font-black mt-0.5">
+                        {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target3.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -446,6 +700,7 @@ function LtpCalculatorPage() {
               coaScenario={coaScenario}
               strikeDepth={strikeDepth}
               currencySymbol={ltpData.currencySymbol ?? "₹"}
+              strikeOverlays={ocIntelligence?.strikeOverlays}
             />
           ) : (
             <div className="p-8 text-center text-zinc-500 font-mono text-xs border border-zinc-800 rounded-xl bg-zinc-950">

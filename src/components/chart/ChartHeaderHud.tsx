@@ -21,6 +21,7 @@ interface ChartHeaderHudProps {
   readonly ltpState?: "hidden" | "loading" | "unavailable" | "ready";
   readonly ltpProvider?: string;
   readonly ltpQuality?: string;
+  readonly prevClose?: number | null;
 }
 
 export function ChartHeaderHud({
@@ -33,8 +34,10 @@ export function ChartHeaderHud({
   ltpState = "hidden",
   ltpProvider,
   ltpQuality,
+  prevClose,
 }: ChartHeaderHudProps) {
   const activeOhlc = hud ?? latestCandle;
+  const isCrosshairActive = hud != null;
   const t = hud?.time ?? latestCandle?.time;
   const shiftingLevels = useMemo(() => buildShiftingChartLevels(ltpData ?? null), [ltpData]);
 
@@ -57,11 +60,16 @@ export function ChartHeaderHud({
   if (!activeOhlc) return null;
 
   const o = activeOhlc.open;
-  const h = activeOhlc.high;
-  const l = activeOhlc.low;
   const c = activeOhlc.close;
-  const change = Number.isFinite(c) && Number.isFinite(o) ? c - o : 0;
-  const changePct = Number.isFinite(o) && o > 0 ? (change / o) * 100 : 0;
+  const h = Math.max(activeOhlc.high, o, c);
+  const l = Math.min(activeOhlc.low, o, c);
+
+  const baseline =
+    !isCrosshairActive && prevClose != null && prevClose > 0
+      ? prevClose
+      : o;
+  const change = Number.isFinite(c) && Number.isFinite(baseline) ? c - baseline : 0;
+  const changePct = Number.isFinite(baseline) && baseline > 0 ? (change / baseline) * 100 : 0;
   const isUp = change >= 0;
   const vol = hud?.volume ?? latestCandle?.volume;
 

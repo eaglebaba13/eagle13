@@ -5,6 +5,7 @@
 import React from "react";
 import { ArrowUpRight, ArrowDownRight, Target, ShieldAlert, Sparkles, TrendingUp, TrendingDown } from "lucide-react";
 import type { StrikeDominance, ReversalLevels, CoaScenarioResult } from "@/lib/options/ltp-calculator-engine.server";
+import type { StrikeIntelligenceOverlay } from "@/lib/analytics/optionChainIntelligence";
 
 interface OptionChainTableProps {
   readonly callStrikes: readonly StrikeDominance[];
@@ -16,6 +17,7 @@ interface OptionChainTableProps {
   readonly onSelectStrike?: (strike: number) => void;
   readonly strikeDepth?: number;
   readonly currencySymbol?: string;
+  readonly strikeOverlays?: ReadonlyMap<number, StrikeIntelligenceOverlay>;
 }
 
 export function OptionChainTable({
@@ -28,6 +30,7 @@ export function OptionChainTable({
   onSelectStrike,
   strikeDepth = 10,
   currencySymbol = "₹",
+  strikeOverlays,
 }: OptionChainTableProps) {
   // Combine strikes
   const strikes = React.useMemo(() => {
@@ -193,6 +196,7 @@ export function OptionChainTable({
             const isAtm = row.isAtm;
             const isEos = row.strike === reversalLevels.supportStrike;
             const isEor = row.strike === reversalLevels.resistanceStrike;
+            const overlay = strikeOverlays?.get(row.strike);
 
             // Call highlight styling
             let callVolClass = "text-zinc-300";
@@ -345,10 +349,21 @@ export function OptionChainTable({
                     <span className="px-1.5 py-0.5 rounded bg-cyan-900/40 border border-cyan-500/30 text-[11px]">
                       {fmtPrice(row.call.reversalPrice)}
                     </span>
-                    {isEor && (
+                    {overlay?.isPazRes && (
+                      <span className="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-300 border border-amber-500/50 uppercase tracking-wider">
+                        PAZ-Res
+                      </span>
+                    )}
+                    {isEor && !overlay?.isPazRes && (
                       <span className="ml-1 text-[8px] font-extrabold text-rose-400 uppercase tracking-wider">
                         [EOR]
                       </span>
+                    )}
+                    {overlay && (overlay.isCallAnchorChallenger || (overlay.callPdiPct >= 75 && !overlay.isPazRes)) && (
+                      <div className="text-[9px] text-cyan-400 font-mono mt-0.5 flex items-center justify-end gap-1">
+                        <span className="h-1 bg-cyan-400/80 rounded-full inline-block" style={{ width: `${Math.min(30, overlay.callPdiPct * 0.3)}px` }} />
+                        <span>{overlay.callPdiLabel}</span>
+                      </div>
                     )}
                   </td>
 
@@ -369,10 +384,21 @@ export function OptionChainTable({
                     <span className="px-1.5 py-0.5 rounded bg-rose-900/40 border border-rose-500/30 text-[11px]">
                       {fmtPrice(row.put.reversalPrice)}
                     </span>
-                    {isEos && (
+                    {overlay?.isPazSup && (
+                      <span className="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 uppercase tracking-wider">
+                        PAZ-Sup
+                      </span>
+                    )}
+                    {isEos && !overlay?.isPazSup && (
                       <span className="ml-1 text-[8px] font-extrabold text-emerald-400 uppercase tracking-wider">
                         [EOS]
                       </span>
+                    )}
+                    {overlay && (overlay.isPutAnchorChallenger || (overlay.putPdiPct >= 75 && !overlay.isPazSup)) && (
+                      <div className="text-[9px] text-rose-400 font-mono mt-0.5 flex items-center justify-start gap-1">
+                        <span className="h-1 bg-rose-400/80 rounded-full inline-block" style={{ width: `${Math.min(30, overlay.putPdiPct * 0.3)}px` }} />
+                        <span>{overlay.putPdiLabel}</span>
+                      </div>
                     )}
                   </td>
                   <td className="py-2 px-2 text-left font-medium text-rose-400">

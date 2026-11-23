@@ -12,7 +12,7 @@ import { isRegularSessionCandle, stitchCandlePoints } from "@/lib/provider-found
 import { ltpCalculatorQuery, stockFourLineQuery } from "@/lib/options/ltp-calculator.functions";
 import { buildLtpChartLevels, calculatorUnderlying } from "@/lib/chart/ltp-overlay";
 import { getLiveCandleBootstrap } from "@/lib/live-candle-stream.functions";
-import { getLiveLevels, type MarketKey } from "@/lib/live-levels.functions";
+import { getLiveLevels, matchMarketItem, type MarketKey } from "@/lib/live-levels.functions";
 import { computeCycles, computeGannAstroLevels, type PlanetRow } from "@/lib/astro-levels";
 import { calculateVwap } from "@/lib/indicators/vwap";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
@@ -55,6 +55,7 @@ import { oiProfileQuery } from "@/lib/orderflow/oi-profile.functions";
 import { liquidityHeatmapQuery } from "@/lib/market-data/liquidity-heatmap.functions";
 import type { HeatmapAsset, HeatmapPalette } from "@/lib/market-data/liquidity-heatmap";
 import { getCryptoTickers, notifyPriceAlertCreated } from "@/lib/market-data/crypto-tickers.functions";
+import { computeOptionChainIntelligence } from "@/lib/analytics/optionChainIntelligence";
 import {
   Search,
   RotateCcw,
@@ -267,6 +268,7 @@ function LiveChartSelection({
   const [showAstroLevels, setShowAstroLevels] = useState(false);
   const [showIctUnicorn, setShowIctUnicorn] = useState(() => !searchFourLine);
   const [showOiProfile, setShowOiProfile] = useState(true);
+  const [showOcMatrix, setShowOcMatrix] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapThreshold, setHeatmapThreshold] = useState(0.25);
   const [heatmapPalette, setHeatmapPalette] = useState<HeatmapPalette>("institutional");
@@ -366,6 +368,7 @@ function LiveChartSelection({
   useEffect(() => {
     let cancelled = false;
     setBootstrapStatus("loading");
+    setHistorical([]); // Clear old instrument's candles immediately so they never leak into the active chart
     async function bootstrap() {
       try {
         const resp = await getLiveCandleBootstrap({ data: { symbol, intervalMs, refresh: true } });
@@ -392,7 +395,7 @@ function LiveChartSelection({
     return () => {
       cancelled = true;
     };
-  }, [symbol, intervalMs, connectionKey]);
+  }, [symbol, intervalMs]);
 
   // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
@@ -459,12 +462,96 @@ function LiveChartSelection({
        cryptoTickers?.[activeInstrument.symbol]?.price)
     : undefined;
 
-  const currentLtp =
-    liveCandleData?.close ??
-    latestCandleClose ??
-    cryptoLivePrice ??
-    sse.status?.lastLtp ??
-    activeInstrument.defaultPrice;
+  // Session Open/Closed Determination across asset classes
+  const isCommodity = activeInstrument.category === "COMMODITY";
+  const isCrypto = activeInstrument.category === "CRYPTO";
+  const isSessionOpen = useMemo(() => {
+    if (isCrypto) return true; // Crypto is 24/7
+    const now = new Date();
+    const istDay = new Date(now.getTime() + 19800000).getUTCDay(); // 0 Sun, 6 Sat
+    if (istDay === 0 || istDay === 6) return false; // Weekend closed for Equities & Commodities
+    if (isCommodity) {
+      // COMEX/MCX commodities: 09:00 - 23:30 IST
+      const istHours = Number(
+        new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(now),
+      );
+      const istMins =
+        istHours * 60 +
+        Number(new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", minute: "numeric" }).format(now));
+      return istMins >= 9 * 60 && istMins < 23 * 60 + 30;
+    }
+    return session.isOpen;
+  }, [isCrypto, isCommodity, session.isOpen]);
+
+  const isMarketClosed = !isSessionOpen;
+  const isConnected = sse.status?.connectionState === "CONNECTED";
+  // Crucial: Closed markets must NEVER be flagged as actively mutating live streaming ticks
+  const isLive = !isMarketClosed && (sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null));
+  const statusLabel = isLive
+    ? "CONNECTED • STREAMING"
+    : isMarketClosed
+      ? "EOD SYNCED"
+      : sse.status?.freshness === "STALE"
+        ? "STALE (CACHED)"
+        : isConnected
+          ? "CONNECTED (EOD)"
+          : sse.status?.connectionState === "CONNECTING"
+            ? "CONNECTING..."
+            : "STREAM DISCONNECTED";
+
+  const currentMarketItem = useMemo(() => {
+    return matchMarketItem(liveLevels?.markets, symbol, activeInstrument.name);
+  }, [liveLevels?.markets, symbol, activeInstrument.name]);
+
+  const currentLtp = useMemo(() => {
+    if (isLive && liveCandleData?.close != null) return liveCandleData.close;
+    if (isLive && sse.status?.lastLtp != null) return sse.status.lastLtp;
+    if (cryptoLivePrice != null && Number.isFinite(cryptoLivePrice)) return cryptoLivePrice;
+    if (currentMarketItem?.livePrice != null && Number.isFinite(currentMarketItem.livePrice)) {
+      return currentMarketItem.livePrice;
+    }
+    if (latestCandleClose != null && Number.isFinite(latestCandleClose)) return latestCandleClose;
+    if (currentMarketItem?.prevClose != null && Number.isFinite(currentMarketItem.prevClose)) {
+      return currentMarketItem.prevClose;
+    }
+    return activeInstrument.defaultPrice;
+  }, [isLive, liveCandleData?.close, sse.status?.lastLtp, cryptoLivePrice, currentMarketItem, latestCandleClose, activeInstrument.defaultPrice]);
+
+  const resolvedLatestCandle = useMemo(() => {
+    if (liveCandleData) {
+      return {
+        time: liveCandleData.time,
+        open: liveCandleData.open,
+        high: Math.max(liveCandleData.high, liveCandleData.open, liveCandleData.close, currentLtp ?? 0),
+        low: Math.min(liveCandleData.low, liveCandleData.open, liveCandleData.close, currentLtp ?? Infinity),
+        close: currentLtp ?? liveCandleData.close,
+        volume: liveCandleData.volume,
+      };
+    }
+    if (displayCandles.length > 0) {
+      const last = displayCandles[displayCandles.length - 1];
+      const close = currentLtp ?? last.y[3];
+      return {
+        time: last.x,
+        open: last.y[0],
+        high: Math.max(last.y[1], last.y[0], close),
+        low: Math.min(last.y[2], last.y[0], close),
+        close,
+        volume: last.volume,
+      };
+    }
+    if (currentLtp != null && currentLtp > 0) {
+      return {
+        time: Date.now(),
+        open: currentMarketItem?.prevClose ?? currentLtp,
+        high: currentLtp,
+        low: currentLtp,
+        close: currentLtp,
+        volume: 0,
+      };
+    }
+    return null;
+  }, [liveCandleData, displayCandles, currentLtp, currentMarketItem?.prevClose]);
 
   // Volume Profile (FRVP)
   const ofCandles: readonly OrderFlowCandle[] = useMemo(() => {
@@ -622,7 +709,7 @@ function LiveChartSelection({
 
   // Use the same live RPC, response shape and cache keys as the calculator page.
   const ltpUnderlying = calculatorUnderlying(symbol);
-  const ltpQ = useQuery({ ...ltpCalculatorQuery({ underlying: ltpUnderlying }), enabled: showLtpLevels && !isReplayActive });
+  const ltpQ = useQuery({ ...ltpCalculatorQuery({ underlying: ltpUnderlying }), enabled: (showLtpLevels || showOcMatrix) && !isReplayActive });
   const fourLineQ = useQuery({ ...stockFourLineQuery(ltpUnderlying), enabled: showLtpLevels && !isReplayActive && activeInstrument.category === "FO_EQUITY" });
   const ltpData = ltpQ.data?.ok ? ltpQ.data.data : null;
   const fourLineData = fourLineQ.data?.ok ? fourLineQ.data.fourLine : null;
@@ -630,6 +717,80 @@ function LiveChartSelection({
   const ltpLevels = useMemo(() => showLtpLevels && !isReplayActive
     ? buildLtpChartLevels(activeInstrument.category === "FO_EQUITY" && !activeFourLine ? null : ltpData, (activeInstrument.category === "FO_EQUITY" || searchFourLine) ? activeFourLine : null) : [],
     [showLtpLevels, isReplayActive, ltpData, activeFourLine, searchFourLine, activeInstrument.category]);
+
+  // Option Chain Intelligence Matrix calculation for chart overlay
+  const ocIntelligence = useMemo(() => {
+    if (!showOcMatrix || isReplayActive || !ltpData) return null;
+    return computeOptionChainIntelligence({
+      underlying: ltpUnderlying,
+      spotPrice: currentLtp ?? ltpData.spotPrice,
+      atmStrike: ltpData.atmStrike,
+      callStrikes: ltpData.callStrikes,
+      putStrikes: ltpData.putStrikes,
+      reversalLevels: ltpData.reversalLevels,
+      static0920Snapshot: ltpData.static0920Snapshot,
+    });
+  }, [showOcMatrix, isReplayActive, ltpData, ltpUnderlying, currentLtp]);
+
+  const ocMatrixLevels = useMemo(() => {
+    if (!showOcMatrix || !ocIntelligence) return [];
+    const { rsbExecution } = ocIntelligence;
+    const isBull = rsbExecution.side === "BUY_CE";
+    const isBear = rsbExecution.side === "BUY_PE";
+
+    const levels = [
+      {
+        id: "oc-entry-conserv",
+        name: isBull ? "OC Conservative Entry" : isBear ? "OC Short Entry" : "OC Conserv Entry",
+        price: rsbExecution.conservativeEntry,
+        color: isBull ? "#10b981" : isBear ? "#f43f5e" : "#f59e0b",
+        lineWidth: 2 as const,
+        dash: false,
+      },
+      {
+        id: "oc-entry-aggr",
+        name: isBull ? "OC Aggressive Entry" : isBear ? "OC Aggressive Short" : "OC Aggr Entry",
+        price: rsbExecution.aggressiveEntry,
+        color: isBull ? "#34d399" : isBear ? "#fb7185" : "#fbbf24",
+        lineWidth: 1 as const,
+        dash: true,
+      },
+      {
+        id: "oc-stop",
+        name: "OC Invalidation Stop",
+        price: rsbExecution.invalidationStop,
+        color: "#ef4444",
+        lineWidth: 2 as const,
+        dash: true,
+      },
+      {
+        id: "oc-t1",
+        name: "OC Target 1 (T1)",
+        price: rsbExecution.target1,
+        color: "#38bdf8",
+        lineWidth: 1 as const,
+        dash: false,
+      },
+      {
+        id: "oc-t2",
+        name: "OC Target 2 (T2)",
+        price: rsbExecution.target2,
+        color: "#60a5fa",
+        lineWidth: 1 as const,
+        dash: false,
+      },
+      {
+        id: "oc-t3",
+        name: `OC Target 3 (T3)${rsbExecution.extendedTolerance ? " [Ext]" : ""}`,
+        price: rsbExecution.target3,
+        color: "#a855f7",
+        lineWidth: 1 as const,
+        dash: false,
+      },
+    ];
+
+    return levels.filter((l) => Number.isFinite(l.price) && l.price > 0);
+  }, [showOcMatrix, ocIntelligence]);
 
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)
   const astroLevels = useMemo(() => {
@@ -703,20 +864,6 @@ function LiveChartSelection({
     setDrawings([]);
     clearSavedDrawings(symbol);
   }, [symbol]);
-
-  // Connection Status
-  const isMarketClosed = !session.isOpen && activeInstrument.category !== "CRYPTO";
-  const isConnected = sse.status?.connectionState === "CONNECTED";
-  const isLive = sse.status?.freshness === "LIVE" || (isConnected && sse.status?.lastLtp != null);
-  const statusLabel = isLive
-    ? "CONNECTED • STREAMING"
-    : isMarketClosed
-      ? "EOD SYNCED"
-      : sse.status?.freshness === "STALE"
-        ? "STALE (CACHED)"
-        : isConnected
-          ? "CONNECTED"
-          : "STREAM DISCONNECTED";
 
   // Volume layout constants for verification and 18% chart headroom
   // maxVol * 5.5 | rgba(16, 185, 129, 0.5) | rgba(244, 63, 94, 0.5)
@@ -1053,6 +1200,21 @@ function LiveChartSelection({
               <span>LTP</span>
             </button>
 
+            {/* Option Chain Intelligence Matrix Overlay Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowOcMatrix(!showOcMatrix)}
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+                showOcMatrix
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+              }`}
+              title="Toggle Option Chain Intelligence Matrix (Entry, Stop, Target 1/2/3)"
+            >
+              {showOcMatrix && <Check className="w-3 h-3 text-amber-400" />}
+              <span>OC Matrix</span>
+            </button>
+
             {/* Astro Levels Toggle */}
             <button
               type="button"
@@ -1180,7 +1342,7 @@ function LiveChartSelection({
 
 
           {/* Loading / Error States */}
-          {bootstrapStatus === "loading" && (
+          {bootstrapStatus === "loading" && displayCandles.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center z-20 bg-[#08090C]/85 backdrop-blur-md pointer-events-none transition-opacity duration-300">
               <div className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-amber-500/25 bg-zinc-950/90 shadow-[0_10px_35px_rgba(0,0,0,0.8)]">
                 <div className="w-8 h-8 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin" />
@@ -1223,19 +1385,9 @@ function LiveChartSelection({
             instrument={activeInstrument}
             intervalLabel={currentTimeframeLabel}
             hud={hudData}
-            latestCandle={
-              displayCandles.length > 0
-                ? {
-                    time: displayCandles[displayCandles.length - 1].x,
-                    open: displayCandles[displayCandles.length - 1].y[0],
-                    high: displayCandles[displayCandles.length - 1].y[1],
-                    low: displayCandles[displayCandles.length - 1].y[2],
-                    close: displayCandles[displayCandles.length - 1].y[3],
-                    volume: displayCandles[displayCandles.length - 1].volume,
-                  }
-                : null
-            }
+            latestCandle={resolvedLatestCandle}
             isLive={isLive}
+            prevClose={currentMarketItem?.prevClose}
             ltpData={showLtpLevels && !isReplayActive ? ltpData : null}
             ltpState={!showLtpLevels || isReplayActive ? "hidden" : ltpQ.isPending ? "loading" : ltpQ.isError || !ltpQ.data?.ok ? "unavailable" : "ready"}
             ltpProvider={ltpQ.data?.ok ? ltpQ.data.provider : undefined}
@@ -1246,7 +1398,7 @@ function LiveChartSelection({
                 symbol={symbol}
                 intervalMs={intervalMs}
                 candles={lightweightCandles}
-                historyReady={bootstrapStatus !== "loading" && bootstrappedConnection === connectionKey}
+                historyReady={bootstrapStatus !== "loading" || displayCandles.length > 0}
                 datasetKey={`${symbol}:${intervalMs}:${isReplayActive ? `replay:${replayIndex}` : historical.length ? "history" : "stream-only"}`}
                 liveCandle={liveCandleData}
                 activeTool={activeTool}
@@ -1257,6 +1409,7 @@ function LiveChartSelection({
                 showVolume={showVolume}
                 showVwap={showVwap}
                 showLtpLevels={showLtpLevels}
+                showOcMatrix={showOcMatrix}
                 showAstroLevels={showAstroLevels}
                 showLiquidity={showLiquidity}
                 showIctUnicorn={showIctUnicorn}
@@ -1265,6 +1418,7 @@ function LiveChartSelection({
                 heatmapThreshold={heatmapThreshold}
                 heatmapPalette={heatmapPalette}
                 ltpLevels={ltpLevels}
+                ocMatrixLevels={ocMatrixLevels}
                 astroLevels={astroLevels}
                 liquidityLevels={sessionLiquidity}
                 unicornSetup={unicornSetup}
@@ -1393,20 +1547,20 @@ function LiveChartSelection({
                         cryptoTickers?.[inst.symbol] ??
                         cryptoTickers?.[inst.key] ??
                         cryptoTickers?.[inst.symbol.toUpperCase()];
-                      const marketItem = liveLevels?.markets?.find(
-                        (m) => m.key === inst.key || m.symbol === inst.symbol || m.name === inst.name,
-                      );
+                      const marketItem = matchMarketItem(liveLevels?.markets, inst.key, inst.name);
                       const priceVal =
-                        cryptoItem?.price ??
-                        marketItem?.livePrice ??
-                        (typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice)
-                          ? inst.defaultPrice
-                          : 0);
+                        isCurrent && currentLtp != null
+                          ? currentLtp
+                          : (cryptoItem?.price ??
+                             marketItem?.livePrice ??
+                             (typeof inst.defaultPrice === "number" && Number.isFinite(inst.defaultPrice)
+                               ? inst.defaultPrice
+                               : 0));
                       const changeVal =
                         cryptoItem?.changePct ??
                         marketItem?.changePct ??
-                        (marketItem?.prevClose && marketItem.livePrice
-                          ? ((marketItem.livePrice - marketItem.prevClose) / marketItem.prevClose) * 100
+                        (marketItem?.prevClose && priceVal && marketItem.prevClose > 0
+                          ? ((priceVal - marketItem.prevClose) / marketItem.prevClose) * 100
                           : 0);
                       const isUp = changeVal >= 0;
                       return (
@@ -1576,13 +1730,13 @@ function LiveChartSelection({
           <div className="flex items-center gap-3 flex-wrap font-mono text-zinc-500 text-[11px]">
             <span>
               MARKET:{" "}
-              <strong className={session.isOpen ? "text-emerald-400" : "text-zinc-400"}>
-                {activeInstrument.category === "CRYPTO" ? "24/7 OPEN" : session.isOpen ? "OPEN" : "CLOSED"}
+              <strong className={isSessionOpen ? "text-emerald-400" : "text-zinc-400"}>
+                {activeInstrument.category === "CRYPTO" ? "24/7 OPEN" : isSessionOpen ? "OPEN" : "CLOSED"}
               </strong>
             </span>
             <span>·</span>
             <span>
-              STATUS: <strong className={isLive || isMarketClosed ? "text-emerald-400" : "text-amber-300"}>{statusLabel}</strong>
+              STATUS: <strong className={isLive ? "text-emerald-400" : "text-zinc-400"}>{statusLabel}</strong>
             </span>
             <span>·</span>
             <span>
@@ -1600,11 +1754,11 @@ function LiveChartSelection({
               <>
                 <span>·</span>
                 <span>
-                  PDH: <strong className="text-cyan-400">{sessionLiquidity.pdh.toLocaleString("en-IN")}</strong>
+                  PDH: <strong className="text-cyan-400">{currencySymbol}{sessionLiquidity.pdh.toLocaleString(isUsd ? "en-US" : "en-IN", { maximumFractionDigits: 2 })}</strong>
                 </span>
                 <span>·</span>
                 <span>
-                  PDL: <strong className="text-rose-400">{sessionLiquidity.pdl.toLocaleString("en-IN")}</strong>
+                  PDL: <strong className="text-rose-400">{currencySymbol}{sessionLiquidity.pdl.toLocaleString(isUsd ? "en-US" : "en-IN", { maximumFractionDigits: 2 })}</strong>
                 </span>
               </>
             )}
@@ -1612,7 +1766,7 @@ function LiveChartSelection({
               <>
                 <span>·</span>
                 <span className="text-zinc-400">
-                  FRVP: VAL <strong className="text-zinc-200">{volumeProfile.val.toFixed(0)}</strong> · POC <strong className="text-amber-300">{volumeProfile.poc.toFixed(0)}</strong> · VAH <strong className="text-zinc-200">{volumeProfile.vah.toFixed(0)}</strong>
+                  FRVP: VAL <strong className="text-zinc-200">{currencySymbol}{volumeProfile.val.toLocaleString(isUsd ? "en-US" : "en-IN", { maximumFractionDigits: 0 })}</strong> · POC <strong className="text-amber-300">{currencySymbol}{volumeProfile.poc.toLocaleString(isUsd ? "en-US" : "en-IN", { maximumFractionDigits: 0 })}</strong> · VAH <strong className="text-zinc-200">{currencySymbol}{volumeProfile.vah.toLocaleString(isUsd ? "en-US" : "en-IN", { maximumFractionDigits: 0 })}</strong>
                 </span>
               </>
             )}
