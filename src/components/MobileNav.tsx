@@ -1,200 +1,49 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, type PanInfo } from "framer-motion";
-import { Menu as MenuIcon, X } from "lucide-react";
+import { Menu as MenuIcon } from "lucide-react";
 import { EagleLogo } from "@/components/EagleLogo";
-import { mobileBottomNav, mobileDrawerNav, type NavItem } from "@/lib/navigation";
+import { mobileBottomNav } from "@/lib/navigation";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useAuth } from "@/lib/auth-context";
-import { hasPermission } from "@/lib/roles";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { useNavDrawer } from "@/context/nav-drawer-context";
 
 export function MobileNav() {
-  const { role, isGuest } = useAuth();
-  const drawerItems: NavItem[] = mobileDrawerNav().filter((item) => !item.to?.startsWith("/admin/") ||
-    (!isGuest && hasPermission(role, "admin.console")));
-  const [open, setOpen] = useState(false);
+  const { openDrawer, isOpen } = useNavDrawer();
   const path = useRouterState({ select: (r) => r.location.pathname });
-  const hash = typeof window !== "undefined" ? window.location.hash : "";
-  const drawerRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   // Suppress workstation mobile nav on public landing page and auth flows
   if (path === "/" || path === "/auth" || path?.startsWith("/auth/")) {
     return null;
   }
 
-  // Lock body scroll + ESC to close + focus trap while the drawer is open.
-  useEffect(() => {
-    if (!open) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        return;
-      }
-      if (e.key === "Tab" && drawerRef.current) {
-        const focusables = drawerRef.current.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    const trigger = triggerRef.current;
-    // Move focus into the drawer for screen readers / keyboard users.
-    const t = window.setTimeout(() => {
-      drawerRef.current?.querySelector<HTMLElement>("a,button")?.focus();
-    }, 60);
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      document.removeEventListener("keydown", onKey);
-      window.clearTimeout(t);
-      trigger?.focus();
-    };
-  }, [open]);
-
-  const isActive = (it: NavItem) => {
-    if (!it.to) return false;
-    if (it.to === "/") return path === "/" && it.id === "dashboard";
-    const [itemPath, itemHash] = it.to.split("#");
-    if (itemHash) {
-      return path === itemPath && hash === `#${itemHash}`;
-    }
-    if (path === "/live-market-terminal" && hash === "#live-chart") {
-      return it.id === "live-market-terminal" ? false : path === itemPath;
-    }
-    return path === itemPath;
-  };
-
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    // Swipe left to dismiss.
-    if (info.offset.x < -60 || info.velocity.x < -400) setOpen(false);
-  };
-
   return (
     <>
-      {/* Sticky mobile top bar: hamburger beside the EagleBABA logo */}
+      {/* Sticky mobile top bar: brand on left, controls and hamburger menu on right */}
       <header className="eb-mtopbar eb-glass block md:hidden" role="banner">
-        <button
-          ref={triggerRef}
-          type="button"
-          className="eb-burger"
-          aria-label="Open navigation menu"
-          aria-expanded={open}
-          aria-controls="eb-mobile-drawer"
-          onClick={() => setOpen(true)}
-        >
-          <MenuIcon size={22} />
-        </button>
         <Link to="/" className="eb-mtopbar-brand" aria-label="EagleBABA home">
-          <EagleLogo size={30} className="rounded-lg object-contain" />
+          <EagleLogo size={28} className="rounded-lg object-contain" />
           <span>EagleBABA</span>
         </Link>
         <div className="eb-mtopbar-actions">
+          <FontSizeControl />
           <ThemeToggle />
           <NotificationBell />
           <ProfileMenu />
+          <button
+            type="button"
+            className="eb-burger"
+            aria-label="Open navigation menu"
+            aria-expanded={isOpen}
+            aria-controls="global-nav-drawer"
+            onClick={openDrawer}
+          >
+            <MenuIcon size={20} />
+          </button>
         </div>
       </header>
 
-      {/* Slide drawer */}
-      <AnimatePresence>
-        {open ? (
-          <>
-            <motion.div
-              className="eb-drawer-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.div
-              id="eb-mobile-drawer"
-              ref={drawerRef}
-              className="eb-drawer eb-glass"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Main navigation"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 38 }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={{ left: 0.4, right: 0 }}
-              onDragEnd={onDragEnd}
-            >
-              <div className="eb-drawer-head">
-                <div className="eb-drawer-brand">
-                  <EagleLogo size={34} className="rounded-lg object-contain" />
-                  <div>
-                    <div className="eb-drawer-title">EagleBABA</div>
-                    <div className="eb-drawer-sub">Astro Trading Terminal</div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="eb-drawer-close"
-                  aria-label="Close navigation menu"
-                  onClick={() => setOpen(false)}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <nav className="eb-drawer-nav" aria-label="Primary">
-                {drawerItems.map((it) => {
-                  const Icon = it.icon;
-                  const active = isActive(it);
-                  const cls = `eb-drawer-item${active ? " is-active" : ""}`;
-                  const inner = (
-                    <>
-                      <span className="eb-drawer-ico">
-                        <Icon size={19} />
-                      </span>
-                      <span className="eb-drawer-label">{it.label}</span>
-                      {active ? <span className="eb-drawer-dot" aria-hidden /> : null}
-                    </>
-                  );
-                  return it.to ? (
-                    <Link
-                      key={it.label}
-                      to={it.to}
-                      className={cls}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setOpen(false)}
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <a key={it.label} href={it.href} className={cls} onClick={() => setOpen(false)}>
-                      {inner}
-                    </a>
-                  );
-                })}
-              </nav>
-            </motion.div>
-          </>
-        ) : null}
-      </AnimatePresence>
-
-      {/* Bottom navigation: 100% solid opaque obsidian black background with luxury gold border */}
+      {/* Bottom navigation: solid obsidian black background with luxury gold accent */}
       <nav
         className="eb-mbottomnav fixed bottom-3 inset-x-0 mx-auto z-50 block md:hidden max-w-sm bg-[#0b0f17] border border-amber-500/35 rounded-[20px] shadow-[0_10px_35px_rgba(0,0,0,0.95)] shadow-amber-500/10 backdrop-blur-xl"
         style={{ backgroundColor: "#0b0f17", opacity: 1 }}
@@ -225,7 +74,7 @@ export function MobileNav() {
           type="button"
           className="eb-mbn-item text-zinc-400 font-medium hover:text-zinc-200"
           aria-label="Open menu"
-          onClick={() => setOpen(true)}
+          onClick={openDrawer}
         >
           <MenuIcon size={21} className="text-zinc-400" />
           <span className="text-zinc-400 font-medium">Menu</span>

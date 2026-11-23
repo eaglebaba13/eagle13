@@ -20,6 +20,8 @@ import { AppShell } from "../components/AppShell";
 import { shouldSuppressShell } from "../components/app-shell.utils";
 import { MigrationAssistant } from "../components/MigrationAssistant";
 import { AiAssistantModal } from "../components/AiAssistantModal";
+import { NavDrawerProvider } from "../context/nav-drawer-context";
+import { GlobalNavDrawer } from "../components/navigation/GlobalNavDrawer";
 import { supabase } from "../integrations/supabase/client";
 import { Toaster } from "sonner";
 import { installBillingAdapter } from "../lib/billing-init";
@@ -155,12 +157,11 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         <script
-          // Pre-hydration theme init — prevents flash of incorrect theme
-          // and keeps `.dark` class in sync with `data-theme` so shadcn
-          // primitives and eb-* tokens paint the same surface.
+          // Pre-hydration theme and font-scale init — prevents flash of incorrect theme
+          // and keeps root typography scale in sync before first paint.
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('eb-theme')||'dark';var r=document.documentElement;r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.classList.add('dark');}})();",
+              "(function(){try{var t=localStorage.getItem('eb-theme')||'dark';var r=document.documentElement;r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');var s=localStorage.getItem('eb-font-scale');if(s){var v=parseInt(s,10);if(v>=85&&v<=125){r.style.fontSize=v+'%';r.style.setProperty('--eb-font-scale',(v/100).toString());}}}catch(e){}})();",
           }}
         />
       </head>
@@ -230,18 +231,21 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Global mobile navigation: sticky hamburger bar, slide drawer, bottom nav. */}
-        <MobileNav />
-        {suppressShell ? (
-          <Outlet />
-        ) : (
-          <AppShell>
+        <NavDrawerProvider>
+          {/* Global mobile navigation: sticky hamburger bar, slide drawer, bottom nav. */}
+          <MobileNav />
+          {suppressShell ? (
             <Outlet />
-          </AppShell>
-        )}
-        <MigrationAssistant />
-        <AiAssistantModal />
-        <Toaster richColors position="top-center" />
+          ) : (
+            <AppShell>
+              <Outlet />
+            </AppShell>
+          )}
+          <GlobalNavDrawer />
+          <MigrationAssistant />
+          <AiAssistantModal />
+          <Toaster richColors position="top-center" />
+        </NavDrawerProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

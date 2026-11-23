@@ -2,7 +2,8 @@ import { useMarketSession } from "@/hooks/use-market-session";
 import { createPortal } from "react-dom";
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useCallback, useRef, Component, type ErrorInfo, type ReactNode } from "react";
-import { AppSidebar } from "@/components/AppSidebar";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { NavMenuTrigger } from "@/components/navigation/NavMenuTrigger";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundToggle } from "@/components/SoundToggle";
@@ -1001,14 +1002,7 @@ function LiveChartSelection({
 
   return (
     <div className="flex h-[calc(100dvh-60px)] md:h-screen w-full max-w-full min-w-0 bg-[#08090C] text-white overflow-hidden font-sans">
-      {/* Platform Sidebar */}
-      {!isFullscreen && (
-        <div className="hidden lg:flex shrink-0">
-          <AppSidebar />
-        </div>
-      )}
-
-      {/* Main Charting Workstation */}
+      {/* Main Charting Workstation - Full Width */}
       <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden relative pb-[76px] md:pb-0">
         {/* Top Institutional Toolbar */}
         <header className="shrink-0 px-3 py-1.5 border-b border-white/10 bg-zinc-950/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 z-30">
@@ -1292,10 +1286,12 @@ function LiveChartSelection({
             </button>
 
             {/* Embedded Utility Controls */}
+            <FontSizeControl />
             <SoundToggle />
             <ThemeToggle />
             <NotificationBell />
             <ProfileMenu />
+            <NavMenuTrigger />
 
             {/* Fullscreen Button */}
             <button

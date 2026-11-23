@@ -14,7 +14,8 @@ import {
 } from "@/lib/option-strategy.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { AppSidebar } from "@/components/AppSidebar";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { NavMenuTrigger } from "@/components/navigation/NavMenuTrigger";
 import { ApexChart } from "@/components/ApexChart";
 import { NewsCenter } from "@/components/NewsPopup";
 import { useIstClock } from "@/hooks/use-scheduler";
@@ -316,15 +317,14 @@ function OptionStrategyTerminal() {
               Level Terminal
             </Link>
             <NewsCenter />
+            <FontSizeControl />
             <ThemeToggle />
+            <NavMenuTrigger />
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <div className="os-hide-sb">
-            <AppSidebar />
-          </div>
-          <main style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", width: "100%" }}>
+          <main style={{ flex: 1, minWidth: 0, width: "100%" }}>
             {isFetching ? (
               <div className="os-mono" style={{ fontSize: 11, color: C.gold, marginBottom: 8 }}>
                 ⟳ Refreshing live market data…

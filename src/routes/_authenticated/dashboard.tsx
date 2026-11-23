@@ -319,7 +319,7 @@ function DashboardContent({ market }: { market: ReturnType<typeof useQuery<Await
         ))}
       </div>
 
-      <main className="eb-main w-full max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
+      <main className="eb-main w-full max-w-none px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4 overflow-x-hidden">
         <DashboardRuntimeStrip />
         <div
           style={{

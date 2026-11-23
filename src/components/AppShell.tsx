@@ -13,17 +13,16 @@
 import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
-import { AppSidebar } from "@/components/AppSidebar";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SoundToggle } from "@/components/SoundToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { NavMenuTrigger } from "@/components/navigation/NavMenuTrigger";
 import { buildBreadcrumbs } from "@/components/app-shell.utils";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { EagleLogo } from "@/components/EagleLogo";
 import { applyThemeToDOM, getCachedThemeConfig } from "@/lib/theme-manager";
 import { getCachedFeatures } from "@/lib/features-client";
-
 import { LiveMarketTickerTape } from "@/components/market/LiveMarketTickerTape";
 
 function AppShellHeader() {
@@ -97,10 +96,12 @@ function AppShellHeader() {
       </nav>
 
       <div className="ml-auto flex flex-nowrap shrink-0 items-center gap-2 z-30">
+        <FontSizeControl />
         <SoundToggle />
         <ThemeToggle />
         <NotificationBell />
         <ProfileMenu />
+        <NavMenuTrigger />
       </div>
     </header>
   );
@@ -127,14 +128,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             "radial-gradient(ellipse 80% 60% at 50% -15%, var(--eb-glow-color, rgba(245,158,11,0.03)), transparent)",
         }}
       />
-      {/* Sidebar: desktop only (lg+). Tablet + mobile use MobileNav drawer. */}
-      <div className="relative z-10 hidden lg:flex lg:shrink-0 lg:pl-3 lg:pr-1 lg:py-3">
-        <AppSidebar />
-      </div>
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-x-hidden">
+      {/* Full-width main container without docked sidebar */}
+      <div className="relative z-10 flex min-w-0 w-full flex-1 flex-col overflow-x-hidden">
         <AppShellHeader />
         {features.tickerTape !== "hide" ? <LiveMarketTickerTape /> : null}
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-28 md:pb-8">{children}</main>
+        <main className="min-w-0 w-full flex-1 overflow-x-hidden pb-28 md:pb-8">{children}</main>
       </div>
     </div>
   );
