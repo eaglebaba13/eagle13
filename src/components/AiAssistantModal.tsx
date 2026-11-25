@@ -25,7 +25,11 @@ export function AiAssistantModal() {
       });
       setAnswer(result.answer);
     } catch (error) {
-      setAnswer(error instanceof Error ? error.message : "Assistant unavailable");
+      setAnswer(
+        error instanceof Error
+          ? error.message
+          : "Unable to reach the assistant right now. Please try again in a moment.",
+      );
     } finally {
       setBusy(false);
     }
