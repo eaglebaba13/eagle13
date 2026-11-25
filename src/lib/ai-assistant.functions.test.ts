@@ -166,4 +166,40 @@ describe("resolveAiAssistantReply & intent-aware bilingual domain intelligence",
     const gapHi = buildDomainFallbackAnswer("GAP · No verified option OI observation kya hai", "hi");
     expect(gapHi).toContain("डेटा-इंटीग्रिटी");
   });
+
+  it("supports multi-turn follow-up resolution, route/symbol context, and secret/formula leak prevention", async () => {
+    // Multi-turn follow-up: turn 1 asks about PURE BLOOD BATH, turn 2 asks "how do I manage SL for it?"
+    const followUp = await resolveAiAssistantReply({
+      question: "how do I manage SL for it?",
+      language: "en",
+      history: [
+        { role: "user", content: "Explain PURE BLOOD BATH (COA #8)" },
+        { role: "assistant", content: "PURE BLOOD BATH (COA #8 / Cascade Breakdown) signals bearish pressure." },
+      ],
+      context: { currentRoute: "/options-chain", activeSymbol: "NIFTY" },
+      env: {},
+      fetchImpl: vi.fn() as unknown as typeof fetch,
+    });
+    expect(followUp.provider).toBe("glossary");
+    expect(followUp.toolsUsed).toContain("route_guide");
+    expect(followUp.answer).toContain("Invalidation Stop");
+    expect(followUp.answer).toContain("NIFTY");
+
+    // Route context awareness when user asks "explain this page"
+    const routeCtx = await resolveAiAssistantReply({
+      question: "explain this page",
+      language: "en",
+      context: { currentRoute: "/live-chart", activeSymbol: "GC1!" },
+      env: {},
+      fetchImpl: vi.fn() as unknown as typeof fetch,
+    });
+    expect(routeCtx.toolsUsed).toContain("route_guide");
+    expect(routeCtx.answer).toContain("/live-chart");
+    expect(routeCtx.answer).toContain("GC1!");
+
+    // Secret & proprietary formula redaction guardrail
+    expect(sanitizeAssistantOutput("Bearer abcdefghijklmnopqrstuvwxyz1234")).toContain("cannot share");
+    expect(sanitizeAssistantOutput("process.env.OPENAI_API_KEY")).toContain("cannot share");
+    expect(sanitizeAssistantOutput("exact equation: Math.sqrt(price) * 0.618")).toContain("cannot share");
+  });
 });

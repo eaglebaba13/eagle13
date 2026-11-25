@@ -1,7 +1,19 @@
-// EagleBABA Intent-Aware Bilingual Trading & Platform Domain Resolver
-// Research & education only — never gives financial advice or executes orders.
+// EagleBABA Agentic Read-Only Domain & Route Knowledge Tools
+// Research & education only — never gives financial advice, reveals secrets,
+// or exposes proprietary mathematical formulas/weights/coefficients.
 
 export type AssistantLanguage = "en" | "hi";
+
+export interface ChatTurn {
+  readonly role: "user" | "assistant";
+  readonly content: string;
+}
+
+export interface AssistantUiContext {
+  readonly currentRoute?: string;
+  readonly activeSymbol?: string;
+  readonly activeRegime?: string;
+}
 
 interface DomainRule {
   readonly id: string;
@@ -9,6 +21,70 @@ interface DomainRule {
   readonly en: string;
   readonly hi: string;
 }
+
+interface RouteGuideEntry {
+  readonly prefix: string;
+  readonly title: string;
+  readonly en: string;
+  readonly hi: string;
+}
+
+const ROUTE_GUIDES: readonly RouteGuideEntry[] = [
+  {
+    prefix: "/dashboard",
+    title: "Dashboard",
+    en: "You are on **`/dashboard`**, which displays live index quotes (`NIFTY 50 — LIVE`), `CPR LEVELS` (`TC`, `PP`, `BC`, CPR width), `SAFE ZONES` (Support/Resistance reversal bands), `INDIA VIX`, `Gold–Silver Ratio`, and `Runtime Readiness`.",
+    hi: "आप अभी **`/dashboard`** पर हैं, जहाँ लाइव इंडेक्स कोट्स (`NIFTY 50 — LIVE`), `CPR LEVELS`, `SAFE ZONES`, `INDIA VIX`, `Gold–Silver Ratio` और `Runtime Readiness` दिखते हैं।",
+  },
+  {
+    prefix: "/options-chain",
+    title: "AI LTP Calculator & COA 1.0",
+    en: "You are on **`/options-chain`**, which provides `PAZ` (`EOS` Support / `EOR` Resistance), `PDI` (`WTT`/`WTB` & anchor pressure tags), `OVM-9` regimes (`Momentum Surge`, `Cascade Breakdown`, `Dual-Side Trap`), `Session Flow`, `RSB` targets (`T1`–`T3`), `D1 (1:1)` scalp plan, and `STOCKS 4-LINE` / `LTP BLAST SCREENER`.",
+    hi: "आप अभी **`/options-chain`** पर हैं, जहाँ `PAZ` (`EOS`/`EOR`), `PDI` (`WTT`/`WTB` प्रेशर टैग), `OVM-9` रेजीम, `Session Flow`, `RSB` लक्ष्य (`T1`–`T3`), `D1 (1:1)` स्कैल्प प्लान और `STOCKS 4-LINE` दिखते हैं।",
+  },
+  {
+    prefix: "/live-chart",
+    title: "60 FPS Live Chart Workstation",
+    en: "You are on **`/live-chart`**, featuring 60 FPS candles, `VWAP`, `OC Matrix` horizontal overlays, `D1 (1:1)` scalp lines, `Astro/Gann` levels, `ICT Unicorn` & `FRVP` toggles, Watchlist, and `Market Replay`.",
+    hi: "आप अभी **`/live-chart`** पर हैं, जहाँ 60 FPS कैंडल्स, `VWAP`, `OC Matrix` ओवरले, `D1 (1:1)` लाइन्स, `Astro/Gann`, `ICT Unicorn` और वॉचलिस्ट उपलब्ध हैं।",
+  },
+  {
+    prefix: "/options-analytics",
+    title: "Options Analytics",
+    en: "You are on **`/options-analytics`**, showing strike-wise OI, Volume, IV skew, and timestamped session observation logs (where unverified intervals are marked `GAP · No verified option OI observation`).",
+    hi: "आप अभी **`/options-analytics`** पर हैं, जहाँ स्ट्राइक-वाइज OI, Volume, IV और सेशन ऑब्जर्वेशन लॉग (`GAP` मार्कर सहित) दिखते हैं।",
+  },
+  {
+    prefix: "/combined-pcr",
+    title: "Combined PCR",
+    en: "You are on **`/combined-pcr`**, tracking multi-index Put-Call Ratio (`Put OI / Call OI`), OI slopes, and directional balance.",
+    hi: "आप अभी **`/combined-pcr`** पर हैं, जो मल्टी-इंडेक्स Put-Call Ratio और OI ट्रेंड दिखाता है।",
+  },
+  {
+    prefix: "/unicorn-radar",
+    title: "Unicorn & SMT Radar",
+    en: "You are on **`/unicorn-radar`**, scanning Breaker Block + FVG overlaps (`ICT Unicorn`) and cross-index `SMT` divergences.",
+    hi: "आप अभी **`/unicorn-radar`** पर हैं, जो Breaker Block + FVG ओवरलैप और `SMT` डाइवर्जेंस स्कैन करता है।",
+  },
+  {
+    prefix: "/liquidity-heatmap",
+    title: "Liquidity & Orderflow Desk",
+    en: "You are on **`/liquidity-heatmap`**, mapping session liquidity pools, sweeps, and volume profile concentration.",
+    hi: "आप अभी **`/liquidity-heatmap`** पर हैं, जो सेशन लिक्विडिटी पूल और ऑर्डरफ्लो जोन दिखाता है।",
+  },
+  {
+    prefix: "/chronowheel",
+    title: "ChronoWheel (GCD)",
+    en: "You are on **`/chronowheel`**, displaying planetary harmonics, time-cycle turning windows, and Gann-cycle research alignments.",
+    hi: "आप अभी **`/chronowheel`** पर हैं, जो टाइम-साइकिल टर्निंग विंडो और प्लैनेटरी हार्मोनिक्स दिखाता है।",
+  },
+  {
+    prefix: "/fo-ban-list",
+    title: "F&O Ban & MWPL",
+    en: "You are on **`/fo-ban-list`**, monitoring NSE F&O Ban securities and Market-Wide Position Limit (`MWPL`) percentages.",
+    hi: "आप अभी **`/fo-ban-list`** पर हैं, जो NSE F&O बैन और `MWPL` प्रतिशत दिखाता है।",
+  },
+];
 
 const DOMAIN_RULES: readonly DomainRule[] = [
   {
@@ -59,6 +135,7 @@ const DOMAIN_RULES: readonly DomainRule[] = [
       /\bkis\s*page\s*par\s*kya\s*hai\b/i,
       /\b(?:all\s*)?pages\s*(?:guide|list|overview)\b/i,
       /\bwhich\s*page\b/i,
+      /\bexplain\s*this\s*page\b/i,
       /\bnavigation\b/i,
     ],
     en: [
@@ -149,8 +226,8 @@ const DOMAIN_RULES: readonly DomainRule[] = [
   {
     id: "vwap",
     patterns: [/\bvwap\b/i, /\bvolume\s*weighted\s*average\s*price\b/i],
-    en: "**VWAP (Volume Weighted Average Price)** is the intraday average price weighted by traded volume (`Σ(Price × Volume) / ΣVolume`). Institutional desks use VWAP on `/live-chart` as a dynamic fair-value benchmark: sustained price above VWAP signals buyer control, while sustained price below VWAP signals seller control.",
-    hi: "**VWAP (Volume Weighted Average Price)** दिन के दौरान वॉल्यूम के आधार पर निकाला गया औसत मूल्य है (`Σ(Price × Volume) / ΣVolume`)। `/live-chart` पर कीमत VWAP से ऊपर टिकना खरीदारों की मजबूती और नीचे टिकना विक्रेताओं का दबाव दर्शाता है।",
+    en: "**VWAP (Volume Weighted Average Price)** is the intraday average price weighted by traded volume across the session. Institutional desks use VWAP on `/live-chart` as a dynamic fair-value benchmark: sustained price above VWAP signals buyer control, while sustained price below VWAP signals seller control.",
+    hi: "**VWAP (Volume Weighted Average Price)** दिन के दौरान ट्रेड हुए वॉल्यूम के आधार पर निकाला गया औसत मूल्य है। `/live-chart` पर कीमत VWAP से ऊपर टिकना खरीदारों की मजबूती और नीचे टिकना विक्रेताओं का दबाव दर्शाता है।",
   },
   {
     id: "bloodbath",
@@ -288,7 +365,7 @@ const DOMAIN_RULES: readonly DomainRule[] = [
   {
     id: "smc-fvg-unicorn",
     patterns: [/\b(?:fvg|fair\s*value\s*gap|unicorn|smt)\b/i],
-    en: "FVG (Fair Value Gap) is a 3-candle imbalance (`candle[2].low > candle[0].high` bullish or `candle[2].high < candle[0].low` bearish). ICT Unicorn combines a Breaker Block overlapping an FVG, while SMT checks divergence across correlated instruments.",
+    en: "FVG (Fair Value Gap) is a 3-candle price imbalance highlighting institutional displacement zones. ICT Unicorn combines a Breaker Block overlapping an FVG, while SMT checks divergence across correlated instruments.",
     hi: "FVG (Fair Value Gap) 3-कैंडल का प्राइस इम्बैलेंस है। ICT Unicorn सेटअप Breaker Block और FVG के ओवरलैप को देखता है, और SMT संबंधित इंडेक्स के बीच डाइवर्जेंस चेक करता है।",
   },
   {
@@ -305,29 +382,132 @@ const DOMAIN_RULES: readonly DomainRule[] = [
   },
 ];
 
-export function buildDomainFallbackAnswer(question: string, language: AssistantLanguage): string {
-  const matched = DOMAIN_RULES.filter((rule) => rule.patterns.some((p) => p.test(question)));
+/** Read-only tool 1: Resolve route/page & symbol context */
+export function lookupRouteGuide(
+  context: AssistantUiContext | undefined,
+  language: AssistantLanguage,
+): { toolName: string; summary: string } | null {
+  if (!context?.currentRoute) return null;
+  const route = context.currentRoute.toLowerCase();
+  const match = ROUTE_GUIDES.find((r) => route === r.prefix || route.startsWith(`${r.prefix}/`));
+  if (!match) return null;
+
+  const symNote = context.activeSymbol
+    ? language === "hi"
+      ? ` (सक्रिय सिंबल: **${context.activeSymbol}**)`
+      : ` (Active symbol: **${context.activeSymbol}**)`
+    : "";
+  const regimeNote = context.activeRegime
+    ? language === "hi"
+      ? ` · रेजीम: **${context.activeRegime}**`
+      : ` · Regime: **${context.activeRegime}**`
+    : "";
+
+  return {
+    toolName: "route_guide",
+    summary: `${match[language]}${symNote}${regimeNote}`,
+  };
+}
+
+/** Read-only tool 2: Intent-aware multi-turn EagleBABA engine & concept resolver */
+export function runAgenticDomainTools(params: {
+  question: string;
+  language: AssistantLanguage;
+  history?: readonly ChatTurn[];
+  context?: AssistantUiContext;
+}): { answer: string; toolsUsed: string[]; groundingSummary: string } {
+  const { question, language, history = [], context } = params;
+  const toolsUsed: string[] = [];
+
+  // 1. Direct intent match on current question
+  let matched = DOMAIN_RULES.filter((rule) => rule.patterns.some((p) => p.test(question)));
+
+  // 2. Multi-turn follow-up resolution: if follow-up is short/pronoun-driven (e.g. "explain more", "iska sl", "what about risk?"),
+  //    inherit the most recent user/assistant topic from conversation history.
+  const isFollowUp =
+    matched.length === 0 ||
+    /\b(?:it|this|that|iska|iski|isme|more|detail|elaborate|example|sl|stop\s*loss)\b/i.test(question);
+
+  if (matched.length === 0 && history.length > 0 && isFollowUp) {
+    const recentText = history
+      .slice(-4)
+      .map((t) => t.content)
+      .join(" ");
+    const inherited = DOMAIN_RULES.filter((rule) => rule.patterns.some((p) => p.test(recentText)));
+    if (inherited.length > 0) {
+      matched = inherited.slice(0, 1);
+      toolsUsed.push("conversation_memory");
+    }
+  }
+
+  // 3. Route context grounding when user asks about current page or general guidance
+  const asksAboutCurrentPage =
+    /\b(?:this\s*page|yeh\s*page|is\s*page|what\s*is\s*this|explain\s*here|current\s*screen)\b/i.test(
+      question,
+    );
+  const routeInfo = lookupRouteGuide(context, language);
+  if (routeInfo) {
+    toolsUsed.push(routeInfo.toolName);
+  }
+
   if (matched.length > 0) {
-    const body = matched
+    toolsUsed.push("engine_concepts");
+    const conceptBody = matched
       .slice(0, 2)
       .map((rule) => rule[language])
       .join("\n\n");
+
+    const parts: string[] = [];
+    if (asksAboutCurrentPage && routeInfo) {
+      parts.push(routeInfo.summary);
+    }
+    parts.push(conceptBody);
+
+    if (!asksAboutCurrentPage && routeInfo && context?.activeSymbol) {
+      parts.push(
+        language === "hi"
+          ? `_(सक्रिय स्क्रीन: \`${context.currentRoute}\` · सिंबल: **${context.activeSymbol}**)_`
+          : `_(Active context: \`${context.currentRoute}\` · Symbol: **${context.activeSymbol}**)_`,
+      );
+    }
+
     const note =
       language === "hi"
-        ? "\n\n_(EagleBABA डोमेन इंटेलिजेंस — केवल रिसर्च और शिक्षा के लिए।)_"
-        : "\n\n_(EagleBABA Domain Intelligence — research & education only.)_";
-    return `${body}${note}`;
+        ? "_(EagleBABA एजेंटिक रिसर्च असिस्टेंट — केवल शिक्षा और रिसर्च के लिए।)_"
+        : "_(EagleBABA Agentic Research Assistant — research & education only.)_";
+    parts.push(note);
+
+    const full = parts.join("\n\n");
+    return { answer: full, toolsUsed, groundingSummary: full };
   }
 
-  return language === "hi"
-    ? [
-        `आपके प्रश्न **"${question.slice(0, 80)}"** के लिए EagleBABA रिसर्च मार्गदर्शन:`,
-        "• **प्लेटफ़ॉर्म उपयोग:** `/dashboard` पर `NIFTY 50 — LIVE`, `CPR` व `Safe Zones` देखें; `/options-chain` पर `OVM-9`, `PAZ` (`EOS`/`EOR`), `Session Flow` व `RSB` जाँचें; `/live-chart` पर `VWAP` और `OC Matrix` से कन्फर्म करें।",
-        "• आप सीधे **Option Buying (Call/Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Safe Buy**, **GAP logs**, या **WTT/WTB** के बारे में पूछ सकते हैं।",
-      ].join("\n")
-    : [
-        `EagleBABA research guidance for **"${question.slice(0, 80)}"**:`,
-        "• **Workflow:** Check `/dashboard` (`CPR`, `Safe Zones`, `India VIX`), inspect `/options-chain` (`OVM-9`, `PAZ` `EOS`/`EOR`, `Session Flow`, `RSB` & `D1 1:1`), and confirm price structure with `VWAP` & `OC Matrix` on `/live-chart`.",
-        "• Ask specifically about **Option Buying (Call vs Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Primary Safe Buy**, **GAP session logs**, or **WTT/WTB**.",
-      ].join("\n");
+  if (routeInfo) {
+    const fallback = [
+      routeInfo.summary,
+      language === "hi"
+        ? `आपके प्रश्न **"${question.slice(0, 80)}"** के संदर्भ में: आप इस पेज के सिग्नल, \`OVM-9\` रेजीम, \`PAZ\`/\`PDI\`, \`RSB\` स्टॉप-लॉस, \`VWAP\`, या किसी भी टर्म के बारे में पूछ सकते हैं।`
+        : `Regarding **"${question.slice(0, 80)}"**: Ask me how to interpret any signal on this page, \`OVM-9\` regimes, \`PAZ\`/\`PDI\`, \`RSB\` stop-loss tiers, \`VWAP\`, or session \`GAP\` markers.`,
+    ].join("\n\n");
+    return { answer: fallback, toolsUsed, groundingSummary: fallback };
+  }
+
+  toolsUsed.push("engine_concepts");
+  const general =
+    language === "hi"
+      ? [
+          `आपके प्रश्न **"${question.slice(0, 80)}"** के लिए EagleBABA रिसर्च मार्गदर्शन:`,
+          "• **वर्कफ़्लो:** `/dashboard` पर `NIFTY 50 — LIVE`, `CPR` व `Safe Zones` देखें; `/options-chain` पर `OVM-9`, `PAZ` (`EOS`/`EOR`), `Session Flow` व `RSB` जाँचें; `/live-chart` पर `VWAP` और `OC Matrix` से कन्फर्म करें।",
+          "• आप **Option Buying (Call/Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Safe Buy**, **GAP logs**, या **WTT/WTB** पर फॉलो-अप पूछ सकते हैं।",
+        ].join("\n")
+      : [
+          `EagleBABA research guidance for **"${question.slice(0, 80)}"**:`,
+          "• **Workflow:** Check `/dashboard` (`CPR`, `Safe Zones`, `India VIX`), inspect `/options-chain` (`OVM-9`, `PAZ` `EOS`/`EOR`, `Session Flow`, `RSB` & `D1 1:1`), and confirm price structure with `VWAP` & `OC Matrix` on `/live-chart`.",
+          "• Ask follow-ups on **Option Buying (Call vs Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Primary Safe Buy**, **GAP session logs**, or **WTT/WTB**.",
+        ].join("\n");
+
+  return { answer: general, toolsUsed, groundingSummary: general };
+}
+
+export function buildDomainFallbackAnswer(question: string, language: AssistantLanguage): string {
+  return runAgenticDomainTools({ question, language }).answer;
 }
