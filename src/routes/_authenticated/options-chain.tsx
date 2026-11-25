@@ -345,11 +345,36 @@ function LtpCalculatorPage() {
 
                 <div className="px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center gap-2">
                   <span className="text-zinc-500 text-[10px] font-semibold">09:20 RANGE:</span>
-                  <span className="text-zinc-200 font-bold">
+                  <span className="text-zinc-200 font-bold tabular-nums">
                     {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.dayRange0920.low.toFixed(2)} - {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.topDownRange.dayRange0920.high.toFixed(2)}
                   </span>
-                  <span className="text-zinc-500 text-[10px]">
+                  <span className="text-zinc-500 text-[10px] tabular-nums">
                     ({(ocIntelligence.topDownRange.dayRange0920.high - ocIntelligence.topDownRange.dayRange0920.low).toFixed(2)} pts)
+                  </span>
+                </div>
+
+                {/* Intraday OI vs Volume & Session Flow Badge */}
+                <div
+                  className="px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 flex flex-wrap items-center gap-2"
+                  title={ocIntelligence.sessionFlow.deltaOiContrastNote}
+                >
+                  <span className="text-slate-400 text-[10px] font-semibold">SESSION FLOW:</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold">
+                    {ocIntelligence.sessionFlow.oiProfile.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-slate-400 text-[10px] tabular-nums">
+                    ATM Vol: <strong className="text-zinc-200">{ocIntelligence.sessionFlow.atmVolumeDominance}</strong>
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold border ${
+                      ocIntelligence.sessionFlow.flowBias === "PUT_FLOW_EDGE"
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                        : ocIntelligence.sessionFlow.flowBias === "CALL_FLOW_EDGE"
+                          ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                          : "bg-zinc-800 text-zinc-300 border-zinc-700"
+                    }`}
+                  >
+                    {ocIntelligence.sessionFlow.flowBias}
                   </span>
                 </div>
               </div>

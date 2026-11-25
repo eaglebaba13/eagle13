@@ -154,6 +154,30 @@ export interface OptionChainIntelligenceInput {
   readonly intradayShiftHistory?: readonly AnchorShiftEvent[];
 }
 
+export type SessionOiProfile =
+  | "EXPIRY_BARRIER_RANGE"
+  | "EVENT_HIGH_OI_OVERRIDE"
+  | "DIRECTIONAL_MOMENTUM";
+
+export type IntradayFlowBias =
+  | "CALL_FLOW_EDGE"
+  | "PUT_FLOW_EDGE"
+  | "BALANCED_RANGE";
+
+export interface SessionFlowIntelligence {
+  readonly oiProfile: SessionOiProfile;
+  readonly isExpirySession: boolean;
+  readonly highOiOverride: boolean;
+  readonly atmCallVolume: number;
+  readonly atmPutVolume: number;
+  readonly atmVolumeDominance: "CALL" | "PUT" | "BALANCED";
+  readonly callDeltaOiVsVolRatio: number;
+  readonly putDeltaOiVsVolRatio: number;
+  readonly deltaOiContrastNote: string;
+  readonly flowBias: IntradayFlowBias;
+  readonly summary: string;
+}
+
 export interface OptionChainIntelligenceResult {
   readonly underlying: string;
   readonly spotPrice: number;
@@ -165,6 +189,7 @@ export interface OptionChainIntelligenceResult {
   readonly pdiTop: PdiDriftIndex;
   readonly pdiBot: PdiDriftIndex;
   readonly ovm9: Ovm9Matrix;
+  readonly sessionFlow: SessionFlowIntelligence;
   readonly rsbExecution: RsbExecutionMatrix;
   readonly d1ScalpPlan: D1ScalpPlan;
   readonly topDownRange: TopDownRangeMatrix;
@@ -786,9 +811,92 @@ export function computeOptionChainIntelligence(
     const now = new Date(timestamp);
     if (!isNaN(expDate.getTime()) && !isNaN(now.getTime())) {
       const diffDays = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) dte = diffDays;
+      if (diffDays >= 0) dte = diffDays;
     }
   }
+
+  // Session Flow & OI-vs-Volume Intelligence
+  const isExpirySession = expiry ? dte <= 1 : false;
+  const totalCombinedOi = callOiTotal + putOiTotal;
+  const totalCombinedVol = callVolTotal + putVolTotal;
+  const isHighOiConcentration =
+    totalCombinedOi >= 200_000 &&
+    (totalCombinedVol === 0 || totalCombinedOi >= totalCombinedVol * 1.15);
+
+  let oiProfile: SessionOiProfile = "DIRECTIONAL_MOMENTUM";
+  let highOiOverride = false;
+  if (isExpirySession && isHighOiConcentration) {
+    oiProfile = "EXPIRY_BARRIER_RANGE";
+  } else if (!isExpirySession && totalCombinedOi >= 200_000 && totalCombinedVol > 0 && totalCombinedOi >= totalCombinedVol * 1.5) {
+    oiProfile = "EVENT_HIGH_OI_OVERRIDE";
+    highOiOverride = true;
+  }
+
+  const atmCallVolume = callStrikes
+    .filter((c) => Math.abs(c.strike - atm) <= step)
+    .reduce((sum, c) => sum + c.volume, 0);
+  const atmPutVolume = putStrikes
+    .filter((p) => Math.abs(p.strike - atm) <= step)
+    .reduce((sum, p) => sum + p.volume, 0);
+
+  const atmVolumeDominance: "CALL" | "PUT" | "BALANCED" =
+    atmCallVolume >= Math.max(1, atmPutVolume) * 1.2
+      ? "CALL"
+      : atmPutVolume >= Math.max(1, atmCallVolume) * 1.2
+        ? "PUT"
+        : "BALANCED";
+
+  const callDeltaOiVsVolRatio =
+    callVolTotal > 0 ? Number((Math.abs(callOiChangeSum) / callVolTotal).toFixed(2)) : 0;
+  const putDeltaOiVsVolRatio =
+    putVolTotal > 0 ? Number((Math.abs(putOiChangeSum) / putVolTotal).toFixed(2)) : 0;
+
+  let flowBias: IntradayFlowBias = "BALANCED_RANGE";
+  let deltaOiContrastNote = "Balanced ΔOI buildup and ATM volume participation across Calls and Puts.";
+
+  if (
+    callOiChangeSum > putOiChangeSum * 1.25 &&
+    callVolTotal < putVolTotal &&
+    atmVolumeDominance === "PUT"
+  ) {
+    flowBias = "PUT_FLOW_EDGE";
+    deltaOiContrastNote =
+      "High Call ΔOI on lower Call volume contrasted by stronger Put ATM volume flow.";
+  } else if (
+    putOiChangeSum > callOiChangeSum * 1.25 &&
+    putVolTotal < callVolTotal &&
+    atmVolumeDominance === "CALL"
+  ) {
+    flowBias = "CALL_FLOW_EDGE";
+    deltaOiContrastNote =
+      "High Put ΔOI on lower Put volume contrasted by stronger Call ATM volume flow.";
+  } else if (putOiChangeSum >= callOiChangeSum * 1.2 && (atmVolumeDominance === "PUT" || putVolTotal >= callVolTotal)) {
+    flowBias = "PUT_FLOW_EDGE";
+    deltaOiContrastNote = "Put ΔOI buildup aligned with stronger Put session/ATM volume flow.";
+  } else if (callOiChangeSum >= putOiChangeSum * 1.2 && (atmVolumeDominance === "CALL" || callVolTotal >= putVolTotal)) {
+    flowBias = "CALL_FLOW_EDGE";
+    deltaOiContrastNote = "Call ΔOI buildup aligned with stronger Call session/ATM volume flow.";
+  } else if (atmVolumeDominance === "CALL") {
+    flowBias = "CALL_FLOW_EDGE";
+    deltaOiContrastNote = "ATM Call volume leads participation while ΔOI remains relatively balanced.";
+  } else if (atmVolumeDominance === "PUT") {
+    flowBias = "PUT_FLOW_EDGE";
+    deltaOiContrastNote = "ATM Put volume leads participation while ΔOI remains relatively balanced.";
+  }
+
+  const sessionFlow: SessionFlowIntelligence = {
+    oiProfile,
+    isExpirySession,
+    highOiOverride,
+    atmCallVolume,
+    atmPutVolume,
+    atmVolumeDominance,
+    callDeltaOiVsVolRatio,
+    putDeltaOiVsVolRatio,
+    deltaOiContrastNote,
+    flowBias,
+    summary: `${oiProfile.replace(/_/g, " ")} · ATM Vol: ${atmVolumeDominance} · ${flowBias}`,
+  };
 
   const expectedMove = Number((spotPrice * (atmIv / 100) * Math.sqrt(Math.max(1, dte) / 365)).toFixed(2));
   const weeklyLow = Math.round(spotPrice - expectedMove);
@@ -861,6 +969,7 @@ export function computeOptionChainIntelligence(
     pdiTop,
     pdiBot,
     ovm9,
+    sessionFlow,
     rsbExecution,
     d1ScalpPlan,
     topDownRange,

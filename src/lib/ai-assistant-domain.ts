@@ -124,9 +124,19 @@ const DOMAIN_RULES: readonly DomainRule[] = [
   },
   {
     id: "oi-volume-pcr",
-    patterns: [/\b(?:oi\b|open\s*interest|pcr|volume)\b/i],
-    en: "Open Interest (OI) tracks active open option contracts, while Volume measures total traded contracts in the session. Comparing ΔOI vs Volume reveals fresh writing vs unwinding, and PCR (`Put OI / Call OI`) gauges overall positioning balance.",
-    hi: "Open Interest (OI) सक्रिय खुले कॉन्ट्रैक्ट्स दिखाता है, जबकि Volume दिन भर में ट्रेड हुए कुल कॉन्ट्रैक्ट्स बताता है। ΔOI और Volume की तुलना से नई राइटिंग या अनवाइंडिंग का पता चलता है, और PCR (`Put OI / Call OI`) बाज़ार का संतुलन मापता है।",
+    patterns: [
+      /\b(?:oi\b|open\s*interest|pcr|volume|session\s*flow|expiry\s*barrier|flow\s*edge|delta\s*oi)\b/i,
+    ],
+    en: [
+      "**Intraday OI vs. Volume & Session Flow Intelligence:**",
+      "• **Session OI Profile:** High OI concentration on expiry signals `EXPIRY_BARRIER_RANGE` (range-bound pinning), while lower OI favors `DIRECTIONAL_MOMENTUM`; large OI on a non-expiry day triggers `EVENT_HIGH_OI_OVERRIDE`.",
+      "• **ATM Participation & ΔOI Contrast:** Compare ATM Call vs. Put volume dominance against ΔOI buildup. When one side builds ΔOI on lower volume while the opposing side leads ATM volume flow, EagleBABA classifies `CALL_FLOW_EDGE`, `PUT_FLOW_EDGE`, or `BALANCED_RANGE` alongside PCR (`Put OI / Call OI`).",
+    ].join("\n"),
+    hi: [
+      "**इंट्राडे OI बनाम Volume और सेशन फ्लो इंटेलिजेंस:**",
+      "• **Session OI Profile:** एक्सपायरी पर अधिक OI `EXPIRY_BARRIER_RANGE` (रेंज-बाउंड पिनिंग) दिखाता है, कम OI `DIRECTIONAL_MOMENTUM` को सपोर्ट करता है, और नॉन-एक्सपायरी पर बड़ा OI `EVENT_HIGH_OI_OVERRIDE` ट्रिगर करता है।",
+      "• **ATM भागीदारी और ΔOI तुलना:** ATM Call बनाम Put वॉल्यूम की तुलना ΔOI से करें—EagleBABA इसे `CALL_FLOW_EDGE`, `PUT_FLOW_EDGE`, या `BALANCED_RANGE` के रूप में दिखाता है।",
+    ].join("\n"),
   },
   {
     id: "smc-fvg-unicorn",

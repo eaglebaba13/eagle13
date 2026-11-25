@@ -276,4 +276,57 @@ describe("optionChainIntelligence Engine", () => {
     expect(bearRes.d1ScalpPlan.pointDistance).toBe(135);
     expect(bearRes.d1ScalpPlan.targetPrice).toBe(25300 - 135);
   });
+
+  it("evaluates Session OI Profile, ATM participation, and ΔOI vs Volume contrast", () => {
+    // 1. EXPIRY_BARRIER_RANGE on expiry day with high OI (> 200k and > 1.15x vol)
+    const expiryRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25350,
+      atmStrike: 25350,
+      callStrikes: mockCallStrikes,
+      putStrikes: mockPutStrikes,
+      expiry: "2026-11-23T15:30:00.000Z",
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(expiryRes.sessionFlow.isExpirySession).toBe(true);
+    expect(expiryRes.sessionFlow.oiProfile).toBe("EXPIRY_BARRIER_RANGE");
+    expect(expiryRes.sessionFlow.highOiOverride).toBe(false);
+
+    // 2. EVENT_HIGH_OI_OVERRIDE on non-expiry day when OI >= 1.5x Vol and >= 200k
+    const eventLegs = [
+      { strike: 25300, side: "CE" as const, oi: 200000, changeOi: 40000, volume: 60000, ltp: 100, changePct: 2, iv: 14, bid: null, ask: null },
+      { strike: 25300, side: "PE" as const, oi: 180000, changeOi: 10000, volume: 90000, ltp: 90, changePct: -2, iv: 14, bid: null, ask: null },
+    ];
+    const overrideRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25300,
+      atmStrike: 25300,
+      legs: eventLegs,
+      expiry: "2026-11-28T15:30:00.000Z",
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(overrideRes.sessionFlow.isExpirySession).toBe(false);
+    expect(overrideRes.sessionFlow.oiProfile).toBe("EVENT_HIGH_OI_OVERRIDE");
+    expect(overrideRes.sessionFlow.highOiOverride).toBe(true);
+    expect(overrideRes.sessionFlow.atmVolumeDominance).toBe("PUT");
+    // High Call ΔOI on lower Call vol contrasted by stronger Put ATM vol -> PUT_FLOW_EDGE
+    expect(overrideRes.sessionFlow.flowBias).toBe("PUT_FLOW_EDGE");
+
+    // 3. DIRECTIONAL_MOMENTUM with CALL_FLOW_EDGE
+    const momentumLegs = [
+      { strike: 25300, side: "CE" as const, oi: 60000, changeOi: 35000, volume: 120000, ltp: 105, changePct: 12, iv: 14, bid: null, ask: null },
+      { strike: 25300, side: "PE" as const, oi: 50000, changeOi: -10000, volume: 40000, ltp: 80, changePct: -10, iv: 14, bid: null, ask: null },
+    ];
+    const momRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25300,
+      atmStrike: 25300,
+      legs: momentumLegs,
+      expiry: "2026-11-28T15:30:00.000Z",
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(momRes.sessionFlow.oiProfile).toBe("DIRECTIONAL_MOMENTUM");
+    expect(momRes.sessionFlow.atmVolumeDominance).toBe("CALL");
+    expect(momRes.sessionFlow.flowBias).toBe("CALL_FLOW_EDGE");
+  });
 });

@@ -1269,6 +1269,22 @@ function LiveChartSelection({
               <span>D1 (1:1)</span>
             </button>
 
+            {showOcMatrix && ocIntelligence && (
+              <span
+                className={`hidden xl:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono border ${
+                  ocIntelligence.sessionFlow.flowBias === "PUT_FLOW_EDGE"
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                    : ocIntelligence.sessionFlow.flowBias === "CALL_FLOW_EDGE"
+                      ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                      : "bg-zinc-900 text-zinc-300 border-zinc-700"
+                }`}
+                title={`${ocIntelligence.sessionFlow.summary} — ${ocIntelligence.sessionFlow.deltaOiContrastNote}`}
+              >
+                <span>{ocIntelligence.sessionFlow.flowBias}</span>
+                <span className="text-zinc-400">· {ocIntelligence.sessionFlow.oiProfile.replace(/_/g, " ")}</span>
+              </span>
+            )}
+
             {/* Astro Levels Toggle */}
             <button
               type="button"

@@ -115,6 +115,8 @@ describe("resolveAiAssistantReply & intent-aware bilingual domain intelligence",
     expect(buildDomainFallbackAnswer("what is wtt", "en")).toContain("Weak Towards Top");
     expect(buildDomainFallbackAnswer("what is d1 1:1 scalp", "en")).toContain("25-pt");
     expect(buildDomainFallbackAnswer("oi vs volume and pcr", "en")).toContain("Put OI / Call OI");
+    expect(buildDomainFallbackAnswer("session flow expiry barrier", "en")).toContain("EXPIRY_BARRIER_RANGE");
+    expect(buildDomainFallbackAnswer("session flow atm volume", "hi")).toContain("PUT_FLOW_EDGE");
     expect(buildDomainFallbackAnswer("fvg unicorn smt", "en")).toContain("Fair Value Gap");
     expect(buildDomainFallbackAnswer("gann and cpr", "en")).toContain("Central Pivot Range");
   });
