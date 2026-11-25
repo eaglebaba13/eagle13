@@ -18,8 +18,8 @@ describe("assistant output guard", () => {
   });
 });
 
-describe("resolveAiAssistantReply & bilingual domain fallback", () => {
-  it("uses OpenAI when OPENAI_API_KEY is configured and returns sanitized response", async () => {
+describe("resolveAiAssistantReply & intent-aware bilingual domain intelligence", () => {
+  it("uses OpenAI when OPENAI_API_KEY is valid and returns sanitized response", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -39,10 +39,10 @@ describe("resolveAiAssistantReply & bilingual domain fallback", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to Gemini when OpenAI fails and GEMINI_API_KEY is configured", async () => {
+  it("falls back to Gemini when OpenAI returns 401 and GEMINI_API_KEY is configured", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: false, status: 401 })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -62,27 +62,60 @@ describe("resolveAiAssistantReply & bilingual domain fallback", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("returns helpful bilingual EagleBABA glossary guidance when providers are unconfigured or fail", async () => {
+  it("records OPENAI_HTTP_401 fallbackReason and resolves PURE BLOOD BATH (COA #8) cleanly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401 }) as unknown as typeof fetch;
+
     const enRes = await resolveAiAssistantReply({
-      question: "what is wtt",
+      question: "Explain PURE BLOOD BATH (COA #8)",
       language: "en",
-      env: {},
-      fetchImpl: vi.fn() as unknown as typeof fetch,
+      env: { OPENAI_API_KEY: "invalid-key" },
+      fetchImpl: fetchMock,
     });
     expect(enRes.provider).toBe("glossary");
-    expect(enRes.answer).toContain("Weak Towards Top");
-    expect(enRes.answer).not.toContain("Assistant unavailable");
+    expect(enRes.fallbackReason).toBe("OPENAI_HTTP_401");
+    expect(enRes.answer).toContain("PURE BLOOD BATH");
+    expect(enRes.answer).toContain("suppressed");
+    expect(enRes.answer).toContain("Max Pain");
 
-    const hiRes = await resolveAiAssistantReply({
-      question: "what is wtt",
-      language: "hi",
-      env: {},
-      fetchImpl: vi.fn() as unknown as typeof fetch,
-    });
-    expect(hiRes.provider).toBe("glossary");
-    expect(hiRes.answer).toContain("Weak Towards Top");
+    const hiRes = buildDomainFallbackAnswer("PURE BLOOD BATH (COA #8)", "hi");
+    expect(hiRes).toContain("PURE BLOOD BATH");
+    expect(hiRes).toContain("suppressed");
+  });
 
-    const unknownRes = buildDomainFallbackAnswer("random question", "en");
-    expect(unknownRes).toContain("WTT, WTB, PAZ");
+  it("explains OVM-9: Dual-Side Trap (Type A) and Primary Safe Buy Setup (Support Reversal)", () => {
+    const trapEn = buildDomainFallbackAnswer("What is OVM-9: Dual-Side Trap (Type A)?", "en");
+    expect(trapEn).toContain("Dual-Side Trap");
+    expect(trapEn).toContain("Straddle Compression");
+    expect(trapEn).toContain("WAIT");
+
+    const safeBuyEn = buildDomainFallbackAnswer("EAGLEBABA PRIMARY SAFE BUY SETUP (SUPPORT REVERSAL)", "en");
+    expect(safeBuyEn).toContain("Support Reversal");
+    expect(safeBuyEn).toContain("Invalidation Stop");
+    expect(safeBuyEn).toContain("slRiskTier");
+
+    const safeBuyHi = buildDomainFallbackAnswer("EAGLEBABA PRIMARY SAFE BUY SETUP (SUPPORT REVERSAL)", "hi");
+    expect(safeBuyHi).toContain("Support Reversal");
+    expect(safeBuyHi).toContain("Invalidation Stop");
+  });
+
+  it("answers Hinglish directional/pressure queries with PAZ/PDI/OVM-9/VWAP guidance and disclaimer", () => {
+    const q1 = buildDomainFallbackAnswer("aaj market kidhar jayega", "hi");
+    expect(q1).toContain("PAZ");
+    expect(q1).toContain("OVM-9");
+    expect(q1).toContain("VWAP");
+    expect(q1).toContain("सलाह नहीं");
+
+    const q2 = buildDomainFallbackAnswer("intraday ka pressure kis side hai", "en");
+    expect(q2).toContain("PAZ & PDI");
+    expect(q2).toContain("OVM-9");
+    expect(q2).toContain("non-advisory");
+  });
+
+  it("answers core EagleBABA terms (WTT, RSB, D1 1:1, OI vs Volume, FVG/SMT, Gann/CPR)", () => {
+    expect(buildDomainFallbackAnswer("what is wtt", "en")).toContain("Weak Towards Top");
+    expect(buildDomainFallbackAnswer("what is d1 1:1 scalp", "en")).toContain("25-pt");
+    expect(buildDomainFallbackAnswer("oi vs volume and pcr", "en")).toContain("Put OI / Call OI");
+    expect(buildDomainFallbackAnswer("fvg unicorn smt", "en")).toContain("Fair Value Gap");
+    expect(buildDomainFallbackAnswer("gann and cpr", "en")).toContain("Central Pivot Range");
   });
 });
