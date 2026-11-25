@@ -22,6 +22,7 @@ import { createChartDrawing, drawingLogical, pointAtLogical, FIBONACCI_LEVELS } 
 import type { UnicornSetup, FVGZone } from "@/lib/orderflow/fvg-calculator";
 
 import { LiveSeriesSynchronizer, mergeChartCandles, utcSeconds, type ChartCandleData } from "@/lib/chart/live-series";
+import { formatIstTimestamp } from "@/lib/chart/live-chart-workspace";
 export type { ChartCandleData } from "@/lib/chart/live-series";
 
 export interface OiProfileLevel {
@@ -76,6 +77,13 @@ export interface TradingViewLightweightChartProps {
   }[];
   readonly onAddPriceAlert?: (price: number) => void;
   readonly onAddHorizontalLine?: (price: number) => void;
+  readonly drawingsLocked?: boolean;
+  readonly replaySelectMode?: boolean;
+  readonly onSelectTool?: (tool: DrawingToolType) => void;
+  readonly onStartReplayAt?: (timeMs: number, barIndex: number) => void;
+  readonly onToggleIndicators?: () => void;
+  readonly onToggleLockDrawings?: () => void;
+  readonly onClearDrawings?: () => void;
 }
 
 export interface HudData {
@@ -127,6 +135,13 @@ export function TradingViewLightweightChart({
   priceAlerts = [],
   onAddPriceAlert,
   onAddHorizontalLine,
+  drawingsLocked = false,
+  replaySelectMode = false,
+  onSelectTool,
+  onStartReplayAt,
+  onToggleIndicators,
+  onToggleLockDrawings,
+  onClearDrawings,
 }: TradingViewLightweightChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -145,7 +160,13 @@ export function TradingViewLightweightChart({
 
   // Floating crosshair + quick action context menu
   const [crosshairPos, setCrosshairPos] = useState<{ price: number; y: number } | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; price: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    price: number;
+    timeMs?: number;
+    barIndex?: number;
+  } | null>(null);
 
   // Coordinate sync state for SVG drawing overlay
   const [viewportTick, setViewportTick] = useState(0);
@@ -766,17 +787,27 @@ export function TradingViewLightweightChart({
     if (!captured) return;
     const target = event.target as SVGElement;
     if (activeTool === "cursor") {
+      if (replaySelectMode && onStartReplayAt && captured.point.logical != null && chartBarsRef.current.length >= 2) {
+        const barIndex = Math.max(1, Math.min(chartBarsRef.current.length - 1, Math.round(captured.point.logical)));
+        const rawTime = chartBarsRef.current[barIndex]?.time;
+        const timeMs = rawTime != null ? (rawTime > 1e11 ? rawTime : rawTime * 1000) : Date.now();
+        event.stopPropagation();
+        event.preventDefault();
+        onStartReplayAt(timeMs, barIndex);
+        return;
+      }
       const id = target.closest("[data-drawing-id]")?.getAttribute("data-drawing-id");
       const drawing = drawings.find((d) => d.id === id);
       if (!drawing) { setSelectedDrawingId(null); return; }
       event.stopPropagation();
       event.preventDefault();
+      setSelectedDrawingId(drawing.id);
+      if (drawingsLocked) return;
       const pointIndex = target.getAttribute("data-point-index");
       editRef.current = { id: drawing.id, original: drawing, start: captured.point,
         pointIndex: pointIndex != null ? Number(pointIndex) : null };
       editedRef.current = drawing;
       setEditedDrawing(drawing);
-      setSelectedDrawingId(drawing.id);
     } else {
       event.preventDefault();
       if (activeTool === "horizontal") {
@@ -865,13 +896,32 @@ export function TradingViewLightweightChart({
     e.preventDefault();
     if (!containerRef.current || !candleSeriesRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const p = candleSeriesRef.current.coordinateToPrice(y);
+    const hitId = (e.target as HTMLElement | null)?.closest("[data-drawing-id]")?.getAttribute("data-drawing-id");
+    if (hitId) setSelectedDrawingId(hitId);
+
+    let barIndex: number | undefined;
+    let timeMs: number | undefined;
+    const logical = chartRef.current?.timeScale().coordinateToLogical(x);
+    if (logical != null && Number.isFinite(logical) && chartBarsRef.current.length > 0) {
+      barIndex = Math.max(0, Math.min(chartBarsRef.current.length - 1, Math.round(logical)));
+      const rawTime = chartBarsRef.current[barIndex]?.time;
+      if (rawTime != null) {
+        timeMs = rawTime > 1e11 ? rawTime : rawTime * 1000;
+      }
+    }
+
     if (p != null && Number.isFinite(p) && p > 0) {
+      const maxX = typeof window !== "undefined" ? Math.max(16, window.innerWidth - 260) : e.clientX;
+      const maxY = typeof window !== "undefined" ? Math.max(16, window.innerHeight - 380) : e.clientY;
       setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
+        x: Math.min(e.clientX, maxX),
+        y: Math.min(e.clientY, maxY),
         price: Math.round(p * 100) / 100,
+        timeMs,
+        barIndex,
       });
     }
   }, []);
@@ -1423,18 +1473,19 @@ export function TradingViewLightweightChart({
       {contextMenu && (
         <div
           style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-          className="fixed z-50 bg-zinc-950/95 border border-amber-500/40 rounded-xl p-1.5 shadow-2xl min-w-[230px] font-mono text-xs select-none backdrop-blur-md"
+          className="fixed z-50 bg-[#090c10]/95 border border-amber-500/35 rounded-xl p-1.5 shadow-2xl min-w-[248px] font-mono text-xs select-none backdrop-blur-md"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-2.5 py-1 text-[10px] text-zinc-400 border-b border-white/10 font-semibold flex items-center justify-between">
-            <span>
+          <div className="px-2.5 py-1.5 text-[10px] text-zinc-400 border-b border-white/10 font-semibold flex items-center justify-between gap-2">
+            <span className="truncate tabular-nums">
               {symbol} @ {currencySymbol}
               {contextMenu.price}
+              {contextMenu.timeMs ? ` • ${formatIstTimestamp(contextMenu.timeMs)}` : ""}
             </span>
             <button
               type="button"
               onClick={() => setContextMenu(null)}
-              className="text-zinc-500 hover:text-zinc-200 cursor-pointer text-xs"
+              className="text-zinc-500 hover:text-zinc-200 cursor-pointer text-xs shrink-0"
             >
               ✕
             </button>
@@ -1449,12 +1500,13 @@ export function TradingViewLightweightChart({
               }}
               className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-amber-500/20 hover:text-amber-300 text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors"
             >
-              <span>🔔</span>
+              <span className="text-amber-400">⊕</span>
               <span>
                 Add Alert at {currencySymbol}
                 {contextMenu.price}
               </span>
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -1464,22 +1516,144 @@ export function TradingViewLightweightChart({
               }}
               className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
             >
-              <span>➖</span>
+              <span className="text-zinc-400">─</span>
               <span>Draw Horizontal Line</span>
             </button>
-            {selectedDrawingId && (
+
+            {onSelectTool && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onSelectTool("trendline");
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-zinc-400">╱</span>
+                  <span>Draw Trend Line / Ray</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onSelectTool("ruler");
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-zinc-400">⌗</span>
+                  <span>Measure / Ruler</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onSelectTool("fibonacci");
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-zinc-400">≡</span>
+                  <span>Fibonacci Retracement</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onSelectTool("riskRewardLong");
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-emerald-400">↗</span>
+                  <span>Risk-Reward (Long)</span>
+                </button>
+              </>
+            )}
+
+            {onStartReplayAt && contextMenu.timeMs != null && contextMenu.barIndex != null && (
+              <button
+                type="button"
+                onClick={() => {
+                  const t = contextMenu.timeMs!;
+                  const idx = contextMenu.barIndex!;
+                  setContextMenu(null);
+                  onStartReplayAt(t, idx);
+                }}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 hover:text-indigo-300 text-indigo-300 flex items-center gap-2 cursor-pointer transition-colors border-t border-white/10 mt-0.5 pt-2"
+              >
+                <span>▶</span>
+                <span>Start Replay From Here</span>
+              </button>
+            )}
+
+            <div className="border-t border-white/10 mt-0.5 pt-1 flex flex-col gap-0.5">
               <button
                 type="button"
                 onClick={() => {
                   setContextMenu(null);
-                  handleDeleteSelectedDrawing();
+                  handleResetViewport();
                 }}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/20 hover:text-rose-300 text-rose-400 flex items-center gap-2 cursor-pointer transition-colors border-t border-white/5 pt-2"
+                className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <span>🗑</span>
-                <span>Delete Selected Drawing</span>
+                <span className="text-zinc-400">⟲</span>
+                <span>Reset Chart View / Auto-Fit</span>
               </button>
-            )}
+
+              {onToggleIndicators && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onToggleIndicators();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-amber-400">⊞</span>
+                  <span>Indicators & Overlays...</span>
+                </button>
+              )}
+
+              {onToggleLockDrawings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onToggleLockDrawings();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-zinc-100 text-zinc-300 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span className="text-zinc-400">{drawingsLocked ? "🔓" : "🔒"}</span>
+                  <span>{drawingsLocked ? "Unlock Drawings" : "Lock All Drawings"}</span>
+                </button>
+              )}
+
+              {onClearDrawings && drawings.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    onClearDrawings();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/15 hover:text-rose-300 text-rose-400 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span>✕</span>
+                  <span>Clear All Drawings ({drawings.length})</span>
+                </button>
+              )}
+
+              {selectedDrawingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu(null);
+                    handleDeleteSelectedDrawing();
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/20 hover:text-rose-300 text-rose-400 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span>🗑</span>
+                  <span>Delete Selected Drawing</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

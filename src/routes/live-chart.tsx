@@ -40,14 +40,20 @@ import {
 } from "@/components/chart/TradingViewLightweightChart";
 import { ChartDrawingToolbar } from "@/components/chart/ChartDrawingToolbar";
 import { ChartHeaderHud } from "@/components/chart/ChartHeaderHud";
+import { IndicatorsDropdown, type ChartIndicatorItem } from "@/components/chart/IndicatorsDropdown";
 import { SymbolSearchModal } from "@/components/chart/SymbolSearchModal";
 import {
-  loadSavedDrawings,
-  persistDrawings,
-  clearSavedDrawings,
   type DrawingToolType,
   type ChartDrawing,
 } from "@/lib/chart/drawing-types";
+import {
+  clearWorkspaceDrawings,
+  ensureContinuousCandles,
+  formatIstTimestamp,
+  loadWorkspaceDrawings,
+  persistWorkspaceDrawings,
+  resolveReplayStartIndex,
+} from "@/lib/chart/live-chart-workspace";
 import {
   detectFairValueGaps,
   computeUnicornSetup,
@@ -278,7 +284,12 @@ function LiveChartSelection({
   // Left Drawing Toolbar States
   const [activeTool, setActiveTool] = useState<DrawingToolType>("cursor");
   const [isMagnet, setIsMagnet] = useState(false);
-  const [drawings, setDrawings] = useState<ChartDrawing[]>(() => loadSavedDrawings(symbol));
+  const [drawingsLocked, setDrawingsLocked] = useState(false);
+  const [isIndicatorsOpen, setIsIndicatorsOpen] = useState(false);
+  const [drawings, setDrawings] = useState<ChartDrawing[]>(() => loadWorkspaceDrawings(symbol, intervalMs));
+  useEffect(() => {
+    setDrawings(loadWorkspaceDrawings(symbol, intervalMs));
+  }, [symbol, intervalMs]);
 
   // Symbol Search Modal State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -293,6 +304,9 @@ function LiveChartSelection({
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState<number>(1000); // ms per candle
+  const [replaySelectMode, setReplaySelectMode] = useState(false);
+  const [replayCustomTime, setReplayCustomTime] = useState("09:30");
+  const [replayEpoch, setReplayEpoch] = useState(0);
 
   // Quick Backtest Modal State
   const [isBacktestOpen, setIsBacktestOpen] = useState(false);
@@ -401,9 +415,17 @@ function LiveChartSelection({
 
   // Merge Historical & Completed Candles (Decoupled from live sub-second ticks to eliminate scale jitter)
   const chartData = useMemo(() => {
-    return stitchCandlePoints(historical.filter((c) => isRegularSessionCandle(c.x, intervalMs, symbol)), [...sse.completedCandles.values()].filter((c) => isRegularSessionCandle(c.time, intervalMs, symbol)).map((c) => ({
-      x: c.time, y: [c.open, c.high, c.low, c.close] as const, volume: c.volume,
-    })));
+    const stitched = stitchCandlePoints(
+      historical.filter((c) => isRegularSessionCandle(c.x, intervalMs, symbol)),
+      [...sse.completedCandles.values()]
+        .filter((c) => isRegularSessionCandle(c.time, intervalMs, symbol))
+        .map((c) => ({
+          x: c.time,
+          y: [c.open, c.high, c.low, c.close] as const,
+          volume: c.volume,
+        })),
+    );
+    return ensureContinuousCandles(stitched);
   }, [historical, sse.completedCandles, symbol, intervalMs]);
 
   // Handle Replay slice if active
@@ -894,19 +916,168 @@ function LiveChartSelection({
     }
   }, [showAstroLevels, liveLevels, symbol, currentLtp]);
 
-  // Drawings Management
+  // Drawings Management (scoped per symbol + timeframe)
   const handleSaveDrawings = useCallback(
     (newDrawings: ChartDrawing[]) => {
       setDrawings(newDrawings);
-      persistDrawings(symbol, newDrawings);
+      persistWorkspaceDrawings(symbol, intervalMs, newDrawings);
     },
-    [symbol],
+    [symbol, intervalMs],
   );
 
   const handleClearDrawings = useCallback(() => {
     setDrawings([]);
-    clearSavedDrawings(symbol);
-  }, [symbol]);
+    clearWorkspaceDrawings(symbol, intervalMs);
+  }, [symbol, intervalMs]);
+
+  const handleStartReplayAt = useCallback(
+    (timeMs: number, barIndex?: number) => {
+      const resolved =
+        barIndex != null && Number.isFinite(barIndex)
+          ? resolveReplayStartIndex(chartData, { mode: "index", index: barIndex })
+          : resolveReplayStartIndex(chartData, { mode: "timestamp", timeMs });
+      if (resolved == null) return;
+      setIsReplayActive(true);
+      setReplaySelectMode(false);
+      setReplayPlaying(false);
+      setReplayIndex(resolved);
+      setReplayEpoch((e) => e + 1);
+    },
+    [chartData],
+  );
+
+  const handleJumpReplayToTime = useCallback(
+    (hhmm: string) => {
+      const resolved = resolveReplayStartIndex(chartData, { mode: "time_string", hhmm });
+      if (resolved == null) return;
+      setIsReplayActive(true);
+      setReplaySelectMode(false);
+      setReplayPlaying(false);
+      setReplayIndex(resolved);
+      setReplayEpoch((e) => e + 1);
+    },
+    [chartData],
+  );
+
+  const indicatorItems: ChartIndicatorItem[] = useMemo(
+    () => [
+      {
+        id: "ict-unicorn",
+        label: "ICT Unicorn & FVG",
+        description: "Fair value gaps & liquidity displacement setups",
+        category: "structure",
+        active: showIctUnicorn,
+        accentClass: "bg-amber-400",
+        onToggle: () => setShowIctUnicorn((v) => !v),
+      },
+      {
+        id: "liquidity-pdh-pdl",
+        label: "Liquidity (PDH / PDL)",
+        description: "Previous day & week high/low institutional levels",
+        category: "structure",
+        active: showLiquidity,
+        accentClass: "bg-cyan-400",
+        onToggle: () => setShowLiquidity((v) => !v),
+      },
+      {
+        id: "vwap",
+        label: "Session VWAP",
+        description: "Intraday volume-weighted average price",
+        category: "structure",
+        active: showVwap,
+        accentClass: "bg-indigo-400",
+        onToggle: () => setShowVwap((v) => !v),
+      },
+      {
+        id: "frvp",
+        label: "Volume Profile (FRVP)",
+        description: "Visible-range POC, VAH & VAL distribution",
+        category: "structure",
+        active: showVolumeProfile,
+        accentClass: "bg-amber-400",
+        onToggle: () => setShowVolumeProfile((v) => !v),
+      },
+      {
+        id: "volume",
+        label: "Volume Histogram",
+        description: "Bottom-docked bar volume bars",
+        category: "structure",
+        active: showVolume,
+        accentClass: "bg-emerald-400",
+        onToggle: () => setShowVolume((v) => !v),
+      },
+      {
+        id: "oi-profile",
+        label: "Live OI Profile",
+        description: "Right-axis Call & Put open interest walls",
+        category: "options",
+        active: showOiProfile,
+        accentClass: "bg-emerald-400",
+        onToggle: () => setShowOiProfile((v) => !v),
+      },
+      {
+        id: "ltp-levels",
+        label: "LTP Calculator Levels",
+        description: "Resistance, support & diversion extension lines",
+        category: "options",
+        active: showLtpLevels,
+        accentClass: "bg-cyan-400",
+        onToggle: () => setShowLtpLevels((v) => !v),
+      },
+      {
+        id: "oc-matrix",
+        label: "OC Matrix Levels",
+        description: "Option-chain pressure & strike matrix",
+        category: "options",
+        active: showOcMatrix,
+        accentClass: "bg-amber-400",
+        onToggle: () => setShowOcMatrix((v) => !v),
+      },
+      {
+        id: "d1-scalp",
+        label: "D1 (1:1) Scalp",
+        description: "1:1 scalp zone (enables OC Matrix)",
+        category: "options",
+        active: showD1Scalp,
+        accentClass: "bg-rose-400",
+        onToggle: () => {
+          if (!showOcMatrix) setShowOcMatrix(true);
+          setShowD1Scalp((v) => !v);
+        },
+      },
+      {
+        id: "heatmap",
+        label: "Liquidity Heatmap",
+        description: "Resting orderbook depth intensity bands",
+        category: "options",
+        active: showHeatmap,
+        accentClass: "bg-orange-400",
+        onToggle: () => setShowHeatmap((v) => !v),
+      },
+      {
+        id: "astro-levels",
+        label: "Gann & Astro Levels",
+        description: "Planetary degree & Gann harmonic R1/S1",
+        category: "astro",
+        active: showAstroLevels,
+        accentClass: "bg-purple-400",
+        onToggle: () => setShowAstroLevels((v) => !v),
+      },
+    ],
+    [
+      showIctUnicorn,
+      showLiquidity,
+      showVwap,
+      showVolumeProfile,
+      showVolume,
+      showOiProfile,
+      showLtpLevels,
+      showOcMatrix,
+      showD1Scalp,
+      showHeatmap,
+      showAstroLevels,
+    ],
+  );
 
   // Volume layout constants for verification and 18% chart headroom
   // maxVol * 5.5 | rgba(16, 185, 129, 0.5) | rgba(244, 63, 94, 0.5)
@@ -1103,24 +1274,44 @@ function LiveChartSelection({
           </div>
 
           {/* Right: Workstation Actions + Overlays + Sidebar Toggle */}
-          <div className="flex w-full min-w-0 items-center gap-1.5 overflow-x-auto z-30 xl:w-auto xl:shrink-0">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 z-30 xl:w-auto xl:shrink-0 xl:flex-nowrap">
             {/* Replay Mode Trigger / Control Bar */}
             {!isReplayActive ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsReplayActive(true);
-                  setReplayIndex(Math.max(1, Math.floor(chartData.length * 0.75)));
-                  setReplayPlaying(false);
-                }}
-                className="px-2 py-1 rounded-md text-xs font-mono font-medium border border-indigo-500/30 bg-indigo-500/10 hover:border-indigo-500/60 text-indigo-300 transition-all flex items-center gap-1 cursor-pointer"
-                title="Bar-by-Bar Replay Player"
-              >
-                <Play className="w-3 h-3 text-indigo-400" />
-                <span className="hidden sm:inline">Replay</span>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const startIdx = resolveReplayStartIndex(chartData, { mode: "session_start" }) ?? Math.max(1, Math.floor(chartData.length * 0.5));
+                    setIsReplayActive(true);
+                    setReplaySelectMode(false);
+                    setReplayIndex(startIdx);
+                    setReplayPlaying(false);
+                    setReplayEpoch((e) => e + 1);
+                  }}
+                  className="px-2 py-1 rounded-md text-xs font-mono font-medium border border-indigo-500/30 bg-indigo-500/10 hover:border-indigo-500/60 text-indigo-300 transition-all flex items-center gap-1 cursor-pointer"
+                  title="Start Bar-by-Bar Replay from Session Open (or right-click any candle -> Start Replay From Here)"
+                >
+                  <Play className="w-3 h-3 text-indigo-400" />
+                  <span className="hidden sm:inline">Replay</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTool("cursor");
+                    setReplaySelectMode((v) => !v);
+                  }}
+                  className={`px-2 py-1 rounded-md text-[11px] font-mono border transition-all cursor-pointer ${
+                    replaySelectMode
+                      ? "bg-indigo-500/25 border-indigo-400 text-indigo-200"
+                      : "border-white/10 bg-[#11161f] text-zinc-400 hover:text-zinc-200"
+                  }`}
+                  title="Click any candle on the chart to start Replay from that bar"
+                >
+                  {replaySelectMode ? "Click Bar..." : "Pick Bar"}
+                </button>
+              </div>
             ) : (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg border border-indigo-500/50 bg-indigo-950/60 text-xs font-mono">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg border border-indigo-500/50 bg-indigo-950/70 text-xs font-mono">
                 <button
                   type="button"
                   onClick={() => setReplayPlaying(!replayPlaying)}
@@ -1143,7 +1334,7 @@ function LiveChartSelection({
                 <button
                   type="button"
                   onClick={() => setReplaySpeed((s) => (s === 1000 ? 500 : s === 500 ? 200 : 1000))}
-                  className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-zinc-200"
+                  className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-zinc-200 cursor-pointer"
                   title="Replay Speed"
                 >
                   {replaySpeed === 1000 ? "1x" : replaySpeed === 500 ? "2x" : "5x"}
@@ -1151,9 +1342,63 @@ function LiveChartSelection({
                 <button
                   type="button"
                   onClick={() => {
+                    const idx = resolveReplayStartIndex(chartData, { mode: "session_start" });
+                    if (idx != null) {
+                      setReplayPlaying(false);
+                      setReplayIndex(idx);
+                      setReplayEpoch((e) => e + 1);
+                    }
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-[10px] text-zinc-300 cursor-pointer hidden md:inline"
+                  title="Jump to Session Open"
+                >
+                  Open
+                </button>
+                <input
+                  type="text"
+                  value={replayCustomTime}
+                  onChange={(e) => setReplayCustomTime(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleJumpReplayToTime(replayCustomTime);
+                  }}
+                  placeholder="09:30"
+                  aria-label="Replay start time IST (HH:MM)"
+                  className="w-12 px-1 py-0.5 rounded bg-[#090c10] border border-white/15 text-[10px] text-zinc-200 text-center tabular-nums hidden lg:inline"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleJumpReplayToTime(replayCustomTime)}
+                  className="px-1.5 py-0.5 rounded bg-indigo-500/20 hover:bg-indigo-500/35 text-[10px] text-indigo-200 cursor-pointer hidden lg:inline"
+                  title="Jump Replay to HH:MM IST"
+                >
+                  Go
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTool("cursor");
+                    setReplaySelectMode((v) => !v);
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[10px] cursor-pointer ${
+                    replaySelectMode ? "bg-amber-500/25 text-amber-200" : "bg-white/5 hover:bg-white/15 text-zinc-300"
+                  }`}
+                  title="Click a bar on the chart to jump Replay"
+                >
+                  Pick
+                </button>
+                {replayIndex !== null && chartData[replayIndex] && (
+                  <span className="px-1.5 text-[10px] text-indigo-200 tabular-nums hidden sm:inline">
+                    {formatIstTimestamp(chartData[replayIndex].x)} ({replayIndex + 1}/{chartData.length})
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
                     setIsReplayActive(false);
+                    setReplaySelectMode(false);
                     setReplayPlaying(false);
                     setReplayIndex(null);
+                    setReplayEpoch((e) => e + 1);
                   }}
                   className="p-1 rounded hover:bg-rose-500/20 text-rose-400 cursor-pointer"
                   title="Exit Replay"
@@ -1190,84 +1435,65 @@ function LiveChartSelection({
 
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
-            {/* ICT Unicorn & FVG Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowIctUnicorn(!showIctUnicorn)}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showIctUnicorn
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showIctUnicorn && <Check className="w-3 h-3 text-emerald-400" />}
-              <span className="hidden sm:inline">ICT</span> Unicorn
-            </button>
-
-            {/* Live Right-Axis OI Profile Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowOiProfile(!showOiProfile)}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showOiProfile
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showOiProfile && <Check className="w-3 h-3 text-rose-400" />}
-              <span>OI</span>
-            </button>
-
-            {/* AI-LTP Levels Toggle */}
-            <button type="button" onClick={() => setShowHeatmap((value) => !value)} aria-pressed={showHeatmap} className={`px-2 py-1 rounded-md text-xs font-mono ${showHeatmap ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "text-zinc-500 hover:text-zinc-300"}`}>🔥 Heatmap</button>
-            {showHeatmap && <label className="text-[10px] text-zinc-400">Threshold <input aria-label="Heatmap intensity threshold" type="range" min="0" max="0.9" step="0.05" value={heatmapThreshold} onChange={(event) => setHeatmapThreshold(Number(event.target.value))} /></label>}
-            {showHeatmap && <select aria-label="Heatmap color palette" value={heatmapPalette} onChange={(event) => setHeatmapPalette(event.target.value as HeatmapPalette)} className="bg-[#111827] text-[10px] text-zinc-300"><option value="institutional">Institutional</option><option value="contrast">Contrast</option></select>}
-            {/* AI-LTP Levels Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowLtpLevels(!showLtpLevels)}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showLtpLevels
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showLtpLevels && <Check className="w-3 h-3 text-amber-400" />}
-              <span>LTP</span>
-            </button>
-
-            {/* Option Chain Intelligence Matrix Overlay Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowOcMatrix(!showOcMatrix)}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showOcMatrix
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-              title="Toggle Option Chain Intelligence Matrix (Entry, Stop, Target 1/2/3)"
-            >
-              {showOcMatrix && <Check className="w-3 h-3 text-amber-400" />}
-              <span>OC Matrix</span>
-            </button>
-
-            {/* D1 (1:1) Scalp Overlay Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!showOcMatrix) setShowOcMatrix(true);
-                setShowD1Scalp((v) => !v);
+            {/* TradingView-Style Grouped Indicators Dropdown */}
+            <IndicatorsDropdown
+              items={indicatorItems}
+              isOpen={isIndicatorsOpen}
+              onOpenChange={setIsIndicatorsOpen}
+              onResetDefaults={() => {
+                setShowVolume(false);
+                setShowVwap(true);
+                setShowVolumeProfile(true);
+                setShowLiquidity(true);
+                setShowLtpLevels(true);
+                setShowAstroLevels(false);
+                setShowIctUnicorn(!searchFourLine);
+                setShowOiProfile(true);
+                setShowOcMatrix(false);
+                setShowD1Scalp(false);
+                setShowHeatmap(false);
               }}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showOcMatrix && showD1Scalp
-                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-              title="Toggle D1 (1:1) Fixed Points Scalp Overlay (25-pt cap check)"
-            >
-              {showOcMatrix && showD1Scalp && <Check className="w-3 h-3 text-sky-400" />}
-              <span>D1 (1:1)</span>
-            </button>
+              onHideAll={() => {
+                setShowVolume(false);
+                setShowVwap(false);
+                setShowVolumeProfile(false);
+                setShowLiquidity(false);
+                setShowLtpLevels(false);
+                setShowAstroLevels(false);
+                setShowIctUnicorn(false);
+                setShowOiProfile(false);
+                setShowOcMatrix(false);
+                setShowD1Scalp(false);
+                setShowHeatmap(false);
+              }}
+            />
+
+            {showHeatmap && (
+              <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-amber-500/30 bg-[#11161f] text-[10px] text-zinc-400">
+                <label className="flex items-center gap-1">
+                  <span>Heat</span>
+                  <input
+                    aria-label="Heatmap intensity threshold"
+                    type="range"
+                    min="0"
+                    max="0.9"
+                    step="0.05"
+                    value={heatmapThreshold}
+                    onChange={(event) => setHeatmapThreshold(Number(event.target.value))}
+                    className="w-14"
+                  />
+                </label>
+                <select
+                  aria-label="Heatmap color palette"
+                  value={heatmapPalette}
+                  onChange={(event) => setHeatmapPalette(event.target.value as HeatmapPalette)}
+                  className="bg-[#090c10] text-[10px] text-zinc-300 rounded px-1 py-0.5 border border-white/10"
+                >
+                  <option value="institutional">Institutional</option>
+                  <option value="contrast">Contrast</option>
+                </select>
+              </div>
+            )}
 
             {showOcMatrix && ocIntelligence && (
               <span
@@ -1284,62 +1510,6 @@ function LiveChartSelection({
                 <span className="text-zinc-400">· {ocIntelligence.sessionFlow.oiProfile.replace(/_/g, " ")}</span>
               </span>
             )}
-
-            {/* Astro Levels Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowAstroLevels(!showAstroLevels)}
-              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
-                showAstroLevels
-                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showAstroLevels && <Check className="w-3 h-3 text-purple-400" />}
-              <span>Astro</span>
-            </button>
-
-            {/* Liquidity (PDH/PDL) */}
-            <button
-              type="button"
-              onClick={() => setShowLiquidity(!showLiquidity)}
-              className={`hidden md:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
-                showLiquidity
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showLiquidity && <Check className="w-3 h-3 text-cyan-400" />}
-              <span>PDH/PDL</span>
-            </button>
-
-            {/* VWAP Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowVwap(!showVwap)}
-              className={`hidden md:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
-                showVwap
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showVwap && <Check className="w-3 h-3 text-indigo-400" />}
-              <span>VWAP</span>
-            </button>
-
-            {/* FRVP Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowVolumeProfile(!showVolumeProfile)}
-              className={`hidden lg:flex px-2 py-1 rounded-md text-xs font-mono transition-all items-center gap-1 ${
-                showVolumeProfile
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-              }`}
-            >
-              {showVolumeProfile && <Check className="w-3 h-3 text-amber-400" />}
-              <span>FRVP</span>
-            </button>
 
             <div className="w-[1px] h-4 bg-white/10 hidden sm:block" />
 
@@ -1390,10 +1560,26 @@ function LiveChartSelection({
               onSelectTool={setActiveTool}
               isMagnet={isMagnet}
               onToggleMagnet={() => setIsMagnet(!isMagnet)}
+              drawingsLocked={drawingsLocked}
+              onToggleLockDrawings={() => setDrawingsLocked((v) => !v)}
               onClearDrawings={handleClearDrawings}
               drawingsCount={drawings.length}
             />
           </div>
+
+          {replaySelectMode && (
+            <div className="absolute top-3 left-16 z-20 flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-indigo-200 text-xs font-mono shadow-lg backdrop-blur-md select-none pointer-events-auto">
+              <span>Replay Start: <strong>Click any candle</strong> on the chart to jump there</span>
+              <button
+                type="button"
+                onClick={() => setReplaySelectMode(false)}
+                className="ml-1 text-zinc-400 hover:text-white cursor-pointer"
+                title="Cancel bar selection"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Active Drawing Tool Feedback Badge */}
           {activeTool !== "cursor" && (
@@ -1471,11 +1657,21 @@ function LiveChartSelection({
                 intervalMs={intervalMs}
                 candles={lightweightCandles}
                 historyReady={bootstrapStatus !== "loading" || displayCandles.length > 0}
-                datasetKey={`${symbol}:${intervalMs}:${isReplayActive ? `replay:${replayIndex}` : historical.length ? "history" : "stream-only"}`}
+                datasetKey={`${symbol}:${intervalMs}:${isReplayActive ? `replay:${replayEpoch}` : historical.length ? "history" : "stream-only"}`}
                 liveCandle={liveCandleData}
                 activeTool={activeTool}
                 onFinishDrawingTool={() => setActiveTool("cursor")}
                 isMagnet={isMagnet}
+                drawingsLocked={drawingsLocked}
+                replaySelectMode={replaySelectMode}
+                onSelectTool={(tool) => {
+                  setReplaySelectMode(false);
+                  setActiveTool(tool);
+                }}
+                onStartReplayAt={handleStartReplayAt}
+                onToggleIndicators={() => setIsIndicatorsOpen((v) => !v)}
+                onToggleLockDrawings={() => setDrawingsLocked((v) => !v)}
+                onClearDrawings={handleClearDrawings}
                 drawings={drawings}
                 onSaveDrawings={handleSaveDrawings}
                 showVolume={showVolume}

@@ -10,6 +10,8 @@ import {
   Ruler,
   Magnet,
   Trash2,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import type { DrawingToolType } from "@/lib/chart/drawing-types";
 
@@ -18,6 +20,8 @@ interface ChartDrawingToolbarProps {
   readonly onSelectTool: (tool: DrawingToolType) => void;
   readonly isMagnet: boolean;
   readonly onToggleMagnet: () => void;
+  readonly drawingsLocked?: boolean;
+  readonly onToggleLockDrawings?: () => void;
   readonly onClearDrawings: () => void;
   readonly drawingsCount: number;
 }
@@ -27,6 +31,8 @@ export function ChartDrawingToolbar({
   onSelectTool,
   isMagnet,
   onToggleMagnet,
+  drawingsLocked = false,
+  onToggleLockDrawings,
   onClearDrawings,
   drawingsCount,
 }: ChartDrawingToolbarProps) {
@@ -119,6 +125,25 @@ export function ChartDrawingToolbar({
           Magnet Snap: {isMagnet ? "ACTIVE" : "OFF"}
         </span>
       </button>
+
+      {/* Lock / Unlock Drawings */}
+      {onToggleLockDrawings && (
+        <button
+          type="button"
+          onClick={onToggleLockDrawings}
+          title={drawingsLocked ? "Unlock Drawings" : "Lock All Drawings"}
+          className={`p-2 rounded-md transition-all flex items-center justify-center relative group cursor-pointer ${
+            drawingsLocked
+              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+          }`}
+        >
+          {drawingsLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+          <span className="absolute left-full ml-2 px-2 py-1 text-[11px] font-medium text-zinc-200 bg-zinc-900 border border-white/10 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            {drawingsLocked ? "Drawings Locked (Click to Unlock)" : "Lock Drawings"}
+          </span>
+        </button>
+      )}
 
       {/* Clear All Drawings */}
       <button
