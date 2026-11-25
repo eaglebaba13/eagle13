@@ -183,4 +183,97 @@ describe("optionChainIntelligence Engine", () => {
     expect(res.topDownRange.dayRange0920.high).toBe(25150);
     expect(res.topDownRange.dayRange0920.source).toBe("STATIC_0920");
   });
+
+  it("classifies explicit anchor pressure states (STABLE_STRONG, WTT_TO_STRONG, WTB_TO_STRONG, SHIFTED_B2T, SHIFTED_T2B)", () => {
+    // WTT_TO_STRONG & WTB_TO_STRONG from mockCallStrikes / mockPutStrikes
+    const driftRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25350,
+      atmStrike: 25350,
+      callStrikes: mockCallStrikes,
+      putStrikes: mockPutStrikes,
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(driftRes.pdiTop.pressureState).toBe("WTT_TO_STRONG");
+    expect(driftRes.pdiTop.pressureBias).toBe("BEARISH");
+    expect(driftRes.pdiBot.pressureState).toBe("WTB_TO_STRONG");
+    expect(driftRes.pdiBot.pressureBias).toBe("BULLISH");
+
+    // STABLE_STRONG when no strike >= 75% of anchor
+    const stableCalls: StrikeDominance[] = [
+      { ...mockCallStrikes[2], strike: 25400, isMaxOi: true, isMaxVol: true },
+      { ...mockCallStrikes[3], strike: 25500, oi: 20000, volume: 15000 },
+    ];
+    const stablePuts: StrikeDominance[] = [
+      { ...mockPutStrikes[1], strike: 25300, isMaxOi: true, isMaxVol: true },
+      { ...mockPutStrikes[0], strike: 25200, oi: 20000, volume: 15000 },
+    ];
+    const stableRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25350,
+      atmStrike: 25350,
+      callStrikes: stableCalls,
+      putStrikes: stablePuts,
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(stableRes.pdiTop.pressureState).toBe("STABLE_STRONG");
+    expect(stableRes.pdiTop.pressureBias).toBe("NEUTRAL");
+    expect(stableRes.pdiBot.pressureState).toBe("STABLE_STRONG");
+
+    // SHIFTED_B2T & SHIFTED_T2B from intradayShiftHistory
+    const shiftRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25350,
+      atmStrike: 25350,
+      callStrikes: stableCalls,
+      putStrikes: stablePuts,
+      intradayShiftHistory: [
+        { timestamp: "2026-11-23T10:00:00.000Z", side: "PUT", fromStrike: 25200, toStrike: 25300, type: "BOTTOM_TO_TOP" },
+        { timestamp: "2026-11-23T10:15:00.000Z", side: "CALL", fromStrike: 25500, toStrike: 25400, type: "TOP_TO_BOTTOM" },
+      ],
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(shiftRes.pdiBot.pressureState).toBe("SHIFTED_B2T");
+    expect(shiftRes.pdiBot.pressureBias).toBe("BULLISH");
+    expect(shiftRes.pdiTop.pressureState).toBe("SHIFTED_T2B");
+    expect(shiftRes.pdiTop.pressureBias).toBe("BEARISH");
+  });
+
+  it("enforces one-sided direction gating, SL risk tiering, and D1 (1:1) scalp plan", () => {
+    const bullLegs = [
+      { strike: 25300, side: "CE" as const, oi: 50000, changeOi: -15000, volume: 40000, ltp: 100, changePct: 10, iv: 14, bid: null, ask: null },
+      { strike: 25300, side: "PE" as const, oi: 90000, changeOi: 45000, volume: 60000, ltp: 80, changePct: -10, iv: 14, bid: null, ask: null },
+    ];
+    const bullRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25210, // Close to 25220 - 25 = 25195 stop -> TIGHT (15 pts <= 25 cap)
+      legs: bullLegs,
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(bullRes.rsbExecution.oneSidedGating).toBe("BULLISH_ONLY");
+    expect(bullRes.rsbExecution.suppressedSide).toBe("BEARISH");
+    expect(bullRes.rsbExecution.slDistancePts).toBe(15);
+    expect(bullRes.rsbExecution.slRiskTier).toBe("TIGHT");
+    expect(bullRes.d1ScalpPlan.recommendedCapPts).toBe(25);
+    expect(bullRes.d1ScalpPlan.overExtended).toBe(false);
+    expect(bullRes.d1ScalpPlan.targetPrice).toBe(25210 + 15);
+
+    const bearLegs = [
+      { strike: 25300, side: "CE" as const, oi: 95000, changeOi: 50000, volume: 65000, ltp: 110, changePct: 15, iv: 14, bid: null, ask: null },
+      { strike: 25300, side: "PE" as const, oi: 40000, changeOi: -20000, volume: 30000, ltp: 70, changePct: -15, iv: 14, bid: null, ask: null },
+    ];
+    const bearRes = computeOptionChainIntelligence({
+      underlying: "NIFTY",
+      spotPrice: 25300, // Invalidation stop = 25410 + 25 = 25435 -> 135 pts > 75 -> WIDE & overExtended
+      legs: bearLegs,
+      timestamp: "2026-11-23T11:30:00.000Z",
+    });
+    expect(bearRes.rsbExecution.oneSidedGating).toBe("BEARISH_ONLY");
+    expect(bearRes.rsbExecution.suppressedSide).toBe("BULLISH");
+    expect(bearRes.rsbExecution.slRiskTier).toBe("WIDE");
+    expect(bearRes.d1ScalpPlan.direction).toBe("BEARISH");
+    expect(bearRes.d1ScalpPlan.overExtended).toBe(true);
+    expect(bearRes.d1ScalpPlan.pointDistance).toBe(135);
+    expect(bearRes.d1ScalpPlan.targetPrice).toBe(25300 - 135);
+  });
 });

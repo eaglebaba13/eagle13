@@ -270,6 +270,7 @@ function LiveChartSelection({
   const [showIctUnicorn, setShowIctUnicorn] = useState(() => !searchFourLine);
   const [showOiProfile, setShowOiProfile] = useState(true);
   const [showOcMatrix, setShowOcMatrix] = useState(false);
+  const [showD1Scalp, setShowD1Scalp] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapThreshold, setHeatmapThreshold] = useState(0.25);
   const [heatmapPalette, setHeatmapPalette] = useState<HeatmapPalette>("institutional");
@@ -735,35 +736,48 @@ function LiveChartSelection({
 
   const ocMatrixLevels = useMemo(() => {
     if (!showOcMatrix || !ocIntelligence) return [];
-    const { rsbExecution } = ocIntelligence;
+    const { rsbExecution, d1ScalpPlan, pdiTop, pdiBot } = ocIntelligence;
     const isBull = rsbExecution.side === "BUY_CE";
     const isBear = rsbExecution.side === "BUY_PE";
+    const anchorTag = isBull ? pdiBot.pressureState : isBear ? pdiTop.pressureState : "";
 
     const levels = [
-      {
-        id: "oc-entry-conserv",
-        name: isBull ? "OC Conservative Entry" : isBear ? "OC Short Entry" : "OC Conserv Entry",
-        price: rsbExecution.conservativeEntry,
-        color: isBull ? "#10b981" : isBear ? "#f43f5e" : "#f59e0b",
-        lineWidth: 2 as const,
-        dash: false,
-      },
-      {
-        id: "oc-entry-aggr",
-        name: isBull ? "OC Aggressive Entry" : isBear ? "OC Aggressive Short" : "OC Aggr Entry",
-        price: rsbExecution.aggressiveEntry,
-        color: isBull ? "#34d399" : isBear ? "#fb7185" : "#fbbf24",
-        lineWidth: 1 as const,
-        dash: true,
-      },
-      {
-        id: "oc-stop",
-        name: "OC Invalidation Stop",
-        price: rsbExecution.invalidationStop,
-        color: "#ef4444",
-        lineWidth: 2 as const,
-        dash: true,
-      },
+      ...(!rsbExecution.invalidatedLevels.includes("conservativeEntry")
+        ? [
+            {
+              id: "oc-entry-conserv",
+              name: `${isBull ? "OC Conservative Entry" : isBear ? "OC Short Entry" : "OC Conserv Entry"}${anchorTag ? ` [${anchorTag}]` : ""}`,
+              price: rsbExecution.conservativeEntry,
+              color: isBull ? "#34d399" : isBear ? "#fb7185" : "#fbbf24",
+              lineWidth: 2 as const,
+              dash: false,
+            },
+          ]
+        : []),
+      ...(!rsbExecution.invalidatedLevels.includes("aggressiveEntry")
+        ? [
+            {
+              id: "oc-entry-aggr",
+              name: isBull ? "OC Aggressive Entry" : isBear ? "OC Aggressive Short" : "OC Aggr Entry",
+              price: rsbExecution.aggressiveEntry,
+              color: isBull ? "#34d399" : isBear ? "#fb7185" : "#fbbf24",
+              lineWidth: 1 as const,
+              dash: true,
+            },
+          ]
+        : []),
+      ...(!rsbExecution.invalidatedLevels.includes("invalidationStop")
+        ? [
+            {
+              id: "oc-stop",
+              name: `OC Invalidation Stop (${rsbExecution.slDistancePts}p ${rsbExecution.slRiskTier})`,
+              price: rsbExecution.invalidationStop,
+              color: "#fb7185",
+              lineWidth: 2 as const,
+              dash: true,
+            },
+          ]
+        : []),
       {
         id: "oc-t1",
         name: "OC Target 1 (T1)",
@@ -772,26 +786,54 @@ function LiveChartSelection({
         lineWidth: 1 as const,
         dash: false,
       },
-      {
-        id: "oc-t2",
-        name: "OC Target 2 (T2)",
-        price: rsbExecution.target2,
-        color: "#60a5fa",
-        lineWidth: 1 as const,
-        dash: false,
-      },
-      {
-        id: "oc-t3",
-        name: `OC Target 3 (T3)${rsbExecution.extendedTolerance ? " [Ext]" : ""}`,
-        price: rsbExecution.target3,
-        color: "#a855f7",
-        lineWidth: 1 as const,
-        dash: false,
-      },
+      ...(!rsbExecution.invalidatedLevels.includes("target2")
+        ? [
+            {
+              id: "oc-t2",
+              name: "OC Target 2 (T2)",
+              price: rsbExecution.target2,
+              color: "#60a5fa",
+              lineWidth: 1 as const,
+              dash: false,
+            },
+          ]
+        : []),
+      ...(!rsbExecution.invalidatedLevels.includes("target3")
+        ? [
+            {
+              id: "oc-t3",
+              name: `OC Target 3 (T3)${rsbExecution.extendedTolerance ? " [Ext]" : ""}`,
+              price: rsbExecution.target3,
+              color: "#a855f7",
+              lineWidth: 1 as const,
+              dash: false,
+            },
+          ]
+        : []),
+      ...(showD1Scalp
+        ? [
+            {
+              id: "oc-d1-target",
+              name: `D1 (1:1) Target (${d1ScalpPlan.pointDistance}p${d1ScalpPlan.overExtended ? " >25p!" : ""})`,
+              price: d1ScalpPlan.targetPrice,
+              color: d1ScalpPlan.overExtended ? "#f59e0b" : "#38bdf8",
+              lineWidth: 2 as const,
+              dash: true,
+            },
+            {
+              id: "oc-d1-sl",
+              name: `D1 (1:1) SL (${d1ScalpPlan.pointDistance}p)`,
+              price: d1ScalpPlan.stopLossPrice,
+              color: "#fb7185",
+              lineWidth: 1 as const,
+              dash: true,
+            },
+          ]
+        : []),
     ];
 
     return levels.filter((l) => Number.isFinite(l.price) && l.price > 0);
-  }, [showOcMatrix, ocIntelligence]);
+  }, [showOcMatrix, showD1Scalp, ocIntelligence]);
 
   // Astro Levels: Scaled strictly to active symbol price scale (Gann Cycles derived from instrument's actual price)
   const astroLevels = useMemo(() => {
@@ -1207,6 +1249,24 @@ function LiveChartSelection({
             >
               {showOcMatrix && <Check className="w-3 h-3 text-amber-400" />}
               <span>OC Matrix</span>
+            </button>
+
+            {/* D1 (1:1) Scalp Overlay Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!showOcMatrix) setShowOcMatrix(true);
+                setShowD1Scalp((v) => !v);
+              }}
+              className={`px-2 py-1 rounded-md text-xs font-mono font-medium transition-all flex items-center gap-1 ${
+                showOcMatrix && showD1Scalp
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/40"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+              }`}
+              title="Toggle D1 (1:1) Fixed Points Scalp Overlay (25-pt cap check)"
+            >
+              {showOcMatrix && showD1Scalp && <Check className="w-3 h-3 text-sky-400" />}
+              <span>D1 (1:1)</span>
             </button>
 
             {/* Astro Levels Toggle */}

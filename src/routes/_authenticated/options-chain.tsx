@@ -412,9 +412,30 @@ function LtpCalculatorPage() {
               {/* Key Levels Ribbon */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono">
                 {/* EOS */}
-                <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
-                  <div className="text-[10px] text-emerald-400 font-bold">EOS (SUPPORT)</div>
-                  <div className="text-lg font-black text-emerald-300 mt-0.5">
+                <div
+                  className={`p-3 rounded-xl border ${
+                    ocIntelligence?.rsbExecution.suppressedSide === "BULLISH"
+                      ? "bg-zinc-900/40 border-zinc-800 opacity-50"
+                      : "bg-emerald-950/20 border-emerald-500/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 text-[10px] text-emerald-400 font-bold">
+                    <span>EOS (SUPPORT)</span>
+                    {ocIntelligence?.rsbExecution.suppressedSide === "BULLISH" ? (
+                      <span className="px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 text-[8px]">SUPPRESSED</span>
+                    ) : ocIntelligence ? (
+                      <span className="px-1 py-0.2 rounded bg-zinc-800 text-zinc-300 text-[8px]">
+                        {ocIntelligence.pdiBot.pressureState}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div
+                    className={`text-lg font-black mt-0.5 tabular-nums ${
+                      ocIntelligence?.rsbExecution.suppressedSide === "BULLISH"
+                        ? "text-zinc-500 line-through"
+                        : "text-emerald-300"
+                    }`}
+                  >
                     {ltpData?.currencySymbol ?? "₹"}{activeLevels.eos.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
@@ -423,20 +444,55 @@ function LtpCalculatorPage() {
                 </div>
 
                 {/* S-Moderate */}
-                <div className="p-3 rounded-xl bg-emerald-950/10 border border-emerald-500/20">
+                <div
+                  className={`p-3 rounded-xl border ${
+                    ocIntelligence?.rsbExecution.suppressedSide === "BULLISH"
+                      ? "bg-zinc-900/40 border-zinc-800 opacity-50"
+                      : "bg-emerald-950/10 border-emerald-500/20"
+                  }`}
+                >
                   <div className="text-[10px] text-emerald-400 font-medium">S-MOD (SAFE BUY)</div>
-                  <div className="text-lg font-black text-zinc-100 mt-0.5">
+                  <div
+                    className={`text-lg font-black mt-0.5 tabular-nums ${
+                      ocIntelligence?.rsbExecution.suppressedSide === "BULLISH"
+                        ? "text-zinc-500 line-through"
+                        : "text-zinc-100"
+                    }`}
+                  >
                     {ltpData?.currencySymbol ?? "₹"}{activeLevels.sModerate.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-emerald-400/80 mt-0.5">
-                    Safe Support Entry
+                    {ocIntelligence?.rsbExecution.suppressedSide === "BULLISH"
+                      ? "Suppressed (Bloodbath)"
+                      : "Safe Support Entry"}
                   </div>
                 </div>
 
                 {/* EOR */}
-                <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30">
-                  <div className="text-[10px] text-rose-400 font-bold">EOR (RESISTANCE)</div>
-                  <div className="text-lg font-black text-rose-300 mt-0.5">
+                <div
+                  className={`p-3 rounded-xl border ${
+                    ocIntelligence?.rsbExecution.suppressedSide === "BEARISH"
+                      ? "bg-zinc-900/40 border-zinc-800 opacity-50"
+                      : "bg-rose-950/20 border-rose-500/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 text-[10px] text-rose-400 font-bold">
+                    <span>EOR (RESISTANCE)</span>
+                    {ocIntelligence?.rsbExecution.suppressedSide === "BEARISH" ? (
+                      <span className="px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[8px]">SUPPRESSED</span>
+                    ) : ocIntelligence ? (
+                      <span className="px-1 py-0.2 rounded bg-zinc-800 text-zinc-300 text-[8px]">
+                        {ocIntelligence.pdiTop.pressureState}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div
+                    className={`text-lg font-black mt-0.5 tabular-nums ${
+                      ocIntelligence?.rsbExecution.suppressedSide === "BEARISH"
+                        ? "text-zinc-500 line-through"
+                        : "text-rose-300"
+                    }`}
+                  >
                     {ltpData?.currencySymbol ?? "₹"}{activeLevels.eor.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-zinc-400 mt-0.5">
@@ -445,13 +501,27 @@ function LtpCalculatorPage() {
                 </div>
 
                 {/* R-Moderate */}
-                <div className="p-3 rounded-xl bg-rose-950/10 border border-rose-500/20">
+                <div
+                  className={`p-3 rounded-xl border ${
+                    ocIntelligence?.rsbExecution.suppressedSide === "BEARISH"
+                      ? "bg-zinc-900/40 border-zinc-800 opacity-50"
+                      : "bg-rose-950/10 border-rose-500/20"
+                  }`}
+                >
                   <div className="text-[10px] text-rose-400 font-medium">R-MOD (SAFE SELL)</div>
-                  <div className="text-lg font-black text-zinc-100 mt-0.5">
+                  <div
+                    className={`text-lg font-black mt-0.5 tabular-nums ${
+                      ocIntelligence?.rsbExecution.suppressedSide === "BEARISH"
+                        ? "text-zinc-500 line-through"
+                        : "text-zinc-100"
+                    }`}
+                  >
                     {ltpData?.currencySymbol ?? "₹"}{activeLevels.rModerate.toFixed(2)}
                   </div>
                   <div className="text-[9px] text-rose-400/80 mt-0.5">
-                    Safe Resistance Entry
+                    {ocIntelligence?.rsbExecution.suppressedSide === "BEARISH"
+                      ? "Suppressed (Bullrun)"
+                      : "Safe Resistance Entry"}
                   </div>
                 </div>
 
@@ -499,6 +569,30 @@ function LtpCalculatorPage() {
                           RSB-EXT (+1 STRIKE EXPANSION)
                         </span>
                       )}
+                      {ocIntelligence.rsbExecution.oneSidedGating !== "NONE" && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            ocIntelligence.rsbExecution.oneSidedGating === "BEARISH_ONLY"
+                              ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                              : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                          }`}
+                        >
+                          {ocIntelligence.rsbExecution.oneSidedGating === "BEARISH_ONLY"
+                            ? "BLOODBATH · BEARISH ONLY"
+                            : "BULLRUN · BULLISH ONLY"}
+                        </span>
+                      )}
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border tabular-nums ${
+                          ocIntelligence.rsbExecution.slRiskTier === "TIGHT"
+                            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                            : ocIntelligence.rsbExecution.slRiskTier === "MODERATE"
+                              ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                              : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                        }`}
+                      >
+                        SL {ocIntelligence.rsbExecution.slDistancePts} pts ({ocIntelligence.rsbExecution.slRiskTier})
+                      </span>
                     </div>
                     <div className="text-[11px] text-zinc-400">
                       {ocIntelligence.rsbExecution.tradeReason}
@@ -509,13 +603,13 @@ function LtpCalculatorPage() {
                     {/* Conservative Entry */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Conservative Entry")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("conservativeEntry")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-zinc-900 border-zinc-800 text-zinc-200"
                       }`}
                     >
                       <div className="text-[9px] text-zinc-400 font-semibold uppercase">Conservative Entry</div>
-                      <div className="text-base font-black text-amber-300 mt-0.5">
+                      <div className="text-base font-black text-amber-300 mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.conservativeEntry.toFixed(2)}
                       </div>
                     </div>
@@ -523,13 +617,13 @@ function LtpCalculatorPage() {
                     {/* Aggressive Entry */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Aggressive Entry")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("aggressiveEntry")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-zinc-900 border-zinc-800 text-zinc-200"
                       }`}
                     >
                       <div className="text-[9px] text-zinc-400 font-semibold uppercase">Aggressive Entry</div>
-                      <div className="text-base font-black text-amber-300 mt-0.5">
+                      <div className="text-base font-black text-amber-300 mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.aggressiveEntry.toFixed(2)}
                       </div>
                     </div>
@@ -537,13 +631,16 @@ function LtpCalculatorPage() {
                     {/* Invalidation Stop */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Invalidation Stop")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("invalidationStop")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-rose-950/20 border-rose-500/30 text-rose-300"
                       }`}
                     >
-                      <div className="text-[9px] text-rose-400 font-semibold uppercase">Invalidation Stop</div>
-                      <div className="text-base font-black mt-0.5">
+                      <div className="text-[9px] text-rose-400 font-semibold uppercase flex items-center justify-between">
+                        <span>Invalidation Stop</span>
+                        <span className="text-[8px] tabular-nums">{ocIntelligence.rsbExecution.slDistancePts}p</span>
+                      </div>
+                      <div className="text-base font-black mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.invalidationStop.toFixed(2)}
                       </div>
                     </div>
@@ -551,13 +648,13 @@ function LtpCalculatorPage() {
                     {/* Target 1 */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 1")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("target1")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
                       }`}
                     >
                       <div className="text-[9px] text-emerald-400 font-semibold uppercase">Target 1 (T1)</div>
-                      <div className="text-base font-black mt-0.5">
+                      <div className="text-base font-black mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target1.toFixed(2)}
                       </div>
                     </div>
@@ -565,13 +662,13 @@ function LtpCalculatorPage() {
                     {/* Target 2 */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 2")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("target2")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
                       }`}
                     >
                       <div className="text-[9px] text-emerald-400 font-semibold uppercase">Target 2 (T2)</div>
-                      <div className="text-base font-black mt-0.5">
+                      <div className="text-base font-black mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target2.toFixed(2)}
                       </div>
                     </div>
@@ -579,7 +676,7 @@ function LtpCalculatorPage() {
                     {/* Target 3 */}
                     <div
                       className={`p-2.5 rounded-lg border ${
-                        ocIntelligence.rsbExecution.invalidatedLevels.includes("Target 3")
+                        ocIntelligence.rsbExecution.invalidatedLevels.includes("target3")
                           ? "bg-zinc-900/40 border-zinc-800 text-zinc-500 line-through opacity-50"
                           : "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
                       }`}
@@ -590,10 +687,40 @@ function LtpCalculatorPage() {
                           <span className="text-[8px] px-1 rounded bg-cyan-500/30 text-cyan-200">EXT</span>
                         )}
                       </div>
-                      <div className="text-base font-black mt-0.5">
+                      <div className="text-base font-black mt-0.5 tabular-nums">
                         {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.rsbExecution.target3.toFixed(2)}
                       </div>
                     </div>
+                  </div>
+
+                  {/* D1 (1:1) Divergence Scalp Plan Strip */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-800/60 text-[11px] tabular-nums">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 font-bold">
+                        D1 (1:1) SCALP
+                      </span>
+                      <span className="text-zinc-300">
+                        Entry {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.d1ScalpPlan.entryPrice.toFixed(2)}
+                      </span>
+                      <span className="text-rose-300">
+                        SL {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.d1ScalpPlan.stopLossPrice.toFixed(2)}
+                      </span>
+                      <span className="text-emerald-300">
+                        1:1 Target {ltpData?.currencySymbol ?? "₹"}{ocIntelligence.d1ScalpPlan.targetPrice.toFixed(2)}
+                      </span>
+                      <span className="text-zinc-400">
+                        ({ocIntelligence.d1ScalpPlan.pointDistance} pts / cap {ocIntelligence.d1ScalpPlan.recommendedCapPts} pts)
+                      </span>
+                    </div>
+                    {ocIntelligence.d1ScalpPlan.overExtended ? (
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[10px]">
+                        OVER-EXTENDED (&gt;{ocIntelligence.d1ScalpPlan.recommendedCapPts} PTS)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold text-[10px]">
+                        WITHIN 25-PT CAP
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

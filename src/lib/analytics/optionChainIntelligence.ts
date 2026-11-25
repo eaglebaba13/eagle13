@@ -19,6 +19,27 @@ export interface PazAnchorZone {
 
 export type PdiDriftDirection = "TOP" | "BOTTOM" | "STRONG";
 
+export type AnchorPressureState =
+  | "STABLE_STRONG"
+  | "WTT_TO_STRONG"
+  | "WTB_TO_STRONG"
+  | "SHIFTED_B2T"
+  | "SHIFTED_T2B";
+
+export type SlRiskTier = "TIGHT" | "MODERATE" | "WIDE";
+
+export interface D1ScalpPlan {
+  readonly enabled: boolean;
+  readonly direction: "BULLISH" | "BEARISH" | "NEUTRAL";
+  readonly entryPrice: number;
+  readonly stopLossPrice: number;
+  readonly targetPrice: number;
+  readonly pointDistance: number;
+  readonly recommendedCapPts: number;
+  readonly overExtended: boolean;
+  readonly label: string;
+}
+
 export interface PdiDriftIndex {
   readonly side: "CALL" | "PUT";
   readonly primaryStrike: number;
@@ -28,6 +49,8 @@ export interface PdiDriftIndex {
   readonly driftPct: number; // Secondary relative to primary (0-100+)
   readonly isDrifting: boolean; // >= 75%
   readonly direction: PdiDriftDirection; // "TOP" (>= 75% higher strike), "BOTTOM" (>= 75% lower strike), "STRONG" (< 75%)
+  readonly pressureState: AnchorPressureState;
+  readonly pressureBias: "BULLISH" | "BEARISH" | "NEUTRAL";
   readonly label: string; // e.g. "STRONG (100%)", "WTT ↗ (84.2%)", "WTB ↘ (79.1%)"
 }
 
@@ -69,6 +92,10 @@ export interface RsbExecutionMatrix {
   readonly riskDistance: number;
   readonly rewardDistance: number;
   readonly rewardToRiskRatio: number;
+  readonly slDistancePts: number;
+  readonly slRiskTier: SlRiskTier;
+  readonly oneSidedGating: "BEARISH_ONLY" | "BULLISH_ONLY" | "NONE";
+  readonly suppressedSide: "BULLISH" | "BEARISH" | null;
   readonly side: "BUY_CE" | "BUY_PE" | "WAIT";
   readonly invalidatedLevels: readonly string[];
 }
@@ -139,8 +166,34 @@ export interface OptionChainIntelligenceResult {
   readonly pdiBot: PdiDriftIndex;
   readonly ovm9: Ovm9Matrix;
   readonly rsbExecution: RsbExecutionMatrix;
+  readonly d1ScalpPlan: D1ScalpPlan;
   readonly topDownRange: TopDownRangeMatrix;
   readonly strikeOverlays: ReadonlyMap<number, StrikeIntelligenceOverlay>;
+}
+
+/** Classify explicit pressure-judgment state for an anchor side */
+function classifyAnchorPressure(
+  side: "CALL" | "PUT",
+  direction: PdiDriftDirection,
+  isDrifting: boolean,
+  shiftHistory: readonly AnchorShiftEvent[],
+): { pressureState: AnchorPressureState; pressureBias: "BULLISH" | "BEARISH" | "NEUTRAL" } {
+  const latestShift = [...shiftHistory].reverse().find((ev) => ev.side === side);
+  if (latestShift) {
+    if (latestShift.type === "BOTTOM_TO_TOP") {
+      return { pressureState: "SHIFTED_B2T", pressureBias: "BULLISH" };
+    }
+    return { pressureState: "SHIFTED_T2B", pressureBias: "BEARISH" };
+  }
+  if (isDrifting) {
+    if (direction === "TOP") {
+      return { pressureState: "WTT_TO_STRONG", pressureBias: "BEARISH" };
+    }
+    if (direction === "BOTTOM") {
+      return { pressureState: "WTB_TO_STRONG", pressureBias: "BULLISH" };
+    }
+  }
+  return { pressureState: "STABLE_STRONG", pressureBias: "NEUTRAL" };
 }
 
 /** Check if given timestamp/now is within the opening settlement window 09:15 - 09:20 IST */
@@ -378,6 +431,8 @@ export function computeOptionChainIntelligence(
     callDirection = callChallengerStrike > pazResStrike ? "TOP" : "BOTTOM";
   }
 
+  const callPressure = classifyAnchorPressure("CALL", callDirection, callIsDrifting, intradayShiftHistory);
+
   const pdiTop: PdiDriftIndex = {
     side: "CALL",
     primaryStrike: pazResStrike,
@@ -387,6 +442,8 @@ export function computeOptionChainIntelligence(
     driftPct: Number(callMaxChallengerPct.toFixed(1)),
     isDrifting: callIsDrifting,
     direction: callDirection,
+    pressureState: callPressure.pressureState,
+    pressureBias: callPressure.pressureBias,
     label:
       callDirection === "TOP"
         ? `WTT ↗ (${callMaxChallengerPct.toFixed(1)}% at ${callChallengerStrike})`
@@ -417,6 +474,8 @@ export function computeOptionChainIntelligence(
     putDirection = putChallengerStrike > pazSupStrike ? "TOP" : "BOTTOM";
   }
 
+  const putPressure = classifyAnchorPressure("PUT", putDirection, putIsDrifting, intradayShiftHistory);
+
   const pdiBot: PdiDriftIndex = {
     side: "PUT",
     primaryStrike: pazSupStrike,
@@ -426,6 +485,8 @@ export function computeOptionChainIntelligence(
     driftPct: Number(putMaxChallengerPct.toFixed(1)),
     isDrifting: putIsDrifting,
     direction: putDirection,
+    pressureState: putPressure.pressureState,
+    pressureBias: putPressure.pressureBias,
     label:
       putDirection === "TOP"
         ? `WTT ↗ (${putMaxChallengerPct.toFixed(1)}% at ${putChallengerStrike})`
@@ -562,9 +623,20 @@ export function computeOptionChainIntelligence(
   const extensionPoints = extensionStrikes * step;
 
   let tradeSide: "BUY_CE" | "BUY_PE" | "WAIT" = "WAIT";
-  if (ovmRegime === "Momentum Surge" || ovmRegime === "Slight Bullish") {
+  let oneSidedGating: "BEARISH_ONLY" | "BULLISH_ONLY" | "NONE" = "NONE";
+  let suppressedSide: "BULLISH" | "BEARISH" | null = null;
+
+  if (ovmRegime === "Momentum Surge") {
     tradeSide = "BUY_CE";
-  } else if (ovmRegime === "Cascade Breakdown" || ovmRegime === "Slight Bearish") {
+    oneSidedGating = "BULLISH_ONLY";
+    suppressedSide = "BEARISH";
+  } else if (ovmRegime === "Slight Bullish") {
+    tradeSide = "BUY_CE";
+  } else if (ovmRegime === "Cascade Breakdown") {
+    tradeSide = "BUY_PE";
+    oneSidedGating = "BEARISH_ONLY";
+    suppressedSide = "BULLISH";
+  } else if (ovmRegime === "Slight Bearish") {
     tradeSide = "BUY_PE";
   } else {
     tradeSide = "WAIT";
@@ -639,6 +711,38 @@ export function computeOptionChainIntelligence(
     tradeReason = "WAIT: Regime In Consolidation";
   }
 
+  const stopRef =
+    tradeSide === "WAIT" && reversalLevels?.maxPainSl && reversalLevels.maxPainSl > 0
+      ? reversalLevels.maxPainSl
+      : invalidationStop;
+  const slDistancePts = Number(Math.abs(spotPrice - stopRef).toFixed(2));
+  const slRiskTier: SlRiskTier =
+    slDistancePts <= step * 0.75 ? "TIGHT" : slDistancePts <= step * 1.5 ? "MODERATE" : "WIDE";
+
+  // D1 (1:1) Fixed Points Divergence Scalp Plan (recommended cap = 25 pts)
+  const D1_RECOMMENDED_CAP_PTS = 25;
+  const d1Direction: "BULLISH" | "BEARISH" | "NEUTRAL" =
+    tradeSide === "BUY_CE" ? "BULLISH" : tradeSide === "BUY_PE" ? "BEARISH" : "NEUTRAL";
+  const d1RawDist = Math.max(1, Math.abs(spotPrice - invalidationStop));
+  const d1PointDistance = Number(d1RawDist.toFixed(2));
+  const d1OverExtended = d1PointDistance > D1_RECOMMENDED_CAP_PTS;
+  const d1TargetPrice = Number(
+    (d1Direction === "BEARISH" ? spotPrice - d1PointDistance : spotPrice + d1PointDistance).toFixed(2),
+  );
+  const d1ScalpPlan: D1ScalpPlan = {
+    enabled: true,
+    direction: d1Direction,
+    entryPrice: Number(spotPrice.toFixed(2)),
+    stopLossPrice: Number(invalidationStop.toFixed(2)),
+    targetPrice: d1TargetPrice,
+    pointDistance: d1PointDistance,
+    recommendedCapPts: D1_RECOMMENDED_CAP_PTS,
+    overExtended: d1OverExtended,
+    label: d1OverExtended
+      ? `D1 (1:1) OVER-EXTENDED (${d1PointDistance} > ${D1_RECOMMENDED_CAP_PTS} pts)`
+      : `D1 (1:1) SCALP (${d1PointDistance} pts)`,
+  };
+
   const rsbExecution: RsbExecutionMatrix = {
     conservativeEntry: Number(conservativeEntry.toFixed(2)),
     aggressiveEntry: Number(aggressiveEntry.toFixed(2)),
@@ -653,6 +757,10 @@ export function computeOptionChainIntelligence(
     riskDistance: Number(riskDist.toFixed(2)),
     rewardDistance: Number(rewardDist.toFixed(2)),
     rewardToRiskRatio: rr,
+    slDistancePts,
+    slRiskTier,
+    oneSidedGating,
+    suppressedSide,
     side: tradeSide,
     invalidatedLevels,
   };
@@ -754,6 +862,7 @@ export function computeOptionChainIntelligence(
     pdiBot,
     ovm9,
     rsbExecution,
+    d1ScalpPlan,
     topDownRange,
     strikeOverlays,
   };
