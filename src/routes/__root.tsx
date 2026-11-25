@@ -93,6 +93,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#090c10", media: "(prefers-color-scheme: dark)" },
+      { name: "theme-color", content: "#f7f4ee", media: "(prefers-color-scheme: light)" },
       { title: "EagleBABA | Astro Levels" },
       {
         name: "description",
@@ -161,7 +163,7 @@ function RootShell({ children }: { children: ReactNode }) {
           // and keeps root typography scale in sync before first paint.
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('eb-theme')||'dark';var r=document.documentElement;r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');var s=localStorage.getItem('eb-font-scale');if(s){var v=parseInt(s,10);if(v>=85&&v<=125){r.style.fontSize=v+'%';r.style.setProperty('--eb-font-scale',(v/100).toString());}}}catch(e){}})();",
+              "(function(){try{var t=localStorage.getItem('eb-theme')||'dark';var r=document.documentElement;r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');r.style.colorScheme=t==='light'?'light':'dark';var s=localStorage.getItem('eb-font-scale');if(s){var v=parseInt(s,10);if(v>=85&&v<=125){r.style.fontSize=v+'%';r.style.setProperty('--eb-font-scale',(v/100).toString());}}}catch(e){}})();",
           }}
         />
       </head>

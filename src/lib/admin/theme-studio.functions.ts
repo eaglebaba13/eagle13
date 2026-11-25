@@ -34,14 +34,14 @@ export interface ThemeStudioConfig {
 
 export const THEME_PRESETS: Record<Exclude<ThemePreset, "custom">, ThemeStudioConfig> = {
   "obsidian-gold": {
-    baseBackground: "#070a0e",
-    cardSurface: "#18181b",
-    cardTransparency: 0.5,
-    borderTint: "rgba(245, 158, 11, 0.25)",
-    glowIntensity: 0.25,
-    glowColor: "rgba(245, 158, 11, 0.25)",
+    baseBackground: "#090c10",
+    cardSurface: "#11161f",
+    cardTransparency: 0.96,
+    borderTint: "rgba(148, 163, 184, 0.14)",
+    glowIntensity: 0.12,
+    glowColor: "rgba(148, 163, 184, 0.06)",
     accentColor: "#f59e0b",
-    activePillColor: "rgba(245, 158, 11, 0.15)",
+    activePillColor: "rgba(245, 158, 11, 0.14)",
     textAccentColor: "#fbbf24",
     preset: "obsidian-gold",
   },

@@ -113,27 +113,28 @@
 
 .dark,
 :root[data-theme="dark"] {
-  /* Premium charcoal — matches --eb-bg / --eb-card so shadcn primitives
-   * inherit the same institutional surface as the terminal layer. */
-  --background: oklch(0.19 0.005 260);
-  --foreground: oklch(0.94 0.01 250);
-  --card: oklch(0.225 0.006 260);
-  --card-foreground: oklch(0.94 0.01 250);
-  --popover: oklch(0.225 0.006 260);
-  --popover-foreground: oklch(0.94 0.01 250);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  color-scheme: dark;
+  /* Institutional Terminal Dark Palette — deep obsidian canvas (#090c10)
+   * with elevated charcoal card surfaces (#11161f) and crisp 1px hairlines. */
+  --background: #090c10;
+  --foreground: #e8edf5;
+  --card: #11161f;
+  --card-foreground: #e8edf5;
+  --popover: #11161f;
+  --popover-foreground: #e8edf5;
+  --primary: #e2e8f0;
+  --primary-foreground: #090c10;
+  --secondary: #141b26;
+  --secondary-foreground: #e8edf5;
+  --muted: #141b26;
+  --muted-foreground: #94a3b8;
+  --accent: #141b26;
+  --accent-foreground: #e8edf5;
+  --destructive: #fb7185;
+  --destructive-foreground: #090c10;
+  --border: rgba(148, 163, 184, 0.14);
+  --input: rgba(148, 163, 184, 0.18);
+  --ring: rgba(148, 163, 184, 0.35);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -159,6 +160,7 @@
 /* Premium light theme — shadcn tokens tuned to warm off-white surfaces
  * so shadcn primitives match the eb-* terminal layer. Never pure white. */
 :root[data-theme="light"] {
+  color-scheme: light;
   --background: oklch(0.972 0.008 85);
   --foreground: oklch(0.22 0.02 260);
   --card: oklch(0.985 0.006 85);
@@ -224,32 +226,31 @@ body {
  * glass-morphism surfaces and soft gold-gradient borders.
  * ====================================================================== */
 :root {
-  /* Canonical Institutional Cyber-Obsidian Tokens */
-  --eb-bg-obsidian: #070a0e;
-  --eb-surface-glass: rgba(24, 24, 27, 0.4);
-  --eb-border-obsidian: rgba(245, 158, 11, 0.2);
-  --eb-border-hover: rgba(245, 158, 11, 0.4);
+  /* Canonical Institutional Terminal Dark Tokens */
+  --eb-bg-obsidian: #090c10;
+  --eb-surface-glass: #11161f;
+  --eb-border-obsidian: rgba(148, 163, 184, 0.14);
+  --eb-border-hover: rgba(148, 163, 184, 0.28);
   --eb-cyan: #22d3ee;
   --eb-emerald: #34d399;
   --eb-amber: #fbbf24;
   --eb-violet: #c084fc;
 
-  /* Premium institutional charcoal — Bloomberg/TradingView inspired.
-   * Deep neutral grey, never pure black; layered for elevation. */
-  --eb-bg: #070a0e;
+  /* Institutional charcoal — layered for crisp elevation without muddy bleed-through. */
+  --eb-bg: #090c10;
   --eb-bg2: #0d1117;
-  --eb-bg3: #161b22;
-  --eb-card: rgba(24, 24, 27, 0.45);
-  --eb-border: rgba(39, 39, 42, 0.8);
-  /* Signature luxury gold */
-  --eb-accent: #d4af37;
-  --eb-accent2: #b8860b;
-  /* Soft bullish/bearish — long-session eye comfort (never neon). */
-  --eb-bull: #22c88a;
-  --eb-bear: #ef4c5a;
-  --eb-neutral: #7ec8e3;
+  --eb-bg3: #141b26;
+  --eb-card: #11161f;
+  --eb-border: rgba(148, 163, 184, 0.14);
+  /* Restrained institutional gold */
+  --eb-accent: #f59e0b;
+  --eb-accent2: #d97706;
+  /* Crisp, WCAG AA compliant bullish/bearish & muted slate */
+  --eb-bull: #34d399;
+  --eb-bear: #fb7185;
+  --eb-neutral: #94a3b8;
   --eb-text: #e8edf5;
-  --eb-muted: #8592a8;
+  --eb-muted: #94a3b8;
   --eb-bn: #8b7cf6; /* Royal violet (BankNifty) */
   --eb-blue: #4c9dff; /* Royal blue */
   --eb-purple: #a855f7; /* Electric purple accent */
@@ -272,45 +273,43 @@ body {
   --eb-conf-40: #f97316;
   --eb-conf-low: #ef4c5a;
 
-  /* Luxury effect tokens (used by helper classes / gradients) */
+  /* Institutional card elevation & hairline borders */
   --eb-gold-grad: linear-gradient(135deg, #f4d47a 0%, #d4af37 45%, #b8860b 100%);
-  --eb-gold-soft: linear-gradient(135deg, rgba(212,175,55,0.55), rgba(184,134,11,0.15));
-  --eb-glass: color-mix(in srgb, var(--eb-card) 72%, transparent);
-  --eb-glass-border: color-mix(in srgb, var(--eb-accent) 22%, var(--eb-border));
-  --eb-shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.85);
-  --eb-shadow-gold: 0 0 32px -8px rgba(212, 175, 55, 0.35);
+  --eb-gold-soft: linear-gradient(135deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.08));
+  --eb-glass: #11161f;
+  --eb-glass-border: rgba(148, 163, 184, 0.14);
+  --eb-shadow-lg: 0 12px 32px -12px rgba(0, 0, 0, 0.75);
+  --eb-shadow-gold: 0 0 0 1px rgba(148, 163, 184, 0.22);
 
   --eb-mono: "JetBrains Mono", ui-monospace, monospace;
   --eb-head: "Space Grotesk", system-ui, sans-serif;
   --eb-body: "Inter", system-ui, sans-serif;
 
   /* Live Theme Studio Dynamic Variables */
-  --eb-base-bg: #070a0e;
-  --eb-card-surface: rgba(24, 24, 27, 0.5);
-  --eb-border-tint: rgba(245, 158, 11, 0.25);
-  --eb-border-hover: rgba(245, 158, 11, 0.45);
-  --eb-glow-color: rgba(245, 158, 11, 0.25);
+  --eb-base-bg: #090c10;
+  --eb-card-surface: #11161f;
+  --eb-border-tint: rgba(148, 163, 184, 0.14);
+  --eb-border-hover: rgba(148, 163, 184, 0.28);
+  --eb-glow-color: rgba(148, 163, 184, 0.08);
   --eb-accent-color: #f59e0b;
-  --eb-active-pill: rgba(245, 158, 11, 0.15);
+  --eb-active-pill: rgba(245, 158, 11, 0.14);
   --eb-text-accent: #fbbf24;
 }
 
 /* =========================================================================
- * Institutional Cyber-Obsidian & Luxury Gold Utility Classes
+ * Institutional Elevated Card Utility Classes
  * ====================================================================== */
 .card-institutional,
 .card-luxury-gold {
-  background-color: var(--eb-card-surface, rgba(24, 24, 27, 0.5));
-  border: 1px solid var(--eb-border-tint, rgba(245, 158, 11, 0.25));
+  background-color: var(--eb-card-surface, #11161f);
+  border: 1px solid var(--eb-border-tint, rgba(148, 163, 184, 0.14));
   border-radius: 0.75rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .card-institutional:hover,
 .card-luxury-gold:hover {
-  border-color: var(--eb-border-hover, rgba(245, 158, 11, 0.45));
-  box-shadow: 0 0 16px -4px var(--eb-glow-color, rgba(245, 158, 11, 0.25));
+  border-color: var(--eb-border-hover, rgba(148, 163, 184, 0.28));
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.75);
 }
 
 .pill-active {
@@ -365,9 +364,7 @@ img[src*="eaglebaba-logo"],
 
 .page-standard-container {
   width: 100%;
-  max-width: 1800px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: none;
   padding: 1rem 0.5rem;
   display: flex;
   flex-direction: column;
@@ -626,30 +623,24 @@ textarea:focus-visible,
  * with the `.eb-glass` modifier. */
 .eb-card {
   position: relative;
-  backdrop-filter: blur(14px) saturate(130%);
-  box-shadow:
-    var(--eb-shadow-lg),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background-color: var(--eb-card, #11161f);
+  border: 1px solid var(--eb-border, rgba(148, 163, 184, 0.14));
+  box-shadow: var(--eb-shadow-lg);
   transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.22s ease,
-    box-shadow 0.22s ease;
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .eb-card:hover {
-  transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--eb-accent) 45%, var(--eb-border));
-  box-shadow:
-    var(--eb-shadow-lg),
-    var(--eb-shadow-gold),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  border-color: var(--eb-border-hover, rgba(148, 163, 184, 0.28));
+  box-shadow: var(--eb-shadow-lg), var(--eb-shadow-gold);
 }
 
-/* True glass surface with a soft gold-gradient border (no inline bg). */
+/* Crisp elevated surface with 1px hairline border (replaces muddy gold glass bleed). */
 .eb-glass {
-  background:
-    linear-gradient(var(--eb-glass), var(--eb-glass)) padding-box,
-    var(--eb-gold-soft) border-box;
-  border: 1px solid transparent;
+  background: var(--eb-card, #11161f);
+  border: 1px solid var(--eb-border, rgba(148, 163, 184, 0.14));
 }
 
 /* Premium scrollbars. */

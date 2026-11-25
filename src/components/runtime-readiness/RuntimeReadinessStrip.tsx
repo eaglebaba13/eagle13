@@ -26,7 +26,7 @@ export function RuntimeReadinessStrip({
       aria-label={title}
       data-testid="runtime-readiness-strip"
       data-overall={overall}
-      className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-card/50 px-3 py-2 text-xs"
+      className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--eb-border,rgba(148,163,184,0.14))] bg-[var(--eb-card,#11161f)] px-3 py-2 text-xs tabular-nums"
     >
       <div className="flex items-center gap-2">
         <span className="font-semibold uppercase tracking-wide text-[10px] text-muted-foreground">

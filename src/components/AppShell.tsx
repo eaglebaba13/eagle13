@@ -118,14 +118,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div
       className="flex min-h-screen w-full text-foreground dark:text-zinc-100 overflow-x-hidden"
-      style={{ backgroundColor: "var(--eb-base-bg, #070a0e)" }}
+      style={{ backgroundColor: "var(--eb-base-bg, #090c10)" }}
     >
-      {/* Ambient background glow */}
+      {/* Subtle slate depth gradient — never tints cards olive/amber */}
       <div
         className="fixed inset-0 pointer-events-none z-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% -15%, var(--eb-glow-color, rgba(245,158,11,0.03)), transparent)",
+            "radial-gradient(ellipse 80% 50% at 50% -15%, rgba(148, 163, 184, 0.04), transparent)",
         }}
       />
       {/* Full-width main container without docked sidebar */}

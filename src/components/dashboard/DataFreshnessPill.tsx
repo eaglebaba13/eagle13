@@ -13,12 +13,12 @@ type Props = {
 };
 
 const STATUS_STYLES: Record<FreshnessResult["status"], { fg: string; label: string }> = {
-  LIVE: { fg: "var(--eb-bull, #10b981)", label: "LIVE" },
-  FRESH: { fg: "var(--eb-bull, #10b981)", label: "FRESH" },
-  DELAYED: { fg: "var(--eb-neutral, #eab308)", label: "DELAYED" },
-  STALE: { fg: "var(--eb-bear, #ef4444)", label: "STALE" },
-  UNAVAILABLE: { fg: "var(--eb-bear, #ef4444)", label: "UNAVAILABLE" },
-  ERROR: { fg: "var(--eb-bear, #ef4444)", label: "ERROR" },
+  LIVE: { fg: "var(--eb-bull, #34d399)", label: "LIVE" },
+  FRESH: { fg: "var(--eb-bull, #34d399)", label: "FRESH" },
+  DELAYED: { fg: "var(--eb-amber, #fbbf24)", label: "DELAYED" },
+  STALE: { fg: "var(--eb-bear, #fb7185)", label: "STALE" },
+  UNAVAILABLE: { fg: "var(--eb-bear, #fb7185)", label: "UNAVAILABLE" },
+  ERROR: { fg: "var(--eb-bear, #fb7185)", label: "ERROR" },
 };
 
 export function DataFreshnessPill({ input, result, provider, compact }: Props) {
@@ -31,14 +31,14 @@ export function DataFreshnessPill({ input, result, provider, compact }: Props) {
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
-        padding: compact ? "2px 8px" : "4px 10px",
+        gap: 5,
+        padding: compact ? "2px 7px" : "4px 10px",
         fontSize: compact ? 10 : 11,
-        letterSpacing: 1,
+        letterSpacing: 0.7,
         textTransform: "uppercase",
         borderRadius: 999,
-        border: `1px solid ${style.fg}`,
-        background: `color-mix(in oklab, ${style.fg} 15%, transparent)`,
+        border: `1px solid color-mix(in oklab, ${style.fg} 32%, transparent)`,
+        background: `color-mix(in oklab, ${style.fg} 10%, transparent)`,
         color: style.fg,
         fontVariantNumeric: "tabular-nums",
         whiteSpace: "nowrap",

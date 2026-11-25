@@ -24,17 +24,18 @@ export function applyThemeToDOM(config: ThemeStudioConfig): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const isLight = root.getAttribute("data-theme") === "light";
+  root.style.colorScheme = isLight ? "light" : "dark";
 
   // Base background & card surfaces
   root.style.setProperty("--eb-base-bg", isLight ? "#f8fafc" : config.baseBackground);
   root.style.setProperty("--surface-bg", isLight ? "#f8fafc" : config.baseBackground);
   root.style.setProperty(
     "--eb-card-surface",
-    isLight ? "#ffffff" : hexToRgba(config.cardSurface, config.cardTransparency),
+    isLight ? "#ffffff" : hexToRgba(config.cardSurface, Math.max(0.92, config.cardTransparency)),
   );
   root.style.setProperty(
     "--surface-card",
-    isLight ? "#ffffff" : hexToRgba(config.cardSurface, config.cardTransparency),
+    isLight ? "#ffffff" : hexToRgba(config.cardSurface, Math.max(0.92, config.cardTransparency)),
   );
 
   // Accent & Brand Colors
@@ -47,7 +48,7 @@ export function applyThemeToDOM(config: ThemeStudioConfig): void {
   root.style.setProperty("--eb-border-hover", config.accentColor);
   root.style.setProperty("--eb-glow-color", config.glowColor);
   root.style.setProperty("--eb-active-pill", config.activePillColor);
-  root.style.setProperty("--eb-text-accent", isLight ? (config.accentColor || "#0f766e") : config.textAccentColor);
+  root.style.setProperty("--eb-text-accent", isLight ? "#8a6400" : config.textAccentColor);
   root.style.setProperty("--text-primary", isLight ? "#0f172a" : config.textAccentColor);
   root.style.setProperty("--text-muted", isLight ? "#475569" : hexToRgba(config.textAccentColor, 0.65));
 

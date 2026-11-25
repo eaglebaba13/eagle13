@@ -39,11 +39,11 @@ export default function SafeZonesWidget() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <div
           style={{
-            padding: 9,
-            borderRadius: 5,
+            padding: 10,
+            borderRadius: 6,
             textAlign: "center",
-            background: gate.allowed ? "rgba(0,201,122,0.08)" : "rgba(255,255,255,0.02)",
-            border: gate.allowed ? "1px solid rgba(0,201,122,0.22)" : "1px solid var(--eb-border)",
+            background: gate.allowed ? "rgba(52, 211, 153, 0.08)" : "var(--eb-bg3, #141b26)",
+            border: gate.allowed ? "1px solid rgba(52, 211, 153, 0.24)" : "1px solid var(--eb-border)",
           }}
         >
           <div
@@ -59,6 +59,7 @@ export default function SafeZonesWidget() {
           <div
             style={{
               fontFamily: "var(--eb-mono)",
+              fontVariantNumeric: "tabular-nums",
               fontSize: 16,
               fontWeight: 700,
               color: gate.allowed ? "var(--eb-bull)" : "var(--eb-muted)",
@@ -70,11 +71,11 @@ export default function SafeZonesWidget() {
         </div>
         <div
           style={{
-            padding: 9,
-            borderRadius: 5,
+            padding: 10,
+            borderRadius: 6,
             textAlign: "center",
-            background: gate.allowed ? "rgba(255,58,92,0.08)" : "rgba(255,255,255,0.02)",
-            border: gate.allowed ? "1px solid rgba(255,58,92,0.22)" : "1px solid var(--eb-border)",
+            background: gate.allowed ? "rgba(251, 113, 133, 0.08)" : "var(--eb-bg3, #141b26)",
+            border: gate.allowed ? "1px solid rgba(251, 113, 133, 0.24)" : "1px solid var(--eb-border)",
           }}
         >
           <div
@@ -90,6 +91,7 @@ export default function SafeZonesWidget() {
           <div
             style={{
               fontFamily: "var(--eb-mono)",
+              fontVariantNumeric: "tabular-nums",
               fontSize: 16,
               fontWeight: 700,
               color: gate.allowed ? "var(--eb-bear)" : "var(--eb-muted)",
