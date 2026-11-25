@@ -12,6 +12,147 @@ interface DomainRule {
 
 const DOMAIN_RULES: readonly DomainRule[] = [
   {
+    id: "session-log-gap",
+    patterns: [
+      /\bno\s*verified\s*option\s*oi\b/i,
+      /\bgap\s*·\s*no\s*verified\b/i,
+      /\b(?:session\s*log|oi\s*observation)\s*gap\b/i,
+      /\bwhat\s*is\s*gap\s*in\s*session\b/i,
+      /\bgap\s*kya\s*hai\b/i,
+    ],
+    en: [
+      "**`GAP · No verified option OI observation`** is a data-integrity marker in EagleBABA session logs—not a market signal.",
+      "• **Why it appears:** No verified Option OI snapshot was recorded for that specific timestamp interval (for example, outside live NSE market hours `09:15–15:30 IST`, during a holiday/weekend, or during a transient feed interruption).",
+      "• **Design Rule:** EagleBABA never fabricates or interpolates missing OI rows; unverified intervals are transparently logged as `GAP`.",
+    ].join("\n"),
+    hi: [
+      "**`GAP · No verified option OI observation`** सेशन लॉग में एक डेटा-इंटीग्रिटी मार्कर है—यह कोई छुपा हुआ ट्रेड सिग्नल नहीं है।",
+      "• **यह क्यों दिखता है:** उस विशेष टाइम-इंटरवल के लिए कोई सत्यापित Option OI स्नैपशॉट उपलब्ध नहीं था (जैसे लाइव मार्केट समय `09:15–15:30 IST` के बाहर, छुट्टी/वीकेंड, या अस्थायी डेटा फीड गैप के कारण)।",
+      "• **नियम:** EagleBABA कभी भी नकली OI डेटा नहीं बनाता; बिना वेरिफाइड डेटा वाले अंतराल को `GAP` दिखाया जाता है।",
+    ].join("\n"),
+  },
+  {
+    id: "platform-overview",
+    patterns: [
+      /\bwhat\s*is\s*this\b/i,
+      /\beaglebaba\s*kya\s*hai\b/i,
+      /\bwhat\s*is\s*eaglebaba\b/i,
+      /\byeh\s*kya\s*hai\b/i,
+      /\babout\s*(?:this\s*)?(?:app|platform|website|terminal)\b/i,
+    ],
+    en: [
+      "**EagleBABA** is an institutional market-research, option-chain analytics, intraday flow, and Gann/time-cycle research terminal (for research & education only—broker order execution is strictly disabled).",
+      "• **Global Workspace:** Full-width layout with a top-right **`≡` Navigation Drawer** (20+ desks) and **`A-` / `100%` / `A+`** font-size scaling saved in your browser.",
+      "• **Core Pillars:** Live index/commodity/crypto quotes & `CPR`/`Safe Zones` (`/dashboard`), 60 FPS charting (`/live-chart`), COA 1.0 & Session Flow (`/options-chain`), `Unicorn & SMT Radar`, and `ChronoWheel` timing cycles.",
+    ].join("\n"),
+    hi: [
+      "**EagleBABA** एक इंस्टीट्यूशनल मार्केट रिसर्च, ऑप्शन-चेन एनालिटिक्स, इंट्राडे फ्लो और Gann/टाइम-साइकिल रिसर्च प्लेटफ़ॉर्म है (केवल रिसर्च और शिक्षा के लिए—ब्रोकर ऑर्डर एग्जीक्यूशन पूरी तरह बंद है)।",
+      "• **ग्लोबल लेआउट:** फुल-विड्थ स्क्रीन, टॉप-राइट **`≡` मेनू ड्रॉअर** (20+ डेस्क), और **`A-` / `100%` / `A+`** फॉन्ट साइज कंट्रोल।",
+      "• **मुख्य मॉड्यूल:** `/dashboard` (लाइव कोट्स, `CPR`, `Safe Zones`), `/live-chart` (60 FPS चार्ट + `OC Matrix`), `/options-chain` (AI LTP / COA 1.0), `Unicorn Radar` और `ChronoWheel`।",
+    ].join("\n"),
+  },
+  {
+    id: "how-to-use-and-pages",
+    patterns: [
+      /\bhow\s*to\s*use\b/i,
+      /\bkaise\s*use\s*kare\b/i,
+      /\bkis\s*page\s*par\s*kya\s*hai\b/i,
+      /\b(?:all\s*)?pages\s*(?:guide|list|overview)\b/i,
+      /\bwhich\s*page\b/i,
+      /\bnavigation\b/i,
+    ],
+    en: [
+      "**How to Use EagleBABA (Page Directory via Top-Right `≡` Menu):**",
+      "1. **`/dashboard`:** Start with `NIFTY 50 — LIVE`, `CPR LEVELS`, `SAFE ZONES`, `INDIA VIX`, and `Runtime Readiness`.",
+      "2. **`/options-chain` (AI LTP Calculator & COA 1.0):** Check `PAZ` (`EOS`/`EOR`), `PDI` (`WTT`/`WTB`), `OVM-9` regime, `Session Flow`, and `RSB` + `D1 (1:1)` levels.",
+      "3. **`/live-chart`:** View 60 FPS candles with `VWAP`, `OC Matrix`, `D1 (1:1)`, `Astro/Gann`, and `ICT Unicorn` overlays.",
+      "4. **Specialized Desks:** `/options-analytics` & `/combined-pcr` (OI/PCR trends), `/unicorn-radar` & `/liquidity-heatmap` (Orderflow/FVG/SMT), `/chronowheel` & `/astro` (Time-cycles), `/fo-ban-list` (MWPL), `/backtest` & `/market-replay` (testing), `/alerts` & `/telegram-log` (alerts).",
+    ].join("\n"),
+    hi: [
+      "**EagleBABA का उपयोग कैसे करें (टॉप-राइट `≡` मेनू के प्रमुख पेज):**",
+      "1. **`/dashboard`:** `NIFTY 50 — LIVE`, `CPR LEVELS`, `SAFE ZONES`, `INDIA VIX` और `Runtime Readiness` देखें।",
+      "2. **`/options-chain` (AI LTP Calculator):** `PAZ` (`EOS`/`EOR`), `PDI` (`WTT`/`WTB`), `OVM-9`, `Session Flow` और `RSB` + `D1 (1:1)` लेवल्स जाँचें।",
+      "3. **`/live-chart`:** `VWAP`, `OC Matrix`, `D1 (1:1)`, `Astro/Gann` और `Unicorn` ओवरले के साथ 60 FPS चार्ट देखें।",
+      "4. **अन्य डेस्क:** `/options-analytics`, `/combined-pcr`, `/unicorn-radar`, `/liquidity-heatmap`, `/chronowheel`, `/fo-ban-list`, `/backtest`, `/market-replay`, `/alerts` और `/telegram-log`।",
+    ].join("\n"),
+  },
+  {
+    id: "dashboard-guide",
+    patterns: [
+      /\bdashboard\s*kya\s*dikhata\s*hai\b/i,
+      /\bwhat\s*does\s*dashboard\s*show\b/i,
+      /\bdashboard\s*(?:cards|widgets|guide|explain)\b/i,
+      /\bruntime\s*readiness\b/i,
+    ],
+    en: [
+      "**What `/dashboard` Shows:**",
+      "• **`NIFTY 50 — LIVE` (and BankNifty/Sensex/Gold tabs):** Verified spot LTP, session change, and previous working day OHLC.",
+      "• **`CPR LEVELS`:** Top Central (`TC`), Pivot (`PP`), Bottom Central (`BC`), and CPR Width % (narrow CPR often precedes directional expansion; wide CPR favors range/reversal).",
+      "• **`SAFE ZONES`:** Symmetric `Safe Buy (Support Rev)` and `Safe Sell (Resistance Rev)` bands around previous close; blocked automatically if data freshness fails.",
+      "• **`INDIA VIX` & `Runtime Readiness`:** Volatility regime (`CALM` / `ELEVATED` / `HIGH FEAR`) plus live/degraded/blocked module health. Always confirm with structure—no single card guarantees direction.",
+    ].join("\n"),
+    hi: [
+      "**`/dashboard` क्या दिखाता है:**",
+      "• **`NIFTY 50 — LIVE`:** सत्यापित स्पॉट LTP, बदलाव और पिछले कार्यदिवस का OHLC।",
+      "• **`CPR LEVELS`:** `TC`, `PP`, `BC` और CPR चौड़ाई % (संकीर्ण CPR ट्रेंडिंग मूव और चौड़ा CPR रेंज/रिवर्सल दर्शाता है)।",
+      "• **`SAFE ZONES`:** सपोर्ट (`Safe Buy`) और रेजिस्टेंस (`Safe Sell`) रिवर्सल ज़ोन (डेटा पुराना होने पर सुरक्षित रूप से ब्लॉक हो जाते हैं)।",
+      "• **`INDIA VIX` व `Runtime Readiness`:** वोलैटिलिटी और सिस्टम डेटा हेल्थ (`LIVE` / `DEGRADED` / `BLOCKED`)। कोई भी कार्ड गारंटीड प्रॉफिट नहीं देता।",
+    ].join("\n"),
+  },
+  {
+    id: "option-buying-logic",
+    patterns: [
+      /\boption\s*buying\s*kaise\b/i,
+      /\bcall\s*(?:ya|or)\s*put\b/i,
+      /\bentry\s*kab\s*leni\b/i,
+      /\bwhen\s*to\s*(?:buy\s*)?(?:call|put|enter)\b/i,
+      /\bhow\s*to\s*(?:trade|analyze)\s*options?\b/i,
+    ],
+    en: [
+      "**Option Buying & Call vs. Put Evaluation Framework (Research & Education):**",
+      "• **Concept:** Option buyers pay premium (subject to theta decay and IV crush), so directional momentum and timing matter. Calls (`CE`) align with bullish structure; Puts (`PE`) align with bearish structure.",
+      "• **EagleBABA Call vs. Put Checklist (`/options-chain` + `/live-chart`):**",
+      "  1. **Regime (`OVM-9`):** Look for `Momentum Surge` (`BULLISH_ONLY`) or `Cascade Breakdown` (`BEARISH_ONLY`), and avoid `Dual-Side Trap` (`WAIT`).",
+      "  2. **Anchors & Flow:** Check `PAZ` (`EOS`/`EOR`), `PDI` (`WTB_TO_STRONG` / `SHIFTED_B2T` vs `WTT_TO_STRONG` / `SHIFTED_T2B`), and `Session Flow` (`PUT_FLOW_EDGE` / `CALL_FLOW_EDGE` + `ATM Volume` vs `ΔOI`).",
+      "  3. **Execution & Risk:** Require `EXECUTION VALID` in `RSB`, verify `slRiskTier` (`TIGHT` / `MODERATE` / `WIDE`), respect `Invalidation Stop` / `Max Pain`, and keep `D1 (1:1)` within the `25`-pt cap.",
+    ].join("\n"),
+    hi: [
+      "**ऑप्शन बाइंग और Call बनाम Put एंट्री लॉजिक (रिसर्च और शिक्षा के लिए):**",
+      "• **मूल सिद्धांत:** ऑप्शन बायर प्रीमियम देता है (जिसमें थीटा डिके का जोखिम होता है), इसलिए स्पष्ट मोमेंटम और सही लेवल ज़रूरी हैं। तेजी में `CE` (Call) और मंदी में `PE` (Put) संरचना देखी जाती है।",
+      "• **EagleBABA चेकलिस्ट (`/options-chain` + `/live-chart`):**",
+      "  1. **`OVM-9` रेजीम:** `Momentum Surge` (`BULLISH_ONLY`) या `Cascade Breakdown` (`BEARISH_ONLY`) देखें; `Dual-Side Trap` में `WAIT` रखें।",
+      "  2. **एंकर व फ्लो:** `PAZ` (`EOS`/`EOR`), `PDI` (`WTT`/`WTB`/शिफ्ट) और `Session Flow` (`ATM Volume` बनाम `ΔOI`) जाँचें।",
+      "  3. **रिस्क और SL:** `RSB` में `EXECUTION VALID`, `Invalidation Stop` (`slRiskTier`), `Max Pain` और `D1 (1:1)` (`25`-pt कैप) का पालन करें।",
+    ].join("\n"),
+  },
+  {
+    id: "stock-analysis",
+    patterns: [
+      /\bstocks?\s*(?:analyse|analyze|analysis)\s*kaise\b/i,
+      /\bhow\s*to\s*analyze\s*stocks?\b/i,
+      /\bstock\s*selection\b/i,
+      /\b4[-\s]*line\b/i,
+    ],
+    en: [
+      "**How to Analyze Stocks on EagleBABA:**",
+      "1. **Price Structure (`/live-chart`):** Check trend relative to `VWAP`, `CPR` (`TC`/`PP`/`BC`), and `Liquidity / FVG` zones.",
+      "2. **F&O Option Chain (`/options-chain`):** Switch mode to **`STOCKS 4-LINE`** or **`LTP BLAST SCREENER`** to inspect support/resistance reversals and OI buildup on 200+ F&O equities.",
+      "3. **Ban & Breadth Context:** Verify `/fo-ban-list` (high `MWPL` % or NSE F&O Ban restricts fresh positions) and `/market-breadth` / `/combined-pcr` for overall market tailwinds.",
+    ].join("\n"),
+    hi: [
+      "**EagleBABA पर स्टॉक्स का विश्लेषण कैसे करें:**",
+      "1. **प्राइस स्ट्रक्चर (`/live-chart`):** `VWAP`, `CPR` (`TC`/`PP`/`BC`) और `Liquidity / FVG` लेवल्स के साथ ट्रेंड देखें।",
+      "2. **F&O ऑप्शन चेन (`/options-chain`):** 200+ F&O स्टॉक्स के लिए **`STOCKS 4-LINE`** या **`LTP BLAST SCREENER`** मोड में सपोर्ट/रेजिस्टेंस व OI देखें।",
+      "3. **बैन और ब्रेड्थ:** `/fo-ban-list` (`MWPL` % व बैन स्टेटस) और `/market-breadth` से समग्र बाज़ार की स्थिति जाँचें।",
+    ].join("\n"),
+  },
+  {
+    id: "vwap",
+    patterns: [/\bvwap\b/i, /\bvolume\s*weighted\s*average\s*price\b/i],
+    en: "**VWAP (Volume Weighted Average Price)** is the intraday average price weighted by traded volume (`Σ(Price × Volume) / ΣVolume`). Institutional desks use VWAP on `/live-chart` as a dynamic fair-value benchmark: sustained price above VWAP signals buyer control, while sustained price below VWAP signals seller control.",
+    hi: "**VWAP (Volume Weighted Average Price)** दिन के दौरान वॉल्यूम के आधार पर निकाला गया औसत मूल्य है (`Σ(Price × Volume) / ΣVolume`)। `/live-chart` पर कीमत VWAP से ऊपर टिकना खरीदारों की मजबूती और नीचे टिकना विक्रेताओं का दबाव दर्शाता है।",
+  },
+  {
     id: "bloodbath",
     patterns: [
       /\b(?:pure\s*)?blood\s*bath\b/i,
@@ -61,7 +202,7 @@ const DOMAIN_RULES: readonly DomainRule[] = [
     en: [
       "**EagleBABA Primary Safe Buy Setup (Support Reversal)** looks for controlled mean-reversion bounces from verified support (`PAZ-Sup` / `EOS` / `S-MOD`):",
       "• **Entry Logic:** Price tests the support reversal zone while `OVM-9` is NOT in `Cascade Breakdown` (`Bloodbath`) or `Dual-Side Trap`.",
-      "• **Confirmation & Invalidation:** Look forPut OI support stability (`STABLE_STRONG` or `WTB_TO_STRONG` / `SHIFTED_B2T`), place `Invalidation Stop` cleanly below the support band, and evaluate `slRiskTier` (`TIGHT` / `MODERATE` / `WIDE`) + `1:1` / `T1`–`T3` R:R.",
+      "• **Confirmation & Invalidation:** Look for Put OI support stability (`STABLE_STRONG` or `WTB_TO_STRONG` / `SHIFTED_B2T`), place `Invalidation Stop` cleanly below the support band, and evaluate `slRiskTier` (`TIGHT` / `MODERATE` / `WIDE`) + `1:1` / `T1`–`T3` R:R.",
     ].join("\n"),
     hi: [
       "**EagleBABA Primary Safe Buy Setup (Support Reversal)** सत्यापित सपोर्ट ज़ोन (`PAZ-Sup` / `EOS` / `S-MOD`) से संभावित बाउंस को ट्रैक करता है:",
@@ -139,6 +280,12 @@ const DOMAIN_RULES: readonly DomainRule[] = [
     ].join("\n"),
   },
   {
+    id: "iv-volatility",
+    patterns: [/\b(?:iv\b|implied\s*volatility|vix|india\s*vix)\b/i],
+    en: "**IV (Implied Volatility) & India VIX:** IV reflects the market's expected price range priced into option premiums. In EagleBABA, `/options-chain` uses ATM IV to compute the **Weekly Range** and flags `IV EXPANSION ⚡` when IV >= 18%, while `/dashboard` tracks `INDIA VIX` regimes (`COMPLACENT`, `CALM`, `ELEVATED`, `HIGH FEAR`).",
+    hi: "**IV (Implied Volatility) और India VIX:** IV बताता है कि बाज़ार में कितनी संभावित हलचल (expected range) प्रीमियम में शामिल है। `/options-chain` पर ATM IV से **Weekly Range** निकलती है और `/dashboard` पर `INDIA VIX` रिस्क रेजीम दिखता है।",
+  },
+  {
     id: "smc-fvg-unicorn",
     patterns: [/\b(?:fvg|fair\s*value\s*gap|unicorn|smt)\b/i],
     en: "FVG (Fair Value Gap) is a 3-candle imbalance (`candle[2].low > candle[0].high` bullish or `candle[2].high < candle[0].low` bearish). ICT Unicorn combines a Breaker Block overlapping an FVG, while SMT checks divergence across correlated instruments.",
@@ -174,13 +321,13 @@ export function buildDomainFallbackAnswer(question: string, language: AssistantL
 
   return language === "hi"
     ? [
-        `आपके प्रश्न **"${question.slice(0, 80)}"** के लिए रिसर्च मार्गदर्शन:`,
-        "• लाइव इंट्राडे स्थिति के लिए `/options-chain` पर **OVM-9 Regime**, **PAZ (`EOS`/`EOR`) प्रेशर टैग**, और **RSB (`Invalidation Stop` + `D1 1:1`)** जाँचें।",
-        "• आप मुझसे **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Primary Safe Buy (Support Reversal)**, **WTT/WTB**, **RSB**, **CPR**, या **Gann** के बारे में विस्तार से पूछ सकते हैं।",
+        `आपके प्रश्न **"${question.slice(0, 80)}"** के लिए EagleBABA रिसर्च मार्गदर्शन:`,
+        "• **प्लेटफ़ॉर्म उपयोग:** `/dashboard` पर `NIFTY 50 — LIVE`, `CPR` व `Safe Zones` देखें; `/options-chain` पर `OVM-9`, `PAZ` (`EOS`/`EOR`), `Session Flow` व `RSB` जाँचें; `/live-chart` पर `VWAP` और `OC Matrix` से कन्फर्म करें।",
+        "• आप सीधे **Option Buying (Call/Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Safe Buy**, **GAP logs**, या **WTT/WTB** के बारे में पूछ सकते हैं।",
       ].join("\n")
     : [
-        `Research guidance for **"${question.slice(0, 80)}"**:`,
-        "• Check **OVM-9 Regime**, **PAZ (`EOS`/`EOR`) pressure tags**, and **RSB (`Invalidation Stop` + `D1 1:1`)** on `/options-chain`, alongside `CPR` & `VWAP` on `/live-chart`.",
-        "• You can ask directly about **PURE BLOOD BATH (COA #8)**, **OVM-9 Dual-Side Trap**, **Primary Safe Buy (Support Reversal)**, **WTT/WTB**, **RSB**, **D1 (1:1)**, **FVG/SMT**, or intraday pressure.",
+        `EagleBABA research guidance for **"${question.slice(0, 80)}"**:`,
+        "• **Workflow:** Check `/dashboard` (`CPR`, `Safe Zones`, `India VIX`), inspect `/options-chain` (`OVM-9`, `PAZ` `EOS`/`EOR`, `Session Flow`, `RSB` & `D1 1:1`), and confirm price structure with `VWAP` & `OC Matrix` on `/live-chart`.",
+        "• Ask specifically about **Option Buying (Call vs Put)**, **Stock Analysis**, **VWAP**, **PURE BLOOD BATH (COA #8)**, **Dual-Side Trap**, **Primary Safe Buy**, **GAP session logs**, or **WTT/WTB**.",
       ].join("\n");
 }

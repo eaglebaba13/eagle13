@@ -120,4 +120,50 @@ describe("resolveAiAssistantReply & intent-aware bilingual domain intelligence",
     expect(buildDomainFallbackAnswer("fvg unicorn smt", "en")).toContain("Fair Value Gap");
     expect(buildDomainFallbackAnswer("gann and cpr", "en")).toContain("Central Pivot Range");
   });
+
+  it("answers natural conversational, platform, dashboard, VWAP, option buying, stock analysis, and GAP queries", () => {
+    const whatIsThis = buildDomainFallbackAnswer("what is this", "en");
+    expect(whatIsThis).toContain("EagleBABA");
+    expect(whatIsThis).toContain("Navigation Drawer");
+
+    const eagleKyaHai = buildDomainFallbackAnswer("EagleBABA kya hai", "hi");
+    expect(eagleKyaHai).toContain("EagleBABA");
+    expect(eagleKyaHai).toContain("ब्रोकर ऑर्डर एग्जीक्यूशन");
+
+    const howToUse = buildDomainFallbackAnswer("how to use", "en");
+    expect(howToUse).toContain("/dashboard");
+    expect(howToUse).toContain("/options-chain");
+    expect(howToUse).toContain("/live-chart");
+
+    const kisPage = buildDomainFallbackAnswer("kis page par kya hai", "hi");
+    expect(kisPage).toContain("/dashboard");
+    expect(kisPage).toContain("/chronowheel");
+
+    const vwapEn = buildDomainFallbackAnswer("what is VWAP", "en");
+    expect(vwapEn).toContain("Volume Weighted Average Price");
+
+    const dashHi = buildDomainFallbackAnswer("dashboard kya dikhata hai", "hi");
+    expect(dashHi).toContain("CPR LEVELS");
+    expect(dashHi).toContain("SAFE ZONES");
+    expect(dashHi).toContain("INDIA VIX");
+
+    const optBuyHi = buildDomainFallbackAnswer("option buying kaise karte hai", "hi");
+    expect(optBuyHi).toContain("OVM-9");
+    expect(optBuyHi).toContain("Invalidation Stop");
+
+    const callPutHi = buildDomainFallbackAnswer("call ya put me entry kab leni chahiye", "hi");
+    expect(callPutHi).toContain("CE");
+    expect(callPutHi).toContain("PE");
+
+    const stockHi = buildDomainFallbackAnswer("stocks analyse kaise karte hai", "hi");
+    expect(stockHi).toContain("STOCKS 4-LINE");
+    expect(stockHi).toContain("/fo-ban-list");
+
+    const gapEn = buildDomainFallbackAnswer("GAP · No verified option OI observation kya hai", "en");
+    expect(gapEn).toContain("data-integrity marker");
+    expect(gapEn).toContain("09:15–15:30 IST");
+
+    const gapHi = buildDomainFallbackAnswer("GAP · No verified option OI observation kya hai", "hi");
+    expect(gapHi).toContain("डेटा-इंटीग्रिटी");
+  });
 });
