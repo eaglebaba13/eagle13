@@ -19,7 +19,8 @@ export function ensureOiCollectorStarted(): void {
   oiCollectorStarted = true;
   const collect = () => { void collectOiSession().catch(() => console.warn("[OI Scanner] Collection unavailable.")); };
   collect();
-  const timer = setInterval(collect, 60_000);
+  // 20s heartbeat + per-minute deduplication eliminates timer-drift gaps and retries transient failures.
+  const timer = setInterval(collect, 20_000);
   timer.unref?.();
 }
 

@@ -108,9 +108,10 @@ export class OiSnapshotStore {
 }
 
 const store = new OiSnapshotStore();
-const http = new UpstoxHttpClient({ timeoutMs: 8_000, maxRetries: 0 });
+const http = new UpstoxHttpClient({ timeoutMs: 8_000, maxRetries: 1 });
 const flights = new Map<string, Promise<void>>();
 const lastAttempt = new Map<string, number>();
+const lastCapturedMinute = new Map<string, number>();
 const latest = new Map<string, OptionChainSnapshot>();
 const priceHistory = new Map<string, { prices: Candle[]; context: OiContext }>();
 const errors = new Map<string, string>();
@@ -212,7 +213,18 @@ async function reconstruct(
     }[];
   }>({ path: "v2/option/contract", query: { instrument_key: key, expiry_date: snapshot.expiry } });
   if (!result.ok || !Array.isArray(result.data?.data)) return;
-  const focus = nearAtm(snapshot).strikes;
+  const sorted = snapshot.strikes.slice().sort((a, b) => a.strike - b.strike);
+  const spotMin = Math.min(snapshot.spotPrice ?? Infinity, ...spotCandles.map((c) => c.close));
+  const spotMax = Math.max(snapshot.spotPrice ?? -Infinity, ...spotCandles.map((c) => c.close));
+  const focusSet = new Set<number>(nearAtm(snapshot, 12).strikes.map((s) => s.strike));
+  if (Number.isFinite(spotMin) && Number.isFinite(spotMax)) {
+    for (const c of spotCandles) {
+      for (const s of nearAtm({ ...snapshot, spotPrice: c.close }).strikes) {
+        focusSet.add(s.strike);
+      }
+    }
+  }
+  const focus = sorted.filter((s) => focusSet.has(s.strike));
   const contracts = result.data.data.filter(
     (c) =>
       c.expiry === snapshot.expiry &&
@@ -221,12 +233,17 @@ async function reconstruct(
       c.instrument_key,
   );
   const histories = new Map<string, Map<string, Candle>>();
-  // Bounded sequential requests: never fan out dozens of candle requests at the provider.
-  for (const c of contracts) {
-    const data = await candles(c.instrument_key!, now);
-    histories.set(
-      `${c.strike_price}:${c.instrument_type}`,
-      new Map(data.map((v) => [v.timestamp, v])),
+  // Bounded concurrency (4 at a time): fast backfill without flooding provider rate limits.
+  for (let i = 0; i < contracts.length; i += 4) {
+    const batch = contracts.slice(i, i + 4);
+    await Promise.all(
+      batch.map(async (c) => {
+        const data = await candles(c.instrument_key!, now);
+        histories.set(
+          `${c.strike_price}:${c.instrument_type}`,
+          new Map(data.map((v) => [v.timestamp, v])),
+        );
+      }),
     );
   }
   const observations: OiObservation[] = [];
@@ -262,7 +279,9 @@ async function reconstruct(
 export async function captureOiSymbol(symbol: string, expiry?: string, now = Date.now()) {
   const key = `${symbol}:${expiry ?? "auto"}`;
   if (flights.has(key)) return flights.get(key);
-  if (now - (lastAttempt.get(key) ?? 0) < 60_000) return;
+  const currentMinute = Math.floor(now / 60_000);
+  if (lastCapturedMinute.get(key) === currentMinute) return;
+  if (now - (lastAttempt.get(key) ?? 0) < 20_000) return;
   lastAttempt.set(key, now);
   const flight = (async () => {
     try {
@@ -313,12 +332,13 @@ export async function captureOiSymbol(symbol: string, expiry?: string, now = Dat
         scannerMarketHours(now) &&
         snap.marketSession === "OPEN" &&
         oiSession(snap.timestamp).date === oiSession(now).date &&
-        Math.abs(now - Date.parse(snap.timestamp)) <= 90_000
+        Math.abs(now - Date.parse(snap.timestamp)) <= 120_000
       ) {
         await store.append(
           [{ snapshot: { ...snap, strikes: nearAtm(snap).strikes }, context, source: "CAPTURED" }],
           now,
         );
+        lastCapturedMinute.set(key, currentMinute);
       }
     } catch {
       errors.set(key, "Upstox collection failed; retrying on the next minute.");
@@ -380,7 +400,11 @@ export async function collectOiSession(now = Date.now()) {
   if (collecting || !scannerMarketHours(now)) return;
   collecting = true;
   try {
-    for (const symbol of OI_SYMBOLS) await captureOiSymbol(symbol);
+    // Bounded concurrency (3 at a time) so all 15 symbols finish well within 1 minute.
+    for (let i = 0; i < OI_SYMBOLS.length; i += 3) {
+      const batch = OI_SYMBOLS.slice(i, i + 3);
+      await Promise.allSettled(batch.map((symbol) => captureOiSymbol(symbol, undefined, now)));
+    }
   } finally {
     collecting = false;
   }
